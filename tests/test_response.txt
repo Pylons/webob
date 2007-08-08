@@ -1,0 +1,141 @@
+This demonstrates how the Response object works, and tests it at the
+same time.
+
+    >>> from wsgiobj import Response, UTC
+    >>> from datetime import datetime
+    >>> res = Response('200 OK', [], 'Test')
+
+This is a minimal response object.  We can do things like get and set
+the body:
+
+    >>> res.body
+    'Test'
+    >>> res.body = 'Another test'
+    >>> res.body
+    'Another test'
+    >>> res.app_iter
+    ['Another test']
+    >>> res.content_length
+    12
+    >>> res.headers['content-length']
+    '12'
+    
+Content-Length is only applied when setting the body to a string; you
+have to set it manually otherwise.  There are also getters and setters
+for the various pieces:
+
+    >>> res.app_iter = ['test']
+    >>> print res.content_length
+    None
+    >>> res.content_length = 4
+    >>> res.status
+    '200 OK'
+    >>> res.status_int
+    200
+    >>> res.headers
+    HeaderDict([('Content-Length', '4')])
+    >>> res.headerlist
+    [('Content-Length', '4')]
+
+Content-type and charset are handled separately as properties, though
+they are both in the ``res.headers['content-type']`` header:
+
+    >>> print res.content_type
+    None
+    >>> res.content_type = 'text/html'
+    >>> res.content_type
+    'text/html'
+    >>> print res.charset
+    None
+    >>> res.charset = 'utf8'
+    >>> res.charset
+    'utf8'
+    >>> res.content_type
+    'text/html'
+    >>> res.headers['content-type']
+    'text/html; charset=utf8'
+
+Cookie handling is done through methods:
+
+    >>> res.set_cookie('test', 'value')
+    >>> res.headers['set-cookie']
+    'test=value; Path=/;'
+    >>> res.set_cookie('test2', 'value2', max_age=10000)
+    >>> res.headers['set-cookie'] # We only see the first header
+    'test=value; Path=/;'
+    >>> res.headers.getall('set-cookie')
+    ['test=value; Path=/;', 'test2=value2; Max-Age=10000; Path=/;']
+    >>> res.delete_cookie('test')
+    >>> res.headers.getall('set-cookie')
+    ['test2=value2; Max-Age=10000; Path=/;']
+
+Most headers are available in a parsed getter/setter form through
+properties:
+
+    >>> res.age = 10
+    >>> res.age, res.headers['age']
+    (10, '10')
+    >>> res.allow = ['GET', 'PUT']
+    >>> res.allow, res.headers['allow']
+    (['GET', 'PUT'], 'GET, PUT')
+    >>> res.cache_control
+    <CacheControl ''>
+    >>> res.cache_control.max_age = 10
+    >>> res.cache_control
+    <CacheControl 'max-age=10'>
+    >>> res.headers['cache-control']
+    'max-age=10'
+    >>> res.cache_control.max_stale = 10
+    Traceback (most recent call last):
+        ...
+    AttributeError: The property max-stale only applies to request Cache-Control
+    >>> res.cache_control = {}
+    >>> res.cache_control
+    <CacheControl ''>
+    >>> res.content_encoding = 'gzip'
+    >>> (res.content_encoding, res.headers['content-encoding'])
+    ('gzip', 'gzip')
+    >>> res.content_language = 'en'
+    >>> (res.content_language, res.headers['content-language'])
+    (['en'], 'en')
+    >>> res.content_location = 'http://localhost:8080'
+    >>> res.headers['content-location']
+    'http://localhost:8080'
+    >>> res.content_range = (0, 100, 1000)
+    >>> (res.content_range, res.headers['content-range'])
+    ((0, 100, 1000), 'bytes 0-100/1000')
+    >>> res.date = datetime(2005, 1, 1, 12, 0, tzinfo=UTC)
+    >>> (res.date, res.headers['date'])
+    (datetime.datetime(2005, 1, 1, 12, 0, tzinfo=UTC), 'Sat, 01 Jan 2005 12:00:00 GMT')
+    >>> res.etag
+    <ETag *>
+    >>> res.etag = 'foo'
+    >>> (res.etag, res.headers['etag'])
+    (<ETag foo>, 'foo')
+    >>> res.expires = res.date
+    >>> res.retry_after = 120 # two minutes
+    >>> res.retry_after #doctest: +ELLIPSIS
+    datetime.datetime(...)
+    >>> res.server = 'Python/foo'
+    >>> res.headers['server']
+    'Python/foo'
+    >>> res.vary = ['Cookie']
+    >>> (res.vary, res.headers['vary'])
+    (['Cookie'], 'Cookie')
+
+The location header will try to absolutify itself if you have a
+request object attached.
+
+    >>> res.location = '/test.html'
+    >>> from wsgiobj import Request
+    >>> res.request = Request.blank('/')
+    >>> res.location
+    'http://localhost/test.html'
+    >>> res.request = None
+    >>> res.location
+    '/test.html'
+    >>> res.request = Request.blank('/')
+    >>> res.location = '/test2.html'
+    >>> res.request = None
+    >>> res.location
+    'http://localhost/test2.html'
