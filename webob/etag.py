@@ -14,6 +14,22 @@ class _AnyETag(object):
 
 AnyETag = _AnyETag()
 
+class _NoETag(object):
+
+    def __repr__(self):
+        return '<No ETag>'
+
+    def __contains__(self, other):
+        return False
+
+    def weak_match(self, other):
+        return False
+
+    def __str__(self):
+        return ''
+
+NoETag = _NoETag()
+
 class ETagMatcher(object):
 
     """

@@ -14,7 +14,7 @@ from webob.datastruct import EnvironHeaders
 from webob.multidict import MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
 from webob.acceptlang import parse_accept_language
 from webob.useragent import UserAgent, parse_search_query
-from webob.etag import AnyETag, ETagMatcher
+from webob.etag import AnyETag, NoETag, ETagMatcher
 from webob.headerdict import HeaderDict
 from webob.statusreasons import status_reasons
 from webob.cachecontrol import CacheControl
@@ -230,18 +230,28 @@ def _serialize_date_delta(value):
         return str(int(value))
     return _serialize_date(value)
 
-def _parse_etag(value):
+def _parse_etag(value, default=True):
     if value is None:
-        return AnyETag
+        value = ''
     value = value.strip()
-    if not value or value == '*':
+    if not value:
+        if default:
+            return AnyETag
+        else:
+            return NoETag
+    if value == '*':
         return AnyETag
     else:
         return ETagMatcher.parse(value)
 
-def _serialize_etag(value):
-    if value is AnyETag:
+def _serialize_etag(value, default=True):
+    if value is None:
         return None
+    if value is AnyETag:
+        if default:
+            return None
+        else:
+            return '*'
     return str(value)
 
 def _parse_int(value):
@@ -759,7 +769,7 @@ class Request(object):
 
     if_match = converter(
         environ_getter('HTTP_IF_MATCH', rfc_section='14.24'),
-        _parse_etag, _serialize_etag, 'etag')
+        _parse_etag, _serialize_etag, 'etag', converter_args=(True,))
 
     if_modified_since = converter(
         environ_getter('HTTP_IF_MODIFIED_SINCE', rfc_section='14.25'),
@@ -767,7 +777,7 @@ class Request(object):
 
     if_none_match = converter(
         environ_getter('HTTP_IF_NONE_MATCH', rfc_section='14.26'),
-        _parse_etag, _serialize_etag, 'etag')
+        _parse_etag, _serialize_etag, 'etag', converter_args=(False,))
 
     ## FIXME: 14.27 If-Range
     ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.27
@@ -1298,6 +1308,8 @@ class Response(object):
         header_getter('Date', rfc_section='14.18'),
         _parse_date, _serialize_date, 'date-parse')
 
+    ## FIXME: should this use _parse_etag?  Shouldn't it just be an
+    ## opaque string?
     etag = converter(
         header_getter('ETag', rfc_section='14.19'),
         _parse_etag, _serialize_etag, 'etag')
