@@ -25,11 +25,13 @@ Request
 The primary object in WebOb is ``webob.Request``, a wrapper around a
 `WSGI environment <http://www.python.org/dev/peps/pep-0333/>`_.
 
-The basic way you create a request object is simple enough::
+The basic way you create a request object is simple enough:
 
-    >>> from webob import Request
-    >>> environ = {}
-    >>> req = Request(environ)
+.. code-block::
+
+   >>> from webob import Request
+   >>> environ = {}
+   >>> req = Request(environ)
 
 The request object *wraps* the environment; it has very little
 internal state of its own.  Instead attributes you access read and
@@ -47,25 +49,27 @@ coexist.  Examples of libraries that can coexist include
 
 The WSGI environment has a number of required variables.  To make it
 easier to test and play around with, the ``Request`` class has a
-constructor that will fill in a minimal environment::
+constructor that will fill in a minimal environment:
 
-    >>> req = Request.blank('/article?id=1')
-    >>> from pprint import pprint
-    >>> pprint(req.environ)
-    {'PATH_INFO': '/article',
-     'QUERY_STRING': 'id=1',
-     'REQUEST_METHOD': 'GET',
-     'SCRIPT_NAME': '',
-     'SERVER_NAME': 'localhost',
-     'SERVER_PORT': '80',
-     'SERVER_PROTOCOL': 'HTTP/1.0',
-     'wsgi.errors': <cStringIO.StringO object at ...>,
-     'wsgi.input': <cStringIO.StringI object at ...>,
-     'wsgi.multiprocess': False,
-     'wsgi.multithread': False,
-     'wsgi.run_once': False,
-     'wsgi.url_scheme': 'http',
-     'wsgi.version': (1, 0)}
+.. code-block::
+
+   >>> req = Request.blank('/article?id=1')
+   >>> from pprint import pprint
+   >>> pprint(req.environ)
+   {'PATH_INFO': '/article',
+    'QUERY_STRING': 'id=1',
+    'REQUEST_METHOD': 'GET',
+    'SCRIPT_NAME': '',
+    'SERVER_NAME': 'localhost',
+    'SERVER_PORT': '80',
+    'SERVER_PROTOCOL': 'HTTP/1.0',
+    'wsgi.errors': <cStringIO.StringO object at ...>,
+    'wsgi.input': <cStringIO.StringI object at ...>,
+    'wsgi.multiprocess': False,
+    'wsgi.multithread': False,
+    'wsgi.run_once': False,
+    'wsgi.url_scheme': 'http',
+    'wsgi.version': (1, 0)}
 
 Request Body
 ------------
@@ -75,6 +79,8 @@ Request Body
 start, but you can set it to a string and that will be turned into a
 file-like object.  You can read the entire body with
 ``req.read_body()``.
+
+.. code-block:: 
 
     >>> req.body
     <cStringIO.StringI object at ...>
@@ -90,7 +96,9 @@ Method & URL
 ------------
 
 All the normal parts of a request are also accessible through the
-request object::
+request object:
+
+.. code-block::
 
     >>> req.method
     'GET'
@@ -115,13 +123,17 @@ request object::
     >>> req.url
     'http://localhost/blog/article?id=1'
 
-You can make new URLs::
+You can make new URLs:
+
+.. code-block::
 
     >>> req.relative_url('archive')
     'http://localhost/blog/archive'
 
 For parsing the URLs, it is often useful to deal with just the next
-path segment on PATH_INFO::
+path segment on PATH_INFO:
+
+.. code-block::
 
     >>> req.path_info_peek() # Doesn't change request
     'article'
@@ -138,7 +150,7 @@ Headers
 All request headers are available through a dictionary-like object
 ``req.headers``.  Keys are case-insensitive.
 
-::
+.. code-block::
 
     >>> req.headers['content-type'] = 'application/x-www-urlencoded'
     >>> req.headers
@@ -163,7 +175,9 @@ with ``.getall(key)`` (which always returns a list, possibly an empty
 list).  You also get all key/value pairs when using ``.items()`` and
 all values with ``.values()``.
 
-Some examples::
+Some examples:
+
+.. code-block::
 
     >>> req = Request.blank('/test?check=a&check=b&name=Bob')
     >>> req.queryvars
@@ -176,7 +190,9 @@ Some examples::
     [('check', 'a'), ('check', 'b'), ('name', 'Bob')]
 
 We'll have to create a request body and change the method to get
-postvars.  Until we do that, the variables are boring::
+postvars.  Until we do that, the variables are boring:
+
+.. code-block::
 
     >>> req.postvars
     <NoVars: Not a POST request>
@@ -192,7 +208,9 @@ postvars.  Until we do that, the variables are boring::
 Often you won't care where the variables come from.  (Even if you care
 about the method, the location of the variables might not be
 important.)  There is a dictionary called ``req.params`` that
-contains variables from both sources::
+contains variables from both sources:
+
+.. code-block::
 
     >>> req.params
     NestedMultiDict([('check', 'a'), ('check', 'b'), ('name', 'Bob'), ('name', 'Joe'), ('email', 'joe@example.com')])
@@ -224,7 +242,9 @@ set is indicated.  A client can indicate the character set with
 very few clients actually do this (sometimes XMLHttpRequest requests
 will do this, as JSON is always UTF8 even when a page is served with a
 different character set).  You can force a charset, which will effect
-all the variables::
+all the variables:
+
+.. code-block::
 
     >>> req.charset = 'utf8'
     >>> req.queryvars
@@ -238,6 +258,8 @@ Cookies
 
 Cookies are presented in a simple dictionary.  Like other variables,
 they will be decoded into Unicode strings if you set the charset.
+
+.. code-block::
 
     >>> req.headers['Cookie'] = 'test=value'
     >>> req.cookies
@@ -281,7 +303,9 @@ accepts.  These are ``accept`` (the Content-Type that is accepted),
 ``accept_language`` (generally the preferred language of the client).
 
 The objects returned support containment to test for acceptability.
-E.g.::
+E.g.:
+
+.. code-block::
 
     >>> 'text/html' in req.accept
     True
@@ -289,7 +313,9 @@ E.g.::
 Because no header means anything is potentially acceptable, this is
 returning True.  We can set it to see more interesting behavior (the
 example means that ``text/html`` is okay, but
-``application/xhtml+xml`` is preferred)::
+``application/xhtml+xml`` is preferred):
+
+.. code-block::
 
     >>> req.accept = 'text/html;q=0.5, application/xhtml+xml;q=1'
     >>> req.accept
@@ -299,27 +325,35 @@ example means that ``text/html`` is okay, but
 
 There's three methods for different strategies of finding a match.
 First, when you trust the server's preference over the client (a good
-idea for Accept)::
+idea for Accept):
+
+.. code-block::
 
     >>> req.accept.first_match(['text/html', 'application/xhtml+xml'])
     'text/html'
 
 Because ``text/html`` is at least *somewhat* acceptible, it is
 returned, even if the client says it prefers
-``application/xhtml+xml``.  If we trust the client more::
+``application/xhtml+xml``.  If we trust the client more:
+
+.. code-block::
 
     >>> req.accept.best_match(['text/html', 'application/xhtml+xml'])
     'application/xhtml+xml'
 
 If we just want to know everything the client prefers, in the order it
-is preferred::
+is preferred:
+
+.. code-block::
 
     >>> req.accept.best_matches()
     ['application/xhtml+xml', 'text/html']
 
 For languages you'll often have a "fallback" language.  E.g., if there's
 nothing better then use ``en-US`` (and if ``en-US`` is okay, ignore
-any less preferrable languages)::
+any less preferrable languages):
+
+.. code-block::
 
     >>> req.accept_language = 'es, pt-BR'
     >>> req.accept_language.best_matches('en-US')
@@ -342,7 +376,9 @@ For instance, it's common to use the mtime (last modified) of the file,
 plus the number of bytes, and maybe a hash of the filename (if there's
 a possibility that the same URL could point to two different
 server-side filenames based on other variables).  To test if a 304
-response is appropriate, you can use::
+response is appropriate, you can use:
+
+.. code-block::
 
     >>> server_token = 'opaque-token'
     >>> server_token in req.if_none_match # You shouldn't return 304
@@ -353,7 +389,9 @@ response is appropriate, you can use::
     >>> server_token in req.if_none_match # You *should* return 304
     True
 
-For date-based comparisons If-Modified-Since is used::
+For date-based comparisons If-Modified-Since is used:
+
+.. code-block::
 
     >>> from webob import UTC
     >>> from datetime import datetime
@@ -372,7 +410,7 @@ this if the current ETag matches the ETag I'm giving".
 If-Unmodified-Since means "do this if the resource has remained
 unchanged".
 
-::
+.. code-block::
 
     >>> server_token in req.if_match # No If-Match means everything is ok
     True
@@ -398,7 +436,7 @@ name) returns the referring URL.
 You can use ``req.referer_search_query`` to get a query term if the
 referring request appears to be from a search engine of some type.
 
-::
+.. code-block::
 
     >>> req.referer = 'http://google.com/search?q=neat+stuff'
     >>> req.referer_search_query()
@@ -406,7 +444,9 @@ referring request appears to be from a search engine of some type.
 
 The User-Agent header is parsed somewhat for more information.
 Specifically it tries to figure out the platform (the OS), the browser
-type, and any preferred language if it is set::
+type, and any preferred language if it is set:
+
+.. code-block::
 
     >>> req.user_agent = 'Mozilla/4.0 (Compatible; MSIE Windows XP pt-BR)'
     >>> req.user_agent
@@ -432,7 +472,9 @@ multiple applications, since applications might modify the request
 when they are run.
 
 There's two forms of the subrequest.  The more primitive form is
-this::
+this:
+
+.. code-block::
 
     >>> req = Request.blank('/')
     >>> def wsgi_app(environ, start_response):
@@ -444,7 +486,9 @@ this::
 Note it returns ``(status_string, header_list, app_iter)``.  If
 ``app_iter.close()`` exists, it is your responsibility to call it.
 
-A handier response can be had with::
+A handier response can be had with:
+
+.. code-block::
 
     >>> res = req.get_response(wsgi_app)
     >>> res
@@ -463,7 +507,9 @@ Thread-local Request Wrappers
 
 You can also give the ``Request`` object a function to get the
 environment.  This can be used to make a single global request object
-dynamic.  An example::
+dynamic.  An example:
+
+.. code-block::
 
     >>> import threading
     >>> import webob
@@ -492,7 +538,9 @@ headers, and a body (or iterator that will produce a body).
 Core Attributes
 ---------------
 
-The core attributes are unsurprising::
+The core attributes are unsurprising:
+
+.. code-block::
 
     >>> from webob import Response
     >>> res = Response()
@@ -503,7 +551,9 @@ The core attributes are unsurprising::
     >>> res.body
     ''
 
-You can set any of these attributes, e.g.::
+You can set any of these attributes, e.g.:
+
+.. code-block::
 
     >>> res.status = 404
     >>> res.status
@@ -523,7 +573,9 @@ Headers
 -------
 
 In addition to ``res.headerlist``, there is dictionary-like view on
-the list in ``res.headers``::
+the list in ``res.headers``:
+
+.. code-block::
 
     >>> res.headers
     HeaderDict([('Content-type', 'text/html'), ('Content-Length', '4')])
@@ -556,7 +608,9 @@ Like Request, HTTP response headers are also available as individual
 properties.  These represent parsed forms of the headers.
 
 Content-Type is a special case, as the type and the charset are
-handled through two separate properties::
+handled through two separate properties:
+
+.. code-block::
 
     >>> res.charset = 'utf8'
     >>> res.content_type
@@ -564,7 +618,9 @@ handled through two separate properties::
     >>> res.headers['content-type']
     'text/html; charset=utf8'
 
-Other headers::
+Other headers:
+
+.. code-block::
 
     >>> # Used with a redirect:
     >>> res.location = 'http://localhost/foo'
@@ -637,7 +693,9 @@ In the case of date-related headers you can set the value to a
 ``datetime`` instance (ideally with a UTC timezone), a time tuple, an
 integer timestamp, or a properly-formatted string.
 
-After setting all these headers, here's the result::
+After setting all these headers, here's the result:
+
+.. code-block::
 
     >>> for name, value in res.headerlist:
     ...     print '%s: %s' % (name, value)
@@ -665,14 +723,18 @@ Cookies
 -------
 
 Cookies (and the Set-Cookie header) are handled with a couple
-methods.  Most importantly::
+methods.  Most importantly:
+
+.. code-block::
 
     >>> res.set_cookie('key', 'value', max_age=360, path='/',
     ...                domain='example.org', secure=True)
     >>> res.headers['Set-Cookie']
     'key=value; Domain=example.org; Max-Age=360; Path=/; secure;'
 
-The only other real method of note::
+The only other real method of note:
+
+.. code-block::
 
     >>> res.delete_cookie('key')
     >>> print res.headers.get('Set-Cookie')
@@ -689,12 +751,16 @@ object.  This is available through ``res.request`` or
 Response as a WSGI application
 ------------------------------
 
-A response is a WSGI application, in that you can do::
+A response is a WSGI application, in that you can do:
+
+.. code-block::
 
     >>> req = Request.blank('/')
     >>> status, headers, app_iter = req.call_application(res)
 
-A possible pattern for your application might be::
+A possible pattern for your application might be:
+
+.. code-block::
 
     >>> def my_app(environ, start_response):
     ...     req = Request(environ)
