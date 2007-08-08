@@ -10,15 +10,15 @@ from rfc822 import parsedate_tz, mktime_tz, formatdate
 from datetime import datetime, date, timedelta, tzinfo
 import time
 import calendar
-from wsgiobj.datastruct import EnvironHeaders
-from wsgiobj.multidict import MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
-from wsgiobj.acceptlang import parse_accept_language
-from wsgiobj.useragent import UserAgent, parse_search_query
-from wsgiobj.etag import AnyETag, ETagMatcher
-from wsgiobj.headerdict import HeaderDict
-from wsgiobj.statusreasons import status_reasons
-from wsgiobj.cachecontrol import CacheControl
-from wsgiobj.acceptparse import Accept, MIMEAccept, NilAccept, MIMENilAccept
+from webob.datastruct import EnvironHeaders
+from webob.multidict import MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
+from webob.acceptlang import parse_accept_language
+from webob.useragent import UserAgent, parse_search_query
+from webob.etag import AnyETag, ETagMatcher
+from webob.headerdict import HeaderDict
+from webob.statusreasons import status_reasons
+from webob.cachecontrol import CacheControl
+from webob.acceptparse import Accept, MIMEAccept, NilAccept, MIMENilAccept
 
 _CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
 _SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
@@ -564,8 +564,8 @@ class Request(object):
         """
         if self.method != 'POST':
             return NoVars('Not a POST request')
-        if 'wsgiobj._parsed_post_vars' in self.environ:
-            vars, body = self.environ['wsgiobj._parsed_post_vars']
+        if 'webob._parsed_post_vars' in self.environ:
+            vars, body = self.environ['webob._parsed_post_vars']
             if body is self.body:
                 return vars
         content_type = self.content_type
@@ -587,7 +587,7 @@ class Request(object):
                               keep_blank_values=True)
         vars = MultiDict.from_fieldstorage(fs)
         FakeCGIBody.update_environ(self.environ, vars)
-        self.environ['wsgiobj._parsed_post_vars'] = (vars, self.body)
+        self.environ['webob._parsed_post_vars'] = (vars, self.body)
         return vars
     str_postvars = property(str_postvars, doc=str_postvars.__doc__)
 
@@ -609,8 +609,8 @@ class Request(object):
         QUERY_STRING.
         """
         source = self.environ.get('QUERY_STRING', '')
-        if 'wsgiobj._parsed_query_vars' in self.environ:
-            vars, qs = self.environ['wsgiobj._parsed_query_vars']
+        if 'webob._parsed_query_vars' in self.environ:
+            vars, qs = self.environ['webob._parsed_query_vars']
             if qs == source:
                 return vars
         if not source:
@@ -619,7 +619,7 @@ class Request(object):
             vars = MultiDict(cgi.parse_qsl(
                 source, keep_blank_values=True,
                 strict_parsing=False))
-        self.environ['wsgiobj._parsed_query_vars'] = (vars, source)
+        self.environ['webob._parsed_query_vars'] = (vars, source)
         return vars
     str_queryvars = property(str_queryvars, doc=str_queryvars.__doc__)
 
@@ -660,8 +660,8 @@ class Request(object):
         Return a *plain* dictionary of cookies as found in the request.
         """
         source = self.environ.get('HTTP_COOKIE', '')
-        if 'wsgiobj._parsed_cookies' in self.environ:
-            vars, var_source = self.environ['wsgiobj._parsed_cookies']
+        if 'webob._parsed_cookies' in self.environ:
+            vars, var_source = self.environ['webob._parsed_cookies']
             if var_source == source:
                 return vars
         vars = {}
@@ -670,7 +670,7 @@ class Request(object):
             cookies.load(source)
             for name in cookies:
                 vars[name] = cookies[name].value
-        self.environ['wsgiobj._parsed_cookies'] = (vars, source)
+        self.environ['webob._parsed_cookies'] = (vars, source)
         return vars
     str_cookies = property(str_cookies, doc=str_cookies.__doc__)
 

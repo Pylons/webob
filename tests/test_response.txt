@@ -1,7 +1,7 @@
 This demonstrates how the Response object works, and tests it at the
 same time.
 
-    >>> from wsgiobj import Response, UTC
+    >>> from webob import Response, UTC
     >>> from datetime import datetime
     >>> res = Response('200 OK', [], 'Test')
 
@@ -127,7 +127,7 @@ The location header will try to absolutify itself if you have a
 request object attached.
 
     >>> res.location = '/test.html'
-    >>> from wsgiobj import Request
+    >>> from webob import Request
     >>> res.request = Request.blank('/')
     >>> res.location
     'http://localhost/test.html'

@@ -1,5 +1,5 @@
 import re
-from wsgiobj.updatedict import UpdateDict
+from webob.updatedict import UpdateDict
 
 token_re = re.compile(
     r'([a-zA-Z][a-zA-Z_-]*)\s*(?:=(?:"([^"]*)"|([^ \t",;]*)))?')

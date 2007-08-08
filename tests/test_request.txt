@@ -4,7 +4,7 @@ You can instantiate a request using ``Request.blank()``, to create a
 fresh environment dictionary with all the basic keys such a dictionary
 should have.
 
-    >>> from wsgiobj import Request, UTC
+    >>> from webob import Request, UTC
     >>> req = Request.blank('/')
     >>> req # doctest: +ELLIPSIS
     <Request at ... GET http://localhost/>

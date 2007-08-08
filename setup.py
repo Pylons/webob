@@ -3,7 +3,7 @@ import sys, os
 
 version = '0.1'
 
-setup(name='WSGIObj',
+setup(name='WebOb',
       version=version,
       description="WSGI request and response object",
       long_description="""\
@@ -19,11 +19,11 @@ setup(name='WSGIObj',
       keywords='wsgi request web http',
       author='Ian Bicking',
       author_email='ianb@colorstudy.com',
-      url='',
+      url='http://pythonpaste.org/webob/',
       license='MIT',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
-      zip_safe=False,
+      zip_safe=True,
       #install_requires=[
       #],
       #entry_points="""

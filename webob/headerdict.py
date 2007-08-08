@@ -1,4 +1,4 @@
-from wsgiobj.multidict import MultiDict
+from webob.multidict import MultiDict
 
 class HeaderDict(MultiDict):
 

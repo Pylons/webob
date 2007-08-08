@@ -1,5 +1,5 @@
 from paste.fixture import *
-from wsgiobj import Request
+from webob import Request
 from py.test import raises
 
 def simpleapp(environ, start_response):

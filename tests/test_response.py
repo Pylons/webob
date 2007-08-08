@@ -1,4 +1,4 @@
-from wsgiobj import *
+from webob import *
 
 def simple_app(environ, start_response):
     start_response('200 OK', [
