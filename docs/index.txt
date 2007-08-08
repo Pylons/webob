@@ -422,7 +422,7 @@ This code doesn't go to great lengths to parse the User-Agent.  It's
 considered bad form to use this information for too much.  The
 language information can be useful.
 
-Calling WSGI applications
+Calling WSGI Applications
 -------------------------
 
 The request object can be used to make handy subrequests or test
@@ -477,3 +477,252 @@ dynamic.  An example::
     >>> request.script_name
     '/test'
 
+Response
+========
+
+The ``webob.Response`` object contains everything necessary to make a
+WSGI response.  Instances of it are in fact WSGI applications, but it
+can also represent the result of calling a WSGI application (as noted
+in `Calling WSGI Applications`_).  It can also be a way of
+accumulating a response in your WSGI application.
+
+A WSGI response is made up of a status (like ``200 OK``), a list of
+headers, and a body (or iterator that will produce a body).
+
+Core Attributes
+---------------
+
+The core attributes are unsurprising::
+
+    >>> from webob import Response
+    >>> res = Response()
+    >>> res.status
+    '200 OK'
+    >>> res.headerlist
+    [('Content-Length', '0')]
+    >>> res.body
+    ''
+
+You can set any of these attributes, e.g.::
+
+    >>> res.status = 404
+    >>> res.status
+    '404 Not Found'
+    >>> res.status_int
+    404
+    >>> res.headerlist = [('Content-type', 'text/html')]
+    >>> res.body = 'test'
+    >>> print res
+    404 Not Found
+    Content-type: text/html
+    Content-Length: 4
+    <BLANKLINE>
+    test
+
+Headers
+-------
+
+In addition to ``res.headerlist``, there is dictionary-like view on
+the list in ``res.headers``::
+
+    >>> res.headers
+    HeaderDict([('Content-type', 'text/html'), ('Content-Length', '4')])
+
+This is case-insensitive.  It can support multiple values for a key,
+though only if you use ``res.headers.add(key, value)`` or read them
+with ``res.headers.getall(key)``.
+
+Body & app_iter
+---------------
+
+The ``res.body`` attribute represents the entire body of the request
+as a single string (not unicode, though you can set it to unicode if
+you have a charset defined).  There is also a ``res.app_iter``
+attribute that reprsents the body as an iterator.  WSGI applications
+return these ``app_iter`` iterators instead of strings, and sometimes
+it can be problematic to load the entire iterator at once (for
+instance, if it returns the contents of a very large file).  Generally
+it is not a problem, and often the iterator is something simple like a
+one-item list containing a string with the entire body.
+
+If you set the body then Content-Length will also be set, and an
+``res.app_iter`` will be created for you.  If you set ``res.app_iter``
+then Content-Length will be cleared, but it won't be set for you.
+
+Header Getters
+--------------
+
+Like Request, HTTP response headers are also available as individual
+properties.  These represent parsed forms of the headers.
+
+Content-Type is a special case, as the type and the charset are
+handled through two separate properties::
+
+    >>> res.charset = 'utf8'
+    >>> res.content_type
+    'text/html'
+    >>> res.headers['content-type']
+    'text/html; charset=utf8'
+
+Other headers::
+
+    >>> # Used with a redirect:
+    >>> res.location = 'http://localhost/foo'
+
+    >>> # Indicates that the server accepts Range requests:
+    >>> res.accept_ranges = 'bytes'
+
+    >>> # Used by caching proxies to tell the client how old the
+    >>> # response is:
+    >>> res.age = 120
+
+    >>> # Show what methods the client can do; typically used in
+    >>> # a 405 Method Not Allowed response:
+    >>> res.allow = ['GET', 'PUT']
+
+    >>> # Set the cache-control header:
+    >>> res.cache_control.max_age = 360
+    >>> res.cache_control.no_transform = True
+
+    >>> # Used if you had gzipped the body:
+    >>> res.content_encoding = 'gzip'
+
+    >>> # What language(s) are in the content:
+    >>> res.content_language = ['en']
+
+    >>> # Seldom used header that tells the client where the content
+    >>> # is from:
+    >>> res.content_location = 'http://localhost/foo'
+
+    >>> # Seldom used header that gives a hash of the body:
+    >>> res.content_md5 = 'big-hash'
+
+    >>> # Means we are serving bytes 0-499 inclusive, out of 100 bytes total:
+    >>> res.content_range = (0, 499, 1000)
+
+    >>> # The length of the content; set automatically if you set
+    >>> # res.body:
+    >>> res.content_length = 4
+
+    >>> # Used to indicate the current date as the server understands
+    >>> # it:
+    >>> res.date = datetime.now()
+
+    >>> # The etag:
+    >>> res.etag = 'opaque-token'
+
+    >>> # When this page should expire from a cache (Cache-Control
+    >>> # often works better):
+    >>> import time
+    >>> res.expires = time.time() + 60*60 # 1 hour
+
+    >>> # When this was last modified, of course:
+    >>> res.last_modified = datetime(2007, 1, 1, 12, 0, tzinfo=UTC)
+
+    >>> # Used with 503 Service Unavailable to hint the client when to
+    >>> # try again:
+    >>> res.retry_after = 160
+
+    >>> # Indicate the server software:
+    >>> res.server = 'WebOb/1.0'
+
+    >>> # Give a list of headers that the cache should vary on:
+    >>> res.vary = ['Cookie']
+
+Note in each case you can general set the header to a string to avoid
+any parsing, and set it to None to remove the header (or do something
+like ``del res.vary``).
+
+In the case of date-related headers you can set the value to a
+``datetime`` instance (ideally with a UTC timezone), a time tuple, an
+integer timestamp, or a properly-formatted string.
+
+After setting all these headers, here's the result::
+
+    >>> for name, value in res.headerlist:
+    ...     print '%s: %s' % (name, value)
+    content-type: text/html; charset=utf8
+    location: http://localhost/foo
+    Accept-Ranges: bytes
+    Age: 120
+    Allow: GET, PUT
+    Cache-Control: max-age=360, no-transform
+    Content-Encoding: gzip
+    Content-Language: en
+    Content-Location: http://localhost/foo
+    Content-MD5: big-hash
+    Content-Range: bytes 0-499/1000
+    Content-Length: 4
+    Date: ... GMT
+    ETag: opaque-token
+    Expires: ... GMT
+    Last-Modified: Mon, 01 Jan 2007 12:00:00 GMT
+    Retry-After: 160
+    Server: WebOb/1.0
+    Vary: Cookie
+
+Cookies
+-------
+
+Cookies (and the Set-Cookie header) are handled with a couple
+methods.  Most importantly::
+
+    >>> res.set_cookie('key', 'value', max_age=360, path='/',
+    ...                domain='example.org', secure=True)
+    >>> res.headers['Set-Cookie']
+    'key=value; Domain=example.org; Max-Age=360; Path=/; secure;'
+
+The only other real method of note::
+
+    >>> res.delete_cookie('key')
+    >>> print res.headers.get('Set-Cookie')
+    None
+
+Binding a Request
+-----------------
+
+You can bind a request (or request WSGI environ) to the response
+object.  This is available through ``res.request`` or
+``res.environ``.  This is currently only used in setting
+``res.location``, to make the location absolute if necessary.
+
+Response as a WSGI application
+------------------------------
+
+A response is a WSGI application, in that you can do::
+
+    >>> req = Request.blank('/')
+    >>> status, headers, app_iter = req.call_application(res)
+
+A possible pattern for your application might be::
+
+    >>> def my_app(environ, start_response):
+    ...     req = Request(environ)
+    ...     res = Response()
+    ...     res.content_type = 'text/plain'
+    ...     parts = []
+    ...     for name, value in sorted(req.environ.items()):
+    ...         parts.append('%s: %r' % (name, value))
+    ...     res.body = '\n'.join(parts)
+    ...     return res(environ, start_response)
+    >>> req = Request.blank('/')
+    >>> res = req.get_response(my_app)
+    >>> print res
+    200 OK
+    content-type: text/plain
+    Content-Length: 362
+    <BLANKLINE>
+    PATH_INFO: '/'
+    QUERY_STRING: ''
+    REQUEST_METHOD: 'GET'
+    SCRIPT_NAME: ''
+    SERVER_NAME: 'localhost'
+    SERVER_PORT: '80'
+    SERVER_PROTOCOL: 'HTTP/1.0'
+    wsgi.errors: <cStringIO.StringO object at ...>
+    wsgi.input: <cStringIO.StringI object at ...>
+    wsgi.multiprocess: False
+    wsgi.multithread: False
+    wsgi.run_once: False
+    wsgi.url_scheme: 'http'
+    wsgi.version: (1, 0)
