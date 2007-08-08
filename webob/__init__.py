@@ -12,7 +12,6 @@ import time
 import calendar
 from webob.datastruct import EnvironHeaders
 from webob.multidict import MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
-from webob.acceptlang import parse_accept_language
 from webob.useragent import UserAgent, parse_search_query
 from webob.etag import AnyETag, NoETag, ETagMatcher
 from webob.headerdict import HeaderDict
