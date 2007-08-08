@@ -949,7 +949,7 @@ class Response(object):
         self._status = status
         if headerlist is None:
             headerlist = []
-        self.headerlist = headerlist
+        self._headerlist = headerlist
         self._headers = None
         if request is not None:
             if hasattr(request, 'environ'):
@@ -1006,6 +1006,22 @@ class Response(object):
     def status_int__set(self, value):
         self.status = value
     status_int = property(status_int__get, status_int__set, doc=status_int__get.__doc__)
+
+    def headerlist__get(self):
+        """
+        The list of response headers
+        """
+        return self._headerlist
+    def headerlist__set(self, value):
+        self._headers = None
+        if not isinstance(value, list):
+            if hasattr(value, 'items'):
+                value = value.items()
+            value = list(value)
+        self._headerlist = value
+    def headerlist__del(self):
+        self.headerlist = []
+    headerlist = property(headerlist__get, headerlist__set, headerlist__del, doc=headerlist__get.__doc__)
 
     def charset__get(self):
         """
@@ -1112,6 +1128,13 @@ class Response(object):
         return self._body
 
     def body__set(self, value):
+        if isinstance(value, unicode):
+            charset = self.charset
+            ## FIXME: should this just be separate unicode_body getter/setter?
+            if not charset:
+                raise TypeError(
+                    "You cannot set the body to a unicode value if charset is not set")
+            value = value.encode(charset)
         if not isinstance(value, str):
             raise TypeError(
                 "You can only set the body to a str (not %s)"
