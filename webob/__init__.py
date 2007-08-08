@@ -525,7 +525,7 @@ class Request(object):
         else:
             return {}
     urlvars = property(urlvars, doc=urlvars.__doc__)
-    
+
     def is_xhr(self):
         """Returns a boolean if X-Requested-With is present and a XMLHttpRequest"""
         return self.environ.get('HTTP_X_REQUESTED_WITH', '') == 'XMLHttpRequest'
@@ -588,7 +588,10 @@ class Request(object):
         FakeCGIBody.update_environ(self.environ, vars)
         self.environ['webob._parsed_post_vars'] = (vars, self.body)
         return vars
+
     str_postvars = property(str_postvars, doc=str_postvars.__doc__)
+
+    str_POST = str_postvars
 
     def postvars(self):
         """
@@ -600,7 +603,10 @@ class Request(object):
                                     errors=self.errors,
                                     decode_keys=self.decode_param_names)
         return vars
+
     postvars = property(postvars, doc=postvars.__doc__)
+
+    POST = postvars
 
     def str_queryvars(self):
         """
@@ -620,7 +626,10 @@ class Request(object):
                 strict_parsing=False))
         self.environ['webob._parsed_query_vars'] = (vars, source)
         return vars
+
     str_queryvars = property(str_queryvars, doc=str_queryvars.__doc__)
+
+    str_GET = str_queryvars
 
     def queryvars(self):
         """
@@ -632,7 +641,10 @@ class Request(object):
                                     errors=self.errors,
                                     decode_keys=self.decode_param_names)
         return vars
+
     queryvars = property(queryvars, doc=queryvars.__doc__)
+
+    GET = queryvars
 
     def str_params(self):
         """
@@ -640,6 +652,7 @@ class Request(object):
         the query string and request body.
         """
         return NestedMultiDict(self.queryvars, self.postvars)
+
     str_params = property(str_params, doc=str_params.__doc__)
 
     def params(self):
@@ -652,6 +665,7 @@ class Request(object):
                                       errors=self.errors,
                                       decode_keys=self.decode_param_names)
         return params
+
     params = property(params, doc=params.__doc__)
 
     def str_cookies(self):
@@ -671,6 +685,7 @@ class Request(object):
                 vars[name] = cookies[name].value
         self.environ['webob._parsed_cookies'] = (vars, source)
         return vars
+
     str_cookies = property(str_cookies, doc=str_cookies.__doc__)
 
     def cookies(self):
@@ -683,6 +698,7 @@ class Request(object):
                                     errors=self.errors,
                                     decode_keys=self.decode_param_names)
         return vars
+
     cookies = property(cookies, doc=cookies.__doc__)
 
     def copy(self):
@@ -740,7 +756,7 @@ class Request(object):
 
     ## FIXME: 14.18 Date ?
     ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.18
-    
+
     if_match = converter(
         environ_getter('HTTP_IF_MATCH', rfc_section='14.24'),
         _parse_etag, _serialize_etag, 'etag')
@@ -763,13 +779,13 @@ class Request(object):
     max_forwards = converter(
         environ_getter('HTTP_MAX_FORWARDS', rfc_section='14.31'),
         _parse_int, _serialize_int, 'int')
- 
+
     ## FIXME: 14.32 Pragma
     ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.32
 
     ## FIXME: 14.35 Range
     ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.35
-    
+
     referer = environ_getter('HTTP_REFERER', rfc_section='14.36')
     referrer = referer
 
@@ -1127,7 +1143,7 @@ class Response(object):
 
     app_iter = property(app_iter__get, app_iter__set, app_iter__del, doc=app_iter__get.__doc__)
 
-    def set_cookie(self, key, value='', max_age=None, 
+    def set_cookie(self, key, value='', max_age=None,
                    path='/', domain=None, secure=None):
         """
         Set (add) a cookie for the response
@@ -1213,7 +1229,7 @@ class Response(object):
         _parse_list, _serialize_list, 'list')
 
     _cache_control_obj = None
-    
+
     def cache_control__get(self):
         """
         Get/set/modify the Cache-Control header (section `14.9
@@ -1312,7 +1328,7 @@ class Response(object):
 
     ## FIXME: 14.47 WWW-Authenticate
     ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.47
-    
+
 
     def request__get(self):
         """
@@ -1418,4 +1434,3 @@ class FakeCGIBody(object):
         environ['wsgi.input'] = obj
 
     update_environ = classmethod(update_environ)
-
