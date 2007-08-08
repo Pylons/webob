@@ -368,7 +368,6 @@ class Request(object):
         self.headers = EnvironHeaders(environ)
         if charset is not NoDefault:
             self.charset = charset
-        self._check_browser_charset()
         if errors is not NoDefault:
             self.errors = errors
         if decode_param_names is NoDefault:
@@ -697,15 +696,6 @@ class Request(object):
         new_body = StringIO(data)
         env['wsgi.input'] = new_body
         return self.__class__(env)
-
-    def _check_browser_charset(self):
-        """
-        Set self.charset if the browser gave a charset in its
-        Content-Type
-        """
-        match = _CHARSET_RE.search(self.content_type)
-        if match:
-            self.charset = match.group(1)
 
     def remove_conditional_headers(self, remove_encoding=True):
         """
