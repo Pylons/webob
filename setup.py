@@ -7,6 +7,12 @@ setup(name='WebOb',
       version=version,
       description="WSGI request and response object",
       long_description="""\
+WebOb provides wrappers around the WSGI request environment, and an
+object to help create WSGI responses.
+
+The objects map much of the specified behavior of HTTP, including
+header parsing and accessors for other standard parts of the
+environment.
 """,
       classifiers=[
         "Development Status :: 4 - Beta",
@@ -24,8 +30,4 @@ setup(name='WebOb',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
       zip_safe=True,
-      #install_requires=[
-      #],
-      #entry_points="""
-      #""",
       )
