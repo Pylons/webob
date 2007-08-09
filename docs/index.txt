@@ -113,7 +113,7 @@ request object:
     ''
     >>> print req.remote_user  # The authenticated user (there is none set)
     None
-    >>> req.remote_addr  # The remote IP
+    >>> print req.remote_addr  # The remote IP
     None
     >>> req.host
     'localhost'
@@ -738,6 +738,10 @@ methods.  Most importantly:
     ...                domain='example.org', secure=True)
     >>> res.headers['Set-Cookie']
     'key=value; Domain=example.org; Max-Age=360; Path=/; secure;'
+    >>> # To delete a cookie previously set in the client:
+    >>> res.delete_cookie('bad_cookie')
+    >>> res.headers['Set-Cookie']
+    'bad_cookie=; Max-Age=0; Path=/;'
 
 The only other real method of note (note that this does *not* delete
 the cookie from clients, only from the response object):
@@ -745,6 +749,7 @@ the cookie from clients, only from the response object):
 .. code-block::
 
     >>> res.unset_cookie('key')
+    >>> res.unset_cookie('bad_cookie')
     >>> print res.headers.get('Set-Cookie')
     None
 

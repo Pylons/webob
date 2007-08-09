@@ -1228,6 +1228,17 @@ class Response(object):
         header_value = cookies[key].output(header='').lstrip()
         self.headerlist.append(('Set-Cookie', header_value))
 
+    def delete_cookie(self, key, path='/', domain=None):
+        """
+        Delete a cookie from the client.  Note that path and domain must match
+        how the cookie was originally set.
+
+        This sets the cookie to the empty string, and max_age=0 so
+        that it should expire immediately.
+        """
+        self.set_cookie(key, '', path=path, domain=domain,
+                        max_age=0)
+
     def unset_cookie(self, key):
         """
         Unset a cookie with the given name (remove it from the
