@@ -726,6 +726,33 @@ After setting all these headers, here's the result:
     Server: WebOb/1.0
     Vary: Cookie
 
+You can also set Cache-Control related attributes with
+``req.cache_expires(seconds, **attrs)``, like:
+
+.. code-block::
+
+    >>> res = Response()
+    >>> res.cache_expires(10)
+    >>> res.headers['Cache-Control']
+    'max-age=10'
+    >>> res.cache_expires(0)
+    >>> res.headers['Cache-Control']
+    'max-age=0, must-revalidate, no-cache, no-store'
+    >>> res.headers['Expires']
+    '... GMT'
+
+You can also use the `timedelta
+<http://python.org/doc/current/lib/datetime-timedelta.html>`_
+constants defined, e.g.:
+
+.. code-block::
+
+    >>> from webob import *
+    >>> res = Response()
+    >>> res.cache_expires(2*day+4*hour)
+    >>> res.headers['Cache-Control']
+    'max-age=187200'
+
 Cookies
 -------
 

@@ -22,7 +22,7 @@ from webob.acceptparse import Accept, MIMEAccept, NilAccept, MIMENilAccept
 _CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
 _SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
 
-__all__ = ['Request', 'Response', 'UTC']
+__all__ = ['Request', 'Response', 'UTC', 'day', 'week', 'hour', 'minute', 'second', 'month', 'year']
 
 class _UTC(tzinfo):
     def dst(self, dt):
@@ -35,6 +35,21 @@ class _UTC(tzinfo):
         return 'UTC'
 
 UTC = _UTC()
+
+def timedelta_to_seconds(td):
+    """
+    Converts a timedelta instance to seconds.
+    """
+    return td.seconds + (td.days*24*60*60)
+
+day = timedelta(days=1)
+week = timedelta(weeks=7)
+hour = timedelta(hours=1)
+minute = timedelta(minutes=1)
+second = timedelta(seconds=1)
+# Estimate, I know; good enough for expirations
+month = timedelta(days=30)
+year = timedelta(days=365)
 
 class NoDefault:
     pass
@@ -198,6 +213,8 @@ def _serialize_date(dt):
         dt = dt.encode('ascii')
     if isinstance(dt, str):
         return dt
+    if isinstance(dt, timedelta):
+        dt = datetime.now() + dt
     if isinstance(dt, (datetime, date)):
         dt = dt.timetuple()
     if isinstance(dt, (tuple, time.struct_time)):
@@ -1332,7 +1349,12 @@ class Response(object):
             value = ""
         if isinstance(value, dict):
             value = CacheControl(value)
-        if isinstance(value, basestring):
+        if isinstance(value, unicode):
+            value = str(value)
+        if isinstance(value, str):
+            if self._cache_control_obj is None:
+                self.headers['Cache-Control'] = value
+                return
             value = CacheControl.parse(value)
         cache = self.cache_control
         cache.properties.clear()
@@ -1351,6 +1373,32 @@ class Response(object):
         cache_control_obj.header_value = value
 
     cache_control = property(cache_control__get, cache_control__set, cache_control__del, doc=cache_control__get.__doc__)
+
+    def cache_expires(self, seconds=0, **kw):
+        """
+        Set expiration on this request.  This sets the response to
+        expire in the given seconds, and any other attributes are used
+        for cache_control (e.g., private=True, etc).
+        """
+        cache_control = self.cache_control
+        if isinstance(seconds, timedelta):
+            seconds = timedelta_to_seconds(seconds)
+        if not seconds:
+            # To really expire something, you have to force a
+            # bunch of these cache control attributes, and IE may
+            # not pay attention to those still so we also set
+            # Expires.
+            cache_control.no_store = True
+            cache_control.no_cache = True
+            cache_control.must_revalidate = True
+            cache_control.max_age = 0
+            cache_control.post_check = 0
+            cache_control.pre_check = 0
+            self.expires = datetime.utcnow()
+        else:
+            cache_control.max_age = seconds
+        for name, value in kw.items():
+            setattr(cache_control, name, value)
 
     content_encoding = header_getter('Content-Encoding', rfc_section='14.11')
 

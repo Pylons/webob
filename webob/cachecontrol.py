@@ -50,6 +50,8 @@ class value_property(object):
         if value == self.default:
             if self.prop in obj.properties:
                 del obj.properties[self.prop]
+        elif value is True:
+            obj.properties[self.prop] = None # Empty value, but present
         else:
             obj.properties[self.prop] = value
     def __del__(self, obj):
