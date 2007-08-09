@@ -739,11 +739,12 @@ methods.  Most importantly:
     >>> res.headers['Set-Cookie']
     'key=value; Domain=example.org; Max-Age=360; Path=/; secure;'
 
-The only other real method of note:
+The only other real method of note (note that this does *not* delete
+the cookie from clients, only from the response object):
 
 .. code-block::
 
-    >>> res.delete_cookie('key')
+    >>> res.unset_cookie('key')
     >>> print res.headers.get('Set-Cookie')
     None
 

@@ -65,7 +65,7 @@ Cookie handling is done through methods:
     'test2=value2; Max-Age=10000; Path=/;'
     >>> res.headers.getall('set-cookie')
     ['test=value; Path=/;', 'test2=value2; Max-Age=10000; Path=/;']
-    >>> res.delete_cookie('test')
+    >>> res.unset_cookie('test')
     >>> res.headers.getall('set-cookie')
     ['test2=value2; Max-Age=10000; Path=/;']
 

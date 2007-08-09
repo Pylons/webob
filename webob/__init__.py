@@ -1228,11 +1228,12 @@ class Response(object):
         header_value = cookies[key].output(header='').lstrip()
         self.headerlist.append(('Set-Cookie', header_value))
 
-    def delete_cookie(self, key):
+    def unset_cookie(self, key):
         """
-        Delete a cookie with the given name.  If there are multiple
-        cookies (e.g., two cookies with the same name and different
-        paths or domains), all such cookies will be deleted.
+        Unset a cookie with the given name (remove it from the
+        response).  If there are multiple cookies (e.g., two cookies
+        with the same name and different paths or domains), all such
+        cookies will be deleted.
         """
         existing = self.headers.getall('Set-Cookie')
         if not existing:
@@ -1252,6 +1253,7 @@ class Response(object):
         if not found:
             raise KeyError(
                 "No cookie has been set with the name %r" % key)
+
     def location__get(self):
         """
         Retrieve the Location header of the response, or None if there
