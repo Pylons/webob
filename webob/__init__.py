@@ -419,6 +419,7 @@ class Request(object):
     ## FIXME: should I strip out parameters?:
     content_type = environ_getter('CONTENT_TYPE')
     remote_user = environ_getter('REMOTE_USER', default=None)
+    remote_addr = environ_getter('REMOTE_ADDR', default=None)
 
     def host_url(self):
         """

@@ -111,7 +111,10 @@ request object:
     '/article'
     >>> req.content_type # Content-Type of the request body
     ''
-    >>> req.remote_user  # The authenticated user (there is none yet)x
+    >>> print req.remote_user  # The authenticated user (there is none set)
+    None
+    >>> req.remote_addr  # The remote IP
+    None
     >>> req.host
     'localhost'
     >>> req.host_url
