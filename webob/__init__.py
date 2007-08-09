@@ -462,6 +462,24 @@ class Request(object):
         return self.application_url + urllib.quote(self.environ.get('PATH_INFO', ''))
     path_url = property(path_url, doc=path_url.__doc__)
 
+    def path(self):
+        """
+        The path of the request, without host or query string
+        """
+        return urllib.quote(self.script_name) + urllib.quote(self.path_info)
+    path = property(path, doc=path.__doc__)
+
+    def path_qs(self):
+        """
+        The path of the request, without host but with query string
+        """
+        path = self.path
+        qs = self.environ.get('QUERY_STRING')
+        if qs:
+            path += '?' + qs
+        return path
+    path_qs = property(path_qs, doc=path_qs.__doc__)
+
     def url(self):
         """
         The full request URL, including QUERY_STRING
@@ -1453,21 +1471,52 @@ class FakeCGIBody(object):
 
     def __init__(self, vars):
         self.vars = vars
-        self.body = None
+        self._body = None
         self.position = 0
 
     ## FIXME: implement more methods?
     def read(self, size=-1):
-        if self.body is None:
-            self.body = urllib.urlencode(self.vars)
+        body = self._get_body()
         if size == -1:
-            v = self.body[self.position:]
-            self.position = len(self.body)
+            v = body[self.position:]
+            self.position = len(body)
             return v
         else:
-            v = self.body[self.position:self.position+size]
-            self.position = min(len(self.body), self.position+size)
+            v = body[self.position:self.position+size]
+            self.position = min(len(body), self.position+size)
             return v
+
+    def _get_body(self):
+        if self._body is None:
+            self._body = urllib.urlencode(self.vars.items())
+        return self._body
+
+    def readline(self, size=None):
+        # We ignore size, but allow it to be hinted
+        rest = self._get_body()[self.position:]
+        next = res.find('\n\r')
+        if next == -1:
+            return self.read()
+        self.position += next+2
+        return rest[:next+2]
+
+    def readlines(self, hint=None):
+        # Again, allow hint but ignore
+        body = self._get_body()
+        rest = body[self.position:]
+        self.position = len(body)
+        result = []
+        while 1:
+            next = rest.find('\n\r')
+            if next == -1:
+                result.append(rest)
+                break
+            result.append(rest[:next+2])
+            rest = rest[next+2:]
+        return result
+
+    def __iter__(self):
+        return iter(self.readlines())
 
     def __repr__(self):
         inner = repr(self.vars)
