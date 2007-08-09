@@ -19,6 +19,13 @@ trac instance <http://trac.pythonpaste.org/>`_.
 
 WebOb is released under an `MIT-style license <license.html>`_.
 
+WebOb is in an svn repository at
+`http://svn.pythonpaste.org/Paste/WebOb/trunk
+<http://svn.pythonpaste.org/Paste/WebOb/trunk#egg=WebOb-dev>`_.  You
+can check it out with::
+
+    $ svn co http://svn.pythonpaste.org/Paste/WebOb/trunk WebOb
+
 Request
 =======
 
