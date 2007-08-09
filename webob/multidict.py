@@ -61,7 +61,7 @@ class MultiDict(DictMixin):
     from_fieldstorage = classmethod(from_fieldstorage)
 
     def __getitem__(self, key):
-        for k, v in self._items:
+        for k, v in reversed(self._items):
             if k == key:
                 return v
         raise KeyError(key)
@@ -409,7 +409,7 @@ class NestedMultiDict(MultiDict):
             value = d.get(key, _dummy)
             if value is not _dummy:
                 return value
-        raise KeyError(repr(key))
+        raise KeyError(key)
 
     def _readonly(self, *args, **kw):
         raise KeyError("NestedMultiDict objects are read-only")
@@ -550,7 +550,7 @@ __test__ = {
     []
     >>> d.add('a', 2)
     >>> d['a']
-    1
+    2
     >>> d.getall('a')
     [1, 2]
     >>> d['b'] = 4

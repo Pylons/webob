@@ -570,16 +570,17 @@ class Request(object):
         requests or for non-form requests (returns empty dict-like
         object in that case).
         """
+        env = self.environ
         if self.method != 'POST':
             return NoVars('Not a POST request')
-        if 'webob._parsed_post_vars' in self.environ:
-            vars, body = self.environ['webob._parsed_post_vars']
+        if 'webob._parsed_post_vars' in env:
+            vars, body = env['webob._parsed_post_vars']
             if body is self.body:
                 return vars
         # Paste compatibility:
-        if 'paste.parsed_formvars' in environ:
+        if 'paste.parsed_formvars' in env:
             # from paste.request.parse_formvars
-            vars, body = self.environ['paste.parsed_formvars']
+            vars, body = env['paste.parsed_formvars']
             if body is self.body:
                 # FIXME: is it okay that this isn't *our* MultiDict?
                 return parsed
@@ -591,18 +592,18 @@ class Request(object):
             # Not an HTML form submission
             return NoVars('Not an HTML form submission (Content-Type: %s)'
                           % content_type)
-        if 'CONTENT_LENGTH' not in self.environ:
+        if 'CONTENT_LENGTH' not in env:
             # FieldStorage assumes a default CONTENT_LENGTH of -1, but a
             # default of 0 is better:
-            self.environ['CONTENT_TYPE'] = '0'
-        fs_environ = self.environ.copy()
+            env['CONTENT_TYPE'] = '0'
+        fs_environ = env.copy()
         fs_environ['QUERY_STRING'] = ''
         fs = cgi.FieldStorage(fp=self.body,
                               environ=fs_environ,
                               keep_blank_values=True)
         vars = MultiDict.from_fieldstorage(fs)
-        FakeCGIBody.update_environ(self.environ, vars)
-        self.environ['webob._parsed_post_vars'] = (vars, self.body)
+        FakeCGIBody.update_environ(env, vars)
+        env['webob._parsed_post_vars'] = (vars, self.body)
         return vars
 
     str_postvars = property(str_postvars, doc=str_postvars.__doc__)
@@ -629,9 +630,10 @@ class Request(object):
         Return a MultiDict containing all the variables from the
         QUERY_STRING.
         """
-        source = self.environ.get('QUERY_STRING', '')
-        if 'webob._parsed_query_vars' in self.environ:
-            vars, qs = self.environ['webob._parsed_query_vars']
+        env = self.environ
+        source = env.get('QUERY_STRING', '')
+        if 'webob._parsed_query_vars' in env:
+            vars, qs = env['webob._parsed_query_vars']
             if qs == source:
                 return vars
         if not source:
@@ -640,7 +642,7 @@ class Request(object):
             vars = MultiDict(cgi.parse_qsl(
                 source, keep_blank_values=True,
                 strict_parsing=False))
-        self.environ['webob._parsed_query_vars'] = (vars, source)
+        env['webob._parsed_query_vars'] = (vars, source)
         return vars
 
     str_queryvars = property(str_queryvars, doc=str_queryvars.__doc__)
@@ -688,9 +690,10 @@ class Request(object):
         """
         Return a *plain* dictionary of cookies as found in the request.
         """
-        source = self.environ.get('HTTP_COOKIE', '')
-        if 'webob._parsed_cookies' in self.environ:
-            vars, var_source = self.environ['webob._parsed_cookies']
+        env = self.environ
+        source = env.get('HTTP_COOKIE', '')
+        if 'webob._parsed_cookies' in env:
+            vars, var_source = env['webob._parsed_cookies']
             if var_source == source:
                 return vars
         vars = {}
@@ -699,7 +702,7 @@ class Request(object):
             cookies.load(source)
             for name in cookies:
                 vars[name] = cookies[name].value
-        self.environ['webob._parsed_cookies'] = (vars, source)
+        env['webob._parsed_cookies'] = (vars, source)
         return vars
 
     str_cookies = property(str_cookies, doc=str_cookies.__doc__)

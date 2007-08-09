@@ -12,7 +12,7 @@ class HeaderDict(MultiDict):
 
     def __getitem__(self, key):
         key = self.normalize(key)
-        for k, v in self._items:
+        for k, v in reversed(self._items):
             if self.normalize(k) == key:
                 return v
         raise KeyError(key)

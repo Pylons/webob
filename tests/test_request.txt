@@ -105,7 +105,7 @@ You can also get access to the query string variables, of course:
     >>> req.queryvars
     MultiDict([('a', 'b'), ('d', 'e'), ('d', 'f')])
     >>> req.queryvars['d']
-    'e'
+    'f'
     >>> req.queryvars.getall('d')
     ['e', 'f']
     >>> req.method = 'POST'
@@ -117,7 +117,7 @@ You can also get access to the query string variables, of course:
     >>> req.params
     NestedMultiDict([('a', 'b'), ('d', 'e'), ('d', 'f'), ('x', 'y'), ('d', 'g')])
     >>> req.params['d']
-    'e'
+    'f'
     >>> req.params.getall('d')
     ['e', 'f', 'g']
 
