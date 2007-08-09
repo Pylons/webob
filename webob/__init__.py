@@ -576,6 +576,13 @@ class Request(object):
             vars, body = self.environ['webob._parsed_post_vars']
             if body is self.body:
                 return vars
+        # Paste compatibility:
+        if 'paste.parsed_formvars' in environ:
+            # from paste.request.parse_formvars
+            vars, body = self.environ['paste.parsed_formvars']
+            if body is self.body:
+                # FIXME: is it okay that this isn't *our* MultiDict?
+                return parsed
         content_type = self.content_type
         if ';' in content_type:
             content_type = content_type.split(';', 1)[0]
@@ -936,8 +943,10 @@ class Response(object):
     Represents a WSGI response
     """
 
+    default_content_type = None
+
     def __init__(self, status='200 OK', headerlist=None, body=None, app_iter=None,
-                 request=None):
+                 request=None, content_type=None):
         if app_iter is None:
             if body is None:
                 body = ''
@@ -962,6 +971,10 @@ class Response(object):
             self._environ = self._request = None
         if self._body is not None:
             self.content_length = len(self._body)
+        if content_type is not None:
+            self.content_type = content_type
+        elif self.default_content_type is not None:
+            self.content_type = self.default_content_type
 
     def __repr__(self):
         return '<%s %x %s>' % (
