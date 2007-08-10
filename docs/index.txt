@@ -839,3 +839,56 @@ A possible pattern for your application might be:
     wsgi.run_once: False
     wsgi.url_scheme: 'http'
     wsgi.version: (1, 0)
+
+Exceptions
+==========
+
+In addition to Request and Response objects, there are a set of Python
+exceptions for different HTTP responses (3xx, 4xx, 5xx codes).
+
+These provide a simple way to provide these non-200 response.  A very
+simple body is provided.
+
+.. code-block::
+
+    >>> from webob.exc import *
+    >>> exc = HTTPTemporaryRedirect(location='foo')
+    >>> req = Request.blank('/path/to/something')
+    >>> print str(req.get_response(exc)).strip()
+    307 Temporary Redirect
+    content-type: text/html
+    location: http://localhost/path/to/foo
+    Content-Length: 126
+    <BLANKLINE>
+    307 Temporary Redirect
+    <BLANKLINE>
+    The resource has been moved to http://localhost/path/to/foo; you should be redirected automatically.
+
+Note that only if there's an ``Accept: text/html`` header in the
+request will an HTML response be given:
+
+.. code-block::
+
+    >>> req.accept += 'text/html'
+    >>> print str(req.get_response(exc)).strip()
+    307 Temporary Redirect
+    content-type: text/html
+    location: http://localhost/path/to/foo
+    Content-Length: 270
+    <BLANKLINE>
+    <html>
+     <head>
+      <title>307 Temporary Redirect</title>
+     </head>
+     <body>
+      <h1>307 Temporary Redirect</h1>
+      The resource has been moved to <a href="http://localhost/path/to/foo">http://localhost/path/to/foo</a>;
+    you should be redirected automatically.
+    <BLANKLINE>
+    <BLANKLINE>
+     </body>
+    </html>
+
+
+This is taken from `paste.httpexceptions <>`_, and if you have Paste
+installed then these exceptions will be subclasses of the Paste exceptions.

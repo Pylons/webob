@@ -22,7 +22,7 @@ from webob.acceptparse import Accept, MIMEAccept, NilAccept, MIMENilAccept
 _CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
 _SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
 
-__all__ = ['Request', 'Response', 'UTC', 'day', 'week', 'hour', 'minute', 'second', 'month', 'year']
+__all__ = ['Request', 'Response', 'UTC', 'day', 'week', 'hour', 'minute', 'second', 'month', 'year', 'html_escape']
 
 class _UTC(tzinfo):
     def dst(self, dt):
@@ -35,6 +35,28 @@ class _UTC(tzinfo):
         return 'UTC'
 
 UTC = _UTC()
+
+def html_escape(s):
+    """HTML-escape a string or object
+    
+    This converts any non-string objects passed into it to strings
+    (actually, using ``unicode()``).  All values returned are
+    non-unicode strings (using ``&#num;`` entities for all non-ASCII
+    characters).
+    
+    None is treated specially, and returns the empty string.
+    """
+    if s is None:
+        return ''
+    if not isinstance(s, basestring):
+        if hasattr(s, '__unicode__'):
+            s = unicode(s)
+        else:
+            s = str(s)
+    s = cgi.escape(s, True)
+    if isinstance(s, unicode):
+        s = s.encode('ascii', 'xmlcharrefreplace')
+    return s
 
 def timedelta_to_seconds(td):
     """
@@ -874,7 +896,7 @@ class Request(object):
             parts.append('%s: %s' % (name, value))
         parts.append('')
         parts.append(self.read_body())
-        return '\n\r'.join(parts)
+        return '\r\n'.join(parts)
 
     def call_application(self, application):
         """
@@ -983,6 +1005,7 @@ class Response(object):
     """
 
     default_content_type = None
+    render = None
 
     def __init__(self, status='200 OK', headerlist=None, body=None, app_iter=None,
                  request=None, content_type=None):
@@ -1556,7 +1579,7 @@ class FakeCGIBody(object):
     def readline(self, size=None):
         # We ignore size, but allow it to be hinted
         rest = self._get_body()[self.position:]
-        next = res.find('\n\r')
+        next = res.find('\r\n')
         if next == -1:
             return self.read()
         self.position += next+2
@@ -1569,7 +1592,7 @@ class FakeCGIBody(object):
         self.position = len(body)
         result = []
         while 1:
-            next = rest.find('\n\r')
+            next = rest.find('\r\n')
             if next == -1:
                 result.append(rest)
                 break
