@@ -63,7 +63,8 @@ constructor that will fill in a minimal environment:
    >>> req = Request.blank('/article?id=1')
    >>> from pprint import pprint
    >>> pprint(req.environ)
-   {'PATH_INFO': '/article',
+   {'HTTP_HOST': 'localhost:80',
+    'PATH_INFO': '/article',
     'QUERY_STRING': 'id=1',
     'REQUEST_METHOD': 'GET',
     'SCRIPT_NAME': '',
@@ -123,7 +124,7 @@ request object:
     >>> print req.remote_addr  # The remote IP
     None
     >>> req.host
-    'localhost'
+    'localhost:80'
     >>> req.host_url
     'http://localhost'
     >>> req.application_url
@@ -168,7 +169,7 @@ All request headers are available through a dictionary-like object
 
     >>> req.headers['content-type'] = 'application/x-www-urlencoded'
     >>> req.headers
-    {'Content-Length': '-1', 'Content-Type': 'application/x-www-urlencoded'}
+    {'Content-Length': '-1', 'Content-Type': 'application/x-www-urlencoded', 'Host': 'localhost:80'}
     >>> req.environ['CONTENT_TYPE']
     'application/x-www-urlencoded'
 
@@ -823,8 +824,9 @@ A possible pattern for your application might be:
     >>> print res
     200 OK
     content-type: text/plain
-    Content-Length: 362
+    Content-Length: 388
     <BLANKLINE>
+    HTTP_HOST: 'localhost:80'
     PATH_INFO: '/'
     QUERY_STRING: ''
     REQUEST_METHOD: 'GET'

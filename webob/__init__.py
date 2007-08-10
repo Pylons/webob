@@ -945,7 +945,7 @@ class Request(object):
         return self.ResponseClass(status, headers, app_iter=app_iter, request=self)
 
     #@classmethod
-    def blank(cls, path_info, environ=None, base_url=None):
+    def blank(cls, path, environ=None, base_url=None):
         """
         Create a blank request environ (and Request wrapper) with the
         given path_info (path_info should be urlencoded), and any keys
@@ -956,22 +956,40 @@ class Request(object):
         base_url then wsgi.url_scheme, HTTP_HOST, and SCRIPT_NAME will
         be filled in from that value.
         """
-        if path_info and '?' in path_info:
-            path_info, query_string = path_info.split('?', 1)
+        if _SCHEME_RE.search(path):
+            scheme, netloc, path, qs, fragment = urlparse.urlsplit(path)
+            if fragment:
+                raise TypeError(
+                    "Path cannot contain a fragment (%r)" % fragment)
+            if qs:
+                path += '?' + qs
+            if ':' not in netloc:
+                if scheme == 'http':
+                    netloc += ':80'
+                elif scheme == 'https':
+                    netloc += ':443'
+                else:
+                    raise TypeError("Unknown scheme: %r" % scheme)
+        else:
+            scheme = 'http'
+            netloc = 'localhost:80'
+        if path and '?' in path:
+            path_info, query_string = path.split('?', 1)
             path_info = urllib.unquote(path_info)
         else:
-            path_info = urllib.unquote(path_info)
+            path_info = urllib.unquote(path)
             query_string = ''
         env = {
             'REQUEST_METHOD': 'GET',
             'SCRIPT_NAME': '',
             'PATH_INFO': path_info or '',
             'QUERY_STRING': query_string,
-            'SERVER_NAME': 'localhost',
-            'SERVER_PORT': '80',
+            'SERVER_NAME': netloc.split(':')[0],
+            'SERVER_PORT': netloc.split(':')[1],
+            'HTTP_HOST': netloc,
             'SERVER_PROTOCOL': 'HTTP/1.0',
             'wsgi.version': (1, 0),
-            'wsgi.url_scheme': 'http',
+            'wsgi.url_scheme': scheme,
             'wsgi.input': StringIO(''),
             'wsgi.errors': StringIO(),
             'wsgi.multithread': False,

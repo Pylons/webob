@@ -9,7 +9,7 @@ should have.
     >>> req # doctest: +ELLIPSIS
     <Request at ... GET http://localhost/>
     >>> print repr(str(req))
-    'GET /\n\rHost: localhost\n\r\n\r'
+    'GET /\r\nHost: localhost:80\r\n\r\n'
     >>> req.environ # doctest: +ELLIPSIS
     {...}
     >>> req.body # doctest: +ELLIPSIS
@@ -56,7 +56,7 @@ should have.
     >>> req.is_xhr
     True
     >>> req.host
-    'localhost'
+    'localhost:80'
 
 There are also variables to access the variables and body:
 
@@ -141,10 +141,10 @@ Sometimes conditional headers are problematic.  You can remove them:
     >>> req.if_modified_since = datetime(2005, 1, 1, 12, 0)
     >>> req.environ['HTTP_ACCEPT_ENCODING'] = 'gzip'
     >>> print req.headers
-    {'If-Match': 'some-etag', 'Accept-Encoding': 'gzip', 'If-Modified-Since': 'Sat, 01 Jan 2005 12:00:00 GMT'}
+    {'Host': 'localhost:80', 'If-Match': 'some-etag', 'Accept-Encoding': 'gzip', 'If-Modified-Since': 'Sat, 01 Jan 2005 12:00:00 GMT'}
     >>> req.remove_conditional_headers()
     >>> print req.headers
-    {}
+    {'Host': 'localhost:80'}
 
 Some headers are handled specifically (more should be added):
 
