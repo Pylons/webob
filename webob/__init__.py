@@ -945,7 +945,7 @@ class Request(object):
         return self.ResponseClass(status, headers, app_iter=app_iter, request=self)
 
     #@classmethod
-    def blank(cls, path, environ=None, base_url=None):
+    def blank(cls, path, environ=None, base_url=None, headers=None):
         """
         Create a blank request environ (and Request wrapper) with the
         given path_info (path_info should be urlencoded), and any keys
@@ -1021,7 +1021,10 @@ class Request(object):
                 env['SCRIPT_NAME'] = urllib.unquote(path)
         if environ:
             env.update(environ)
-        return cls(env)
+        obj = cls(env)
+        if headers is not None:
+            obj.headers.update(headers)
+        return obj
 
     blank = classmethod(blank)
 
