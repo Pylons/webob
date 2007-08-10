@@ -255,5 +255,14 @@ class MIMEAccept(Accept):
             return True
         return False
 
+    def accept_html(self):
+        """
+        Returns true if any HTML-like type is accepted
+        """
+        return ('text/html' in self
+                or 'application/xhtml+xml' in self
+                or 'application/xml' in self
+                or 'text/xml' in self)
+
 class MIMENilAccept(NilAccept):
     MasterClass = MIMEAccept
