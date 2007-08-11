@@ -507,6 +507,9 @@ class NoVars(object):
     pop = __delitem__
     popitem = __delitem__
 
+    def get(self, key, default=None):
+        return default
+
     def getall(self, key):
         return []
 
@@ -530,6 +533,9 @@ class NoVars(object):
 
     def __len__(self):
         return 0
+
+    def __cmp__(self, other):
+        return cmp({}, other)
 
     def keys(self):
         return []

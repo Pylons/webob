@@ -1035,7 +1035,6 @@ class Response(object):
     """
 
     default_content_type = None
-    render = None
 
     def __init__(self, status='200 OK', headerlist=None, body=None, app_iter=None,
                  request=None, content_type=None):
