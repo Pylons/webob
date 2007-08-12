@@ -538,6 +538,22 @@ dynamic.  An example:
     >>> request.script_name
     '/test'
 
+Ad-Hoc Attributes
+-----------------
+
+You can assign attributes to your request objects.  They will all go
+in ``environ['webob.adhoc_attrs']`` (a dictionary).  
+
+.. code-block::
+
+    >>> req = Request.blank('/')
+    >>> req.some_attr = 'blah blah blah'
+    >>> new_req = Request(req.environ)
+    >>> new_req.some_attr
+    'blah blah blah'
+    >>> req.environ['webob.adhoc_attrs']
+    {'some_attr': 'blah blah blah'}
+
 Response
 ========
 

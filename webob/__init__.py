@@ -398,6 +398,7 @@ class Request(object):
 
     ## Options:
     charset = None
+    ## FIXME: this name is too vague:
     errors = 'strict'
     decode_param_names = False
 
@@ -413,13 +414,34 @@ class Request(object):
             self._environ_getter = environ_getter
         else:
             self._environ = environ
-        self.headers = EnvironHeaders(environ)
         if charset is not NoDefault:
-            self.charset = charset
+            self.__dict__['charset'] = charset
         if errors is not NoDefault:
-            self.errors = errors
+            self.__dict__['errors'] = errors
         if decode_param_names is NoDefault:
-            self.decode_param_names = decode_param_names
+            self.__dict__['decode_param_names'] = decode_param_names
+
+    def __setattr__(self, attr, value):
+        ## FIXME: I don't know why I need this guard...
+        if attr in self.__class__.__dict__ or attr.startswith('_'):
+            object.__setattr__(self, attr, value)
+        else:
+            self.environ.setdefault('webob.adhoc_attrs', {})[attr] = value
+
+    def __getattr__(self, attr):
+        ## FIXME: I don't know why I need this guard...
+        if attr in self.__class__.__dict__:
+            return object.__getattr__(self, attr)
+        try:
+            return self.environ['webob.adhoc_attrs'][attr]
+        except KeyError:
+            raise AttributeError(attr)
+
+    def __delattr__(self, attr):
+        try:
+            del self.environ['webob.adhoc_attrs'][attr]
+        except KeyError:
+            raise AttributeError(attr)
 
     def environ(self):
         return self._environ_getter()
@@ -457,8 +479,28 @@ class Request(object):
     path_info = environ_getter('PATH_INFO')
     ## FIXME: should I strip out parameters?:
     content_type = environ_getter('CONTENT_TYPE')
+    content_length = converter(
+        environ_getter('CONTENT_LENGTH', rfc_section='14.17'),
+        _parse_int, _serialize_int, 'int')
     remote_user = environ_getter('REMOTE_USER', default=None)
     remote_addr = environ_getter('REMOTE_ADDR', default=None)
+
+    _headers = None
+
+    def headers__get(self):
+        """
+        All the request headers as a case-insensitive dictionary-like
+        object.
+        """
+        if self._headers is None:
+            self._headers = EnvironHeaders(self.environ)
+        return self._headers
+
+    def headers__set(self, value):
+        self.headers.clear()
+        self.headers.update(value)
+
+    headers = property(headers__get, headers__set, doc=headers__get.__doc__)
 
     def host_url(self):
         """
@@ -1116,6 +1158,7 @@ class Response(object):
         The list of response headers
         """
         return self._headerlist
+
     def headerlist__set(self, value):
         self._headers = None
         if not isinstance(value, list):
@@ -1123,8 +1166,10 @@ class Response(object):
                 value = value.items()
             value = list(value)
         self._headerlist = value
+
     def headerlist__del(self):
         self.headerlist = []
+
     headerlist = property(headerlist__get, headerlist__set, headerlist__del, doc=headerlist__get.__doc__)
 
     def charset__get(self):
@@ -1167,6 +1212,7 @@ class Response(object):
 
     charset = property(charset__get, charset__set, charset__del, doc=charset__get.__doc__)
 
+    ## FIXME: need to give access to content type params some too
     def content_type__get(self):
         """
         Get/set the Content-Type header (or None), *without* the
@@ -1561,6 +1607,9 @@ class Response(object):
         ## FIXME: I should watch out here for bad responses, e.g.,
         ## incomplete headers or body, etc
         start_response(self.status, self.headerlist)
+        if environ['REQUEST_METHOD'] == 'HEAD':
+            # Special case here...
+            return []
         return self.app_iter
 
 Request.ResponseClass = Response
