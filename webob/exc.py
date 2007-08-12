@@ -19,6 +19,14 @@ sent and then an exception was encountered.
 
 Exception
   HTTPException
+    HTTPOk
+      * 200 - HTTPOk
+      * 201 - HTTPCreated
+      * 202 - HTTPAccepted
+      * 203 - HTTPNonAuthoritativeInformation
+      * 204 - HTTPNoContent
+      * 205 - HTTPResetContent
+      * 206 - HTTPPartialContent
     HTTPRedirection
       * 300 - HTTPMultipleChoices
       * 301 - HTTPMovedPermanently
