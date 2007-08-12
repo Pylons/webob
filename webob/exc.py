@@ -216,6 +216,44 @@ class HTTPRedirection(HTTPException):
     condition.
     """
 
+class HTTPOk(HTTPException):
+    """
+    Base class for the 200's status code (successful responses)
+    """
+    code = 200
+    title = 'OK'
+
+############################################################
+## 2xx success
+############################################################
+
+class HTTPCreated(HTTPOk):
+    code = 201
+    title = 'Created'
+
+class HTTPAccepted(HTTPOk):
+    code = 202
+    title = 'Accepted'
+    explanation = 'The request is accepted for processing.'
+
+class HTTPNonAuthoritativeInformation(HTTPOk):
+    code = 203
+    title = 'Non-Authoritative Information'
+
+class HTTPNoContent(HTTPOk):
+    code = 204
+    title = 'No Content'
+    empty_body = True
+
+class HTTPResetContent(HTTPOk):
+    code = 205
+    title = 'Reset Content'
+    empty_body = True
+
+class HTTPPartialContent(HTTPOk):
+    code = 206
+    title = 'Partial Content'
+
 ############################################################
 ## 3xx redirection
 ############################################################
