@@ -134,7 +134,7 @@ ${body}''')
     ## Set this to True for responses that should have no request body
     empty_body = False
 
-    def __init__(self, detail=None, headers=None, comments=None,
+    def __init__(self, detail=None, headers=None, comment=None,
                  body_template=None):
         Response.__init__(self,
                           status = '%s %s' % (self.code, self.title),
@@ -142,7 +142,7 @@ ${body}''')
         if headers:
             self.headers.update(headers)
         self.detail = detail
-        self.comments = comments
+        self.comment = comment
         if body_template is not None:
             self.body_template = body_template
             self.body_template_obj = Template(body_template)
@@ -151,12 +151,12 @@ ${body}''')
         args = {
             'explanation': escape(self.explanation),
             'detail': escape(self.detail or ''),
-            'comments': escape(self.comments or ''),
+            'comment': escape(self.comment or ''),
             }
-        if self.comments:
-            args['html_comments'] = '<!-- %s -->' % escape(self.comments)
+        if self.comment:
+            args['html_comment'] = '<!-- %s -->' % escape(self.comment)
         else:
-            args['html_comments'] = ''
+            args['html_comment'] = ''
         body_tmpl = self.body_template_obj
         if HTTPException.body_template_obj is not self.body_template_obj:
             # Custom template; add headers to args
@@ -286,12 +286,12 @@ class _HTTPMove(HTTPRedirection):
 ${explanation} <a href="${location}">${location}</a>;
 you should be redirected automatically.
 ${detail}
-${html_comments}''')
+${html_comment}''')
 
-    def __init__(self, detail=None, headers=None, comments=None,
+    def __init__(self, detail=None, headers=None, comment=None,
                  body_template=None, location=None, add_slash=False):
         super(_HTTPMove, self).__init__(
-            detail=detail, headers=headers, comments=comments,
+            detail=detail, headers=headers, comment=comment,
             body_template=body_template)
         if location is not None:
             self.location = location
