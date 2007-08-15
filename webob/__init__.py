@@ -1583,6 +1583,19 @@ class Response(object):
 
     etag = header_getter('ETag', rfc_section='14.19')
 
+    def md5_etag(self, body=None):
+        """
+        Generate an etag for the response object using an MD5 hash of
+        the body (the body parameter, or ``self.body`` if not given)
+
+        Sets ``self.etag``
+        """
+        if body is None:
+            body = self.body
+        import md5
+        h = md5.new(body)
+        self.etag = h.hexdigest()
+
     expires = converter(
         header_getter('Expires', rfc_section='14.21'),
         _parse_date, _serialize_date, 'date-parse')
@@ -1659,6 +1672,9 @@ class Response(object):
         """
         ## FIXME: I should watch out here for bad responses, e.g.,
         ## incomplete headers or body, etc
+        ## FIXME: should I automatically give 304 responses when possible?
+        ## FIXME: should I automatically give Precondition Failed when necessary?  (erm...)
+        ## Or maybe it should be a method that would possible raise HTTPPreconditionFailed
         start_response(self.status, self.headerlist)
         if environ['REQUEST_METHOD'] == 'HEAD':
             # Special case here...
