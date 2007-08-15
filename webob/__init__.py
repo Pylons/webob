@@ -13,7 +13,7 @@ import calendar
 from webob.datastruct import EnvironHeaders
 from webob.multidict import MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
 from webob.useragent import UserAgent, parse_search_query
-from webob.etag import AnyETag, NoETag, ETagMatcher
+from webob.etag import AnyETag, NoETag, ETagMatcher, IfRange, NoIfRange
 from webob.headerdict import HeaderDict
 from webob.statusreasons import status_reasons
 from webob.cachecontrol import CacheControl
@@ -293,6 +293,21 @@ def _serialize_etag(value, default=True):
         else:
             return '*'
     return str(value)
+
+def _parse_if_range(value):
+    if not value:
+        return NoIfRange
+    else:
+        return IfRange.parse(value)
+
+def _serialize_if_range(value):
+    if value is None:
+        return value
+    if isinstance(value, (datetime, date)):
+        return _serialize_date(value)
+    if not isinstance(value, str):
+        value = str(value)
+    return value or None
 
 def _parse_int(value):
     if value is None:
@@ -910,8 +925,9 @@ class Request(object):
         environ_getter('HTTP_IF_NONE_MATCH', rfc_section='14.26'),
         _parse_etag, _serialize_etag, 'etag', converter_args=(False,))
 
-    ## FIXME: 14.27 If-Range
-    ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.27
+    if_range = converter(
+        environ_getter('HTTP_IF_RANGE', rfc_section='14.27'),
+        _parse_if_range, _serialize_if_range, 'if-range')
 
     if_unmodified_since = converter(
         environ_getter('HTTP_IF_UNMODIFIED_SINCE', rfc_section='14.28'),

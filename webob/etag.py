@@ -1,4 +1,11 @@
+import webob
+
+__all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'NoIfRange']
+
 class _AnyETag(object):
+    """
+    Represents an ETag of *, or a missing ETag when matching is 'safe'
+    """
 
     def __repr__(self):
         return '<ETag *>'
@@ -15,6 +22,9 @@ class _AnyETag(object):
 AnyETag = _AnyETag()
 
 class _NoETag(object):
+    """
+    Represents a missing ETag when matching is unsafe
+    """
 
     def __repr__(self):
         return '<No ETag>'
@@ -98,3 +108,83 @@ class ETagMatcher(object):
         for weak in self.weak_etags:
             items.append('W/%s' % weak)
         return ', '.join(items)
+
+class IfRange(object):
+    """
+    Parses and represents the If-Range header, which can be
+    an ETag *or* a date
+    """
+    def __init__(self, etag=None, date=None):
+        self.etag = etag
+        self.date = date
+
+    def __repr__(self):
+        if self.etag is None:
+            etag = '*'
+        else:
+            etag = str(self.etag)
+        if self.date is None:
+            date = '*'
+        else:
+            date = webob._serialize_date(self.date)
+        return '<%s etag=%s, date=%s>' % (
+            self.__class__.__name__,
+            etag, date)
+
+    def __str__(self):
+        if self.etag is not None:
+            return str(self.etag)
+        elif self.date:
+            return webob._serialize_date(self.date)
+        else:
+            return ''
+
+    def match(self, etag=None, last_modified=None):
+        """
+        Return True if the If-Range header matches the given etag or last_modified
+        """
+        if self.date is not None:
+            if last_modified is None:
+                # Conditional with nothing to base the condition won't work
+                return False
+            return last_modified <= self.date
+        elif self.etag is not None:
+            if not etag:
+                return False
+            return etag in self.etag
+        return True
+
+    def match_response(self, response):
+        return self.match(etag=response.etag, last_modified=response.last_modified)
+
+    #@classmethod
+    def parse(cls, value):
+        date = etag = None
+        if not value:
+            etag = NoEtag()
+        elif value and value.endswith(' GMT'):
+            # Must be a date
+            date = webob._parse_date(value)
+        else:
+            etag = ETagMatcher.parse(value)
+        return cls(etag=etag, date=date)
+    parse = classmethod(parse)
+
+class _NoIfRange(object):
+    """
+    Represents a missing If-Range header
+    """
+    
+    def __repr__(self):
+        return '<Empty If-Range>'
+
+    def __str__(self):
+        return ''
+
+    def match(self, etag=None, last_modified=None):
+        return True
+
+    def match_response(self, response):
+        return True
+
+NoIfRange = _NoIfRange()

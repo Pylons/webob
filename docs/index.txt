@@ -428,6 +428,31 @@ For date-based comparisons If-Modified-Since is used:
     >>> req.if_modified_since and req.if_modified_since >= server_modified
     True
 
+For range requests, you can use If-Range; if the header fails to match
+then the full response (not a range) should be returned:
+
+.. code-block::
+
+    >>> req.if_range
+    <Empty If-Range>
+    >>> req.if_range.match(etag='some-etag', last_modified=datetime(2005, 1, 1, 12, 0))
+    True
+    >>> req.if_range = 'opaque-etag'
+    >>> req.if_range.match(etag='other-etag')
+    False
+    >>> req.if_range.match(etag='opaque-etag')
+    True
+
+You can also pass in a response object with:
+
+.. code-block::
+
+    >>> from webob import Response
+    >>> res = Response()
+    >>> res.etag = 'opaque-etag'
+    >>> req.if_range.match_response(res)
+    True
+
 Another kind of conditional request is a request (typically PUT) that
 includes If-Match or If-Unmodified-Since.  In this case you are saying
 "here is an update to a resource, but don't apply it if someone else

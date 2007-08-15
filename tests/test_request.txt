@@ -222,3 +222,34 @@ mime types are not supported.
     ['es']
     >>> req.accept_language.best_matches('ES')
     ['es']
+
+The If-Range header is a combination of a possible conditional date or
+etag match::
+
+    >>> req = Request.blank('/')
+    >>> req.if_range = 'asdf'
+    >>> req.if_range
+    <IfRange etag=asdf, date=*>
+    >>> from webob import Response
+    >>> res = Response()
+    >>> res.etag = 'asdf'
+    >>> req.if_range.match_response(res)
+    True
+    >>> res.etag = None
+    >>> req.if_range.match_response(res)
+    False
+    >>> res.last_modified = datetime(2005, 1, 1, 12, 0, tzinfo=UTC)
+    >>> req.if_range = datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
+    >>> req.if_range
+    <IfRange etag=*, date=Sun, 01 Jan 2006 12:00:00 GMT>
+    >>> req.if_range.match_response(res)
+    True
+    >>> res.last_modified = datetime(2007, 1, 1, 12, 0, tzinfo=UTC)
+    >>> req.if_range.match_response(res)
+    False
+    >>> req = Request.blank('/')
+    >>> req.if_range
+    <Empty If-Range>
+    >>> req.if_range.match_response(res)
+    True
+    
