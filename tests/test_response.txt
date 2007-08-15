@@ -107,11 +107,11 @@ properties:
     >>> res.date = datetime(2005, 1, 1, 12, 0, tzinfo=UTC)
     >>> (res.date, res.headers['date'])
     (datetime.datetime(2005, 1, 1, 12, 0, tzinfo=UTC), 'Sat, 01 Jan 2005 12:00:00 GMT')
-    >>> res.etag
-    <ETag *>
+    >>> print res.etag
+    None
     >>> res.etag = 'foo'
     >>> (res.etag, res.headers['etag'])
-    (<ETag foo>, 'foo')
+    ('foo', 'foo')
     >>> res.expires = res.date
     >>> res.retry_after = 120 # two minutes
     >>> res.retry_after #doctest: +ELLIPSIS

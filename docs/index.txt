@@ -97,18 +97,18 @@ Request Body
 (e.g., a POST form, the body of a PUT, etc).  It's kind of boring to
 start, but you can set it to a string and that will be turned into a
 file-like object.  You can read the entire body with
-``req.read_body()``.
+``req.body``.
 
 .. code-block:: 
 
-    >>> req.body
+    >>> req.body_file
     <cStringIO.StringI object at ...>
-    >>> req.read_body()
+    >>> req.body
     ''
     >>> req.body = 'test'
-    >>> req.body
+    >>> req.body_file
     <cStringIO.StringI object at ...>
-    >>> req.read_body()
+    >>> req.body
     'test'
 
 Method & URL
@@ -180,7 +180,7 @@ All request headers are available through a dictionary-like object
 
     >>> req.headers['content-type'] = 'application/x-www-urlencoded'
     >>> req.headers
-    {'Content-Length': '-1', 'Content-Type': 'application/x-www-urlencoded', 'Host': 'localhost:80'}
+    {'Content-Length': '4', 'Content-Type': 'application/x-www-urlencoded', 'Host': 'localhost:80'}
     >>> req.environ['CONTENT_TYPE']
     'application/x-www-urlencoded'
 

@@ -17,7 +17,7 @@ def simpleapp(environ, start_response):
         'post is %r\n' % request.postvars,
         'params is %r\n' % request.params,
         'cookies is %r\n' % request.cookies,
-        'body: %r\n' % request.read_body(),
+        'body: %r\n' % request.body,
         'method: %s\n' % request.method,
         'remote_user: %r\n' % request.environ['REMOTE_USER'],
         'host_url: %r; application_url: %r; path_url: %r; url: %r\n' % (request.host_url, request.application_url, request.path_url, request.url),

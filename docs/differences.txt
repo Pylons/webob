@@ -21,6 +21,11 @@ explicit elsewhere removes the need for this policy).
 Request
 -------
 
+body:
+    This is a file-like object in WSGIRequest.  In WebOb it is a
+    string (to match Response.body) and the file-like object is
+    available through ``req.body_file``
+
 query/postvars:
     These are known as GET and POST in WSGIRequest.  These aliases are
     still available
@@ -33,6 +38,7 @@ match_accept(mimetypes):
     This is available through ``req.accept.first_match(mimetypes)``;
     or if you trust the client's quality ratings, you can use
     ``req.accept.best_match(mimetypes)``
+
 errors:
     This controls how unicode decode errors are handled; it is now
     named ``unicode_errors``
@@ -45,15 +51,20 @@ Response
 
 default content_type:
     The base Response object has no default content_type or charset.
+
 determine_charset():
     Is now available as ``res.charset``
+
 has_header(header):
     Should be done with ``header in res.headers``
+
 get_content() and wsgi_response():
     These are gone; you should use ``res.body`` or ``res(environ,
     start_response)``
+
 write(content):
     Not available; you have to use ``res.body += content``
+
 flush() and tell():
     Also gone
 
@@ -71,21 +82,29 @@ Request
 
 encoding:
     Is ``req.charset``
+
 REQUEST:
     Is ``req.params``
+
 FILES:
     File uploads are ``cgi.FieldStorage`` objects directly in
     postvars
+
 META:
     Is ``req.environ``
+
 user:
     No equivalent (too connected to application model)
+
 session:
     No equivalent
+
 raw_post_data:
-    Available with ``req.read_body()``
+    Available with ``req.body``
+
 __getitem__(key):
     You have to use ``req.params``
+
 is_secure():
     No equivalent
 
@@ -99,23 +118,30 @@ variables).  The equivalent in WebOb is MultiDict.
 Mutability:
     WebOb dictionaries are sometimes mutable (req.queryvars is,
     req.params is not)
+
 Ordering:
     I believe Django does not order the keys fully; MultiDict is a
     full ordering.  Methods that iterate over the parameters iterate
     over keys in their order in the original request.
+
 keys(), items(), values() (+iter\*):
     These return all values in MultiDict, but only the last value for
     a QueryDict.  That is, given ``a=1&a=2`` with MultiDict
     ``d.items()`` returns ``[('a', '1'), ('a', '2')]``, but QueryDict
     returns ``[('a', '1')]``
+
 getlist(key):
     Available as ``d.getall(key)``
+
 setlist(key):
     No direct equivalent
+
 appendlist(key, value):
     Available as ``d.add(key, value)``
+
 setlistdefault(key, default_list):
     No direct equivalent
+
 lists():
     Is ``d.dict_of_lists()``
  
@@ -132,14 +158,18 @@ Constructor:
     Totally different.  The WebOb Response object should probably be
     subclassed for direct application use; in WebOb it does not
     *prefer* HTML or anything normal web application conventions
+
 dictionary-like:
     The Django response object is somewhat dictionary-like, setting
     headers.  The equivalent dictionary-like object is
     ``res.headers``.  In WebOb this is a MultiDict.
+
 has_header(header):
     Use ``header in res.headers``
+
 write(content), flush(), tell():
     Not available
+
 content:
     Use ``res.body`` for the ``str`` value, ``res.unicode_body`` for
     the ``unicode`` value
@@ -163,67 +193,92 @@ Request
 
 app:
     No equivalent
+
 base:
     ``req.appication_url``
-body:
-    Via ``req.read_body()``
+
 close():
     No equivalent
+
 closed:
     No equivalent
+
 config:
     No equivalent
+
 cookie:
     A ``SimpleCookie`` object in CherryPy; a dictionary in WebOb
     (``SimpleCookie`` can represent cookie parameters, but cookie
     parameters are only sent with responses not requests)
+
 dispatch:
     No equivalent
+
 error_page, error_response, handle_error:
     No equivalent
+
 get_resource:
     Similar to ``req.get_response(app)``
+
 handler:
     No equivalent
+
 headers, header_list:
     The WSGI environment represents headers as a dictionary, available
     through ``req.headers``
+
 hooks:
     No equivalent
+
 local:
     No equivalent
+
 methods_with_bodies:
     This represents methods where CherryPy will automatically try to
     read the request body.  WebOb lazily reads POST requests with the
     correct content type, and no other bodies.
+
 namespaces:
     No equivalent
+
 prototol:
     As ``req.environ['SERVER_PROTOCOL']``
+
 query_string:
     As ``req.environ['QUERY_STRING']``
+
 remote:
     ``remote.ip`` is like ``req.remote_addr``.  ``remote.port`` is not
     available.  ``remote.name`` is in
     ``req.environ.get('REMOTE_HOST')``
+
 request_line:
     No equivalent
+
 respond:
     No equivalent
+
 rfile:
     ``req.body``
+
 run:
     No equivalent
+
 server_protocol:
     As ``req.environ['SERVER_PROTOCOL']``
+
 show_tracebacks:
     No equivalent
+
 throw_errors:
     No equivalent
+
 throws:
     No equivalent
+
 toolmaps:
     No equivalent
+
 wsgi_environ:
     As ``req.environ``
 
@@ -235,21 +290,29 @@ From information `from the wiki
 
 body:
     This is an iterable in CherryPy, a string in WebOb
+
 check_timeout:
     No equivalent
+
 collapse_body:
     No equivalent
+
 cookie:
     Accessible through ``res.set_cookie(...)``, ``res.delete_cookie``,
     ``res.unset_cookie()``
+
 finalize:
     No equivalent
+
 header_list:
     As ``res.headerlist``
+
 stream:
     No equivalent
+
 time:
     No equivalent
+
 timed_out:
     No equivalent
 
@@ -267,19 +330,25 @@ Request
 
 query:
     As ``req.queryvars`` or ``req.GET``
+
 form:
     As ``req.postvars`` or ``req.POST``
+
 cookie:
     A ``SimpleCookie`` object in Yaro; a dictionary in WebOb
     (``SimpleCookie`` can represent cookie parameters, but cookie
     parameters are only sent with responses not requests)
+
 uri:
     Returns a URI object, no equivalent
+
 redirect:
     Not available (response-related)
+
 forward, wsgi_forward:
     Available with ``req.get_response(app)`` and
     ``req.call_application(app)``
+
 res:
     No equivalent
 

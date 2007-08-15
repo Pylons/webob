@@ -451,7 +451,7 @@ class Request(object):
     def _environ_getter(self):
         return self._environ
 
-    def body__get(self):
+    def body_file__get(self):
         """
         Access the body of the request (wsgi.input) as a file-like
         object.
@@ -461,7 +461,7 @@ class Request(object):
         set the attribute to a string then the length of the string).
         """
         return self.environ['wsgi.input']
-    def body__set(self, value):
+    def body_file__set(self, value):
         if isinstance(value, str):
             length = len(value)
             value = StringIO(value)
@@ -469,11 +469,10 @@ class Request(object):
             length = -1
         self.environ['wsgi.input'] = value
         self.environ['CONTENT_LENGTH'] = str(length)
-    def body__del(self):
+    def body_file__del(self):
         self.environ['wsgi.input'] = StringIO('')
         self.environ['CONTENT_LENGTH'] = '0'
-    ## FIXME: this totally doesn't match the meaning of Response.body
-    body = property(body__get, body__set, body__del, doc=body__get.__doc__)
+    body_file = property(body_file__get, body_file__set, body_file__del, doc=body_file__get.__doc__)
 
     scheme = environ_getter('wsgi.url_scheme')
     method = environ_getter('REQUEST_METHOD')
@@ -655,7 +654,7 @@ class Request(object):
             del self.environ['HTTP_HOST']
     host = property(host__get, host__set, host__del, doc=host__get.__doc__)
 
-    def read_body(self):
+    def body__get(self):
         """
         Return the content of the request body.
         """
@@ -663,9 +662,27 @@ class Request(object):
             length = int(self.environ.get('CONTENT_LENGTH', '0'))
         except ValueError:
             return ''
-        c = self.body.read(length)
-        self.body = StringIO(c)
+        c = self.body_file.read(length)
+        # We don't want/need to lose CONTENT_LENGTH here (as setting
+        # self.body_file would do):
+        self.environ['wsgi.input'] = StringIO(c)
         return c
+
+    def body__set(self, value):
+        if value is None:
+            del self.body
+            return
+        if not isinstance(value, str):
+            raise TypeError(
+                "You can only set Request.body to a str (not %r)" % type(value))
+        body_file = StringIO(value)
+        self.body_file = body_file
+        self.environ['CONTENT_LENGTH'] = str(len(value))
+
+    def body__del(self, value):
+        del self.body_file
+
+    body = property(body__get, body__set, body__del, doc=body__get.__doc__)
 
     def str_postvars(self):
         """
@@ -678,14 +695,14 @@ class Request(object):
         if self.method != 'POST':
             return NoVars('Not a POST request')
         if 'webob._parsed_post_vars' in env:
-            vars, body = env['webob._parsed_post_vars']
-            if body is self.body:
+            vars, body_file = env['webob._parsed_post_vars']
+            if body_file is self.body_file:
                 return vars
         # Paste compatibility:
         if 'paste.parsed_formvars' in env:
             # from paste.request.parse_formvars
-            vars, body = env['paste.parsed_formvars']
-            if body is self.body:
+            vars, body_file = env['paste.parsed_formvars']
+            if body_file is self.body_file:
                 # FIXME: is it okay that this isn't *our* MultiDict?
                 return parsed
         content_type = self.content_type
@@ -702,12 +719,12 @@ class Request(object):
             env['CONTENT_TYPE'] = '0'
         fs_environ = env.copy()
         fs_environ['QUERY_STRING'] = ''
-        fs = cgi.FieldStorage(fp=self.body,
+        fs = cgi.FieldStorage(fp=self.body_file,
                               environ=fs_environ,
                               keep_blank_values=True)
         vars = MultiDict.from_fieldstorage(fs)
         FakeCGIBody.update_environ(env, vars)
-        env['webob._parsed_post_vars'] = (vars, self.body)
+        env['webob._parsed_post_vars'] = (vars, self.body_file)
         return vars
 
     str_postvars = property(str_postvars, doc=str_postvars.__doc__)
@@ -831,7 +848,7 @@ class Request(object):
         This only does a shallow copy, except of wsgi.input
         """
         env = self.environ.copy()
-        data = self.read_body()
+        data = self.body
         new_body = StringIO(data)
         env['wsgi.input'] = new_body
         return self.__class__(env)
@@ -942,7 +959,7 @@ class Request(object):
         for name, value in sorted(self.headers.items()):
             parts.append('%s: %s' % (name, value))
         parts.append('')
-        parts.append(self.read_body())
+        parts.append(self.body)
         return '\r\n'.join(parts)
 
     def call_application(self, application, catch_exc_info=False):

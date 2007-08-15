@@ -12,7 +12,7 @@ should have.
     'GET /\r\nHost: localhost:80\r\n\r\n'
     >>> req.environ # doctest: +ELLIPSIS
     {...}
-    >>> req.body # doctest: +ELLIPSIS
+    >>> req.body_file # doctest: +ELLIPSIS
     <cStringIO.StringI object at ...>
     >>> req.scheme
     'http'
@@ -64,7 +64,7 @@ There are also variables to access the variables and body:
     >>> body = 'var1=value1&var2=value2&rep=1&rep=2'
     >>> req = Request.blank('/')
     >>> req.method = 'POST'
-    >>> req.body = StringIO(body)
+    >>> req.body_file = StringIO(body)
     >>> req.environ['CONTENT_LENGTH'] = str(len(body))
     >>> vars = req.str_postvars
     >>> vars
@@ -93,10 +93,10 @@ requests, but they are empty and read-only:
     >>> req.str_postvars
     MultiDict([])
     >>> req.content_type = 'text/xml'
-    >>> req.body = StringIO('<xml></xml>')
+    >>> req.body_file = StringIO('<xml></xml>')
     >>> req.str_postvars
     <NoVars: Not an HTML form submission (Content-Type: text/xml)>
-    >>> req.read_body()
+    >>> req.body
     '<xml></xml>'
 
 You can also get access to the query string variables, of course:
@@ -110,7 +110,7 @@ You can also get access to the query string variables, of course:
     ['e', 'f']
     >>> req.method = 'POST'
     >>> req.body = 'x=y&d=g'
-    >>> req.body # doctest: +ELLIPSIS
+    >>> req.body_file # doctest: +ELLIPSIS
     <cStringIO.StringI object at ...>
     >>> req.environ['CONTENT_LENGTH']
     '7'
