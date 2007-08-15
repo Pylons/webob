@@ -398,11 +398,10 @@ class Request(object):
 
     ## Options:
     charset = None
-    ## FIXME: this name is too vague:
-    errors = 'strict'
+    unicode_errors = 'strict'
     decode_param_names = False
 
-    def __init__(self, environ=None, environ_getter=None, charset=NoDefault, errors=NoDefault,
+    def __init__(self, environ=None, environ_getter=None, charset=NoDefault, unicode_errors=NoDefault,
                  decode_param_names=NoDefault):
         if environ is None and environ_getter is None:
             raise TypeError(
@@ -416,8 +415,8 @@ class Request(object):
             self._environ = environ
         if charset is not NoDefault:
             self.__dict__['charset'] = charset
-        if errors is not NoDefault:
-            self.__dict__['errors'] = errors
+        if unicode_errors is not NoDefault:
+            self.__dict__['unicode_errors'] = unicode_errors
         if decode_param_names is NoDefault:
             self.__dict__['decode_param_names'] = decode_param_names
 
@@ -717,7 +716,7 @@ class Request(object):
         vars = self.str_postvars
         if self.charset:
             vars = UnicodeMultiDict(vars, encoding=self.charset,
-                                    errors=self.errors,
+                                    errors=self.unicode_errors,
                                     decode_keys=self.decode_param_names)
         return vars
 
@@ -756,7 +755,7 @@ class Request(object):
         vars = self.str_queryvars
         if self.charset:
             vars = UnicodeMultiDict(vars, encoding=self.charset,
-                                    errors=self.errors,
+                                    errors=self.unicode_errors,
                                     decode_keys=self.decode_param_names)
         return vars
 
@@ -780,7 +779,7 @@ class Request(object):
         params = self.str_params
         if self.charset:
             params = UnicodeMultiDict(params, encoding=self.charset,
-                                      errors=self.errors,
+                                      errors=self.unicode_errors,
                                       decode_keys=self.decode_param_names)
         return params
 
@@ -814,7 +813,7 @@ class Request(object):
         vars = self.str_cookies
         if self.charset:
             vars = UnicodeMultiDict(vars, encoding=self.charset,
-                                    errors=self.errors,
+                                    errors=self.unicode_errors,
                                     decode_keys=self.decode_param_names)
         return vars
 
