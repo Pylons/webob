@@ -1594,7 +1594,7 @@ class Response(object):
             body = self.body
         import md5
         h = md5.new(body)
-        self.etag = h.hexdigest()
+        self.etag = h.digest().encode('base64').replace('\n', '').strip('=')
 
     expires = converter(
         header_getter('Expires', rfc_section='14.21'),

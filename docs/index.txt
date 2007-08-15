@@ -726,6 +726,10 @@ Other headers:
 
     >>> # The etag:
     >>> res.etag = 'opaque-token'
+    >>> # You can generate it from the body too:
+    >>> res.md5_etag()
+    >>> res.etag
+    'CY9rzUYh03PK3k6DJie09g'
 
     >>> # When this page should expire from a cache (Cache-Control
     >>> # often works better):
@@ -772,7 +776,7 @@ After setting all these headers, here's the result:
     Content-Range: bytes 0-499/1000
     Content-Length: 4
     Date: ... GMT
-    ETag: opaque-token
+    ETag: CY9rzUYh03PK3k6DJie09g
     Expires: ... GMT
     Last-Modified: Mon, 01 Jan 2007 12:00:00 GMT
     Retry-After: 160
