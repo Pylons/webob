@@ -648,6 +648,12 @@ handled through two separate properties:
     'text/html'
     >>> res.headers['content-type']
     'text/html; charset=utf8'
+    >>> res.content_type = 'application/atom+xml'
+    >>> res.content_type_params
+    {'charset': 'utf8'}
+    >>> res.content_type_params = {'type': 'entry', 'charset': 'utf8'}
+    >>> res.headers['content-type']
+    'application/atom+xml; charset=utf8; type=entry'
 
 Other headers:
 
@@ -730,7 +736,7 @@ After setting all these headers, here's the result:
 
     >>> for name, value in res.headerlist:
     ...     print '%s: %s' % (name, value)
-    content-type: text/html; charset=utf8
+    content-type: application/atom+xml; charset=utf8; type=entry
     location: http://localhost/foo
     Accept-Ranges: bytes
     Age: 120

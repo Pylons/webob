@@ -21,6 +21,8 @@ from webob.acceptparse import Accept, MIMEAccept, NilAccept, MIMENilAccept
 
 _CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
 _SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
+_PARAM_RE = re.compile(r'([a-z0-9]+)=(?:"([^"]*)"|([a-z0-9_.-]*))', re.I)
+_OK_PARAM_RE = re.compile(r'^[a-z0-9_.-]+$', re.I)
 
 __all__ = ['Request', 'Response', 'UTC', 'day', 'week', 'hour', 'minute', 'second', 'month', 'year', 'html_escape']
 
@@ -874,8 +876,9 @@ class Request(object):
     ## FIXME: 14.8 Authorization
     ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.8
 
-    ## FIXME: 14.18 Date ?
-    ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.18
+    date = converter(
+        environ_getter('HTTP_DATE', rfc_section='14.8'),
+        _parse_date, _serialize_date, 'date-parsed')
 
     if_match = converter(
         environ_getter('HTTP_IF_MATCH', rfc_section='14.24'),
@@ -1244,6 +1247,39 @@ class Response(object):
 
     content_type = property(content_type__get, content_type__set,
                             content_type__del, doc=content_type__get.__doc__)
+
+    def content_type_params__get(self):
+        """
+        Returns a dictionary of all the parameters in the content type.
+        """
+        params = self.headers.get('content-type', '')
+        if ';' not in params:
+            return {}
+        params = params.split(';', 1)[1]
+        result = {}
+        for match in _PARAM_RE.finditer(params):
+            result[match.group(1)] = match.group(2) or match.group(3) or ''
+        return result
+        
+    def content_type_params__set(self, value_dict):
+        if not value_dict:
+            del self.content_type_params
+            return
+        params = []
+        for k, v in sorted(value_dict.items()):
+            if not _OK_PARAM_RE.search(v):
+                # FIXME: this isn't the right quoting, I'm sure
+                v = '"%s"' % v.replace('"', '\\"')
+            # Are they really all joined with ;, or ,?
+            params.append('; %s=%s' % (k, v))
+        ct = self.headers.pop('content-type', '').split(';', 1)[0]
+        ct += ''.join(params)
+        self.headers['content-type'] = ct
+
+    def content_type_params__del(self, value):
+        self.headers['content-type'] = self.headers.get('content-type', '').split(';', 1)[0]
+
+    content_type_params = property(content_type_params__get, content_type_params__set, content_type_params__del, doc=content_type_params__get.__doc__)
 
     def headers__get(self):
         """
