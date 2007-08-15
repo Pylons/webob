@@ -1,0 +1,286 @@
+Differences Between WebOb and Other Systems
++++++++++++++++++++++++++++++++++++++++++++
+
+This document points out some of the API differences between the
+Request and Response object, and the objects in other systems.
+
+.. contents::
+
+paste.wsgiwrappers and Pylons
+=============================
+
+The Pylons ``request`` and ``response`` object are based on
+``paste.wsgiwrappers.WSGIRequest`` and ``WSGIResponse``
+
+There is no concept of ``defaults`` in WebOb.  In Paste/Pylons these
+serve as threadlocal settings that control certain policies on the
+request and response object.  In WebOb you should make your own
+subclasses to control policy (though in many ways simply being
+explicit elsewhere removes the need for this policy).
+
+Request
+-------
+
+query/postvars:
+    These are known as GET and POST in WSGIRequest.  These aliases are
+    still available
+
+languages():
+    This is available through ``req.accept_language``, particularly
+    ``req.accept_language.best_matches(fallback_language)``
+
+match_accept(mimetypes):
+    This is available through ``req.accept.first_match(mimetypes)``;
+    or if you trust the client's quality ratings, you can use
+    ``req.accept.best_match(mimetypes)``
+errors:
+    This controls how unicode decode errors are handled; it is now
+    named ``unicode_errors``
+
+There are also many extra methods and attributes on WebOb Request
+objects.
+
+Response
+--------
+
+default content_type:
+    The base Response object has no default content_type or charset.
+determine_charset():
+    Is now available as ``res.charset``
+has_header(header):
+    Should be done with ``header in res.headers``
+get_content() and wsgi_response():
+    These are gone; you should use ``res.body`` or ``res(environ,
+    start_response)``
+write(content):
+    Not available; you have to use ``res.body += content``
+flush() and tell():
+    Also gone
+
+There are also many extra methods and attributes on WebOb Response
+objects.
+
+Django
+======
+
+This is a quick summary from reading `the Django documentation
+<http://www.djangoproject.com/documentation/request_response/>`_.
+
+Request
+-------
+
+encoding:
+    Is ``req.charset``
+REQUEST:
+    Is ``req.params``
+FILES:
+    File uploads are ``cgi.FieldStorage`` objects directly in
+    postvars
+META:
+    Is ``req.environ``
+user:
+    No equivalent (too connected to application model)
+session:
+    No equivalent
+raw_post_data:
+    Available with ``req.read_body()``
+__getitem__(key):
+    You have to use ``req.params``
+is_secure():
+    No equivalent
+
+QueryDict
+---------
+
+QueryDict is the way Django represents the multi-key dictionary-like
+objects that are request variables (query string and POST body
+variables).  The equivalent in WebOb is MultiDict.
+
+Mutability:
+    WebOb dictionaries are sometimes mutable (req.queryvars is,
+    req.params is not)
+Ordering:
+    I believe Django does not order the keys fully; MultiDict is a
+    full ordering.  Methods that iterate over the parameters iterate
+    over keys in their order in the original request.
+keys(), items(), values() (+iter\*):
+    These return all values in MultiDict, but only the last value for
+    a QueryDict.  That is, given ``a=1&a=2`` with MultiDict
+    ``d.items()`` returns ``[('a', '1'), ('a', '2')]``, but QueryDict
+    returns ``[('a', '1')]``
+getlist(key):
+    Available as ``d.getall(key)``
+setlist(key):
+    No direct equivalent
+appendlist(key, value):
+    Available as ``d.add(key, value)``
+setlistdefault(key, default_list):
+    No direct equivalent
+lists():
+    Is ``d.dict_of_lists()``
+ 
+The MultiDict object has a ``d.getone(key)`` method, that raises
+KeyError if there is not exactly one key.  There is a method
+``d.mixed()`` which returns a version where values are lists *if*
+there are multiple values for a list.  This is similar to how many
+cgi-based requests are represented.
+
+Response
+--------
+
+Constructor:
+    Totally different.  The WebOb Response object should probably be
+    subclassed for direct application use; in WebOb it does not
+    *prefer* HTML or anything normal web application conventions
+dictionary-like:
+    The Django response object is somewhat dictionary-like, setting
+    headers.  The equivalent dictionary-like object is
+    ``res.headers``.  In WebOb this is a MultiDict.
+has_header(header):
+    Use ``header in res.headers``
+write(content), flush(), tell():
+    Not available
+content:
+    Use ``res.body`` for the ``str`` value, ``res.unicode_body`` for
+    the ``unicode`` value
+
+Response Subclasses
+-------------------
+
+These are generally like ``webob.exc`` objects.
+``HttpResponseNotModified`` is ``HTTPNotModified``; this naming
+translation generally works.
+
+CherryPy/TurboGears
+===================
+
+The `CherryPy request object
+<http://www.cherrypy.org/wiki/RequestObject>`_ is also used by
+TurboGears 1.x.
+
+Request
+-------
+
+app:
+    No equivalent
+base:
+    ``req.appication_url``
+body:
+    Via ``req.read_body()``
+close():
+    No equivalent
+closed:
+    No equivalent
+config:
+    No equivalent
+cookie:
+    A ``SimpleCookie`` object in CherryPy; a dictionary in WebOb
+    (``SimpleCookie`` can represent cookie parameters, but cookie
+    parameters are only sent with responses not requests)
+dispatch:
+    No equivalent
+error_page, error_response, handle_error:
+    No equivalent
+get_resource:
+    Similar to ``req.get_response(app)``
+handler:
+    No equivalent
+headers, header_list:
+    The WSGI environment represents headers as a dictionary, available
+    through ``req.headers``
+hooks:
+    No equivalent
+local:
+    No equivalent
+methods_with_bodies:
+    This represents methods where CherryPy will automatically try to
+    read the request body.  WebOb lazily reads POST requests with the
+    correct content type, and no other bodies.
+namespaces:
+    No equivalent
+prototol:
+    As ``req.environ['SERVER_PROTOCOL']``
+query_string:
+    As ``req.environ['QUERY_STRING']``
+remote:
+    ``remote.ip`` is like ``req.remote_addr``.  ``remote.port`` is not
+    available.  ``remote.name`` is in
+    ``req.environ.get('REMOTE_HOST')``
+request_line:
+    No equivalent
+respond:
+    No equivalent
+rfile:
+    ``req.body``
+run:
+    No equivalent
+server_protocol:
+    As ``req.environ['SERVER_PROTOCOL']``
+show_tracebacks:
+    No equivalent
+throw_errors:
+    No equivalent
+throws:
+    No equivalent
+toolmaps:
+    No equivalent
+wsgi_environ:
+    As ``req.environ``
+
+Response
+--------
+
+From information `from the wiki
+<http://www.cherrypy.org/wiki/ResponseObject>`_.
+
+body:
+    This is an iterable in CherryPy, a string in WebOb
+check_timeout:
+    No equivalent
+collapse_body:
+    No equivalent
+cookie:
+    Accessible through ``res.set_cookie(...)``, ``res.delete_cookie``,
+    ``res.unset_cookie()``
+finalize:
+    No equivalent
+header_list:
+    As ``res.headerlist``
+stream:
+    No equivalent
+time:
+    No equivalent
+timed_out:
+    No equivalent
+
+Yaro
+====
+
+`Yaro <http://lukearno.com/projects/yaro/>`_ is a small wrapper around
+the WSGI environment, much like WebOb in scope.
+
+The WebOb objects have many more methods and attributes.  The Yaro
+Response object is a much smaller subset of WebOb's Response.
+
+Request
+-------
+
+query:
+    As ``req.queryvars`` or ``req.GET``
+form:
+    As ``req.postvars`` or ``req.POST``
+cookie:
+    A ``SimpleCookie`` object in Yaro; a dictionary in WebOb
+    (``SimpleCookie`` can represent cookie parameters, but cookie
+    parameters are only sent with responses not requests)
+uri:
+    Returns a URI object, no equivalent
+redirect:
+    Not available (response-related)
+forward, wsgi_forward:
+    Available with ``req.get_response(app)`` and
+    ``req.call_application(app)``
+res:
+    No equivalent
+
+
