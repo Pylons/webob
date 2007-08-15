@@ -10,6 +10,9 @@ class _AnyETag(object):
     def __repr__(self):
         return '<ETag *>'
 
+    def __nonzero__(self):
+        return False
+
     def __contains__(self, other):
         return True
 
@@ -28,6 +31,9 @@ class _NoETag(object):
 
     def __repr__(self):
         return '<No ETag>'
+
+    def __nonzero__(self):
+        return False
 
     def __contains__(self, other):
         return False
@@ -180,6 +186,9 @@ class _NoIfRange(object):
 
     def __str__(self):
         return ''
+
+    def __nonzero__(self):
+        return False
 
     def match(self, etag=None, last_modified=None):
         return True
