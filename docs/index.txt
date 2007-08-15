@@ -655,6 +655,28 @@ If you set the body then Content-Length will also be set, and an
 ``res.app_iter`` will be created for you.  If you set ``res.app_iter``
 then Content-Length will be cleared, but it won't be set for you.
 
+There is also a file-like object you can access, which will update the
+app_iter in-place (turning the app_iter into a list if necessary):
+
+.. code-block::
+
+    >>> res = Response(content_type='text/plain')
+    >>> f = res.body_file
+    >>> f.write('hey')
+    >>> f.write(u'test')
+    Traceback (most recent call last):
+      . . .
+    TypeError: You can only write unicode to Response.body_file if charset has been set
+    >>> f.encoding
+    >>> res.charset = 'utf8'
+    >>> f.encoding
+    'utf8'
+    >>> f.write(u'test')
+    >>> res.app_iter
+    ['hey', 'test']
+    >>> res.body
+    'heytest'
+
 Header Getters
 --------------
 
@@ -666,6 +688,8 @@ handled through two separate properties:
 
 .. code-block::
 
+    >>> res = Response()
+    >>> res.content_type = 'text/html'
     >>> res.charset = 'utf8'
     >>> res.content_type
     'text/html'
@@ -729,7 +753,7 @@ Other headers:
     >>> # You can generate it from the body too:
     >>> res.md5_etag()
     >>> res.etag
-    'CY9rzUYh03PK3k6DJie09g'
+    '1B2M2Y8AsgTpgAmY7PhCfg'
 
     >>> # When this page should expire from a cache (Cache-Control
     >>> # often works better):
@@ -776,7 +800,7 @@ After setting all these headers, here's the result:
     Content-Range: bytes 0-499/1000
     Content-Length: 4
     Date: ... GMT
-    ETag: CY9rzUYh03PK3k6DJie09g
+    ETag: ...
     Expires: ... GMT
     Last-Modified: Mon, 01 Jan 2007 12:00:00 GMT
     Retry-After: 160

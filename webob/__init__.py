@@ -1350,6 +1350,19 @@ class Response(object):
 
     body = property(body__get, body__set, body__del, doc=body__get.__doc__)
 
+    def body_file__get(self):
+        """
+        Returns a file-like object that can be used to write to the
+        body.  If you passed in a list app_iter, that app_iter will be
+        modified by writes.
+        """
+        return ResponseBodyFile(self)
+
+    def body_file__del(self):
+        del self.body
+
+    body_file = property(body_file__get, fdel=body_file__del, doc=body_file__get.__doc__)
+
     def unicode_body__get(self):
         """
         Get/set the unicode value of the body (using the charset of the Content-Type)
@@ -1781,3 +1794,55 @@ class FakeCGIBody(object):
         environ['wsgi.input'] = obj
 
     update_environ = classmethod(update_environ)
+
+class ResponseBodyFile(object):
+
+    def __init__(self, response):
+        self.response = response
+
+    def __repr__(self):
+        return '<body_file for %r>' % (
+            self.response)
+
+    def close(self):
+        raise NotImplementedError(
+            "Response bodies cannot be closed")
+
+    def flush(self):
+        pass
+
+    def write(self, s):
+        if isinstance(s, unicode):
+            if self.response.charset is not None:
+                s = s.encode(self.response.charset)
+            else:
+                raise TypeError(
+                    "You can only write unicode to Response.body_file "
+                    "if charset has been set")
+        if not isinstance(s, str):
+            raise TypeError(
+                "You can only write str to a Response.body_file, not %s"
+                % type(s))
+        if not isinstance(self.response._app_iter, list):
+            body = self.response.body
+            if body:
+                self.response.app_iter = [body]
+            else:
+                self.response.app_iter = []
+        self.response.app_iter.append(s)
+
+    def writelines(self, seq):
+        for item in seq:
+            self.write(item)
+        
+    closed = False
+
+    def encoding(self):
+        """
+        The encoding of the file (inherited from response.charset)
+        """
+        return self.response.charset
+
+    encoding = property(encoding, doc=encoding.__doc__)
+
+    mode = 'wb'
