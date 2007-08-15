@@ -72,10 +72,11 @@ References:
 
 """
 
-from webob import Response, Request, html_escape
-from string import Template
 import re
 import urlparse
+import sys
+from string import Template
+from webob import Response, Request, html_escape
 
 tag_re = re.compile(r'<.*?>', re.S)
 br_re = re.compile(r'<br.*?>', re.I|re.S)
@@ -530,6 +531,30 @@ class HTTPVersionNotSupported(HTTPServerError):
     title = 'HTTP Version Not Supported'
     explanation = ('The HTTP version is not supported.')
 
+class HTTPExceptionMiddleware(object):
+    """
+    Middleware that catches exceptions in the sub-application.  This
+    does not catch exceptions in the app_iter; only during the initial
+    calling of the application.
+
+    This should be put *very close* to applications that might raise
+    these exceptions.  This should not be applied globally; letting
+    *expected* exceptions raise through the WSGI stack is dangerous.
+    """
+
+    def __init__(self, application):
+        self.application = application
+    def __call__(self, environ, start_response):
+        try:
+            return self.application(environ, start_response)
+        except HTTPException, exc:
+            parent_exc_info = sys.exc_info()
+            def repl_start_response(status, headers, exc_info=None):
+                if exc_info is None:
+                    exc_info = parent_exc_info
+                return start_response(status, headers, exc_info)
+            return exc(environ, repl_start_response)
+
 try:
     from paste import httpexceptions
 except ImportError:
@@ -543,7 +568,7 @@ else:
             obj.__bases__ = obj.__bases__ + (getattr(httpexceptions, name),)
     del name, obj, httpexceptions
 
-__all__ = []
+__all__ = ['HTTPExceptionMiddleware']
 for name, value in globals().items():
     if (isinstance(value, type) and issubclass(value, HTTPException)
         and not name.startswith('_')):
