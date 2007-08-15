@@ -599,6 +599,18 @@ You can set any of these attributes, e.g.:
     Content-Length: 4
     <BLANKLINE>
     test
+    >>> res.body = u"test"
+    Traceback (most recent call last):
+        ...
+    TypeError: You cannot set Response.body to a unicode object (use Response.unicode_body)
+    >>> res.unicode_body = u"test"
+    Traceback (most recent call last):
+        ...
+    AttributeError: You cannot access Response.unicode_body unless charset is set
+    >>> res.charset = 'utf8'
+    >>> res.unicode_body = u"test"
+    >>> res.body
+    'test'
 
 Headers
 -------
@@ -609,7 +621,7 @@ the list in ``res.headers``:
 .. code-block::
 
     >>> res.headers
-    HeaderDict([('Content-type', 'text/html'), ('Content-Length', '4')])
+    HeaderDict([('content-type', 'text/html; charset=utf8'), ('Content-Length', '4')])
 
 This is case-insensitive.  It can support multiple values for a key,
 though only if you use ``res.headers.add(key, value)`` or read them

@@ -472,6 +472,7 @@ class Request(object):
     def body__del(self):
         self.environ['wsgi.input'] = StringIO('')
         self.environ['CONTENT_LENGTH'] = '0'
+    ## FIXME: this totally doesn't match the meaning of Response.body
     body = property(body__get, body__set, body__del, doc=body__get.__doc__)
 
     scheme = environ_getter('wsgi.url_scheme')
@@ -1216,7 +1217,6 @@ class Response(object):
 
     charset = property(charset__get, charset__set, charset__del, doc=charset__get.__doc__)
 
-    ## FIXME: need to give access to content type params some too
     def content_type__get(self):
         """
         Get/set the Content-Type header (or None), *without* the
@@ -1270,7 +1270,7 @@ class Response(object):
             if not _OK_PARAM_RE.search(v):
                 # FIXME: this isn't the right quoting, I'm sure
                 v = '"%s"' % v.replace('"', '\\"')
-            # Are they really all joined with ;, or ,?
+            # FIXME: Are they really all joined with ;, or ,?
             params.append('; %s=%s' % (k, v))
         ct = self.headers.pop('content-type', '').split(';', 1)[0]
         ct += ''.join(params)
@@ -1316,12 +1316,8 @@ class Response(object):
 
     def body__set(self, value):
         if isinstance(value, unicode):
-            charset = self.charset
-            ## FIXME: should this just be separate unicode_body getter/setter?
-            if not charset:
-                raise TypeError(
-                    "You cannot set the body to a unicode value if charset is not set")
-            value = value.encode(charset)
+            raise TypeError(
+                "You cannot set Response.body to a unicode object (use Response.unicode_body)")
         if not isinstance(value, str):
             raise TypeError(
                 "You can only set the body to a str (not %s)"
@@ -1336,6 +1332,30 @@ class Response(object):
         self._app_iter = None
 
     body = property(body__get, body__set, body__del, doc=body__get.__doc__)
+
+    def unicode_body__get(self):
+        """
+        Get/set the unicode value of the body (using the charset of the Content-Type)
+        """
+        if not self.charset:
+            raise AttributeError(
+                "You cannot access Response.unicode_body unless charset is set")
+        body = self.body
+        return body.decode(self.charset)
+
+    def unicode_body__set(self, value):
+        if not self.charset:
+            raise AttributeError(
+                "You cannot access Response.unicode_body unless charset is set")
+        if not isinstance(value, unicode):
+            raise TypeError(
+                "You can only set Response.unicode_body to a unicode string (not %s)" % type(value))
+        self.body = value.encode(self.charset)
+
+    def unicode_body__del(self):
+        del self.body
+
+    unicode_body = property(unicode_body__get, unicode_body__set, unicode_body__del, doc=unicode_body__get.__doc__)
 
     def app_iter__get(self):
         """
