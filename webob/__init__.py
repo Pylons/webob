@@ -234,6 +234,8 @@ def _parse_date(value):
     return datetime.fromtimestamp(t, UTC)
 
 def _serialize_date(dt):
+    if dt is None:
+        return None
     if isinstance(dt, unicode):
         dt = dt.encode('ascii')
     if isinstance(dt, str):
@@ -450,6 +452,9 @@ class Request(object):
             raise AttributeError(attr)
 
     def __delattr__(self, attr):
+        ## FIXME: I don't know why I need this guard (though experimentation says I do)
+        if attr in self.__class__.__dict__:
+            return object.__delattr__(self, attr)
         try:
             del self.environ['webob.adhoc_attrs'][attr]
         except KeyError:
@@ -1113,9 +1118,10 @@ class Response(object):
     """
 
     default_content_type = None
+    default_conditional_response = False
 
     def __init__(self, status='200 OK', headerlist=None, body=None, app_iter=None,
-                 request=None, content_type=None):
+                 request=None, content_type=None, conditional_response=NoDefault):
         if app_iter is None:
             if body is None:
                 body = ''
@@ -1144,6 +1150,10 @@ class Response(object):
             self.content_type = content_type
         elif self.default_content_type is not None:
             self.content_type = self.default_content_type
+        if conditional_response is NoDefault:
+            self.conditional_response = self.default_conditional_response
+        else:
+            self.conditional_response = conditional_response
 
     def __repr__(self):
         return '<%s %x %s>' % (
@@ -1719,12 +1729,66 @@ class Response(object):
         ## FIXME: should I automatically give 304 responses when possible?
         ## FIXME: should I automatically give Precondition Failed when necessary?  (erm...)
         ## Or maybe it should be a method that would possible raise HTTPPreconditionFailed
+        if self.conditional_response:
+            return self.conditional_response_app(environ, start_response)
         start_response(self.status, self.headerlist)
         if environ['REQUEST_METHOD'] == 'HEAD':
             # Special case here...
             return []
         return self.app_iter
 
+    _safe_methods = ('GET', 'HEAD')
+
+    def conditional_response_app(self, environ, start_response):
+        """
+        Like the normal __call__ interface, but checks conditional headers:
+
+        * If-Modified-Since   (304 Not Modified; only on GET, HEAD)
+        * If-None-Match       (304 Not Modified; only on GET, HEAD)
+        * Range               (406 Partial Content; only on GET, HEAD)
+        """
+        req = self.RequestClass(environ)
+        status304 = False
+        if req.method in self._safe_methods:
+            if req.if_modified_since and self.last_modified and self.last_modified <= req.if_modified_since:
+                status304 = True
+            if req.if_none_match and self.etag:
+                ## FIXME: should a weak match be okay?
+                if self.etag in req.if_none_match:
+                    status304 = True
+                else:
+                    # Even if If-Modified-Since matched, if ETag doesn't then reject it
+                    status304 = True
+        if status304:
+            start_response('304 Not Modified', self.headerlist)
+            return []
+        if req.method == 'HEAD':
+            start_response(self.status, self.headerlist)
+            return []
+        if (req.range and req.if_range.match_response(self)
+            and self.content_range is None
+            and req.method == 'GET'
+            and self.status_int == 200):
+            content_range = req.range.content_range(self.content_length)
+            if content_range is not None:
+                app_iter = self.app_iter_range(content_range.start, content_range.stop)
+                if app_iter is not None:
+                    headers = list(self.headerlist)
+                    headers.append(('Content-Range', str(content_range)))
+                    start_response('206 Partial Content', headers)
+                    return app_iter
+        start_response(self.status, self.headerlist)
+        return self.app_iter
+
+    def app_iter_range(self, start, stop):
+        if self._app_iter is None:
+            return [self.body[start:stop]]
+        app_iter = self.app_iter
+        if hasattr(app_iter, 'app_iter_range'):
+            return app_iter.app_iter_range(start, stop)
+        return AppIterRange(app_iter, start, stop)
+        
+        
 Request.ResponseClass = Response
 Response.RequestClass = Request
 
@@ -1860,3 +1924,59 @@ class ResponseBodyFile(object):
     encoding = property(encoding, doc=encoding.__doc__)
 
     mode = 'wb'
+
+class AppIterRange(object):
+    """
+    Wraps an app_iter, returning just a range of bytes
+    """
+
+    def __init__(self, app_iter, start, stop):
+        assert start >= 0, "Bad start: %r" % start
+        assert stop is None or (stop >= 0 and stop >= start), (
+            "Bad stop: %r" % stop)
+        self.app_iter = app_iter
+        self.app_iterator = iter(app_iter)
+        self.start = start
+        if stop is None:
+            self.length = -1
+        else:
+            self.length = stop - start
+        if start:
+            self._served = None
+        else:
+            self._served = 0
+        if hasattr(app_iter, 'close'):
+            self.close = app_iter.close
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        if self._served is None:
+            # Haven't served anything; need to skip some leading bytes
+            skipped = 0
+            start = self.start
+            while 1:
+                chunk = self.app_iterator.next()
+                skipped += len(chunk)
+                extra = skipped - start
+                if extra == 0:
+                    self._served = 0
+                    break
+                elif extra > 0:
+                    self._served = extra
+                    return chunk[-extra:]
+        length = self.length
+        if length is None:
+            # Spent
+            raise StopIteration
+        chunk = self.app_iterator.next()
+        if length == -1:
+            return chunk
+        if self._served + len(chunk) > length:
+            extra = self._served + len(chunk) - length
+            self.length = None
+            return chunk[:-extra]
+        self._served += len(chunk)
+        return chunk
+            

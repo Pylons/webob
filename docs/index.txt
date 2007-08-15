@@ -1011,3 +1011,37 @@ This is taken from `paste.httpexceptions
 <http://pythonpaste.org/module-paste.httpexceptions.html>`_, and if
 you have Paste installed then these exceptions will be subclasses of
 the Paste exceptions.
+
+Conditional WSGI Application
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Response object can handle your conditional responses for you,
+checking If-None-Match, If-Modified-Since, and Range/If-Range.
+
+To enable this you must create the response like
+``Response(conditional_request=True)``, or make a subclass like:
+
+.. code-block::
+
+    >>> class AppResponse(Response):
+    ...     default_content_type = 'text/html'
+    ...     default_conditional_response = True
+    >>> res = AppResponse()
+    >>> res.body = '0123456789'
+    >>> res.last_modified = datetime(2005, 1, 1, 12, 0, tzinfo=UTC)
+    >>> req = Request.blank('/')
+    >>> req.if_modified_since = datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
+    >>> req.get_response(res)
+    <Response ... 304 Not Modified>
+    >>> del req.if_modified_since
+    >>> res.etag = 'opaque-tag'
+    >>> req.if_none_match = 'opaque-tag'
+    >>> req.get_response(res)
+    <Response ... 304 Not Modified>
+    >>> del req.if_none_match
+    >>> req.range = (1, 5)
+    >>> result = req.get_response(res)
+    >>> result.headers['content-range']
+    'bytes 1-6/10'
+    >>> result.body
+    '1234'

@@ -1,6 +1,7 @@
 This demonstrates how the Response object works, and tests it at the
 same time.
 
+    >>> from dtopt import ELLIPSIS
     >>> from webob import Response, UTC
     >>> from datetime import datetime
     >>> res = Response('200 OK', [], 'Test')
@@ -114,7 +115,7 @@ properties:
     ('foo', 'foo')
     >>> res.expires = res.date
     >>> res.retry_after = 120 # two minutes
-    >>> res.retry_after #doctest: +ELLIPSIS
+    >>> res.retry_after
     datetime.datetime(...)
     >>> res.server = 'Python/foo'
     >>> res.headers['server']
@@ -139,3 +140,97 @@ request object attached.
     >>> res.request = None
     >>> res.location
     'http://localhost/test2.html'
+
+There's some conditional response handling too (you have to turn on
+conditioanl_response)::
+
+    >>> res = Response(conditional_response=True)
+    >>> req = Request.blank('/')
+    >>> res.etag = 'tag'
+    >>> req.if_none_match = 'tag'
+    >>> req.get_response(res)
+    <Response ... 304 Not Modified>
+    >>> res.etag = 'other-tag'
+    >>> req.get_response(res)
+    <Response ... 304 Not Modified>
+    >>> del req.if_none_match
+    >>> req.if_modified_since = datetime(2005, 1, 1, 12, 1, tzinfo=UTC)
+    >>> res.last_modified = datetime(2005, 1, 1, 12, 1, tzinfo=UTC)
+    >>> req.get_response(res)
+    <Response ... 304 Not Modified>
+    >>> res.last_modified = datetime(2006, 1, 1, 12, 1, tzinfo=UTC)
+    >>> req.get_response(res)
+    <Response ... 200 OK>
+    >>> res.last_modified = None
+    >>> req.get_response(res)
+    <Response ... 200 OK>
+
+Also range response::
+
+    >>> res = Response(conditional_response=True)
+    >>> req = Request.blank('/')
+    >>> res.body = '0123456789'
+    >>> req.range = (1, 5)
+    >>> result = req.get_response(res)
+    >>> result.body
+    '1234'
+    >>> result.content_range
+    <ContentRange bytes 1-6/10>
+    >>> tuple(result.content_range)
+    (1, 5, 10)
+    >>> # Now an invalid range:
+    >>> req.range = (0, 20)
+    >>> str(req.range)
+    'bytes=0-21'
+    >>> result = req.get_response(res)
+    >>> result.body
+    '0123456789'
+    >>> print result.content_range
+    None
+
+That was easier; we'll try it with a iterator for the body::
+
+    >>> res = Response(conditional_response=True)
+    >>> res.app_iter = ['01234', '567', '89']
+    >>> req = Request.blank('/')
+    >>> req.range = (1, 5)
+    >>> result = req.get_response(res)
+    >>> # Because we don't know the length of the app_iter, this
+    >>> # doesn't work:
+    >>> result.body
+    '0123456789'
+    >>> print result.content_range
+    None
+    >>> req.range = (5, None)
+    >>> result = req.get_response(res)
+    >>> result.body
+    '56789'
+    >>> result.content_range
+    <ContentRange bytes 5-*/10>
+    >>> # If we set Content-Length then we can use it with an app_iter
+    >>> res.content_length = 10
+    >>> req.range = (1, 5)
+    >>> result = req.get_response(res)
+    >>> result.body
+    '1234'
+    >>> result.content_range
+    <ContentRange bytes 1-6/10>
+    >>> # And trying If-modified-since
+    >>> res.etag = 'foobar'
+    >>> req.if_range = 'foobar'
+    >>> req.if_range
+    <IfRange etag=foobar, date=*>
+    >>> result = req.get_response(res)
+    >>> result.content_range
+    <ContentRange bytes 1-6/10>
+    >>> req.if_range = 'blah'
+    >>> result = req.get_response(res)
+    >>> result.content_range
+    >>> req.if_range = datetime(2005, 1, 1, 12, 0, tzinfo=UTC)
+    >>> res.last_modified = datetime(2005, 1, 1, 12, 0, tzinfo=UTC)
+    >>> result = req.get_response(res)
+    >>> result.content_range
+    <ContentRange bytes 1-6/10>
+    >>> res.last_modified = datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
+    >>> result = req.get_response(res)
+    >>> result.content_range

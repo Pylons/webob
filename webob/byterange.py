@@ -1,6 +1,8 @@
 class Range(object):
 
     def __init__(self, ranges):
+        for begin, end in ranges:
+            assert end is None or end >= 0, "Bad ranges: %r" % ranges
         self.ranges = ranges
 
     def satisfiable(self, length):
@@ -91,6 +93,8 @@ class Range(object):
             (units, range) = header.split("=", 1)
             units = units.strip().lower()
             for item in range.split(","):
+                if '-' not in item:
+                    raise ValueError()
                 if item.startswith('-'):
                     # This is a range asking for a trailing chunk
                     if last_end < 0:
@@ -99,18 +103,17 @@ class Range(object):
                     end = None
                     last_end = -1
                 else:
-                    (begin, end) = item.split("-")
+                    (begin, end) = item.split("-", 1)
                     begin = int(begin)
                     if begin < last_end or last_end < 0:
                         print begin, last_end
                         raise ValueError('begin<last_end, or last_end<0')
-                    if begin > end:
-                        print begin, end
-                        raise ValueError('begin>end')
                     if not end.strip():
                         end = None
                     else:
                         end = int(end)
+                    if end is not None and begin > end:
+                        raise ValueError('begin>end')
                     last_end = end
                 ranges.append((begin, end))
         except ValueError, e:
@@ -130,9 +133,9 @@ class Range(object):
         for begin, end in ranges:
             if end is None:
                 if begin >= 0:
-                    raise ValueError(
-                        "(%r, None) should have a negative first value" % begin)
-                parts.append(str(begin))
+                    parts.append('%s-' % begin)
+                else:
+                    parts.append(str(begin))
             else:
                 if begin < 0:
                     raise ValueError(
@@ -167,11 +170,15 @@ class Range(object):
                 else:
                     begin = length - begin
                     end = length
-            if end is None:
-                end = 0
-            if length is not None and end > length:
+            if begin is None:
+                begin = 0
+            if end is None and length is not None:
+                end = length
+            if length is not None and end is not None and end > length:
                 return None
-            result.append((begin, end-1))
+            if end is not None:
+                end -= 1
+            result.append((begin, end))
         return result
 
     @staticmethod
@@ -193,6 +200,9 @@ class Range(object):
 class ContentRange(object):
 
     def __init__(self, start, stop, length):
+        assert start >= 0, "Bad start: %r" % start
+        assert stop is None or (stop >= 0 and stop >= start), (
+            "Bad stop: %r" % stop)
         self.start = start
         self.stop = stop
         self.length = length
@@ -251,4 +261,7 @@ class ContentRange(object):
         except ValueError:
             # Parse problem
             return None
-        return cls(start, end-1, length)
+        if end is None:
+            return cls(start, None, length)
+        else:
+            return cls(start, end-1, length)
