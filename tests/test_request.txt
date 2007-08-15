@@ -252,4 +252,24 @@ etag match::
     <Empty If-Range>
     >>> req.if_range.match_response(res)
     True
-    
+
+Ranges work like so::
+
+    >>> req = Request.blank('/')
+    >>> req.range = (0, 100)
+    >>> req.range
+    <Range ranges=(0, 100)>
+    >>> str(req.range)
+    'bytes=0-101'
+
+You can use them with responses::
+
+    >>> res = Response()
+    >>> res.content_range = req.range.content_range(1000)
+    >>> res.content_range
+    <ContentRange bytes 0-101/1000>
+    >>> str(res.content_range)
+    'bytes 0-101/1000'
+    >>> start, end, length = res.content_range
+    >>> start, end, length
+    (0, 100, 1000)

@@ -18,6 +18,7 @@ from webob.headerdict import HeaderDict
 from webob.statusreasons import status_reasons
 from webob.cachecontrol import CacheControl
 from webob.acceptparse import Accept, MIMEAccept, NilAccept, MIMENilAccept
+from webob.byterange import Range, ContentRange
 
 _CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
 _SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
@@ -309,6 +310,24 @@ def _serialize_if_range(value):
         value = str(value)
     return value or None
 
+def _parse_range(value):
+    if not value:
+        return None
+    # Might return None too:
+    return Range.parse(value)
+
+def _serialize_range(value):
+    if isinstance(value, (list, tuple)):
+        if len(value) != 2:
+            raise ValueError(
+                "If setting .range to a list or tuple, it must be of length 2 (not %r)"
+                % value)
+        value = Range([value])
+    if value is None:
+        return None
+    value = str(value)
+    return value or None
+
 def _parse_int(value):
     if value is None:
         return None
@@ -320,52 +339,29 @@ def _serialize_int(value):
     return str(value)
 
 def _parse_content_range(value):
-    if value is None:
+    if not value or not value.strip():
         return None
-    value = value.strip()
-    if not value.startswith('bytes '):
-        # Unparseable
-        return None
-    value = value[len('bytes '):].strip()
-    if '/' not in value:
-        # Invalid, no length given
-        return None
-    range, length = value.split('/', 1)
-    if '-' not in range:
-        # Invalid, no range
-        return None
-    start, end = range.split('-', 1)
-    try:
-        start = int(start)
-        if end == '*':
-            end = None
-        else:
-            end = int(end)
-        if length == '*':
-            length = None
-        else:
-            length = int(length)
-    except ValueError:
-        # Parse problem
-        return None
-    return (start, end, length)
+    # May still return None
+    return ContentRange.parse(value)
 
 def _serialize_content_range(value):
     if value is None:
         return None
-    if isinstance(value, unicode):
-        value = str(value)
-    if isinstance(value, str):
-        return value
-    if len(value) != 3:
-        raise ValueError(
-            "You must pass in a 3-tuple (not %r)" % value)
-    start, end, length = value
-    if end is None:
-        end = '*'
-    if length is None:
-        length = '*'
-    return 'bytes %s-%s/%s' % (start, end, length)
+    if isinstance(value, (tuple, list)):
+        if len(value) not in (2, 3):
+            raise ValueError(
+                "When setting content_range to a list/tuple, it must "
+                "be length 2 or 3 (not %r)" % value)
+        if len(value) == 2:
+            begin, end = value
+            length = None
+        else:
+            begin, end, length = value
+        value = ContentRange(begin, end, length)
+    value = str(value).strip()
+    if not value:
+        return None
+    return value
 
 def _parse_list(value):
     if value is None:
@@ -680,6 +676,7 @@ class Request(object):
         c = self.body_file.read(length)
         # We don't want/need to lose CONTENT_LENGTH here (as setting
         # self.body_file would do):
+        ## FIXME: if the body is really big, we should use a tempfile
         self.environ['wsgi.input'] = StringIO(c)
         return c
 
@@ -879,7 +876,7 @@ class Request(object):
         conflict detection.
         """
         for key in ['HTTP_IF_MATCH', 'HTTP_IF_MODIFIED_SINCE',
-                    'HTTP_IF_RANGE']:
+                    'HTTP_IF_RANGE', 'HTTP_RANGE']:
             if key in self.environ:
                 del self.environ[key]
         if remove_encoding:
@@ -940,8 +937,9 @@ class Request(object):
     ## FIXME: 14.32 Pragma
     ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.32
 
-    ## FIXME: 14.35 Range
-    ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.35
+    range = converter(
+        environ_getter('HTTP_RANGE', rfc_section='14.35'),
+        _parse_range, _serialize_range, 'range')
 
     referer = environ_getter('HTTP_REFERER', rfc_section='14.36')
     referrer = referer

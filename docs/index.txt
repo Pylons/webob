@@ -428,8 +428,10 @@ For date-based comparisons If-Modified-Since is used:
     >>> req.if_modified_since and req.if_modified_since >= server_modified
     True
 
-For range requests, you can use If-Range; if the header fails to match
-then the full response (not a range) should be returned:
+For range requests there are two important headers, If-Range (which is
+form of conditional request) and Range (which requests a range).  If
+the If-Range header fails to match then the full response (not a
+range) should be returned:
 
 .. code-block::
 
@@ -452,6 +454,20 @@ You can also pass in a response object with:
     >>> res.etag = 'opaque-etag'
     >>> req.if_range.match_response(res)
     True
+
+To get the range information:
+
+    >>> req.range = 'bytes=0-100'
+    >>> req.range
+    <Range ranges=(0, 99)>
+    >>> cr = req.range.content_range(length=1000)
+    >>> cr.start, cr.stop, cr.length
+    (0, 99, 1000)
+
+Note that the range headers use *inclusive* ranges (the last byte
+indexed is included), where Python always uses a range where the last
+index is excluded from the range.  The ``.stop`` index is in the
+Python form.
 
 Another kind of conditional request is a request (typically PUT) that
 includes If-Match or If-Unmodified-Since.  In this case you are saying
@@ -762,7 +778,8 @@ Other headers:
     >>> # Seldom used header that gives a hash of the body:
     >>> res.content_md5 = 'big-hash'
 
-    >>> # Means we are serving bytes 0-499 inclusive, out of 100 bytes total:
+    >>> # Means we are serving bytes 0-500 inclusive, out of 100 bytes total:
+    >>> # you can also use the range setter shown earlier
     >>> res.content_range = (0, 499, 1000)
 
     >>> # The length of the content; set automatically if you set
@@ -822,7 +839,7 @@ After setting all these headers, here's the result:
     Content-Language: en
     Content-Location: http://localhost/foo
     Content-MD5: big-hash
-    Content-Range: bytes 0-499/1000
+    Content-Range: bytes 0-500/1000
     Content-Length: 4
     Date: ... GMT
     ETag: ...
