@@ -1268,9 +1268,9 @@ class Response(object):
         params = []
         for k, v in sorted(value_dict.items()):
             if not _OK_PARAM_RE.search(v):
-                # FIXME: this isn't the right quoting, I'm sure
+                ## FIXME: I'm not sure what to do with "'s in the parameter value
+                ## I think it might be simply illegal
                 v = '"%s"' % v.replace('"', '\\"')
-            # FIXME: Are they really all joined with ;, or ,?
             params.append('; %s=%s' % (k, v))
         ct = self.headers.pop('content-type', '').split(';', 1)[0]
         ct += ''.join(params)
@@ -1581,11 +1581,7 @@ class Response(object):
         header_getter('Date', rfc_section='14.18'),
         _parse_date, _serialize_date, 'date-parse')
 
-    ## FIXME: should this use _parse_etag?  Shouldn't it just be an
-    ## opaque string?
-    etag = converter(
-        header_getter('ETag', rfc_section='14.19'),
-        _parse_etag, _serialize_etag, 'etag')
+    etag = header_getter('ETag', rfc_section='14.19')
 
     expires = converter(
         header_getter('Expires', rfc_section='14.21'),
@@ -1694,7 +1690,6 @@ class FakeCGIBody(object):
         self._body = None
         self.position = 0
 
-    ## FIXME: implement more methods?
     def read(self, size=-1):
         body = self._get_body()
         if size == -1:
