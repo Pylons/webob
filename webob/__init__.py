@@ -421,14 +421,14 @@ class Request(object):
             self.__dict__['decode_param_names'] = decode_param_names
 
     def __setattr__(self, attr, value):
-        ## FIXME: I don't know why I need this guard...
+        ## FIXME: I don't know why I need this guard (though experimentation says I do)
         if attr in self.__class__.__dict__ or attr.startswith('_'):
             object.__setattr__(self, attr, value)
         else:
             self.environ.setdefault('webob.adhoc_attrs', {})[attr] = value
 
     def __getattr__(self, attr):
-        ## FIXME: I don't know why I need this guard...
+        ## FIXME: I don't know why I need this guard (though experimentation says I do)
         if attr in self.__class__.__dict__:
             return object.__getattr__(self, attr)
         try:
@@ -641,8 +641,10 @@ class Request(object):
 
     def host__get(self):
         """Host name provided in HTTP_HOST, with fall-back to SERVER_NAME"""
-        ## FIXME: should I add in SERVER_PORT?
-        return self.environ.get('HTTP_HOST', self.environ.get('SERVER_NAME'))
+        if 'HTTP_HOST' in self.environ:
+            return self.environ['HTTP_HOST']
+        else:
+            return '%(SERVER_NAME)s:%(SERVER_PORT)s' % self.environ
     def host__set(self, value):
         self.environ['HTTP_HOST'] = value
     def host__del(self):
