@@ -450,8 +450,7 @@ You can also pass in a response object with:
 .. code-block::
 
     >>> from webob import Response
-    >>> res = Response()
-    >>> res.etag = 'opaque-etag'
+    >>> res = Response(etag='opaque-etag')
     >>> req.if_range.match_response(res)
     True
 
@@ -663,6 +662,9 @@ You can set any of these attributes, e.g.:
     >>> res.unicode_body = u"test"
     >>> res.body
     'test'
+
+You can set any attribute with the constructor, like
+``Response(charset='utf8')``
 
 Headers
 -------
@@ -1026,9 +1028,8 @@ To enable this you must create the response like
     >>> class AppResponse(Response):
     ...     default_content_type = 'text/html'
     ...     default_conditional_response = True
-    >>> res = AppResponse()
-    >>> res.body = '0123456789'
-    >>> res.last_modified = datetime(2005, 1, 1, 12, 0, tzinfo=UTC)
+    >>> res = AppResponse(body='0123456789',
+    ...                   last_modified=datetime(2005, 1, 1, 12, 0, tzinfo=UTC))
     >>> req = Request.blank('/')
     >>> req.if_modified_since = datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
     >>> req.get_response(res)

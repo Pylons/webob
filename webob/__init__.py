@@ -1121,7 +1121,8 @@ class Response(object):
     default_conditional_response = False
 
     def __init__(self, status='200 OK', headerlist=None, body=None, app_iter=None,
-                 request=None, content_type=None, conditional_response=NoDefault):
+                 request=None, content_type=None, conditional_response=NoDefault,
+                 **kw):
         if app_iter is None:
             if body is None:
                 body = ''
@@ -1154,6 +1155,15 @@ class Response(object):
             self.conditional_response = self.default_conditional_response
         else:
             self.conditional_response = conditional_response
+        if 'charset' in kw:
+            # We set this early, so something like unicode_body works later
+            setattr(self, 'charset', kw.pop('charset'))
+        for name, value in kw.items():
+            if not name not in self.__class__.__dict__:
+                # Not a basic attribute
+                raise TypeError(
+                    "Unexpected keyword: %s=%r" % (name, value))
+            setattr(self, name, value)
 
     def __repr__(self):
         return '<%s %x %s>' % (
