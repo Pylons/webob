@@ -10,6 +10,7 @@ from rfc822 import parsedate_tz, mktime_tz, formatdate
 from datetime import datetime, date, timedelta, tzinfo
 import time
 import calendar
+import tempfile
 from webob.datastruct import EnvironHeaders
 from webob.multidict import MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
 from webob.useragent import UserAgent, parse_search_query
@@ -415,6 +416,10 @@ class Request(object):
     charset = None
     unicode_errors = 'strict'
     decode_param_names = False
+    ## The limit after which request bodies should be stored on disk
+    ## if they are read in (under this, and the request body is stored
+    ## in memory):
+    request_body_tempfile_limit = 10*1024
 
     def __init__(self, environ=None, environ_getter=None, charset=NoDefault, unicode_errors=NoDefault,
                  decode_param_names=NoDefault):
@@ -679,10 +684,16 @@ class Request(object):
         except ValueError:
             return ''
         c = self.body_file.read(length)
+        tempfile_limit = self.request_body_tempfile_limit
+        if tempfile_limit and len(c) > tempfile_limit:
+            fileobj = tempfile.TemporaryFile()
+            fileobj.write(c)
+            fileobj.seek(0)
+        else:
+            fileobj = StringIO(c)
         # We don't want/need to lose CONTENT_LENGTH here (as setting
         # self.body_file would do):
-        ## FIXME: if the body is really big, we should use a tempfile
-        self.environ['wsgi.input'] = StringIO(c)
+        self.environ['wsgi.input'] = fileobj
         return c
 
     def body__set(self, value):
@@ -1159,10 +1170,10 @@ class Response(object):
             # We set this early, so something like unicode_body works later
             setattr(self, 'charset', kw.pop('charset'))
         for name, value in kw.items():
-            if not name not in self.__class__.__dict__:
+            if not hasattr(self.__class__, name):
                 # Not a basic attribute
                 raise TypeError(
-                    "Unexpected keyword: %s=%r" % (name, value))
+                    "Unexpected keyword: %s=%r in %r" % (name, value))
             setattr(self, name, value)
 
     def __repr__(self):

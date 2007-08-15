@@ -4,6 +4,7 @@ You can instantiate a request using ``Request.blank()``, to create a
 fresh environment dictionary with all the basic keys such a dictionary
 should have.
 
+    >>> from dtopt import ELLIPSIS
     >>> from webob import Request, UTC
     >>> req = Request.blank('/')
     >>> req # doctest: +ELLIPSIS
@@ -273,3 +274,18 @@ You can use them with responses::
     >>> start, end, length = res.content_range
     >>> start, end, length
     (0, 100, 1000)
+
+A quick test of caching the request body:
+
+    >>> from cStringIO import StringIO
+    >>> length = Request.request_body_tempfile_limit+10
+    >>> data = StringIO('x'*length)
+    >>> req = Request.blank('/')
+    >>> req.content_length = length
+    >>> req.body_file = data
+    >>> req.body_file
+    <cStringIO.StringI object at ...>
+    >>> len(req.body)
+    10250
+    >>> req.body_file
+    <open file '<fdopen>', mode 'w+b' at ...>
