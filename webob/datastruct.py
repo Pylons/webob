@@ -40,7 +40,7 @@ class EnvironHeaders(DictMixin):
         return self.environ[self._trans_name(item)]
 
     def __setitem__(self, item, value):
-        # @@: Should this dictionary be writable at all?
+        # FIXME: Should this dictionary be writable at all?
         self.environ[self._trans_name(item)] = value
 
     def __delitem__(self, item):

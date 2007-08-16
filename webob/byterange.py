@@ -70,7 +70,7 @@ class Range(object):
             self.__class__.__name__,
             ', '.join(map(repr, self.ranges)))
 
-    @classmethod
+    #@classmethod
     def parse(cls, header):
         """
         Parse the header; may return None if header is invalid
@@ -85,8 +85,9 @@ class Range(object):
         if ranges is None:
             return None
         return cls(ranges)
+    parse = classmethod(parse)
 
-    @staticmethod
+    #@staticmethod
     def parse_bytes(header):
         """
         Parse a Range header into (bytes, list_of_ranges).  Note that the
@@ -134,8 +135,9 @@ class Range(object):
             print e
             return None
         return (units, ranges)
+    parse_bytes = staticmethod(parse_bytes)
 
-    @staticmethod
+    #@staticmethod
     def serialize_bytes(units, ranges):
         """
         Takes the output of parse_bytes and turns it into a header
@@ -156,8 +158,9 @@ class Range(object):
                         "(%r, %r) should have a non-negative second value" % (begin, end))
                 parts.append('%s-%s' % (begin, end))
         return '%s=%s' % (units, ','.join(parts))
+    serialize_bytes = staticmethod(serialize_bytes)
 
-    @staticmethod
+    #@staticmethod
     def bytes_to_python_ranges(ranges, length=None):
         """
         Converts the list-of-ranges from parse_bytes() to a Python-style
@@ -191,8 +194,9 @@ class Range(object):
                 end -= 1
             result.append((begin, end))
         return result
-
-    @staticmethod
+    bytes_to_python_ranges = staticmethod(bytes_to_python_ranges)
+    
+    #@staticmethod
     def python_ranges_to_bytes(ranges):
         """
         Converts a Python-style list of ranges to what serialize_bytes
@@ -207,6 +211,7 @@ class Range(object):
             else:
                 result.append((begin, end+1))
         return result
+    python_ranges_to_bytes = staticmethod(python_ranges_to_bytes)
 
 class ContentRange(object):
 
@@ -249,7 +254,7 @@ class ContentRange(object):
         """
         return iter([self.start, self.stop, self.length])
 
-    @classmethod
+    #@classmethod
     def parse(cls, value):
         """
         Parse the header.  May return None if it cannot parse.
@@ -286,3 +291,5 @@ class ContentRange(object):
             return cls(start, None, length)
         else:
             return cls(start, end-1, length)
+    parse = classmethod(parse)
+    
