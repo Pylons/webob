@@ -1653,6 +1653,11 @@ class Response(object):
         for name, value in kw.items():
             setattr(cache_control, name, value)
 
+    ## FIXME: I'd like some native support for gzipping the response
+    ## This seems non-trivial to me, since it involves changing things like
+    ## the response content type.  It would probably be some method; either an
+    ## in-place method like response.gzip(), or a copied response object like
+    ## response.gzipped().
     content_encoding = header_getter('Content-Encoding', rfc_section='14.11')
 
     content_language = converter(
