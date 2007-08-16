@@ -81,6 +81,11 @@ properties:
     (['GET', 'PUT'], 'GET, PUT')
     >>> res.cache_control
     <CacheControl ''>
+    >>> print res.cache_control.max_age
+    None
+    >>> res.cache_control.properties['max-age'] = None
+    >>> print res.cache_control.max_age
+    -1
     >>> res.cache_control.max_age = 10
     >>> res.cache_control
     <CacheControl 'max-age=10'>

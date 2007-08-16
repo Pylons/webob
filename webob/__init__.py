@@ -1,4 +1,5 @@
 from cStringIO import StringIO
+import sys
 import cgi
 import urllib
 import urlparse
@@ -1145,7 +1146,7 @@ class Request(object):
             'wsgi.version': (1, 0),
             'wsgi.url_scheme': scheme,
             'wsgi.input': StringIO(''),
-            'wsgi.errors': StringIO(),
+            'wsgi.errors': sys.stderr,
             'wsgi.multithread': False,
             'wsgi.multiprocess': False,
             'wsgi.run_once': False,
@@ -1841,7 +1842,7 @@ class Response(object):
                     status304 = True
                 else:
                     # Even if If-Modified-Since matched, if ETag doesn't then reject it
-                    status304 = True
+                    status304 = False
         if status304:
             start_response('304 Not Modified', self.headerlist)
             return []
