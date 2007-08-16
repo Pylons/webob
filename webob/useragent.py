@@ -1,3 +1,7 @@
+"""
+User-Agent header parsing
+"""
+
 import re
 import urlparse
 import urllib

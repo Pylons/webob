@@ -1,3 +1,7 @@
+"""
+Represents the Cache-Control header
+"""
+
 import re
 from webob.updatedict import UpdateDict
 
@@ -6,6 +10,10 @@ token_re = re.compile(
 need_quote_re = re.compile(r'[^a-zA-Z0-9._-]')
 
 class exists_property(object):
+    """
+    Represents a property that either is listed in the Cache-Control
+    header, or is not listed (has no value)
+    """
     def __init__(self, prop, type=None):
         self.prop = prop
         self.type = type
@@ -28,6 +36,11 @@ class exists_property(object):
         self.__set__(obj, False)
 
 class value_property(object):
+    """
+    Represents a property that has a value in the Cache-Control header.
+
+    When no value is actually given, the value of self.none is returned.
+    """
     def __init__(self, prop, default=None, none=None, type=None):
         self.prop = prop
         self.default = default
@@ -60,12 +73,26 @@ class value_property(object):
 
 class CacheControl(object):
 
+    """
+    Represents the Cache-Control header.
+
+    By giving a type of ``'request'`` or ``'response'`` you can
+    control what attributes are allowed (some Cache-Control values
+    only apply to requests or responses).
+    """
+
     def __init__(self, properties, type):
         self.properties = properties
         self.type = type
 
     #@classmethod
     def parse(cls, header, updates_to=None, type=None):
+        """
+        Parse the header, returning a CacheControl object.
+
+        The object is bound to the request or response object
+        ``updates_to``, if that is given.
+        """
         if updates_to:
             props = UpdateDict()
             props.updated = updates_to
@@ -91,12 +118,12 @@ class CacheControl(object):
         return '<CacheControl %r>' % str(self)
 
     # Request values:
-    # no-cache shared
-    # no-store shared
-    # max-age shared
+    # no-cache shared (below)
+    # no-store shared (below)
+    # max-age shared  (below)
     max_stale = value_property('max-stale', none='*', type='request')
     min_fresh = value_property('min-fresh', type='request')
-    # no-transform shared
+    # no-transform shared (below)
     only_if_cached = exists_property('only-if-cached', type='request')
 
     # Response values:
@@ -124,4 +151,7 @@ class CacheControl(object):
         return ', '.join(parts)
 
     def copy(self):
+        """
+        Returns a copy of this object.
+        """
         return self.__class__(self.properties.copy(), type=self.type)

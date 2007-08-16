@@ -38,6 +38,12 @@ def parse_accept(value):
     return result
 
 class Accept(object):
+    """
+    Represents a generic ``Accept-*`` style header.
+
+    This object should not be modified.  To add items you can use
+    ``accept_obj + 'accept_thing'`` to get a new object
+    """
 
     def __init__(self, header_name, header_value):
         self.header_name = header_name
@@ -89,6 +95,10 @@ class Accept(object):
         return self.__add__(other, True)
 
     def __contains__(self, match):
+        """
+        Returns true if the given object is listed in the accepted
+        types.
+        """
         for item, quality in self._parsed:
             if self._match(item, match):
                 return True
@@ -170,6 +180,10 @@ class Accept(object):
 
 class NilAccept(object):
 
+    """
+    Represents an Accept header with no value.
+    """
+
     MasterClass = Accept
 
     def __init__(self, header_name):
@@ -224,6 +238,12 @@ class NilAccept(object):
             return []
 
 class MIMEAccept(Accept):
+
+    """
+    Represents the ``Accept`` header, which is a list of mimetypes.
+
+    This class knows about mime wildcards, like ``image/*``
+    """
 
     def _match(self, item, match):
         item = item.lower()

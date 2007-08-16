@@ -1,3 +1,7 @@
+"""
+Represents the response header list as a dictionary-like object.
+"""
+
 from webob.multidict import MultiDict
 
 class HeaderDict(MultiDict):

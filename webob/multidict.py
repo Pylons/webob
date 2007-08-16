@@ -1,5 +1,8 @@
 # (c) 2005 Ian Bicking and contributors; written for Paste (http://pythonpaste.org)
 # Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+"""
+Gives a multi-value dictionary object (MultiDict) plus several wrappers
+"""
 import cgi
 import copy
 import sys
@@ -401,6 +404,10 @@ class UnicodeMultiDict(DictMixin):
 _dummy = object()
 
 class NestedMultiDict(MultiDict):
+    """
+    Wraps several MultiDict objects, treating it as one large MultiDict
+    """
+    
     def __init__(self, *dicts):
         self.dicts = dicts
 

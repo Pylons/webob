@@ -143,7 +143,7 @@ Now, with ``conditional_response`` on, and with ``last_modified`` and
    
 We can even do Range requests, but it will currently involve iterating
 through the file unnecessarily, because we can use
-``fileobj.seek(pos)`` to move around the file.
+``fileobj.seek(pos)`` to move around the file much more efficiently.
 
 .. code-block::
 

@@ -1,3 +1,7 @@
+"""
+Contains some data structures.
+"""
+
 from UserDict import DictMixin
 
 class EnvironHeaders(DictMixin):

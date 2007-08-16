@@ -1,5 +1,13 @@
 class Range(object):
 
+    """
+    Represents the Range header.
+
+    This only represents ``bytes`` ranges, which are the only kind
+    specified in HTTP.  This can represent multiple sets of ranges,
+    but no place else is this multi-range facility supported.
+    """
+
     def __init__(self, ranges):
         for begin, end in ranges:
             assert end is None or end >= 0, "Bad ranges: %r" % ranges
@@ -43,7 +51,7 @@ class Range(object):
         """
         Works like range_for_length; returns None or a ContentRange object
 
-        You can use it like:
+        You can use it like::
 
             response.content_range = req.range.content_range(response.content_length)
 
@@ -64,6 +72,9 @@ class Range(object):
 
     @classmethod
     def parse(cls, header):
+        """
+        Parse the header; may return None if header is invalid
+        """
         bytes = cls.parse_bytes(header)
         if bytes is None:
             return None
@@ -199,6 +210,13 @@ class Range(object):
 
 class ContentRange(object):
 
+    """
+    Represents the Content-Range header
+
+    This header is ``start-stop/length``, where stop and length can be
+    ``*`` (represented as None in the attributes).
+    """
+
     def __init__(self, start, stop, length):
         assert start >= 0, "Bad start: %r" % start
         assert stop is None or (stop >= 0 and stop >= start), (
@@ -228,11 +246,15 @@ class ContentRange(object):
         Mostly so you can unpack this, like::
 
             start, stop, length = res.content_range
+        
         """
         return iter([self.start, self.stop, self.length])
 
     @classmethod
     def parse(cls, value):
+        """
+        Parse the header.  May return None if it cannot parse.
+        """
         if value is None:
             return None
         value = value.strip()

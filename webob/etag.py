@@ -1,3 +1,9 @@
+"""
+Does parsing of ETag-related headers: If-None-Matches, If-Matches
+
+Also If-Range parsing
+"""
+
 import webob
 
 __all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'NoIfRange']
@@ -73,6 +79,9 @@ class ETagMatcher(object):
             ' or '.join(self.etags))
 
     def parse(cls, value):
+        """
+        Parse this from a header value
+        """
         results = []
         weak_results = []
         while value:
@@ -161,10 +170,16 @@ class IfRange(object):
         return True
 
     def match_response(self, response):
+        """
+        Return True if this matches the given ``webob.Response`` instance.
+        """
         return self.match(etag=response.etag, last_modified=response.last_modified)
 
     #@classmethod
     def parse(cls, value):
+        """
+        Parse this from a header value.
+        """
         date = etag = None
         if not value:
             etag = NoEtag()

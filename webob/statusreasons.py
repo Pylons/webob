@@ -1,3 +1,9 @@
+"""
+Gives ``status_reasons``, a dictionary of HTTP reasons for integer status codes
+"""
+
+__all__ = ['status_reasons']
+
 status_reasons = {
     # Status Codes
     # Informational
