@@ -289,3 +289,16 @@ A quick test of caching the request body:
     10250
     >>> req.body_file
     <open file '<fdopen>', mode 'w+b' at ...>
+
+Some query tests:
+
+    >>> req = Request.blank('/')
+    >>> req.queryvars.get('unknown')
+    >>> req.queryvars.get('unknown', '?')
+    '?'
+    >>> req.postvars.get('unknown')
+    >>> req.postvars.get('unknown', '?')
+    '?'
+    >>> req.params.get('unknown')
+    >>> req.params.get('unknown', '?')
+    '?'
