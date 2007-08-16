@@ -6,7 +6,7 @@ Gives a multi-value dictionary object (MultiDict) plus several wrappers
 import cgi
 import copy
 import sys
-from UserDict import DictMixin
+from webob.util.dictmixin import DictMixin
 
 __all__ = ['MultiDict', 'UnicodeMultiDict', 'NestedMultiDict', 'NoVars']
 

@@ -4,13 +4,13 @@ import urllib
 import urlparse
 import re
 import textwrap
-from UserDict import DictMixin
 from Cookie import SimpleCookie
 from rfc822 import parsedate_tz, mktime_tz, formatdate
 from datetime import datetime, date, timedelta, tzinfo
 import time
 import calendar
 import tempfile
+from webob.util.dictmixin import DictMixin
 from webob.datastruct import EnvironHeaders
 from webob.multidict import MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
 from webob.useragent import UserAgent, parse_search_query
