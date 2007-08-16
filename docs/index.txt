@@ -1,6 +1,13 @@
 WebOb
 +++++
 
+Other documents:
+
+* `Differences between the WebOb API and other framework/libraries
+  <differences.html>`_
+
+* `File-serving example <file-example.html>`_
+
 .. contents::
 
 .. comment:
@@ -25,17 +32,6 @@ WebOb is in an svn repository at
 can check it out with::
 
     $ svn co http://svn.pythonpaste.org/Paste/WebOb/trunk WebOb
-
-Differences From Other Frameworks/Libraries
-===========================================
-
-You can read a summary of the differences in the API of WebOb and
-several other frameworks/libraries in `differences
-<differences.html>`_.
-
-Besides API differences, generally WebOb wraps WSGI very closely, and
-goes to great effort to avoid having information represented in
-multiple forms or locations.
 
 Request
 =======
@@ -1015,7 +1011,7 @@ you have Paste installed then these exceptions will be subclasses of
 the Paste exceptions.
 
 Conditional WSGI Application
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------
 
 The Response object can handle your conditional responses for you,
 checking If-None-Match, If-Modified-Since, and Range/If-Range.
