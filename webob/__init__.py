@@ -1642,8 +1642,6 @@ class Response(object):
     content_md5 = header_getter(
         'Content-MD5', rfc_section='14.14')
 
-    ## FIXME: is (start, end, length) a sufficient parsing of this?
-    ## FIXME: need to make sure request headers are symmetric with this
     content_range = converter(
         header_getter('Content-Range', rfc_section='14.16'),
         _parse_content_range, _serialize_content_range, 'range')
@@ -1681,9 +1679,6 @@ class Response(object):
 
     ## FIXME: 14.32 Pragma
     ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.32
-
-    ## FIXME: 14.35 Range
-    ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.35
 
     retry_after = converter(
         header_getter('Retry-After', rfc_section='14.37'),
@@ -1747,9 +1742,6 @@ class Response(object):
         """
         ## FIXME: I should watch out here for bad responses, e.g.,
         ## incomplete headers or body, etc
-        ## FIXME: should I automatically give 304 responses when possible?
-        ## FIXME: should I automatically give Precondition Failed when necessary?  (erm...)
-        ## Or maybe it should be a method that would possible raise HTTPPreconditionFailed
         if self.conditional_response:
             return self.conditional_response_app(environ, start_response)
         start_response(self.status, self.headerlist)
