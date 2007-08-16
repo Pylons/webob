@@ -475,7 +475,7 @@ class Request(object):
     def _environ_getter(self):
         return self._environ
 
-    def body_file__get(self):
+    def _body_file__get(self):
         """
         Access the body of the request (wsgi.input) as a file-like
         object.
@@ -485,7 +485,7 @@ class Request(object):
         set the attribute to a string then the length of the string).
         """
         return self.environ['wsgi.input']
-    def body_file__set(self, value):
+    def _body_file__set(self, value):
         if isinstance(value, str):
             length = len(value)
             value = StringIO(value)
@@ -493,10 +493,10 @@ class Request(object):
             length = -1
         self.environ['wsgi.input'] = value
         self.environ['CONTENT_LENGTH'] = str(length)
-    def body_file__del(self):
+    def _body_file__del(self):
         self.environ['wsgi.input'] = StringIO('')
         self.environ['CONTENT_LENGTH'] = '0'
-    body_file = property(body_file__get, body_file__set, body_file__del, doc=body_file__get.__doc__)
+    body_file = property(_body_file__get, _body_file__set, _body_file__del, doc=_body_file__get.__doc__)
 
     scheme = environ_getter('wsgi.url_scheme')
     method = environ_getter('REQUEST_METHOD')
@@ -512,7 +512,7 @@ class Request(object):
 
     _headers = None
 
-    def headers__get(self):
+    def _headers__get(self):
         """
         All the request headers as a case-insensitive dictionary-like
         object.
@@ -521,11 +521,11 @@ class Request(object):
             self._headers = EnvironHeaders(self.environ)
         return self._headers
 
-    def headers__set(self, value):
+    def _headers__set(self, value):
         self.headers.clear()
         self.headers.update(value)
 
-    headers = property(headers__get, headers__set, doc=headers__get.__doc__)
+    headers = property(_headers__get, _headers__set, doc=_headers__get.__doc__)
 
     def host_url(self):
         """
@@ -665,20 +665,20 @@ class Request(object):
         return self.environ.get('HTTP_X_REQUESTED_WITH', '') == 'XMLHttpRequest'
     is_xhr = property(is_xhr, doc=is_xhr.__doc__)
 
-    def host__get(self):
+    def _host__get(self):
         """Host name provided in HTTP_HOST, with fall-back to SERVER_NAME"""
         if 'HTTP_HOST' in self.environ:
             return self.environ['HTTP_HOST']
         else:
             return '%(SERVER_NAME)s:%(SERVER_PORT)s' % self.environ
-    def host__set(self, value):
+    def _host__set(self, value):
         self.environ['HTTP_HOST'] = value
-    def host__del(self):
+    def _host__del(self):
         if 'HTTP_HOST' in self.environ:
             del self.environ['HTTP_HOST']
-    host = property(host__get, host__set, host__del, doc=host__get.__doc__)
+    host = property(_host__get, _host__set, _host__del, doc=_host__get.__doc__)
 
-    def body__get(self):
+    def _body__get(self):
         """
         Return the content of the request body.
         """
@@ -699,7 +699,7 @@ class Request(object):
         self.environ['wsgi.input'] = fileobj
         return c
 
-    def body__set(self, value):
+    def _body__set(self, value):
         if value is None:
             del self.body
             return
@@ -710,10 +710,10 @@ class Request(object):
         self.body_file = body_file
         self.environ['CONTENT_LENGTH'] = str(len(value))
 
-    def body__del(self, value):
+    def _body__del(self, value):
         del self.body_file
 
-    body = property(body__get, body__set, body__del, doc=body__get.__doc__)
+    body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
 
     def str_postvars(self):
         """
@@ -1361,7 +1361,7 @@ class Response(object):
 
     headers = property(headers__get, headers__set, doc=headers__get.__doc__)
 
-    def body__get(self):
+    def _body__get(self):
         """
         The body of the response, as a str
         """
@@ -1378,7 +1378,7 @@ class Response(object):
             self.content_length = len(self._body)
         return self._body
 
-    def body__set(self, value):
+    def _body__set(self, value):
         if isinstance(value, unicode):
             raise TypeError(
                 "You cannot set Response.body to a unicode object (use Response.unicode_body)")
@@ -1390,14 +1390,14 @@ class Response(object):
         self.content_length = len(value)
         self._app_iter = None
 
-    def body__del(self):
+    def _body__del(self):
         self._body = None
         self.content_length = None
         self._app_iter = None
 
-    body = property(body__get, body__set, body__del, doc=body__get.__doc__)
+    body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
 
-    def body_file__get(self):
+    def _body_file__get(self):
         """
         Returns a file-like object that can be used to write to the
         body.  If you passed in a list app_iter, that app_iter will be
@@ -1405,12 +1405,12 @@ class Response(object):
         """
         return ResponseBodyFile(self)
 
-    def body_file__del(self):
+    def _body_file__del(self):
         del self.body
 
-    body_file = property(body_file__get, fdel=body_file__del, doc=body_file__get.__doc__)
+    body_file = property(_body_file__get, fdel=_body_file__del, doc=_body_file__get.__doc__)
 
-    def unicode_body__get(self):
+    def _unicode_body__get(self):
         """
         Get/set the unicode value of the body (using the charset of the Content-Type)
         """
@@ -1420,7 +1420,7 @@ class Response(object):
         body = self.body
         return body.decode(self.charset)
 
-    def unicode_body__set(self, value):
+    def _unicode_body__set(self, value):
         if not self.charset:
             raise AttributeError(
                 "You cannot access Response.unicode_body unless charset is set")
@@ -1429,12 +1429,12 @@ class Response(object):
                 "You can only set Response.unicode_body to a unicode string (not %s)" % type(value))
         self.body = value.encode(self.charset)
 
-    def unicode_body__del(self):
+    def _unicode_body__del(self):
         del self.body
 
-    unicode_body = property(unicode_body__get, unicode_body__set, unicode_body__del, doc=unicode_body__get.__doc__)
+    unicode_body = property(_unicode_body__get, _unicode_body__set, _unicode_body__del, doc=_unicode_body__get.__doc__)
 
-    def app_iter__get(self):
+    def _app_iter__get(self):
         """
         Returns the app_iter of the response
         """
@@ -1446,18 +1446,18 @@ class Response(object):
         else:
             return self._app_iter
 
-    def app_iter__set(self, value):
+    def _app_iter__set(self, value):
         if self._body is not None:
             # Undo the automatically-set content-length
             self.content_length = None
         self._app_iter = value
         self._body = None
 
-    def app_iter__del(self):
+    def _app_iter__del(self):
         self.content_length = None
         self._app_iter = self._body = None
 
-    app_iter = property(app_iter__get, app_iter__set, app_iter__del, doc=app_iter__get.__doc__)
+    app_iter = property(_app_iter__get, _app_iter__set, _app_iter__del, doc=_app_iter__get.__doc__)
 
     def set_cookie(self, key, value='', max_age=None,
                    path='/', domain=None, secure=None):
@@ -1514,7 +1514,7 @@ class Response(object):
             raise KeyError(
                 "No cookie has been set with the name %r" % key)
 
-    def location__get(self):
+    def _location__get(self):
         """
         Retrieve the Location header of the response, or None if there
         is no header.  If the header is not absolute and this response
@@ -1534,18 +1534,18 @@ class Response(object):
             location = urlparse.urljoin(base_uri, location)
         return location
 
-    def location__set(self, value):
+    def _location__set(self, value):
         if not _SCHEME_RE.search(value):
             # Not absolute, see if we can make it absolute
             if self.request is not None:
                 value = urlparse.urljoin(self.request.url, value)
         self.headers['location'] = value
 
-    def location__del(self):
+    def _location__del(self):
         if 'location' in self.headers:
             del self.headers['location']
 
-    location = property(location__get, location__set, location__del, doc=location__get.__doc__)
+    location = property(_location__get, _location__set, _location__del, doc=_location__get.__doc__)
 
     accept_ranges = header_getter('Accept-Ranges', rfc_section='14.5')
 
@@ -1559,7 +1559,7 @@ class Response(object):
 
     _cache_control_obj = None
 
-    def cache_control__get(self):
+    def _cache_control__get(self):
         """
         Get/set/modify the Cache-Control header (section `14.9
         <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9>`_)
@@ -1575,7 +1575,7 @@ class Response(object):
             self._cache_control_obj.header_value = value
         return self._cache_control_obj
 
-    def cache_control__set(self, value):
+    def _cache_control__set(self, value):
         # This actually becomes a copy
         if not value:
             value = ""
@@ -1592,7 +1592,7 @@ class Response(object):
         cache.properties.clear()
         cache.properties.update(value.properties)
 
-    def cache_control__del(self):
+    def _cache_control__del(self):
         self.cache_control = {}
 
     def _update_cache_control(self, cache_control_obj):
@@ -1604,7 +1604,7 @@ class Response(object):
             self.headers['Cache-Control'] = value
         cache_control_obj.header_value = value
 
-    cache_control = property(cache_control__get, cache_control__set, cache_control__del, doc=cache_control__get.__doc__)
+    cache_control = property(_cache_control__get, _cache_control__set, _cache_control__del, doc=_cache_control__get.__doc__)
 
     def cache_expires(self, seconds=0, **kw):
         """
@@ -1695,7 +1695,7 @@ class Response(object):
     ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.47
 
 
-    def request__get(self):
+    def _request__get(self):
         """
         Return the request associated with this response if any.
         """
@@ -1703,7 +1703,7 @@ class Response(object):
             self._request = self.RequestClass(self._environ)
         return self._request
 
-    def request__set(self, value):
+    def _request__set(self, value):
         if value is None:
             del self.request
             return
@@ -1714,28 +1714,28 @@ class Response(object):
             self._request = value
             self._environ = value.environ
 
-    def request__del(self):
+    def _request__del(self):
         self._request = self._environ = None
 
-    request = property(request__get, request__set, request__del, doc=request__get.__doc__)
+    request = property(_request__get, _request__set, _request__del, doc=_request__get.__doc__)
 
-    def environ__get(self):
+    def _environ__get(self):
         """
         Get/set the request environ associated with this response, if
         any.
         """
         return self._environ
 
-    def environ__set(self, value):
+    def _environ__set(self, value):
         if value is None:
             del self.environ
         self._environ = value
         self._request = None
 
-    def environ__del(self):
+    def _environ__del(self):
         self._request = self._environ = None
 
-    environ = property(environ__get, environ__set, environ__del, doc=environ__get.__doc__)
+    environ = property(_environ__get, _environ__set, _environ__del, doc=_environ__get.__doc__)
 
     def __call__(self, environ, start_response):
         """
