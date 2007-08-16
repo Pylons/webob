@@ -170,7 +170,7 @@ through the file unnecessarily, because we can use
    ...     def __iter__(self):
    ...         return self
    ...     def next(self):
-   ...         if self.length <= 0:
+   ...         if self.length is not None and self.length <= 0:
    ...             raise StopIteration
    ...         chunk = self.fileobj.read(self.chunk_size)
    ...         if not chunk:

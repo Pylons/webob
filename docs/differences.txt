@@ -352,4 +352,41 @@ forward, wsgi_forward:
 res:
     No equivalent
 
+Werkzeug
+========
 
+Probably not that many people know about this library, which is a
+offshoot of `Pocoo <http://pocoo.org>`_, and used to go by another
+name (Columbrid?)  This library is based around WSGI, similar to Paste
+and Yaro.
+
+This is take from the `wrapper documentation
+<http://werkzeug.pocoo.org/documentation/wrappers>`_.
+
+Request
+-------
+
+path:
+    As ``req.path_info``
+args:
+    As ``req.queryvars`` or ``req.GET``
+form:
+    As ``req.postvars`` or ``req.POST``
+values:
+    As ``req.params``
+files:
+    In ``req.postvars``
+data:
+    In ``req.body_file``
+
+Response
+--------
+
+response:
+    In ``res.body`` (settable as ``res.body`` or ``res.app_iter``)
+status:
+    In ``res.status_int``
+mimetype:
+    In ``res.content_type``
+write(data):
+    With ``res.body_file.write(data)``

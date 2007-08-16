@@ -134,7 +134,7 @@ class CacheControl(object):
     no_transform = exists_property('no-transform')
     must_revalidate = exists_property('must-revalidate', type='response')
     proxy_revalidate = exists_property('proxy-revalidate', type='response')
-    max_age = value_property('max-age')
+    max_age = value_property('max-age', none=-1)
     s_maxage = value_property('s-maxage', type='response')
     s_max_age = s_maxage
 

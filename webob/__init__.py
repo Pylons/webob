@@ -436,6 +436,9 @@ class Request(object):
         if environ is None:
             self._environ_getter = environ_getter
         else:
+            if not isinstance(environ, dict):
+                raise TypeError(
+                    "Bad type for environ: %s" % type(environ))
             self._environ = environ
         if charset is not NoDefault:
             self.__dict__['charset'] = charset
@@ -935,6 +938,44 @@ class Request(object):
 
     ## FIXME: 14.8 Authorization
     ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.8
+
+    def _cache_control__get(self):
+        """
+        Get/set/modify the Cache-Control header (section `14.9
+        <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9>`_)
+        """
+        env = self.environ
+        value = env.get('HTTP_CACHE_CONTROL', '')
+        cache_header, cache_obj = env.get('webob._cache_control', (None, None))
+        if cache_obj is not None and cache_header == value:
+            return cache_obj
+        cache_obj = CacheControl.parse(value, type='request')
+        env['webob._cache_control'] = (value, cache_obj)
+        return cache_obj
+
+    def _cache_control__set(self, value):
+        env = self.environ
+        if not value:
+            value = ""
+        if isinstance(value, dict):
+            value = CacheControl(value, type='request')
+        elif isinstance(value, CacheControl):
+            str_value = str(value)
+            env['HTTP_CACHE_CONTROL'] = str_value
+            env['webob._cache_control'] = (str_value, value)
+        else:
+            env['HTTP_CACHE_CONTROL'] = str(value)
+            if 'webob._cache_control' in env:
+                del env['webob._cache_control']
+
+    def _cache_control__del(self, value):
+        env = self.environ
+        if 'HTTP_CACHE_CONTROL' in env:
+            del env['HTTP_CACHE_CONTROL']
+        if 'webob._cache_control' in env:
+            del env['webob._cache_control']
+
+    cache_control = property(_cache_control__get, _cache_control__set, _cache_control__del, doc=_cache_control__get.__doc__)
 
     date = converter(
         environ_getter('HTTP_DATE', rfc_section='14.8'),
@@ -1590,7 +1631,7 @@ class Response(object):
             self._cache_control_obj = CacheControl.parse(value, updates_to=self._update_cache_control, type='response')
             self._cache_control_obj.header_value = value
         if self._cache_control_obj.header_value != value:
-            new_obj = CacheControl.parse(value)
+            new_obj = CacheControl.parse(value, type='response')
             self._cache_control_obj.properties.clear()
             self._cache_control_obj.properties.update(new_obj.properties)
             self._cache_control_obj.header_value = value
@@ -1608,7 +1649,7 @@ class Response(object):
             if self._cache_control_obj is None:
                 self.headers['Cache-Control'] = value
                 return
-            value = CacheControl.parse(value)
+            value = CacheControl.parse(value, 'response')
         cache = self.cache_control
         cache.properties.clear()
         cache.properties.update(value.properties)
@@ -1713,6 +1754,8 @@ class Response(object):
 
     server = header_getter('Server', rfc_section='14.38')
 
+    ## FIXME: I realize response.var += 'something' won't work.  It should.
+    ## Maybe for all listy headers.
     vary = converter(
         header_getter('Vary', rfc_section='14.44'),
         _parse_list, _serialize_list, 'list')
