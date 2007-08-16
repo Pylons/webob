@@ -77,8 +77,10 @@ second = timedelta(seconds=1)
 month = timedelta(days=30)
 year = timedelta(days=365)
 
-class NoDefault:
-    pass
+class _NoDefault:
+    def __repr__(self):
+        return '(No Default)'
+NoDefault = _NoDefault()
 
 class environ_getter(object):
     """For delegating an attribute to a key in self.environ."""
@@ -620,7 +622,8 @@ class Request(object):
         SCRIPT_NAME, and returning the popped segment.  Returns None if
         there is nothing left on PATH_INFO.
 
-        Does not return empty segments.
+        Does not return ``''`` when there's an empty segment (like
+        ``/path//path``); these segments are just ignored.
         """
         path = self.path_info
         if not path:
@@ -882,8 +885,14 @@ class Request(object):
         """
         env = self.environ.copy()
         data = self.body
-        new_body = StringIO(data)
-        env['wsgi.input'] = new_body
+        tempfile_limit = self.request_body_tempfile_limit
+        if tempfile_limit and len(data) > tempfile_limit:
+            fileobj = tempfile.TemporaryFile()
+            fileobj.write(data)
+            fileobj.seek(0)
+        else:
+            fileobj = StringIO(data)
+        env['wsgi.input'] = fileobj
         return self.__class__(env)
 
     def remove_conditional_headers(self, remove_encoding=True):
