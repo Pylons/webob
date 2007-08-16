@@ -1047,6 +1047,9 @@ class Request(object):
         Like ``.call_application(application)``, except returns a
         response object with ``.status``, ``.headers``, and ``.body``
         attributes.
+
+        This will use ``self.ResponseClass`` to figure out the class
+        of the response object to return.
         """
         status, headers, app_iter = self.call_application(application)
         return self.ResponseClass(status, headers, app_iter=app_iter, request=self)
@@ -1055,8 +1058,11 @@ class Request(object):
     def blank(cls, path, environ=None, base_url=None, headers=None):
         """
         Create a blank request environ (and Request wrapper) with the
-        given path_info (path_info should be urlencoded), and any keys
-        from environ.
+        given path (path should be urlencoded), and any keys from
+        environ.
+
+        The path will become path_info, with any query string split
+        off and used.
 
         All necessary keys will be added to the environ, but the
         values you pass in will take precedence.  If you pass in
@@ -1374,7 +1380,8 @@ class Response(object):
 
     def _body__get(self):
         """
-        The body of the response, as a str
+        The body of the response, as a ``str``.  This will read in the
+        entire app_iter if necessary.
         """
         if self._body is None:
             if self._app_iter is None:
@@ -1447,7 +1454,10 @@ class Response(object):
 
     def _app_iter__get(self):
         """
-        Returns the app_iter of the response
+        Returns the app_iter of the response.
+
+        If body was set, this will create an app_iter from that body
+        (a single-item list)
         """
         if self._app_iter is None:
             if self._body is None:
@@ -1806,6 +1816,10 @@ class Response(object):
         return self.app_iter
 
     def app_iter_range(self, start, stop):
+        """
+        Return a new app_iter built from the response app_iter, that
+        serves up only the given ``start:stop`` range.
+        """
         if self._app_iter is None:
             return [self.body[start:stop]]
         app_iter = self.app_iter
