@@ -950,8 +950,7 @@ class Request(object):
         environ_getter('HTTP_MAX_FORWARDS', rfc_section='14.31'),
         _parse_int, _serialize_int, 'int')
 
-    ## FIXME: 14.32 Pragma
-    ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.32
+    pragma = environ_getter('HTTP_PRAGMA', rfc_section='14.32')
 
     range = converter(
         environ_getter('HTTP_RANGE', rfc_section='14.35'),
@@ -1677,8 +1676,7 @@ class Response(object):
         header_getter('Last-Modified', rfc_section='14.29'),
         _parse_date, _serialize_date, 'date-parse')
 
-    ## FIXME: 14.32 Pragma
-    ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.32
+    pragma = header_getter('Pragma', rfc_section='14.32')
 
     retry_after = converter(
         header_getter('Retry-After', rfc_section='14.37'),
