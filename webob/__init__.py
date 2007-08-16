@@ -96,7 +96,7 @@ class environ_getter(object):
             docstring += " and sets"
         if self.deletable:
             docstring += " and deletes"
-        docstring += " the %r key from the environment" % self.key
+        docstring += " the %r key from the environment." % self.key
         docstring += _rfc_reference(self.key, rfc_section)
         if doc:
             docstring += '\n\n' + textwrap.dedent(doc)
@@ -186,11 +186,11 @@ class converter(object):
         self.convert_name = convert_name
         self.converter_args = converter_args
         docstring = decorator.__doc__ or ''
-        docstring += " and converts it using "
+        docstring += "  Converts it as a "
         if convert_name:
-            docstring += convert_name
+            docstring += convert_name + '.'
         else:
-            docstring += "%r and %r" % (getter_converter, setter_converter)
+            docstring += "%r and %r." % (getter_converter, setter_converter)
         if doc:
             docstring += '\n\n' + textwrap.dedent(doc)
         self.__doc__ = docstring
@@ -221,7 +221,9 @@ def _rfc_reference(header, section):
     major_section = section.split('.')[0]
     link = 'http://www.w3.org/Protocols/rfc2616/rfc2616-sec%s.html#sec%s' % (
         major_section, section)
-    return " for more information on %s see `section %s <%s>`_" % (
+    if header.startswith('HTTP_'):
+        header = header[5:].title().replace('_', '-')
+    return "  For more information on %s see `section %s <%s>`_." % (
         header, section, link)
 
 def _parse_date(value):
@@ -413,7 +415,6 @@ def _serialize_accept(value, header_name, AcceptClass, NilClass):
 class Request(object):
 
     ## Options:
-    charset = None
     unicode_errors = 'strict'
     decode_param_names = False
     ## The limit after which request bodies should be stored on disk
@@ -466,8 +467,10 @@ class Request(object):
             raise AttributeError(attr)
 
     def environ(self):
+        """
+        The WSGI environment dictionary for this request
+        """
         return self._environ_getter()
-    environ = property(environ)
 
     def _environ_getter(self):
         return self._environ
@@ -500,9 +503,9 @@ class Request(object):
     script_name = environ_getter('SCRIPT_NAME')
     path_info = environ_getter('PATH_INFO')
     ## FIXME: should I strip out parameters?:
-    content_type = environ_getter('CONTENT_TYPE')
+    content_type = environ_getter('CONTENT_TYPE', rfc_section='14.17')
     content_length = converter(
-        environ_getter('CONTENT_LENGTH', rfc_section='14.17'),
+        environ_getter('CONTENT_LENGTH', rfc_section='14.13'),
         _parse_int, _serialize_int, 'int')
     remote_user = environ_getter('REMOTE_USER', default=None)
     remote_addr = environ_getter('REMOTE_ADDR', default=None)
@@ -658,7 +661,7 @@ class Request(object):
     urlvars = property(urlvars, doc=urlvars.__doc__)
 
     def is_xhr(self):
-        """Returns a boolean if X-Requested-With is present and a XMLHttpRequest"""
+        """Returns a boolean if X-Requested-With is present and ``XMLHttpRequest``"""
         return self.environ.get('HTTP_X_REQUESTED_WITH', '') == 'XMLHttpRequest'
     is_xhr = property(is_xhr, doc=is_xhr.__doc__)
 
@@ -761,7 +764,7 @@ class Request(object):
 
     def postvars(self):
         """
-        Like str_postvars, but may decode values and keys
+        Like ``.str_postvars``, but may decode values and keys
         """
         vars = self.str_postvars
         if self.charset:
@@ -800,7 +803,7 @@ class Request(object):
 
     def queryvars(self):
         """
-        Like str_queryvars, but may decode values and keys
+        Like ``.str_queryvars``, but may decode values and keys
         """
         vars = self.str_queryvars
         if self.charset:
@@ -824,7 +827,7 @@ class Request(object):
 
     def params(self):
         """
-        Like str_params, but may decode values and keys
+        Like ``.str_params``, but may decode values and keys
         """
         params = self.str_params
         if self.charset:
@@ -858,7 +861,7 @@ class Request(object):
 
     def cookies(self):
         """
-        Like str_cookies, but may decode values and keys
+        Like ``.str_cookies``, but may decode values and keys
         """
         vars = self.str_cookies
         if self.charset:
@@ -901,22 +904,22 @@ class Request(object):
 
     accept = converter(
         environ_getter('HTTP_ACCEPT', rfc_section='14.1'),
-        _parse_accept, _serialize_accept, 'mime-accept',
+        _parse_accept, _serialize_accept, 'MIME Accept',
         converter_args=('Accept', MIMEAccept, MIMENilAccept))
 
     accept_charset = converter(
         environ_getter('HTTP_ACCEPT_CHARSET', rfc_section='14.2'),
-        _parse_accept, _serialize_accept, 'accept',
+        _parse_accept, _serialize_accept, 'accept header',
         converter_args=('Accept-Charset', Accept, NilAccept))
 
     accept_encoding = converter(
         environ_getter('HTTP_ACCEPT_ENCODING', rfc_section='14.3'),
-        _parse_accept, _serialize_accept, 'accept',
+        _parse_accept, _serialize_accept, 'accept header',
         converter_args=('Accept-Encoding', Accept, NilAccept))
 
     accept_language = converter(
         environ_getter('HTTP_ACCEPT_LANGUAGE', rfc_section='14.4'),
-        _parse_accept, _serialize_accept, 'accept',
+        _parse_accept, _serialize_accept, 'accept header',
         converter_args=('Accept-Language', Accept, NilAccept))
 
     ## FIXME: 14.8 Authorization
@@ -924,27 +927,27 @@ class Request(object):
 
     date = converter(
         environ_getter('HTTP_DATE', rfc_section='14.8'),
-        _parse_date, _serialize_date, 'date-parsed')
+        _parse_date, _serialize_date, 'HTTP date')
 
     if_match = converter(
         environ_getter('HTTP_IF_MATCH', rfc_section='14.24'),
-        _parse_etag, _serialize_etag, 'etag', converter_args=(True,))
+        _parse_etag, _serialize_etag, 'ETag', converter_args=(True,))
 
     if_modified_since = converter(
         environ_getter('HTTP_IF_MODIFIED_SINCE', rfc_section='14.25'),
-        _parse_date, _serialize_date, 'date-parsed')
+        _parse_date, _serialize_date, 'HTTP date')
 
     if_none_match = converter(
         environ_getter('HTTP_IF_NONE_MATCH', rfc_section='14.26'),
-        _parse_etag, _serialize_etag, 'etag', converter_args=(False,))
+        _parse_etag, _serialize_etag, 'ETag', converter_args=(False,))
 
     if_range = converter(
         environ_getter('HTTP_IF_RANGE', rfc_section='14.27'),
-        _parse_if_range, _serialize_if_range, 'if-range')
+        _parse_if_range, _serialize_if_range, 'IfRange object')
 
     if_unmodified_since = converter(
         environ_getter('HTTP_IF_UNMODIFIED_SINCE', rfc_section='14.28'),
-        _parse_date, _serialize_date, 'date-parsed')
+        _parse_date, _serialize_date, 'HTTP date')
 
     max_forwards = converter(
         environ_getter('HTTP_MAX_FORWARDS', rfc_section='14.31'),
@@ -954,7 +957,7 @@ class Request(object):
 
     range = converter(
         environ_getter('HTTP_RANGE', rfc_section='14.35'),
-        _parse_range, _serialize_range, 'range')
+        _parse_range, _serialize_range, 'Range object')
 
     referer = environ_getter('HTTP_REFERER', rfc_section='14.36')
     referrer = referer
@@ -969,7 +972,7 @@ class Request(object):
 
     user_agent = converter(
         environ_getter('HTTP_USER_AGENT', rfc_section='14.43'),
-        _parse_user_agent, _serialize_user_agent, 'user-agent')
+        _parse_user_agent, _serialize_user_agent, 'UserAgent object')
 
     def __repr__(self):
         msg = '<%s at %x %s %s>' % (
@@ -1643,7 +1646,7 @@ class Response(object):
 
     content_range = converter(
         header_getter('Content-Range', rfc_section='14.16'),
-        _parse_content_range, _serialize_content_range, 'range')
+        _parse_content_range, _serialize_content_range, 'ContentRange object')
 
     content_length = converter(
         header_getter('Content-Length', rfc_section='14.17'),
@@ -1651,7 +1654,7 @@ class Response(object):
 
     date = converter(
         header_getter('Date', rfc_section='14.18'),
-        _parse_date, _serialize_date, 'date-parse')
+        _parse_date, _serialize_date, 'HTTP date')
 
     etag = header_getter('ETag', rfc_section='14.19')
 
@@ -1670,17 +1673,17 @@ class Response(object):
 
     expires = converter(
         header_getter('Expires', rfc_section='14.21'),
-        _parse_date, _serialize_date, 'date-parse')
+        _parse_date, _serialize_date, 'HTTP date')
 
     last_modified = converter(
         header_getter('Last-Modified', rfc_section='14.29'),
-        _parse_date, _serialize_date, 'date-parse')
+        _parse_date, _serialize_date, 'HTTP date')
 
     pragma = header_getter('Pragma', rfc_section='14.32')
 
     retry_after = converter(
         header_getter('Retry-After', rfc_section='14.37'),
-        _parse_date_delta, _serialize_date_delta, 'date-delta-parse')
+        _parse_date_delta, _serialize_date_delta, 'HTTP date or delta seconds')
 
     server = header_getter('Server', rfc_section='14.38')
 

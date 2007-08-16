@@ -243,10 +243,9 @@ class ContentRange(object):
 
     def __iter__(self):
         """
-        Mostly so you can unpack this, like::
+        Mostly so you can unpack this, like:
 
             start, stop, length = res.content_range
-        
         """
         return iter([self.start, self.stop, self.length])
 
