@@ -237,6 +237,11 @@ class NilAccept(object):
         else:
             return []
 
+class NoAccept(NilAccept):
+
+    def __contains__(self, item):
+        return False
+
 class MIMEAccept(Accept):
 
     """

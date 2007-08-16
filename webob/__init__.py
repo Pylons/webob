@@ -18,7 +18,7 @@ from webob.etag import AnyETag, NoETag, ETagMatcher, IfRange, NoIfRange
 from webob.headerdict import HeaderDict
 from webob.statusreasons import status_reasons
 from webob.cachecontrol import CacheControl
-from webob.acceptparse import Accept, MIMEAccept, NilAccept, MIMENilAccept
+from webob.acceptparse import Accept, MIMEAccept, NilAccept, MIMENilAccept, NoAccept
 from webob.byterange import Range, ContentRange
 
 _CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
@@ -929,7 +929,7 @@ class Request(object):
     accept_encoding = converter(
         environ_getter('HTTP_ACCEPT_ENCODING', rfc_section='14.3'),
         _parse_accept, _serialize_accept, 'accept header',
-        converter_args=('Accept-Encoding', Accept, NilAccept))
+        converter_args=('Accept-Encoding', Accept, NoAccept))
 
     accept_language = converter(
         environ_getter('HTTP_ACCEPT_LANGUAGE', rfc_section='14.4'),

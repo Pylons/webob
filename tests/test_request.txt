@@ -209,6 +209,8 @@ mime types are not supported.
     >>> req.accept_charset = 'utf8'
     >>> 'UTF8' in req.accept_charset
     True
+    >>> 'gzip' in req.accept_encoding
+    False
     >>> req.accept_encoding = 'gzip'
     >>> 'GZIP' in req.accept_encoding
     True
