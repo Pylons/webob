@@ -415,6 +415,7 @@ def _serialize_accept(value, header_name, AcceptClass, NilClass):
 class Request(object):
 
     ## Options:
+    charset = None
     unicode_errors = 'strict'
     decode_param_names = False
     ## The limit after which request bodies should be stored on disk
@@ -451,7 +452,7 @@ class Request(object):
     def __getattr__(self, attr):
         ## FIXME: I don't know why I need this guard (though experimentation says I do)
         if attr in self.__class__.__dict__:
-            return object.__getattr__(self, attr)
+            return object.__getattribute__(self, attr)
         try:
             return self.environ['webob.adhoc_attrs'][attr]
         except KeyError:
@@ -471,6 +472,7 @@ class Request(object):
         The WSGI environment dictionary for this request
         """
         return self._environ_getter()
+    environ = property(environ, doc=environ.__doc__)
 
     def _environ_getter(self):
         return self._environ
@@ -1191,13 +1193,13 @@ class Response(object):
                 + '\n\n'
                 + self.body)
 
-    def status__get(self):
+    def _status__get(self):
         """
         The status string
         """
         return self._status
 
-    def status__set(self, value):
+    def _status__set(self, value):
         if isinstance(value, int):
             value = str(value)
         if not isinstance(value, str):
@@ -1211,24 +1213,24 @@ class Response(object):
             value += ' ' + reason
         self._status = value
 
-    status = property(status__get, status__set, doc=status__get.__doc__)
+    status = property(_status__get, _status__set, doc=_status__get.__doc__)
 
-    def status_int__get(self):
+    def _status_int__get(self):
         """
         The status as an integer
         """
         return int(self.status.split()[0])
-    def status_int__set(self, value):
+    def _status_int__set(self, value):
         self.status = value
-    status_int = property(status_int__get, status_int__set, doc=status_int__get.__doc__)
+    status_int = property(_status_int__get, _status_int__set, doc=_status_int__get.__doc__)
 
-    def headerlist__get(self):
+    def _headerlist__get(self):
         """
         The list of response headers
         """
         return self._headerlist
 
-    def headerlist__set(self, value):
+    def _headerlist__set(self, value):
         self._headers = None
         if not isinstance(value, list):
             if hasattr(value, 'items'):
@@ -1236,12 +1238,12 @@ class Response(object):
             value = list(value)
         self._headerlist = value
 
-    def headerlist__del(self):
+    def _headerlist__del(self):
         self.headerlist = []
 
-    headerlist = property(headerlist__get, headerlist__set, headerlist__del, doc=headerlist__get.__doc__)
+    headerlist = property(_headerlist__get, _headerlist__set, _headerlist__del, doc=_headerlist__get.__doc__)
 
-    def charset__get(self):
+    def _charset__get(self):
         """
         Get/set the charset (in the Content-Type)
         """
@@ -1253,7 +1255,7 @@ class Response(object):
             return match.group(1)
         return None
 
-    def charset__set(self, charset):
+    def _charset__set(self, charset):
         if charset is None:
             del self.charset
             return
@@ -1268,7 +1270,7 @@ class Response(object):
         header += '; charset=%s' % charset
         self.headers['content-type'] = header
 
-    def charset__del(self):
+    def _charset__del(self):
         try:
             header = self.headers.pop('content-type')
         except KeyError:
@@ -1279,9 +1281,9 @@ class Response(object):
             header = header[:match.start()] + header[match.end():]
         self.headers['content-type'] = header
 
-    charset = property(charset__get, charset__set, charset__del, doc=charset__get.__doc__)
+    charset = property(_charset__get, _charset__set, _charset__del, doc=_charset__get.__doc__)
 
-    def content_type__get(self):
+    def _content_type__get(self):
         """
         Get/set the Content-Type header (or None), *without* the
         charset or any parameters.
@@ -1295,7 +1297,7 @@ class Response(object):
             return None
         return header.split(';', 1)[0]
 
-    def content_type__set(self, value):
+    def _content_type__set(self, value):
         if ';' not in value:
             header = self.headers.get('content-type', '')
             if ';' in header:
@@ -1303,16 +1305,16 @@ class Response(object):
                 value += ';' + params
         self.headers['content-type'] = value
 
-    def content_type__del(self):
+    def _content_type__del(self):
         try:
             del self.headers['content-type']
         except KeyError:
             pass
 
-    content_type = property(content_type__get, content_type__set,
-                            content_type__del, doc=content_type__get.__doc__)
+    content_type = property(_content_type__get, _content_type__set,
+                            _content_type__del, doc=_content_type__get.__doc__)
 
-    def content_type_params__get(self):
+    def _content_type_params__get(self):
         """
         Returns a dictionary of all the parameters in the content type.
         """
@@ -1325,7 +1327,7 @@ class Response(object):
             result[match.group(1)] = match.group(2) or match.group(3) or ''
         return result
         
-    def content_type_params__set(self, value_dict):
+    def _content_type_params__set(self, value_dict):
         if not value_dict:
             del self.content_type_params
             return
@@ -1340,12 +1342,12 @@ class Response(object):
         ct += ''.join(params)
         self.headers['content-type'] = ct
 
-    def content_type_params__del(self, value):
+    def _content_type_params__del(self, value):
         self.headers['content-type'] = self.headers.get('content-type', '').split(';', 1)[0]
 
-    content_type_params = property(content_type_params__get, content_type_params__set, content_type_params__del, doc=content_type_params__get.__doc__)
+    content_type_params = property(_content_type_params__get, _content_type_params__set, _content_type_params__del, doc=_content_type_params__get.__doc__)
 
-    def headers__get(self):
+    def _headers__get(self):
         """
         The headers in a dictionary-like object
         """
@@ -1353,13 +1355,13 @@ class Response(object):
             self._headers = HeaderDict.view_list(self.headerlist)
         return self._headers
 
-    def headers__set(self, value):
+    def _headers__set(self, value):
         if hasattr(value, 'items'):
             value = value.items()
         self.headerlist = value
         self._headers = None
 
-    headers = property(headers__get, headers__set, doc=headers__get.__doc__)
+    headers = property(_headers__get, _headers__set, doc=_headers__get.__doc__)
 
     def _body__get(self):
         """
