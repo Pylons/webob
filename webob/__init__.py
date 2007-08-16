@@ -69,7 +69,7 @@ def timedelta_to_seconds(td):
     return td.seconds + (td.days*24*60*60)
 
 day = timedelta(days=1)
-week = timedelta(weeks=7)
+week = timedelta(weeks=1)
 hour = timedelta(hours=1)
 minute = timedelta(minutes=1)
 second = timedelta(seconds=1)
