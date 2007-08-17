@@ -568,10 +568,13 @@ else:
             obj.__bases__ = obj.__bases__ + (getattr(httpexceptions, name),)
     del name, obj, httpexceptions
 
-__all__ = ['HTTPExceptionMiddleware']
+__all__ = ['HTTPExceptionMiddleware', 'status_map']
+status_map={}
 for name, value in globals().items():
     if (isinstance(value, type) and issubclass(value, HTTPException)
         and not name.startswith('_')):
         __all__.append(name)
+        if value.code:
+            status_map[value.code]=value
 del name, value
 

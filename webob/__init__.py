@@ -882,6 +882,9 @@ class Request(object):
 
     cookies = property(cookies, doc=cookies.__doc__)
 
+    ## FIXME: there should be a way to turn the request into a GET as part
+    ## of the copy; often a copied request is a safe subrequest of some sort,
+    ## and only GET is really safe (HEAD being uncommon)
     def copy(self):
         """
         Copy the request and environment object.
