@@ -78,7 +78,7 @@ constructor that will fill in a minimal environment:
     'SERVER_NAME': 'localhost',
     'SERVER_PORT': '80',
     'SERVER_PROTOCOL': 'HTTP/1.0',
-    'wsgi.errors': <cStringIO.StringO object at ...>,
+    'wsgi.errors': <open file '<stderr>', mode 'w' at ...>,
     'wsgi.input': <cStringIO.StringI object at ...>,
     'wsgi.multiprocess': False,
     'wsgi.multithread': False,
@@ -144,6 +144,8 @@ request object:
     '/blog/article'
     >>> req.path_qs
     '/blog/article?id=1'
+    >>> req.query_string
+    'id=1'
 
 You can make new URLs:
 
@@ -937,7 +939,7 @@ A possible pattern for your application might be:
     >>> print res
     200 OK
     content-type: text/plain
-    Content-Length: 388
+    Content-Length: 394
     <BLANKLINE>
     HTTP_HOST: 'localhost:80'
     PATH_INFO: '/'
@@ -947,7 +949,7 @@ A possible pattern for your application might be:
     SERVER_NAME: 'localhost'
     SERVER_PORT: '80'
     SERVER_PROTOCOL: 'HTTP/1.0'
-    wsgi.errors: <cStringIO.StringO object at ...>
+    wsgi.errors: <open file '<stderr>', mode 'w' at ...>
     wsgi.input: <cStringIO.StringI object at ...>
     wsgi.multiprocess: False
     wsgi.multithread: False

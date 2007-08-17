@@ -157,7 +157,7 @@ conditioanl_response)::
     <Response ... 304 Not Modified>
     >>> res.etag = 'other-tag'
     >>> req.get_response(res)
-    <Response ... 304 Not Modified>
+    <Response ... 200 OK>
     >>> del req.if_none_match
     >>> req.if_modified_since = datetime(2005, 1, 1, 12, 1, tzinfo=UTC)
     >>> res.last_modified = datetime(2005, 1, 1, 12, 1, tzinfo=UTC)

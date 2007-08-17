@@ -517,6 +517,7 @@ class Request(object):
         _parse_int, _serialize_int, 'int')
     remote_user = environ_getter('REMOTE_USER', default=None)
     remote_addr = environ_getter('REMOTE_ADDR', default=None)
+    query_string = environ_getter('QUERY_STRING')
 
     _headers = None
 
