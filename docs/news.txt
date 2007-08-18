@@ -1,0 +1,9 @@
+News
+====
+
+0.8
+---
+
+First release.  Nothing is new, or everything is new, depending on how
+you think about it.
+
