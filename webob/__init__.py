@@ -1513,6 +1513,8 @@ class Response(object):
         else:
             return self._app_iter
 
+    ## FIXME: maybe the content-length clearing should only happen if
+    ## self._app_iter is not None?
     def _app_iter__set(self, value):
         if self._body is not None:
             # Undo the automatically-set content-length

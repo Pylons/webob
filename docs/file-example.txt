@@ -28,7 +28,7 @@ we can use as we improve our application:
    >>> import mimetypes
    >>> def get_mimetype(filename):
    ...     type, encoding = mimetypes.guess_type(filename)
-   ...     # We'll ignore encoding
+   ...     # We'll ignore encoding, even though we shouldn't really
    ...     return type or 'application/octet-stream'
 
 Now we can make different definitions of ``make_response``.  The
@@ -102,8 +102,8 @@ And testing:
    <BLANKLINE>
 
 Well, that doesn't *look* different, but lets *imagine* that it's
-different because we know we did stuff differently.  Now to add some
-basic data:
+different because we know we changed some code.  Now to add some basic
+metadata to the response:
 
 .. code-block::
 
@@ -113,7 +113,8 @@ basic data:
    ...     res.app_iter = FileIterable(filename)
    ...     res.content_length = os.path.getsize(filename)
    ...     res.last_modified = os.path.getmtime(filename)
-   ...     res.etag = '%s-%s' % (os.path.getmtime(filename), hash(filename))
+   ...     res.etag = '%s-%s-%s' % (os.path.getmtime(filename),
+   ...                              os.path.getsize(filename), hash(filename))
    ...     return res
 
 Now, with ``conditional_response`` on, and with ``last_modified`` and
@@ -142,8 +143,15 @@ Now, with ``conditional_response`` on, and with ``last_modified`` and
    <Response ... 304 Not Modified>
    
 We can even do Range requests, but it will currently involve iterating
-through the file unnecessarily, because we can use
+through the file unnecessarily.  When there's a range request (and you
+set ``conditional_response=True``) the application will satisfy that
+request.  But with an arbitrary iterator the only way to do that is to
+run through the beginning of the iterator until you get to the chunk
+that the client asked for.  We can do better because we can use
 ``fileobj.seek(pos)`` to move around the file much more efficiently.
+
+So we'll add an extra method, ``app_iter_range``, that ``Response``
+looks for:
 
 .. code-block::
 
