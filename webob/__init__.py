@@ -1695,8 +1695,12 @@ class Response(object):
             cache_control.post_check = 0
             cache_control.pre_check = 0
             self.expires = datetime.utcnow()
+            if 'last-modified' not in self.headers:
+                self.last_modified = datetime.utcnow()
+            self.pragma = 'no-cache'
         else:
             cache_control.max_age = seconds
+            self.expires = datetime.utcnow() + timedelta(seconds=seconds)
         for name, value in kw.items():
             setattr(cache_control, name, value)
 
