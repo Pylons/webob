@@ -18,7 +18,7 @@ from webob.useragent import UserAgent, parse_search_query
 from webob.etag import AnyETag, NoETag, ETagMatcher, IfRange, NoIfRange
 from webob.headerdict import HeaderDict
 from webob.statusreasons import status_reasons
-from webob.cachecontrol import CacheControl
+from webob.cachecontrol import CacheControl, serialize_cache_control
 from webob.acceptparse import Accept, MIMEAccept, NilAccept, MIMENilAccept, NoAccept
 from webob.byterange import Range, ContentRange
 
@@ -1649,7 +1649,7 @@ class Response(object):
         if not value:
             value = ""
         if isinstance(value, dict):
-            value = CacheControl(value)
+            value = CacheControl(value, 'response')
         if isinstance(value, unicode):
             value = str(value)
         if isinstance(value, str):
@@ -1664,14 +1664,13 @@ class Response(object):
     def _cache_control__del(self):
         self.cache_control = {}
 
-    def _update_cache_control(self, cache_control_obj):
-        value = str(cache_control_obj)
+    def _update_cache_control(self, prop_dict):
+        value = serialize_cache_control(prop_dict)
         if not value:
             if 'Cache-Control' in self.headers:
                 del self.headers['Cache-Control']
         else:
             self.headers['Cache-Control'] = value
-        cache_control_obj.header_value = value
 
     cache_control = property(_cache_control__get, _cache_control__set, _cache_control__del, doc=_cache_control__get.__doc__)
 

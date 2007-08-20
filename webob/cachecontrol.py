@@ -53,6 +53,8 @@ class value_property(object):
             value = obj.properties[self.prop]
             if value is None:
                 return self.none
+            else:
+                return value
         else:
             return self.default
     def __set__(self, obj, value):
@@ -139,19 +141,23 @@ class CacheControl(object):
     s_max_age = s_maxage
 
     def __str__(self):
-        parts = []
-        for name, value in sorted(self.properties.items()):
-            if value is None:
-                parts.append(name)
-                continue
-            value = str(value)
-            if need_quote_re.search(value):
-                value = '"%s"' % value
-            parts.append('%s=%s' % (name, value))
-        return ', '.join(parts)
+        return serialize_cache_control(self.properties)
 
     def copy(self):
         """
         Returns a copy of this object.
         """
         return self.__class__(self.properties.copy(), type=self.type)
+
+def serialize_cache_control(properties):
+    parts = []
+    for name, value in sorted(properties.items()):
+        if value is None:
+            parts.append(name)
+            continue
+        value = str(value)
+        if need_quote_re.search(value):
+            value = '"%s"' % value
+        parts.append('%s=%s' % (name, value))
+    return ', '.join(parts)
+    
