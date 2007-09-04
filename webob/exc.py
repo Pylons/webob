@@ -161,7 +161,6 @@ ${body}''')
         body_tmpl = self.body_template_obj
         if HTTPException.body_template_obj is not self.body_template_obj:
             # Custom template; add headers to args
-            req = Request(environ)
             for k, v in environ.items():
                 args[k] = escape(v)
             for k, v in self.headers.items():
@@ -262,6 +261,8 @@ class HTTPResetContent(HTTPOk):
 class HTTPPartialContent(HTTPOk):
     code = 206
     title = 'Partial Content'
+
+## FIXME: add 207 Multi-Status (but it's complicated)
 
 ############################################################
 ## 3xx redirection
@@ -474,6 +475,25 @@ class HTTPExpectationFailed(HTTPClientError):
     title = 'Expectation Failed'
     explanation = ('Expectation failed.')
 
+class HTTPUnprocessableEntity(HTTPClientError):
+    ## Note: from WebDAV
+    code = 422
+    title = 'Unprocessable Entity'
+    explanation = 'Unable to process the contained instructions'
+
+class HTTPLocked(HTTPClientError):
+    ## Note: from WebDAV
+    code = 423
+    title = 'Locked'
+    explanation = ('The resource is locked')
+
+class HTTPFailedDependency(HTTPClientError):
+    ## Note: from WebDAV
+    code = 424
+    title = 'Failed Dependency'
+    explanation = ('The method could not be performed because the requested '
+                   'action dependended on another action and that action failed')
+
 ############################################################
 ## 5xx Server Error
 ############################################################
@@ -530,6 +550,11 @@ class HTTPVersionNotSupported(HTTPServerError):
     code = 505
     title = 'HTTP Version Not Supported'
     explanation = ('The HTTP version is not supported.')
+
+class HTTPInsufficientStorage(HTTPServerError):
+    code = 507
+    title = 'Insufficient Storage'
+    explanation = ('There was not enough space to save the resource')
 
 class HTTPExceptionMiddleware(object):
     """
