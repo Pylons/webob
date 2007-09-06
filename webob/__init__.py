@@ -1529,7 +1529,7 @@ class Response(object):
     app_iter = property(_app_iter__get, _app_iter__set, _app_iter__del, doc=_app_iter__get.__doc__)
 
     def set_cookie(self, key, value='', max_age=None,
-                   path='/', domain=None, secure=None):
+                   path='/', domain=None, secure=None, httponly=False):
         """
         Set (add) a cookie for the response
         """
@@ -1540,6 +1540,7 @@ class Response(object):
             ('path', path),
             ('domain', domain),
             ('secure', secure),
+            ('HttpOnly', httponly),
             ]:
             if var_value is not None and var_value is not False:
                 cookies[key][var_name.replace('_', '-')] = str(var_value)

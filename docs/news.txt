@@ -1,6 +1,13 @@
 News
 ====
 
+svn trunk
+---------
+
+* Added ``res.set_cookie(..., httponly=True)`` to set the ``HttpOnly``
+  attribute on the cookie, which keeps Javascript from reading the
+  cookie.
+
 0.8
 ---
 
