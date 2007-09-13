@@ -3,6 +3,10 @@ Represents the response header list as a dictionary-like object.
 """
 
 from webob.multidict import MultiDict
+try:
+    reversed
+except NameError:
+    from webob.util.reversed import reversed
 
 class HeaderDict(MultiDict):
 

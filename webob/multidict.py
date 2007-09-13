@@ -7,6 +7,10 @@ import cgi
 import copy
 import sys
 from webob.util.dictmixin import DictMixin
+try:
+    reversed
+except NameError:
+    from webob.util.reversed import reversed
 
 __all__ = ['MultiDict', 'UnicodeMultiDict', 'NestedMultiDict', 'NoVars']
 
