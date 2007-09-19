@@ -150,6 +150,8 @@ class CacheControl(object):
         return self.__class__(self.properties.copy(), type=self.type)
 
 def serialize_cache_control(properties):
+    if isinstance(properties, CacheControl):
+        properties = properties.properties
     parts = []
     for name, value in sorted(properties.items()):
         if value is None:
