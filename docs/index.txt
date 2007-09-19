@@ -778,7 +778,7 @@ Other headers:
     >>> # Seldom used header that gives a hash of the body:
     >>> res.content_md5 = 'big-hash'
 
-    >>> # Means we are serving bytes 0-500 inclusive, out of 100 bytes total:
+    >>> # Means we are serving bytes 0-500 inclusive, out of 1000 bytes total:
     >>> # you can also use the range setter shown earlier
     >>> res.content_range = (0, 499, 1000)
 

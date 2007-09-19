@@ -100,7 +100,7 @@ def strip_tags(value):
     value = tag_re.sub('', value)
     return value
 
-class HTTPException(Response, Exception):
+class HTTPException(Exception, Response):
 
     ## You should set in subclasses:
     # code = 200
@@ -138,8 +138,9 @@ ${body}''')
     def __init__(self, detail=None, headers=None, comment=None,
                  body_template=None):
         Response.__init__(self,
-                          status = '%s %s' % (self.code, self.title),
+                          status='%s %s' % (self.code, self.title),
                           content_type='text/html')
+        Exception.__init__(self, detail)
         if headers:
             self.headers.update(headers)
         self.detail = detail
