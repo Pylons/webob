@@ -100,7 +100,24 @@ def strip_tags(value):
     value = tag_re.sub('', value)
     return value
 
-class HTTPException(Exception, Response):
+class HTTPException(Exception):
+    """
+    Exception used on pre-Python-2.5, where new-style classes cannot be used as
+    an exception.
+    """
+
+    def __init__(self, message, wsgi_response):
+        Exception.__init__(self, message)
+        self.wsgi_response = wsgi_response
+
+    def __call__(self, environ, start_response):
+        return self.wsgi_response(environ, start_response)
+
+    @property
+    def exception(self):
+        return self
+
+class WSGIHTTPException(HTTPException, Response):
 
     ## You should set in subclasses:
     # code = 200
@@ -205,6 +222,17 @@ ${body}''')
         if not self.body and not self.empty_body:
             return self.generate_response(environ, start_response)
         return Response.__call__(self, environ, start_response)
+
+    @property
+    def wsgi_response(self):
+        return self
+
+    @property
+    def exception(self):
+        if sys.version_info >= (2, 5):
+            return self
+        else:
+            return RealHTTPException(self.detail, self)
 
 class HTTPError(HTTPException):
     """

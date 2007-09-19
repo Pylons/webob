@@ -6,6 +6,9 @@ svn trunk
 
 * Python 2.3 compatibility: backport of ``reversed(seq)``
 
+* Made separate ``.exception`` attribute on ``webob.exc`` objects,
+  since new-style classes can't be raised as exceptions.
+
 0.8.1
 -----
 

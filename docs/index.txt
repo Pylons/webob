@@ -1012,6 +1012,15 @@ This is taken from `paste.httpexceptions
 you have Paste installed then these exceptions will be subclasses of
 the Paste exceptions.
 
+Note that on Python 2.4 and before, new-style classes could not be
+used as exceptions.  ``Response`` objects must be new-style classes,
+so this causes a bit of a conflict.  The base class
+``webob.exc.HTTPException`` *is* an exception, so you can catch that,
+and it *is* a WSGI application.  But you may not be able to use
+Response methods.  You can always get ``obj.exception`` to get an
+exception that you can raise, and ``obj.wsgi_response`` to get the
+``Response`` object that you can use.
+
 Conditional WSGI Application
 ----------------------------
 
