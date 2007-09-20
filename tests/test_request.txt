@@ -166,12 +166,10 @@ Some headers are handled specifically (more should be added):
     >>> req.referer_search_query()
     'test query'
     >>> req.user_agent
-    UserAgent('')
+    ''
     >>> req.user_agent = 'MSIE-Win'
-    >>> req.user_agent.platform
-    'windows'
-    >>> req.user_agent.browser
-    'msie'
+    >>> req.user_agent
+    'MSIE-Win'
 
 Accept-* headers are parsed into read-only objects that support
 containment tests, and some useful methods.  Note that parameters on

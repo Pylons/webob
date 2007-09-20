@@ -14,6 +14,11 @@ svn trunk
   ``req.str_POST``).  The old names give a warning; will give an error
   in next release, and be completely gone in the following release.
 
+* ``req.user_agent`` is now just a simple string (parsing the
+  User-Agent header was just too transient, and required too much
+  knowledge about current browsers).  Similarly,
+  ``req.referer_search_query()`` is gone.
+
 0.8.1
 -----
 

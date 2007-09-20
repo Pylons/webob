@@ -483,42 +483,6 @@ For more on this kind of conditional request, see `Detecting the Lost
 Update Problem Using Unreserved Checkout
 <http://www.w3.org/1999/04/Editing/>`_.
 
-Referer & User-Agent
-~~~~~~~~~~~~~~~~~~~~
-
-These tell a bit about the client and context.  The ``req.referer``
-(or ``req.referrer`` if you don't want to use the misspelled header
-name) returns the referring URL.
-
-You can use ``req.referer_search_query`` to get a query term if the
-referring request appears to be from a search engine of some type.
-
-.. code-block::
-
-    >>> req.referer = 'http://google.com/search?q=neat+stuff'
-    >>> req.referer_search_query()
-    'neat stuff'
-
-The User-Agent header is parsed somewhat for more information.
-Specifically it tries to figure out the platform (the OS), the browser
-type, and any preferred language if it is set:
-
-.. code-block::
-
-    >>> req.user_agent = 'Mozilla/4.0 (Compatible; MSIE Windows XP pt-BR)'
-    >>> req.user_agent
-    UserAgent('Mozilla/4.0 (Compatible; MSIE Windows XP pt-BR)')
-    >>> req.user_agent.browser
-    'msie'
-    >>> req.user_agent.platform
-    'windows'
-    >>> req.user_agent.language
-    'pt-BR'
-
-This code doesn't go to great lengths to parse the User-Agent.  It's
-considered bad form to use this information for too much.  The
-language information can be useful.
-
 Calling WSGI Applications
 -------------------------
 

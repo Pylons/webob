@@ -74,7 +74,7 @@ def test_headers():
     res = app.get('/?foo=bar&baz', headers=headers)
     res.mustcontain(
         'if_modified_since: datetime.datetime(1994, 10, 29, 19, 43, 31, tzinfo=UTC)',
-        'user_agent: UserAgent(',
+        "user_agent: 'Mozilla",
         'is_xhr: True',
         "cookies is {'var1': 'value1'}",
         "params is NestedMultiDict([('foo', 'bar'), ('baz', '')])",

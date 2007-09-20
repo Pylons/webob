@@ -15,7 +15,6 @@ import warnings
 from webob.util.dictmixin import DictMixin
 from webob.datastruct import EnvironHeaders
 from webob.multidict import MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
-from webob.useragent import UserAgent, parse_search_query
 from webob.etag import AnyETag, NoETag, ETagMatcher, IfRange, NoIfRange
 from webob.headerdict import HeaderDict
 from webob.statusreasons import status_reasons
@@ -428,17 +427,6 @@ def _serialize_list(value):
     if isinstance(value, str):
         return value
     return ', '.join(map(str, value))
-
-def _parse_user_agent(value):
-    return UserAgent(value or '')
-
-def _serialize_user_agent(value):
-    if value is None:
-        return None
-    value = str(value).strip()
-    if not value:
-        return None
-    return value
 
 def _parse_accept(value, header_name, AcceptClass, NilClass):
     if not value:
@@ -1064,17 +1052,7 @@ class Request(object):
     referer = environ_getter('HTTP_REFERER', rfc_section='14.36')
     referrer = referer
 
-    def referer_search_query(self):
-        """
-        Return the search query used to reach this page, if there was
-        one.  Returns a string.  If not found, returns None.
-        """
-        return parse_search_query(self.referer)
-    referrer_search_query = referer_search_query
-
-    user_agent = converter(
-        environ_getter('HTTP_USER_AGENT', rfc_section='14.43'),
-        _parse_user_agent, _serialize_user_agent, 'UserAgent object')
+    user_agent = environ_getter('HTTP_USER_AGENT', rfc_section='14.43')
 
     def __repr__(self):
         msg = '<%s at %x %s %s>' % (
