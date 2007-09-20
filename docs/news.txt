@@ -9,6 +9,11 @@ svn trunk
 * Made separate ``.exception`` attribute on ``webob.exc`` objects,
   since new-style classes can't be raised as exceptions.
 
+* Deprecate ``req.postvars`` and ``req.queryvars``, instead using the
+  sole names ``req.GET`` and ``req.POST`` (also ``req.str_GET`` and
+  ``req.str_POST``).  The old names give a warning; will give an error
+  in next release, and be completely gone in the following release.
+
 0.8.1
 -----
 

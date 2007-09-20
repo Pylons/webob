@@ -11,6 +11,7 @@ from datetime import datetime, date, timedelta, tzinfo
 import time
 import calendar
 import tempfile
+import warnings
 from webob.util.dictmixin import DictMixin
 from webob.datastruct import EnvironHeaders
 from webob.multidict import MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
@@ -228,6 +229,45 @@ def _rfc_reference(header, section):
         header = header[5:].title().replace('_', '-')
     return "  For more information on %s see `section %s <%s>`_." % (
         header, section, link)
+
+class deprecated_property(object):
+    """
+    Wraps a decorator, with a deprecation warning or error
+    """
+    def __init__(self, decorator, attr, message, warning=True):
+        self.decorator = decorator
+        self.attr = attr
+        self.message = message
+        self.warning = warning
+
+    def __get__(self, obj, type=None):
+        if obj is None:
+            return self
+        self.warn()
+        return self.decorator.__get__(obj, type)
+
+    def __set__(self, obj, value):
+        self.warn()
+        self.decorator.__set__(obj, value)
+
+    def __delete__(self, obj):
+        self.warn()
+        self.decorator.__delete__(obj)
+
+    def __repr__(self):
+        return '<Deprecated attribute %s: %r>' % (
+            self.attr,
+            self.decorator)
+
+    def warn(self):
+        if not self.warning:
+            raise DeprecationWarning(
+                'The attribute %s is deprecated: %s' % (self.attr, self.message))
+        else:
+            warnings.warn(
+                'The attribute %s is deprecated: %s' % (self.attr, self.message),
+                DeprecationWarning,
+                stacklevel=3)
 
 def _parse_date(value):
     if not value:
@@ -725,7 +765,7 @@ class Request(object):
 
     body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
 
-    def str_postvars(self):
+    def str_POST(self):
         """
         Return a MultiDict containing all the variables from a POST
         form request.  Does *not* return anything for non-POST
@@ -768,26 +808,28 @@ class Request(object):
         env['webob._parsed_post_vars'] = (vars, self.body_file)
         return vars
 
-    str_postvars = property(str_postvars, doc=str_postvars.__doc__)
+    str_POST = property(str_POST, doc=str_POST.__doc__)
 
-    str_POST = str_postvars
+    str_postvars = deprecated_property(str_POST, 'str_postvars',
+                                       'use str_POST instead')
 
-    def postvars(self):
+    def POST(self):
         """
-        Like ``.str_postvars``, but may decode values and keys
+        Like ``.str_POST``, but may decode values and keys
         """
-        vars = self.str_postvars
+        vars = self.str_POST
         if self.charset:
             vars = UnicodeMultiDict(vars, encoding=self.charset,
                                     errors=self.unicode_errors,
                                     decode_keys=self.decode_param_names)
         return vars
 
-    postvars = property(postvars, doc=postvars.__doc__)
+    POST = property(POST, doc=POST.__doc__)
 
-    POST = postvars
+    postvars = deprecated_property(POST, 'postvars',
+                                   'use POST instead')
 
-    def str_queryvars(self):
+    def str_GET(self):
         """
         Return a MultiDict containing all the variables from the
         QUERY_STRING.
@@ -807,31 +849,34 @@ class Request(object):
         env['webob._parsed_query_vars'] = (vars, source)
         return vars
 
-    str_queryvars = property(str_queryvars, doc=str_queryvars.__doc__)
+    str_GET = property(str_GET, doc=str_GET.__doc__)
 
-    str_GET = str_queryvars
+    str_queryvars = deprecated_property(str_GET, 'str_queryvars',
+                                        'use str_GET instead')
+                                        
 
-    def queryvars(self):
+    def GET(self):
         """
-        Like ``.str_queryvars``, but may decode values and keys
+        Like ``.str_GET``, but may decode values and keys
         """
-        vars = self.str_queryvars
+        vars = self.str_GET
         if self.charset:
             vars = UnicodeMultiDict(vars, encoding=self.charset,
                                     errors=self.unicode_errors,
                                     decode_keys=self.decode_param_names)
         return vars
 
-    queryvars = property(queryvars, doc=queryvars.__doc__)
+    GET = property(GET, doc=GET.__doc__)
 
-    GET = queryvars
+    queryvars = deprecated_property(GET, 'queryvars',
+                                    'use GET instead')
 
     def str_params(self):
         """
         A dictionary-like object containing both the parameters from
         the query string and request body.
         """
-        return NestedMultiDict(self.queryvars, self.postvars)
+        return NestedMultiDict(self.str_GET, self.str_POST)
 
     str_params = property(str_params, doc=str_params.__doc__)
 

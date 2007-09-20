@@ -10,11 +10,11 @@ def simpleapp(environ, start_response):
     request.remote_user = 'bob'
     return [
         'Hello world!\n',
-        'The get is %r' % request.queryvars,
-        ' and Val is %s\n' % request.queryvars.get('name'),
+        'The get is %r' % request.GET,
+        ' and Val is %s\n' % request.GET.get('name'),
         'The languages are: %s\n' % request.accept_language.best_matches('en-US'),
         'The accepttypes is: %s\n' % request.accept.best_match(['text/html', 'application/xml']),
-        'post is %r\n' % request.postvars,
+        'post is %r\n' % request.POST,
         'params is %r\n' % request.params,
         'cookies is %r\n' % request.cookies,
         'body: %r\n' % request.body,

@@ -67,35 +67,35 @@ There are also variables to access the variables and body:
     >>> req.method = 'POST'
     >>> req.body_file = StringIO(body)
     >>> req.environ['CONTENT_LENGTH'] = str(len(body))
-    >>> vars = req.str_postvars
+    >>> vars = req.str_POST
     >>> vars
     MultiDict([('var1', 'value1'), ('var2', 'value2'), ('rep', '1'), ('rep', '2')])
-    >>> vars is req.str_postvars
+    >>> vars is req.str_POST
     True
-    >>> req.postvars
+    >>> req.POST
     MultiDict([('var1', 'value1'), ('var2', 'value2'), ('rep', '1'), ('rep', '2')])
     >>> req.charset = 'utf8'
-    >>> req.postvars
+    >>> req.POST
     UnicodeMultiDict([(u'var1', u'value1'), (u'var2', u'value2'), (u'rep', u'1'), (u'rep', u'2')])
 
 Note that the variables are there for GET requests and non-form POST
 requests, but they are empty and read-only:
 
     >>> req = Request.blank('/')
-    >>> req.str_postvars
+    >>> req.str_POST
     <NoVars: Not a POST request>
-    >>> req.str_postvars.items()
+    >>> req.str_POST.items()
     []
-    >>> req.str_postvars['x'] = 'y'
+    >>> req.str_POST['x'] = 'y'
     Traceback (most recent call last):
         ...
     KeyError: 'Cannot add variables: Not a POST request'
     >>> req.method = 'POST'
-    >>> req.str_postvars
+    >>> req.str_POST
     MultiDict([])
     >>> req.content_type = 'text/xml'
     >>> req.body_file = StringIO('<xml></xml>')
-    >>> req.str_postvars
+    >>> req.str_POST
     <NoVars: Not an HTML form submission (Content-Type: text/xml)>
     >>> req.body
     '<xml></xml>'
@@ -103,11 +103,11 @@ requests, but they are empty and read-only:
 You can also get access to the query string variables, of course:
 
     >>> req = Request.blank('/?a=b&d=e&d=f')
-    >>> req.queryvars
+    >>> req.GET
     MultiDict([('a', 'b'), ('d', 'e'), ('d', 'f')])
-    >>> req.queryvars['d']
+    >>> req.GET['d']
     'f'
-    >>> req.queryvars.getall('d')
+    >>> req.GET.getall('d')
     ['e', 'f']
     >>> req.method = 'POST'
     >>> req.body = 'x=y&d=g'
@@ -295,11 +295,11 @@ A quick test of caching the request body:
 Some query tests:
 
     >>> req = Request.blank('/')
-    >>> req.queryvars.get('unknown')
-    >>> req.queryvars.get('unknown', '?')
+    >>> req.GET.get('unknown')
+    >>> req.GET.get('unknown', '?')
     '?'
-    >>> req.postvars.get('unknown')
-    >>> req.postvars.get('unknown', '?')
+    >>> req.POST.get('unknown')
+    >>> req.POST.get('unknown', '?')
     '?'
     >>> req.params.get('unknown')
     >>> req.params.get('unknown', '?')

@@ -204,29 +204,29 @@ Some examples:
 .. code-block::
 
     >>> req = Request.blank('/test?check=a&check=b&name=Bob')
-    >>> req.queryvars
+    >>> req.GET
     MultiDict([('check', 'a'), ('check', 'b'), ('name', 'Bob')])
-    >>> req.queryvars['check']
+    >>> req.GET['check']
     'b'
-    >>> req.queryvars.getall('check')
+    >>> req.GET.getall('check')
     ['a', 'b']
-    >>> req.queryvars.items()
+    >>> req.GET.items()
     [('check', 'a'), ('check', 'b'), ('name', 'Bob')]
 
 We'll have to create a request body and change the method to get
-postvars.  Until we do that, the variables are boring:
+POST.  Until we do that, the variables are boring:
 
 .. code-block::
 
-    >>> req.postvars
+    >>> req.POST
     <NoVars: Not a POST request>
-    >>> req.postvars.items()  # NoVars can be read like a dict, but not written
+    >>> req.POST.items()  # NoVars can be read like a dict, but not written
     []
     >>> req.method = 'POST'
     >>> req.body = 'name=Joe&email=joe@example.com'
-    >>> req.postvars
+    >>> req.POST
     MultiDict([('name', 'Joe'), ('email', 'joe@example.com')])
-    >>> req.postvars['name']
+    >>> req.POST['name']
     'Joe'
 
 Often you won't care where the variables come from.  (Even if you care
@@ -250,13 +250,6 @@ contains variables from both sources:
     name: 'Joe'
     email: 'joe@example.com'
 
-There are aliases available as well: ``req.GET`` and ``req.POST``.
-These are not entirely accurate, as *all* requests can have query
-strings (not just GET requests), and not all POST requests use a form
-body (if you do a POST as with `Atompub/APP <http://atompub.org/>`_,
-you'll have an XML body instead of variables, and req.postvars will be
-empty).
-
 Unicode Variables
 ~~~~~~~~~~~~~~~~~
 
@@ -271,11 +264,11 @@ all the variables:
 .. code-block::
 
     >>> req.charset = 'utf8'
-    >>> req.queryvars
+    >>> req.GET
     UnicodeMultiDict([(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob')])
 
-If you always want ``str`` values, you can use ``req.str_queryvars``
-and ``str_postvars`` (or ``req.str_GET`` and ``req.str_POST``).
+If you always want ``str`` values, you can use ``req.str_GET``
+and ``str_POST``.
 
 Cookies
 -------

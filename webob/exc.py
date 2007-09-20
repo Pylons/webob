@@ -76,6 +76,7 @@ import re
 import urlparse
 import sys
 from string import Template
+import types
 from webob import Response, Request, html_escape
 
 tag_re = re.compile(r'<.*?>', re.S)
@@ -117,7 +118,7 @@ class HTTPException(Exception):
     def exception(self):
         return self
 
-class WSGIHTTPException(HTTPException, Response):
+class WSGIHTTPException(Response, HTTPException):
 
     ## You should set in subclasses:
     # code = 200
@@ -177,7 +178,7 @@ ${body}''')
         else:
             args['html_comment'] = ''
         body_tmpl = self.body_template_obj
-        if HTTPException.body_template_obj is not self.body_template_obj:
+        if WSGIHTTPException.body_template_obj is not self.body_template_obj:
             # Custom template; add headers to args
             for k, v in environ.items():
                 args[k] = escape(v)
@@ -232,9 +233,9 @@ ${body}''')
         if sys.version_info >= (2, 5):
             return self
         else:
-            return RealHTTPException(self.detail, self)
+            return HTTPException(self.detail, self)
 
-class HTTPError(HTTPException):
+class HTTPError(WSGIHTTPException):
     """
     base class for status codes in the 400's and 500's
 
@@ -243,7 +244,7 @@ class HTTPError(HTTPException):
     typically results in the 400's and 500's.
     """
 
-class HTTPRedirection(HTTPException):
+class HTTPRedirection(WSGIHTTPException):
     """
     base class for 300's status code (redirections)
 
@@ -253,7 +254,7 @@ class HTTPRedirection(HTTPException):
     condition.
     """
 
-class HTTPOk(HTTPException):
+class HTTPOk(WSGIHTTPException):
     """
     Base class for the 200's status code (successful responses)
     """
@@ -618,17 +619,18 @@ else:
     for name in dir(httpexceptions):
         obj = globals().get(name)
         if (obj and isinstance(obj, type) and issubclass(obj, HTTPException)
-            and obj is not HTTPException):
+            and obj is not HTTPException
+            and obj is not WSGIHTTPException):
             obj.__bases__ = obj.__bases__ + (getattr(httpexceptions, name),)
     del name, obj, httpexceptions
 
 __all__ = ['HTTPExceptionMiddleware', 'status_map']
 status_map={}
 for name, value in globals().items():
-    if (isinstance(value, type) and issubclass(value, HTTPException)
+    if (isinstance(value, (type, types.ClassType)) and issubclass(value, HTTPException)
         and not name.startswith('_')):
         __all__.append(name)
-        if value.code:
+        if getattr(value, 'code', None):
             status_map[value.code]=value
 del name, value
 
