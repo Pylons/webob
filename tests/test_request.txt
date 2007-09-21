@@ -158,13 +158,6 @@ Some headers are handled specifically (more should be added):
     >>> req.if_modified_since = datetime(2005, 1, 1, 12, 0)
     >>> req.if_modified_since < datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
     True
-    >>> print req.referer_search_query()
-    None
-    >>> req.referer = 'http://www.google.com/search?q=test+query'
-    >>> req.headers['referer']
-    'http://www.google.com/search?q=test+query'
-    >>> req.referer_search_query()
-    'test query'
     >>> req.user_agent
     ''
     >>> req.user_agent = 'MSIE-Win'
