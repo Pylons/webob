@@ -915,9 +915,6 @@ class Request(object):
 
     cookies = property(cookies, doc=cookies.__doc__)
 
-    ## FIXME: there should be a way to turn the request into a GET as part
-    ## of the copy; often a copied request is a safe subrequest of some sort,
-    ## and only GET is really safe (HEAD being uncommon)
     def copy(self):
         """
         Copy the request and environment object.
@@ -934,6 +931,20 @@ class Request(object):
         else:
             fileobj = StringIO(data)
         env['wsgi.input'] = fileobj
+        return self.__class__(env)
+
+    def copy_get(self):
+        """
+        Copies the request and environment object, but turning this request
+        into a GET along the way.  If this was a POST request (or any other verb)
+        then it becomes GET, and the request body is thrown away.
+        """
+        env = self.environ.copy()
+        env['wsgi.input'] = StringIO('')
+        env['CONTENT_LENGTH'] = '0'
+        if 'CONTENT_TYPE' in env:
+            del env['CONTENT_TYPE']
+        env['REQUEST_METHOD'] = 'GET'
         return self.__class__(env)
 
     def remove_conditional_headers(self, remove_encoding=True):
