@@ -1547,8 +1547,6 @@ class Response(object):
         else:
             return self._app_iter
 
-    ## FIXME: maybe the content-length clearing should only happen if
-    ## self._app_iter is not None?
     def _app_iter__set(self, value):
         if self._body is not None:
             # Undo the automatically-set content-length
@@ -1739,11 +1737,6 @@ class Response(object):
         for name, value in kw.items():
             setattr(cache_control, name, value)
 
-    ## FIXME: I'd like some native support for gzipping the response
-    ## This seems non-trivial to me, since it involves changing things like
-    ## the response content type.  It would probably be some method; either an
-    ## in-place method like response.gzip(), or a copied response object like
-    ## response.gzipped().
     content_encoding = header_getter('Content-Encoding', rfc_section='14.11')
 
     content_language = converter(
@@ -1799,7 +1792,7 @@ class Response(object):
 
     server = header_getter('Server', rfc_section='14.38')
 
-    ## FIXME: I realize response.var += 'something' won't work.  It should.
+    ## FIXME: I realize response.vary += 'something' won't work.  It should.
     ## Maybe for all listy headers.
     vary = converter(
         header_getter('Vary', rfc_section='14.44'),
@@ -1855,8 +1848,6 @@ class Response(object):
         """
         WSGI application interface
         """
-        ## FIXME: I should watch out here for bad responses, e.g.,
-        ## incomplete headers or body, etc
         if self.conditional_response:
             return self.conditional_response_app(environ, start_response)
         start_response(self.status, self.headerlist)
