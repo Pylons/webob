@@ -1377,7 +1377,7 @@ class Response(object):
             header = self.headers.pop('content-type')
         except KeyError:
             raise AttributeError(
-                "You cannot set the charset when on content-type is defined")
+                "You cannot set the charset when no content-type is defined")
         match = _CHARSET_RE.search(header)
         if match:
             header = header[:match.start()] + header[match.end():]
