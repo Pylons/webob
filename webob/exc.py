@@ -114,9 +114,10 @@ class HTTPException(Exception):
     def __call__(self, environ, start_response):
         return self.wsgi_response(environ, start_response)
 
-    @property
     def exception(self):
         return self
+    
+    exception = property(exception)
 
 class WSGIHTTPException(Response, HTTPException):
 
@@ -224,16 +225,18 @@ ${body}''')
             return self.generate_response(environ, start_response)
         return Response.__call__(self, environ, start_response)
 
-    @property
     def wsgi_response(self):
         return self
+    
+    wsgi_response = property(wsgi_response)
 
-    @property
     def exception(self):
         if sys.version_info >= (2, 5):
             return self
         else:
             return HTTPException(self.detail, self)
+
+    exception = property(exception)
 
 class HTTPError(WSGIHTTPException):
     """
