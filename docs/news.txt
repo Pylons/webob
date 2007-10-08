@@ -1,8 +1,8 @@
 News
 ====
 
-svn trunk
----------
+0.8.2
+-----
 
 * Python 2.3 compatibility: backport of ``reversed(seq)``
 
