@@ -19,6 +19,12 @@ svn trunk
   knowledge about current browsers).  Similarly,
   ``req.referer_search_query()`` is gone.
 
+* Added parameters ``version`` and ``comment`` to
+  ``Response.set_cookie()``, per William Dode's suggestion.
+
+* Was accidentally consuming file uploads, instead of putting the
+  ``FieldStorage`` object directly in the parameters.
+
 0.8.1
 -----
 
