@@ -390,3 +390,146 @@ mimetype:
     In ``res.content_type``
 write(data):
     With ``res.body_file.write(data)``
+
+Zope 3
+======
+
+From the Zope 3 interfaces for the `Request
+<http://apidoc.zope.org/++apidoc++/Interface/zope.publisher.interfaces.browser.IBrowserRequest/index.html>`_
+and `Response
+<http://apidoc.zope.org/++apidoc++/Interface/zope.publisher.interfaces.http.IHTTPResponse/index.html>`_.
+
+Request
+-------
+
+``locale``, ``setupLocale()``:
+    This is not fully calculated, but information is available in
+    ``req.accept_languages``.
+
+``principal``, ``setPrincipal(principal)``:
+    ``req.remote_user`` gives the username, but there is no standard
+    place for a user *object*.
+
+``publication``, ``setPublication()``, 
+    These are associated with the object publishing system in Zope.
+    This kind of publishing system is outside the scope of WebOb.
+
+``traverse(object)``, ``getTraversalStack()``, ``setTraversalStack()``:
+    These all relate to traversal, which is part of the publishing
+    system.
+
+``processInputs()``, ``setPathSuffix(steps)``:
+    Also associated with traversal and preparing the request.
+
+``environment``:
+    In ``req.environ``
+
+``bodyStream``:
+    In ``req.body_file``
+
+``interaction``:
+    What this is, I don't know.
+
+``annotations``:
+    Extra information associated with the request.  This would
+    generally go in custom keys of ``req.environ``, or if you set
+    attributes those attributes are stored in
+    ``req.environ['webob.adhoc_attrs']``.
+
+``debug``:
+    There is no standard debug flag for WebOb.
+    
+``__getitem__(key)``, ``get(key)``, etc:
+    These treat the request like a dictionary, which WebOb does not
+    do.  They seem to take values from the environment, not
+    parameters.  Also on the Zope request object is ``items()``,
+    ``__contains__(key)``, ``__iter__()``, ``keys()``, ``__len__()``,
+    ``values()``.
+
+``getPositionalArguments()``:
+    I'm not sure what the equivalent would be, as there are no
+    positional arguments during instantiation (it doesn't fit into
+    WSGI).  Maybe ``wsgiorg.urlvars``?
+
+``retry()``, ``supportsRetry()``:
+    Creates a new request that can be used to retry a request.
+    Similar to ``req.copy()``.
+
+``close()``, ``hold(obj)``: 
+    This closes resources associated with the request, including any
+    "held" objects.  There's nothing similar.
+
+Response
+--------
+
+``authUser``:
+    Not sure what this is or does.
+
+``reset()``:
+    No direct equivalent; you'd have to do ``res.headers = [];
+    res.body = ''; res.status = 200``
+
+``setCookie(name, value, **kw)``:
+    Is ``res.set_cookie(...)``.
+
+``getCookie(name)``:
+    No equivalent.  Hm.
+
+``expireCookie(name)``:
+    Is ``res.delete_cookie(name)``.
+
+``appendToCookie(name, value)``:
+    This appends the value to any existing cookie (separating values
+    with a colon).  WebOb does not do this.
+
+``setStatus(status)``:
+    Availble by setting ``res.status`` (can be set to an integer or a
+    string of "code reason").
+
+``getHeader(name, default=None)``:
+    Is ``res.headers.get(name)``.
+
+``getStatus()``:
+    Is ``res.status_int`` (or ``res.status`` to include reason)
+
+``addHeader(name, value)``:
+    Is ``res.headers.add(name, value)`` (in Zope and WebOb, this does
+    not clobber any previous value).
+
+``getHeaders()``:
+    Is ``res.headerlist``.
+
+``setHeader(name, value)``:
+    Is ``res.headers[name] = value``.
+
+``getStatusString()``:
+    Is ``res.status``.
+
+``consumeBody()``:
+    This consumes any non-string body to turn the body into a single
+    string.  Any access to ``res.body`` will do this (e.g., when you
+    have set the ``res.app_iter``).
+
+``internalError()``:
+    This is available with ``webob.exc.HTTP*()``.
+
+``handleException(exc_info)``:
+    This is provided with a tool like ``paste.exceptions``.
+
+``consumeBodyIter()``:
+    This returns the iterable for the body, even if the body was a
+    string.  Anytime you access ``res.app_iter`` you will get an
+    iterable.  ``res.body`` and ``res.app_iter`` can be interchanged
+    and accessed as many times as you want, unlike the Zope
+    equivalents.
+
+``setResult(result)``:
+    You can achieve the same thing through ``res.body = result``, or
+    ``res.app_iter = result``.  ``res.body`` accepts None, a unicode
+    string (*if* you have set a charset) or a normal string.
+    ``res.app_iter`` only accepts None and an interable.  You can't
+    update all of a response with one call.
+
+    Like in Zope, WebOb updates Content-Length.  Unlike Zope, it does
+    not automatically calculate a charset.
+
