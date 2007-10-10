@@ -81,3 +81,13 @@ def test_headers():
         "if_none_match: <ETag etag001 or etag002>",
         )
     
+def test_bad_cookie():
+    req = Request.blank('/')
+    req.headers['Cookie'] = '070-it-:><?0'
+    assert req.cookies == {}
+    req.headers['Cookie'] = 'foo=bar'
+    assert req.cookies == {'foo': 'bar'}
+    req.headers['Cookie'] = '...'
+    assert req.cookies == {}
+    req.headers['Cookie'] = '=foo'
+    assert req.cookies == {}
