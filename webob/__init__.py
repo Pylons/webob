@@ -546,6 +546,10 @@ class Request(object):
     remote_user = environ_getter('REMOTE_USER', default=None)
     remote_addr = environ_getter('REMOTE_ADDR', default=None)
     query_string = environ_getter('QUERY_STRING')
+    server_name = environ_getter('SERVER_NAME')
+    server_port = converter(
+        environ_getter('SERVER_PORT'),
+        _parse_int, _serialize_int, 'int')
 
     _headers = None
 

@@ -1,6 +1,12 @@
 News
 ====
 
+svn trunk
+---------
+
+* Added request attributes ``req.server_name`` and ``req.server_port``
+  for the environ keys ``SERVER_NAME`` and ``SERVER_PORT``.
+
 0.8.2
 -----
 
