@@ -85,13 +85,14 @@ Request
 
 ``FILES``:
     File uploads are ``cgi.FieldStorage`` objects directly in
-    postvars
+    ``res.POST``
 
 ``META``:
     Is ``req.environ``
 
 ``user``:
-    No equivalent (too connected to application model for WebOb)
+    No equivalent (too connected to application model for WebOb).
+    There is ``req.remote_user``, which is only ever a string.
 
 ``session``:
     No equivalent
@@ -113,7 +114,7 @@ objects that are request variables (query string and POST body
 variables).  The equivalent in WebOb is MultiDict.
 
 Mutability:
-    WebOb dictionaries are sometimes mutable (req.queryvars is,
+    WebOb dictionaries are sometimes mutable (req.GET is,
     req.params is not)
 
 Ordering:
@@ -333,10 +334,10 @@ Request
 -------
 
 ``query``:
-    As ``req.queryvars`` or ``req.GET``
+    As ``req.GET``
 
 ``form``:
-    As ``req.postvars`` or ``req.POST``
+    As ``req.POST``
 
 ``cookie``:
     A ``SimpleCookie`` object in Yaro; a dictionary in WebOb
@@ -377,13 +378,13 @@ Request
 path:
     As ``req.path_info``
 args:
-    As ``req.queryvars`` or ``req.GET``
+    As ``req.GET``
 form:
-    As ``req.postvars`` or ``req.POST``
+    As ``req.POST``
 values:
     As ``req.params``
 files:
-    In ``req.postvars``
+    In ``req.POST`` (as FieldStorage objects)
 data:
     In ``req.body_file``
 
