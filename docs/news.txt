@@ -7,6 +7,9 @@ svn trunk
 * Added request attributes ``req.server_name`` and ``req.server_port``
   for the environ keys ``SERVER_NAME`` and ``SERVER_PORT``.
 
+* Avoid exceptions in ``req.content_length``, even if
+  ``environ['CONTENT_LENGTH'] is somehow invalid.
+
 0.8.2
 -----
 

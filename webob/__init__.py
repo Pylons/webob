@@ -376,9 +376,17 @@ def _serialize_range(value):
     return value or None
 
 def _parse_int(value):
-    if value is None:
+    if value is None or value == '':
         return None
     return int(value)
+
+def _parse_int_safe(value):
+    if value is None or value == '':
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        return None
 
 def _serialize_int(value):
     if value is None:
@@ -542,7 +550,7 @@ class Request(object):
     content_type = environ_getter('CONTENT_TYPE', rfc_section='14.17')
     content_length = converter(
         environ_getter('CONTENT_LENGTH', rfc_section='14.13'),
-        _parse_int, _serialize_int, 'int')
+        _parse_int_safe, _serialize_int, 'int')
     remote_user = environ_getter('REMOTE_USER', default=None)
     remote_addr = environ_getter('REMOTE_ADDR', default=None)
     query_string = environ_getter('QUERY_STRING')
@@ -1679,7 +1687,7 @@ class Response(object):
 
     age = converter(
         header_getter('Age', rfc_section='14.6'),
-        _parse_int, _serialize_int, 'int')
+        _parse_int_safe, _serialize_int, 'int')
 
     allow = converter(
         header_getter('Allow', rfc_section='14.7'),
