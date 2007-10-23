@@ -437,7 +437,9 @@ Request
     In ``req.body_file``
 
 ``interaction``:
-    What this is, I don't know.
+    This is the security context for the request; all the possible
+    participants or principals in the request.  There's no
+    equivalent.
 
 ``annotations``:
     Extra information associated with the request.  This would
