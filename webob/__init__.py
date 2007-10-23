@@ -697,7 +697,7 @@ class Request(object):
         path = path.lstrip('/')
         return path.split('/', 1)[0]
 
-    def urlvars__get(self):
+    def _urlvars__get(self):
         """
         Return any variables matched in the URL (e.g.,
         ``wsgiorg.routing_args``).
@@ -711,17 +711,17 @@ class Request(object):
             self.environ['wsgiorg.routing_args'] = ((), result)
             return result
 
-    def urlvars__set(self, value):
+    def _urlvars__set(self, value):
         del self.urlvars
         self.environ['wsgiorg.routing_args'] = ((), value)
 
-    def urlvars__del(self):
+    def _urlvars__del(self):
         if 'paste.urlvars' in self.environ:
             del self.environ['paste.urlvars']
         if 'wsgiorg.routing_args' in self.environ:
             del self.environ['wsgiorg.routing_args']
             
-    urlvars = property(urlvars__get, urlvars__set, urlvars__del, doc=urlvars__get.__doc__)
+    urlvars = property(_urlvars__get, _urlvars__set, _urlvars__del, doc=_urlvars__get.__doc__)
 
     def is_xhr(self):
         """Returns a boolean if X-Requested-With is present and ``XMLHttpRequest``"""
