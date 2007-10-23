@@ -62,7 +62,7 @@ class MultiDict(DictMixin):
         if fs.list:
             # fs.list can be None when there's nothing to parse
             for field in fs.list:
-                if field.file:
+                if field.filename:
                     obj.add(field.name, field)
                 else:
                     obj.add(field.name, field.value)

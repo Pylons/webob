@@ -4,11 +4,14 @@ News
 svn trunk
 ---------
 
+* ``request.POST`` was giving FieldStorage objects for *every*
+  attribute, not just file uploads.  This is fixed now.x
+
 * Added request attributes ``req.server_name`` and ``req.server_port``
   for the environ keys ``SERVER_NAME`` and ``SERVER_PORT``.
 
 * Avoid exceptions in ``req.content_length``, even if
-  ``environ['CONTENT_LENGTH'] is somehow invalid.
+  ``environ['CONTENT_LENGTH']`` is somehow invalid.
 
 0.8.2
 -----
