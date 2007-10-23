@@ -17,7 +17,7 @@ we can use as we improve our application:
 
 .. code-block::
 
-   >>> from webob import Request, Response, UTC
+   >>> from webob import Request, Response
    >>> import os
    >>> class FileApp(object):
    ...     def __init__(self, filename):
@@ -36,7 +36,6 @@ simplest version:
 
 .. code-block::
 
-   >>> import mimetypes
    >>> def make_response(filename):
    ...     res = Response(content_type=get_mimetype(filename))
    ...     res.body = open(filename, 'rb').read()
@@ -216,4 +215,3 @@ Now we'll test it out:
    >>> req3.if_range = 'invalid-etag'
    >>> req3.get_response(app)
    <Response ... 200 OK>
-   
