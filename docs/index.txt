@@ -95,7 +95,7 @@ object:
 ``req.headers``:
     A dictionary of all the headers.  This is dictionary is case-insensitive.
 
-.. _dictionary-like object: multidict_
+.. _`dictionary-like object`: `Multidict`
 
 Also, for standard HTTP request headers there are usually attributes,
 for instance: ``req.accept_language``, ``req.content_length``,
@@ -211,8 +211,7 @@ Here's the highlights:
     This optional attribute can point to the request object associated
     with this response object.
 
-``response.set_cookie(key, value, max_age=None, path='/', domain=None,
-secure=None, httponly=False, version=None, comment=None)``:
+``response.set_cookie(key, value, max_age=None, path='/', domain=None, secure=None, httponly=False, version=None, comment=None)``:
     Set a cookie.  The keyword arguments control the various cookie
     parameters.
 
@@ -232,7 +231,7 @@ secure=None, httponly=False, version=None, comment=None)``:
     attribute later).  It can also do HEAD and Range requests.
 
 Headers
-~~~~~~~
+-------
 
 Like the request, most HTTP response headers are available as
 properties.  These are parsed, so you can do things like
@@ -242,7 +241,7 @@ The details are available in the `extracted Response documentation
 <class-webob.Response.html>`_.
 
 Instantiating the Response
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 
 Of course most of the time you just want to *make* a response.  
 Generally any attribute of the response can be passed in as a keyword
@@ -290,6 +289,29 @@ You can use this like:
 The exceptions are still WSGI applications, but you cannot set
 attributes like ``content_type``, ``charset``, etc. on these exception
 objects.
+
+Multdict
+========
+
+Several parts of WebOb use a "multidict"; this is a dictionary where a
+key can have multiple values.  The quintessential example is a query
+string like ``?pref=red&pref=blue``; the ``pref`` variable has two
+values: ``red`` and ``blue``.
+
+In a multidict, when you do ``request.GET['pref']`` you'll get back
+only ``'blue'`` (the last value of ``pref``).  Sometimes returning a
+string, and sometimes returning a list, is the cause of frequent
+exceptions.  If you want *all* the values back, use
+``request.GET.getall('pref')``.  If you want to be sure there is *one
+and only one* value, use ``request.GET.getone('pref')``, which will
+raise an exception if there is zero or more than one value for
+``pref``.
+
+When you use operations like ``request.GET.items()`` you'll get back
+something like ``[('pref', 'red'), ('pref', 'blue')]``.  All the
+key/value pairs will show up.  Similarly ``request.GET.keys()``
+returns ``['pref', 'pref']``.  Multidict is a view on a list of
+tuples; all the keys are ordered, and all the values are ordered.
 
 Example
 =======
