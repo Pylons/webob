@@ -798,7 +798,7 @@ class Request(object):
             vars, body_file = env['paste.parsed_formvars']
             if body_file is self.body_file:
                 # FIXME: is it okay that this isn't *our* MultiDict?
-                return parsed
+                return vars
         content_type = self.content_type
         if ';' in content_type:
             content_type = content_type.split(';', 1)[0]
