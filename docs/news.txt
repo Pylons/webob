@@ -1,8 +1,8 @@
 News
 ====
 
-svn trunk
----------
+0.8.3
+-----
 
 * ``request.POST`` was giving FieldStorage objects for *every*
   attribute, not just file uploads.  This is fixed now.
