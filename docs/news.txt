@@ -5,7 +5,8 @@ svn trunk
 ---------
 
 * ``request.POST`` was giving FieldStorage objects for *every*
-  attribute, not just file uploads.  This is fixed now.x
+  attribute, not just file uploads.  This is fixed now.
+
 
 * Added request attributes ``req.server_name`` and ``req.server_port``
   for the environ keys ``SERVER_NAME`` and ``SERVER_PORT``.
