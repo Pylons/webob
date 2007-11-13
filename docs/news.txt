@@ -1,6 +1,12 @@
 News
 ====
 
+svn trunk
+---------
+
+* ``__setattr__`` would keep ``Request`` subclasses from having
+  properly settable environ proxies (like ``req.path_info``).
+
 0.8.3
 -----
 

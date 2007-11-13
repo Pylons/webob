@@ -484,9 +484,9 @@ class Request(object):
         if decode_param_names is NoDefault:
             self.__dict__['decode_param_names'] = decode_param_names
 
-    def __setattr__(self, attr, value):
+    def __setattr__(self, attr, value, DEFAULT=[]):
         ## FIXME: I don't know why I need this guard (though experimentation says I do)
-        if attr in self.__class__.__dict__ or attr.startswith('_'):
+        if getattr(self.__class__, attr, DEFAULT) is not DEFAULT or attr.startswith('_'):
             object.__setattr__(self, attr, value)
         else:
             self.environ.setdefault('webob.adhoc_attrs', {})[attr] = value
