@@ -1,6 +1,14 @@
 News
 ====
 
+svn trunk
+---------
+
+* Bugfix (typo) with reusing POST body.
+
+* ``Response(status=404)`` now works (before you would have to use
+  ``status="404 Not Found"``).
+
 0.8.4
 -----
 
