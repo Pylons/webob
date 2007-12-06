@@ -1272,7 +1272,7 @@ class Response(object):
                 "You may only give one of the body and app_iter arguments")
         self._app_iter = app_iter
         self._body = body
-        self._status = status
+        self.status = status
         if headerlist is None:
             headerlist = []
         self._headerlist = headerlist
@@ -1990,7 +1990,7 @@ class FakeCGIBody(object):
     def readline(self, size=None):
         # We ignore size, but allow it to be hinted
         rest = self._get_body()[self.position:]
-        next = res.find('\r\n')
+        next = rest.find('\r\n')
         if next == -1:
             return self.read()
         self.position += next+2
