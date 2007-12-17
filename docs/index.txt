@@ -3,16 +3,18 @@ WebOb
 
 Other documents:
 
-* `Differences between the WebOb API and other framework/libraries
-  <differences.html>`_
-
-* `File-serving example <file-example.html>`_
-
 * `Reference <reference.html>`_
 
 * Extracted documentation for the `request
   <class-webob.Request.html>`_ and `response
   <class-webob.Response.html>`_.
+
+* `Differences between the WebOb API and other framework/libraries
+  <differences.html>`_
+
+* `File-serving example <file-example.html>`_
+
+* `Comment middleware example <comment-example.html>`_
 
 .. contents::
 
