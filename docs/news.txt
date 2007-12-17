@@ -1,21 +1,21 @@
 News
 ====
 
-svn trunk
----------
+0.8.5
+-----
 
-* Bugfix (typo) with reusing POST body.
+* Added response methods ``resp.encode_content()`` and
+  ``resp.decode_content()`` to gzip or ungzip content.
 
 * ``Response(status=404)`` now works (before you would have to use
   ``status="404 Not Found"``).
+
+* Bugfix (typo) with reusing POST body.
 
 * Added ``226 IM Used`` response status.
 
 * Backport of ``string.Template`` included for Python 2.3
   compatibility.
-
-* Added response methods ``resp.encode_content()`` and
-  ``resp.decode_content()`` to gzip or ungzip content.
 
 0.8.4
 -----
