@@ -20,6 +20,7 @@ status_reasons = {
     205: 'Reset Content',
     206: 'Partial Content',
     207: 'Multi Status',
+    226: 'IM Used',
 
     # Redirection
     300: 'Multiple Choices',
