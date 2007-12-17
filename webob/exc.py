@@ -75,7 +75,10 @@ References:
 import re
 import urlparse
 import sys
-from string import Template
+try:
+    from string import Template
+except ImportError:
+    from webob.util.stringtemplate import Template
 import types
 from webob import Response, Request, html_escape
 

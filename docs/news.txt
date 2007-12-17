@@ -11,6 +11,9 @@ svn trunk
 
 * Added ``226 IM Used`` response status.
 
+* Backport of ``string.Template`` included for Python 2.3
+  compatibility.
+
 0.8.4
 -----
 
