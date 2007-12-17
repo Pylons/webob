@@ -1773,6 +1773,46 @@ class Response(object):
 
     content_encoding = header_getter('Content-Encoding', rfc_section='14.11')
 
+    def encode_content(self, encoding='gzip'):
+        """
+        Encode the content with the given encoding (only gzip and
+        identity are supported).
+        """
+        if encoding == 'identity':
+            return
+        if encoding != 'gzip':
+            raise ValueError(
+                "Unknown encoding: %r" % encoding)
+        if self.content_encoding:
+            if self.content_encoding == encoding:
+                return
+            self.decode_content()
+        from webob.util.safegzip import GzipFile
+        f = StringIO()
+        gzip_f = GzipFile(filename='', mode='w', fileobj=f)
+        gzip_f.write(self.body)
+        gzip_f.close()
+        new_body = f.getvalue()
+        f.close()
+        self.content_encoding = 'gzip'
+        self.body = new_body
+
+    def decode_content(self):
+        content_encoding = self.content_encoding
+        if not content_encoding or content_encoding == 'identity':
+            return
+        if content_encoding != 'gzip':
+            raise ValueError(
+                "I don't know how to decode the content %s" % content_encoding)
+        from webob.util.safegzip import GzipFile
+        f = StringIO(self.body)
+        gzip_f = GzipFile(filename='', mode='r', fileobj=f)
+        new_body = gzip_f.read()
+        gzip_f.close()
+        f.close()
+        self.content_encoding = None
+        self.body = new_body
+
     content_language = converter(
         header_getter('Content-Language', rfc_section='14.12'),
         _parse_list, _serialize_list, 'list')

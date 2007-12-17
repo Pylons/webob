@@ -14,6 +14,9 @@ svn trunk
 * Backport of ``string.Template`` included for Python 2.3
   compatibility.
 
+* Added response methods ``resp.encode_content()`` and
+  ``resp.decode_content()`` to gzip or ungzip content.
+
 0.8.4
 -----
 
