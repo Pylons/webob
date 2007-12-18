@@ -376,12 +376,11 @@ class HTTPNotModified(HTTPRedirection):
     empty_body = True
 
 class HTTPUseProxy(_HTTPMove):
-    # FIXME: Not a move, but looks a little like one
+    # Not a move, but looks a little like one
     code = 305
     title = 'Use Proxy'
     explanation = (
-        'The resource must be accessed through a proxy '
-        'located at ')
+        'The resource must be accessed through a proxy located at')
 
 class HTTPTemporaryRedirect(_HTTPMove):
     code = 307
