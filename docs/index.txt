@@ -97,7 +97,7 @@ object:
 ``req.headers``:
     A dictionary of all the headers.  This is dictionary is case-insensitive.
 
-.. _`dictionary-like object`: `Multidict`
+.. _`dictionary-like object`: #multidict
 
 Also, for standard HTTP request headers there are usually attributes,
 for instance: ``req.accept_language``, ``req.content_length``,
@@ -292,8 +292,8 @@ The exceptions are still WSGI applications, but you cannot set
 attributes like ``content_type``, ``charset``, etc. on these exception
 objects.
 
-Multdict
-========
+Multidict
+=========
 
 Several parts of WebOb use a "multidict"; this is a dictionary where a
 key can have multiple values.  The quintessential example is a query
@@ -318,5 +318,11 @@ tuples; all the keys are ordered, and all the values are ordered.
 Example
 =======
 
-I haven't figured out the example I want to use here.  Sigh.
+I haven't figured out the example I want to use here.  The
+`file-serving example`_ shows how to do more advanced HTTP techniques,
+while the `comment middleware example`_ shows middleware.  For
+applications it's more reasonable to use WebOb in the context of a
+larger framework.  `Pylons <http://pylonshq.com>`_ uses WebOb
+optionally in 0.9.7+.
+
 
