@@ -28,8 +28,7 @@ def test_response():
     assert res.headerlist == [('content-type', 'text/html')]
     res.set_cookie('x', 'y')
     assert res.headers['set-cookie'] == 'x=y; Path=/;'
-    res = Response('200 OK', content_type='text/html',
-                   body='a body')
+    res = Response('a body', '200 OK', content_type='text/html')
     res.encode_content()
     assert res.content_encoding == 'gzip'
     assert res.body == '\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xffKTH\xcaO\xa9\x04\x00\xf6\x86GI\x06\x00\x00\x00'

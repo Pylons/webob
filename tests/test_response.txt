@@ -4,7 +4,7 @@ same time.
     >>> from dtopt import ELLIPSIS
     >>> from webob import Response, UTC
     >>> from datetime import datetime
-    >>> res = Response('200 OK', [], 'Test')
+    >>> res = Response('Test', status='200 OK', headerlist=[])
 
 This is a minimal response object.  We can do things like get and set
 the body:
@@ -34,27 +34,27 @@ for the various pieces:
     >>> res.status_int
     200
     >>> res.headers
-    HeaderDict([('Content-Length', '4')])
+    HeaderDict([('content-type', 'text/html; charset=utf8'), ('Content-Length', '4')])
     >>> res.headerlist
-    [('Content-Length', '4')]
+    [('content-type', 'text/html; charset=utf8'), ('Content-Length', '4')]
 
 Content-type and charset are handled separately as properties, though
 they are both in the ``res.headers['content-type']`` header:
 
-    >>> print res.content_type
-    None
+    >>> res.content_type
+    'text/html'
     >>> res.content_type = 'text/html'
     >>> res.content_type
     'text/html'
-    >>> print res.charset
-    None
-    >>> res.charset = 'utf8'
     >>> res.charset
     'utf8'
+    >>> res.charset = 'iso-8859-1'
+    >>> res.charset
+    'iso-8859-1'
     >>> res.content_type
     'text/html'
     >>> res.headers['content-type']
-    'text/html; charset=utf8'
+    'text/html; charset=iso-8859-1'
 
 Cookie handling is done through methods:
 

@@ -5,7 +5,7 @@ import urllib
 import urlparse
 import re
 import textwrap
-from Cookie import SimpleCookie
+from Cookie import BaseCookie
 from rfc822 import parsedate_tz, mktime_tz, formatdate
 from datetime import datetime, date, timedelta, tzinfo
 import time
@@ -778,6 +778,12 @@ class Request(object):
 
     body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
 
+    def write(self, text):
+        if isinstance(text, unicode):
+            self.unicode_body += text
+        else:
+            self.body += text
+
     def str_POST(self):
         """
         Return a MultiDict containing all the variables from a POST
@@ -918,7 +924,7 @@ class Request(object):
                 return vars
         vars = {}
         if source:
-            cookies = SimpleCookie()
+            cookies = BaseCookie()
             cookies.load(source)
             for name in cookies:
                 vars[name] = cookies[name].value
@@ -1163,7 +1169,9 @@ class Request(object):
         else:
             status, headers, app_iter = self.call_application(
                 application, catch_exc_info=False)
-        return self.ResponseClass(status, headers, app_iter=app_iter, request=self)
+        return self.ResponseClass(
+            status=status, headerlist=headers, app_iter=app_iter,
+            request=self)
 
     #@classmethod
     def blank(cls, path, environ=None, base_url=None, headers=None):
@@ -1258,10 +1266,11 @@ class Response(object):
     Represents a WSGI response
     """
 
-    default_content_type = None
+    default_content_type = 'text/html'
+    default_charset = 'utf8'
     default_conditional_response = False
 
-    def __init__(self, status='200 OK', headerlist=None, body=None, app_iter=None,
+    def __init__(self, body=None, status='200 OK', headerlist=None, app_iter=None,
                  request=None, content_type=None, conditional_response=NoDefault,
                  **kw):
         if app_iter is None:
@@ -1270,8 +1279,6 @@ class Response(object):
         elif body is not None:
             raise TypeError(
                 "You may only give one of the body and app_iter arguments")
-        self._app_iter = app_iter
-        self._body = body
         self.status = status
         if headerlist is None:
             headerlist = []
@@ -1286,11 +1293,9 @@ class Response(object):
                 self._request = None
         else:
             self._environ = self._request = None
-        if self._body is not None:
-            self.content_length = len(self._body)
         if content_type is not None:
             self.content_type = content_type
-        elif self.default_content_type is not None:
+        elif self.default_content_type is not None and headerlist is None:
             self.content_type = self.default_content_type
         if conditional_response is NoDefault:
             self.conditional_response = self.default_conditional_response
@@ -1298,7 +1303,23 @@ class Response(object):
             self.conditional_response = conditional_response
         if 'charset' in kw:
             # We set this early, so something like unicode_body works later
-            setattr(self, 'charset', kw.pop('charset'))
+            value = kw.pop('charset')
+            if value:
+                self.charset = value
+        elif self.default_charset and not self.charset and headerlist is None:
+            ct = self.content_type
+            if ct and (ct.startswith('text/') or ct.startswith('application/xml')
+                       or (ct.startswith('application/') and ct.endswith('+xml'))):
+                self.charset = self.default_charset
+        if app_iter is not None:
+            self._app_iter = app_iter
+            self._body = None
+        else:
+            if isinstance(body, unicode):
+                self.unicode_body = body
+            else:
+                self.body = body
+            self._app_iter = None
         for name, value in kw.items():
             if not hasattr(self.__class__, name):
                 # Not a basic attribute
@@ -1597,7 +1618,7 @@ class Response(object):
         """
         Set (add) a cookie for the response
         """
-        cookies = SimpleCookie()
+        cookies = BaseCookie()
         cookies[key] = value
         for var_name, var_value in [
             ('max_age', max_age),
@@ -1638,7 +1659,7 @@ class Response(object):
         del self.headers['Set-Cookie']
         found = False
         for header in existing:
-            cookies = SimpleCookie()
+            cookies = BaseCookie()
             cookies.load(header)
             if key in cookies:
                 found = True

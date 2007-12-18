@@ -1,6 +1,31 @@
 News
 ====
 
+.. contents::
+
+svn trunk
+---------
+
+Backward Incompatible Changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* The ``Response`` constructor has changed: it is not ``Response([body],
+  [status], ...)`` (before it was ``Response([status], [body], ...).
+  Body may be str or unicode.
+
+* The ``Response`` class defaults to ``text/html`` for the
+  Content-Type, and ``utf8`` for the charset (charset is only set on
+  ``text/*`` and ``application/*+xml`` responses).
+
+Bugfixes and Small Changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Use ``BaseCookie`` instead of ``SimpleCookie`` for parsing cookies.
+
+* Added ``resp.write(text)`` method, which is equivalent to
+  ``resp.body += text`` or ``resp.unicode_body += text``, depending on
+  the type of ``text``.
+
 0.8.5
 -----
 
