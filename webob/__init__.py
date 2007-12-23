@@ -12,7 +12,6 @@ import time
 import calendar
 import tempfile
 import warnings
-from webob.util.dictmixin import DictMixin
 from webob.datastruct import EnvironHeaders
 from webob.multidict import MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
 from webob.etag import AnyETag, NoETag, ETagMatcher, IfRange, NoIfRange

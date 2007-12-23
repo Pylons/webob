@@ -107,7 +107,7 @@ class ETagMatcher(object):
                     etag = value
                     rest = ''
             if etag == '*':
-                return AnyTag
+                return AnyETag
             if etag:
                 if weak:
                     weak_results.append(etag)
@@ -182,7 +182,7 @@ class IfRange(object):
         """
         date = etag = None
         if not value:
-            etag = NoEtag()
+            etag = NoETag()
         elif value and value.endswith(' GMT'):
             # Must be a date
             date = webob._parse_date(value)
