@@ -50,7 +50,26 @@ should have.
     'bar'
     >>> req.script_name, req.path_info
     ('/foo/bar', '/')
-    >>> # Should test urlvars
+    >>> print req.environ.get('wsgiorg.routing_args')
+    None
+    >>> req.urlvars
+    {}
+    >>> req.environ['wsgiorg.routing_args']
+    ((), {})
+    >>> req.urlvars = dict(x='y')
+    >>> req.environ['wsgiorg.routing_args']
+    ((), {'x': 'y'})
+    >>> req.urlargs
+    ()
+    >>> req.urlargs = (1, 2, 3)
+    >>> req.environ['wsgiorg.routing_args']
+    ((1, 2, 3), {'x': 'y'})
+    >>> del req.urlvars
+    >>> req.environ['wsgiorg.routing_args']
+    ((1, 2, 3), {})
+    >>> del req.urlargs
+    >>> req.environ['wsgiorg.routing_args']
+    ((), {})
     >>> req.is_xhr
     False
     >>> req.environ['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest'

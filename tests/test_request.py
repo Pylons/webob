@@ -22,6 +22,7 @@ def simpleapp(environ, start_response):
         'remote_user: %r\n' % request.environ['REMOTE_USER'],
         'host_url: %r; application_url: %r; path_url: %r; url: %r\n' % (request.host_url, request.application_url, request.path_url, request.url),
         'urlvars: %r\n' % request.urlvars,
+        'urlargs: %r\n' % (request.urlargs, ),
         'is_xhr: %r\n' % request.is_xhr,
         'if_modified_since: %r\n' % request.if_modified_since,
         'user_agent: %r\n' % request.user_agent,

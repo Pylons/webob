@@ -698,8 +698,10 @@ class Request(object):
 
     def _urlvars__get(self):
         """
-        Return any variables matched in the URL (e.g.,
-        ``wsgiorg.routing_args``).
+        Return any *named* variables matched in the URL.
+
+        Takes values from ``environ['wsgiorg.routing_args']``.
+        Systems like ``routes`` set this value.
         """
         if 'paste.urlvars' in self.environ:
             return self.environ['paste.urlvars']
@@ -711,8 +713,15 @@ class Request(object):
             return result
 
     def _urlvars__set(self, value):
-        del self.urlvars
-        self.environ['wsgiorg.routing_args'] = ((), value)
+        environ = self.environ
+        if 'wsgiorg.routing_args' in environ:
+            environ['wsgiorg.routing_args'] = (environ['wsgiorg.routing_args'][0], value)
+            if 'paste.urlvars' in environ:
+                del environ['paste.urlvars']
+        elif 'paste.urlvars' in environ:
+            environ['paste.urlvars'] = value
+        else:
+            environ['wsgiorg.routing_args'] = ((), value)
 
     def _urlvars__del(self):
         if 'paste.urlvars' in self.environ:
@@ -721,6 +730,38 @@ class Request(object):
             del self.environ['wsgiorg.routing_args']
             
     urlvars = property(_urlvars__get, _urlvars__set, _urlvars__del, doc=_urlvars__get.__doc__)
+
+    def _urlargs__get(self):
+        """
+        Return any *positional* variables matched in the URL.
+
+        Takes values from ``environ['wsgiorg.routing_args']``.
+        Systems like ``routes`` set this value.
+        """
+        if 'wsgiorg.routing_args' in self.environ:
+            return self.environ['wsgiorg.routing_args'][0]
+        else:
+            # Since you can't update this value in-place, we don't need
+            # to set the key in the environment
+            return ()
+
+    def _urlargs__set(self, value):
+        environ = self.environ
+        if 'paste.urlvars' in environ:
+            # Some overlap between this and wsgiorg.routing_args; we need
+            # wsgiorg.routing_args to make this work
+            routing_args = (value, environ.pop('paste.urlvars'))
+        elif 'wsgiorg.routing_args' in environ:
+            routing_args = (value, environ['wsgiorg.routing_args'][1])
+        else:
+            routing_args = (value, {})
+        environ['wsgiorg.routing_args'] = routing_args
+
+    def _urlargs__del(self):
+        if 'wsgiorg.routing_args' in self.environ:
+            del self.environ['wsgiorg.routing_args']
+
+    urlargs = property(_urlargs__get, _urlargs__set, _urlargs__del, _urlargs__get.__doc__)
 
     def is_xhr(self):
         """Returns a boolean if X-Requested-With is present and ``XMLHttpRequest``"""

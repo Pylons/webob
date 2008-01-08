@@ -6,6 +6,9 @@ News
 svn trunk
 ---------
 
+* Added ``req.urlarg``, which represents positional arguments in
+  ``environ['wsgiorg.routing_args']``.
+
 Backward Incompatible Changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
