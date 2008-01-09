@@ -764,7 +764,12 @@ class Request(object):
     urlargs = property(_urlargs__get, _urlargs__set, _urlargs__del, _urlargs__get.__doc__)
 
     def is_xhr(self):
-        """Returns a boolean if X-Requested-With is present and ``XMLHttpRequest``"""
+        """Returns a boolean if X-Requested-With is present and ``XMLHttpRequest``
+
+        Note: this isn't set by every XMLHttpRequest request, it is
+        only set if you are using a Javascript library that sets it
+        (or you set the header yourself manually).  Currently
+        Prototype and jQuery are known to set this header."""
         return self.environ.get('HTTP_X_REQUESTED_WITH', '') == 'XMLHttpRequest'
     is_xhr = property(is_xhr, doc=is_xhr.__doc__)
 
