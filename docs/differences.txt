@@ -544,3 +544,47 @@ Response
     Like in Zope, WebOb updates Content-Length.  Unlike Zope, it does
     not automatically calculate a charset.
 
+
+mod_python
+==========
+
+Some key attributes from the `mod_python
+<http://modpython.org/live/current/doc-html/pyapi-mprequest-mem.html>`_ 
+request object.
+
+Request
+-------
+
+``req.uri``:
+    In ``req.path``.
+   
+``req.user``:
+    In ``req.remote_user``.
+
+``req.get_remote_host()``:
+    In ``req.environ['REMOTE_ADDR']`` or ``req.remote_addr``.
+
+``req.headers_in.get('referer')``:
+    In ``req.headers.get('referer')`` or ``req.referer`` (same pattern
+    for other request headers, presumably).
+
+Response
+--------
+
+``util.redirect`` or ``req.status = apache.HTTP_MOVED_TEMPORARILY``:
+
+.. code-block::
+
+    from webob.exc import HTTPMovedTemporarily()
+    exc = HTTPMovedTemporarily(location=url)
+    return exc(environ, start_response)
+
+``req.content_type = "application/x-csv"`` and 
+``req.headers_out.add('Content-Disposition', 'attachment;filename=somefile.csv'):
+
+.. code-block::
+
+    res = req.ResponseClass()
+    res.content_type = 'application/x-csv'
+    res.headers.add('Content-Disposition', 'attachment;filename=somefile.csv')
+    return res(environ, start_response)
