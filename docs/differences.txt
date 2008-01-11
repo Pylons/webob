@@ -196,7 +196,7 @@ Request
     No equivalent
 
 ``base``:
-    ``req.appication_url``
+    ``req.application_url``
 
 ``close()``:
     No equivalent
@@ -242,7 +242,7 @@ Request
 ``namespaces``:
     No equivalent
 
-``prototol``:
+``protocol``:
     As ``req.environ['SERVER_PROTOCOL']``
 
 ``query_string``:
