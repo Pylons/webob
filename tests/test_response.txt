@@ -239,3 +239,11 @@ That was easier; we'll try it with a iterator for the body::
     >>> res.last_modified = datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
     >>> result = req.get_response(res)
     >>> result.content_range
+
+Some tests of exceptions::
+
+    >>> from webob import exc
+    >>> res = exc.HTTPNotFound('Not found!')
+    >>> res.exception.content_type = 'text/plain'
+    >>> res.content_type
+    'text/plain'

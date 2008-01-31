@@ -112,7 +112,7 @@ class HTTPException(Exception):
 
     def __init__(self, message, wsgi_response):
         Exception.__init__(self, message)
-        self.wsgi_response = wsgi_response
+        self.__dict__['wsgi_response'] = wsgi_response
 
     def __call__(self, environ, start_response):
         return self.wsgi_response(environ, start_response)
@@ -121,6 +121,16 @@ class HTTPException(Exception):
         return self
     
     exception = property(exception)
+
+    if sys.version_info < (2, 5):
+        def __getattr__(self, attr):
+            return getattr(self.wsgi_response, attr)
+
+        def __setattr__(self, attr, value):
+            if attr.startswith('_') or attr in ('args',):
+                self.__dict__[attr] = value
+            else:
+                setattr(self.wsgi_response, attr, value)
 
 class WSGIHTTPException(Response, HTTPException):
 
