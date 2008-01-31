@@ -124,6 +124,8 @@ class HTTPException(Exception):
 
     if sys.version_info < (2, 5):
         def __getattr__(self, attr):
+            if attr in self.__dict__:
+                return self.__dict__[attr]
             return getattr(self.wsgi_response, attr)
 
         def __setattr__(self, attr, value):
