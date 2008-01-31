@@ -9,6 +9,12 @@ svn trunk
 * Added ``req.urlarg``, which represents positional arguments in
   ``environ['wsgiorg.routing_args']``.
 
+* For Python 2.4, added attribute get/set proxies on exception objects
+  from, for example, ``webob.exc.HTTPNotFound().exception``, so that
+  they act more like normal response objects (despite not being
+  new-style classes or ``webob.Response`` objects).  In Python 2.5 the
+  exceptions are ``webob.Response`` objects.
+
 Backward Incompatible Changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
