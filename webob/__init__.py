@@ -727,7 +727,10 @@ class Request(object):
         if 'paste.urlvars' in self.environ:
             del self.environ['paste.urlvars']
         if 'wsgiorg.routing_args' in self.environ:
-            del self.environ['wsgiorg.routing_args']
+            if not self.environ['wsgiorg.routing_args'][0]:
+                del self.environ['wsgiorg.routing_args']
+            else:
+                self.environ['wsgiorg.routing_args'] = (self.environ['wsgiorg.routing_args'][0], {})
             
     urlvars = property(_urlvars__get, _urlvars__set, _urlvars__del, doc=_urlvars__get.__doc__)
 
@@ -759,7 +762,10 @@ class Request(object):
 
     def _urlargs__del(self):
         if 'wsgiorg.routing_args' in self.environ:
-            del self.environ['wsgiorg.routing_args']
+            if not self.environ['wsgiorg.routing_args'][1]:
+                del self.environ['wsgiorg.routing_args']
+            else:
+                self.environ['wsgiorg.routing_args'] = ((), self.environ['wsgiorg.routing_args'][1])
 
     urlargs = property(_urlargs__get, _urlargs__set, _urlargs__del, _urlargs__get.__doc__)
 
@@ -1326,8 +1332,9 @@ class Response(object):
                 "You may only give one of the body and app_iter arguments")
         self.status = status
         if headerlist is None:
-            headerlist = []
-        self._headerlist = headerlist
+            self._headerlist = []
+        else:
+            self._headerlist = headerlist
         self._headers = None
         if request is not None:
             if hasattr(request, 'environ'):

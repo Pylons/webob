@@ -4,7 +4,7 @@ same time.
     >>> from dtopt import ELLIPSIS
     >>> from webob import Response, UTC
     >>> from datetime import datetime
-    >>> res = Response('Test', status='200 OK', headerlist=[])
+    >>> res = Response('Test', status='200 OK')
 
 This is a minimal response object.  We can do things like get and set
 the body:
@@ -60,15 +60,15 @@ Cookie handling is done through methods:
 
     >>> res.set_cookie('test', 'value')
     >>> res.headers['set-cookie']
-    'test=value; Path=/;'
+    'test=value; Path=/'
     >>> res.set_cookie('test2', 'value2', max_age=10000)
     >>> res.headers['set-cookie'] # We only see the last header
-    'test2=value2; Max-Age=10000; Path=/;'
+    'test2=value2; Max-Age=10000; Path=/'
     >>> res.headers.getall('set-cookie')
-    ['test=value; Path=/;', 'test2=value2; Max-Age=10000; Path=/;']
+    ['test=value; Path=/', 'test2=value2; Max-Age=10000; Path=/']
     >>> res.unset_cookie('test')
     >>> res.headers.getall('set-cookie')
-    ['test2=value2; Max-Age=10000; Path=/;']
+    ['test2=value2; Max-Age=10000; Path=/']
 
 Most headers are available in a parsed getter/setter form through
 properties:

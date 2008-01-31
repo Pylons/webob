@@ -67,9 +67,10 @@ should have.
     >>> del req.urlvars
     >>> req.environ['wsgiorg.routing_args']
     ((1, 2, 3), {})
+    >>> req.urlvars = {'test': 'value'}
     >>> del req.urlargs
     >>> req.environ['wsgiorg.routing_args']
-    ((), {})
+    ((), {'test': 'value'})
     >>> req.is_xhr
     False
     >>> req.environ['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest'
