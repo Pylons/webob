@@ -829,12 +829,6 @@ class Request(object):
 
     body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
 
-    def write(self, text):
-        if isinstance(text, unicode):
-            self.unicode_body += text
-        else:
-            self.body += text
-
     def str_POST(self):
         """
         Return a MultiDict containing all the variables from a POST
@@ -1611,6 +1605,12 @@ class Response(object):
         del self.body
 
     body_file = property(_body_file__get, fdel=_body_file__del, doc=_body_file__get.__doc__)
+
+    def write(self, text):
+        if isinstance(text, unicode):
+            self.unicode_body += text
+        else:
+            self.body += text
 
     def _unicode_body__get(self):
         """

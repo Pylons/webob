@@ -14,6 +14,8 @@ the body:
     >>> res.body = 'Another test'
     >>> res.body
     'Another test'
+    >>> res.body = 'Another'
+    >>> res.write(' test')
     >>> res.app_iter
     ['Another test']
     >>> res.content_length
