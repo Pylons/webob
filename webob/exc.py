@@ -124,9 +124,10 @@ class HTTPException(Exception):
 
     if sys.version_info < (2, 5):
         def __getattr__(self, attr):
-            if attr in self.__dict__:
-                return self.__dict__[attr]
-            return getattr(self.wsgi_response, attr)
+            if not attr.startswith('_'):
+                return getattr(self.wsgi_response, attr)
+            else:
+                raise AttributeError(attr)
 
         def __setattr__(self, attr, value):
             if attr.startswith('_') or attr in ('args',):
