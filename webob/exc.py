@@ -183,6 +183,9 @@ ${body}''')
         if body_template is not None:
             self.body_template = body_template
             self.body_template_obj = Template(body_template)
+        if self.empty_body:
+            del self.content_type
+            del self.content_length
 
     def _make_body(self, environ, escape):
         args = {

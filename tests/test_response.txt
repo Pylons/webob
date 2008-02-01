@@ -249,3 +249,6 @@ Some tests of exceptions::
     >>> res.exception.content_type = 'text/plain'
     >>> res.content_type
     'text/plain'
+    >>> res = exc.HTTPNotModified()
+    >>> res.headers
+    HeaderDict([])
