@@ -18,7 +18,7 @@ svn trunk
 Backward Incompatible Changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* The ``Response`` constructor has changed: it is not ``Response([body],
+* The ``Response`` constructor has changed: it is now ``Response([body],
   [status], ...)`` (before it was ``Response([status], [body], ...)``).
   Body may be str or unicode.
 
