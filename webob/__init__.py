@@ -480,7 +480,7 @@ class Request(object):
             self.__dict__['charset'] = charset
         if unicode_errors is not NoDefault:
             self.__dict__['unicode_errors'] = unicode_errors
-        if decode_param_names is NoDefault:
+        if decode_param_names is not NoDefault:
             self.__dict__['decode_param_names'] = decode_param_names
 
     def __setattr__(self, attr, value, DEFAULT=[]):
