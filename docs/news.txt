@@ -3,8 +3,8 @@ News
 
 .. contents::
 
-svn trunk
----------
+0.9
+---
 
 * Added ``req.urlarg``, which represents positional arguments in
   ``environ['wsgiorg.routing_args']``.
@@ -14,13 +14,6 @@ svn trunk
   they act more like normal response objects (despite not being
   new-style classes or ``webob.Response`` objects).  In Python 2.5 the
   exceptions are ``webob.Response`` objects.
-
-* The ``decode_param_names`` argument (used like
-  ``Request(decode_param_names=True)``) was being ignored.
-
-* Unicode decoding of file uploads and file upload filenames were
-  causing errors when decoding non-file-upload fields (both fixes from
-  Ryan Barrett).
 
 Backward Incompatible Changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -41,6 +34,13 @@ Bugfixes and Small Changes
 * Added ``resp.write(text)`` method, which is equivalent to
   ``resp.body += text`` or ``resp.unicode_body += text``, depending on
   the type of ``text``.
+
+* The ``decode_param_names`` argument (used like
+  ``Request(decode_param_names=True)``) was being ignored.
+
+* Unicode decoding of file uploads and file upload filenames were
+  causing errors when decoding non-file-upload fields (both fixes from
+  Ryan Barrett).
 
 0.8.5
 -----
