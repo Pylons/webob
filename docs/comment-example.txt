@@ -115,7 +115,7 @@ middleware (using WebOb):
             return resp(environ, start_response)
 
 This doesn't modify the response it any way.  You could write it like
-this, without WebOb, like this:
+this without WebOb:
 
 .. code-block::
 
@@ -127,7 +127,7 @@ this, without WebOb, like this:
 But it won't be as convenient later.  First, lets create a little bit
 of infrastructure for our middleware.  We need to save and load
 per-url data (the comments themselves).  We'll keep them in pickles,
-where each url has a pickle named after the url (but re-encoded, so
+where each url has a pickle named after the url (but double-quoted, so
 ``http://localhost:8080/index.html`` becomes
 ``http%3A%2F%2Flocalhost%3A8080%2Findex.html``).
 
@@ -139,7 +139,6 @@ where each url has a pickle named after the url (but re-encoded, so
         ...
 
         def get_data(self, url):
-            # Double-quoting makes the filename safe
             filename = self.url_filename(url)
             if not os.path.exists(filename):
                 return []
@@ -156,6 +155,7 @@ where each url has a pickle named after the url (but re-encoded, so
             f.close()
 
         def url_filename(self, url):
+            # Double-quoting makes the filename safe
             return os.path.join(self.storage_dir, urllib.quote(url, ''))
 
 You can get the full request URL with ``req.url``, so to get the
@@ -251,7 +251,8 @@ Because we put in some text without quoting it is susceptible to a
 `Cross-Site Scripting
 <http://en.wikipedia.org/wiki/Cross-site_scripting>`_ attack.  Fixing
 that is beyond the scope of this tutorial; you could quote it or clean
-it with something like ``lxml.html.clean``.
+it with something like `lxml.html.clean
+<http://codespeak.net/lxml/lxmlhtml.html#cleaning-up-html>`_.
 
 Accepting Comments
 ------------------
@@ -269,7 +270,7 @@ to the middleware; we can intercept anything else below
 ``SCRIPT_NAME`` but nothing above it.  The name for the URL without
 ``PATH_INFO`` is ``req.application_url``.  We have to capture it early
 to make sure it doesn't change (since the WSGI application we are
-wrapping may update those values).
+wrapping may update ``SCRIPT_NAME`` and ``PATH_INFO``).
 
 So here's what this all looks like:
 
@@ -339,8 +340,8 @@ Here's what the form looks like:
 Nothing too exciting.  It submits a form with the keys ``url`` (the
 URL being commented on), ``name``, ``homepage``, and ``comments``.
 
-process_comments
-~~~~~~~~~~~~~~~~
+process_comment
+~~~~~~~~~~~~~~~
 
 If you look at the method call, what we do is call the method then
 treat the result as a WSGI application:
@@ -349,10 +350,25 @@ treat the result as a WSGI application:
 
     return self.process_comment(req)(environ, start_response)
 
-This pattern is used to keep ``start_response`` from leaking out of
-the ``__call__`` method.  The ``webob.Response`` object is itself a
-WSGI application, so in ``process_comment`` we create a response
-object and return that.
+You could write this as:
+
+.. code-block::
+
+    response = self.process_comment(req)
+    return response(environ, start_response)
+
+A common pattern in WSGI middleware that *doesn't* use WebOb is to
+just do:
+
+.. code-block::
+
+    return self.process_comment(environ, start_response)
+
+But the WebOb style makes it easier to modify the response if you want
+to; modifying a traditional WSGI response/application output requires
+changing your logic flow considerably.
+
+Here's the actual processing code:
 
 .. code-block::
 
