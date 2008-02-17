@@ -288,7 +288,9 @@ class UnicodeMultiDict(DictMixin):
             value = copy.copy(value)
             if self.decode_keys:
                 value.name = value.name.decode(self.encoding, self.errors)
-            value.filename = value.filename.decode(self.encoding, self.errors)
+            if value.filename:
+                value.filename = value.filename.decode(self.encoding,
+                                                       self.errors)
         else:
             try:
                 value = value.decode(self.encoding, self.errors)
