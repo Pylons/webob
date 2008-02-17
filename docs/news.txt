@@ -15,6 +15,13 @@ svn trunk
   new-style classes or ``webob.Response`` objects).  In Python 2.5 the
   exceptions are ``webob.Response`` objects.
 
+* The ``decode_param_names`` argument (used like
+  ``Request(decode_param_names=True)``) was being ignored.
+
+* Unicode decoding of file uploads and file upload filenames were
+  causing errors when decoding non-file-upload fields (both fixes from
+  Ryan Barrett).
+
 Backward Incompatible Changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
