@@ -1312,7 +1312,7 @@ class Response(object):
     """
 
     default_content_type = 'text/html'
-    default_charset = 'utf8'
+    default_charset = 'UTF-8'
     default_conditional_response = False
 
     def __init__(self, body=None, status='200 OK', headerlist=None, app_iter=None,
