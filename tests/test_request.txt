@@ -96,7 +96,7 @@ There are also variables to access the variables and body:
     MultiDict([('var1', 'value1'), ('var2', 'value2'), ('rep', '1'), ('rep', '2')])
     >>> req.charset = 'utf8'
     >>> req.POST
-    UnicodeMultiDict([(u'var1', u'value1'), (u'var2', u'value2'), (u'rep', u'1'), (u'rep', u'2')])
+    UnicodeMultiDict([('var1', u'value1'), ('var2', u'value2'), ('rep', u'1'), ('rep', u'2')])
 
 Note that the variables are there for GET requests and non-form POST
 requests, but they are empty and read-only:
@@ -152,7 +152,7 @@ Cookie are viewed as a dictionary (*view only*):
     {'var1': 'value1', 'var2': 'value2'}
     >>> req.charset = 'utf8'
     >>> req.cookies
-    UnicodeMultiDict([(u'var1', u'value1'), (u'var2', u'value2')])
+    UnicodeMultiDict([('var1', u'value1'), ('var2', u'value2')])
 
 Sometimes conditional headers are problematic.  You can remove them:
 

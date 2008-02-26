@@ -36,9 +36,9 @@ for the various pieces:
     >>> res.status_int
     200
     >>> res.headers
-    HeaderDict([('content-type', 'text/html; charset=utf8'), ('Content-Length', '4')])
+    HeaderDict([('content-type', 'text/html; charset=UTF-8'), ('Content-Length', '4')])
     >>> res.headerlist
-    [('content-type', 'text/html; charset=utf8'), ('Content-Length', '4')]
+    [('content-type', 'text/html; charset=UTF-8'), ('Content-Length', '4')]
 
 Content-type and charset are handled separately as properties, though
 they are both in the ``res.headers['content-type']`` header:
@@ -49,7 +49,7 @@ they are both in the ``res.headers['content-type']`` header:
     >>> res.content_type
     'text/html'
     >>> res.charset
-    'utf8'
+    'UTF-8'
     >>> res.charset = 'iso-8859-1'
     >>> res.charset
     'iso-8859-1'
