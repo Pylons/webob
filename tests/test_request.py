@@ -1,6 +1,5 @@
-from paste.fixture import *
 from webob import Request
-from py.test import raises
+from webtest import TestApp
 
 def simpleapp(environ, start_response):
     status = '200 OK'
