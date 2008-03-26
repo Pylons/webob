@@ -153,9 +153,10 @@ Response
 --------
 
 Constructor:
-    Totally different.  The WebOb Response object should probably be
-    subclassed for direct application use; in WebOb it does not
-    *prefer* HTML or anything normal web application conventions
+    Somewhat different.  WebOb takes any keyword arguments as
+    attribute assignments.  Django only takes a couple arguments.  The
+    ``mimetype`` argument is ``content_type``, and ``content_type`` is
+    the entire ``Content-Type`` header (including charset).
 
 dictionary-like:
     The Django response object is somewhat dictionary-like, setting
@@ -164,9 +165,6 @@ dictionary-like:
 
 ``has_header(header)``:
     Use ``header in res.headers``
-
-``write(content)``:
-    As ``res.body_file.write(content)``
 
 ``flush()``, ``tell()``:
     Not available
