@@ -91,3 +91,14 @@ def test_bad_cookie():
     assert req.cookies == {}
     req.headers['Cookie'] = '=foo'
     assert req.cookies == {}
+
+def test_params():
+    req = Request.blank('/?a=1&b=2')
+    req.method = 'POST'
+    req.body = 'b=3'
+    assert req.params.items() == [('a', '1'), ('b', '2'), ('b', '3')]
+    new_params = req.params.copy()
+    assert new_params.items() == [('a', '1'), ('b', '2'), ('b', '3')]
+    new_params['b'] = '4'
+    assert new_params.items() == [('a', '1'), ('b', '4')]
+    

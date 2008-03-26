@@ -3,6 +3,12 @@ News
 
 .. contents::
 
+svn trunk
+---------
+
+* ``request.params.copy()`` now returns a writable MultiDict (before
+  it returned an unwritable object).
+
 0.9
 ---
 

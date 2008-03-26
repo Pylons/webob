@@ -448,7 +448,9 @@ class NestedMultiDict(MultiDict):
     # getone
     # mixed
     # dict_of_lists
-    # copy
+
+    def copy(self):
+        return MultiDict(self)
 
     def __contains__(self, key):
         for d in self.dicts:
