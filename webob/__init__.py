@@ -1219,7 +1219,7 @@ class Request(object):
             request=self)
 
     #@classmethod
-    def blank(cls, path, environ=None, base_url=None, headers=None):
+    def blank(cls, path, environ=None, base_url=None, headers=None, **kw):
         """
         Create a blank request environ (and Request wrapper) with the
         given path (path should be urlencoded), and any keys from
@@ -1232,6 +1232,9 @@ class Request(object):
         values you pass in will take precedence.  If you pass in
         base_url then wsgi.url_scheme, HTTP_HOST, and SCRIPT_NAME will
         be filled in from that value.
+
+        Any extra keyword will be passed to ``__init__`` (e.g.,
+        ``decode_param_names``).
         """
         if _SCHEME_RE.search(path):
             scheme, netloc, path, qs, fragment = urlparse.urlsplit(path)
@@ -1298,7 +1301,7 @@ class Request(object):
                 env['SCRIPT_NAME'] = urllib.unquote(path)
         if environ:
             env.update(environ)
-        obj = cls(env)
+        obj = cls(env, **kw)
         if headers is not None:
             obj.headers.update(headers)
         return obj

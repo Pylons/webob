@@ -276,6 +276,11 @@ class UnicodeMultiDict(DictMixin):
                 pass
         return key
 
+    def _encode_key(self, key):
+        if self.decode_keys and isinstance(key, unicode):
+            return key.encode(self.encoding, self.errors)
+        return key
+
     def _decode_value(self, value):
         """
         Decode the specified value to unicode. Assumes value is a ``str`` or
@@ -291,37 +296,43 @@ class UnicodeMultiDict(DictMixin):
             if value.filename:
                 value.filename = value.filename.decode(self.encoding,
                                                        self.errors)
-        else:
+        elif not isinstance(value, unicode):
             try:
                 value = value.decode(self.encoding, self.errors)
             except AttributeError:
                 pass
         return value
 
+    def _encode_value(self, value):
+        # FIXME: should this do the FieldStorage stuff too?
+        if isinstance(value, unicode):
+            value = value.encode(self.encoding, self.errors)
+        return value
+
     def __getitem__(self, key):
-        return self._decode_value(self.multi.__getitem__(key))
+        return self._decode_value(self.multi.__getitem__(self._encode_key(key)))
 
     def __setitem__(self, key, value):
-        self.multi.__setitem__(key, value)
+        self.multi.__setitem__(self._encode_key(key), self._encode_value(value))
 
     def add(self, key, value):
         """
         Add the key and value, not overwriting any previous value.
         """
-        self.multi.add(key, value)
+        self.multi.add(self._encode_key(key), self._encode_value(value))
 
     def getall(self, key):
         """
         Return a list of all values matching the key (may be an empty list)
         """
-        return [self._decode_value(v) for v in self.multi.getall(key)]
+        return [self._decode_value(v) for v in self.multi.getall(self._encode_key(key))]
 
     def getone(self, key):
         """
         Get one value matching the key, raising a KeyError if multiple
         values were found.
         """
-        return self._decode_value(self.multi.getone(key))
+        return self._decode_value(self.multi.getone(self._encode_key(key)))
 
     def mixed(self):
         """
@@ -352,10 +363,10 @@ class UnicodeMultiDict(DictMixin):
         return unicode_dict
 
     def __delitem__(self, key):
-        self.multi.__delitem__(key)
+        self.multi.__delitem__(self._encode_key(key))
 
     def __contains__(self, key):
-        return self.multi.__contains__(key)
+        return self.multi.__contains__(self._encode_key(key))
 
     has_key = __contains__
 
@@ -366,10 +377,10 @@ class UnicodeMultiDict(DictMixin):
         return UnicodeMultiDict(self.multi.copy(), self.encoding, self.errors)
 
     def setdefault(self, key, default=None):
-        return self._decode_value(self.multi.setdefault(key, default))
+        return self._decode_value(self.multi.setdefault(self._encode_key(key), self._encode_value(default)))
 
     def pop(self, key, *args):
-        return self._decode_value(self.multi.pop(key, *args))
+        return self._decode_value(self.multi.pop(self._encode_key(key), *args))
 
     def popitem(self):
         k, v = self.multi.popitem()
@@ -396,8 +407,8 @@ class UnicodeMultiDict(DictMixin):
     __iter__ = iterkeys
 
     def items(self):
-        return [(self._decode_key(k), self._decode_value(v)) for \
-                    k, v in self.multi.iteritems()]
+        return [(self._decode_key(k), self._decode_value(v))
+                for k, v in self.multi.iteritems()]
 
     def iteritems(self):
         for k, v in self.multi.iteritems():

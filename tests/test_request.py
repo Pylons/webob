@@ -101,4 +101,8 @@ def test_params():
     assert new_params.items() == [('a', '1'), ('b', '2'), ('b', '3')]
     new_params['b'] = '4'
     assert new_params.items() == [('a', '1'), ('b', '4')]
-    
+    # The key name is \u1000:
+    req = Request.blank('/?%E1%80%80=x', decode_param_names=True, charset='UTF-8')
+    assert req.decode_param_names
+    assert u'\u1000' in req.GET.keys()
+    assert req.GET[u'\u1000'] == 'x'

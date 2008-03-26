@@ -9,6 +9,14 @@ svn trunk
 * ``request.params.copy()`` now returns a writable MultiDict (before
   it returned an unwritable object).
 
+* There were several things broken with ``UnicodeMultiDict`` when
+  ``decode_param_names`` is turned on (when the dictionary keys are
+  unicode).
+
+* You can pass keyword arguments to ``Request.blank()`` that will be
+  used to construct ``Request`` (e.g., ``Request.blank('/',
+  decode_param_names=True)``).
+
 0.9
 ---
 
