@@ -95,6 +95,8 @@ There are also variables to access the variables and body:
     >>> req.POST
     MultiDict([('var1', 'value1'), ('var2', 'value2'), ('rep', '1'), ('rep', '2')])
     >>> req.charset = 'utf8'
+    >>> req.decode_param_names
+    False
     >>> req.POST
     UnicodeMultiDict([('var1', u'value1'), ('var2', u'value2'), ('rep', u'1'), ('rep', u'2')])
 
