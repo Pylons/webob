@@ -573,8 +573,8 @@ Response
 
 .. code-block::
 
-    from webob.exc import HTTPMovedTemporarily()
-    exc = HTTPMovedTemporarily(location=url)
+    from webob.exc import HTTPTemporaryRedirect
+    exc = HTTPTemporaryRedirect(location=url)
     return exc(environ, start_response)
 
 ``req.content_type = "application/x-csv"`` and 
