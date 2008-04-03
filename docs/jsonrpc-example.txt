@@ -241,7 +241,7 @@ And maybe the request body doesn't contain valid JSON:
 
 And maybe all the keys aren't in the dictionary:
 
-.. code-bock::
+.. code-block::
 
     try:
         method = json['method']

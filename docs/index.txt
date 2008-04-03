@@ -16,6 +16,8 @@ Other documents:
 
 * `Comment middleware example <comment-example.html>`_
 
+* `JSON-RPC server and client example <jsonrpc-example.html>`_
+
 .. contents::
 
 .. comment:
