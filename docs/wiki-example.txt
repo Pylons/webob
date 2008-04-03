@@ -362,7 +362,7 @@ gives a ``307 Temporary Redirect`` response with the given location.
 Otherwise we fill in a template.  The template language we're going to
 use in this example is `Tempita <http://pythonpaste.org/tempita/>`_, a
 very simple template language with a similar interface to
-`string.Template <>`_.
+`string.Template <http://python.org/doc/current/lib/node40.html>`_.
 
 The template actually looks like this:
 
@@ -422,10 +422,12 @@ To allow conditional responses we set ``resp.last_modified``.  You can
 set this attribute to a date, None (effectively removing the header),
 a time tuple (like produced by ``time.localtime()``), or as in this
 case to an integer timestamp.  If you get the value back it will
-always be a `datetime <>`_ object (or None).  With this header we can
-process requests with If-Modified-Since headers, and return ``304 Not
-Modified`` if appropriate.  It won't actually do that unless you set
-``resp.conditional_response`` to True.  
+always be a `datetime
+<http://python.org/doc/current/lib/datetime-datetime.html>`_ object
+(or None).  With this header we can process requests with
+If-Modified-Since headers, and return ``304 Not Modified`` if
+appropriate.  It won't actually do that unless you set
+``resp.conditional_response`` to True.
 
 .. note::
 
@@ -485,7 +487,8 @@ In ``<form action="{{req.path_url}}" method="POST">`` we submit to
 ``req.path_url``; that's everything *but* ``?action=edit``.  So we are
 POSTing right over the view page.  This has the nice side effect of
 automatically invalidating any caches of the original page.  It also
-is vaguely `RESTful <>`_.
+is vaguely `RESTful
+<http://en.wikipedia.org/wiki/Representational_State_Transfer>`_.
 
 We save the last modified time in a hidden ``mtime`` field.  This way
 we can detect concurrent updates.  If start editing the page who's

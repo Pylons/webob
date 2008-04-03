@@ -578,7 +578,7 @@ Response
     return exc(environ, start_response)
 
 ``req.content_type = "application/x-csv"`` and 
-``req.headers_out.add('Content-Disposition', 'attachment;filename=somefile.csv'):
+``req.headers_out.add('Content-Disposition', 'attachment;filename=somefile.csv')``:
 
 .. code-block::
 
