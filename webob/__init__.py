@@ -167,6 +167,9 @@ class header_getter(object):
             if self.header in obj.headers:
                 del obj.headers[self.header]
         else:
+            if isinstance(value, unicode):
+                # This is the standard encoding for headers:
+                value = value.encode('ISO-8859-1')
             obj.headers[self.header] = value
 
     def __delete__(self, obj):

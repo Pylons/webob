@@ -252,3 +252,13 @@ Some tests of exceptions::
     >>> res = exc.HTTPNotModified()
     >>> res.headers
     HeaderDict([])
+
+Headers can be set to unicode values::
+
+    >>> res = Response('test')
+    >>> res.etag = u'fran\xe7ais'
+
+But they come out as str::
+
+    >>> res.etag
+    'fran\xe7ais'

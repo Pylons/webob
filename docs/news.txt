@@ -3,8 +3,8 @@ News
 
 .. contents::
 
-svn trunk
----------
+0.9.1
+-----
 
 * ``request.params.copy()`` now returns a writable MultiDict (before
   it returned an unwritable object).
@@ -16,6 +16,10 @@ svn trunk
 * You can pass keyword arguments to ``Request.blank()`` that will be
   used to construct ``Request`` (e.g., ``Request.blank('/',
   decode_param_names=True)``).
+
+* If you set headers like ``response.etag`` to a unicode value, they
+  will be encoded as ISO-8859-1 (however, they will remain encoded,
+  and ``response.etag`` will not be a unicode value).
 
 0.9
 ---
