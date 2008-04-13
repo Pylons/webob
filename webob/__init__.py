@@ -1689,6 +1689,13 @@ class Response(object):
             value = '"%s"' % value.encode(self.charset)
         cookies = BaseCookie()
         cookies[key] = value
+        if isinstance(max_age, timedelta):
+            max_age = timedelta.seconds + timedelta.days*24*60*60
+        if max_age is not None:
+            future = datetime.utcnow() + timedelta(seconds=max_age)
+            expires = _serialize_date(future)
+        else:
+            expires = None
         for var_name, var_value in [
             ('max_age', max_age),
             ('path', path),
@@ -1697,6 +1704,7 @@ class Response(object):
             ('HttpOnly', httponly),
             ('version', version),
             ('comment', comment),
+            ('expires', expires),
             ]:
             if var_value is not None and var_value is not False:
                 cookies[key][var_name.replace('_', '-')] = str(var_value)
