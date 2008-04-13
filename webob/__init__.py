@@ -42,12 +42,12 @@ UTC = _UTC()
 
 def html_escape(s):
     """HTML-escape a string or object
-    
+
     This converts any non-string objects passed into it to strings
     (actually, using ``unicode()``).  All values returned are
     non-unicode strings (using ``&#num;`` entities for all non-ASCII
     characters).
-    
+
     None is treated specially, and returns the empty string.
     """
     if s is None:
@@ -731,7 +731,7 @@ class Request(object):
                 del self.environ['wsgiorg.routing_args']
             else:
                 self.environ['wsgiorg.routing_args'] = (self.environ['wsgiorg.routing_args'][0], {})
-            
+
     urlvars = property(_urlvars__get, _urlvars__set, _urlvars__del, doc=_urlvars__get.__doc__)
 
     def _urlargs__get(self):
@@ -917,7 +917,7 @@ class Request(object):
 
     str_queryvars = deprecated_property(str_GET, 'str_queryvars',
                                         'use str_GET instead')
-                                        
+
 
     def GET(self):
         """
@@ -1522,7 +1522,7 @@ class Response(object):
         for match in _PARAM_RE.finditer(params):
             result[match.group(1)] = match.group(2) or match.group(3) or ''
         return result
-        
+
     def _content_type_params__set(self, value_dict):
         if not value_dict:
             del self.content_type_params
@@ -1673,6 +1673,8 @@ class Response(object):
         """
         Set (add) a cookie for the response
         """
+        if isinstance(value, unicode) and self.charset is not None:
+            value = value.encode(self.charset)
         cookies = BaseCookie()
         cookies[key] = value
         for var_name, var_value in [
@@ -2060,8 +2062,8 @@ class Response(object):
         if hasattr(app_iter, 'app_iter_range'):
             return app_iter.app_iter_range(start, stop)
         return AppIterRange(app_iter, start, stop)
-        
-        
+
+
 Request.ResponseClass = Response
 Response.RequestClass = Request
 
@@ -2185,7 +2187,7 @@ class ResponseBodyFile(object):
     def writelines(self, seq):
         for item in seq:
             self.write(item)
-        
+
     closed = False
 
     def encoding(self):
@@ -2252,4 +2254,4 @@ class AppIterRange(object):
             return chunk[:-extra]
         self._served += len(chunk)
         return chunk
-            
+
