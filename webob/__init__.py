@@ -957,6 +957,8 @@ class Request(object):
 
     params = property(params, doc=params.__doc__)
 
+    _rx_quotes = re.compile('"(.*)"')
+
     def str_cookies(self):
         """
         Return a *plain* dictionary of cookies as found in the request.
@@ -972,7 +974,11 @@ class Request(object):
             cookies = BaseCookie()
             cookies.load(source)
             for name in cookies:
-                vars[name] = cookies[name].value
+                value = cookies[name].value
+                unquote_match = self._rx_quotes.match(value)
+                if unquote_match is not None:
+                    value = unquote_match.group(1)
+                vars[name] = value
         env['webob._parsed_cookies'] = (vars, source)
         return vars
 
@@ -1674,7 +1680,7 @@ class Response(object):
         Set (add) a cookie for the response
         """
         if isinstance(value, unicode) and self.charset is not None:
-            value = value.encode(self.charset)
+            value = '"%s"' % value.encode(self.charset)
         cookies = BaseCookie()
         cookies[key] = value
         for var_name, var_value in [
