@@ -21,6 +21,9 @@ News
   will be encoded as ISO-8859-1 (however, they will remain encoded,
   and ``response.etag`` will not be a unicode value).
 
+* When parsing, interpret times with no timezone as UTC (previously
+  they would be interpreted as local time).
+
 0.9
 ---
 
