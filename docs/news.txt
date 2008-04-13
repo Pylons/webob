@@ -24,6 +24,9 @@ News
 * When parsing, interpret times with no timezone as UTC (previously
   they would be interpreted as local time).
 
+* Set the Expires property on cookies when using
+  ``response.set_cookie()``.  This is inherited from ``max_age``.
+
 0.9
 ---
 

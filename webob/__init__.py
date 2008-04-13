@@ -1681,7 +1681,7 @@ class Response(object):
 
     def set_cookie(self, key, value='', max_age=None,
                    path='/', domain=None, secure=None, httponly=False,
-                   version=None, comment=None):
+                   version=None, comment=None, expires=None):
         """
         Set (add) a cookie for the response
         """
@@ -1691,11 +1691,12 @@ class Response(object):
         cookies[key] = value
         if isinstance(max_age, timedelta):
             max_age = timedelta.seconds + timedelta.days*24*60*60
-        if max_age is not None:
-            future = datetime.utcnow() + timedelta(seconds=max_age)
-            expires = _serialize_date(future)
-        else:
-            expires = None
+        if max_age is not None and expires is None:
+            expires = datetime.utcnow() + timedelta(seconds=max_age)
+        if isinstance(expires, timedelta):
+            expires = datetime.utcnow() + expires
+        if isinstance(expires, datetime):
+            expires = '"'+_serialize_date(expires)+'"'
         for var_name, var_value in [
             ('max_age', max_age),
             ('path', path),
@@ -1720,7 +1721,7 @@ class Response(object):
         that it should expire immediately.
         """
         self.set_cookie(key, '', path=path, domain=domain,
-                        max_age=0)
+                        max_age=0, expires=timedelta(days=-5))
 
     def unset_cookie(self, key):
         """
@@ -1741,7 +1742,7 @@ class Response(object):
             if key in cookies:
                 found = True
                 del cookies[key]
-            header = cookies.output(header='').lstrip()
+                header = cookies.output(header='').lstrip()
             if header:
                 self.headers.add('Set-Cookie', header)
         if not found:
