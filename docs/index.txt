@@ -99,6 +99,13 @@ object:
 ``req.headers``:
     A dictionary of all the headers.  This is dictionary is case-insensitive.
 
+``req.urlvars`` and ``req.urlargs``:
+    ``req.urlvars`` is the keyword parameters associated with the
+    request URL.  ``req.urlargs`` are the positional parameters.
+    These are set by products like `Routes
+    <http://routes.groovie.org/>`_ and `Selector
+    <http://lukearno.com/projects/selector/>`_.
+
 .. _`dictionary-like object`: #multidict
 
 Also, for standard HTTP request headers there are usually attributes,
