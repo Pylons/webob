@@ -3,6 +3,14 @@ News
 
 .. contents::
 
+svn trunk
+---------
+
+* Change formatting of cookie expires, to use the more traditional
+  format ``Wed, 5-May-2001 15:34:10 GMT`` (dashes instead of spaces).
+  Browsers should deal with either format, but some other code expects
+  dashes.
+
 0.9.1
 -----
 

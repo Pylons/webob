@@ -301,6 +301,17 @@ def _serialize_date(dt):
             "You must pass in a datetime, date, time tuple, or integer object, not %r" % dt)
     return formatdate(dt)
 
+def _serialize_cookie_date(dt):
+    if dt is None:
+        return None
+    if isinstance(dt, unicode):
+        dt = dt.encode('ascii')
+    if isinstance(dt, timedelta):
+        dt = datetime.now() + dt
+    if isinstance(dt, (datetime, date)):
+        dt = dt.timetuple()
+    return time.strftime('%a, %d-%b-%Y %H:%M:%S GMT', dt)
+
 def _parse_date_delta(value):
     """
     like _parse_date, but also handle delta seconds
@@ -1696,7 +1707,7 @@ class Response(object):
         if isinstance(expires, timedelta):
             expires = datetime.utcnow() + expires
         if isinstance(expires, datetime):
-            expires = '"'+_serialize_date(expires)+'"'
+            expires = '"'+_serialize_cookie_date(expires)+'"'
         for var_name, var_value in [
             ('max_age', max_age),
             ('path', path),
