@@ -200,7 +200,7 @@ Also, some people don't know how exactly the string method ``split`` works.  It 
 Routing: putting it together
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now, the ``Router`` class.  The class has the ``add_route`` method, and also a ``__call__`` method.  That ``__call__`` method makes this object a WSGI application itself.  So the application looks at ``PATH_INFO`` (also known as ``req.path_info``).
+Now, the ``Router`` class.  The class has the ``add_route`` method, and also a ``__call__`` method.  That ``__call__`` method makes the Router object itself a WSGI application.  So when a request comes in, it looks at ``PATH_INFO`` (also known as ``req.path_info``) and hands off the request to the controller that matches that path.
 
 We put the variables matched from the regular expression, and any extra keyword arguments passed to ``add_route`` into ``req.urlvars``.  This is actually ``environ['wsgiorg.routing_args']``, a `standard location for this routing information <http://wsgi.org/wsgi/Specifications/routing_args>`_.
 
@@ -236,11 +236,11 @@ Using ``return controller(environ, start_response)`` basically forwards the requ
 Controllers
 -----------
 
-Controllers are themselves just WSGI applications, but we'll want to set up something to make them friendlier to write.
+The router just passes the request on to the controller, so the controllers are themselves just WSGI applications.  But we'll want to set up something to make those applications friendlier to write.
 
-To do that we'll write a `decorator <http://www.ddj.com/web-development/184406073>`_.  A decorator is a function that wraps another function.  The decorated function will be a WSGI application, but it will call a function with a signature like ``controller_func(req, **urlvars)``.  The controller function will return a response object (which, remember, is a WSGI application on its own).
+To do that we'll write a `decorator <http://www.ddj.com/web-development/184406073>`_.  A decorator is a function that wraps another function.  After decoration the function will be a WSGI application, but it will be decorating a function with a signature like ``controller_func(req, **urlvars)``.  The controller function will return a response object (which, remember, is a WSGI application on its own).
 
-If you remember ``webob.exc.HTTPNotFound``, those objects can also be used as exceptions.  Unless you are willing to restrict yourself to Python 2.5+, you'll have to do ``raise exc.HTTPNotFound().exception`` because the actual objects like ``HTTPNotFound`` don't work as exceptions.
+If you remember ``webob.exc.HTTPNotFound``, those objects can also be used as exceptions.  Unless you are willing to restrict yourself to Python 2.5+, you'll have to do ``raise exc.HTTPNotFound().exception`` because the actual objects like ``HTTPNotFound`` don't work as exceptions before 2.5.  We'll allow the function to raise these exceptions, and turn them into normal responses.
 
 We'll also let the function return just a string, and in that case create a standard response object (200 OK, with a Content-Type of text/html).
 
@@ -389,6 +389,113 @@ We'll run the same test as before:
     <BLANKLINE>
     Hello Ian!
 
+URL Generation and Request Access
+---------------------------------
+
+You can use hard-coded links in your HTML, but this can have problems.  Relative links are hard to manage, and absolute links presume that your application lives at a particular location.  WSGI gives a variable ``SCRIPT_NAME``, which is the portion of the path that led up to this application.  If you are writing a blog application, for instance, someone might want to install it at ``/blog/``, and then SCRIPT_NAME would be ``"/blog"``.  We should generate links with that in mind.
+
+The base URL using SCRIPT_NAME is ``req.application_url``.  So, if we have access to the request we can make a URL.  But what if we don't have access?
+
+We can use thread-local variables to make it easy for any function to get access to the currect request.  A "thread-local" variable is a variable whose value is tracked separately for each thread, so if there are multiple requests in different threads, their requests won't clobber each other.
+
+The basic means of using a thread-local variable is ``threading.local()``.  This creates a blank object that can have thread-local attributes assigned to it.  I find the best way to get *at* a thread-local value is with a function, as this makes it clear that you are fetching the object, as opposed to getting at some global object.
+
+Here's the basic structure for the local:
+
+.. code-block::
+
+    >>> import threading
+    >>> class Localized(object):
+    ...     def __init__(self):
+    ...         self.local = threading.local()
+    ...     def register(self, object):
+    ...         self.local.object = object
+    ...     def unregister(self):
+    ...         del self.local.object
+    ...     def __call__(self):
+    ...         try:
+    ...             return self.local.object
+    ...         except AttributeError:
+    ...             raise TypeError("No object has been registered for this thread")
+    >>> get_request = Localized()
+
+Now we need some *middleware* to register the request object.  Middleware is something that wraps an application, possibly modifying the request on the way in or the way out.  In a sense the ``Router`` object was middleware, though not exactly because it didn't wrap a single application.
+
+This registration middleware looks like:
+
+.. code-block::
+
+    >>> class RegisterRequest(object):
+    ...     def __init__(self, app):
+    ...         self.app = app
+    ...     def __call__(self, environ, start_response):
+    ...         req = Request(environ)
+    ...         get_request.register(req)
+    ...         try:
+    ...             return self.app(environ, start_response)
+    ...         finally:
+    ...             get_request.unregister()
+
+Now if we do:
+
+    >>> hello_world = RegisterRequest(hello_world)
+
+then the request will be registered each time.  Now, lets create a URL generation function:
+
+.. code-block::
+
+    >>> import urllib
+    >>> def url(*segments, **vars):
+    ...     base_url = get_request().application_url
+    ...     path = '/'.join(str(s) for s in segments)
+    ...     if not path.startswith('/'):
+    ...         path = '/' + path
+    ...     if vars:
+    ...         path += '?' + urllib.urlencode(vars)
+    ...     return base_url + path
+
+Now, to test:
+
+.. code-block::
+
+    >>> get_request.register(Request.blank('http://localhost/'))
+    >>> url('article', 1)
+    'http://localhost/article/1'
+    >>> url('search', q='some query')
+    'http://localhost/search?q=some+query'
+
+Templating
+----------
+
+Well, we don't *really* need to factor templating into our framework.  After all, you return a string from your controller, and you can figure out on your own how to get a rendered string from a template.
+
+But we'll add a little helper, because I think it shows a clever trick.
+
+We'll use `Tempita <http://pythonpaste.org/tempita/>`_ for templating, mostly because it's very simplistic about how it does loading.  The basic form is:
+
+.. code-block::
+
+    import tempita
+    template = tempita.HTMLTemplate.from_filename('some-file.html')
+
+But we'll be implementing a function ``render(template_name, **vars)`` that will render the named template, treating it as a path *relative to the location of the render() call*.  That's the trick.
+
+To do that we use ``sys._getframe``, which is a way to look at information in the calling scope.  Generally this is frowned upon, but I think this case is justifiable.
+
+We'll also let you pass an instantiated template in instead of a template name, which will be useful in places like a doctest where there aren't other files easily accessible.
+
+.. code-block::
+
+    >>> import os
+    >>> import tempita
+    >>> def render(template, **vars):
+    ...     if isinstance(template, basestring):
+    ...         caller_location = sys._getframe(1).f_globals['__file__']
+    ...         filename = os.path.join(os.path.dirname(caller_location), template)
+    ...         template = tempita.HTMLTemplate.from_filename(filename)
+    ...     vars.setdefault('request', get_request())
+    ...     return template.substitute(vars)
+
 Conclusion
 ----------
 
@@ -397,7 +504,6 @@ Well, that's a framework.  Ta-da!
 Of course, this doesn't deal with some other stuff.  In particular:
 
 * Configuration
-* Templates
 * Making your routes debuggable
 * Exception catching and other basic infrastructure
 * Database connections
