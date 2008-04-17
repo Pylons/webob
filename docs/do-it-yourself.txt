@@ -6,7 +6,7 @@ Another Do-It-Yourself Framework
 Introduction and Audience
 -------------------------
 
-It's been over two years since I wrote the `first version of this tutorial <http://pythonpaste.org/do-it-yourself-framework.html>`_.  I decided to give it another run with some of the tools that have come about since then (particularly `WebOb <>`_).
+It's been over two years since I wrote the `first version of this tutorial <http://pythonpaste.org/do-it-yourself-framework.html>`_.  I decided to give it another run with some of the tools that have come about since then (particularly `WebOb <http://pythonpaste.org/webob/>`_).
 
 Sometimes Python is accused of having too many web frameworks.  And it's true, there are a lot.  That said, I think writing a framework is a useful exercise.  It doesn't let you skip over too much without understanding it.  It removes the magic.  So even if you go on to use another existing framework (which I'd probably advise you do), you'll be able to understand it better if you've written something like it on your own.
 
@@ -82,7 +82,7 @@ These two pieces solve a lot of the more tedious parts of making a framework.  T
 Serving Your Application
 ------------------------
 
-While we can test the application using WebOb, you might want to serve the application.  Here's the basic recipe, using the `Paste <>`_ HTTP server:
+While we can test the application using WebOb, you might want to serve the application.  Here's the basic recipe, using the `Paste <http://pythonpaste.org>`_ HTTP server:
 
 .. code-block::
 
@@ -90,7 +90,7 @@ While we can test the application using WebOb, you might want to serve the appli
         from paste import httpserver
         httpserver.serve(app, host='127.0.0.1', port=8080)
 
-you could also use `wsgiref <>`_ from the standard library, but this is mostly appropriate for testing as it is single-threaded:
+you could also use `wsgiref <http://python.org/doc/current/lib/module-wsgiref.simpleserver.html>`_ from the standard library, but this is mostly appropriate for testing as it is single-threaded:
 
 .. code-block::
 
@@ -202,7 +202,7 @@ Routing: putting it together
 
 Now, the ``Router`` class.  The class has the ``add_route`` method, and also a ``__call__`` method.  That ``__call__`` method makes this object a WSGI application itself.  So the application looks at ``PATH_INFO`` (also known as ``req.path_info``).
 
-We put the variables matched from the regular expression, and any extra keyword arguments passed to ``add_route`` into ``req.urlvars``.  This is actually ``environ['wsgiorg.routing_args']``, a `standard location for this routing information <>`_.
+We put the variables matched from the regular expression, and any extra keyword arguments passed to ``add_route`` into ``req.urlvars``.  This is actually ``environ['wsgiorg.routing_args']``, a `standard location for this routing information <http://wsgi.org/wsgi/Specifications/routing_args>`_.
 
 Lastly, if nothing matches at all, we want to return a 404 Not Found result.  WebOb comes with applications to return error results.  ``exc.HTTPNotFound()`` is one that returns a not found message.  We could include more information, but for now we'll be lazy and not give much information.
 
@@ -238,7 +238,7 @@ Controllers
 
 Controllers are themselves just WSGI applications, but we'll want to set up something to make them friendlier to write.
 
-To do that we'll write a `decorator <>`_.  A decorator is a function that wraps another function.  The decorated function will be a WSGI application, but it will call a function with a signature like ``controller_func(req, **urlvars)``.  The controller function will return a response object (which, remember, is a WSGI application on its own).
+To do that we'll write a `decorator <http://www.ddj.com/web-development/184406073>`_.  A decorator is a function that wraps another function.  The decorated function will be a WSGI application, but it will call a function with a signature like ``controller_func(req, **urlvars)``.  The controller function will return a response object (which, remember, is a WSGI application on its own).
 
 If you remember ``webob.exc.HTTPNotFound``, those objects can also be used as exceptions.  Unless you are willing to restrict yourself to Python 2.5+, you'll have to do ``raise exc.HTTPNotFound().exception`` because the actual objects like ``HTTPNotFound`` don't work as exceptions.
 
@@ -318,7 +318,7 @@ Another Controller
 
 There's another pattern that might be interesting to try for a controller.  Instead of a function, we can make a class with methods like ``get``, ``post``, etc.  The ``urlvars`` will be used to instantiate the class.
 
-We could do this as a superclass, but the implementation will be more elegant as a wrapper, like the decorator is a wrapper.  Python 3.0 will add `class decorators <>`_ which will work like this.
+We could do this as a superclass, but the implementation will be more elegant as a wrapper, like the decorator is a wrapper.  Python 3.0 will add `class decorators <http://www.python.org/dev/peps/pep-3129/>`_ which will work like this.
 
 We'll allow an extra ``action`` variable, which will define the method (actually ``action_method``, where ``_method`` is the request method).  If no action is given, we'll use just the method (i.e., ``get``, ``post``, etc).
 
