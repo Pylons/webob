@@ -18,6 +18,8 @@ Other documents:
 
 * `JSON-RPC server and client example <jsonrpc-example.html>`_
 
+* `A Do-It-Yourself Framework <do-it-yourself.html>`_
+
 .. contents::
 
 .. comment:
