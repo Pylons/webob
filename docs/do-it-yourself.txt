@@ -12,6 +12,8 @@ Sometimes Python is accused of having too many web frameworks.  And it's true, t
 
 This tutorial shows you how to create a web framework of your own, using WSGI and WebOb.  No other libraries will be used.
 
+For the longer sections I will try to explain any tricky parts on a line-by line basis following the example.
+
 What Is WSGI?
 -------------
 
@@ -138,9 +140,7 @@ To do this we'll need a couple pieces:
 Routing: Templates
 ~~~~~~~~~~~~~~~~~~
 
-To do the matching, we'll compile those templates to regular expressions.  We'll actually use a regular expression to match the variables.  We use ``re.VERBOSE`` so that the regular expression can span lines (whitespace is ignored) and we can add comments on the lines.
-
-Another thing most people don't know about is ``re.escape()``.  This escapes any special regular expression characters.  So ``re.escape('.*')`` becomes ``'\\.\\*'``.
+To do the matching, we'll compile those templates to regular expressions.  
 
 .. code-block::
 
@@ -153,23 +153,39 @@ Another thing most people don't know about is ``re.escape()``.  This escapes any
     ...     ''', re.VERBOSE)
     >>> def template_to_regex(template):
     ...     regex = ''
-    ...     last_match = None
+    ...     last_pos = 0
     ...     for match in var_regex.finditer(template):
-    ...         if last_match is None:
-    ...             regex += re.escape(template[:match.start()])
-    ...         else:
-    ...             regex += re.escape(template[last_match.end():match.start()])
+    ...         regex += re.escape(template[last_pos:match.start()])
+    ...         var_name = match.group(1)
     ...         expr = match.group(2) or '[^/]+'
-    ...         expr = '(?P<%s>%s)' % (match.group(1), expr)
+    ...         expr = '(?P<%s>%s)' % (var_name, expr)
     ...         regex += expr
-    ...         last_match = match
-    ...     if not last_match:
-    ...         # There were no {} groups
-    ...         regex = re.escape(template)
-    ...     else:
-    ...         regex += re.escape(template[match.end():])
+    ...         last_pos = match.end()
+    ...     regex += re.escape(template[last_pos:])
     ...     regex = '^%s$' % regex
     ...     return regex
+
+**line 2:** Here we create the regular expression.  The ``re.VERBOSE`` flag makes the regular expression parser ignore whitespace and allow comments, so we can avoid some of the feel of line-noise.  This matches any variables, i.e., ``{var:regex}`` (where ``:regex`` is optional).  Note that there are two groups we capture: ``match.group(1)`` will be the variable name, and ``match.group(2)`` will be the regular expression (or None when there is no regular expression).  Note that ``(?:...)?`` means that the section is optional.
+
+**line 10**: This variable will hold the regular expression that we are creating.  
+
+**line 11**: This contains the position of the end of the last match.
+
+**line 12**: The ``finditer`` method yields all the matches.
+
+**line 13**: We're getting all the non-``{}`` text from after the last match, up to the beginning of this match.  We call ``re.escape`` on that text, which escapes any characters that have special meaning.  So ``.html`` will be escaped as ``\.html``.
+
+**line 14**: The first match is the variable name.
+
+**line 15**: ``expr`` is the regular expression we'll match against, the optional second match.  The default is ``[^/]+``, which matches any non-empty, non-/ string.  Which seems like a reasonable default to me.
+
+**line 16**: Here we create the actual regular expression.  ``(?P<name>...)`` is a grouped expression that is named.  When you get a match, you can look at ``match.groupdict()`` and get the names and values.
+
+**line 17, 18**: We add the expression on to the complete regular expression and save the last position.
+
+**line 19**: We add remaining non-variable text to the regular expression.
+
+**line 20**: And then we make the regular expression match the complete string (``^`` to force it to match from the start, ``$`` to make sure it matches up to the end).
 
 To test it we can try some translations.  You could put these directly in the docstring of the ``template_to_regex`` function and use `doctest <http://python.org/doc/current/lib/module-doctest.html>`_ to test that.  But I'm using doctest to test *this* document, so I can't put a docstring doctest inside the doctest itself.  Anyway, here's what a test looks like:
 
@@ -202,12 +218,6 @@ Routing: putting it together
 
 Now, the ``Router`` class.  The class has the ``add_route`` method, and also a ``__call__`` method.  That ``__call__`` method makes the Router object itself a WSGI application.  So when a request comes in, it looks at ``PATH_INFO`` (also known as ``req.path_info``) and hands off the request to the controller that matches that path.
 
-We put the variables matched from the regular expression, and any extra keyword arguments passed to ``add_route`` into ``req.urlvars``.  This is actually ``environ['wsgiorg.routing_args']``, a `standard location for this routing information <http://wsgi.org/wsgi/Specifications/routing_args>`_.
-
-Lastly, if nothing matches at all, we want to return a 404 Not Found result.  WebOb comes with applications to return error results.  ``exc.HTTPNotFound()`` is one that returns a not found message.  We could include more information, but for now we'll be lazy and not give much information.
-
-Using ``return controller(environ, start_response)`` basically forwards the request on to that controller.  The controller is then a WSGI application of its own.
-
 .. code-block::
 
     >>> from webob import Request
@@ -233,16 +243,30 @@ Using ``return controller(environ, start_response)`` basically forwards the requ
     ...                 return controller(environ, start_response)
     ...         return exc.HTTPNotFound()(environ, start_response)
 
+**line 5**: We are going to keep the route options in an ordered list.  Each item will be ``(regex, controller, vars)``: ``regex`` is the regular expression object to match against, ``controller`` is the controller to run, and ``vars`` are any extra (constant) variables.
+
+**line 8, 9**: We will allow you to call ``add_route`` with a string (that will be imported) or a controller object.  We test for a string here, and then import it if necessary.
+
+**line 13**: Here we add a ``__call__`` method.  This is the method used when you call an object like a function.  You should recognize this as the WSGI signature.
+
+**line 14**: We create a request object.  Note we'll only use this request object in this function; if the controller wants a request object it'll have to make on of its own.
+
+**line 16**: We test the regular expression against ``req.path_info``.  This is the same as ``environ['PATH_INFO']``.  That's all the request path left to be processed.
+
+**line 18**: We set ``req.urlvars`` to the dictionary of matches in the regular expression.  This variable actually maps to ``environ['wsgiorg.routing_args']``.  Any attributes you set on a request will, in one way or another, map to the environment dictionary: the request holds no state of its own.
+
+**line 19**: We also add in any explicit variables passed in through ``add_route()``.
+
+**line 20**: Then we call the controller as a WSGI application itself.  Any fancy framework stuff the controller wants to do, it'll have to do itself.
+
+**line 21**: If nothing matches, we return a 404 Not Found response.  ``webob.exc.HTTPNotFound()`` is a WSGI application that returns 404 responses.  You could add a message too, like ``webob.exc.HTTPNotFound('No route matched')``.  Then, of course, we call the application.
+
 Controllers
 -----------
 
 The router just passes the request on to the controller, so the controllers are themselves just WSGI applications.  But we'll want to set up something to make those applications friendlier to write.
 
 To do that we'll write a `decorator <http://www.ddj.com/web-development/184406073>`_.  A decorator is a function that wraps another function.  After decoration the function will be a WSGI application, but it will be decorating a function with a signature like ``controller_func(req, **urlvars)``.  The controller function will return a response object (which, remember, is a WSGI application on its own).
-
-If you remember ``webob.exc.HTTPNotFound``, those objects can also be used as exceptions.  Unless you are willing to restrict yourself to Python 2.5+, you'll have to do ``raise exc.HTTPNotFound().exception`` because the actual objects like ``HTTPNotFound`` don't work as exceptions before 2.5.  We'll allow the function to raise these exceptions, and turn them into normal responses.
-
-We'll also let the function return just a string, and in that case create a standard response object (200 OK, with a Content-Type of text/html).
 
 .. code-block::
 
@@ -259,6 +283,22 @@ We'll also let the function return just a string, and in that case create a stan
     ...             resp = Response(body=resp)
     ...         return resp(environ, start_response)
     ...     return replacement
+
+**line 3**: This is the typical signature for a decorator -- it takes one function as an argument, and returns a wrapped function.
+
+**line 4**: This is the replacement function we'll return.  This is called a `closure <http://en.wikipedia.org/wiki/Closure_(computer_science)>`_ -- this function will have access to ``func``, and everytime you decorate a new function there will be a new ``replacement`` function with its own value of ``func``.  As you can see, this is a WSGI application.
+
+**line 5**: We create a request.
+
+**line 6**: Here we catch any ``webob.exc.HTTPException`` exceptions.  This is so you can do ``raise webob.exc.HTTPNotFound()`` in your function (or on Python 2.4, ``raise webob.exc.HTTPNotFound().exception``).  These exceptions are themselves WSGI applications.
+
+**line 7**: We call the function with the request object, any any variables in ``req.urlvars``.  And we get back a response.
+
+**line 10**: We'll allow the function to return a full response object, or just a string.  If they return a string, we'll create a ``Response`` object with that (and with the standard ``200 OK`` status, ``text/html`` content type, and ``utf8`` charset/encoding).
+
+**line 12**: We pass the request on to the response.  Which *also* happens to be a WSGI application.  WSGI applications are falling from the sky!
+
+**line 13**: We return the function object itself, which will take the place of the function.
 
 You use this controller like:
 
@@ -345,6 +385,28 @@ We'll allow an extra ``action`` variable, which will define the method (actually
     ...             resp = e
     ...         return resp(environ, start_response)
     ...     return replacement
+
+**line 1**: Here we're kind of decorating a class.  But really we'll just create a WSGI application wrapper.
+
+**line 2-4**: The replacement WSGI application, also a closure.  And we create a request and catch exceptions, just like in the decorator.
+
+**line 5**: We instantiate the class with both the request and ``req.urlvars`` to initialize it.  The instance will only be used for one request.  (Note that the *instance* then doesn't have to be thread safe.)
+
+**line 6**: We get the action variable out, if there is one.
+
+**line 7, 8**: If there was one, we'll use the method name ``{action}_{method}``...
+
+**line 8, 9**: ... otherwise we'll use just the method for the method name.
+
+**line 10-13**: We'll get the method from the instance, or respond with a 404 error if there is not such method.
+
+**line 14**: Call the method, get the response
+
+**line 15, 16**: If the response is just a string, create a full response object from it.
+
+**line 19**: and then we forward the request...
+
+**line 20**: ... and return the wrapper object we've created.
 
 Here's the hello world:
 
