@@ -10,6 +10,10 @@ exists, but this ignores them.
 """
 
 import re
+try:
+    sorted
+except NameError:
+    from webob.compat import sorted
 
 part_re = re.compile(
     r',\s*([^\s;,\n]+)(?:[^,]*?;\s*q=([0-9.]*))?')

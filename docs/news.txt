@@ -11,6 +11,9 @@ svn trunk
   Browsers should deal with either format, but some other code expects
   dashes.
 
+* Added in ``sorted`` function for backward compatibility with Python
+  2.3.
+
 0.9.1
 -----
 

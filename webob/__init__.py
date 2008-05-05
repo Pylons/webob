@@ -20,6 +20,10 @@ from webob.statusreasons import status_reasons
 from webob.cachecontrol import CacheControl, serialize_cache_control
 from webob.acceptparse import Accept, MIMEAccept, NilAccept, MIMENilAccept, NoAccept
 from webob.byterange import Range, ContentRange
+try:
+    sorted
+except NameError:
+    from webob.compat import sorted
 
 _CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
 _SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
