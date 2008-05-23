@@ -1050,7 +1050,8 @@ class Request(object):
         env['REQUEST_METHOD'] = 'GET'
         return self.__class__(env)
 
-    def remove_conditional_headers(self, remove_encoding=True):
+    def remove_conditional_headers(self, remove_encoding=True, remove_range=True,
+                                        remove_match=True, remove_modified=True):
         """
         Remove headers that make the request conditional.
 
@@ -1060,13 +1061,19 @@ class Request(object):
         This does not remove headers like If-Match, which are used for
         conflict detection.
         """
-        for key in ['HTTP_IF_MATCH', 'HTTP_IF_MODIFIED_SINCE',
-                    'HTTP_IF_RANGE', 'HTTP_RANGE']:
+        check_keys = []
+        if remove_range:
+            check_keys += ['HTTP_IF_RANGE', 'HTTP_RANGE']
+        if remove_match:
+            check_keys.append('HTTP_IF_MATCH')
+        if remove_modified:
+            check_keys.append('HTTP_IF_MODIFIED_SINCE')
+        if remove_encoding:
+            check_keys.append('HTTP_ACCEPT_ENCODING')
+
+        for key in check_keys:
             if key in self.environ:
                 del self.environ[key]
-        if remove_encoding:
-            if 'HTTP_ACCEPT_ENCODING' in self.environ:
-                del self.environ['HTTP_ACCEPT_ENCODING']
 
     accept = converter(
         environ_getter('HTTP_ACCEPT', rfc_section='14.1'),
