@@ -1958,18 +1958,22 @@ class Response(object):
 
     etag = header_getter('ETag', rfc_section='14.19')
 
-    def md5_etag(self, body=None):
+    def md5_etag(self, body=None, set_content_md5=False):
         """
         Generate an etag for the response object using an MD5 hash of
         the body (the body parameter, or ``self.body`` if not given)
 
         Sets ``self.etag``
+        If set_content_md5 is True sets self.content_md5 as well
         """
         if body is None:
             body = self.body
         import md5
         h = md5.new(body)
-        self.etag = h.digest().encode('base64').replace('\n', '').strip('=')
+        md5_digest = h.digest().encode('base64').replace('\n', '').strip('=')
+        self.etag = md5_digest
+        if set_content_md5:
+            self.content_md5 = md5_digest
 
     expires = converter(
         header_getter('Expires', rfc_section='14.21'),
