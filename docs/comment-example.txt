@@ -29,7 +29,7 @@ Every middleware needs an application (``app``) that it wraps.  This
 middleware also needs a location to store the comments; we'll put them
 all in a single directory.
 
-.. code-block::
+.. code-block:: python
 
     import os
     
@@ -42,7 +42,7 @@ all in a single directory.
 
 When you use this middleware, you'll use it like:
 
-.. code-block::
+.. code-block:: python
 
     app = ... make the application ...
     app = Commenter(app, storage_dir='./comments')
@@ -52,7 +52,7 @@ included with `Paste <http://pythonpaste.org>`_ (use ``easy_install
 Paste`` to install this).  The setup is all at the bottom of
 ``example.py``, and looks like this:
 
-.. code-block::
+.. code-block:: python
 
     if __name__ == '__main__':
         import optparse
@@ -97,7 +97,7 @@ While we've created the class structure for the middleware, it doesn't
 actually do anything.  Here's a kind of minimal version of the
 middleware (using WebOb):
 
-.. code-block::
+.. code-block:: python
 
     from webob import Request
 
@@ -117,7 +117,7 @@ middleware (using WebOb):
 This doesn't modify the response it any way.  You could write it like
 this without WebOb:
 
-.. code-block::
+.. code-block:: python
 
     class Commenter(object):
         ...
@@ -131,7 +131,7 @@ where each url has a pickle named after the url (but double-quoted, so
 ``http://localhost:8080/index.html`` becomes
 ``http%3A%2F%2Flocalhost%3A8080%2Findex.html``).
 
-.. code-block::
+.. code-block:: python
 
     from cPickle import load, dump
 
@@ -167,7 +167,7 @@ and get the comment data for those.  We don't want to change responses
 that were error responses (anything but ``200``), nor do we want to
 filter responses that aren't HTML.  So we get:
 
-.. code-block::
+.. code-block:: python
 
     class Commenter(object):
         ...
@@ -190,7 +190,7 @@ site!'}``.
 We'll also need a simple method to add stuff to the page.  We'll use a
 regular expression to find the end of the page and put text in:
 
-.. code-block::
+.. code-block:: python
 
     import re
 
@@ -211,7 +211,7 @@ regular expression to find the end of the page and put text in:
 
 And then we'll use it like:
 
-.. code-block::
+.. code-block:: python
 
     data = self.get_data(req.url)
     body = resp.body
@@ -222,7 +222,7 @@ And then we'll use it like:
 We get the body, update it, and put it back in the response.  This
 also updates ``Content-Length``.  Then we define:
 
-.. code-block::
+.. code-block:: python
 
     from webob import html_escape
 
@@ -274,7 +274,7 @@ wrapping may update ``SCRIPT_NAME`` and ``PATH_INFO``).
 
 So here's what this all looks like:
 
-.. code-block::
+.. code-block:: python
 
     class Commenter(object):
         ...
@@ -316,7 +316,7 @@ submit_form
 
 Here's what the form looks like:
 
-.. code-block::
+.. code-block:: python
 
     class Commenter(object):
         ...
@@ -346,13 +346,13 @@ process_comment
 If you look at the method call, what we do is call the method then
 treat the result as a WSGI application:
 
-.. code-block::
+.. code-block:: python
 
     return self.process_comment(req)(environ, start_response)
 
 You could write this as:
 
-.. code-block::
+.. code-block:: python
 
     response = self.process_comment(req)
     return response(environ, start_response)
@@ -360,7 +360,7 @@ You could write this as:
 A common pattern in WSGI middleware that *doesn't* use WebOb is to
 just do:
 
-.. code-block::
+.. code-block:: python
 
     return self.process_comment(environ, start_response)
 
@@ -370,7 +370,7 @@ changing your logic flow considerably.
 
 Here's the actual processing code:
 
-.. code-block::
+.. code-block:: python
 
     from webob import exc
     from webob import Response

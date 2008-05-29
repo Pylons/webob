@@ -81,7 +81,7 @@ This will open up a server (using `wsgiref
 and serve up our application (note that *creating* the application is
 left out to start with):
 
-.. code-block::
+.. code-block:: python
 
     import sys
 
@@ -118,7 +118,7 @@ app created by ``make_app(args[0])``.  ``make_app`` will have to load
 up the object and wrap it in our WSGI/WebOb wrapper.  We'll be calling
 that wrapper ``JSONRPC(obj)``, so here's how it'll go:
 
-.. code-block::
+.. code-block:: python
 
     def make_app(expr):
         module, expression = expr.split(':', 1)
@@ -147,7 +147,7 @@ terminology WSGI uses.  Everything that gets *called* is an
 
 The instantiation of the server is already figured out:
 
-.. code-block::
+.. code-block:: python
 
     class JsonRpcApp(object):
 
@@ -163,7 +163,7 @@ exposed, and ``__call__`` implements the WSGI interface.
 We'll start with a simple outline of the WSGI interface, using a kind
 of standard WebOb setup:
 
-.. code-block::
+.. code-block:: python
 
     from webob import Request, Response
     from webob import exc
@@ -198,7 +198,7 @@ The ``process`` method of course is where all the fancy stuff
 happens.  We'll start with just the most minimal implementation, with
 no error checking or handling:
 
-.. code-block::
+.. code-block:: python
 
     from simplejson import loads, dumps
 
@@ -223,7 +223,7 @@ any exceptions, you are pretty much set.  But of course that's not a
 reasonable expectation.  There's a whole bunch of things that can go
 wrong.  For instance, it has to be a POST method:
 
-.. code-block::
+.. code-block:: python
 
     if not req.method == 'POST':
         raise exc.HTTPMethodNotAllowed(
@@ -232,7 +232,7 @@ wrong.  For instance, it has to be a POST method:
 
 And maybe the request body doesn't contain valid JSON:
 
-.. code-block::
+.. code-block:: python
 
     try:
         json = loads(req.body)
@@ -241,7 +241,7 @@ And maybe the request body doesn't contain valid JSON:
 
 And maybe all the keys aren't in the dictionary:
 
-.. code-block::
+.. code-block:: python
 
     try:
         method = json['method']
@@ -258,7 +258,7 @@ raise its ``.exception`` attribute, which contains the "real"
 exception object (as opposed to the ``web.Response`` based object,
 though on Python 2.5+ these are the same objects):
 
-.. code-block::
+.. code-block:: python
 
     if method.startswith('_'):
         raise exc.HTTPForbidden(
@@ -266,7 +266,7 @@ though on Python 2.5+ these are the same objects):
 
 And maybe ``json['params']`` isn't a list:
 
-.. code-block::
+.. code-block:: python
 
     if not isinstance(params, list):
         raise ValueError(
@@ -274,7 +274,7 @@ And maybe ``json['params']`` isn't a list:
 
 And maybe the method doesn't exist:
 
-.. code-block::
+.. code-block:: python
 
     try:
         method = getattr(self.obj, method)
@@ -285,7 +285,7 @@ And maybe the method doesn't exist:
 The last case is the error we actually can expect: that the method
 raises some exception.
 
-.. code-block::
+.. code-block:: python
 
     try:
         result = method(*params)
@@ -312,7 +312,7 @@ The Complete Code
 Since we showed all the error handling in pieces, here's the complete
 code:
 
-.. code-block::
+.. code-block:: python
 
     from webob import Request, Response
     from webob import exc
@@ -396,14 +396,14 @@ Request and Response to do actual HTTP connections.
 
 The basic idea is that you can create a blank Request:
 
-.. code-block::
+.. code-block:: python
 
     >>> from webob import Request
     >>> req = Request.blank('http://python.org')
 
 Then you can send that request to an application:
 
-.. code-block::
+.. code-block:: python
 
     >>> from wsgiproxy.exactproxy import proxy_exact_request
     >>> resp = req.get_response(proxy_exact_request)
@@ -411,7 +411,7 @@ Then you can send that request to an application:
 This particular application (``proxy_exact_request``) sends the
 request over HTTP:
 
-.. code-block::
+.. code-block:: python
 
     >>> resp.content_type
     'text/html'
@@ -428,7 +428,7 @@ The proxy client is instantiated with its base URL.  We'll also let
 you pass in a proxy application, in case you want to do local requests
 (e.g., to do direct tests against a ``JsonRpcApp`` instance):
 
-.. code-block::
+.. code-block:: python
 
     class ServerProxy(object):
 
@@ -448,7 +448,7 @@ method, you are calling the object that ``.method`` returns.  So we'll
 create a helper object that is callable, and our ``__getattr__`` will
 just return that:
 
-.. code-block::
+.. code-block:: python
 
     class ServerProxy(object):
         ...
@@ -470,7 +470,7 @@ will be ``self.name``.
 
 Here's the code to do the call:
 
-.. code-block::
+.. code-block:: python
 
     class _Method(object):
         ...
@@ -510,7 +510,7 @@ In both cases we'll keep the response object around, as that can be
 interesting.  Note that you can make exception have any methods or
 signature you want, which we'll do:
 
-.. code-block::
+.. code-block:: python
 
     class ProxyError(Exception):
         """
@@ -547,7 +547,7 @@ and you can run it with `docs/json-example-code/test_jsonrpc.py
 <http://svn.pythonpaste.org/Paste/WebOb/trunk/docs/json-example-code/test_jsonrpc.py>`_,
 which looks like:
 
-.. code-block::
+.. code-block:: python
 
     if __name__ == '__main__':
         import doctest
@@ -556,7 +556,7 @@ which looks like:
 As you can see, it's just a stub to run the doctest.  We'll need a
 simple object to expose.  We'll make it real simple:
 
-.. code-block::
+.. code-block:: python
 
     >>> class Divider(object):
     ...     def divide(self, a, b):
@@ -564,14 +564,14 @@ simple object to expose.  We'll make it real simple:
 
 Then we'll get the app setup:
 
-.. code-block::
+.. code-block:: python
 
     >>> from jsonrpc import *
     >>> app = JsonRpcApp(Divider())
 
 And attach the client *directly* to it:
 
-.. code-block::
+.. code-block:: python
 
     >>> proxy = ServerProxy('http://localhost:8080', proxy=app)
 
@@ -600,7 +600,7 @@ Generally it works well.
 
 So, now we have a proxy, lets use it:
 
-.. code-block::
+.. code-block:: python
 
     >>> proxy.divide(10, 4)
     2
@@ -609,7 +609,7 @@ So, now we have a proxy, lets use it:
 
 Lastly, we'll test a couple error conditions.  First a method error:
 
-.. code-block::
+.. code-block:: python
 
     >>> proxy.divide(10, 0) # doctest: +ELLIPSIS
     Traceback (most recent call last):
@@ -632,7 +632,7 @@ visual inspection to make sure it looks sensible.
 
 The other exception can be:
 
-.. code-block::
+.. code-block:: python
 
     >>> proxy.add(1, 1)
     Traceback (most recent call last):

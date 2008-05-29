@@ -23,7 +23,7 @@ WSGI more specifically is made up of an *application* and a *server*.  The appli
 
 A very simple application looks like this:
 
-.. code-block::
+.. code-block:: python
 
     >>> def application(environ, start_response):
     ...     start_response('200 OK', [('Content-Type', 'text/html')])
@@ -33,7 +33,7 @@ The ``environ`` argument is a dictionary with values like the environment in a C
 
 We won't focus much on the server, but we will use WebOb to handle the application.  WebOb in a way has a simple server interface.  To use it you create a new request with ``req = webob.Request('http://localhost/test')``, and then call the application with ``resp = req.get_response(app)``.  For example:
 
-.. code-block::
+.. code-block:: python
 
     >>> from webob import Request
     >>> req = Request.blank('http://localhost/test')
@@ -51,7 +51,7 @@ About WebOb
 
 WebOb is a library to create a request and response object.  It's centered around the WSGI model.  Requests are wrappers around the environment.  For example:
 
-.. code-block::
+.. code-block:: python
 
     >>> req = Request.blank('http://localhost/test')
     >>> req.environ['HTTP_HOST']
@@ -63,7 +63,7 @@ WebOb is a library to create a request and response object.  It's centered aroun
 
 Responses are objects that represent the... well, response.  The status, headers, and body:
 
-.. code-block::
+.. code-block:: python
 
     >>> from webob import Response
     >>> resp = Response(body='Hello World!')
@@ -86,7 +86,7 @@ Serving Your Application
 
 While we can test the application using WebOb, you might want to serve the application.  Here's the basic recipe, using the `Paste <http://pythonpaste.org>`_ HTTP server:
 
-.. code-block::
+.. code-block:: python
 
     if __name__ == '__main__':
         from paste import httpserver
@@ -94,7 +94,7 @@ While we can test the application using WebOb, you might want to serve the appli
 
 you could also use `wsgiref <http://python.org/doc/current/lib/module-wsgiref.simpleserver.html>`_ from the standard library, but this is mostly appropriate for testing as it is single-threaded:
 
-.. code-block::
+.. code-block:: python
 
     if __name__ == '__main__':
         from wsgiref.simple_server import make_server
@@ -119,7 +119,7 @@ We'll use explicit routes using URI templates (minus the domains) to match paths
 
 So here's what a route would look like:
 
-.. code-block::
+.. code-block:: python
 
     app = Router()
     app.add_route('/', controller='controllers:index')
@@ -142,7 +142,7 @@ Routing: Templates
 
 To do the matching, we'll compile those templates to regular expressions.  
 
-.. code-block::
+.. code-block:: python
 
     >>> import re
     >>> var_regex = re.compile(r'''
@@ -189,7 +189,7 @@ To do the matching, we'll compile those templates to regular expressions.
 
 To test it we can try some translations.  You could put these directly in the docstring of the ``template_to_regex`` function and use `doctest <http://python.org/doc/current/lib/module-doctest.html>`_ to test that.  But I'm using doctest to test *this* document, so I can't put a docstring doctest inside the doctest itself.  Anyway, here's what a test looks like:
 
-.. code-block::
+.. code-block:: python
 
     >>> print template_to_regex('/a/static/path')
     ^\/a\/static\/path$
@@ -203,7 +203,7 @@ To load controllers we have to import the module, then get the function out of i
 
 Also, some people don't know how exactly the string method ``split`` works.  It takes two arguments -- the first is the character to split on, and the second is the maximum number of splits to do.  We want to split on just the first ``:`` character, so we'll use a maximum number of splits of 1.
 
-.. code-block::
+.. code-block:: python
 
     >>> import sys
     >>> def load_controller(string):
@@ -218,7 +218,7 @@ Routing: putting it together
 
 Now, the ``Router`` class.  The class has the ``add_route`` method, and also a ``__call__`` method.  That ``__call__`` method makes the Router object itself a WSGI application.  So when a request comes in, it looks at ``PATH_INFO`` (also known as ``req.path_info``) and hands off the request to the controller that matches that path.
 
-.. code-block::
+.. code-block:: python
 
     >>> from webob import Request
     >>> from webob import exc
@@ -268,7 +268,7 @@ The router just passes the request on to the controller, so the controllers are 
 
 To do that we'll write a `decorator <http://www.ddj.com/web-development/184406073>`_.  A decorator is a function that wraps another function.  After decoration the function will be a WSGI application, but it will be decorating a function with a signature like ``controller_func(req, **urlvars)``.  The controller function will return a response object (which, remember, is a WSGI application on its own).
 
-.. code-block::
+.. code-block:: python
 
     >>> from webob import Request, Response
     >>> from webob import exc
@@ -302,7 +302,7 @@ To do that we'll write a `decorator <http://www.ddj.com/web-development/18440607
 
 You use this controller like:
 
-.. code-block::
+.. code-block:: python
 
     >>> @controller
     ... def index(req):
@@ -313,7 +313,7 @@ Putting It Together
 
 Now we'll show a basic application.  Just a hello world application for now.  Note that this document is the module ``__main__``.
 
-.. code-block::
+.. code-block:: python
 
     >>> @controller
     ... def hello(req):
@@ -329,7 +329,7 @@ Now we'll show a basic application.  Just a hello world application for now.  No
 
 Now let's test that application:
 
-.. code-block::
+.. code-block:: python
 
     >>> req = Request.blank('/')
     >>> resp = req.get_response(hello_world)
@@ -362,7 +362,7 @@ We could do this as a superclass, but the implementation will be more elegant as
 
 We'll allow an extra ``action`` variable, which will define the method (actually ``action_method``, where ``_method`` is the request method).  If no action is given, we'll use just the method (i.e., ``get``, ``post``, etc).
 
-.. code-block::
+.. code-block:: python
 
     >>> def rest_controller(cls):
     ...     def replacement(environ, start_response):
@@ -410,7 +410,7 @@ We'll allow an extra ``action`` variable, which will define the method (actually
 
 Here's the hello world:
 
-.. code-block::
+.. code-block:: python
 
     >>> class Hello(object):
     ...     def __init__(self, req):
@@ -426,7 +426,7 @@ Here's the hello world:
 
 We'll run the same test as before:
 
-.. code-block::
+.. code-block:: python
 
     >>> hello_world = Router()
     >>> hello_world.add_route('/', controller=hello)
@@ -464,7 +464,7 @@ The basic means of using a thread-local variable is ``threading.local()``.  This
 
 Here's the basic structure for the local:
 
-.. code-block::
+.. code-block:: python
 
     >>> import threading
     >>> class Localized(object):
@@ -485,7 +485,7 @@ Now we need some *middleware* to register the request object.  Middleware is som
 
 This registration middleware looks like:
 
-.. code-block::
+.. code-block:: python
 
     >>> class RegisterRequest(object):
     ...     def __init__(self, app):
@@ -504,7 +504,7 @@ Now if we do:
 
 then the request will be registered each time.  Now, lets create a URL generation function:
 
-.. code-block::
+.. code-block:: python
 
     >>> import urllib
     >>> def url(*segments, **vars):
@@ -518,7 +518,7 @@ then the request will be registered each time.  Now, lets create a URL generatio
 
 Now, to test:
 
-.. code-block::
+.. code-block:: python
 
     >>> get_request.register(Request.blank('http://localhost/'))
     >>> url('article', 1)
@@ -535,7 +535,7 @@ But we'll add a little helper, because I think it shows a clever trick.
 
 We'll use `Tempita <http://pythonpaste.org/tempita/>`_ for templating, mostly because it's very simplistic about how it does loading.  The basic form is:
 
-.. code-block::
+.. code-block:: python
 
     import tempita
     template = tempita.HTMLTemplate.from_filename('some-file.html')
@@ -546,7 +546,7 @@ To do that we use ``sys._getframe``, which is a way to look at information in th
 
 We'll also let you pass an instantiated template in instead of a template name, which will be useful in places like a doctest where there aren't other files easily accessible.
 
-.. code-block::
+.. code-block:: python
 
     >>> import os
     >>> import tempita

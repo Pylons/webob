@@ -15,7 +15,7 @@ to a high-quality file serving application.
 First we'll setup a really simple shim around our application, which
 we can use as we improve our application:
 
-.. code-block::
+.. code-block:: python
 
    >>> from webob import Request, Response
    >>> import os
@@ -34,7 +34,7 @@ we can use as we improve our application:
 Now we can make different definitions of ``make_response``.  The
 simplest version:
 
-.. code-block::
+.. code-block:: python
 
    >>> def make_response(filename):
    ...     res = Response(content_type=get_mimetype(filename))
@@ -44,7 +44,7 @@ simplest version:
 Let's give it a go.  We'll test it out with a file ``test-file.txt``
 in the WebOb doc directory:
 
-.. code-block::
+.. code-block:: python
 
    >>> fn = os.path.join(doc_dir, 'test-file.txt')
    >>> open(fn).read()
@@ -62,7 +62,7 @@ in the WebOb doc directory:
 Well, that worked.  But it's not a very fancy object.  First, it reads
 everything into memory, and that's bad.  We'll create an iterator instead:
 
-.. code-block::
+.. code-block:: python
 
    >>> class FileIterable(object):
    ...     def __init__(self, filename):
@@ -89,7 +89,7 @@ everything into memory, and that's bad.  We'll create an iterator instead:
 
 And testing:
 
-.. code-block::
+.. code-block:: python
 
    >>> req = Request.blank('/')
    >>> print req.get_response(app)
@@ -104,7 +104,7 @@ Well, that doesn't *look* different, but lets *imagine* that it's
 different because we know we changed some code.  Now to add some basic
 metadata to the response:
 
-.. code-block::
+.. code-block:: python
 
    >>> def make_response(filename):
    ...     res = Response(content_type=get_mimetype(filename),
@@ -119,7 +119,7 @@ metadata to the response:
 Now, with ``conditional_response`` on, and with ``last_modified`` and
 ``etag`` set, we can do conditional requests:
 
-.. code-block::
+.. code-block:: python
 
    >>> req = Request.blank('/')
    >>> res = req.get_response(app)
@@ -152,7 +152,7 @@ that the client asked for.  We can do better because we can use
 So we'll add an extra method, ``app_iter_range``, that ``Response``
 looks for:
 
-.. code-block::
+.. code-block:: python
 
    >>> class FileIterable(object):
    ...     def __init__(self, filename, start=None, stop=None):
@@ -191,7 +191,7 @@ looks for:
 
 Now we'll test it out:
 
-.. code-block::
+.. code-block:: python
 
    >>> req = Request.blank('/')
    >>> res = req.get_response(app)

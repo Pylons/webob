@@ -1,24 +1,18 @@
 WebOb
 +++++
 
-Other documents:
+.. toctree::
 
-* `Reference <reference.html>`_
-
-* Extracted documentation for the `request
-  <class-webob.Request.html>`_ and `response
-  <class-webob.Response.html>`_.
-
-* `Differences between the WebOb API and other framework/libraries
-  <differences.html>`_
-
-* `File-serving example <file-example.html>`_
-
-* `Comment middleware example <comment-example.html>`_
-
-* `JSON-RPC server and client example <jsonrpc-example.html>`_
-
-* `A Do-It-Yourself Framework <do-it-yourself.html>`_
+   reference
+   modules/webob
+   differences
+   file-example
+   wiki-example
+   comment-example
+   jsonrpc-example
+   do-it-yourself
+   news
+   license
 
 .. contents::
 
@@ -262,7 +256,7 @@ Of course most of the time you just want to *make* a response.
 Generally any attribute of the response can be passed in as a keyword
 argument to the class; e.g.:
 
-.. code-block::
+.. code-block:: python
 
   response = Response(body='hello world!', content_type='text/plain')
 
@@ -282,7 +276,7 @@ the error.  For instance, ``webob.exc.HTTPNotFound``.  It subclasses
 ``Response``, so you can manipulate the instances in the same way.  A
 typical example is:
 
-.. code-block::
+.. code-block:: python
 
     response = HTTPNotFound('There is no such resource')
     # or:
@@ -293,7 +287,7 @@ they are new-style classes which are not allowed as exceptions until
 Python 2.5.  To get an exception object use ``response.exception``.
 You can use this like:
 
-.. code-block::
+.. code-block:: python
 
     try:
         ... stuff ...
@@ -332,10 +326,10 @@ Example
 =======
 
 I haven't figured out the example I want to use here.  The
-`file-serving example`_ shows how to do more advanced HTTP techniques,
-while the `comment middleware example`_ shows middleware.  For
-applications it's more reasonable to use WebOb in the context of a
-larger framework.  `Pylons <http://pylonshq.com>`_ uses WebOb
-optionally in 0.9.7+.
+`file-serving example <file-example.html>`_ shows how to do more
+advanced HTTP techniques, while the `comment middleware example
+<comment-example.html>`_ shows middleware.  For applications it's more
+reasonable to use WebOb in the context of a larger framework.  `Pylons
+<http://pylonshq.com>`_ uses WebOb optionally in 0.9.7+.
 
 

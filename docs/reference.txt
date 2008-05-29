@@ -30,7 +30,7 @@ The primary object in WebOb is ``webob.Request``, a wrapper around a
 
 The basic way you create a request object is simple enough:
 
-.. code-block::
+.. code-block:: python
 
    >>> from webob import Request
    >>> environ = {}
@@ -54,7 +54,7 @@ The WSGI environment has a number of required variables.  To make it
 easier to test and play around with, the ``Request`` class has a
 constructor that will fill in a minimal environment:
 
-.. code-block::
+.. code-block:: python
 
    >>> req = Request.blank('/article?id=1')
    >>> from pprint import pprint
@@ -84,7 +84,7 @@ start, but you can set it to a string and that will be turned into a
 file-like object.  You can read the entire body with
 ``req.body``.
 
-.. code-block:: 
+.. code-block:: python 
 
     >>> req.body_file
     <cStringIO.StringI object at ...>
@@ -102,7 +102,7 @@ Method & URL
 All the normal parts of a request are also accessible through the
 request object:
 
-.. code-block::
+.. code-block:: python
 
     >>> req.method
     'GET'
@@ -138,7 +138,7 @@ request object:
 
 You can make new URLs:
 
-.. code-block::
+.. code-block:: python
 
     >>> req.relative_url('archive')
     'http://localhost/blog/archive'
@@ -146,7 +146,7 @@ You can make new URLs:
 For parsing the URLs, it is often useful to deal with just the next
 path segment on PATH_INFO:
 
-.. code-block::
+.. code-block:: python
 
     >>> req.path_info_peek() # Doesn't change request
     'article'
@@ -163,7 +163,7 @@ Headers
 All request headers are available through a dictionary-like object
 ``req.headers``.  Keys are case-insensitive.
 
-.. code-block::
+.. code-block:: python
 
     >>> req.headers['content-type'] = 'application/x-www-urlencoded'
     >>> req.headers
@@ -190,7 +190,7 @@ all values with ``.values()``.
 
 Some examples:
 
-.. code-block::
+.. code-block:: python
 
     >>> req = Request.blank('/test?check=a&check=b&name=Bob')
     >>> req.GET
@@ -205,7 +205,7 @@ Some examples:
 We'll have to create a request body and change the method to get
 POST.  Until we do that, the variables are boring:
 
-.. code-block::
+.. code-block:: python
 
     >>> req.POST
     <NoVars: Not a POST request>
@@ -223,7 +223,7 @@ about the method, the location of the variables might not be
 important.)  There is a dictionary called ``req.params`` that
 contains variables from both sources:
 
-.. code-block::
+.. code-block:: python
 
     >>> req.params
     NestedMultiDict([('check', 'a'), ('check', 'b'), ('name', 'Bob'), ('name', 'Joe'), ('email', 'joe@example.com')])
@@ -250,7 +250,7 @@ will do this, as JSON is always UTF8 even when a page is served with a
 different character set).  You can force a charset, which will effect
 all the variables:
 
-.. code-block::
+.. code-block:: python
 
     >>> req.charset = 'utf8'
     >>> req.GET
@@ -265,7 +265,7 @@ Cookies
 Cookies are presented in a simple dictionary.  Like other variables,
 they will be decoded into Unicode strings if you set the charset.
 
-.. code-block::
+.. code-block:: python
 
     >>> req.headers['Cookie'] = 'test=value'
     >>> req.cookies
@@ -311,7 +311,7 @@ accepts.  These are ``accept`` (the Content-Type that is accepted),
 The objects returned support containment to test for acceptability.
 E.g.:
 
-.. code-block::
+.. code-block:: python
 
     >>> 'text/html' in req.accept
     True
@@ -321,7 +321,7 @@ returning True.  We can set it to see more interesting behavior (the
 example means that ``text/html`` is okay, but
 ``application/xhtml+xml`` is preferred):
 
-.. code-block::
+.. code-block:: python
 
     >>> req.accept = 'text/html;q=0.5, application/xhtml+xml;q=1'
     >>> req.accept
@@ -333,7 +333,7 @@ There's three methods for different strategies of finding a match.
 First, when you trust the server's preference over the client (a good
 idea for Accept):
 
-.. code-block::
+.. code-block:: python
 
     >>> req.accept.first_match(['text/html', 'application/xhtml+xml'])
     'text/html'
@@ -342,7 +342,7 @@ Because ``text/html`` is at least *somewhat* acceptible, it is
 returned, even if the client says it prefers
 ``application/xhtml+xml``.  If we trust the client more:
 
-.. code-block::
+.. code-block:: python
 
     >>> req.accept.best_match(['text/html', 'application/xhtml+xml'])
     'application/xhtml+xml'
@@ -350,7 +350,7 @@ returned, even if the client says it prefers
 If we just want to know everything the client prefers, in the order it
 is preferred:
 
-.. code-block::
+.. code-block:: python
 
     >>> req.accept.best_matches()
     ['application/xhtml+xml', 'text/html']
@@ -359,7 +359,7 @@ For languages you'll often have a "fallback" language.  E.g., if there's
 nothing better then use ``en-US`` (and if ``en-US`` is okay, ignore
 any less preferrable languages):
 
-.. code-block::
+.. code-block:: python
 
     >>> req.accept_language = 'es, pt-BR'
     >>> req.accept_language.best_matches('en-US')
@@ -384,7 +384,7 @@ a possibility that the same URL could point to two different
 server-side filenames based on other variables).  To test if a 304
 response is appropriate, you can use:
 
-.. code-block::
+.. code-block:: python
 
     >>> server_token = 'opaque-token'
     >>> server_token in req.if_none_match # You shouldn't return 304
@@ -397,7 +397,7 @@ response is appropriate, you can use:
 
 For date-based comparisons If-Modified-Since is used:
 
-.. code-block::
+.. code-block:: python
 
     >>> from webob import UTC
     >>> from datetime import datetime
@@ -413,7 +413,7 @@ form of conditional request) and Range (which requests a range).  If
 the If-Range header fails to match then the full response (not a
 range) should be returned:
 
-.. code-block::
+.. code-block:: python
 
     >>> req.if_range
     <Empty If-Range>
@@ -427,7 +427,7 @@ range) should be returned:
 
 You can also pass in a response object with:
 
-.. code-block::
+.. code-block:: python
 
     >>> from webob import Response
     >>> res = Response(etag='opaque-etag')
@@ -456,7 +456,7 @@ this if the current ETag matches the ETag I'm giving".
 If-Unmodified-Since means "do this if the resource has remained
 unchanged".
 
-.. code-block::
+.. code-block:: python
 
     >>> server_token in req.if_match # No If-Match means everything is ok
     True
@@ -484,7 +484,7 @@ when they are run.
 There's two forms of the subrequest.  The more primitive form is
 this:
 
-.. code-block::
+.. code-block:: python
 
     >>> req = Request.blank('/')
     >>> def wsgi_app(environ, start_response):
@@ -498,7 +498,7 @@ Note it returns ``(status_string, header_list, app_iter)``.  If
 
 A handier response can be had with:
 
-.. code-block::
+.. code-block:: python
 
     >>> res = req.get_response(wsgi_app)
     >>> res
@@ -519,7 +519,7 @@ You can also give the ``Request`` object a function to get the
 environment.  This can be used to make a single global request object
 dynamic.  An example:
 
-.. code-block::
+.. code-block:: python
 
     >>> import threading
     >>> import webob
@@ -539,7 +539,7 @@ Ad-Hoc Attributes
 You can assign attributes to your request objects.  They will all go
 in ``environ['webob.adhoc_attrs']`` (a dictionary).  
 
-.. code-block::
+.. code-block:: python
 
     >>> req = Request.blank('/')
     >>> req.some_attr = 'blah blah blah'
@@ -566,7 +566,7 @@ Core Attributes
 
 The core attributes are unsurprising:
 
-.. code-block::
+.. code-block:: python
 
     >>> from webob import Response
     >>> res = Response()
@@ -579,7 +579,7 @@ The core attributes are unsurprising:
 
 You can set any of these attributes, e.g.:
 
-.. code-block::
+.. code-block:: python
 
     >>> res.status = 404
     >>> res.status
@@ -616,7 +616,7 @@ Headers
 In addition to ``res.headerlist``, there is dictionary-like view on
 the list in ``res.headers``:
 
-.. code-block::
+.. code-block:: python
 
     >>> res.headers
     HeaderDict([('content-type', 'text/html; charset=utf8'), ('Content-Length', '4')])
@@ -645,7 +645,7 @@ then Content-Length will be cleared, but it won't be set for you.
 There is also a file-like object you can access, which will update the
 app_iter in-place (turning the app_iter into a list if necessary):
 
-.. code-block::
+.. code-block:: python
 
     >>> res = Response(content_type='text/plain')
     >>> f = res.body_file
@@ -673,7 +673,7 @@ properties.  These represent parsed forms of the headers.
 Content-Type is a special case, as the type and the charset are
 handled through two separate properties:
 
-.. code-block::
+.. code-block:: python
 
     >>> res = Response()
     >>> res.content_type = 'text/html'
@@ -691,7 +691,7 @@ handled through two separate properties:
 
 Other headers:
 
-.. code-block::
+.. code-block:: python
 
     >>> # Used with a redirect:
     >>> res.location = 'http://localhost/foo'
@@ -771,7 +771,7 @@ integer timestamp, or a properly-formatted string.
 
 After setting all these headers, here's the result:
 
-.. code-block::
+.. code-block:: python
 
     >>> for name, value in res.headerlist:
     ...     print '%s: %s' % (name, value)
@@ -798,7 +798,7 @@ After setting all these headers, here's the result:
 You can also set Cache-Control related attributes with
 ``req.cache_expires(seconds, **attrs)``, like:
 
-.. code-block::
+.. code-block:: python
 
     >>> res = Response()
     >>> res.cache_expires(10)
@@ -814,7 +814,7 @@ You can also use the `timedelta
 <http://python.org/doc/current/lib/datetime-timedelta.html>`_
 constants defined, e.g.:
 
-.. code-block::
+.. code-block:: python
 
     >>> from webob import *
     >>> res = Response()
@@ -828,7 +828,7 @@ Cookies
 Cookies (and the Set-Cookie header) are handled with a couple
 methods.  Most importantly:
 
-.. code-block::
+.. code-block:: python
 
     >>> res.set_cookie('key', 'value', max_age=360, path='/',
     ...                domain='example.org', secure=True)
@@ -842,7 +842,7 @@ methods.  Most importantly:
 The only other real method of note (note that this does *not* delete
 the cookie from clients, only from the response object):
 
-.. code-block::
+.. code-block:: python
 
     >>> res.unset_cookie('key')
     >>> res.unset_cookie('bad_cookie')
@@ -862,14 +862,14 @@ Response as a WSGI application
 
 A response is a WSGI application, in that you can do:
 
-.. code-block::
+.. code-block:: python
 
     >>> req = Request.blank('/')
     >>> status, headers, app_iter = req.call_application(res)
 
 A possible pattern for your application might be:
 
-.. code-block::
+.. code-block:: python
 
     >>> def my_app(environ, start_response):
     ...     req = Request(environ)
@@ -912,7 +912,7 @@ exceptions for different HTTP responses (3xx, 4xx, 5xx codes).
 These provide a simple way to provide these non-200 response.  A very
 simple body is provided.
 
-.. code-block::
+.. code-block:: python
 
     >>> from webob.exc import *
     >>> exc = HTTPTemporaryRedirect(location='foo')
@@ -930,7 +930,7 @@ simple body is provided.
 Note that only if there's an ``Accept: text/html`` header in the
 request will an HTML response be given:
 
-.. code-block::
+.. code-block:: python
 
     >>> req.accept += 'text/html'
     >>> print str(req.get_response(exc)).strip()
@@ -976,7 +976,7 @@ checking If-None-Match, If-Modified-Since, and Range/If-Range.
 To enable this you must create the response like
 ``Response(conditional_request=True)``, or make a subclass like:
 
-.. code-block::
+.. code-block:: python
 
     >>> class AppResponse(Response):
     ...     default_content_type = 'text/html'

@@ -36,7 +36,7 @@ A common pattern for creating small WSGI applications is to have a
 class which is instantiated with the configuration.  For our
 application we'll be storing the pages under a directory.
 
-.. code-block::
+.. code-block:: python
 
     class WikiApp(object):
 
@@ -47,7 +47,7 @@ WSGI applications are callables like ``wsgi_app(environ,
 start_response)``.  *Instances* of `WikiApp` are WSGI applications, so
 we'll implement a ``__call__`` method:
 
-.. code-block::
+.. code-block:: python
 
     class WikiApp(object):
         ...
@@ -57,7 +57,7 @@ we'll implement a ``__call__`` method:
 To make the script runnable we'll create a simple command-line
 interface:
 
-.. code-block::
+.. code-block:: python
 
     if __name__ == '__main__':
         import optparse
@@ -102,7 +102,7 @@ but ``webob.Request`` gives an object interface to it.
 application.  Here's kind of the hello world of WSGI applications
 using these objects:
 
-.. code-block::
+.. code-block:: python
 
     from webob import Request, Response
 
@@ -139,7 +139,7 @@ One last thing we'll do in our ``__call__`` method is create our
 
 All this together makes:
 
-.. code-block::
+.. code-block:: python
 
     from webob import Request, Response
     from webob import exc
@@ -178,7 +178,7 @@ the title and content.
 
 Here's the method to figure out the filename:
 
-.. code-block::
+.. code-block:: python
 
     import os
 
@@ -219,7 +219,7 @@ path").exception``.
 
 Here's the actual domain object:
 
-.. code-block::
+.. code-block:: python
 
     class Page(object):
         def __init__(self, filename):
@@ -339,7 +339,7 @@ The dispatching goes to ``action_ACTION_METHOD``, where ACTION
 defaults to ``view``.  So a simple page view will be
 ``action_view_GET``.  Let's implement that:
 
-.. code-block::
+.. code-block:: python
 
     class WikiApp(object):
         ...
@@ -366,7 +366,7 @@ very simple template language with a similar interface to
 
 The template actually looks like this:
 
-.. code-block::
+.. code-block:: python
 
     from tempita import HTMLTemplate
 
@@ -401,7 +401,7 @@ escaping of the content with ``{{page.content|html}}``.
 
 So let's look at the ``action_view_GET`` method again:
 
-.. code-block::
+.. code-block:: python
 
         def action_view_GET(self, req, page):
             if not page.exists:
@@ -443,7 +443,7 @@ The Edit Screen
 The edit screen will be implemented in the method
 ``action_edit_GET``.  There's a template and a very simple method:
 
-.. code-block::
+.. code-block:: python
 
     EDIT_TEMPLATE = HTMLTemplate("""\
     <html>
@@ -522,7 +522,7 @@ Processing the Form
 The form submits to ``action_view_POST`` (``view`` is the default
 action).  So we have to implement that method:
 
-.. code-block::
+.. code-block:: python
 
     class WikiApp(object):
         ...
@@ -602,7 +602,7 @@ A simple way to do this is to set a cookie after the save, then
 display it in the page view.  To set it on save, we add a little to
 ``action_view_POST``:
 
-.. code-block::
+.. code-block:: python
 
     def action_view_POST(self, req, page):
         ...
@@ -613,7 +613,7 @@ display it in the page view.  To set it on save, we add a little to
 
 And then in ``action_view_GET``:
 
-.. code-block::
+.. code-block:: python
 
 
     VIEW_TEMPLATE = HTMLTemplate("""\

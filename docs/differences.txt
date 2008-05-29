@@ -571,7 +571,7 @@ Response
 
 ``util.redirect`` or ``req.status = apache.HTTP_MOVED_TEMPORARILY``:
 
-.. code-block::
+.. code-block:: python
 
     from webob.exc import HTTPTemporaryRedirect
     exc = HTTPTemporaryRedirect(location=url)
@@ -580,7 +580,7 @@ Response
 ``req.content_type = "application/x-csv"`` and 
 ``req.headers_out.add('Content-Disposition', 'attachment;filename=somefile.csv')``:
 
-.. code-block::
+.. code-block:: python
 
     res = req.ResponseClass()
     res.content_type = 'application/x-csv'
