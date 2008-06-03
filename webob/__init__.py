@@ -1079,6 +1079,11 @@ class Request(object):
         tempfile_limit = self.request_body_tempfile_limit
         body = None
         input = self.body_file
+        if hasattr(input, 'seek'):
+            # Just in case someone has read parts of the body already
+            ## FIXME: Should we use .tell() to try to put the body
+            ## back to its previous position?
+            input.seek(0)
         if length == -1:
             body = self.body
             length = len(body)
