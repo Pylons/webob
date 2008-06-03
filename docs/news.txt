@@ -14,6 +14,14 @@ svn trunk
 * Added in ``sorted`` function for backward compatibility with Python
   2.3.
 
+* Allow keyword arguments to :class:`webob.Request`, which assign
+  attributes (possibly overwriting values in the environment).
+
+* Added methods :method:`webob.Request.make_body_seekable` and
+  :method:`webob.Request.copy_body`, which make it easier to share a
+  request body among different consuming applications, doing something
+  like `req.make_body_seekable(); req.body_file.seek(0)``
+
 0.9.1
 -----
 

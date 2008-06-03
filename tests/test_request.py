@@ -106,3 +106,37 @@ def test_params():
     assert req.decode_param_names
     assert u'\u1000' in req.GET.keys()
     assert req.GET[u'\u1000'] == 'x'
+
+class UnseekableInput(object):
+    def __init__(self, data):
+        self.data = data
+        self.pos = 0
+    def read(self, size=-1):
+        if size == -1:
+            t = self.data[self.pos:]
+            self.pos = len(self.data)
+            return t
+        else:
+            assert self.pos + size <= len(self.data), (
+                "Attempt to read past end (length=%s, position=%s, reading %s bytes)"
+                % (len(self.data), self.pos, size))
+            t = self.data[self.pos:self.pos+size]
+            self.pos += size
+            return t
+
+def test_copy():
+    req = Request.blank('/', method='POST', body='some text', request_body_tempfile_limit=1)
+    old_body_file = req.body_file
+    req.copy_body()
+    assert req.body_file is not old_body_file
+    req = Request.blank('/', method='POST', body_file=UnseekableInput('0123456789'), content_length=10)
+    assert not hasattr(req.body_file, 'seek')
+    old_body_file = req.body_file
+    req.make_body_seekable()
+    assert req.body_file is not old_body_file
+    assert req.body == '0123456789'
+    old_body_file = req.body_file
+    req.make_body_seekable()
+    assert req.body_file is old_body_file
+    
+    

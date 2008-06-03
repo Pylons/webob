@@ -483,7 +483,7 @@ class Request(object):
     request_body_tempfile_limit = 10*1024
 
     def __init__(self, environ=None, environ_getter=None, charset=NoDefault, unicode_errors=NoDefault,
-                 decode_param_names=NoDefault):
+                 decode_param_names=NoDefault, **kw):
         if environ is None and environ_getter is None:
             raise TypeError(
                 "You must provide one of environ or environ_getter")
@@ -503,6 +503,11 @@ class Request(object):
             self.__dict__['unicode_errors'] = unicode_errors
         if decode_param_names is not NoDefault:
             self.__dict__['decode_param_names'] = decode_param_names
+        for name, value in kw.items():
+            if not hasattr(self.__class__, name):
+                raise TypeError(
+                    "Unexpected keyword: %s=%r" % name, value)
+            setattr(self, name, value)
 
     def __setattr__(self, attr, value, DEFAULT=[]):
         ## FIXME: I don't know why I need this guard (though experimentation says I do)
@@ -1025,16 +1030,9 @@ class Request(object):
         This only does a shallow copy, except of wsgi.input
         """
         env = self.environ.copy()
-        data = self.body
-        tempfile_limit = self.request_body_tempfile_limit
-        if tempfile_limit and len(data) > tempfile_limit:
-            fileobj = tempfile.TemporaryFile()
-            fileobj.write(data)
-            fileobj.seek(0)
-        else:
-            fileobj = StringIO(data)
-        env['wsgi.input'] = fileobj
-        return self.__class__(env)
+        new_req = self.__class__(env)
+        new_req.copy_body()
+        return new_req
 
     def copy_get(self):
         """
@@ -1049,6 +1047,57 @@ class Request(object):
             del env['CONTENT_TYPE']
         env['REQUEST_METHOD'] = 'GET'
         return self.__class__(env)
+
+    def make_body_seekable(self):
+        """
+        This forces ``environ['wsgi.input']`` to be seekable.  That
+        is, if it doesn't have a `seek` method already, the content is
+        copied into a StringIO or temporary file.
+
+        The choice to copy to StringIO is made from
+        ``self.request_body_tempfile_limit``
+        """
+        input = self.body_file
+        if hasattr(input, 'seek'):
+            # It has a seek method, so we don't need to do anything
+            return
+        self.copy_body()
+
+    def copy_body(self):
+        """
+        Copies the body, in cases where it might be shared with
+        another request object and that is not desired.
+
+        This copies the body in-place, either into a StringIO object
+        or a temporary file.
+        """
+        length = self.content_length
+        if length == 0:
+            # No real need to copy this, but of course it is free
+            self.body_file = StringIO('')
+            return
+        tempfile_limit = self.request_body_tempfile_limit
+        body = None
+        input = self.body_file
+        if length == -1:
+            body = self.body
+            length = len(body)
+            self.content_length = length
+        if tempfile_limit and length > tempfile_limit:
+            fileobj = tempfile.TemporaryFile()
+            if body is None:
+                while length:
+                    data = input.read(min(length, 4096))
+                    fileobj.write(data)
+                    length -= len(data)
+            else:
+                fileobj.write(body)
+            fileobj.seek(0)
+        else:
+            if body is None:
+                body = input.read(length)
+            fileobj = StringIO(body)
+        self.body_file = fileobj
 
     def remove_conditional_headers(self, remove_encoding=True, remove_range=True,
                                         remove_match=True, remove_modified=True):
@@ -1407,7 +1456,7 @@ class Response(object):
             if not hasattr(self.__class__, name):
                 # Not a basic attribute
                 raise TypeError(
-                    "Unexpected keyword: %s=%r in %r" % (name, value))
+                    "Unexpected keyword: %s=%r" % (name, value))
             setattr(self, name, value)
 
     def __repr__(self):
