@@ -122,7 +122,8 @@ class HTTPException(Exception):
     
     exception = property(exception)
 
-    if sys.version_info < (2, 5):
+    # for old style exceptions
+    if not issubclass(Exception, object):
         def __getattr__(self, attr):
             if not attr.startswith('_'):
                 return getattr(self.wsgi_response, attr)
