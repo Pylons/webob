@@ -82,6 +82,8 @@ except ImportError:
 import types
 from webob import Response, Request, html_escape
 
+newstyle_exceptions = not issubclass(Exception, object)
+
 tag_re = re.compile(r'<.*?>', re.S)
 br_re = re.compile(r'<br.*?>', re.I|re.S)
 comment_re = re.compile(r'<!--|-->')
@@ -123,7 +125,7 @@ class HTTPException(Exception):
     exception = property(exception)
 
     # for old style exceptions
-    if not issubclass(Exception, object):
+    if not newstyle_exceptions:
         def __getattr__(self, attr):
             if not attr.startswith('_'):
                 return getattr(self.wsgi_response, attr)
@@ -251,7 +253,7 @@ ${body}''')
     wsgi_response = property(wsgi_response)
 
     def exception(self):
-        if sys.version_info >= (2, 5):
+        if newstyle_exceptions:
             return self
         else:
             return HTTPException(self.detail, self)
