@@ -82,7 +82,7 @@ except ImportError:
 import types
 from webob import Response, Request, html_escape
 
-newstyle_exceptions = not issubclass(Exception, object)
+newstyle_exceptions = issubclass(Exception, object)
 
 tag_re = re.compile(r'<.*?>', re.S)
 br_re = re.compile(r'<br.*?>', re.I|re.S)
