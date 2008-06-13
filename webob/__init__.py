@@ -1954,6 +1954,7 @@ class Response(object):
         identity are supported).
         """
         if encoding == 'identity':
+            self.decode_content()
             return
         if encoding != 'gzip':
             raise ValueError(
@@ -2018,7 +2019,7 @@ class Response(object):
         the body (the body parameter, or ``self.body`` if not given)
 
         Sets ``self.etag``
-        If set_content_md5 is True sets self.content_md5 as well
+        If ``set_content_md5`` is True sets ``self.content_md5`` as well
         """
         if body is None:
             body = self.body
