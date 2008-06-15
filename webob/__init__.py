@@ -1673,6 +1673,8 @@ class Response(object):
             raise TypeError(
                 "You can only set the body to a str (not %s)"
                 % type(value))
+        if self._body or self._app_iter:
+            self.content_md5 = None
         self._body = value
         self.content_length = len(value)
         self._app_iter = None
