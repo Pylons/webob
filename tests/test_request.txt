@@ -160,11 +160,11 @@ Sometimes conditional headers are problematic.  You can remove them:
 
     >>> from datetime import datetime
     >>> req = Request.blank('/')
-    >>> req.if_match = 'some-etag'
+    >>> req.if_none_match = 'some-etag'
     >>> req.if_modified_since = datetime(2005, 1, 1, 12, 0)
     >>> req.environ['HTTP_ACCEPT_ENCODING'] = 'gzip'
     >>> print req.headers
-    {'Host': 'localhost:80', 'If-Match': 'some-etag', 'Accept-Encoding': 'gzip', 'If-Modified-Since': 'Sat, 01 Jan 2005 12:00:00 GMT'}
+    {'If-None-Match': 'some-etag', 'Host': 'localhost:80', 'Accept-Encoding': 'gzip', 'If-Modified-Since': 'Sat, 01 Jan 2005 12:00:00 GMT'}
     >>> req.remove_conditional_headers()
     >>> print req.headers
     {'Host': 'localhost:80'}
