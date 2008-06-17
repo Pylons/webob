@@ -10,10 +10,10 @@ class webob_wrap(object):
         else:
             return super(webob_wrap, cls).__new__(cls, *args, **kw)
 
-    def __init__(self, __func=None, default_request_charset='UTF-8', **kw):
+    def __init__(self, __func=None, **kw):
         self.func = __func
         self._original_kw = kw.copy()
-        self.default_request_charset = 'UTF-8'
+        self.default_request_charset = kw.pop('default_request_charset', 'UTF-8')
         self.kw = kw
         self._key = str(id(self))
 
