@@ -2,11 +2,14 @@ from webob import Request, Response
 from webob.exc import HTTPException
 
 import new
+import inspect
 
 class WrapperBase(object):
-    _min_args = 1
     def __new__(cls, *args, **kw):
-        if len(args) < cls._min_args:
+        if not hasattr(cls, '_min_init_args'):
+            init_args, _, _, init_defaults = inspect.getargspec(cls.__init__)
+            cls._min_init_args = len(init_args) - len(init_defaults or ()) - 1
+        if len(args) < cls._min_init_args:
             return lambda *newargs: cls(*(args+newargs), **kw)
         else:
             inst = super(WrapperBase, cls).__new__(cls, *args, **kw)
@@ -52,7 +55,6 @@ class webob_wrap(WrapperBase):
 
 
 class webob_middleware(WrapperBase):
-    _min_args = 2
     def __init__(self, mwfunc, next_app, **kw):
         self.mwfunc = mwfunc
         self.next_app = next_app
@@ -64,7 +66,6 @@ class webob_middleware(WrapperBase):
 
 
 class webob_postprocessor(WrapperBase):
-    _min_args = 2
     def __init__(self, postprocessor, next_app, no_range=True, decode_content=True, **kw):
         self.postprocessor = postprocessor
         self.next_app = next_app
