@@ -12,6 +12,7 @@ class webob_wrap(object):
 
     def __init__(self, __func=None, default_request_charset='UTF-8', **kw):
         self.func = __func
+        self._original_kw = kw.copy()
         self.default_request_charset = 'UTF-8'
         self.kw = kw
         self._key = str(id(self))
@@ -32,10 +33,13 @@ class webob_wrap(object):
         wrapped = getattr(instance, self._key, None)
         if wrapped is None:
             bound = new.instancemethod(self.func, owner, instance)
-            wrapped = webob_wrap(bound)
+            wrapped = webob_wrap(bound, **self._original_kw)
             setattr(instance, self._key, wrapped)
         return wrapped
 
+    def __repr__(self):
+        kwstr = ', '.join('%s=%r' % (name, val) for (name, val) in self._original_kw.iteritems())
+        return '%s(%r, %s)' % (self.__class__.__name__, self.func, kwstr)
 
 
 def webob_middleware(middleware):
@@ -67,6 +71,7 @@ if __name__ == '__main__':
     def app(req, x):
         return Response(str(x))
 
+    print app
     assert test(app).body == '1'
 
     class App(object):
