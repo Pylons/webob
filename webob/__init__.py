@@ -1119,7 +1119,7 @@ class Request(object):
         if remove_range:
             check_keys += ['HTTP_IF_RANGE', 'HTTP_RANGE']
         if remove_match:
-            check_keys.append('HTTP_IF_MATCH')
+            check_keys.append('HTTP_IF_NONE_MATCH')
         if remove_modified:
             check_keys.append('HTTP_IF_MODIFIED_SINCE')
         if remove_encoding:
