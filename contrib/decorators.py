@@ -26,12 +26,13 @@ class WrapperBase(object):
             args.append('%s=%r' % (name, val))
         return '%s(%s)' % (self.__class__.__name__, ', '.join(args))
 
-    def __get__(self, owner, instance):
+    def __get__(self, instance, owner):
         wrapped = getattr(instance, self._key, None)
         if wrapped is None:
-            bound = new.instancemethod(self.func, owner, instance)
+            bound = new.instancemethod(self.func, instance, owner)
             wrapped = self.__class__(bound, **self._original_kw)
-            setattr(instance, self._key, wrapped)
+            if instance is not None:
+                setattr(instance, self._key, wrapped)
         return wrapped
 
 
@@ -125,5 +126,9 @@ if __name__ == '__main__':
     #print double
     #print double.__call__
     dapp = double(app)
+    print id(webob_postprocessor.__call__)
     print dapp
+    print dapp.__call__
+    print dapp.__call__.default_request_charset
     assert test(dapp).body == '11'
+
