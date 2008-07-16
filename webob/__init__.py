@@ -1772,7 +1772,7 @@ class Response(object):
         cookies = BaseCookie()
         cookies[key] = value
         if isinstance(max_age, timedelta):
-            max_age = timedelta.seconds + timedelta.days*24*60*60
+            max_age = max_age.seconds + max_age.days*24*60*60
         if max_age is not None and expires is None:
             expires = datetime.utcnow() + timedelta(seconds=max_age)
         if isinstance(expires, timedelta):

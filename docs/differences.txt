@@ -45,10 +45,6 @@ objects.
 Response
 --------
 
-default ``content_type``:
-    The base Response object has no default content_type or charset.
-    You can set ``default_content_type`` in a subclass.
-
 ``determine_charset()``:
     Is now available as ``res.charset``
 
@@ -395,8 +391,6 @@ status:
     In ``res.status_int``
 mimetype:
     In ``res.content_type``
-write(data):
-    With ``res.body_file.write(data)``
 
 Zope 3
 ======
