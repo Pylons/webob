@@ -147,7 +147,7 @@ only a few you'll use often:
     URL.  This can be useful for subrequests and artificial requests.
     You can also use ``req.copy()`` to copy an existing request, or
     for subrequests ``req.copy_get()`` which copies the request but
-    always turns it into a GET (which is safer to shrae for
+    always turns it into a GET (which is safer to share for
     subrequests).
 
 ``req.get_response(wsgi_application)``:
