@@ -4,6 +4,7 @@ You can instantiate a request using ``Request.blank()``, to create a
 fresh environment dictionary with all the basic keys such a dictionary
 should have.
 
+    >>> from cStringIO import InputType
     >>> from dtopt import ELLIPSIS
     >>> from webob import Request, UTC
     >>> req = Request.blank('/')
@@ -13,8 +14,8 @@ should have.
     'GET /\r\nHost: localhost:80\r\n\r\n'
     >>> req.environ # doctest: +ELLIPSIS
     {...}
-    >>> req.body_file # doctest: +ELLIPSIS
-    <cStringIO.StringI object at ...>
+    >>> isinstance(req.body_file, InputType)
+    True
     >>> req.scheme
     'http'
     >>> req.method
@@ -133,8 +134,8 @@ You can also get access to the query string variables, of course:
     ['e', 'f']
     >>> req.method = 'POST'
     >>> req.body = 'x=y&d=g'
-    >>> req.body_file # doctest: +ELLIPSIS
-    <cStringIO.StringI object at ...>
+    >>> isinstance(req.body_file, InputType)
+    True
     >>> req.environ['CONTENT_LENGTH']
     '7'
     >>> req.params
@@ -159,12 +160,13 @@ Cookie are viewed as a dictionary (*view only*):
 Sometimes conditional headers are problematic.  You can remove them:
 
     >>> from datetime import datetime
+    >>> from webob.compat import sorted
     >>> req = Request.blank('/')
     >>> req.if_none_match = 'some-etag'
     >>> req.if_modified_since = datetime(2005, 1, 1, 12, 0)
     >>> req.environ['HTTP_ACCEPT_ENCODING'] = 'gzip'
-    >>> print req.headers
-    {'If-None-Match': 'some-etag', 'Host': 'localhost:80', 'Accept-Encoding': 'gzip', 'If-Modified-Since': 'Sat, 01 Jan 2005 12:00:00 GMT'}
+    >>> print sorted(req.headers.items())
+    [('Accept-Encoding', 'gzip'), ('Host', 'localhost:80'), ('If-Modified-Since', 'Sat, 01 Jan 2005 12:00:00 GMT'), ('If-None-Match', 'some-etag')]
     >>> req.remove_conditional_headers()
     >>> print req.headers
     {'Host': 'localhost:80'}
@@ -298,8 +300,8 @@ A quick test of caching the request body:
     >>> req = Request.blank('/')
     >>> req.content_length = length
     >>> req.body_file = data
-    >>> req.body_file
-    <cStringIO.StringI object at ...>
+    >>> isinstance(req.body_file, InputType)
+    True
     >>> len(req.body)
     10250
     >>> req.body_file
