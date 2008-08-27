@@ -101,18 +101,34 @@ There are also variables to access the variables and body:
     >>> req.POST
     UnicodeMultiDict([('var1', u'value1'), ('var2', u'value2'), ('rep', u'1'), ('rep', u'2')])
 
-Note that the variables are there for GET requests and non-form POST
-requests, but they are empty and read-only:
+The ``POST`` and ``GET`` nomenclature for request variables is
+historical -- ``request.GET`` can be used in non GET requests to
+access query parameters, and ``request.POST`` can be used in PUT form
+requests.
+
+    >>> body = 'var1=value1&var2=value2&rep=1&rep=2'
+    >>> req = Request.blank('/?foo=bar')
+    >>> req.method = 'PUT'
+    >>> req.body_file = StringIO(body)
+    >>> req.environ['CONTENT_LENGTH'] = str(len(body))
+    >>> req.environ['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
+    >>> req.POST
+    MultiDict([('var1', 'value1'), ('var2', 'value2'), ('rep', '1'), ('rep', '2')])
+    >>> req.GET
+    MultiDict([('foo', 'bar')])
+
+Note that the variables are there for GET requests and non-form requests,
+but they are empty and read-only:
 
     >>> req = Request.blank('/')
     >>> req.str_POST
-    <NoVars: Not a POST request>
+    <NoVars: Not a POST or form request>
     >>> req.str_POST.items()
     []
     >>> req.str_POST['x'] = 'y'
     Traceback (most recent call last):
         ...
-    KeyError: 'Cannot add variables: Not a POST request'
+    KeyError: 'Cannot add variables: Not a POST or form request'
     >>> req.method = 'POST'
     >>> req.str_POST
     MultiDict([])

@@ -863,8 +863,8 @@ class Request(object):
         object in that case).
         """
         env = self.environ
-        if self.method != 'POST':
-            return NoVars('Not a POST request')
+        if self.method not in ('POST', 'PUT'):
+            return NoVars('Not a POST or form request')
         if 'webob._parsed_post_vars' in env:
             vars, body_file = env['webob._parsed_post_vars']
             if body_file is self.body_file:

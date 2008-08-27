@@ -34,7 +34,7 @@ def test_gets():
     print res
     assert 'Hello' in res
     assert "get is MultiDict([])" in res
-    assert "post is <NoVars: Not a POST request>" in res
+    assert "post is <NoVars: Not a POST or form request>" in res
     
     res = app.get('/?name=george')
     res.mustcontain("get is MultiDict([('name', 'george')])")
