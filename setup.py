@@ -31,5 +31,5 @@ environment.
       include_package_data=True,
       zip_safe=True,
       test_suite='nose.collector',
-      tests_require=['dtopt', 'nose', 'webtest']
+      tests_require=['dtopt', 'nose', 'tempita', 'webtest', 'wsgiproxy']
       )

@@ -165,9 +165,10 @@ All request headers are available through a dictionary-like object
 
 .. code-block:: python
 
+    >>> from webob.compat import sorted
     >>> req.headers['content-type'] = 'application/x-www-urlencoded'
-    >>> req.headers
-    {'Content-Length': '4', 'Content-Type': 'application/x-www-urlencoded', 'Host': 'localhost:80'}
+    >>> sorted(req.headers.items())
+    [('Content-Length', '4'), ('Content-Type', 'application/x-www-urlencoded'), ('Host', 'localhost:80')]
     >>> req.environ['CONTENT_TYPE']
     'application/x-www-urlencoded'
 
@@ -208,7 +209,7 @@ POST.  Until we do that, the variables are boring:
 .. code-block:: python
 
     >>> req.POST
-    <NoVars: Not a POST request>
+    <NoVars: Not a POST or form request>
     >>> req.POST.items()  # NoVars can be read like a dict, but not written
     []
     >>> req.method = 'POST'
@@ -254,7 +255,7 @@ all the variables:
 
     >>> req.charset = 'utf8'
     >>> req.GET
-    UnicodeMultiDict([(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob')])
+    UnicodeMultiDict([('check', u'a'), ('check', u'b'), ('name', u'Bob')])
 
 If you always want ``str`` values, you can use ``req.str_GET``
 and ``str_POST``.
@@ -269,7 +270,7 @@ they will be decoded into Unicode strings if you set the charset.
 
     >>> req.headers['Cookie'] = 'test=value'
     >>> req.cookies
-    UnicodeMultiDict([(u'test', u'value')])
+    UnicodeMultiDict([('test', u'value')])
     >>> req.charset = None
     >>> req.cookies
     {'test': 'value'}
@@ -573,7 +574,7 @@ The core attributes are unsurprising:
     >>> res.status
     '200 OK'
     >>> res.headerlist
-    [('Content-Length', '0')]
+    [('content-type', 'text/html; charset=UTF-8'), ('Content-Length', '0')]
     >>> res.body
     ''
 
@@ -647,7 +648,7 @@ app_iter in-place (turning the app_iter into a list if necessary):
 
 .. code-block:: python
 
-    >>> res = Response(content_type='text/plain')
+    >>> res = Response(content_type='text/plain', charset=None)
     >>> f = res.body_file
     >>> f.write('hey')
     >>> f.write(u'test')
@@ -833,11 +834,11 @@ methods.  Most importantly:
     >>> res.set_cookie('key', 'value', max_age=360, path='/',
     ...                domain='example.org', secure=True)
     >>> res.headers['Set-Cookie']
-    'key=value; Domain=example.org; Max-Age=360; Path=/; secure;'
+    'key=value; Domain=example.org; expires="... GMT"; Max-Age=360; Path=/; secure'
     >>> # To delete a cookie previously set in the client:
     >>> res.delete_cookie('bad_cookie')
     >>> res.headers['Set-Cookie']
-    'bad_cookie=; Max-Age=0; Path=/;'
+    'bad_cookie=; expires="... GMT"; Max-Age=0; Path=/'
 
 The only other real method of note (note that this does *not* delete
 the cookie from clients, only from the response object):
@@ -884,8 +885,8 @@ A possible pattern for your application might be:
     >>> res = req.get_response(my_app)
     >>> print res
     200 OK
-    content-type: text/plain
-    Content-Length: 394
+    content-type: text/plain; charset=UTF-8
+    Content-Length: ...
     <BLANKLINE>
     HTTP_HOST: 'localhost:80'
     PATH_INFO: '/'
@@ -919,7 +920,7 @@ simple body is provided.
     >>> req = Request.blank('/path/to/something')
     >>> print str(req.get_response(exc)).strip()
     307 Temporary Redirect
-    content-type: text/html
+    content-type: text/html; charset=UTF-8
     location: http://localhost/path/to/foo
     Content-Length: 126
     <BLANKLINE>
@@ -935,7 +936,7 @@ request will an HTML response be given:
     >>> req.accept += 'text/html'
     >>> print str(req.get_response(exc)).strip()
     307 Temporary Redirect
-    content-type: text/html
+    content-type: text/html; charset=UTF-8
     location: http://localhost/path/to/foo
     Content-Length: 270
     <BLANKLINE>
