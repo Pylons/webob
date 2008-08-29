@@ -300,7 +300,7 @@ def _serialize_date(dt):
         dt = dt.timetuple()
     if isinstance(dt, (tuple, time.struct_time)):
         dt = calendar.timegm(dt)
-    if not isinstance(dt, (float, int)):
+    if not isinstance(dt, (float, int, long)):
         raise ValueError(
             "You must pass in a datetime, date, time tuple, or integer object, not %r" % dt)
     return formatdate(dt)
@@ -1792,6 +1792,10 @@ class Response(object):
             if var_value is not None and var_value is not False:
                 cookies[key][var_name.replace('_', '-')] = str(var_value)
         header_value = cookies[key].output(header='').lstrip()
+        if header_value.endswith(';'):
+            # Python 2.4 adds a trailing ; to the end, strip it to be
+            # consistent with 2.5
+            header_value = header_value[:-1]
         self.headerlist.append(('Set-Cookie', header_value))
 
     def delete_cookie(self, key, path='/', domain=None):
@@ -1826,6 +1830,10 @@ class Response(object):
                 del cookies[key]
                 header = cookies.output(header='').lstrip()
             if header:
+                if header.endswith(';'):
+                    # Python 2.4 adds a trailing ; to the end, strip it
+                    # to be consistent with 2.5
+                    header = header[:-1]
                 self.headers.add('Set-Cookie', header)
         if not found:
             raise KeyError(
