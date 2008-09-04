@@ -2027,13 +2027,14 @@ class Response(object):
 
     etag = header_getter('ETag', rfc_section='14.19')
 
-    def md5_etag(self, body=None, set_content_md5=False):
+    def md5_etag(self, body=None, set_content_md5=False, set_conditional_response=False):
         """
         Generate an etag for the response object using an MD5 hash of
         the body (the body parameter, or ``self.body`` if not given)
 
         Sets ``self.etag``
         If ``set_content_md5`` is True sets ``self.content_md5`` as well
+        If ``set_conditional_response`` is True sets ``self.conditional_response`` to True
         """
         if body is None:
             body = self.body
@@ -2043,6 +2044,8 @@ class Response(object):
         self.etag = md5_digest
         if set_content_md5:
             self.content_md5 = md5_digest
+        if set_conditional_response:
+            self.conditional_response = True
 
     expires = converter(
         header_getter('Expires', rfc_section='14.21'),
