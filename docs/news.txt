@@ -8,6 +8,9 @@ svn trunk
 
 * Fixed ``resp.set_cookie(max_age=timedelta(...))``
 
+* ``request.POST`` now supports PUT requests with the appropriate
+  Content-Type.
+
 0.9.2
 -----
 

@@ -209,7 +209,7 @@ POST.  Until we do that, the variables are boring:
 .. code-block:: python
 
     >>> req.POST
-    <NoVars: Not a POST or form request>
+    <NoVars: Not a form request>
     >>> req.POST.items()  # NoVars can be read like a dict, but not written
     []
     >>> req.method = 'POST'
@@ -239,6 +239,21 @@ contains variables from both sources:
     name: 'Bob'
     name: 'Joe'
     email: 'joe@example.com'
+
+The ``POST`` and ``GET`` nomenclature is historical -- ``req.GET`` can
+be used for non-GET requests to access query parameters, and
+``req.POST`` can also be used for PUT requests with the appropriate
+Content-Type.
+
+    >>> req = Request.blank('/test?check=a&check=b&name=Bob')
+    >>> req.method = 'PUT'
+    >>> req.body = body = 'var1=value1&var2=value2&rep=1&rep=2'
+    >>> req.environ['CONTENT_LENGTH'] = str(len(req.body))
+    >>> req.environ['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
+    >>> req.GET
+    MultiDict([('check', 'a'), ('check', 'b'), ('name', 'Bob')])
+    >>> req.POST
+    MultiDict([('var1', 'value1'), ('var2', 'value2'), ('rep', '1'), ('rep', '2')])
 
 Unicode Variables
 ~~~~~~~~~~~~~~~~~

@@ -857,14 +857,16 @@ class Request(object):
 
     def str_POST(self):
         """
-        Return a MultiDict containing all the variables from a POST
-        form request.  Does *not* return anything for non-POST
-        requests or for non-form requests (returns empty dict-like
-        object in that case).
+        Return a MultiDict containing all the variables from a form
+        request. Returns an empty dict-like object for non-form
+        requests.
+
+        Form requests are typically POST requests, however PUT requests
+        with an appropriate Content-Type are also supported.
         """
         env = self.environ
         if self.method not in ('POST', 'PUT'):
-            return NoVars('Not a POST or form request')
+            return NoVars('Not a form request')
         if 'webob._parsed_post_vars' in env:
             vars, body_file = env['webob._parsed_post_vars']
             if body_file is self.body_file:
@@ -879,8 +881,9 @@ class Request(object):
         content_type = self.content_type
         if ';' in content_type:
             content_type = content_type.split(';', 1)[0]
-        if content_type not in ('', 'application/x-www-form-urlencoded',
-                                'multipart/form-data'):
+        if (self.method == 'PUT' and not content_type) or \
+                content_type not in ('', 'application/x-www-form-urlencoded',
+                                     'multipart/form-data'):
             # Not an HTML form submission
             return NoVars('Not an HTML form submission (Content-Type: %s)'
                           % content_type)
