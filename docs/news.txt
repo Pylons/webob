@@ -3,8 +3,8 @@ News
 
 .. contents::
 
-svn trunk
----------
+0.9.3
+-----
 
 * Fixed ``resp.set_cookie(max_age=timedelta(...))``
 
