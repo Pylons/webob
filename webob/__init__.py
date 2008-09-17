@@ -2041,8 +2041,11 @@ class Response(object):
         """
         if body is None:
             body = self.body
-        import md5
-        h = md5.new(body)
+        try:
+            from hashlib import md5
+        except ImportError:
+            from md5 import md5
+        h = md5(body)
         md5_digest = h.digest().encode('base64').replace('\n', '').strip('=')
         self.etag = md5_digest
         if set_content_md5:
