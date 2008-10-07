@@ -25,10 +25,10 @@ News
 * Allow keyword arguments to :class:`webob.Request`, which assign
   attributes (possibly overwriting values in the environment).
 
-* Added methods :method:`webob.Request.make_body_seekable` and
-  :method:`webob.Request.copy_body`, which make it easier to share a
+* Added methods :meth:`webob.Request.make_body_seekable` and
+  :meth:`webob.Request.copy_body`, which make it easier to share a
   request body among different consuming applications, doing something
-  like `req.make_body_seekable(); req.body_file.seek(0)``
+  like `req.make_body_seekable(); req.body_file.seek(0)`
 
 0.9.1
 -----
