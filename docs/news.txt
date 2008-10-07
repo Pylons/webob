@@ -3,6 +3,11 @@ News
 
 .. contents::
 
+0.9.4
+-----
+
+* Quiet Python 2.6 deprecation warnings.
+
 0.9.3
 -----
 
