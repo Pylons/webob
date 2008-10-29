@@ -8,6 +8,11 @@ News
 
 * Quiet Python 2.6 deprecation warnings.
 
+* Added an attribute ``unicode_errors`` to :class:`webob.Response` --
+  if set to something like ``unicode_errors='replace'`` it will decode
+  ``resp.body`` appropriately.  The default is ``strict`` (which was
+  the former un-overridable behavior).
+
 0.9.3
 -----
 

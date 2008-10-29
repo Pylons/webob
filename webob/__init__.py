@@ -1407,6 +1407,7 @@ class Response(object):
 
     default_content_type = 'text/html'
     default_charset = 'UTF-8'
+    unicode_errors = 'strict'
     default_conditional_response = False
 
     def __init__(self, body=None, status='200 OK', headerlist=None, app_iter=None,
@@ -1720,7 +1721,7 @@ class Response(object):
             raise AttributeError(
                 "You cannot access Response.unicode_body unless charset is set")
         body = self.body
-        return body.decode(self.charset)
+        return body.decode(self.charset, self.unicode_errors)
 
     def _unicode_body__set(self, value):
         if not self.charset:
