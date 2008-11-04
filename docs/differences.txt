@@ -580,3 +580,59 @@ Response
     res.content_type = 'application/x-csv'
     res.headers.add('Content-Disposition', 'attachment;filename=somefile.csv')
     return res(environ, start_response)
+
+webapp Response
+===============
+
+The Google App Engine `webapp <>`_ framework uses the WebOb Request
+object, but does not use its Response object.
+
+The constructor for ``webapp.Response`` does not take any arguments.
+The response is created by the framework, so you don't use it like
+``return Response(...)``, instead you use ``self.response``.  Also the
+response object automatically has ``Cache-Control: no-cache`` set,
+while the WebOb response does not set any cache headers.
+
+``resp.set_status(code, message=None)``:
+    This is handled by setting the ``resp.status`` attribute.
+
+``resp.clear()``:
+    You'd do ``resp.body = ""``
+
+``resp.wsgi_write(start_response)``:
+    This writes the response using the ``start_response`` callback,
+    and using the ``start_response`` writer.  The WebOb response
+    object is called as a WSGI app (``resp(environ, start_response)``)
+    to do the equivalent.
+
+``resp.out.write(text)``:
+    This writes to an internal ``StringIO`` instance of the response.
+    This uses the ability of the standard StringIO object to hold
+    either unicode or ``str`` text, and so long as you are always
+    consistent it will encode your content (but it does not respect
+    your preferred encoding, it always uses UTF-8).  The WebOb method
+    ``resp.write(text)`` is basically equivalent, and also accepts
+    unicode (using ``resp.charset`` for the encoding).  You can also
+    write to ``resp.body_file``, but it does not allow unicode.
+
+Besides exposing a ``.headers`` attribute (based on
+`wsgiref.headers.Headers
+<http://docs.python.org/library/wsgiref.html#wsgiref.headers.Headers>`_)
+there is no other API for the webapp response object.  This means the
+response lacks:
+
+* A usefully readable body or status.
+* A useful constructor that makes it easy to treat responses like
+  objects.
+* Providing a non-string ``app_iter`` for the body (like a generator).
+* Parsing of the Content-Type charset.
+* Getter/setters for parsed forms of headers, specifically
+  cache_control and last_modified.
+* The ``cache_expires`` method
+* ``set_cookie``, ``delete_cookie``, and ``unset_cookie``.  Instead
+  you have to simply manually set the Set-Cookie header.
+* ``encode_content`` and ``decode_content`` for handling gzip encoding.
+* ``md5_etag()`` for generating an etag from the body.
+* Conditional responses that will return 304 based on the response and
+  request headers.
+* The ability to serve Range request automatically.
