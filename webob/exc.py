@@ -47,7 +47,7 @@ Exception
         * 406 - HTTPNotAcceptable
         * 407 - HTTPProxyAuthenticationRequired
         * 408 - HTTPRequestTimeout
-        * 409 - HTTPConfict
+        * 409 - HTTPConflict
         * 410 - HTTPGone
         * 411 - HTTPLengthRequired
         * 412 - HTTPPreconditionFailed
