@@ -75,7 +75,7 @@ class WikiApp(object):
         path = path.lstrip('/')
         if not path:
             path = 'index'
-        path = os.path.join(self.storage_dir)
+        path = os.path.join(self.storage_dir, path)
         path = os.path.normpath(path)
         if path.endswith('/'):
             path += 'index'
