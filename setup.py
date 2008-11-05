@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 import sys, os
 
 version = '0.9.5'
@@ -27,7 +27,7 @@ environment.
       author_email='ianb@colorstudy.com',
       url='http://pythonpaste.org/webob/',
       license='MIT',
-      packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
+      packages=['webob', 'webob.util'],
       include_package_data=True,
       zip_safe=True,
       test_suite='nose.collector',
