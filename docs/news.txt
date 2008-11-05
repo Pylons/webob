@@ -3,6 +3,13 @@ News
 
 .. contents::
 
+svn trunk
+---------
+
+* Make :func:`webob.html_escape` respect the ``.__html__()`` magic
+  method, which allows you to use HTML in
+  :class`webob.exc.HTTPException` instances.
+
 0.9.4
 -----
 

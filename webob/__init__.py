@@ -56,6 +56,8 @@ def html_escape(s):
     """
     if s is None:
         return ''
+    if hasattr(s, '__html__'):
+        return s.__html__()
     if not isinstance(s, basestring):
         if hasattr(s, '__unicode__'):
             s = unicode(s)
