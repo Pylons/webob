@@ -508,7 +508,7 @@ class Request(object):
         for name, value in kw.items():
             if not hasattr(self.__class__, name):
                 raise TypeError(
-                    "Unexpected keyword: %s=%r" % name, value)
+                    "Unexpected keyword: %s=%r" % (name, value))
             setattr(self, name, value)
 
     def __setattr__(self, attr, value, DEFAULT=[]):
