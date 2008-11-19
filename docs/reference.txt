@@ -68,7 +68,7 @@ constructor that will fill in a minimal environment:
     'SERVER_PORT': '80',
     'SERVER_PROTOCOL': 'HTTP/1.0',
     'wsgi.errors': <open file '<stderr>', mode 'w' at ...>,
-    'wsgi.input': <cStringIO.StringI object at ...>,
+    'wsgi.input': <cStringIO... object at ...>,
     'wsgi.multiprocess': False,
     'wsgi.multithread': False,
     'wsgi.run_once': False,
@@ -86,13 +86,14 @@ file-like object.  You can read the entire body with
 
 .. code-block:: python 
 
-    >>> req.body_file
-    <cStringIO.StringI object at ...>
+    >>> import cStringIO
+    >>> isinstance(req.body_file, cStringIO.InputType)
+    True
     >>> req.body
     ''
     >>> req.body = 'test'
-    >>> req.body_file
-    <cStringIO.StringI object at ...>
+    >>> isinstance(req.body_file, cStringIO.InputType)
+    True
     >>> req.body
     'test'
 
@@ -912,7 +913,7 @@ A possible pattern for your application might be:
     SERVER_PORT: '80'
     SERVER_PROTOCOL: 'HTTP/1.0'
     wsgi.errors: <open file '<stderr>', mode 'w' at ...>
-    wsgi.input: <cStringIO.StringI object at ...>
+    wsgi.input: <cStringIO... object at ...>
     wsgi.multiprocess: False
     wsgi.multithread: False
     wsgi.run_once: False
