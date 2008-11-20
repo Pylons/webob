@@ -1866,6 +1866,11 @@ class Response(object):
         return location
 
     def _location__set(self, value):
+        if value is None:
+            del self.location
+            return
+        if isinstance(value, unicode):
+            value = value.encode('ISO-8859-1')
         if not _SCHEME_RE.search(value):
             # Not absolute, see if we can make it absolute
             if self.request is not None:

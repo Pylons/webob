@@ -10,6 +10,8 @@ svn trunk
   method, which allows you to use HTML in
   :class`webob.exc.HTTPException` instances.
 
+* Handle unicode values for ``resp.location``
+
 0.9.4
 -----
 
