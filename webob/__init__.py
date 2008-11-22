@@ -1089,7 +1089,7 @@ class Request(object):
             ## FIXME: Should we use .tell() to try to put the body
             ## back to its previous position?
             input.seek(0)
-        if length == -1:
+        if length in (-1, None):
             body = self.body
             length = len(body)
             self.content_length = length
