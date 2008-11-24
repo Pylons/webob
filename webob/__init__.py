@@ -186,6 +186,31 @@ class header_getter(object):
     def __repr__(self):
         return '<Proxy for header %s>' % self.header
 
+class set_via_call(object):
+    def __init__(self, func, adapt_args=None):
+        self.func = func
+    def __get__(self, obj, type=None):
+        return self.__class__(self.func.__get__(obj, type))
+    def __set__(self, obj, value):
+        if self.adapt_args is None:
+            args, kw = (value,), {}
+        else:
+            result = self.adapt_args(value)
+            if result is None:
+                return
+            args, kw = result
+        self.func(*args, **kw)
+    def __repr__(self):
+        return 'set_via_call(%r)' % self.func
+
+def _adapt_cache_expires(value):
+    if value is False:
+        return None
+    if value is True:
+        return (0,), {}
+    else:
+        return (value,), {}
+
 class converter(object):
     """
     Wraps a decorator, and applies conversion for that decorator
@@ -1941,7 +1966,7 @@ class Response(object):
 
     cache_control = property(_cache_control__get, _cache_control__set, _cache_control__del, doc=_cache_control__get.__doc__)
 
-    def cache_expires(self, seconds=0, **kw):
+    def _cache_expires(self, seconds=0, **kw):
         """
         Set expiration on this request.  This sets the response to
         expire in the given seconds, and any other attributes are used
@@ -1970,6 +1995,8 @@ class Response(object):
             self.expires = datetime.utcnow() + timedelta(seconds=seconds)
         for name, value in kw.items():
             setattr(cache_control, name, value)
+
+    cache_expires = set_via_call(_cache_expires, _adapt_cache_expires)
 
     content_encoding = header_getter('Content-Encoding', rfc_section='14.11')
 
@@ -2387,4 +2414,3 @@ class AppIterRange(object):
             return chunk[:-extra]
         self._served += len(chunk)
         return chunk
-

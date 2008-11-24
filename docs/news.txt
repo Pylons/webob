@@ -10,7 +10,14 @@ svn trunk
   method, which allows you to use HTML in
   :class`webob.exc.HTTPException` instances.
 
-* Handle unicode values for ``resp.location``
+* Handle unicode values for ``resp.location``.
+
+* Allow arbitrary keyword arguments to ``exc.HTTP*`` (the same
+  keywords you can send to :class:`webob.Response`).
+
+* Allow setting :method:`webob.Response.cache_expires` (usually it is
+  called as a method).  This is primarily to allow
+  ``Response(cache_expires=True)``.
 
 0.9.4
 -----
