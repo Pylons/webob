@@ -189,6 +189,7 @@ class header_getter(object):
 class set_via_call(object):
     def __init__(self, func, adapt_args=None):
         self.func = func
+        self.adapt_args = adapt_args
     def __get__(self, obj, type=None):
         return self.__class__(self.func.__get__(obj, type))
     def __set__(self, obj, value):
@@ -199,7 +200,7 @@ class set_via_call(object):
             if result is None:
                 return
             args, kw = result
-        self.func(*args, **kw)
+        self.func(obj, *args, **kw)
     def __repr__(self):
         return 'set_via_call(%r)' % self.func
 
