@@ -1261,7 +1261,7 @@ class Request(object):
     user_agent = environ_getter('HTTP_USER_AGENT', rfc_section='14.43')
 
     def __repr__(self):
-        msg = '<%s at %x %s %s>' % (
+        msg = '<%s at 0x%x %s %s>' % (
             self.__class__.__name__,
             abs(id(self)), self.method, self.url)
         return msg
@@ -1497,7 +1497,7 @@ class Response(object):
             setattr(self, name, value)
 
     def __repr__(self):
-        return '<%s %x %s>' % (
+        return '<%s at 0x%x %s>' % (
             self.__class__.__name__,
             abs(id(self)),
             self.status)
@@ -2297,7 +2297,7 @@ class FakeCGIBody(object):
         inner = repr(self.vars)
         if len(inner) > 20:
             inner = inner[:15] + '...' + inner[-5:]
-        return '<%s at %x viewing %s>' % (
+        return '<%s at 0x%x viewing %s>' % (
             self.__class__.__name__,
             abs(id(self)), inner)
 
