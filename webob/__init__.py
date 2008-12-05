@@ -203,6 +203,8 @@ class set_via_call(object):
         self.func(obj, *args, **kw)
     def __repr__(self):
         return 'set_via_call(%r)' % self.func
+    def __call__(self, *args, **kw):
+        return self.func(*args, **kw)
 
 def _adapt_cache_expires(value):
     if value is False:
