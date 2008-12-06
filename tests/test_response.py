@@ -1,3 +1,5 @@
+from StringIO import StringIO
+
 from webob import *
 
 def simple_app(environ, start_response):
@@ -35,3 +37,12 @@ def test_response():
     res.decode_content()
     assert res.content_encoding is None
     assert res.body == 'a body'
+
+def test_HEAD_closes():
+    req = Request.blank('/')
+    req.method = 'HEAD'
+    app_iter = StringIO('foo')
+    res = req.get_response(Response(app_iter=app_iter))
+    assert res.status_int == 200
+    assert res.body == ''
+    assert app_iter.closed

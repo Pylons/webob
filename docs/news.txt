@@ -6,6 +6,8 @@ News
 svn trunk
 ---------
 
+* Fix a potential memory leak with HEAD requests and 304 responses.
+
 * Make :func:`webob.html_escape` respect the ``.__html__()`` magic
   method, which allows you to use HTML in
   :class`webob.exc.HTTPException` instances.

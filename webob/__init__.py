@@ -2168,7 +2168,7 @@ class Response(object):
         start_response(self.status, self.headerlist)
         if environ['REQUEST_METHOD'] == 'HEAD':
             # Special case here...
-            return []
+            return EmptyResponse(self.app_iter)
         return self.app_iter
 
     _safe_methods = ('GET', 'HEAD')
@@ -2195,10 +2195,10 @@ class Response(object):
                     status304 = False
         if status304:
             start_response('304 Not Modified', self.headerlist)
-            return []
+            return EmptyResponse(self.app_iter)
         if req.method == 'HEAD':
             start_response(self.status, self.headerlist)
-            return []
+            return EmptyResponse(self.app_iter)
         if (req.range and req.if_range.match_response(self)
             and self.content_range is None
             and req.method == 'GET'
@@ -2417,3 +2417,24 @@ class AppIterRange(object):
             return chunk[:-extra]
         self._served += len(chunk)
         return chunk
+
+class EmptyResponse(object):
+
+    """An empty WSGI response.
+
+    An iterator that immediately stops. Optionally provides a close
+    method to close an underlying app_iter it replaces.
+    """
+
+    def __init__(self, app_iter=None):
+        if app_iter and hasattr(app_iter, 'close'):
+            self.close = app_iter.close
+
+    def __iter__(self):
+        return self
+
+    def __len__(self):
+        return 0
+
+    def next(self):
+        raise StopIteration()
