@@ -1302,19 +1302,45 @@ class Request(object):
                 raise exc_info[0], exc_info[1], exc_info[2]
             captured[:] = [status, headers, exc_info]
             return output.append
+
         app_iter = application(self.environ, start_response)
-        if (not captured
-            or output):
+
+        if output:
             try:
                 output.extend(app_iter)
             finally:
                 if hasattr(app_iter, 'close'):
                     app_iter.close()
             app_iter = output
+
+        elif not captured:
+            # to make webob-based middleware more efficient
+            # we do this without exhausting the entire app_iter
+            # (applies mostly for wsgi apps implemented as generators)
+            try:
+                item0 = app_iter.next()
+            except StopIteration:
+                pass
+            else:
+                assert captured
+                old_iter = app_iter
+                def new_iter():
+                    yield item0
+                    try:
+                        for item in old_iter:
+                            yield item
+                    finally:
+                        # however this part will only work w/ py2.5
+                        if hasattr(old_iter, 'close'):
+                            old_iter.close()
+                        assert not output # just in case
+                app_iter = new_iter()
+
         if catch_exc_info:
             return (captured[0], captured[1], app_iter, captured[2])
         else:
             return (captured[0], captured[1], app_iter)
+
 
     # Will be filled in later:
     ResponseClass = None
