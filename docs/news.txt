@@ -3,8 +3,8 @@ News
 
 .. contents::
 
-svn trunk
----------
+0.9.5
+-----
 
 * Fix a potential memory leak with HEAD requests and 304 responses.
 
