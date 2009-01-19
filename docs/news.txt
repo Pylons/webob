@@ -3,6 +3,12 @@ News
 
 .. contents::
 
+svn trunk
+---------
+
+* Fix defaulting of ``CONTENT_TYPE`` instead of ``CONTENT_LENGTH`` to
+  0 in ``Request.str_POST``.
+
 0.9.5
 -----
 

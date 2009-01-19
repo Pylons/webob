@@ -917,10 +917,9 @@ class Request(object):
             # Not an HTML form submission
             return NoVars('Not an HTML form submission (Content-Type: %s)'
                           % content_type)
-        if 'CONTENT_LENGTH' not in env:
-            # FieldStorage assumes a default CONTENT_LENGTH of -1, but a
-            # default of 0 is better:
-            env['CONTENT_TYPE'] = '0'
+        # FieldStorage assumes a default CONTENT_LENGTH of -1, but a
+        # default of 0 is better:
+        env.setdefault('CONTENT_LENGTH', 0)
         fs_environ = env.copy()
         fs_environ['QUERY_STRING'] = ''
         fs = cgi.FieldStorage(fp=self.body_file,
