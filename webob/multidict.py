@@ -36,7 +36,8 @@ class MultiDict(DictMixin):
             self._items = items
         else:
             self._items = []
-        self._items.extend(kw.iteritems())
+        if kw:
+            self._items.extend(kw.iteritems())
 
     #@classmethod
     def view_list(cls, lst):

@@ -521,23 +521,25 @@ class Request(object):
             raise TypeError(
                 "You can only provide one of the environ and environ_getter arguments")
         if environ is None:
-            self._environ_getter = environ_getter
+            self.__dict__['_environ_getter'] = environ_getter
         else:
             if not isinstance(environ, dict):
                 raise TypeError(
                     "Bad type for environ: %s" % type(environ))
-            self._environ = environ
+            self.__dict__['_environ'] = environ
         if charset is not NoDefault:
             self.__dict__['charset'] = charset
         if unicode_errors is not NoDefault:
             self.__dict__['unicode_errors'] = unicode_errors
         if decode_param_names is not NoDefault:
             self.__dict__['decode_param_names'] = decode_param_names
-        for name, value in kw.items():
-            if not hasattr(self.__class__, name):
-                raise TypeError(
-                    "Unexpected keyword: %s=%r" % (name, value))
-            setattr(self, name, value)
+        if kw:
+            my_class = self.__class__
+            for name, value in kw.iteritems():
+                if not hasattr(my_class, name):
+                    raise TypeError(
+                        "Unexpected keyword: %s=%r" % (name, value))
+                setattr(self, name, value)
 
     def __setattr__(self, attr, value, DEFAULT=[]):
         ## FIXME: I don't know why I need this guard (though experimentation says I do)
@@ -1493,9 +1495,15 @@ class Response(object):
             self._body = None
         else:
             if isinstance(body, unicode):
-                self.unicode_body = body
+                if charset is None:
+                    raise TypeError(
+                        "You cannot set the body to a unicode value without a charset")
+                body = body.encode(charset)
+            self._body = body
+            if headerlist is None:
+                self._headerlist.append(('Content-Length', str(len(body))))
             else:
-                self.body = body
+                self.headers['Content-Length'] = str(len(body))
             self._app_iter = None
         for name, value in kw.iteritems():
             if not hasattr(self.__class__, name):

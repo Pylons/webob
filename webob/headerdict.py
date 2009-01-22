@@ -62,6 +62,15 @@ class HeaderDict(MultiDict):
                 result[key] = [value]
         return result
 
+    def __setitem__(self, key, value):
+        normalize = self.normalize
+        norm_key = normalize(key)
+        items = self._items
+        for i in range(len(items)-1, -1, -1):
+            if normalize(items[i][0]) == norm_key:
+                del items[i]
+        self._items.append((key, value))
+
     def __delitem__(self, key):
         normalize = self.normalize
         key = normalize(key)
