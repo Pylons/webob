@@ -19,7 +19,11 @@ if __name__ == '__main__':
     import sys
     import os
     import signal
-    if sys.argv[1:] == ['open']:
+    if sys.argv[1:]:
+        arg = sys.argv[1]
+    else:
+        arg = None
+    if arg in ['open', 'run']:
         import subprocess
         import webbrowser
         import time
@@ -27,7 +31,8 @@ if __name__ == '__main__':
         proc = subprocess.Popen([sys.executable, __file__])
         time.sleep(1)
         subprocess.call(['ab', '-n', '1000', 'http://localhost:8080/'])
-        webbrowser.open('http://localhost:8080/__profile__')
+        if arg == 'open':
+            webbrowser.open('http://localhost:8080/__profile__')
         print 'Hit ^C to end'
         try:
             while 1:
