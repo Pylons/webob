@@ -6,7 +6,8 @@ News
 svn trunk
 ---------
 
-* Speed ups for :method:`webob.Response.__init__`
+* Speed ups for :method:`webob.Response.__init__` and
+  :method:`webob.Request.__init__`
 
 * Fix defaulting of ``CONTENT_TYPE`` instead of ``CONTENT_LENGTH`` to
   0 in ``Request.str_POST``.
