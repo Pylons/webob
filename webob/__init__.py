@@ -1473,7 +1473,8 @@ class Response(object):
         if 'charset' in kw:
             charset = kw.pop('charset')
         elif self.default_charset and headerlist is None:
-            if content_type and (content_type.startswith('text/')
+            if content_type and (content_type == 'text/html'
+                                 or content_type.startswith('text/')
                                  or content_type.startswith('application/xml')
                                  or (content_type.startswith('application/')
                                      and content_type.endswith('+xml'))):
