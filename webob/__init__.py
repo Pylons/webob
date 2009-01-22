@@ -520,19 +520,20 @@ class Request(object):
         if environ is not None and environ_getter is not None:
             raise TypeError(
                 "You can only provide one of the environ and environ_getter arguments")
+        d = self.__dict__
         if environ is None:
-            self.__dict__['_environ_getter'] = environ_getter
+            d['_environ_getter'] = environ_getter
         else:
             if not isinstance(environ, dict):
                 raise TypeError(
                     "Bad type for environ: %s" % type(environ))
-            self.__dict__['_environ'] = environ
+            d['_environ'] = environ
         if charset is not NoDefault:
-            self.__dict__['charset'] = charset
+            d['charset'] = charset
         if unicode_errors is not NoDefault:
-            self.__dict__['unicode_errors'] = unicode_errors
+            d['unicode_errors'] = unicode_errors
         if decode_param_names is not NoDefault:
-            self.__dict__['decode_param_names'] = decode_param_names
+            d['decode_param_names'] = decode_param_names
         if kw:
             my_class = self.__class__
             for name, value in kw.iteritems():
