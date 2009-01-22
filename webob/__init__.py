@@ -1439,7 +1439,7 @@ class Response(object):
     unicode_errors = 'strict'
     default_conditional_response = False
 
-    def __init__(self, body=None, status='200 OK', headerlist=None, app_iter=None,
+    def __init__(self, body=None, status=None, headerlist=None, app_iter=None,
                  request=None, content_type=None, conditional_response=NoDefault,
                  **kw):
         if app_iter is None:
@@ -1448,7 +1448,10 @@ class Response(object):
         elif body is not None:
             raise TypeError(
                 "You may only give one of the body and app_iter arguments")
-        self.status = status
+        if status is None:
+            self._status = '200 OK'
+        else:
+            self.status = status
         if headerlist is None:
             self._headerlist = []
         else:
@@ -1463,24 +1466,28 @@ class Response(object):
                 self._request = None
         else:
             self._environ = self._request = None
-        if content_type is not None:
-            self.content_type = content_type
-        elif self.default_content_type is not None and headerlist is None:
-            self.content_type = self.default_content_type
+        if content_type is None:
+            content_type = self.default_content_type
+        if 'charset' in kw:
+            charset = kw.pop('charset')
+        elif self.default_charset and headerlist is None:
+            if content_type and (content_type.startswith('text/')
+                                 or content_type.startswith('application/xml')
+                                 or (content_type.startswith('application/')
+                                     and content_type.endswith('+xml'))):
+                charset = self.default_charset
+        else:
+            charset = None
+        if content_type and charset:
+            content_type += '; charset=' + charset
+        elif self._headerlist and charset:
+            self.charset = charset
+        if not self._headerlist:
+            self._headerlist.append(('Content-Type', content_type))
         if conditional_response is NoDefault:
             self.conditional_response = self.default_conditional_response
         else:
             self.conditional_response = conditional_response
-        if 'charset' in kw:
-            # We set this early, so something like unicode_body works later
-            value = kw.pop('charset')
-            if value:
-                self.charset = value
-        elif self.default_charset and not self.charset and headerlist is None:
-            ct = self.content_type
-            if ct and (ct.startswith('text/') or ct.startswith('application/xml')
-                       or (ct.startswith('application/') and ct.endswith('+xml'))):
-                self.charset = self.default_charset
         if app_iter is not None:
             self._app_iter = app_iter
             self._body = None
@@ -1490,7 +1497,7 @@ class Response(object):
             else:
                 self.body = body
             self._app_iter = None
-        for name, value in kw.items():
+        for name, value in kw.iteritems():
             if not hasattr(self.__class__, name):
                 # Not a basic attribute
                 raise TypeError(
