@@ -335,7 +335,7 @@ Now let's test that application:
     >>> resp = req.get_response(hello_world)
     >>> print resp
     200 OK
-    content-type: text/html; charset=UTF-8
+    Content-Type: text/html; charset=UTF-8
     Content-Length: 131
     <BLANKLINE>
     <form method="POST">
@@ -347,7 +347,7 @@ Now let's test that application:
     >>> resp = req.get_response(hello_world)
     >>> print resp
     200 OK
-    content-type: text/html; charset=UTF-8
+    Content-Type: text/html; charset=UTF-8
     Content-Length: 10
     <BLANKLINE>
     Hello Ian!
@@ -434,7 +434,7 @@ We'll run the same test as before:
     >>> resp = req.get_response(hello_world)
     >>> print resp
     200 OK
-    content-type: text/html; charset=UTF-8
+    Content-Type: text/html; charset=UTF-8
     Content-Length: 131
     <BLANKLINE>
     <form method="POST">
@@ -446,7 +446,7 @@ We'll run the same test as before:
     >>> resp = req.get_response(hello_world)
     >>> print resp
     200 OK
-    content-type: text/html; charset=UTF-8
+    Content-Type: text/html; charset=UTF-8
     Content-Length: 10
     <BLANKLINE>
     Hello Ian!

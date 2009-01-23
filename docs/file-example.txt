@@ -53,7 +53,7 @@ in the WebOb doc directory:
    >>> req = Request.blank('/')
    >>> print req.get_response(app)
    200 OK
-   content-type: text/plain; charset=UTF-8
+   Content-Type: text/plain; charset=UTF-8
    Content-Length: 36
    <BLANKLINE>
    This is a test.  Hello test people!
@@ -94,7 +94,7 @@ And testing:
    >>> req = Request.blank('/')
    >>> print req.get_response(app)
    200 OK
-   content-type: text/plain; charset=UTF-8
+   Content-Type: text/plain; charset=UTF-8
    Content-Length: 36
    <BLANKLINE>
    This is a test.  Hello test people!
@@ -125,7 +125,7 @@ Now, with ``conditional_response`` on, and with ``last_modified`` and
    >>> res = req.get_response(app)
    >>> print res
    200 OK
-   content-type: text/plain; charset=UTF-8
+   Content-Type: text/plain; charset=UTF-8
    Content-Length: 36
    Last-Modified: ... GMT
    ETag: ...-...

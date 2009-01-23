@@ -590,7 +590,7 @@ The core attributes are unsurprising:
     >>> res.status
     '200 OK'
     >>> res.headerlist
-    [('content-type', 'text/html; charset=UTF-8'), ('Content-Length', '0')]
+    [('Content-Type', 'text/html; charset=UTF-8'), ('Content-Length', '0')]
     >>> res.body
     ''
 
@@ -936,7 +936,7 @@ simple body is provided.
     >>> req = Request.blank('/path/to/something')
     >>> print str(req.get_response(exc)).strip()
     307 Temporary Redirect
-    content-type: text/html; charset=UTF-8
+    Content-Type: text/html; charset=UTF-8
     location: http://localhost/path/to/foo
     Content-Length: 126
     <BLANKLINE>
@@ -952,7 +952,7 @@ request will an HTML response be given:
     >>> req.accept += 'text/html'
     >>> print str(req.get_response(exc)).strip()
     307 Temporary Redirect
-    content-type: text/html; charset=UTF-8
+    Content-Type: text/html; charset=UTF-8
     location: http://localhost/path/to/foo
     Content-Length: 270
     <BLANKLINE>

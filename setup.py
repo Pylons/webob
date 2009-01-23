@@ -31,5 +31,6 @@ environment.
       include_package_data=True,
       zip_safe=True,
       test_suite='nose.collector',
-      tests_require=['Tempita', 'WSGIProxy', 'WebTest', 'dtopt', 'nose'],
+      tests_require=['Tempita', 'WSGIProxy', 'WebTest', 'dtopt', 'nose',
+                     'repoze.profile'],
       )
