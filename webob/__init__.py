@@ -1529,12 +1529,15 @@ class Response(object):
 
     def copy(self):
         """Makes a copy of the response"""
+        if self._app_iter is not None:
+            app_iter = self._app_iter
+        else:
+            app_iter = [self._body]
         return self.__class__(
             content_type=False,
             status=self._status,
             headerlist=self._headerlist,
-            app_iter=self._app_iter,
-            body=self._body,
+            app_iter=app_iter,
             conditional_response=self.conditional_response)
 
     def _status__get(self):
