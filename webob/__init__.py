@@ -1486,7 +1486,7 @@ class Response(object):
             content_type += '; charset=' + charset
         elif self._headerlist and charset:
             self.charset = charset
-        if not self._headerlist:
+        if not self._headerlist and content_type:
             self._headerlist.append(('Content-Type', content_type))
         if conditional_response is NoDefault:
             self.conditional_response = self.default_conditional_response
@@ -1526,6 +1526,16 @@ class Response(object):
                              for name, value in self.headerlist])
                 + '\n\n'
                 + self.body)
+
+    def copy(self):
+        """Makes a copy of the response"""
+        return self.__class__(
+            content_type=False,
+            status=self._status,
+            headerlist=self._headerlist,
+            app_iter=self._app_iter,
+            body=self._body,
+            conditional_response=self.conditional_response)
 
     def _status__get(self):
         """

@@ -12,6 +12,8 @@ svn trunk
 * Fix defaulting of ``CONTENT_TYPE`` instead of ``CONTENT_LENGTH`` to
   0 in ``Request.str_POST``.
 
+* Added :method:`webob.Response.copy`
+
 0.9.5
 -----
 
