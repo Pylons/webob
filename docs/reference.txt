@@ -529,27 +529,6 @@ A handier response can be had with:
 
 You can learn more about this response object in the Response_ section.
 
-Thread-local Request Wrappers
------------------------------
-
-You can also give the ``Request`` object a function to get the
-environment.  This can be used to make a single global request object
-dynamic.  An example:
-
-.. code-block:: python
-
-    >>> import threading
-    >>> import webob
-    >>> environments = threading.local()
-    >>> def get_environ():
-    ...     return environments.environ
-    >>> def set_thread_environ(environ):
-    ...     environments.environ = environ
-    >>> request = webob.Request(environ_getter=get_environ)
-    >>> set_thread_environ({'SCRIPT_NAME': '/test'})
-    >>> request.script_name
-    '/test'
-
 Ad-Hoc Attributes
 -----------------
 

@@ -6,6 +6,12 @@ News
 svn trunk
 ---------
 
+* Removed `environ_getter` from :class:`webob.Request`.  This
+  largely-unused option allowed a Request object to be instantiated
+  with a dynamic underlying environ.  Since it wasn't used much, and
+  might have been ill-advised from the beginning, and affected
+  performance, it has been removed (from Chris McDonough).
+
 * Speed ups for :method:`webob.Response.__init__` and
   :method:`webob.Request.__init__`
 

@@ -514,20 +514,13 @@ class Request(object):
 
     def __init__(self, environ=None, environ_getter=None, charset=NoDefault, unicode_errors=NoDefault,
                  decode_param_names=NoDefault, **kw):
-        if environ is None and environ_getter is None:
-            raise TypeError(
-                "You must provide one of environ or environ_getter")
-        if environ is not None and environ_getter is not None:
-            raise TypeError(
-                "You can only provide one of the environ and environ_getter arguments")
-        d = self.__dict__
+        if environ_getter is not None:
+            raise ValueError('The environ_getter argument is no longer '
+                             'supported')
         if environ is None:
-            d['_environ_getter'] = environ_getter
-        else:
-            if not isinstance(environ, dict):
-                raise TypeError(
-                    "Bad type for environ: %s" % type(environ))
-            d['_environ'] = environ
+            raise TypeError("You must provide an environ arg")
+        d = self.__dict__
+        d['environ'] = environ
         if charset is not NoDefault:
             d['charset'] = charset
         if unicode_errors is not NoDefault:
@@ -566,16 +559,6 @@ class Request(object):
             del self.environ['webob.adhoc_attrs'][attr]
         except KeyError:
             raise AttributeError(attr)
-
-    def environ(self):
-        """
-        The WSGI environment dictionary for this request
-        """
-        return self._environ_getter()
-    environ = property(environ, doc=environ.__doc__)
-
-    def _environ_getter(self):
-        return self._environ
 
     def _body_file__get(self):
         """
