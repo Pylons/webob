@@ -143,6 +143,7 @@ Routing: Templates
 To do the matching, we'll compile those templates to regular expressions.  
 
 .. code-block:: python
+   :linenos:
 
     >>> import re
     >>> var_regex = re.compile(r'''
@@ -219,6 +220,7 @@ Routing: putting it together
 Now, the ``Router`` class.  The class has the ``add_route`` method, and also a ``__call__`` method.  That ``__call__`` method makes the Router object itself a WSGI application.  So when a request comes in, it looks at ``PATH_INFO`` (also known as ``req.path_info``) and hands off the request to the controller that matches that path.
 
 .. code-block:: python
+   :linenos:
 
     >>> from webob import Request
     >>> from webob import exc
@@ -269,6 +271,7 @@ The router just passes the request on to the controller, so the controllers are 
 To do that we'll write a `decorator <http://www.ddj.com/web-development/184406073>`_.  A decorator is a function that wraps another function.  After decoration the function will be a WSGI application, but it will be decorating a function with a signature like ``controller_func(req, **urlvars)``.  The controller function will return a response object (which, remember, is a WSGI application on its own).
 
 .. code-block:: python
+   :linenos:
 
     >>> from webob import Request, Response
     >>> from webob import exc
@@ -363,6 +366,7 @@ We could do this as a superclass, but the implementation will be more elegant as
 We'll allow an extra ``action`` variable, which will define the method (actually ``action_method``, where ``_method`` is the request method).  If no action is given, we'll use just the method (i.e., ``get``, ``post``, etc).
 
 .. code-block:: python
+   :linenos:
 
     >>> def rest_controller(cls):
     ...     def replacement(environ, start_response):
