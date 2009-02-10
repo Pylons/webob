@@ -3,8 +3,8 @@ News
 
 .. contents::
 
-svn trunk
----------
+0.9.6
+-----
 
 * Removed `environ_getter` from :class:`webob.Request`.  This
   largely-unused option allowed a Request object to be instantiated
