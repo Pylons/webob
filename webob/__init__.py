@@ -1454,6 +1454,7 @@ class Response(object):
             self._environ = self._request = None
         if content_type is None:
             content_type = self.default_content_type
+        charset = None
         if 'charset' in kw:
             charset = kw.pop('charset')
         elif self.default_charset and headerlist is None:
@@ -1463,8 +1464,6 @@ class Response(object):
                                  or (content_type.startswith('application/')
                                      and content_type.endswith('+xml'))):
                 charset = self.default_charset
-        else:
-            charset = None
         if content_type and charset:
             content_type += '; charset=' + charset
         elif self._headerlist and charset:

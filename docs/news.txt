@@ -3,6 +3,12 @@ News
 
 .. contents::
 
+svn trunk
+---------
+
+* Fixed :meth:`Response.__init__`, which for some content types would
+  raise an exception.
+
 0.9.6
 -----
 
