@@ -843,16 +843,19 @@ class Request(object):
         except ValueError:
             return ''
         c = self.body_file.read(length)
-        tempfile_limit = self.request_body_tempfile_limit
-        if tempfile_limit and len(c) > tempfile_limit:
-            fileobj = tempfile.TemporaryFile()
-            fileobj.write(c)
-            fileobj.seek(0)
+        if hasattr(self.body_file, 'seek'):
+            self.body_file.seek(0)
         else:
-            fileobj = StringIO(c)
-        # We don't want/need to lose CONTENT_LENGTH here (as setting
-        # self.body_file would do):
-        self.environ['wsgi.input'] = fileobj
+            tempfile_limit = self.request_body_tempfile_limit
+            if tempfile_limit and len(c) > tempfile_limit:
+                fileobj = tempfile.TemporaryFile()
+                fileobj.write(c)
+                fileobj.seek(0)
+            else:
+                fileobj = StringIO(c)
+            # We don't want/need to lose CONTENT_LENGTH here (as setting
+            # self.body_file would do):
+            self.environ['wsgi.input'] = fileobj
         return c
 
     def _body__set(self, value):

@@ -6,8 +6,11 @@ News
 svn trunk
 ---------
 
-* Fixed :meth:`Response.__init__`, which for some content types would
+* Fixed :method:`Response.__init__`, which for some content types would
   raise an exception.
+
+* The ``req.body`` property will not recreate a StringIO object
+  unnecessarily when rereading the body.
 
 0.9.6
 -----

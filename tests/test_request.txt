@@ -292,7 +292,8 @@ You can use them with responses::
     >>> start, end, length
     (0, 100, 1000)
 
-A quick test of caching the request body:
+A quick test of caching the request body (now that we check for seek()
+this doesn't exercise it well):
 
     >>> from cStringIO import StringIO
     >>> length = Request.request_body_tempfile_limit+10
@@ -305,7 +306,9 @@ A quick test of caching the request body:
     >>> len(req.body)
     10250
     >>> req.body_file
-    <open file '<fdopen>', mode 'w+b' at ...>
+    <cStringIO.StringI object at ...>
+    >>> req.body_file.tell()
+    0
 
 Some query tests:
 
