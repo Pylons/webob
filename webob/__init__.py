@@ -523,10 +523,14 @@ class Request(object):
         d['environ'] = environ
         if charset is not NoDefault:
             d['default_charset'] = charset
-        elif hasattr(self.__class__, 'charset'):
+        elif hasattr(self.__class__, 'charset') and isinstance(self.__class__.charset, str):
             # This is here for backward compatibility; default_charset
             # used to be named simply charset:
-            d['default_charset'] = self.__class__.charset
+            warnings.warn(
+                'The class attribute charset is deprecated; use default_charset instead',
+                DeprecationWarning)
+            self.__class__.default_charset = self.__class__.charset
+            del self.__class__.charset
         if unicode_errors is not NoDefault:
             d['unicode_errors'] = unicode_errors
         if decode_param_names is not NoDefault:
@@ -648,7 +652,7 @@ class Request(object):
             return cache[1]
         charset_match = _CHARSET_RE.search(content_type)
         if charset_match:
-            result = charset_match.group(1)
+            result = charset_match.group(1).strip('"').strip()
         else:
             result = self.default_charset
         self.__dict__['_charset_cache'] = (content_type, result)
