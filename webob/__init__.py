@@ -504,7 +504,7 @@ def _serialize_accept(value, header_name, AcceptClass, NilClass):
 class Request(object):
 
     ## Options:
-    charset = None
+    default_charset = None
     unicode_errors = 'strict'
     decode_param_names = False
     ## The limit after which request bodies should be stored on disk
@@ -522,7 +522,7 @@ class Request(object):
         d = self.__dict__
         d['environ'] = environ
         if charset is not NoDefault:
-            d['charset'] = charset
+            d['default_charset'] = charset
         if unicode_errors is not NoDefault:
             d['unicode_errors'] = unicode_errors
         if decode_param_names is not NoDefault:
@@ -587,8 +587,6 @@ class Request(object):
     method = environ_getter('REQUEST_METHOD')
     script_name = environ_getter('SCRIPT_NAME')
     path_info = environ_getter('PATH_INFO')
-    ## FIXME: should I strip out parameters?:
-    content_type = environ_getter('CONTENT_TYPE', rfc_section='14.17')
     content_length = converter(
         environ_getter('CONTENT_LENGTH', rfc_section='14.13'),
         _parse_int_safe, _serialize_int, 'int')
@@ -599,6 +597,79 @@ class Request(object):
     server_port = converter(
         environ_getter('SERVER_PORT'),
         _parse_int, _serialize_int, 'int')
+
+    def _content_type__get(self):
+        """Return the content type, but leaving off any parameters (like
+        charset, but also things like the type in ``application/atom+xml;
+        type=entry``)
+
+        If you set this property, you can include parameters, or if
+        you don't include any parameters in the value then existing
+        parameters will be preserved.
+        """
+        return self.environ.get('CONTENT_TYPE', '').split(';', 1)[0]
+    def _content_type__set(self, value):
+        value = str(value)
+        if ';' not in value:
+            content_type = self.environ.get('CONTENT_TYPE', '')
+            if ';' in content_type:
+                value += ';' + content_type.split(';', 1)[1]
+        self.environ['CONTENT_TYPE'] = value
+    def _content_type__del(self):
+        if 'CONTENT_TYPE' in self.environ:
+            del self.environ['CONTENT_TYPE']
+    
+    content_type = property(_content_type__get, _content_type__set, _content_type__del,
+                            _content_type__get.__doc__)
+
+    _charset_cache = None
+
+    def _charset__get(self):
+        """Get the charset of the request.
+
+        If the request was sent with a charset parameter on the
+        Content-Type, that will be used.  Otherwise if there is a
+        default charset (set during construction, or as a class
+        attribute) that will be returned.  Otherwise None.
+
+        Setting this property after request instantiation will always
+        update Content-Type.  Deleting the property updates the
+        Content-Type to remove any charset parameter (if none exists,
+        then deleting the property will do nothing, and there will be
+        no error).
+        """
+        cache = self._charset_cache
+        content_type = self.environ.get('CONTENT_TYPE', '')
+        if cache and cache[0] == content_type:
+            return cache[1]
+        charset_match = _CHARSET_RE.search(content_type)
+        if charset_match:
+            result = charset_match.group(1)
+        else:
+            result = self.default_charset
+        self.__dict__['_charset_cache'] = (content_type, result)
+        return result
+    def _charset__set(self, charset):
+        if charset is None or charset == '':
+            del self.charset
+            return
+        charset = str(charset)
+        content_type = self.environ.get('CONTENT_TYPE', '')
+        charset_match = _CHARSET_RE.search(self.environ.get('CONTENT_TYPE', ''))
+        if charset_match:
+            content_type = content_type[:charset_match.start(1)] + charset + content_type[charset_match.end(1):]
+        elif ';' in content_type:
+            content_type += ', charset="%s"' % charset
+        else:
+            content_type += '; charset="%s"' % charset
+        self.environ['CONTENT_TYPE'] = content_type
+    def _charset__del(self):
+        new_content_type = _CHARSET_RE.sub('', self.environ.get('CONTENT_TYPE', ''))
+        new_content_type = new_content_type.rstrip().rstrip(';').rstrip(',')
+        self.environ['CONTENT_TYPE'] = new_content_type
+
+    charset = property(_charset__get, _charset__set, _charset__del,
+                       _charset__get.__doc__)
 
     _headers = None
 
