@@ -11,9 +11,7 @@ svn trunk
   header, if it is present.  Otherwise a ``default_charset`` parameter
   is read, or the ``charset`` argument to the Request constructor.
   This is more similar to how :class:`webob.Response` handles the
-  charset.  **Backward-incompatible change:** if you set the class
-  attribute ``charset`` to indicate the default charset, that must be
-  changed to ``default_charset``.
+  charset.
 
 0.9.6.1
 -------

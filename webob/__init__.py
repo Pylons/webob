@@ -523,6 +523,10 @@ class Request(object):
         d['environ'] = environ
         if charset is not NoDefault:
             d['default_charset'] = charset
+        elif hasattr(self.__class__, 'charset'):
+            # This is here for backward compatibility; default_charset
+            # used to be named simply charset:
+            d['default_charset'] = self.__class__.charset
         if unicode_errors is not NoDefault:
             d['unicode_errors'] = unicode_errors
         if decode_param_names is not NoDefault:
