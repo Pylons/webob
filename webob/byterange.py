@@ -118,7 +118,6 @@ class Range(object):
                     (begin, end) = item.split("-", 1)
                     begin = int(begin)
                     if begin < last_end or last_end < 0:
-                        print begin, last_end
                         raise ValueError('begin<last_end, or last_end<0')
                     if not end.strip():
                         end = None
@@ -132,7 +131,6 @@ class Range(object):
             # In this case where the Range header is malformed,
             # section 14.16 says to treat the request as if the
             # Range header was not present.  How do I log this?
-            print e
             return None
         return (units, ranges)
     parse_bytes = staticmethod(parse_bytes)
