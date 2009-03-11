@@ -1658,7 +1658,7 @@ class Response(object):
         """
         Get/set the charset (in the Content-Type)
         """
-        header = self.headers.get('content-type')
+        header = self.headers.get('Content-Type')
         if not header:
             return None
         match = _CHARSET_RE.search(header)
@@ -1671,7 +1671,7 @@ class Response(object):
             del self.charset
             return
         try:
-            header = self.headers.pop('content-type')
+            header = self.headers.pop('Content-Type')
         except KeyError:
             raise AttributeError(
                 "You cannot set the charset when no content-type is defined")
@@ -1679,18 +1679,18 @@ class Response(object):
         if match:
             header = header[:match.start()] + header[match.end():]
         header += '; charset=%s' % charset
-        self.headers['content-type'] = header
+        self.headers['Content-Type'] = header
 
     def _charset__del(self):
         try:
-            header = self.headers.pop('content-type')
+            header = self.headers.pop('Content-Type')
         except KeyError:
             # Don't need to remove anything
             return
         match = _CHARSET_RE.search(header)
         if match:
             header = header[:match.start()] + header[match.end():]
-        self.headers['content-type'] = header
+        self.headers['Content-Type'] = header
 
     charset = property(_charset__get, _charset__set, _charset__del, doc=_charset__get.__doc__)
 
@@ -1703,22 +1703,22 @@ class Response(object):
         content_type, any existing parameters will be deleted;
         otherwise they will be preserved.
         """
-        header = self.headers.get('content-type')
+        header = self.headers.get('Content-Type')
         if not header:
             return None
         return header.split(';', 1)[0]
 
     def _content_type__set(self, value):
         if ';' not in value:
-            header = self.headers.get('content-type', '')
+            header = self.headers.get('Content-Type', '')
             if ';' in header:
                 params = header.split(';', 1)[1]
                 value += ';' + params
-        self.headers['content-type'] = value
+        self.headers['Content-Type'] = value
 
     def _content_type__del(self):
         try:
-            del self.headers['content-type']
+            del self.headers['Content-Type']
         except KeyError:
             pass
 
@@ -1729,7 +1729,7 @@ class Response(object):
         """
         Returns a dictionary of all the parameters in the content type.
         """
-        params = self.headers.get('content-type', '')
+        params = self.headers.get('Content-Type', '')
         if ';' not in params:
             return {}
         params = params.split(';', 1)[1]
@@ -1749,12 +1749,12 @@ class Response(object):
                 ## I think it might be simply illegal
                 v = '"%s"' % v.replace('"', '\\"')
             params.append('; %s=%s' % (k, v))
-        ct = self.headers.pop('content-type', '').split(';', 1)[0]
+        ct = self.headers.pop('Content-Type', '').split(';', 1)[0]
         ct += ''.join(params)
-        self.headers['content-type'] = ct
+        self.headers['Content-Type'] = ct
 
     def _content_type_params__del(self, value):
-        self.headers['content-type'] = self.headers.get('content-type', '').split(';', 1)[0]
+        self.headers['Content-Type'] = self.headers.get('Content-Type', '').split(';', 1)[0]
 
     content_type_params = property(_content_type_params__get, _content_type_params__set, _content_type_params__del, doc=_content_type_params__get.__doc__)
 

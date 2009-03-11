@@ -13,6 +13,9 @@ svn trunk
   This is more similar to how :class:`webob.Response` handles the
   charset.
 
+* Made the case of the Content-Type header consistent (note: this
+  might break some doctests).
+
 0.9.6.1
 -------
 

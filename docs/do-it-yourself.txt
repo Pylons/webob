@@ -73,7 +73,7 @@ Responses are objects that represent the... well, response.  The status, headers
     >>> print resp
     200 OK
     Content-Length: 12
-    content-type: text/plain; charset=UTF-8
+    Content-Type: text/plain; charset=UTF-8
     <BLANKLINE>
     Hello World!
 

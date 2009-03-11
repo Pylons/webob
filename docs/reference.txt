@@ -167,7 +167,7 @@ All request headers are available through a dictionary-like object
 .. code-block:: python
 
     >>> from webob.compat import sorted
-    >>> req.headers['content-type'] = 'application/x-www-urlencoded'
+    >>> req.headers['Content-Type'] = 'application/x-www-urlencoded'
     >>> sorted(req.headers.items())
     [('Content-Length', '4'), ('Content-Type', 'application/x-www-urlencoded'), ('Host', 'localhost:80')]
     >>> req.environ['CONTENT_TYPE']
@@ -615,7 +615,7 @@ the list in ``res.headers``:
 .. code-block:: python
 
     >>> res.headers
-    HeaderDict([('content-type', 'text/html; charset=utf8'), ('Content-Length', '4')])
+    HeaderDict([('Content-Type', 'text/html; charset=utf8'), ('Content-Length', '4')])
 
 This is case-insensitive.  It can support multiple values for a key,
 though only if you use ``res.headers.add(key, value)`` or read them
@@ -771,7 +771,7 @@ After setting all these headers, here's the result:
 
     >>> for name, value in res.headerlist:
     ...     print '%s: %s' % (name, value)
-    content-type: application/atom+xml; charset=utf8; type=entry
+    Content-Type: application/atom+xml; charset=utf8; type=entry
     location: http://localhost/foo
     Accept-Ranges: bytes
     Age: 120
@@ -880,7 +880,7 @@ A possible pattern for your application might be:
     >>> res = req.get_response(my_app)
     >>> print res
     200 OK
-    content-type: text/plain; charset=UTF-8
+    Content-Type: text/plain; charset=UTF-8
     Content-Length: ...
     <BLANKLINE>
     HTTP_HOST: 'localhost:80'
