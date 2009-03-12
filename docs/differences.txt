@@ -636,3 +636,61 @@ response lacks:
 * Conditional responses that will return 304 based on the response and
   request headers.
 * The ability to serve Range request automatically.
+
+PHP
+===
+
+PHP does not have anything really resembling a request and response
+object.  Instead these are encoded in a set of global objects for the
+request and functions for the response.
+
+``$_POST``, ``$_GET``, ``$_FILES``
+----------------------------------
+
+These represent ``req.POST`` and ``req.GET``.
+
+PHP uses the variable names to tell whether a variable can hold
+multiple values.  For instance ``$_POST['name[]']``, which will be an
+array.  In WebOb any variable can have multiple values, and you can
+get these through ``req.POST.getall('name')``.
+
+The files in ``$_FILES`` are simply in ``req.POST`` in WebOb, as
+FieldStorage instances.
+
+``$_COOKIES``
+-------------
+
+This is in ``req.cookies``.
+
+``$_SERVER``, ``$_REQUEST``, ``$_ENV``
+--------------------------------------
+
+These are all in ``req.environ``.  These are not split up like they
+are in PHP, it's all just one dictionary.  Everything that would
+typically be in ``$_ENV`` is technically optional, and outside of a
+couple CGI-standard keys in ``$_SERVER`` most of those are also
+optional, but it is common for WSGI servers to populate the request
+with similar information as PHP.
+
+``$HTTP_RAW_POST_DATA``
+-----------------------
+
+This contains the unparsed data in the request body.  This is in
+``req.body``.
+
+The response
+------------
+
+Response headers in PHP are sent with ``header("Header-Name:
+value")``.  In WebOb there is a dictionary in ``resp.headers`` that
+can have values set; the headers aren't actually sent until you send
+the response.  You can add headers without overwriting (the equivalent
+of ``header("...", false)``) with ``resp.headers.add('Header-Name',
+'value')``.
+
+The status in PHP is sent with ``http_send_status(code)``.  In WebOb
+this is ``resp.status = code``.
+
+The body in PHP is sent implicitly through the rendering of the PHP
+body (or with ``echo`` or any other functions that send output).
+
