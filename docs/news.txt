@@ -6,6 +6,9 @@ News
 svn trunk
 ---------
 
+* Added response attribute ``response.content_disposition`` for its
+  associated header.
+
 * Changed how ``charset`` is determined on :class:`webob.Request`
   objects.  Now the ``charset`` parameter is read on the Content-Type
   header, if it is present.  Otherwise a ``default_charset`` parameter
