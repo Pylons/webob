@@ -330,6 +330,6 @@ I haven't figured out the example I want to use here.  The
 advanced HTTP techniques, while the `comment middleware example
 <comment-example.html>`_ shows middleware.  For applications it's more
 reasonable to use WebOb in the context of a larger framework.  `Pylons
-<http://pylonshq.com>`_ uses WebOb optionally in 0.9.7+.
+<http://pylonshq.com>`_ uses WebOb in 0.9.7+.
 
 
