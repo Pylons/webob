@@ -626,7 +626,7 @@ class Request(object):
     def _content_type__del(self):
         if 'CONTENT_TYPE' in self.environ:
             del self.environ['CONTENT_TYPE']
-    
+
     content_type = property(_content_type__get, _content_type__set, _content_type__del,
                             _content_type__get.__doc__)
 
@@ -2180,8 +2180,8 @@ class Response(object):
         except ImportError:
             from md5 import md5
         h = md5(body)
-        md5_digest = h.digest().encode('base64').replace('\n', '').strip('=')
-        self.etag = md5_digest
+        md5_digest = h.digest().encode('base64').replace('\n', '')
+        self.etag = md5_digest.strip('=')
         if set_content_md5:
             self.content_md5 = md5_digest
         if set_conditional_response:
