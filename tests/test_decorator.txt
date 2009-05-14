@@ -1,0 +1,52 @@
+A test of the decorator module::
+
+    >>> from dtopt import ELLIPSIS
+    >>> from webob.dec import wsgify
+    >>> from webob import Response, Request
+    >>> @wsgify
+    ... def test_app(req):
+    ...     return 'hey, this is a test: %s' % req.url
+    >>> def testit(app, req):
+    ...     if isinstance(req, basestring):
+    ...         req = Request.blank(req)
+    ...     resp = req.get_response(app)
+    ...     print resp
+    >>> testit(test_app.wsgi_app, 'a url')
+    200 OK
+    Content-Type: text/html; charset=UTF-8
+    Content-Length: 44
+    <BLANKLINE>
+    hey, this is a test: http://localhosta%20url
+    >>> test_app
+    wsgify(test_app)
+    >>> test_app2 = wsgify(force_wsgi=True)
+    >>> test_app2
+    wsgify(force_wsgi=True)
+    >>> test_app2 = test_app2(test_app.func)
+    >>> test_app2
+    wsgify(test_app, force_wsgi=True)
+    >>> testit(test_app2, '/path')
+    200 OK
+    Content-Type: text/html; charset=UTF-8
+    Content-Length: 42
+    <BLANKLINE>
+    hey, this is a test: http://localhost/path
+
+Now some middleware testing::
+
+    >>> @wsgify.middleware
+    ... def set_urlvar(req, app, **vars):
+    ...     req.urlvars.update(vars)
+    ...     return app(req)
+    >>> @wsgify(add_urlvars=True)
+    ... def show_vars(req, **vars):
+    ...     return 'These are the vars: %r' % (sorted(vars.items()))
+    >>> show_vars2 = set_urlvar(show_vars.wsgi_app, a=1, b=2)
+    >>> show_vars2
+    wsgify.middleware(set_urlvar)(wsgify(webob.dec.method), a=1, b=2)
+    >>> testit(show_vars2.wsgi_app, '/path')
+    200 OK
+    Content-Type: text/html; charset=UTF-8
+    Content-Length: 40
+    <BLANKLINE>
+    These are the vars: [('a', 1), ('b', 2)]

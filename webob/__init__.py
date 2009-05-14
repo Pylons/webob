@@ -2255,6 +2255,27 @@ class Response(object):
 
     environ = property(_environ__get, _environ__set, _environ__del, doc=_environ__get.__doc__)
 
+    def merge_cookies(self, resp):
+        """Merge the cookies that were set on this response with the
+        given `resp` object (which can be any WSGI application).
+
+        If the `resp` is a :class:`webob.Response` object, then the
+        other object will be modified in-place.
+        """
+        if not self.headers.get('Set-Cookie'):
+            return resp
+        if isinstance(resp, Response):
+            for header in self.headers.getall('Set-Cookie'):
+                resp.headers.add('Set-Cookie', header)
+            return resp
+        else:
+            def repl_app(environ, start_response):
+                def repl_start_response(status, headers, exc_info=None):
+                    headers.extend(self.headers.getall('Set-Cookie'))
+                    return start_response(status, headers, exc_info=exc_info)
+                return resp(environ, repl_start_response)
+            return repl_app
+
     def __call__(self, environ, start_response):
         """
         WSGI application interface
