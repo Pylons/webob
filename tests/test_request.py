@@ -62,6 +62,49 @@ def test_mime_parsing():
     res = app.get('/', headers={'Accept':'application/xml,*/*'})
     assert "accepttypes is: application/xml" in res
 
+
+def test_accept_best_match():
+    req = Request.blank('/', headers={'Accept':'text/plain'})
+    assert req.accept.best_match(['*/*','text/*']) == 'text/*'
+    assert req.accept.best_match(['text/*','*/*']) == 'text/*'
+
+def test_from_mimeparse():
+    # http://mimeparse.googlecode.com/svn/trunk/mimeparse.py
+    supported = ['application/xbel+xml', 'application/xml']
+    tests = [('application/xbel+xml', 'application/xbel+xml'),
+             ('application/xbel+xml; q=1', 'application/xbel+xml'),
+             ('application/xml; q=1', 'application/xml'),
+             ('application/*; q=1', 'application/xml'),
+             ('*/*', 'application/xml')]
+
+    for accept, get in tests:
+        req = Request.blank('/', headers={'Accept':accept})
+        assert req.accept.best_match(supported) == get
+    
+    supported = ['application/xbel+xml', 'text/xml']
+    tests = [('text/*;q=0.5,*/*; q=0.1', 'text/xml'),
+             ('text/html,application/atom+xml; q=0.9', '')]
+    
+    for accept, get in tests:
+        req = Request.blank('/', headers={'Accept':accept})
+        assert req.accept.best_match(supported) == get
+    
+    supported = ['application/json', 'text/html']
+    tests = [('application/json, text/javascript, */*', 'application/json'),
+             ('application/json, text/html;q=0.9', 'application/json')]
+
+    for accept, get in tests:
+        req = Request.blank('/', headers={'Accept':accept})
+        assert req.accept.best_match(supported) == get
+
+    supported = ['image/*', 'application/xml']
+    tests = [('image/png', 'image/*'),
+             ('image/*', 'image/*')]
+
+    for accept, get in tests:
+        req = Request.blank('/', headers={'Accept':accept})
+        assert req.accept.best_match(supported) == get
+
 def test_headers():
     app = TestApp(simpleapp)
     headers = {
