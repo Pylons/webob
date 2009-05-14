@@ -215,7 +215,7 @@ no error checking or handling:
                 content_type='application/json',
                 body=dumps(dict(result=result,
                                 error=None,
-                                id=None)))
+                                id=id)))
             return resp
 
 As long as the request is properly formed and the method doesn't raise
@@ -253,10 +253,10 @@ And maybe all the keys aren't in the dictionary:
 
 And maybe it's trying to acces a private method (a method that starts
 with ``_``) -- that's not just a bad request, we'll call that case
-``403 Forbidden``.  Note that when we raise an exception we have to
-raise its ``.exception`` attribute, which contains the "real"
-exception object (as opposed to the ``web.Response`` based object,
-though on Python 2.5+ these are the same objects):
+``403 Forbidden``.  Note that when we raise an exception in Python 2.4
+we have to raise its ``.exception`` attribute, which contains the
+"real" exception object (as opposed to the ``web.Response`` based
+object): (In Python 2.5+ this isn't an issue)
 
 .. code-block:: python
 
@@ -439,7 +439,7 @@ you pass in a proxy application, in case you want to do local requests
                 proxy = proxy_exact_request
             self.proxy = proxy
 
-This proxy object itself doesn't do much, but you can call methods on
+This ServerProxy object itself doesn't do much, but you can call methods on
 it.  We can intercept any access ``ServerProxy(...).method`` with the
 magic function ``__getattr__``.  Whenever you get an attribute that
 doesn't exist in an instance, Python will call
@@ -475,7 +475,7 @@ Here's the code to do the call:
     class _Method(object):
         ...
 
-        def __call__(self, *args)
+        def __call__(self, *args):
             json = dict(method=self.name,
                         id=None,
                         params=list(args))
@@ -507,7 +507,7 @@ when a more expected exception occurs, i.e., the underlying method
 raised an exception.
 
 In both cases we'll keep the response object around, as that can be
-interesting.  Note that you can make exception have any methods or
+interesting.  Note that you can make exceptions have any methods or
 signature you want, which we'll do:
 
 .. code-block:: python
@@ -594,7 +594,7 @@ set ``environ['jsonrpc.request_value'] = dict(...)``, and avoid
 ``simplejson.dumps`` and ``simplejson.loads``.  We *could* do that,
 and if we did then it is possible our test would work even though the
 libraries were broken over HTTP.  But of course inspection shows we
-*don't* do that.  A little discipline is required not to play clever
+*don't* do that.  A little discipline is required to resist playing clever
 tricks (or else you can play those tricks and do more testing).
 Generally it works well.
 
