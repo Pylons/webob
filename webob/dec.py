@@ -99,7 +99,7 @@ class wsgify(object):
         return resp
 
     def __get__(self, obj, type=None):
-        if hasattr(obj, '__get__'):
+        if hasattr(self.func, '__get__'):
             return self.__class__(self.func.__get__(obj, type), **self._instance_args)
         else:
             return self
