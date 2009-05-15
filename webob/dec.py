@@ -218,9 +218,8 @@ class wsgify(object):
                 new_kw['add_keyword_args'] = config
                 return cls.middleware(middle_func, app, **new_kw)
             return middleware_factory
-        if not isinstance(app, cls):
-            if not reverse_args and hasattr(app, 'wsgi_app'):
-                app = app.wsgi_app
-            app = cls.reverse(app, **reverse_args)
+        if hasattr(app, 'wsgi_app'):
+            app = app.wsgi_app
+        app = cls.reverse(app, **reverse_args)
         return cls(middle_func, middleware_wraps=app, **kw)
 

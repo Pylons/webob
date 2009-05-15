@@ -173,3 +173,34 @@ Now a controller-like class::
     <BLANKLINE>
     The resource was found at http://localhost; you should be redirected automatically.  
 
+Now a status checking middleware::
+
+    >>> @wsgify.middleware
+    ... def catch(req, app, catchers):
+    ...     resp = app(req)
+    ...     return catchers.get(resp.status_int, resp)
+    >>> @wsgify
+    ... def simple(req):
+    ...     return other_app # Just to mess around
+    >>> @wsgify
+    ... def other_app(req):
+    ...     return Response('hey', status_int=int(req.path_info.strip('/')))
+    >>> app = catch(simple, catchers={500: Response('error!'), 404: Response('nothing')})
+    >>> print Request.blank('/200').get_response(app)
+    200 OK
+    Content-Type: text/html; charset=UTF-8
+    Content-Length: 3
+    <BLANKLINE>
+    hey
+    >>> print Request.blank('/500').get_response(app)
+    200 OK
+    Content-Type: text/html; charset=UTF-8
+    Content-Length: 6
+    <BLANKLINE>
+    error!
+    >>> print Request.blank('/404').get_response(app)
+    200 OK
+    Content-Type: text/html; charset=UTF-8
+    Content-Length: 7
+    <BLANKLINE>
+    nothing
