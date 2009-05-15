@@ -54,8 +54,7 @@ Now some middleware testing::
 
 Some examples from Sergey::
 
-    >>> from UserDict import UserDict
-    >>> class HostMap(UserDict, object):
+    >>> class HostMap(dict):
     ...     @wsgify
     ...     def __call__(self, req):
     ...         return self[req.host.split(':')[0]]
