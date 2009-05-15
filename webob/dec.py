@@ -176,7 +176,7 @@ class wsgify(object):
         return self.call(*args, **kw)
 
     @classmethod
-    def unwrap(cls, wsgi_app, **kw):
+    def reverse(cls, wsgi_app, **kw):
         """Takes a WSGI application and gives it a calling signature
         similar to a wrapped function (``resp = func(req)``)"""
         if hasattr(wsgi_app, 'wsgi_app'):
@@ -204,10 +204,10 @@ class wsgify(object):
 
             app = set_user(app, username='bob')
         """
-        if 'unwrap_args' in kw:
-            unwrap_args = kw.pop('unwrap_args')
+        if 'reverse_args' in kw:
+            reverse_args = kw.pop('reverse_args')
         else:
-            unwrap_args = {}
+            reverse_args = {}
         if middle_func is None:
             def middleware_decorator(func):
                 return cls.middleware(middle_func, app=app, **kw)
@@ -219,8 +219,8 @@ class wsgify(object):
                 return cls.middleware(middle_func, app, **new_kw)
             return middleware_factory
         if not isinstance(app, cls):
-            if not unwrap_args and hasattr(app, 'wsgi_app'):
+            if not reverse_args and hasattr(app, 'wsgi_app'):
                 app = app.wsgi_app
-            app = cls.unwrap(app, **unwrap_args)
+            app = cls.reverse(app, **reverse_args)
         return cls(middle_func, middleware_wraps=app, **kw)
 
