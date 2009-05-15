@@ -1362,6 +1362,8 @@ class Request(object):
         do this and there was an exception, the exception will be
         raised directly.
         """
+        if hasattr(application, 'wsgi_app'):
+            application = application.wsgi_app
         captured = []
         output = []
         def start_response(status, headers, exc_info=None):
