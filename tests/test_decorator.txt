@@ -3,6 +3,7 @@ A test of the decorator module::
     >>> from dtopt import ELLIPSIS
     >>> from webob.dec import wsgify
     >>> from webob import Response, Request
+    >>> from webob import exc
     >>> @wsgify
     ... def test_app(req):
     ...     return 'hey, this is a test: %s' % req.url
@@ -50,3 +51,125 @@ Now some middleware testing::
     Content-Length: 40
     <BLANKLINE>
     These are the vars: [('a', 1), ('b', 2)]
+
+Some examples from Sergey::
+
+    >>> from UserDict import UserDict
+    >>> class HostMap(UserDict, object):
+    ...     @wsgify
+    ...     def __call__(self, req):
+    ...         return self[req.host.split(':')[0]]
+    >>> app = HostMap()
+    >>> app['example.com'] = Response('1')
+    >>> app['other.com'] = Response('2')
+    >>> print Request.blank('http://example.com/').get_response(wsgify(app))
+    200 OK
+    Content-Type: text/html; charset=UTF-8
+    Content-Length: 1
+    <BLANKLINE>
+    1
+
+    >>> @wsgify.middleware
+    ... def override_https(req, normal_app, secure_app):
+    ...     if req.scheme == 'https':
+    ...         return secure_app
+    ...     else:
+    ...         return normal_app
+    >>> app = override_https(Response('http'), secure_app=Response('https'))
+    >>> print Request.blank('http://x.com/').get_response(app)
+    200 OK
+    Content-Type: text/html; charset=UTF-8
+    Content-Length: 4
+    <BLANKLINE>
+    http
+
+Now a controller-like class::
+
+    >>> def getapp(obj):
+    ...     if hasattr(obj, 'wsgi_app'):
+    ...         return obj.wsgi_app
+    ...     if hasattr(obj, '__call__') and hasattr(obj.__call__, 'wsgi_app'):
+    ...         return obj.__call__.wsgi_app
+    ...     return obj
+    >>> class instantiate_wsgi_app(object):
+    ...     def __get__(self, obj, type=None):
+    ...         if obj is None:
+    ...             def wsgi_app(environ, start_response):
+    ...                 instance = type()
+    ...                 if hasattr(instance.__call__, 'wsgi_app'):
+    ...                     instance = instance.__call__.wsgi_app
+    ...                 return instance(environ, start_response)
+    ...             return wsgi_app
+    ...         return getapp(obj)
+    >>> class Controller(object):
+    ...     def __before__(self):
+    ...         pass
+    ...     def __after__(self, resp):
+    ...         return resp
+    ...     @wsgify
+    ...     def __call__(self, req):
+    ...         self.__before__()
+    ...         action = req.urlvars.get('action', 'index')
+    ...         method = getattr(self, action, self.not_found)
+    ...         resp = method(req)
+    ...         resp = self.__after__(resp)
+    ...         return resp
+    ...     @wsgify
+    ...     def not_found(self, req):
+    ...         raise exc.HTTPNotFound()
+    ...     wsgi_app = instantiate_wsgi_app()
+    >>> class dispatch_method(object):
+    ...     def __init__(self, method_name, obj=None, not_found_attr='not_found'):
+    ...         self.method_name = method_name
+    ...         self.obj = obj
+    ...         self.not_found_attr = not_found_attr
+    ...     def __get__(self, obj, type=None):
+    ...         if obj is not None:
+    ...             return self.__class__(self.method_name, obj)
+    ...         else:
+    ...             return self.__class__(self.method_name, type)
+    ...     @wsgify
+    ...     def __call__(self, req):
+    ...         method = getattr(self.obj, '%s_%s' % (self.method_name, req.method), None)
+    ...         if method is None:
+    ...             method = getattr(self.obj, self.not_found_attr, exc.HTTPNotFound())
+    ...         return method(req)
+    >>> class MyController(Controller):
+    ...     def index(self, req):
+    ...         return Response('some menu of items')
+    ...     form = dispatch_method('form')
+    ...     def form_GET(self, req):
+    ...         return 'here is a form'
+    ...     def form_POST(self, req):
+    ...         raise exc.HTTPFound(location=req.application_url).exception
+    >>> import re
+    >>> class Router(object):
+    ...     def __init__(self, *items):
+    ...         self.items = list(items)
+    ...     def add(self, route, controller):
+    ...         self.items.append((route, controller))
+    ...     @wsgify
+    ...     def __call__(self, req):
+    ...         for route, controller in self.items:
+    ...             match = re.match(route, req.path_info)
+    ...             if match:
+    ...                 req.urlvars.update(match.groupdict())
+    ...                 return getapp(controller)
+    ...         raise exc.HTTPNotFound().exception
+    >>> router = Router()
+    >>> router.add('^/$', MyController)
+    >>> router.add('^/(?P<action>[^/]+)$', MyController)
+    >>> print Request.blank('/').get_response(getapp(router)).body
+    some menu of items
+    >>> print Request.blank('/form').get_response(getapp(router)).body
+    here is a form
+    >>> print Request.blank('/form', method='POST').get_response(getapp(router))
+    302 Found
+    Content-Type: text/html; charset=UTF-8
+    location: http://localhost
+    Content-Length: 96
+    <BLANKLINE>
+    302 Found
+    <BLANKLINE>
+    The resource was found at http://localhost; you should be redirected automatically.  
+
