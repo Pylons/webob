@@ -1,9 +1,15 @@
-
-
-
 from webob import Request, Response
 from webob.multidict import MultiDict
 from webob import converter
+
+def convert_multidict(prop):
+    return converter(prop, _convert_getter, _convert_setter)
+
+def _convert_getter(value):
+    return DjangoMultiDictWrapper(value)
+
+def _convert_setter(value):
+    return value
 
 class HttpRequest(Request):
     encoding = Request.charset
@@ -42,15 +48,6 @@ class DjangoMultiDictWrapper(object):
         return self.m.dict_of_lists()
     def __getattr__(self, attr):
         return getattr(self, m, attr)
-
-def convert_multidict(prop):
-    return converter(prop, convert_getter, convert_setter)
-
-def convert_getter(value):
-    return DjangoMultiDictWrapper(value)
-
-def convert_setter(value):
-    return value
     
 class HttpResponse(Response):
     def __init__(self, body, mimetype=None, content_type=None):
