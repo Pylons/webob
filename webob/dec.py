@@ -1,7 +1,7 @@
 import webob
 import webob.exc
 
-__all__ = ['wsgify']
+__all__ = ['wsgify', 'wsgiwrap']
 
 class wsgify(object):
 
@@ -192,6 +192,9 @@ class wsgify(object):
             reverse_args = {}
         app = cls.reverse(app, **reverse_args)
         return cls(middle_func, middleware_wraps=app, **kw)
+
+class wsgiwrap(wsgify):
+    force_wsgi = True
 
 class _UnboundMiddleware(object):
     def __init__(self, wrapper_class, app, kw):
