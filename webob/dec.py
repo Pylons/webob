@@ -1,3 +1,12 @@
+"""
+Decorators to wrap functions to make them WSGI applications.
+
+The main decorator :class:`wsgify` adds a ``.wsgi_app`` attribute to a
+function that is a WSGI application for that function.
+:class:`wsgiwrap` turns the function into a WSGI application (not as
+an attribute).
+"""
+
 import webob
 import webob.exc
 
