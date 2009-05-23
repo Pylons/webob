@@ -117,6 +117,10 @@ Now a controller-like class::
     ...     def not_found(self, req):
     ...         raise exc.HTTPNotFound()
     ...     wsgi_app = instantiate_wsgi_app()
+    >>> Controller.not_found
+    wsgify(Controller.not_found)
+    >>> Controller().not_found # doctest: +ELLIPSIS
+    wsgify(<Controller object at ...>.not_found)
     >>> class dispatch_method(object):
     ...     def __init__(self, method_name, obj=None, not_found_attr='not_found'):
     ...         self.method_name = method_name
