@@ -1251,7 +1251,7 @@ class Request(object):
 
     ## FIXME: 14.8 Authorization
     ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.8
-    authorization = environ_getter('HTTP_AUTHORIZATION', rfc_section='14.8') # anything else?
+    authorization = header_getter('Authorization', rfc_section='14.8') # anything else?
 
 
     def _cache_control__get(self):
