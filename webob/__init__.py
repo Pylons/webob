@@ -152,7 +152,7 @@ class header_getter(object):
             docstring += " and sets"
         if self.deletable:
             docstring += " and deletes"
-        docstring += " they header %s from the headers" % self.header
+        docstring += " the %s header" % self.header
         docstring += _rfc_reference(self.header, rfc_section)
         if doc:
             docstring += '\n\n' + textwrap.dedent(doc)
@@ -161,10 +161,10 @@ class header_getter(object):
     def __get__(self, obj, type=None):
         if obj is None:
             return self
-        if self.header not in obj.headers:
-            return self.default
-        else:
+        try:
             return obj.headers[self.header]
+        except KeyError:
+            return self.default
 
     def __set__(self, obj, value):
         if not self.settable:
@@ -1337,19 +1337,17 @@ class Request(object):
             abs(id(self)), self.method, self.url)
         return msg
 
-    def __str__(self):
+    def __str__(self, skip_body=False):
         url = self.url
         host = self.host_url
         assert url.startswith(host)
         url = url[len(host):]
-        if 'Host' not in self.headers:
-            self.headers['Host'] = self.host
         parts = ['%s %s' % (self.method, url)]
-        for name, value in sorted(self.headers.items()):
-            parts.append('%s: %s' % (name, value))
-        parts.append('')
-        parts.append(self.body)
-        return '\r\n'.join(parts)
+        self.headers.setdefault('Host', self.host)
+        parts += map('%s: %s'.__mod__, sorted(self.headers.items()))
+        if not skip_body and self.method in ('PUT', 'POST'):
+            parts += ['', self.body]
+        return '\n'.join(parts)
 
     def call_application(self, application, catch_exc_info=False):
         """
@@ -1586,12 +1584,12 @@ class Response(object):
             abs(id(self)),
             self.status)
 
-    def __str__(self):
-        return (self.status + '\n'
-                + '\n'.join(['%s: %s' % (name, value)
-                             for name, value in self.headerlist])
-                + '\n\n'
-                + self.body)
+    def __str__(self, skip_body=False):
+        parts = [self.status]
+        parts += map('%s: %s'.__mod__, self.headerlist)
+        if not skip_body and self.body:
+            parts += ['', self.body]
+        return '\n'.join(parts)
 
     def copy(self):
         """Makes a copy of the response"""
