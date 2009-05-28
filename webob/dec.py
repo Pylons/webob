@@ -9,6 +9,7 @@ an attribute).
 
 import webob
 import webob.exc
+from types import ClassType
 
 __all__ = ['wsgify', 'wsgiwrap']
 
@@ -30,6 +31,8 @@ class wsgify(object):
     add_keyword_args = {}
     # When this is middleware that wraps an application:
     middleware_wraps = None
+    # When this is used as an instantiator:
+    _instantiate_class = None
 
     def __init__(self, func=None, **kw):
         """Decorate `func` as a WSGI application
@@ -60,10 +63,13 @@ class wsgify(object):
             args = [_func_name(self.func)]
         args.extend(['%s=%r' % (name, value) for name, value in sorted(self._instance_args.items())
                      if name != 'middleware_wraps'
-                     and (name != 'add_keyword_args' or self.middleware_wraps is None)])
+                     and (name != 'add_keyword_args' or self.middleware_wraps is None)
+                     and (name != '_instantiate_class')])
         my_name = self.__class__.__name__
         if self.middleware_wraps is not None:
             my_name = '%s.middleware' % my_name
+        if self._instantiate_class is not None:
+            my_name = '%s.instantiator' % my_name
         r = '%s(%s)' % (
             my_name, ', '.join(args))
         if self.middleware_wraps:
@@ -71,6 +77,8 @@ class wsgify(object):
             if self.add_keyword_args:
                 args.extend(['%s=%r' % (name, value) for name, value in sorted(self.add_keyword_args.items())])
             r += '(%s)' % ', '.join(args)
+        if self._instantiate_class is not None and self._instantiate_class is not True:
+            r = '<%s bound to %s>' % (r, _func_name(self._instantiate_class))
         return r
 
     # To match @decorator:
@@ -79,6 +87,8 @@ class wsgify(object):
         return self.func
 
     def __call__(self, req, *args, **kw):
+        if self._instantiate_class is not None:
+            return self.wsgi_app(req, args[0])
         if self.func is None:
             func = req
             if not func or args or kw:
@@ -87,7 +97,7 @@ class wsgify(object):
         elif self.force_wsgi:
             if kw or len(args) != 1:
                 raise TypeError(
-                    "Incorrect WSGI signature: %r(%s)" % (self, _format_args(req, *args, **kw)))
+                    "Incorrect WSGI signature: %r(%s)" % (self, _format_args((req,)+args, kw)))
             return self.wsgi_app(req, args[0])
         else:
             return self.call(req, *args, **kw)
@@ -96,10 +106,15 @@ class wsgify(object):
         """Call the function like normal, normalizing the response if
         asked for
         """
-        try:
-            resp = self.func(req, *args, **kw)
-        except TypeError:
-            assert 0, '%r(%s)->%r' % (self.func, _format_args(req, *args, **kw), self.wsgi_app)
+        if self._instantiate_class is None:
+            args = (req,)+args
+            func = self.func
+        else:
+            if self._instantiate_class is True:
+                raise TypeError('%r called with no bound class (did you add it to a new-style class?'
+                                % self)
+            func = self._instantiate_class(req)
+        resp = func(*args, **kw)
         resp = self.normalize_response(req, resp)
         return resp
 
@@ -202,6 +217,28 @@ class wsgify(object):
         app = cls.reverse(app, **reverse_args)
         return cls(middle_func, middleware_wraps=app, **kw)
 
+    @classmethod
+    def instantiator(cls, **kw):
+        """Give a class a descriptor that will instantiate the class
+        with a request object, then call the instance with no
+        arguments.
+
+        Use this like::
+
+            class MyClass(object):
+                def __init__(self, req):
+                    self.req = req
+                def __call__(self):
+                    return Response('whatever')
+                wsgi_app = wsgify.instantiator()
+
+        Then ``MyClass.wsgi_app`` will be an application that will
+        instantiate the class *for every request*.  You can use settings
+        like ``add_urlvars`` with ``wsgify.instantiate``, and these will
+        effect how ``__call__`` is invoked.
+        """
+        return _Instantiator(cls, kw)
+
 class wsgiwrap(wsgify):
     force_wsgi = True
 
@@ -217,7 +254,7 @@ class _UnboundMiddleware(object):
             args = ()
         return '%s.middleware(%s)' % (
             self.wrapper_class.__name__,
-            _format_args(*args, **self.kw))
+            _format_args(args, self.kw))
     def __call__(self, func, app=None):
         if app is not None:
             app = self.app
@@ -231,14 +268,29 @@ class _MiddlewareFactory(object):
     def __repr__(self):
         return '%s.middleware(%s)' % (
             self.wrapper_class.__name__,
-            _format_args(self.middleware, **self.kw))
+            _format_args((self.middleware,), self.kw))
     def __call__(self, app, **config):
         kw = self.kw.copy()
         kw['add_keyword_args'] = config
         return self.wrapper_class.middleware(self.middleware, app, **kw)
 
+class _Instantiator(object):
+    def __init__(self, wsgify_class, wsgify_kw):
+        self.wsgify_class = wsgify_class
+        self.wsgify_kw = wsgify_kw
+    def __get__(self, obj, type=None):
+        if obj is not None:
+            return self.wsgify_class(obj, **self.wsgify_kw)
+        else:
+            return self.wsgify_class(_instantiate_class=type, **self.wsgify_kw)
+
 def _func_name(func):
     """Returns the string name of a function, or method, as best it can"""
+    if isinstance(func, (type, ClassType)):
+        name = func.__name__
+        if func.__module__ not in ('__main__', '__builtin__'):
+            name = '%s.%s' % (func.__module__, name)
+        return name
     name = getattr(func, 'func_name', None)
     if name is None:
         name = repr(func)
@@ -255,8 +307,51 @@ def _func_name(func):
             name = '%s.%s' % (module, name)
     return name
 
-def _format_args(*args, **kw):
+def _format_args(args=(), kw=None, leading_comma=False, obj=None, names=None, defaults=None):
+    if kw is None:
+        kw = {}
     all = [repr(arg) for arg in args]
+    if names is not None:
+        assert obj is not None
+        kw = {}
+        if isinstance(names, basestring):
+            names = names.split()
+        for name in names:
+            kw[name] = getattr(obj, name)
+    if defaults is not None:
+        kw = kw.copy()
+        for name, value in defaults.items():
+            if name in kw and value == kw[name]:
+                del kw[name]
     all.extend(['%s=%r' % (name, value) for name, value in sorted(kw.items())])
-    return ', '.join(all)
-    
+    result = ', '.join(all)
+    if result and leading_comma:
+        result = ', ' + result
+    return result
+
+class classapp(object):
+    def __init__(self, klass, construction_method=None, call_method='__call__'):
+        """This turns a class into a WSGI application."""
+        self.klass = klass
+        self.construction_method = construction_method
+        self.call_method = call_method
+    def __repr__(self):
+        args = {}
+        if self.construction_method is not None:
+            args['construction_method'] = self.construction_method
+        if self.call_method != '__call__':
+            args['call_method'] = self.call_method
+        return 'classapp(%s%s)' % (_func_name(self.klass),
+                                   _format_args(obj=self, names='construction_method call_method',
+                                                defaults=dict(construction_method=None, call_method='__call__'),
+                                                leading_comma=True))
+    @wsgify
+    def __call__(self, req):
+        if self.construction_method is None:
+            instantiator = self.klass
+        else:
+            instantiator = getattr(self.klass, self.construction_method)
+        instance = instantiator(req)
+        method = getattr(instance, self.call_method)
+        return method()
+

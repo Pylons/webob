@@ -207,3 +207,20 @@ Now a status checking middleware::
     Content-Length: 7
     <BLANKLINE>
     nothing
+
+Or, here's the instantiating descriptor::
+
+    >>> class MyClass(object):
+    ...     def __init__(self, req):
+    ...         self.req = req
+    ...     wsgi_app = wsgify.instantiator()
+    ...     def __call__(self):
+    ...         return 'Hi %s' % self.req.path_info
+    >>> MyClass.wsgi_app
+    <wsgify.instantiator() bound to MyClass>
+    >>> print Request.blank('/hey').get_response(MyClass)
+    200 OK
+    Content-Type: text/html; charset=UTF-8
+    Content-Length: 7
+    <BLANKLINE>
+    Hi /hey
