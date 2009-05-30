@@ -50,6 +50,10 @@ class wsgify(object):
         WSGI application (i.e., ``__call__`` acts as a WSGI application).
         """
         self.func = func
+        if func is not None:
+            for attr in ('__name__', 'func_name', 'func_doc', '__doc__'):
+                if hasattr(func, attr):
+                    setattr(self, attr, getattr(func, attr))
         self._instance_args = kw
         for name, value in kw.iteritems():
             if not hasattr(self, name):
