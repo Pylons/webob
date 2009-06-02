@@ -20,9 +20,6 @@ class wsgify(object):
     # Bind these attributes to the request object when the request
     # comes in:
     request_attrs = {}
-    # Replaces the function with a WSGI application instead of just
-    # attaching .wsgi_app:
-    force_wsgi = False
     # If true, then **req.urlvars are added to the signature
     add_urlvars = False
     # Positional arguments to add to the function call:
@@ -46,8 +43,7 @@ class wsgify(object):
 
         Note that the resulting object *is not itself a WSGI application*.
         Instead it has an attribute ``.wsgi_app`` which is a WSGI
-        application.  Unless you set ``.force_wsgi=True``, which makes it a
-        WSGI application (i.e., ``__call__`` acts as a WSGI application).
+        application.
         """
         self.func = func
         if func is not None:
@@ -98,13 +94,14 @@ class wsgify(object):
             if not func or args or kw:
                 raise TypeError('wsgiapp is unbound; you must call it with a function')
             return self.__class__(func, **self._instance_args)
-        elif self.force_wsgi:
-            if kw or len(args) != 1:
+        if type(req) is dict:
+            # A WSGI call
+            if len(args) != 1 or kw:
                 raise TypeError(
-                    "Incorrect WSGI signature: %r(%s)" % (self, _format_args((req,)+args, kw)))
+                    "Improper WSGI call signature: %r(%s)"
+                    % (self, _format_args((req,)+args, kw)))
             return self.wsgi_app(req, args[0])
-        else:
-            return self.call(req, *args, **kw)
+        return self.call(req, *args, **kw)
 
     def call(self, req, *args, **kw):
         """Call the function like normal, normalizing the response if
@@ -242,9 +239,6 @@ class wsgify(object):
         effect how ``__call__`` is invoked.
         """
         return _Instantiator(cls, kw)
-
-class wsgiwrap(wsgify):
-    force_wsgi = True
 
 class _UnboundMiddleware(object):
     def __init__(self, wrapper_class, app, kw):

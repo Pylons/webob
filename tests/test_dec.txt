@@ -20,18 +20,6 @@ A test of the decorator module::
     hey, this is a test: http://localhosta%20url
     >>> test_app
     wsgify(test_app)
-    >>> test_app2 = wsgify(force_wsgi=True)
-    >>> test_app2
-    wsgify(force_wsgi=True)
-    >>> test_app2 = test_app2(test_app.func)
-    >>> test_app2
-    wsgify(test_app, force_wsgi=True)
-    >>> testit(test_app2, '/path')
-    200 OK
-    Content-Type: text/html; charset=UTF-8
-    Content-Length: 42
-    <BLANKLINE>
-    hey, this is a test: http://localhost/path
 
 Now some middleware testing::
 
@@ -218,7 +206,7 @@ Or, here's the instantiating descriptor::
     ...         return 'Hi %s' % self.req.path_info
     >>> MyClass.wsgi_app
     <wsgify.instantiator() bound to MyClass>
-    >>> print Request.blank('/hey').get_response(MyClass)
+    >>> print Request.blank('/hey').get_response(MyClass.wsgi_app)
     200 OK
     Content-Type: text/html; charset=UTF-8
     Content-Length: 7
