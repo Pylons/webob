@@ -1635,6 +1635,10 @@ class Response(object):
         self.status = value
     status_int = property(_status_int__get, _status_int__set, doc=_status_int__get.__doc__)
 
+    status_code = deprecated_property(
+        status_int, 'status_code', 'use .status or .status_int instead',
+        warning=False)
+
     def _headerlist__get(self):
         """
         The list of response headers
