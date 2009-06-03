@@ -1611,6 +1611,9 @@ class Response(object):
         return self._status
 
     def _status__set(self, value):
+        if isinstance(value, unicode):
+            # Status messages have to be ASCII safe, so this is OK:
+            value = str(value)
         if isinstance(value, int):
             value = str(value)
         if not isinstance(value, str):
