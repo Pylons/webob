@@ -156,7 +156,7 @@ class Accept(object):
                 server_quality = 1
             for item, quality in self._parsed:
                 possible_quality = server_quality * quality
-                if possible_quality < best_quality:
+                if possible_quality <= best_quality:
                     continue
                 if self._match(item, match):
                     best_quality = possible_quality

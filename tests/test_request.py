@@ -60,12 +60,12 @@ def test_mime_parsing():
     assert "accepttypes is: application/xml" in res
     
     res = app.get('/', headers={'Accept':'application/xml,*/*'})
-    assert "accepttypes is: application/xml" in res
+    assert "accepttypes is: text/html" in res, str(res)
 
 
 def test_accept_best_match():
     req = Request.blank('/', headers={'Accept':'text/plain'})
-    assert req.accept.best_match(['*/*','text/*']) == 'text/*'
+    assert req.accept.best_match(['*/*','text/*']) == '*/*'
     assert req.accept.best_match(['text/*','*/*']) == 'text/*'
 
 def test_from_mimeparse():
@@ -74,8 +74,8 @@ def test_from_mimeparse():
     tests = [('application/xbel+xml', 'application/xbel+xml'),
              ('application/xbel+xml; q=1', 'application/xbel+xml'),
              ('application/xml; q=1', 'application/xml'),
-             ('application/*; q=1', 'application/xml'),
-             ('*/*', 'application/xml')]
+             ('application/*; q=1', 'application/xbel+xml'),
+             ('*/*', 'application/xbel+xml')]
 
     for accept, get in tests:
         req = Request.blank('/', headers={'Accept':accept})
@@ -83,7 +83,7 @@ def test_from_mimeparse():
     
     supported = ['application/xbel+xml', 'text/xml']
     tests = [('text/*;q=0.5,*/*; q=0.1', 'text/xml'),
-             ('text/html,application/atom+xml; q=0.9', '')]
+             ('text/html,application/atom+xml; q=0.9', None)]
     
     for accept, get in tests:
         req = Request.blank('/', headers={'Accept':accept})

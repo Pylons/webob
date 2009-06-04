@@ -19,6 +19,9 @@ svn trunk
 * Made the case of the Content-Type header consistent (note: this
   might break some doctests).
 
+* With ``req.accept.best_match([types])`` prefer the first type in the
+  list (previously it preferred later types).
+
 0.9.6.1
 -------
 
