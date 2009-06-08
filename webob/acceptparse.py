@@ -142,7 +142,9 @@ class Accept(object):
         The sequence can be a simple sequence, or you can have
         ``(match, server_quality)`` items in the sequence.  If you
         have these tuples then the client quality is multiplied by the
-        server_quality to get a total.
+        server_quality to get a total.  If two matches have equal
+        weight, then the one that shows up first in the `matches` list
+        will be returned.
 
         default_match (default None) is returned if there is no intersection.
         """
