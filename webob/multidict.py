@@ -12,7 +12,8 @@ try:
 except NameError:
     from webob.util.reversed import reversed
 
-__all__ = ['MultiDict', 'UnicodeMultiDict', 'NestedMultiDict', 'NoVars']
+__all__ = ['MultiDict', 'UnicodeMultiDict', 'NestedMultiDict', 'NoVars',
+           'TrackableMultiDict']
 
 class MultiDict(DictMixin):
 
@@ -423,6 +424,46 @@ class UnicodeMultiDict(DictMixin):
             yield self._decode_value(v)
 
 _dummy = object()
+
+class TrackableMultiDict(MultiDict):
+    tracker = None
+    name = None
+    def __init__(self, *args, **kw):
+        if '__tracker' in kw:
+            self.tracker = kw.pop('__tracker')
+        if '__name' in kw:
+            self.name = kw.pop('__name')
+        MultiDict.__init__(self, *args, **kw)
+    def __setitem__(self, key, value):
+        MultiDict.__setitem__(self, key, value)
+        self.tracker(self, key, value)
+    def add(self, key, value):
+        MultiDict.add(self, key, value)
+        self.tracker(self, key, value)
+    def __delitem__(self, key):
+        MultiDict.__delitem__(self, key)
+        self.tracker(self, key)
+    def clear(self):
+        MultiDict.clear(self)
+        self.tracker(self)
+    def setdefault(self, key, default=None):
+        result = MultiDict.setdefault(self, key, default)
+        self.tracker(self, key, result)
+        return result
+    def pop(self, key, *args):
+        result = MultiDict.pop(self, key, *args)
+        self.tracker(self, key)
+        return result
+    def popitem(self):
+        result = MultiDict.popitem(self)
+        self.tracker(self)
+        return result
+    def update(self, other=None, **kwargs):
+        MultiDict.update(self, other, **kwargs)
+        self.tracker(self)
+    def __repr__(self):
+        items = ', '.join(['(%r, %r)' % v for v in self.iteritems()])
+        return '%s([%s])' % (self.name or self.__class__.__name__, items)
 
 class NestedMultiDict(MultiDict):
     """

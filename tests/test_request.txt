@@ -5,6 +5,7 @@ fresh environment dictionary with all the basic keys such a dictionary
 should have.
 
     >>> from cStringIO import InputType
+    >>> from webob.compat import sorted
     >>> from dtopt import ELLIPSIS
     >>> from webob import Request, UTC
     >>> req = Request.blank('/')
@@ -127,7 +128,7 @@ You can also get access to the query string variables, of course:
 
     >>> req = Request.blank('/?a=b&d=e&d=f')
     >>> req.GET
-    MultiDict([('a', 'b'), ('d', 'e'), ('d', 'f')])
+    GET([('a', 'b'), ('d', 'e'), ('d', 'f')])
     >>> req.GET['d']
     'f'
     >>> req.GET.getall('d')
@@ -145,9 +146,8 @@ You can also get access to the query string variables, of course:
     >>> req.params.getall('d')
     ['e', 'f', 'g']
 
-Cookie are viewed as a dictionary (*view only*):
+Cookies are viewed as a dictionary (*view only*):
 
-    >>> from webob.compat import sorted
     >>> req = Request.blank('/')
     >>> req.environ['HTTP_COOKIE'] = 'var1=value1; var2=value2'
     >>> sorted(req.str_cookies.items())
@@ -322,3 +322,69 @@ Some query tests:
     >>> req.params.get('unknown')
     >>> req.params.get('unknown', '?')
     '?'
+
+Some updating of the query string:
+
+    >>> req = Request.blank('http://localhost/foo?a=b')
+    >>> req.GET
+    GET([('a', 'b')])
+    >>> req.GET['c'] = 'd'
+    >>> req.query_string
+    'a=b&c=d'
+
+And for dealing with file uploads:
+
+    >>> req = Request.blank('/posty')
+    >>> req.method = 'POST'
+    >>> req.content_type = 'multipart/form-data; boundary="foobar"'
+    >>> req.body = '''\
+    ... --foobar
+    ... Content-Disposition: form-data; name="a"
+    ... 
+    ... b
+    ... --foobar
+    ... Content-Disposition: form-data; name="upload"; filename="test.html"
+    ... Content-Type: text/html
+    ... 
+    ... <html>Some text...</html>
+    ... --foobar--
+    ... '''
+    >>> req.POST
+    MultiDict([('a', 'b'), ('upload', FieldStorage('upload', 'test.html'))])
+    >>> print req.body.replace('\r', '') # doctest: +REPORT_UDIFF
+    --foobar
+    Content-Disposition: form-data; name="a"
+    <BLANKLINE>
+    b
+    --foobar
+    Content-Disposition: form-data; name="upload"; filename="test.html"
+    Content-type: text/html
+    <BLANKLINE>
+    <html>Some text...</html>
+    --foobar--
+    >>> req.POST['c'] = 'd'
+    >>> req.POST
+    MultiDict([('a', 'b'), ('upload', FieldStorage('upload', 'test.html')), ('c', 'd')])
+    >>> req.body_file
+    <FakeCGIBody at ... viewing MultiDict([('a'...d')])>
+    >>> print req.body.replace('\r', '') # doctestx: +REPORT_UDIFF
+    --foobar
+    Content-Disposition: form-data; name="a"
+    <BLANKLINE>
+    b
+    --foobar
+    Content-Disposition: form-data; name="upload"; filename="test.html"
+    Content-type: text/html
+    <BLANKLINE>
+    <html>Some text...</html>
+    --foobar
+    Content-Disposition: form-data; name="c"
+    <BLANKLINE>
+    d
+    --foobar--
+
+Also reparsing works through the fake body:
+
+    >>> del req.environ['webob._parsed_post_vars']
+    >>> req.POST
+    MultiDict([('a', 'b'), ('upload', FieldStorage('upload', 'test.html')), ('c', 'd')])

@@ -13,7 +13,7 @@ import calendar
 import tempfile
 import warnings
 from webob.datastruct import EnvironHeaders
-from webob.multidict import MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
+from webob.multidict import TrackableMultiDict, MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
 from webob.etag import AnyETag, NoETag, ETagMatcher, IfRange, NoIfRange
 from webob.headerdict import HeaderDict
 from webob.statusreasons import status_reasons
@@ -161,10 +161,7 @@ class header_getter(object):
     def __get__(self, obj, type=None):
         if obj is None:
             return self
-        try:
-            return obj.headers[self.header]
-        except KeyError:
-            return self.default
+        return obj.headers.get(self.header, self.default)
 
     def __set__(self, obj, value):
         if not self.settable:
@@ -985,10 +982,10 @@ class Request(object):
             # Not an HTML form submission
             return NoVars('Not an HTML form submission (Content-Type: %s)'
                           % content_type)
+        fs_environ = env.copy()
         # FieldStorage assumes a default CONTENT_LENGTH of -1, but a
         # default of 0 is better:
-        env.setdefault('CONTENT_LENGTH', 0)
-        fs_environ = env.copy()
+        fs_environ.setdefault('CONTENT_LENGTH', '0')
         fs_environ['QUERY_STRING'] = ''
         fs = cgi.FieldStorage(fp=self.body_file,
                               environ=fs_environ,
@@ -1031,11 +1028,11 @@ class Request(object):
             if qs == source:
                 return vars
         if not source:
-            vars = MultiDict()
+            vars = TrackableMultiDict(__tracker=self._update_get, __name='GET')
         else:
-            vars = MultiDict(cgi.parse_qsl(
+            vars = TrackableMultiDict(cgi.parse_qsl(
                 source, keep_blank_values=True,
-                strict_parsing=False))
+                strict_parsing=False), __tracker=self._update_get, __name='GET')
         env['webob._parsed_query_vars'] = (vars, source)
         return vars
 
@@ -1044,6 +1041,11 @@ class Request(object):
     str_queryvars = deprecated_property(str_GET, 'str_queryvars',
                                         'use str_GET instead')
 
+    def _update_get(self, vars, key=None, value=None):
+        env = self.environ
+        qs = urllib.urlencode(vars.items())
+        env['QUERY_STRING'] = qs
+        env['webob._parsed_query_vars'] = (vars, qs)
 
     def GET(self):
         """
@@ -1407,7 +1409,7 @@ class Request(object):
             request=self)
 
     #@classmethod
-    def blank(cls, path, environ=None, base_url=None, headers=None, **kw):
+    def blank(cls, path, environ=None, base_url=None, headers=None, POST=None, **kw):
         """
         Create a blank request environ (and Request wrapper) with the
         given path (path should be urlencoded), and any keys from
@@ -1464,6 +1466,14 @@ class Request(object):
             'wsgi.multiprocess': False,
             'wsgi.run_once': False,
             }
+        if POST is not None:
+            env['REQUEST_METHOD'] = 'POST'
+            if hasattr(POST, 'items'):
+                POST = POST.items()
+            body = urllib.urlencode(POST)
+            env['wsgi.input'] = StringIO(body)
+            env['CONTENT_LENGTH'] = str(len(body))
+            env['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
         if base_url:
             scheme, netloc, path, query, fragment = urlparse.urlsplit(base_url)
             if query or fragment:
@@ -2262,6 +2272,27 @@ class Response(object):
 
     environ = property(_environ__get, _environ__set, _environ__del, doc=_environ__get.__doc__)
 
+    def merge_cookies(self, resp):
+        """Merge the cookies that were set on this response with the
+        given `resp` object (which can be any WSGI application).
+
+        If the `resp` is a :class:`webob.Response` object, then the
+        other object will be modified in-place.
+        """
+        if not self.headers.get('Set-Cookie'):
+            return resp
+        if isinstance(resp, Response):
+            for header in self.headers.getall('Set-Cookie'):
+                resp.headers.add('Set-Cookie', header)
+            return resp
+        else:
+            def repl_app(environ, start_response):
+                def repl_start_response(status, headers, exc_info=None):
+                    headers.extend(self.headers.getall('Set-Cookie'))
+                    return start_response(status, headers, exc_info=exc_info)
+                return resp(environ, repl_start_response)
+            return repl_app
+
     def __call__(self, environ, start_response):
         """
         WSGI application interface
@@ -2350,10 +2381,21 @@ cgi.FieldStorage.__repr__ = _cgi_FieldStorage__repr__patch
 
 class FakeCGIBody(object):
 
-    def __init__(self, vars):
+    def __init__(self, vars, content_type):
         self.vars = vars
+        self.content_type = content_type
         self._body = None
         self.position = 0
+
+    def seek(self, pos):
+        ## FIXME: this isn't strictly necessary, but it's important
+        ## when modifying POST parameters.  I wish there was a better
+        ## way to do this.
+        self._body = None
+        self.position = pos
+
+    def tell(self):
+        return self.position
 
     def read(self, size=-1):
         body = self._get_body()
@@ -2368,7 +2410,12 @@ class FakeCGIBody(object):
 
     def _get_body(self):
         if self._body is None:
-            self._body = urllib.urlencode(self.vars.items())
+            if self.content_type.lower().startswith('application/x-www-form-urlencoded'):
+                self._body = urllib.urlencode(self.vars.items())
+            elif self.content_type.lower().startswith('multipart/form-data'):
+                self._body = _encode_multipart(self.vars, self.content_type)
+            else:
+                assert 0, ('Bad content type: %r' % self.content_type)
         return self._body
 
     def readline(self, size=None):
@@ -2402,17 +2449,49 @@ class FakeCGIBody(object):
         inner = repr(self.vars)
         if len(inner) > 20:
             inner = inner[:15] + '...' + inner[-5:]
+        if self.position:
+            inner += ' at position %s' % self.position
         return '<%s at 0x%x viewing %s>' % (
             self.__class__.__name__,
             abs(id(self)), inner)
 
     #@classmethod
     def update_environ(cls, environ, vars):
-        obj = cls(vars)
+        obj = cls(vars, environ.get('CONTENT_TYPE', 'application/x-www-form-urlencoded'))
         environ['CONTENT_LENGTH'] = '-1'
         environ['wsgi.input'] = obj
 
     update_environ = classmethod(update_environ)
+
+def _encode_multipart(vars, content_type):
+    """Encode a multipart request body into a string"""
+    boundary_match = re.search(r'boundary=([^ ]+)', content_type, re.I)
+    if not boundary_match:
+        raise ValueError('Content-type: %r does not contain boundary' % content_type)
+    boundary = boundary_match.group(1).strip('"')
+    lines = []
+    for name, value in vars.iteritems():
+        lines.append('--%s' % boundary)
+        ## FIXME: encode the name like this?
+        assert name is not None, 'Value associated with no name: %r' % value
+        disp = 'Content-Disposition: form-data; name="%s"' % urllib.quote(name)
+        if getattr(value, 'filename', None):
+            disp += '; filename="%s"' % urllib.quote(value.filename)
+        lines.append(disp)
+        ## FIXME: should handle value.disposition_options
+        if getattr(value, 'type', None):
+            ct = 'Content-type: %s' % value.type
+            if value.type_options:
+                ct += ''.join(['; %s="%s"' % (ct_name, urllib.quote(ct_value))
+                               for ct_name, ct_value in sorted(value.type_options.items())])
+            lines.append(ct)
+        lines.append('')
+        if hasattr(value, 'value'):
+            lines.append(value.value)
+        else:
+            lines.append(value)
+    lines.append('--%s--' % boundary)
+    return '\r\n'.join(lines)
 
 class ResponseBodyFile(object):
 

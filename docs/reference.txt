@@ -196,7 +196,7 @@ Some examples:
 
     >>> req = Request.blank('/test?check=a&check=b&name=Bob')
     >>> req.GET
-    MultiDict([('check', 'a'), ('check', 'b'), ('name', 'Bob')])
+    GET([('check', 'a'), ('check', 'b'), ('name', 'Bob')])
     >>> req.GET['check']
     'b'
     >>> req.GET.getall('check')
@@ -252,7 +252,7 @@ Content-Type.
     >>> req.environ['CONTENT_LENGTH'] = str(len(req.body))
     >>> req.environ['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
     >>> req.GET
-    MultiDict([('check', 'a'), ('check', 'b'), ('name', 'Bob')])
+    GET([('check', 'a'), ('check', 'b'), ('name', 'Bob')])
     >>> req.POST
     MultiDict([('var1', 'value1'), ('var2', 'value2'), ('rep', '1'), ('rep', '2')])
 

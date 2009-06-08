@@ -12,7 +12,7 @@ def simpleapp(environ, start_response):
         'The get is %r' % request.GET,
         ' and Val is %s\n' % request.GET.get('name'),
         'The languages are: %s\n' % request.accept_language.best_matches('en-US'),
-        'The accepttypes is: %s\n' % request.accept.best_match(['text/html', 'application/xml']),
+        'The accepttypes is: %s\n' % request.accept.best_match(['application/xml', 'text/html']),
         'post is %r\n' % request.POST,
         'params is %r\n' % request.params,
         'cookies is %r\n' % request.cookies,
@@ -33,11 +33,11 @@ def test_gets():
     res = app.get('/')
     print res
     assert 'Hello' in res
-    assert "get is MultiDict([])" in res
+    assert "get is GET([])" in res
     assert "post is <NoVars: Not a form request>" in res
     
     res = app.get('/?name=george')
-    res.mustcontain("get is MultiDict([('name', 'george')])")
+    res.mustcontain("get is GET([('name', 'george')])")
     res.mustcontain("Val is george")
 
 def test_language_parsing():
@@ -60,7 +60,7 @@ def test_mime_parsing():
     assert "accepttypes is: application/xml" in res
     
     res = app.get('/', headers={'Accept':'application/xml,*/*'})
-    assert "accepttypes is: text/html" in res, str(res)
+    assert "accepttypes is: application/xml" in res, res
 
 
 def test_accept_best_match():
@@ -79,7 +79,8 @@ def test_from_mimeparse():
 
     for accept, get in tests:
         req = Request.blank('/', headers={'Accept':accept})
-        assert req.accept.best_match(supported) == get
+        assert req.accept.best_match(supported) == get, (
+            '%r generated %r instead of %r for %r' % (accept, req.accept.best_match(supported), get, supported))
     
     supported = ['application/xbel+xml', 'text/xml']
     tests = [('text/*;q=0.5,*/*; q=0.1', 'text/xml'),
@@ -87,7 +88,8 @@ def test_from_mimeparse():
     
     for accept, get in tests:
         req = Request.blank('/', headers={'Accept':accept})
-        assert req.accept.best_match(supported) == get
+        assert req.accept.best_match(supported) == get, (
+            'Got %r instead of %r for %r' % (req.accept.best_match(supported), get, supported))
     
     supported = ['application/json', 'text/html']
     tests = [('application/json, text/javascript, */*', 'application/json'),
@@ -95,7 +97,8 @@ def test_from_mimeparse():
 
     for accept, get in tests:
         req = Request.blank('/', headers={'Accept':accept})
-        assert req.accept.best_match(supported) == get
+        assert req.accept.best_match(supported) == get, (
+            '%r generated %r instead of %r for %r' % (accept, req.accept.best_match(supported), get, supported))
 
     supported = ['image/*', 'application/xml']
     tests = [('image/png', 'image/*'),

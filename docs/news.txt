@@ -22,6 +22,28 @@ svn trunk
 * With ``req.accept.best_match([types])`` prefer the first type in the
   list (previously it preferred later types).
 
+* Make ``req.GET`` settable, such that ``req.environ['QUERY_STRING']``
+  is updated.
+
+* Fix problem with ``req.POST`` causing a re-parse of the body when
+  you instantiate multiple ``Request`` objects over the same environ
+  (e.g., when using middleware that looks at ``req.POST``). 
+
+* Recreate the request body properly when a ``POST`` includes file
+  uploads.  
+
+* When ``req.POST`` is updated, the generated body will include the
+  new values.
+
+* Added a ``POST`` parameter to :method:`webob.Request.blank`; when
+  given this will create a request body for the POST parameters (list
+  of two-tuples or dictionary-like object).  Note: this does not
+  handle unicode or file uploads.
+
+* Added method :method:`webob.Response.merge_cookies`, which takes the
+  ``Set-Cookie`` headers from a Response, and merges them with another
+  response or WSGI application.  (This is useful for flash messages.)
+
 0.9.6.1
 -------
 
