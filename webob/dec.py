@@ -13,140 +13,74 @@ from types import ClassType
 
 __all__ = ['wsgify', 'wsgiwrap']
 
-class wsgify(object):
-
-    # The class to use for requests:
+class wsgiwrap(object):
     RequestClass = webob.Request
-    # Bind these attributes to the request object when the request
-    # comes in:
-    request_attrs = {}
-    # If true, then **req.urlvars are added to the signature
-    add_urlvars = False
-    # Positional arguments to add to the function call:
-    add_call_args = ()
-    # Keyword arguments to add to the function call:
-    add_keyword_args = {}
-    # When this is middleware that wraps an application:
     middleware_wraps = None
-    # When this is used as an instantiator:
-    _instantiate_class = None
+    add_keyword_args = None
 
-    def __init__(self, func=None, **kw):
-        """Decorate `func` as a WSGI application
-
-        If `func` is None, then this is a lazy binding of ``**kw`` and
-        the resulting object is a decorator for the func, like::
-
-            @wsgify(add_urlvars=True)
-            def app(req, *args, **kw):
-                return Response(...)
-
-        Note that the resulting object *is not itself a WSGI application*.
-        Instead it has an attribute ``.wsgi_app`` which is a WSGI
-        application.
-        """
+    def __init__(self, func=None, RequestClass=None, middleware_wraps=None,
+                 add_keyword_args=None):
         self.func = func
-        if func is not None:
-            for attr in ('__name__', 'func_name', 'func_doc', '__doc__'):
-                if hasattr(func, attr):
-                    setattr(self, attr, getattr(func, attr))
-        self._instance_args = kw
-        for name, value in kw.iteritems():
-            if not hasattr(self, name):
-                raise TypeError("Unexpected argument: %s" % name)
-            setattr(self, name, value)
+        if RequestClass is not None:
+            self.RequestClass = RequestClass
+        if middleware_wraps is not None:
+            self.middleware_wraps = middleware_wraps
+        if add_keyword_args is not None:
+            self.add_keyword_args = add_keyword_args
 
     def __repr__(self):
-        if self.func is None:
-            args = []
-        else:
-            args = [_func_name(self.func)]
-        args.extend(['%s=%r' % (name, value) for name, value in sorted(self._instance_args.items())
-                     if name != 'middleware_wraps'
-                     and (name != 'add_keyword_args' or self.middleware_wraps is None)
-                     and (name != '_instantiate_class')])
-        my_name = self.__class__.__name__
+        kw = {}
+        if self.RequestClass is not self.__class__.RequestClass:
+            kw['RequestClass'] = self.RequestClass
         if self.middleware_wraps is not None:
-            my_name = '%s.middleware' % my_name
-        if self._instantiate_class is not None:
-            my_name = '%s.instantiator' % my_name
-        r = '%s(%s)' % (
-            my_name, ', '.join(args))
-        if self.middleware_wraps:
-            args = [repr(self.middleware_wraps)]
-            if self.add_keyword_args:
-                args.extend(['%s=%r' % (name, value) for name, value in sorted(self.add_keyword_args.items())])
-            r += '(%s)' % ', '.join(args)
-        if self._instantiate_class is not None and self._instantiate_class is not True:
-            r = '<%s bound to %s>' % (r, _func_name(self._instantiate_class))
-        return r
+            kw['middleware_wraps'] = self.middleware_wraps
+        if self.add_keyword_args is not None:
+            kw['add_keyword_args'] = self.add_keyword_args
+        if self.func is not None:
+            args = (self.func,)
+        else:
+            args = ()
+        return '%s(%s)' % (self.__class__.__name__, _format_args(args, kw))
 
-    # To match @decorator:
     @property
     def undecorated(self):
         return self.func
 
     def __call__(self, req, *args, **kw):
-        if self._instantiate_class is not None:
-            return self.wsgi_app(req, args[0])
         if self.func is None:
             func = req
             if not func or args or kw:
                 raise TypeError('wsgiapp is unbound; you must call it with a function')
-            return self.__class__(func, **self._instance_args)
-        if type(req) is dict:
+            return self._clone(func)
+        if type(req) is dist:
             # A WSGI call
             if len(args) != 1 or kw:
                 raise TypeError(
                     "Improper WSGI call signature: %r(%s)"
                     % (self, _format_args((req,)+args, kw)))
             return self.wsgi_app(req, args[0])
-        return self.call(req, *args, **kw)
+        return self.func(req, *args, **kw)
 
-    def call(self, req, *args, **kw):
-        """Call the function like normal, normalizing the response if
-        asked for
-        """
-        if self._instantiate_class is None:
-            args = (req,)+args
-            func = self.func
-        else:
-            if self._instantiate_class is True:
-                raise TypeError('%r called with no bound class (did you add it to a new-style class?'
-                                % self)
-            func = self._instantiate_class(req)
-        resp = func(*args, **kw)
-        resp = self.normalize_response(req, resp)
-        return resp
+    def _clone(self, new_func):
+        return self.__class__(new_func, RequestClass=self.__dict__.get('RequestClass'),
+                              middleware_wraps=self.__dict__.get('middleware_wraps'),
+                              add_keyword_args=self.__dict__.get('add_keyword_args'))
 
     def __get__(self, obj, type=None):
         if hasattr(self.func, '__get__'):
-            return self.__class__(self.func.__get__(obj, type), **self._instance_args)
+            return self._clone(self.func.__get__(obj, type))
         else:
             return self
 
     def wsgi_app(self, environ, start_response):
-        """The WSGI calling signature for this wrapped function"""
-        req = self.RequestClass(environ, **self.request_attrs)
+        req = self.RequestClass(environ)
         req.response = req.ResponseClass()
         req.response.request = req
-        # Hacky, but I think it improves the traceback: (?)
-        if self.handle_exception:
-            handle_exception = Exception # Catches all (well, most) exceptions
-        else:
-            handle_exception = None      # Catches no exceptions
         try:
             resp = self.apply(req)
         except webob.exc.HTTPException, resp:
             pass # the exception is the new response
-        except handle_exception, e:
-            resp = self.handle_exception(req, e)
-            if resp is None:
-                raise
         resp = self.normalize_response(req, resp)
-        if hasattr(resp, 'wsgi_app'):
-            # Allows chaining return values
-            resp = resp.wsgi_app
         return resp(environ, start_response)
 
     def normalize_response(self, req, resp):
@@ -161,34 +95,11 @@ class wsgify(object):
             resp = req.response.merge_cookies(resp)
         return resp
 
-    # Optional exception handler:
-    handle_exception = None
-
     def apply(self, req):
-        """For use by subclasses to override the calling signature"""
         args = (req,)
         if self.middleware_wraps:
             args += (self.middleware_wraps,)
-        if self.add_call_args:
-            args += tuple(self.add_call_args)
-        if self.add_urlvars:
-            args = args + tuple(req.urlargs)
-            kw = req.urlvars
-        else:
-            kw = {}
-        if self.add_keyword_args:
-            kw.update(self.add_keyword_args)
-        return self.call(*args, **kw)
-
-    @classmethod
-    def reverse(cls, wsgi_app):
-        """Takes a WSGI application and gives it a calling signature
-        similar to a wrapped function (``resp = func(req)``)"""
-        if hasattr(wsgi_app, 'wsgi_app'):
-            wsgi_app = wsgi_app.wsgi_app
-        def method(req):
-            return req.get_response(wsgi_app)
-        return cls(method)
+        return self.func(*args)
 
     @classmethod
     def middleware(cls, middle_func=None, app=None, **kw):
@@ -209,36 +120,40 @@ class wsgify(object):
             return _UnboundMiddleware(cls, app, kw)
         if app is None:
             return _MiddlewareFactory(cls, middle_func, kw)
-        if hasattr(app, 'wsgi_app'):
-            app = app.wsgi_app
-        if 'reverse_args' in kw:
-            reverse_args = kw.pop('reverse_args')
-        else:
-            reverse_args = {}
-        app = cls.reverse(app, **reverse_args)
         return cls(middle_func, middleware_wraps=app, **kw)
 
-    @classmethod
-    def instantiator(cls, **kw):
-        """Give a class a descriptor that will instantiate the class
-        with a request object, then call the instance with no
-        arguments.
+class _UnboundMiddleware(object):
+    def __init__(self, wrapper_class, app, kw):
+        self.wrapper_class = wrapper_class
+        self.app = app
+        self.kw = kw
+    def __repr__(self):
+        if self.app:
+            args = (self.app,)
+        else:
+            args = ()
+        return '%s.middleware(%s)' % (
+            self.wrapper_class.__name__,
+            _format_args(args, self.kw))
+    def __call__(self, func, app=None):
+        if app is not None:
+            app = self.app
+        return self.wrapper_class.middleware(func, app=app, **self.kw)
 
-        Use this like::
+class _MiddlewareFactory(object):
+    def __init__(self, wrapper_class, middleware, kw):
+        self.wrapper_class = wrapper_class
+        self.middleware = middleware
+        self.kw = kw
+    def __repr__(self):
+        return '%s.middleware(%s)' % (
+            self.wrapper_class.__name__,
+            _format_args((self.middleware,), self.kw))
+    def __call__(self, app, **config):
+        kw = self.kw.copy()
+        kw['add_keyword_args'] = config
+        return self.wrapper_class.middleware(self.middleware, app, **kw)
 
-            class MyClass(object):
-                def __init__(self, req):
-                    self.req = req
-                def __call__(self):
-                    return Response('whatever')
-                wsgi_app = wsgify.instantiator()
-
-        Then ``MyClass.wsgi_app`` will be an application that will
-        instantiate the class *for every request*.  You can use settings
-        like ``add_urlvars`` with ``wsgify.instantiate``, and these will
-        effect how ``__call__`` is invoked.
-        """
-        return _Instantiator(cls, kw)
 
 class _UnboundMiddleware(object):
     def __init__(self, wrapper_class, app, kw):
@@ -326,30 +241,4 @@ def _format_args(args=(), kw=None, leading_comma=False, obj=None, names=None, de
     if result and leading_comma:
         result = ', ' + result
     return result
-
-class classapp(object):
-    def __init__(self, klass, construction_method=None, call_method='__call__'):
-        """This turns a class into a WSGI application."""
-        self.klass = klass
-        self.construction_method = construction_method
-        self.call_method = call_method
-    def __repr__(self):
-        args = {}
-        if self.construction_method is not None:
-            args['construction_method'] = self.construction_method
-        if self.call_method != '__call__':
-            args['call_method'] = self.call_method
-        return 'classapp(%s%s)' % (_func_name(self.klass),
-                                   _format_args(obj=self, names='construction_method call_method',
-                                                defaults=dict(construction_method=None, call_method='__call__'),
-                                                leading_comma=True))
-    @wsgify
-    def __call__(self, req):
-        if self.construction_method is None:
-            instantiator = self.klass
-        else:
-            instantiator = getattr(self.klass, self.construction_method)
-        instance = instantiator(req)
-        method = getattr(instance, self.call_method)
-        return method()
 
