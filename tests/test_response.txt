@@ -122,7 +122,10 @@ properties:
     None
     >>> res.etag = 'foo'
     >>> (res.etag, res.headers['etag'])
-    ('foo', 'foo')
+    ('foo', '"foo"')
+    >>> res.etag = 'something-with-"quotes"'
+    >>> (res.etag, res.headers['etag'])
+    ('something-with-"quotes"', '"something-with-\\"quotes\\""')
     >>> res.expires = res.date
     >>> res.retry_after = 120 # two minutes
     >>> res.retry_after

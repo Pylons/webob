@@ -29,6 +29,8 @@ _CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
 _SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
 _PARAM_RE = re.compile(r'([a-z0-9]+)=(?:"([^"]*)"|([a-z0-9_.-]*))', re.I)
 _OK_PARAM_RE = re.compile(r'^[a-z0-9_.-]+$', re.I)
+_QUOTES_RE = re.compile('"(.*)"')
+
 
 __all__ = ['Request', 'Response', 'UTC', 'day', 'week', 'hour', 'minute', 'second', 'month', 'year', 'html_escape']
 
@@ -388,6 +390,24 @@ def _serialize_etag(value, default=True):
         else:
             return '*'
     return str(value)
+
+# FIXME: weak entity tags are not supported, would need special class
+def _parse_etag_response(value):
+    """
+    See:
+        * http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.19
+        * http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.11
+    """
+    if value is not None:
+        unquote_match = _QUOTES_RE.match(value)
+        if unquote_match is not None:
+            value = unquote_match.group(1)
+            value = value.replace('\\"', '"')
+        return value
+
+def _serialize_etag_response(value):
+    if value is not None:
+        return '"%s"' % value.replace('"', '\\"')
 
 def _parse_if_range(value):
     if not value:
@@ -1085,8 +1105,6 @@ class Request(object):
 
     params = property(params, doc=params.__doc__)
 
-    _rx_quotes = re.compile('"(.*)"')
-
     def str_cookies(self):
         """
         Return a *plain* dictionary of cookies as found in the request.
@@ -1103,7 +1121,7 @@ class Request(object):
             cookies.load(source)
             for name in cookies:
                 value = cookies[name].value
-                unquote_match = self._rx_quotes.match(value)
+                unquote_match = _QUOTES_RE.match(value)
                 if unquote_match is not None:
                     value = unquote_match.group(1)
                 vars[name] = value
@@ -2179,7 +2197,9 @@ class Response(object):
         header_getter('Date', rfc_section='14.18'),
         _parse_date, _serialize_date, 'HTTP date')
 
-    etag = header_getter('ETag', rfc_section='14.19')
+    etag = converter(
+        header_getter('ETag', rfc_section='14.19'),
+        _parse_etag_response, _serialize_etag_response, 'Entity tag')
 
     def md5_etag(self, body=None, set_content_md5=False, set_conditional_response=False):
         """
