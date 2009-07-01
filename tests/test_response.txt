@@ -152,7 +152,7 @@ request object attached.
     'http://localhost/test2.html'
 
 There's some conditional response handling too (you have to turn on
-conditioanl_response)::
+conditional_response)::
 
     >>> res = Response(conditional_response=True)
     >>> req = Request.blank('/')
