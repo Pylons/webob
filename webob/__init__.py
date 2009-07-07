@@ -31,6 +31,11 @@ _PARAM_RE = re.compile(r'([a-z0-9]+)=(?:"([^"]*)"|([a-z0-9_.-]*))', re.I)
 _OK_PARAM_RE = re.compile(r'^[a-z0-9_.-]+$', re.I)
 _QUOTES_RE = re.compile('"(.*)"')
 
+if sys.version >= '2.6':
+    parse_qsl = urlparse.parse_qsl
+else:
+    parse_qsl = cgi.parse_qsl
+
 
 __all__ = ['Request', 'Response', 'UTC', 'day', 'week', 'hour', 'minute', 'second', 'month', 'year', 'html_escape']
 
@@ -1050,7 +1055,7 @@ class Request(object):
         if not source:
             vars = TrackableMultiDict(__tracker=self._update_get, __name='GET')
         else:
-            vars = TrackableMultiDict(cgi.parse_qsl(
+            vars = TrackableMultiDict(parse_qsl(
                 source, keep_blank_values=True,
                 strict_parsing=False), __tracker=self._update_get, __name='GET')
         env['webob._parsed_query_vars'] = (vars, source)

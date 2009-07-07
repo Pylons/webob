@@ -1,5 +1,12 @@
 This demonstrates how the Request object works, and tests it.
 
+To test for absense of PendingDeprecationWarning's we should reset
+default warning filters
+
+    >>> import warnings
+    >>> warnings.resetwarnings()
+
+
 You can instantiate a request using ``Request.blank()``, to create a
 fresh environment dictionary with all the basic keys such a dictionary
 should have.
