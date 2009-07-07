@@ -1,6 +1,10 @@
 from cStringIO import StringIO
 import sys
 import cgi
+try:
+    from urlparse import parse_qsl
+except ImportError:
+    from cgi import parse_qsl
 import urllib
 import urlparse
 import re
@@ -1030,7 +1034,7 @@ class Request(object):
         if not source:
             vars = TrackableMultiDict(__tracker=self._update_get, __name='GET')
         else:
-            vars = TrackableMultiDict(cgi.parse_qsl(
+            vars = TrackableMultiDict(parse_qsl(
                 source, keep_blank_values=True,
                 strict_parsing=False), __tracker=self._update_get, __name='GET')
         env['webob._parsed_query_vars'] = (vars, source)
