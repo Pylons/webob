@@ -2358,7 +2358,8 @@ class Response(object):
         if (req.range and req.if_range.match_response(self)
             and self.content_range is None
             and req.method == 'GET'
-            and self.status_int == 200):
+            and self.status_int == 200
+        ):
             content_range = req.range.content_range(self.content_length)
             if content_range is not None:
                 app_iter = self.app_iter_range(content_range.start, content_range.stop)

@@ -114,7 +114,7 @@ properties:
     'http://localhost:8080'
     >>> res.content_range = (0, 100, 1000)
     >>> (res.content_range, res.headers['content-range'])
-    (<ContentRange bytes 0-101/1000>, 'bytes 0-101/1000')
+    (<ContentRange bytes 0-99/1000>, 'bytes 0-99/1000')
     >>> res.date = datetime(2005, 1, 1, 12, 0, tzinfo=UTC)
     >>> (res.date, res.headers['date'])
     (datetime.datetime(2005, 1, 1, 12, 0, tzinfo=UTC), 'Sat, 01 Jan 2005 12:00:00 GMT')
@@ -157,7 +157,7 @@ request object attached.
 There's some conditional response handling too (you have to turn on
 conditioanl_response)::
 
-    >>> res = Response(conditional_response=True)
+    >>> res = Response(conditional_response=True) # doctest: +ELLIPSIS
     >>> req = Request.blank('/')
     >>> res.etag = 'tag'
     >>> req.if_none_match = 'tag'
@@ -180,21 +180,25 @@ conditioanl_response)::
 
 Also range response::
 
-    >>> res = Response(conditional_response=True)
-    >>> req = Request.blank('/')
-    >>> res.body = '0123456789'
-    >>> req.range = (1, 5)
+    >>> res = Response('0123456789', conditional_response=True)
+    >>> req = Request.blank('/', range=(1, 5))
+    >>> req.range
+    <Range ranges=(1, 5)>
+    >>> str(req.range)
+    'bytes=1-4'
     >>> result = req.get_response(res)
     >>> result.body
     '1234'
+    >>> result.content_range.stop
+    5
     >>> result.content_range
-    <ContentRange bytes 1-6/10>
+    <ContentRange bytes 1-4/10>
     >>> tuple(result.content_range)
     (1, 5, 10)
     >>> # Now an invalid range:
     >>> req.range = (0, 20)
     >>> str(req.range)
-    'bytes=0-21'
+    'bytes=0-19'
     >>> result = req.get_response(res)
     >>> result.body
     '0123456789'
@@ -222,12 +226,14 @@ That was easier; we'll try it with a iterator for the body::
     <ContentRange bytes 5-*/10>
     >>> # If we set Content-Length then we can use it with an app_iter
     >>> res.content_length = 10
-    >>> req.range = (1, 5)
+    >>> req.range = (1, 5) # python-style range
+    >>> req.range
+    <Range ranges=(1, 5)>
     >>> result = req.get_response(res)
     >>> result.body
     '1234'
     >>> result.content_range
-    <ContentRange bytes 1-6/10>
+    <ContentRange bytes 1-4/10>
     >>> # And trying If-modified-since
     >>> res.etag = 'foobar'
     >>> req.if_range = 'foobar'
@@ -235,7 +241,7 @@ That was easier; we'll try it with a iterator for the body::
     <IfRange etag=foobar, date=*>
     >>> result = req.get_response(res)
     >>> result.content_range
-    <ContentRange bytes 1-6/10>
+    <ContentRange bytes 1-4/10>
     >>> req.if_range = 'blah'
     >>> result = req.get_response(res)
     >>> result.content_range
@@ -243,7 +249,7 @@ That was easier; we'll try it with a iterator for the body::
     >>> res.last_modified = datetime(2005, 1, 1, 12, 0, tzinfo=UTC)
     >>> result = req.get_response(res)
     >>> result.content_range
-    <ContentRange bytes 1-6/10>
+    <ContentRange bytes 1-4/10>
     >>> res.last_modified = datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
     >>> result = req.get_response(res)
     >>> result.content_range

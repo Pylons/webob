@@ -285,16 +285,16 @@ Ranges work like so::
     >>> req.range
     <Range ranges=(0, 100)>
     >>> str(req.range)
-    'bytes=0-101'
+    'bytes=0-99'
 
 You can use them with responses::
 
     >>> res = Response()
     >>> res.content_range = req.range.content_range(1000)
     >>> res.content_range
-    <ContentRange bytes 0-101/1000>
+    <ContentRange bytes 0-99/1000>
     >>> str(res.content_range)
-    'bytes 0-101/1000'
+    'bytes 0-99/1000'
     >>> start, end, length = res.content_range
     >>> start, end, length
     (0, 100, 1000)
@@ -347,12 +347,12 @@ And for dealing with file uploads:
     >>> req.body = '''\
     ... --foobar
     ... Content-Disposition: form-data; name="a"
-    ... 
+    ...
     ... b
     ... --foobar
     ... Content-Disposition: form-data; name="upload"; filename="test.html"
     ... Content-Type: text/html
-    ... 
+    ...
     ... <html>Some text...</html>
     ... --foobar--
     ... '''

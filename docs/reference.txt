@@ -84,7 +84,7 @@ start, but you can set it to a string and that will be turned into a
 file-like object.  You can read the entire body with
 ``req.body``.
 
-.. code-block:: python 
+.. code-block:: python
 
     >>> import cStringIO
     >>> isinstance(req.body_file, cStringIO.InputType)
@@ -455,10 +455,10 @@ To get the range information:
 
     >>> req.range = 'bytes=0-100'
     >>> req.range
-    <Range ranges=(0, 99)>
+    <Range ranges=(0, 101)>
     >>> cr = req.range.content_range(length=1000)
     >>> cr.start, cr.stop, cr.length
-    (0, 99, 1000)
+    (0, 101, 1000)
 
 Note that the range headers use *inclusive* ranges (the last byte
 indexed is included), where Python always uses a range where the last
@@ -482,7 +482,7 @@ unchanged".
     True
     >>> req.if_match = 'other-token'
     >>> # Not OK, should return 412 Precondition Failed:
-    >>> server_token in req.if_match 
+    >>> server_token in req.if_match
     False
 
 For more on this kind of conditional request, see `Detecting the Lost
@@ -533,7 +533,7 @@ Ad-Hoc Attributes
 -----------------
 
 You can assign attributes to your request objects.  They will all go
-in ``environ['webob.adhoc_attrs']`` (a dictionary).  
+in ``environ['webob.adhoc_attrs']`` (a dictionary).
 
 .. code-block:: python
 
@@ -725,7 +725,7 @@ Other headers:
 
     >>> # Means we are serving bytes 0-500 inclusive, out of 1000 bytes total:
     >>> # you can also use the range setter shown earlier
-    >>> res.content_range = (0, 499, 1000)
+    >>> res.content_range = (0, 501, 1000)
 
     >>> # The length of the content; set automatically if you set
     >>> # res.body:
@@ -996,6 +996,6 @@ To enable this you must create the response like
     >>> req.range = (1, 5)
     >>> result = req.get_response(res)
     >>> result.headers['content-range']
-    'bytes 1-6/10'
+    'bytes 1-4/10'
     >>> result.body
     '1234'
