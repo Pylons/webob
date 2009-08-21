@@ -42,7 +42,8 @@ class Range(object):
             return (begin, None)
         elif length is None or end > length:
             return None # Unsatisfiable
-        return (begin, end)
+        else:
+            return (begin, end)
 
     def content_range(self, length):
         """
@@ -99,10 +100,10 @@ class Range(object):
     #@staticmethod
     def parse_bytes(header):
         """
-        Parse a Range header into (bytes, list_of_ranges).
-        ranges in list_of_ranges are non-inclusive (unlike the HTTP header).
+            Parse a Range header into (bytes, list_of_ranges).
+            ranges in list_of_ranges are non-inclusive (unlike the HTTP header).
 
-        Will return None if the header is invalid
+            Will return None if the header is invalid
         """
         if not header:
             raise TypeError(
@@ -117,12 +118,7 @@ class Range(object):
                     raise ValueError()
                 if item.startswith('-'):
                     # This is a range asking for a trailing chunk.
-                    # There's little support for it anywhere else in this module,
-                    # so maybe we should just treat this header as invalid?
-                    #raise ValueError("End-ranges are not supported (%s)" % item)
                     if last_end < 0:
-                        # FIXME: this detection is not good enough
-                        # bytes=-100,1-2,-200 would pass this test
                         raise ValueError('too many end ranges')
                     begin = int(item)
                     end = None
