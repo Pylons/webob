@@ -1367,7 +1367,7 @@ class Request(object):
         host = self.host_url
         assert url.startswith(host)
         url = url[len(host):]
-        parts = ['%s %s' % (self.method, url)]
+        parts = ['%s %s %s' % (self.method, url, self.environ['SERVER_PROTOCOL'])]
         self.headers.setdefault('Host', self.host)
         parts += map('%s: %s'.__mod__, sorted(self.headers.items()))
         if not skip_body and self.method in ('PUT', 'POST'):

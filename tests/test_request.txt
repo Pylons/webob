@@ -19,7 +19,7 @@ should have.
     >>> req # doctest: +ELLIPSIS
     <Request at ... GET http://localhost/>
     >>> print repr(str(req))
-    'GET /\nHost: localhost:80'
+    'GET / HTTP/1.0\nHost: localhost:80'
     >>> req.environ # doctest: +ELLIPSIS
     {...}
     >>> isinstance(req.body_file, InputType)
