@@ -223,8 +223,31 @@ That was easier; we'll try it with a iterator for the body::
     >>> result.body
     '56789'
     >>> result.content_range
-    <ContentRange bytes 5-*/10>
-    >>> # If we set Content-Length then we can use it with an app_iter
+    <ContentRange bytes 5-9/10>
+
+
+Ranges requesting x last bytes are supported too:
+
+    >>> req.range = 'bytes=-1'
+    >>> req.range
+    <Range ranges=(-1, None)>
+    >>> result = req.get_response(res)
+    >>> result.body
+    '9'
+    >>> result.content_range
+    <ContentRange bytes 9-9/10>
+
+These ranges are also discarded if no satisfiable:
+
+    >>> req.range = 'bytes=-100'
+    >>> result = req.get_response(res)
+    >>> result.body
+    '0123456789'
+    >>> print result.content_range
+    None
+
+If we set Content-Length then we can use it with an app_iter
+
     >>> res.content_length = 10
     >>> req.range = (1, 5) # python-style range
     >>> req.range
@@ -253,6 +276,24 @@ That was easier; we'll try it with a iterator for the body::
     >>> res.last_modified = datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
     >>> result = req.get_response(res)
     >>> result.content_range
+
+Some tests of Content-Range parsing::
+
+    >>> from webob.byterange import ContentRange
+    >>> ContentRange.parse('bytes */*')
+    <ContentRange bytes */*>
+    >>> ContentRange.parse('bytes */10')
+    <ContentRange bytes */10>
+    >>> ContentRange.parse('bytes 5-9/10')
+    <ContentRange bytes 5-9/10>
+    >>> ContentRange.parse('bytes 5-10/*')
+    <ContentRange bytes 5-10/*>
+    >>> print ContentRange.parse('bytes 5-10/10')
+    None
+    >>> print ContentRange.parse('bytes 5-4/10')
+    None
+    >>> print ContentRange.parse('bytes 5-*/10')
+    None
 
 Some tests of exceptions::
 

@@ -29,21 +29,18 @@ class Range(object):
             *If* there is only one range, and *if* it is satisfiable by
             the given length, then return a (begin, end) non-inclusive range
             of bytes to serve.  Otherwise return None
-
-            If length is None (unknown length), then the resulting range
-            may be (begin, None), meaning it should be served from that
-            point.  If it's a range with a fixed endpoint we won't know if
-            it is satisfiable, so this will return None.
         """
-        if len(self.ranges) != 1:
+        if length is None or len(self.ranges) != 1:
             return None
-        begin, end = self.ranges[0]
+        start, end = self.ranges[0]
         if end is None:
-            return (begin, None)
-        elif length is None or end > length:
-            return None # Unsatisfiable
+            end = length
+            if start < 0:
+                start += length
+        if _is_content_range_valid(start, end, length):
+            return (start, end)
         else:
-            return (begin, end)
+            return None
 
     def content_range(self, length):
         """
@@ -70,11 +67,11 @@ class Range(object):
                     parts.append(str(begin))
             else:
                 if begin < 0:
-                    raise ValueError(
-                        "(%r, %r) should have a non-negative first value" % (begin, end))
+                    raise ValueError("(%r, %r) should have a non-negative first value"
+                                    % (begin, end))
                 if end <= 0:
-                    raise ValueError(
-                        "(%r, %r) should have a positive second value" % (begin, end))
+                    raise ValueError("(%r, %r) should have a positive second value"
+                                    % (begin, end))
                 parts.append('%s-%s' % (begin, end-1))
         return 'bytes=%s' % ','.join(parts)
 
@@ -150,32 +147,29 @@ class ContentRange(object):
     """
     Represents the Content-Range header
 
-    This header is ``start-stop/length``, where stop and length can be
-    ``*`` (represented as None in the attributes).
+    This header is ``start-stop/length``, where start-stop and length
+    can be ``*`` (represented as None in the attributes).
     """
 
     def __init__(self, start, stop, length):
-        assert start >= 0, "Bad start: %r" % start
-        assert stop is None or (stop >= 0 and stop >= start), (
-            "Bad stop: %r" % stop)
+        if not _is_content_range_valid(start, stop, length):
+            raise ValueError("Bad start:stop/length: %r:%r/%r" % (start, stop, length))
         self.start = start
         self.stop = stop # this is python-style range end (non-inclusive)
         self.length = length
 
     def __repr__(self):
-        return '<%s %s>' % (
-            self.__class__.__name__,
-            self)
+        return '<%s %s>' % (self.__class__.__name__, self)
 
     def __str__(self):
-        if self.stop is None:
-            stop = '*'
-        else:
-            stop = self.stop - 1 # from non-inclusive to HTTP-style
         if self.length is None:
             length = '*'
         else:
             length = self.length
+        if self.start is None:
+            assert self.stop is None
+            return 'bytes */%s' % length
+        stop = self.stop - 1 # from non-inclusive to HTTP-style
         return 'bytes %s-%s/%s' % (self.start, stop, length)
 
     def __iter__(self):
@@ -202,24 +196,39 @@ class ContentRange(object):
             # Invalid, no length given
             return None
         range, length = value.split('/', 1)
-        if '-' not in range:
+        if length == '*':
+            length = None
+        elif length.isdigit():
+            length = int(length)
+        else:
+            return None # invalid length
+
+        if range == '*':
+            return cls(None, None, length)
+        elif '-' not in range:
             # Invalid, no range
             return None
-        start, end = range.split('-', 1)
-        try:
-            start = int(start)
-            if end == '*':
-                end = None
-            else:
-                end = int(end)
-                end += 1 # convert to non-inclusive
-            if length == '*':
-                length = None
-            else:
-                length = int(length)
-        except ValueError:
-            # Parse problem
-            return None
-        return cls(start, end, length)
+        else:
+            start, stop = range.split('-', 1)
+            try:
+                start = int(start)
+                stop = int(stop)
+                stop += 1 # convert to non-inclusive
+            except ValueError:
+                # Parse problem
+                return None
+            if not _is_content_range_valid(start, stop, length):
+                return None
+            return cls(start, stop, length)
     parse = classmethod(parse)
 
+
+def _is_content_range_valid(start, stop, length):
+    if (start is None) != (stop is None):
+        return False
+    elif start is None:
+        return length is None or length >= 0
+    elif length is None:
+        return 0 <= start < stop
+    else:
+        return 0 <= start < stop <= length
