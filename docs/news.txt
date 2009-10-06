@@ -44,6 +44,10 @@ svn trunk
   ``Set-Cookie`` headers from a Response, and merges them with another
   response or WSGI application.  (This is useful for flash messages.)
 
+* Fix a problem with creating exceptions like
+  ``webob.exc.HTTPNotFound(body='<notfound/>',
+  content_type='application/xml')`` (i.e., non-HTML exceptions).
+
 0.9.6.1
 -------
 
