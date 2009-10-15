@@ -116,7 +116,7 @@ class Accept(object):
             if self._match(item, match):
                 return quality
         return None
-    
+
     def first_match(self, matches):
         """
         Returns the first match in the sequences of matches that is
@@ -134,7 +134,7 @@ class Accept(object):
             if match is None:
                 return None
         return matches[0]
-    
+
     def best_match(self, matches, default_match=None):
         """
         Returns the best match in the sequence of matches.
@@ -202,6 +202,9 @@ class NilAccept(object):
     def __str__(self):
         return ''
 
+    def __nonzero__(self):
+        return False
+
     def __add__(self, item):
         if isinstance(item, self.MasterClass):
             return item
@@ -244,9 +247,9 @@ class NilAccept(object):
             return []
 
 class NoAccept(NilAccept):
-
     def __contains__(self, item):
         return False
+
 
 class MIMEAccept(Accept):
 
@@ -297,3 +300,4 @@ class MIMEAccept(Accept):
 
 class MIMENilAccept(NilAccept):
     MasterClass = MIMEAccept
+

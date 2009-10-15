@@ -523,6 +523,14 @@ def _serialize_accept(value, header_name, AcceptClass, NilClass):
         return None
     return value
 
+
+
+
+################
+################
+
+
+
 class Request(object):
 
     ## Options:
@@ -1528,6 +1536,14 @@ class Request(object):
         return obj
 
     blank = classmethod(blank)
+
+
+
+
+################
+################
+
+
 
 class Response(object):
 

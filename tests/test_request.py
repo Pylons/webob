@@ -35,7 +35,7 @@ def test_gets():
     assert 'Hello' in res
     assert "get is GET([])" in res
     assert "post is <NoVars: Not a form request>" in res
-    
+
     res = app.get('/?name=george')
     res.mustcontain("get is GET([('name', 'george')])")
     res.mustcontain("Val is george")
@@ -44,7 +44,7 @@ def test_language_parsing():
     app = TestApp(simpleapp)
     res = app.get('/')
     assert "The languages are: ['en-US']" in res
-    
+
     res = app.get('/', headers={'Accept-Language':'da, en-gb;q=0.8, en;q=0.7'})
     assert "languages are: ['da', 'en-gb', 'en', 'en-US']" in res
 
@@ -55,16 +55,19 @@ def test_mime_parsing():
     app = TestApp(simpleapp)
     res = app.get('/', headers={'Accept':'text/html'})
     assert "accepttypes is: text/html" in res
-    
+
     res = app.get('/', headers={'Accept':'application/xml'})
     assert "accepttypes is: application/xml" in res
-    
+
     res = app.get('/', headers={'Accept':'application/xml,*/*'})
     assert "accepttypes is: application/xml" in res, res
 
 
 def test_accept_best_match():
+    assert not Request.blank('/').accept
+    assert not Request.blank('/', headers={'Accept': ''}).accept
     req = Request.blank('/', headers={'Accept':'text/plain'})
+    assert req.accept
     assert req.accept.best_match(['*/*','text/*']) == '*/*'
     assert req.accept.best_match(['text/*','*/*']) == 'text/*'
 
@@ -81,16 +84,16 @@ def test_from_mimeparse():
         req = Request.blank('/', headers={'Accept':accept})
         assert req.accept.best_match(supported) == get, (
             '%r generated %r instead of %r for %r' % (accept, req.accept.best_match(supported), get, supported))
-    
+
     supported = ['application/xbel+xml', 'text/xml']
     tests = [('text/*;q=0.5,*/*; q=0.1', 'text/xml'),
              ('text/html,application/atom+xml; q=0.9', None)]
-    
+
     for accept, get in tests:
         req = Request.blank('/', headers={'Accept':accept})
         assert req.accept.best_match(supported) == get, (
             'Got %r instead of %r for %r' % (req.accept.best_match(supported), get, supported))
-    
+
     supported = ['application/json', 'text/html']
     tests = [('application/json, text/javascript, */*', 'application/json'),
              ('application/json, text/html;q=0.9', 'application/json')]
@@ -126,7 +129,7 @@ def test_headers():
         "params is NestedMultiDict([('foo', 'bar'), ('baz', '')])",
         "if_none_match: <ETag etag001 or etag002>",
         )
-    
+
 def test_bad_cookie():
     req = Request.blank('/')
     req.headers['Cookie'] = '070-it-:><?0'
@@ -184,5 +187,5 @@ def test_copy():
     old_body_file = req.body_file
     req.make_body_seekable()
     assert req.body_file is old_body_file
-    
-    
+
+
