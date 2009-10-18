@@ -2400,7 +2400,7 @@ class Response(object):
                 app_iter = self.app_iter_range(content_range.start, content_range.stop)
                 if app_iter is not None:
                     partial_resp = Response(
-                        status = '206 Partial content',
+                        status = '206 Partial Content',
                         headers=list(self.headerlist),
                         content_range=content_range,
                         app_iter=app_iter,
