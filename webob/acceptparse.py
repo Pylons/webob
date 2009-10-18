@@ -98,26 +98,27 @@ class Accept(object):
     def __radd__(self, other):
         return self.__add__(other, True)
 
-    def __contains__(self, match):
+    def __contains__(self, offer):
         """
         Returns true if the given object is listed in the accepted
         types.
         """
-        for item, quality in self._parsed:
-            if self._match(item, match):
+        for mask, quality in self._parsed:
+            if self._match(mask, offer):
                 return True
 
-    def quality(self, match):
+    def quality(self, offer, modifier=1):
         """
-        Return the quality of the given match.  Returns None if there
+        Return the quality of the given offer.  Returns None if there
         is no match (not 0).
         """
-        for item, quality in self._parsed:
-            if self._match(item, match):
-                return quality
+        # FIXME: this does not return best quality, just quality of the first match
+        for mask, quality in self._parsed:
+            if self._match(mask, offer):
+                return quality * modifier
         return None
 
-    def first_match(self, matches):
+    def first_match(self, offers):
         """
         Returns the first match in the sequences of matches that is
         allowed.  Ignores quality.  Returns the first item if nothing
@@ -127,17 +128,17 @@ class Accept(object):
         if not matches:
             raise ValueError(
                 "You must pass in a non-empty list")
-        for match in matches:
-            for item, quality in self._parsed:
-                if self._match(item, match):
-                    return match
-            if match is None:
+        for offer in offers:
+            if offer is None:
                 return None
-        return matches[0]
+            for mask, quality in self._parsed:
+                if self._match(mask, offer):
+                    return offer
+        return offers[0]
 
-    def best_match(self, matches, default_match=None):
+    def best_match(self, offers, default_match=None):
         """
-        Returns the best match in the sequence of matches.
+        Returns the best match in the sequence of offered types.
 
         The sequence can be a simple sequence, or you can have
         ``(match, server_quality)`` items in the sequence.  If you
@@ -146,24 +147,35 @@ class Accept(object):
         weight, then the one that shows up first in the `matches` list
         will be returned.
 
+        But among matches with the same quality the match to a more specific
+        requested type will be chosen. For example a match to text/* trumps */*.
+
         default_match (default None) is returned if there is no intersection.
         """
         best_quality = -1
-        best_match = default_match
-        for match_item in matches:
-            if isinstance(match_item, (tuple, list)):
-                match, server_quality = match_item
+        best_offer = default_match
+        matched_by = '*/*'
+        for offer in offers:
+            if '*' in offer:
+                raise ValueError("The application should offer specific types, got %r" % offer)
+            if isinstance(offer, (tuple, list)):
+                offer, server_quality = offer
             else:
-                match = match_item
                 server_quality = 1
-            for item, quality in self._parsed:
+            for mask, quality in self._parsed:
                 possible_quality = server_quality * quality
-                if possible_quality <= best_quality:
+                if possible_quality < best_quality:
                     continue
-                if self._match(item, match):
+                elif possible_quality == best_quality:
+                    # 'text/plain' overrides 'message/*' overrides '*/*'
+                    # (if all match w/ the same q=)
+                    if matched_by.count('*') <= mask.count('*'):
+                        continue
+                if self._match(mask, offer):
                     best_quality = possible_quality
-                    best_match = match
-        return best_match
+                    best_offer = offer
+                    matched_by = mask
+        return best_offer
 
     def best_matches(self, fallback=None):
         """
@@ -181,8 +193,19 @@ class Accept(object):
                 items.append(fallback)
         return items
 
-    def _match(self, item, match):
-        return item.lower() == match.lower() or item == '*'
+    def _match(self, mask, item):
+        # checks if item is covered by the mask
+        if '*' not in mask:
+            return item == mask
+        elif mask == '*/*':
+            return True
+        else:
+            assert mask.endswith('/*')
+            mask_major = mask[:-2]
+            item_major = item.split('/', 1)[0]
+            assert item_major != '*', "item must be a specific type"
+            return item_major == mask_major
+
 
 class NilAccept(object):
 

@@ -1,5 +1,6 @@
 from webob import Request
 from webtest import TestApp
+from nose.tools import eq_, ok_, assert_raises
 
 def simpleapp(environ, start_response):
     status = '200 OK'
@@ -67,9 +68,14 @@ def test_accept_best_match():
     assert not Request.blank('/').accept
     assert not Request.blank('/', headers={'Accept': ''}).accept
     req = Request.blank('/', headers={'Accept':'text/plain'})
-    assert req.accept
-    assert req.accept.best_match(['*/*','text/*']) == '*/*'
-    assert req.accept.best_match(['text/*','*/*']) == 'text/*'
+    ok_(req.accept)
+    assert_raises(ValueError, req.accept.best_match, ['*/*'])
+    req = Request.blank('/', accept=['*/*','text/*'])
+    eq_(req.accept.best_match(['application/x-foo', 'text/plain']), 'text/plain')
+    eq_(req.accept.best_match(['text/plain', 'application/x-foo']), 'text/plain')
+    req = Request.blank('/', accept=['text/plain', 'message/*'])
+    eq_(req.accept.best_match(['message/x-foo', 'text/plain']), 'text/plain')
+    eq_(req.accept.best_match(['text/plain', 'message/x-foo']), 'text/plain')
 
 def test_from_mimeparse():
     # http://mimeparse.googlecode.com/svn/trunk/mimeparse.py
@@ -103,13 +109,16 @@ def test_from_mimeparse():
         assert req.accept.best_match(supported) == get, (
             '%r generated %r instead of %r for %r' % (accept, req.accept.best_match(supported), get, supported))
 
-    supported = ['image/*', 'application/xml']
-    tests = [('image/png', 'image/*'),
-             ('image/*', 'image/*')]
+    offered = ['image/png', 'application/xml']
+    tests = [
+        ('image/png', 'image/png'),
+        ('image/*', 'image/png'),
+        ('image/*, application/xml', 'application/xml'),
+    ]
 
     for accept, get in tests:
-        req = Request.blank('/', headers={'Accept':accept})
-        assert req.accept.best_match(supported) == get
+        req = Request.blank('/', accept=accept)
+        eq_(req.accept.best_match(offered), get)
 
 def test_headers():
     app = TestApp(simpleapp)
