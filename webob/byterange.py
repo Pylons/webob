@@ -153,7 +153,7 @@ class ContentRange(object):
 
     def __init__(self, start, stop, length):
         if not _is_content_range_valid(start, stop, length):
-            raise ValueError("Bad start:stop/length: %r:%r/%r" % (start, stop, length))
+            raise ValueError("Bad start:stop/length: %r-%r/%r" % (start, stop, length))
         self.start = start
         self.stop = stop # this is python-style range end (non-inclusive)
         self.length = length

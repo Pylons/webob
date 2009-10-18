@@ -195,6 +195,8 @@ Also range response::
     <ContentRange bytes 1-4/10>
     >>> tuple(result.content_range)
     (1, 5, 10)
+    >>> result.content_length
+    4
     >>> # Now an invalid range:
     >>> req.range = (0, 20)
     >>> str(req.range)
@@ -204,6 +206,11 @@ Also range response::
     '0123456789'
     >>> print result.content_range
     None
+
+    >>> Request.blank('/', range=(1,2)).get_response(
+    ...     Response('0123456789', conditional_response=True)).content_length
+    1
+
 
 That was easier; we'll try it with a iterator for the body::
 
@@ -236,8 +243,11 @@ Ranges requesting x last bytes are supported too:
     '9'
     >>> result.content_range
     <ContentRange bytes 9-9/10>
+    >>> result.content_length
+    1
 
-These ranges are also discarded if no satisfiable:
+
+Those ranges are also discarded if not satisfiable:
 
     >>> req.range = 'bytes=-100'
     >>> result = req.get_response(res)

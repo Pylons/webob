@@ -2377,15 +2377,38 @@ class Response(object):
             and self.content_range is None
             and req.method == 'GET'
             and self.status_int == 200
+            and self.content_length is not None
         ):
             content_range = req.range.content_range(self.content_length)
-            if content_range is not None:
+            if content_range is None:
+                pass
+                # "416 Requested range not satisfiable" response
+                # seems to be the correct behavior according to the
+                # standard (SHOULD in RFC).
+                # But I'm not as sure if it is also the correct thing
+                # to do in reality -Sergey
+##                 error_resp = Response(
+##                     status = '416 Requested range not satisfiable',
+##                     headers=list(self.headerlist),
+##                     content_range = ContentRange(None, None, self.content_length),
+##                     body = "Requested range not satisfiable",
+##                 )
+##                 # FIXME: self.app_iter will not get closed
+##                 return error_resp(environ, start_response)
+##
+            else:
                 app_iter = self.app_iter_range(content_range.start, content_range.stop)
                 if app_iter is not None:
-                    headers = list(self.headerlist)
-                    headers.append(('Content-Range', str(content_range)))
-                    start_response('206 Partial Content', headers)
-                    return app_iter
+                    partial_resp = Response(
+                        status = '206 Partial content',
+                        headers=list(self.headerlist),
+                        content_range=content_range,
+                        app_iter=app_iter,
+                    )
+                    # this should be guaranteed by Range.range_for_length(length)
+                    assert content_range.start is not None
+                    partial_resp.content_length = content_range.stop - content_range.start
+                    return partial_resp(environ, start_response)
         start_response(self.status, self.headerlist)
         return self.app_iter
 
