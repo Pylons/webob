@@ -125,9 +125,8 @@ class Accept(object):
         else matches; or if you include None at the end of the match
         list then that will be returned.
         """
-        if not matches:
-            raise ValueError(
-                "You must pass in a non-empty list")
+        if not offers:
+            raise ValueError("You must pass in a non-empty list")
         for offer in offers:
             if offer is None:
                 return None
@@ -182,8 +181,8 @@ class Accept(object):
         Return all the matches in order of quality, with fallback (if
         given) at the end.
         """
-        items = [
-            i for i, q in sorted(self._parsed, key=lambda iq: -iq[1])]
+        items = [i for i, q
+                    in sorted(self._parsed, key=lambda iq: -iq[1])]
         if fallback:
             for index, item in enumerate(items):
                 if self._match(item, fallback):
@@ -194,17 +193,8 @@ class Accept(object):
         return items
 
     def _match(self, mask, item):
-        # checks if item is covered by the mask
-        if '*' not in mask:
-            return item == mask
-        elif mask == '*/*':
-            return True
-        else:
-            assert mask.endswith('/*')
-            mask_major = mask[:-2]
-            item_major = item.split('/', 1)[0]
-            assert item_major != '*', "item must be a specific type"
-            return item_major == mask_major
+        return mask == '*' or item.lower() == mask.lower()
+
 
 
 class NilAccept(object):
@@ -275,42 +265,23 @@ class NoAccept(NilAccept):
 
 
 class MIMEAccept(Accept):
-
     """
-    Represents the ``Accept`` header, which is a list of mimetypes.
+        Represents the ``Accept`` header, which is a list of mimetypes.
 
-    This class knows about mime wildcards, like ``image/*``
+        This class knows about mime wildcards, like ``image/*``
     """
-
-    def _match(self, item, match):
-        item = item.lower()
-        if item == '*':
-            item = '*/*'
-        match = match.lower()
-        if match == '*':
-            match = '*/*'
-        if '/' not in item:
-            # Bad, but we ignore
-            return False
-        if '/' not in match:
-            raise ValueError(
-                "MIME matches must include / (bad: %r)" % match)
-        item_major, item_minor = item.split('/', 1)
-        match_major, match_minor = match.split('/', 1)
-        if match_major == '*' and match_minor != '*':
-            raise ValueError(
-                "A MIME type of %r doesn't make sense" % match)
-        if item_major == '*' and item_minor != '*':
-            # Bad, but we ignore
-            return False
-        if ((item_major == '*' and item_minor == '*')
-            or (match_major == '*' and match_minor == '*')):
-            return True
-        if (item_major == match_major
-            and ((item_minor == '*' or match_minor == '*')
-                 or item_minor == match_minor)):
-            return True
-        return False
+    def __init__(self, header_name, header_value):
+        Accept.__init__(self, header_name, header_value)
+        parsed = []
+        for mask, q in self._parsed:
+            try:
+                mask_major, mask_minor = mask.split('/')
+            except ValueError:
+                continue
+            if mask_major == '*' and mask_minor != '*':
+                continue
+            parsed.append((mask, q))
+        self._parsed = parsed
 
     def accept_html(self):
         """
@@ -320,6 +291,22 @@ class MIMEAccept(Accept):
                 or 'application/xhtml+xml' in self
                 or 'application/xml' in self
                 or 'text/xml' in self)
+
+    accepts_html = property(accept_html) # note the plural
+
+    def _match(self, mask, item):
+        # checks if item is covered by the mask
+        assert '*' not in item, "item must be a specific type"
+        if '*' not in mask:
+            return item == mask
+        elif mask == '*/*':
+            return True
+        else:
+            assert mask.endswith('/*')
+            mask_major = mask[:-2]
+            item_major = item.split('/', 1)[0]
+            return item_major == mask_major
+
 
 class MIMENilAccept(NilAccept):
     MasterClass = MIMEAccept
