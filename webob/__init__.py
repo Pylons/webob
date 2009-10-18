@@ -2595,49 +2595,51 @@ class AppIterRange(object):
             "Bad stop: %r" % stop)
         self.app_iter = app_iter
         self.app_iterator = iter(app_iter)
+        self._pos = 0 # position in app_iterator
         self.start = start
-        if stop is None:
-            self.length = -1
-        else:
-            self.length = stop - start
-        if start:
-            self._served = None
-        else:
-            self._served = 0
-        if hasattr(app_iter, 'close'):
-            self.close = app_iter.close
+        self.stop = stop
 
     def __iter__(self):
         return self
 
+    def _skip_start(self):
+        start, stop = self.start, self.stop
+        for chunk in self.app_iterator:
+            self._pos += len(chunk)
+            if self._pos < start:
+                continue
+            elif self._pos == start:
+                return ''
+            else:
+                chunk = chunk[start-self._pos:]
+                if stop is not None and self._pos > stop:
+                    chunk = chunk[:stop-self._pos]
+                    assert len(chunk) == stop - start
+                return chunk
+        else:
+            raise StopIteration()
+
+
     def next(self):
-        if self._served is None:
-            # Haven't served anything; need to skip some leading bytes
-            skipped = 0
-            start = self.start
-            while 1:
-                chunk = self.app_iterator.next()
-                skipped += len(chunk)
-                extra = skipped - start
-                if extra == 0:
-                    self._served = 0
-                    break
-                elif extra > 0:
-                    self._served = extra
-                    return chunk[-extra:]
-        length = self.length
-        if length is None:
-            # Spent
+        if self._pos < self.start:
+            # need to skip some leading bytes
+            return self._skip_start()
+        stop = self.stop
+        if stop is not None and self._pos >= stop:
             raise StopIteration
+
         chunk = self.app_iterator.next()
-        if length == -1:
+        self._pos += len(chunk)
+
+        if stop is None or self._pos <= stop:
             return chunk
-        if self._served + len(chunk) > length:
-            extra = self._served + len(chunk) - length
-            self.length = None
-            return chunk[:-extra]
-        self._served += len(chunk)
-        return chunk
+        else:
+            return chunk[:stop-self._pos]
+
+    def close(self):
+        if hasattr(self.app_iter, 'close'):
+            self.app_iter.close()
+
 
 class EmptyResponse(object):
 

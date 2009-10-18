@@ -1,5 +1,5 @@
 from StringIO import StringIO
-
+from nose.tools import eq_, ok_
 from webob import *
 
 def simple_app(environ, start_response):
@@ -38,11 +38,35 @@ def test_response():
     assert res.content_encoding is None
     assert res.body == 'a body'
 
+
 def test_HEAD_closes():
     req = Request.blank('/')
     req.method = 'HEAD'
     app_iter = StringIO('foo')
     res = req.get_response(Response(app_iter=app_iter))
-    assert res.status_int == 200
-    assert res.body == ''
-    assert app_iter.closed
+    eq_(res.status_int, 200)
+    eq_(res.body, '')
+    ok_(app_iter.closed)
+
+def test_app_iter_range():
+    req = Request.blank('/', range=(2,5))
+    for app_iter in [
+        ['012345'],
+        ['0', '12345'],
+        ['0', '1234', '5'],
+        ['01', '2345'],
+        ['01', '234', '5'],
+        ['012', '34', '5'],
+        ['012', '3', '4', '5'],
+        ['012', '3', '45'],
+        ['0', '12', '34', '5'],
+        ['0', '12', '345'],
+    ]:
+        r = Response(
+            app_iter=app_iter,
+            content_length=6,
+            conditional_response=True,
+        )
+        res = req.get_response(r)
+        eq_(list(res.content_range), [2,5,6])
+        eq_(res.body, '234', 'body=%r; app_iter=%r' % (res.body, app_iter))
