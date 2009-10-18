@@ -121,7 +121,7 @@ class HTTPException(Exception):
 
     def exception(self):
         return self
-    
+
     exception = property(exception)
 
     # for old style exceptions
@@ -228,16 +228,17 @@ ${body}''')
         headerlist = list(self.headerlist)
         accept = environ.get('HTTP_ACCEPT', '')
         if accept and 'html' in accept or '*/*' in accept:
+            content_type = 'text/html'
             body = self.html_body(environ)
-            if not self.content_type:
-                headerlist.append('text/html; charset=utf8')
         else:
+            content_type = 'text/plain'
             body = self.plain_body(environ)
-            if not self.content_type:
-                headerlist.append('text/plain; charset=utf8')
-        headerlist.append(('Content-Length', str(len(body))))
-        start_response(self.status, headerlist)
-        return [body]
+        resp = Response(body,
+            status=self.status,
+            headerlist=headerlist,
+            content_type=content_type
+        )
+        return resp(environ, start_response)
 
     def __call__(self, environ, start_response):
         if environ['REQUEST_METHOD'] == 'HEAD':
@@ -249,7 +250,7 @@ ${body}''')
 
     def wsgi_response(self):
         return self
-    
+
     wsgi_response = property(wsgi_response)
 
     def exception(self):
@@ -368,7 +369,7 @@ ${html_comment}''')
         self.location = urlparse.urljoin(req.path_url, self.location)
         return super(_HTTPMove, self).__call__(
             environ, start_response)
-    
+
 class HTTPMultipleChoices(_HTTPMove):
     code = 300
     title = 'Multiple Choices'

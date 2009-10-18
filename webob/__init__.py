@@ -696,8 +696,9 @@ class Request(object):
         charset_match = _CHARSET_RE.search(self.environ.get('CONTENT_TYPE', ''))
         if charset_match:
             content_type = content_type[:charset_match.start(1)] + charset + content_type[charset_match.end(1):]
-        elif ';' in content_type:
-            content_type += ', charset="%s"' % charset
+        # comma to separate params? there's nothing like that in RFCs AFAICT
+        #elif ';' in content_type:
+        #    content_type += ', charset="%s"' % charset
         else:
             content_type += '; charset="%s"' % charset
         self.environ['CONTENT_TYPE'] = content_type
@@ -2150,6 +2151,7 @@ class Response(object):
 
     cache_expires = set_via_call(_cache_expires, _adapt_cache_expires)
 
+    # FIXME: a special ContentDisposition type would be nice
     content_disposition = header_getter('Content-Disposition',
                                         rfc_section='19.5.1')
 
