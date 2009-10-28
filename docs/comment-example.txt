@@ -16,7 +16,7 @@ Code
 
 The finished code for this is available in
 `docs/comment-example-code/example.py
-<http://svn.pythonpaste.org/Paste/WebOb/trunk/docs/comment-example-code/example.py>`_
+<http://bitbucket.org/ianb/webob/src/tip/docs/comment-example-code/example.py>`_
 -- you can run that file as a script to try it out.
 
 Instantiating Middleware

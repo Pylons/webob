@@ -25,7 +25,7 @@ Code
 
 The finished code for this is available in
 `docs/json-example-code/jsonrpc.py
-<http://svn.pythonpaste.org/Paste/WebOb/trunk/docs/json-example-code/jsonrpc.py>`_
+<http://bitbucket.org/ianb/webob/src/tip/trunk/docs/json-example-code/jsonrpc.py>`_
 -- you can run that file as a script to try it out, or import it.
 
 Concepts
@@ -542,9 +542,9 @@ Good programmers start with tests.  But at least we'll end with a
 test.  We'll use `doctest
 <http://python.org/doc/current/lib/module-doctest.html>`_ for our
 tests.  The test is in `docs/json-example-code/test_jsonrpc.txt
-<http://svn.pythonpaste.org/Paste/WebOb/trunk/docs/json-example-code/test_jsonrpc.txt>`_
+<http://bitbucket.org/ianb/webob/src/tip/docs/json-example-code/test_jsonrpc.txt>`_
 and you can run it with `docs/json-example-code/test_jsonrpc.py
-<http://svn.pythonpaste.org/Paste/WebOb/trunk/docs/json-example-code/test_jsonrpc.py>`_,
+<http://bitbucket.org/ianb/webob/src/tip/docs/json-example-code/test_jsonrpc.py>`_,
 which looks like:
 
 .. code-block:: python

@@ -26,7 +26,7 @@ Code
 
 The finished code for this is available in
 `docs/wiki-example-code/example.py
-<http://svn.pythonpaste.org/Paste/WebOb/trunk/docs/wiki-example-code/example.py>`_
+<http://bitbucket.org/ianb/webob/src/tip/docs/wiki-example-code/example.py>`_
 -- you can run that file as a script to try it out.
 
 Creating an Application
