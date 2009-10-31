@@ -4,10 +4,9 @@ GZip that doesn't include the timestamp
 import gzip
 
 class GzipFile(gzip.GzipFile):
-
     def _write_gzip_header(self):
-        self.fileobj.write('\037\213')             # magic header
-        self.fileobj.write('\010')                 # compression method
+        self.fileobj.write('\x1f\x8b') # magic header
+        self.fileobj.write('\x08') # compression method
         if hasattr(self, 'name'):
             # 2.6
             fname = self.name
@@ -21,7 +20,6 @@ class GzipFile(gzip.GzipFile):
         self.fileobj.write(chr(flags))
         ## This is what WebOb patches:
         gzip.write32u(self.fileobj, long(0))
-        self.fileobj.write('\002')
-        self.fileobj.write('\377')
+        self.fileobj.write('\x02\xff')
         if fname:
-            self.fileobj.write(fname + '\000')
+            self.fileobj.write(fname + '\x00')
