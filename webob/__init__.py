@@ -1919,6 +1919,7 @@ class Response(object):
         del self.body
 
     unicode_body = property(_unicode_body__get, _unicode_body__set, _unicode_body__del, doc=_unicode_body__get.__doc__)
+    ubody = unicode_body # this alias will work as long as subclasses don't redefine unicode_body
 
     def _app_iter__get(self):
         """
