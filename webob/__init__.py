@@ -524,6 +524,31 @@ def _serialize_accept(value, header_name, AcceptClass, NilClass):
     return value
 
 
+class UnicodePathProperty(object):
+    """
+        upath_info, uscript_info descriptor implementation
+    """
+
+    def __init__(self, key, doc=None):
+        self.key = key
+        #if doc:
+        #    docstring += textwrap.dedent(doc)
+        #self.__doc__ = docstring
+
+    def __get__(self, obj, type=None):
+        if obj is None:
+            return self
+        str_path = obj.environ[self.key]
+        return str_path.decode('UTF8', obj.unicode_errors)
+
+    def __set__(self, obj, path):
+        if not isinstance(path, unicode):
+            path = path.decode('ASCII') # or just throw an error?
+        str_path = path.encode('UTF8', obj.unicode_errors)
+        obj.environ[self.key] = str_path
+
+    def __repr__(self):
+        return '%s(%r)' % (self.__class__.__name__, self.key)
 
 
 ################
@@ -635,6 +660,10 @@ class Request(object):
     server_port = converter(
         environ_getter('SERVER_PORT'),
         _parse_int, _serialize_int, 'int')
+
+    uscript_name = UnicodePathProperty('SCRIPT_NAME')
+    upath_info = UnicodePathProperty('PATH_INFO')
+
 
     def _content_type__get(self):
         """Return the content type, but leaving off any parameters (like
