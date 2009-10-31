@@ -2561,34 +2561,35 @@ def _encode_multipart(vars, content_type):
     lines.append('--%s--' % boundary)
     return '\r\n'.join(lines)
 
+
 class ResponseBodyFile(object):
+    mode = 'wb'
+    closed = False
 
     def __init__(self, response):
         self.response = response
 
     def __repr__(self):
-        return '<body_file for %r>' % (
-            self.response)
+        return '<body_file for %r>' % self.response
 
-    def close(self):
-        raise NotImplementedError(
-            "Response bodies cannot be closed")
-
-    def flush(self):
-        pass
+    encoding = property(
+        lambda self: self.response.charset,
+        doc="The encoding of the file (inherited from response.charset)"
+    )
 
     def write(self, s):
         if isinstance(s, unicode):
-            if self.response.charset is not None:
-                s = s.encode(self.response.charset)
-            else:
+            if self.response.charset is None:
                 raise TypeError(
                     "You can only write unicode to Response.body_file "
-                    "if charset has been set")
+                    "if charset has been set"
+                )
+            s = s.encode(self.response.charset)
         if not isinstance(s, str):
             raise TypeError(
                 "You can only write str to a Response.body_file, not %s"
-                % type(s))
+                % type(s)
+            )
         if not isinstance(self.response._app_iter, list):
             body = self.response.body
             if body:
@@ -2601,17 +2602,13 @@ class ResponseBodyFile(object):
         for item in seq:
             self.write(item)
 
-    closed = False
+    def close(self):
+        raise NotImplementedError("Response bodies cannot be closed")
 
-    def encoding(self):
-        """
-        The encoding of the file (inherited from response.charset)
-        """
-        return self.response.charset
+    def flush(self):
+        pass
 
-    encoding = property(encoding, doc=encoding.__doc__)
 
-    mode = 'wb'
 
 class AppIterRange(object):
     """
