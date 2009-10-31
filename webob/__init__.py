@@ -526,7 +526,7 @@ def _serialize_accept(value, header_name, AcceptClass, NilClass):
 
 class UnicodePathProperty(object):
     """
-        upath_info, uscript_info descriptor implementation
+        upath_info and uscript_name descriptor implementation
     """
 
     def __init__(self, key, doc=None):
