@@ -952,21 +952,24 @@ class Request(object):
             length = int(self.environ.get('CONTENT_LENGTH', '0'))
         except ValueError:
             return ''
-        c = self.body_file.read(length)
-        if hasattr(self.body_file, 'seek'):
+        # maybe we should use .tell() before reading and then use it to seek back?
+        body = self.body_file.read(length)
+        try:
             self.body_file.seek(0)
-        else:
+        except (AttributeError, IOError):
+            # AttributeError is thrown if body_file doesn't have a .seek method
+            # IOError is thrown if body_file is stdin (or wrapped stdin)
             tempfile_limit = self.request_body_tempfile_limit
-            if tempfile_limit and len(c) > tempfile_limit:
+            if tempfile_limit and len(body) > tempfile_limit:
                 fileobj = tempfile.TemporaryFile()
-                fileobj.write(c)
+                fileobj.write(body)
                 fileobj.seek(0)
             else:
-                fileobj = StringIO(c)
+                fileobj = StringIO(body)
             # We don't want/need to lose CONTENT_LENGTH here (as setting
             # self.body_file would do):
             self.environ['wsgi.input'] = fileobj
-        return c
+        return body
 
     def _body__set(self, value):
         if value is None:
