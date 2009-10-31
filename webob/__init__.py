@@ -220,15 +220,15 @@ def _adapt_cache_expires(value):
 
 class converter(object):
     """
-    Wraps a decorator, and applies conversion for that decorator
+    Wraps a descriptor, and applies additional conversions when reading and writing
     """
-    def __init__(self, decorator, getter_converter, setter_converter, convert_name=None, doc=None, converter_args=()):
-        self.decorator = decorator
+    def __init__(self, descriptor, getter_converter, setter_converter, convert_name=None, doc=None, converter_args=()):
+        self.descriptor = descriptor
         self.getter_converter = getter_converter
         self.setter_converter = setter_converter
         self.convert_name = convert_name
         self.converter_args = converter_args
-        docstring = decorator.__doc__ or ''
+        docstring = descriptor.__doc__ or ''
         docstring += "  Converts it as a "
         if convert_name:
             docstring += convert_name + '.'
@@ -241,22 +241,22 @@ class converter(object):
     def __get__(self, obj, type=None):
         if obj is None:
             return self
-        value = self.decorator.__get__(obj, type)
+        value = self.descriptor.__get__(obj, type)
         return self.getter_converter(value, *self.converter_args)
 
     def __set__(self, obj, value):
         value = self.setter_converter(value, *self.converter_args)
-        self.decorator.__set__(obj, value)
+        self.descriptor.__set__(obj, value)
 
     def __delete__(self, obj):
-        self.decorator.__delete__(obj)
+        self.descriptor.__delete__(obj)
 
     def __repr__(self):
         if self.convert_name:
             name = ' %s' % self.convert_name
         else:
             name = ''
-        return '<Converted %r%s>' % (self.decorator, name)
+        return '<Converted %r%s>' % (self.descriptor, name)
 
 def _rfc_reference(header, section):
     if not section:
@@ -271,10 +271,10 @@ def _rfc_reference(header, section):
 
 class deprecated_property(object):
     """
-    Wraps a decorator, with a deprecation warning or error
+    Wraps a descriptor, with a deprecation warning or error
     """
-    def __init__(self, decorator, attr, message, warning=True):
-        self.decorator = decorator
+    def __init__(self, descriptor, attr, message, warning=True):
+        self.descriptor = descriptor
         self.attr = attr
         self.message = message
         self.warning = warning
@@ -283,20 +283,20 @@ class deprecated_property(object):
         if obj is None:
             return self
         self.warn()
-        return self.decorator.__get__(obj, type)
+        return self.descriptor.__get__(obj, type)
 
     def __set__(self, obj, value):
         self.warn()
-        self.decorator.__set__(obj, value)
+        self.descriptor.__set__(obj, value)
 
     def __delete__(self, obj):
         self.warn()
-        self.decorator.__delete__(obj)
+        self.descriptor.__delete__(obj)
 
     def __repr__(self):
         return '<Deprecated attribute %s: %r>' % (
             self.attr,
-            self.decorator)
+            self.descriptor)
 
     def warn(self):
         if not self.warning:
