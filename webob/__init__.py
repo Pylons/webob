@@ -1366,9 +1366,13 @@ class Request(object):
     user_agent = environ_getter('HTTP_USER_AGENT', rfc_section='14.43')
 
     def __repr__(self):
-        msg = '<%s at 0x%x %s %s>' % (
+        try:
+            name = '%s %s' % (self.method, self.url)
+        except KeyError:
+            name = '(invalid WSGI environ)'
+        msg = '<%s at 0x%x %s>' % (
             self.__class__.__name__,
-            abs(id(self)), self.method, self.url)
+            abs(id(self)), name)
         return msg
 
     def __str__(self, skip_body=False):
