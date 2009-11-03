@@ -33,8 +33,12 @@ The basic way you create a request object is simple enough:
 .. code-block:: python
 
    >>> from webob import Request
-   >>> environ = {}
+   >>> environ = {'wsgi.url_scheme': 'http', ...}
    >>> req = Request(environ)
+
+(Note that the WSGI environment is a dictionary with a dozen required
+keys, so it's a bit lengthly to show a complete example of what it
+would look like -- usually your WSGI server will create it.)
 
 The request object *wraps* the environment; it has very little
 internal state of its own.  Instead attributes you access read and
