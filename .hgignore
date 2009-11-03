@@ -1,1 +1,2 @@
 WebOb.egg-info
+.*\.py[co]$
