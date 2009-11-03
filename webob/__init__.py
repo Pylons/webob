@@ -220,15 +220,15 @@ def _adapt_cache_expires(value):
 
 class converter(object):
     """
-    Wraps a decorator, and applies conversion for that decorator
+    Wraps a descriptor, and applies additional conversions when reading and writing
     """
-    def __init__(self, decorator, getter_converter, setter_converter, convert_name=None, doc=None, converter_args=()):
-        self.decorator = decorator
+    def __init__(self, descriptor, getter_converter, setter_converter, convert_name=None, doc=None, converter_args=()):
+        self.descriptor = descriptor
         self.getter_converter = getter_converter
         self.setter_converter = setter_converter
         self.convert_name = convert_name
         self.converter_args = converter_args
-        docstring = decorator.__doc__ or ''
+        docstring = descriptor.__doc__ or ''
         docstring += "  Converts it as a "
         if convert_name:
             docstring += convert_name + '.'
@@ -241,22 +241,22 @@ class converter(object):
     def __get__(self, obj, type=None):
         if obj is None:
             return self
-        value = self.decorator.__get__(obj, type)
+        value = self.descriptor.__get__(obj, type)
         return self.getter_converter(value, *self.converter_args)
 
     def __set__(self, obj, value):
         value = self.setter_converter(value, *self.converter_args)
-        self.decorator.__set__(obj, value)
+        self.descriptor.__set__(obj, value)
 
     def __delete__(self, obj):
-        self.decorator.__delete__(obj)
+        self.descriptor.__delete__(obj)
 
     def __repr__(self):
         if self.convert_name:
             name = ' %s' % self.convert_name
         else:
             name = ''
-        return '<Converted %r%s>' % (self.decorator, name)
+        return '<Converted %r%s>' % (self.descriptor, name)
 
 def _rfc_reference(header, section):
     if not section:
@@ -271,10 +271,10 @@ def _rfc_reference(header, section):
 
 class deprecated_property(object):
     """
-    Wraps a decorator, with a deprecation warning or error
+    Wraps a descriptor, with a deprecation warning or error
     """
-    def __init__(self, decorator, attr, message, warning=True):
-        self.decorator = decorator
+    def __init__(self, descriptor, attr, message, warning=True):
+        self.descriptor = descriptor
         self.attr = attr
         self.message = message
         self.warning = warning
@@ -283,20 +283,20 @@ class deprecated_property(object):
         if obj is None:
             return self
         self.warn()
-        return self.decorator.__get__(obj, type)
+        return self.descriptor.__get__(obj, type)
 
     def __set__(self, obj, value):
         self.warn()
-        self.decorator.__set__(obj, value)
+        self.descriptor.__set__(obj, value)
 
     def __delete__(self, obj):
         self.warn()
-        self.decorator.__delete__(obj)
+        self.descriptor.__delete__(obj)
 
     def __repr__(self):
         return '<Deprecated attribute %s: %r>' % (
             self.attr,
-            self.decorator)
+            self.descriptor)
 
     def warn(self):
         if not self.warning:
@@ -524,6 +524,31 @@ def _serialize_accept(value, header_name, AcceptClass, NilClass):
     return value
 
 
+class UnicodePathProperty(object):
+    """
+        upath_info, uscript_info descriptor implementation
+    """
+
+    def __init__(self, key, doc=None):
+        self.key = key
+        #if doc:
+        #    docstring += textwrap.dedent(doc)
+        #self.__doc__ = docstring
+
+    def __get__(self, obj, type=None):
+        if obj is None:
+            return self
+        str_path = obj.environ[self.key]
+        return str_path.decode('UTF8', obj.unicode_errors)
+
+    def __set__(self, obj, path):
+        if not isinstance(path, unicode):
+            path = path.decode('ASCII') # or just throw an error?
+        str_path = path.encode('UTF8', obj.unicode_errors)
+        obj.environ[self.key] = str_path
+
+    def __repr__(self):
+        return '%s(%r)' % (self.__class__.__name__, self.key)
 
 
 ################
@@ -610,6 +635,10 @@ class BaseRequest(object):
     server_port = converter(
         environ_getter('SERVER_PORT'),
         _parse_int, _serialize_int, 'int')
+
+    uscript_name = UnicodePathProperty('SCRIPT_NAME')
+    upath_info = UnicodePathProperty('PATH_INFO')
+
 
     def _content_type__get(self):
         """Return the content type, but leaving off any parameters (like
@@ -927,21 +956,24 @@ class BaseRequest(object):
             length = int(self.environ.get('CONTENT_LENGTH', '0'))
         except ValueError:
             return ''
-        c = self.body_file.read(length)
-        if hasattr(self.body_file, 'seek'):
+        # maybe we should use .tell() before reading and then use it to seek back?
+        body = self.body_file.read(length)
+        try:
             self.body_file.seek(0)
-        else:
+        except (AttributeError, IOError):
+            # AttributeError is thrown if body_file doesn't have a .seek method
+            # IOError is thrown if body_file is stdin (or wrapped stdin)
             tempfile_limit = self.request_body_tempfile_limit
-            if tempfile_limit and len(c) > tempfile_limit:
+            if tempfile_limit and len(body) > tempfile_limit:
                 fileobj = tempfile.TemporaryFile()
-                fileobj.write(c)
+                fileobj.write(body)
                 fileobj.seek(0)
             else:
-                fileobj = StringIO(c)
+                fileobj = StringIO(body)
             # We don't want/need to lose CONTENT_LENGTH here (as setting
             # self.body_file would do):
             self.environ['wsgi.input'] = fileobj
-        return c
+        return body
 
     def _body__set(self, value):
         if value is None:
@@ -1341,9 +1373,13 @@ class BaseRequest(object):
     user_agent = environ_getter('HTTP_USER_AGENT', rfc_section='14.43')
 
     def __repr__(self):
-        msg = '<%s at 0x%x %s %s>' % (
+        try:
+            name = '%s %s' % (self.method, self.url)
+        except KeyError:
+            name = '(invalid WSGI environ)'
+        msg = '<%s at 0x%x %s>' % (
             self.__class__.__name__,
-            abs(id(self)), self.method, self.url)
+            abs(id(self)), name)
         return msg
 
     def __str__(self, skip_body=False):
@@ -1918,6 +1954,7 @@ class Response(object):
         del self.body
 
     unicode_body = property(_unicode_body__get, _unicode_body__set, _unicode_body__del, doc=_unicode_body__get.__doc__)
+    ubody = unicode_body # this alias will work as long as subclasses don't redefine unicode_body
 
     def _app_iter__get(self):
         """
@@ -2559,34 +2596,35 @@ def _encode_multipart(vars, content_type):
     lines.append('--%s--' % boundary)
     return '\r\n'.join(lines)
 
+
 class ResponseBodyFile(object):
+    mode = 'wb'
+    closed = False
 
     def __init__(self, response):
         self.response = response
 
     def __repr__(self):
-        return '<body_file for %r>' % (
-            self.response)
+        return '<body_file for %r>' % self.response
 
-    def close(self):
-        raise NotImplementedError(
-            "Response bodies cannot be closed")
-
-    def flush(self):
-        pass
+    encoding = property(
+        lambda self: self.response.charset,
+        doc="The encoding of the file (inherited from response.charset)"
+    )
 
     def write(self, s):
         if isinstance(s, unicode):
-            if self.response.charset is not None:
-                s = s.encode(self.response.charset)
-            else:
+            if self.response.charset is None:
                 raise TypeError(
                     "You can only write unicode to Response.body_file "
-                    "if charset has been set")
+                    "if charset has been set"
+                )
+            s = s.encode(self.response.charset)
         if not isinstance(s, str):
             raise TypeError(
                 "You can only write str to a Response.body_file, not %s"
-                % type(s))
+                % type(s)
+            )
         if not isinstance(self.response._app_iter, list):
             body = self.response.body
             if body:
@@ -2599,17 +2637,13 @@ class ResponseBodyFile(object):
         for item in seq:
             self.write(item)
 
-    closed = False
+    def close(self):
+        raise NotImplementedError("Response bodies cannot be closed")
 
-    def encoding(self):
-        """
-        The encoding of the file (inherited from response.charset)
-        """
-        return self.response.charset
+    def flush(self):
+        pass
 
-    encoding = property(encoding, doc=encoding.__doc__)
 
-    mode = 'wb'
 
 class AppIterRange(object):
     """

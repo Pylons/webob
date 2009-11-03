@@ -32,6 +32,8 @@ should have.
     ''
     >>> req.path_info
     '/'
+    >>> req.upath_info
+    u'/'
     >>> req.content_type
     ''
     >>> print req.remote_user
