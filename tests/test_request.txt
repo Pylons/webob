@@ -397,3 +397,36 @@ Also reparsing works through the fake body:
     >>> del req.environ['webob._parsed_post_vars']
     >>> req.POST
     MultiDict([('a', 'b'), ('upload', FieldStorage('upload', 'test.html')), ('c', 'd')])
+
+A ``BaseRequest`` class exists for the purpose of usage by web
+frameworks that want a less featureful ``Request``.
+
+For example, the ``Request`` class mutates the
+``environ['webob.adhoc_attrs']`` attribute when its ``__getattr__``,
+``__setattr__``, and ``__delattr__`` are invoked.
+
+The ``BaseRequest`` class omits the mutation annotation behavior
+provided by the default ``Request`` implementation.  Instead, the of
+the ``BaseRequest`` class actually mutates the ``__dict__`` of the
+request instance itself.
+
+    >>> from webob import BaseRequest
+    >>> req = BaseRequest.blank('/')
+    >>> req.foo = 1
+    >>> req.environ['webob.adhoc_attrs']
+    Traceback (most recent call last):
+        ...
+    KeyError: 'webob.adhoc_attrs'
+    >>> req.foo
+    1
+    >>> del req.foo
+    >>> req.foo
+    Traceback (most recent call last):
+        ...
+    AttributeError: 'BaseRequest' object has no attribute 'foo'
+
+  
+
+
+
+

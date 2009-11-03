@@ -3,8 +3,20 @@ News
 
 .. contents::
 
-svn trunk
----------
+hg tip
+------
+
+* Moved repository from svn location to
+  http://bitbucket.org/ianb/webob/
+
+* Moved most ``Request`` behavior into a new class named
+  ``BaseRequest``.  The ``Request`` class is now a superclass for
+  ``BaseRequest`` and a simple mixin which manages
+  ``environ['webob.adhoc_attrs']`` when ``__setitem__``,
+  ``__delitem__`` and ``__getitem__`` are called.  This allows
+  framework developers who do not want the
+  ``environ['webob.adhoc_attrs']`` mutation behavior from
+  ``__setattr__``.  (chrism)
 
 * Added response attribute ``response.content_disposition`` for its
   associated header.

@@ -556,7 +556,7 @@ class UnicodePathProperty(object):
 
 
 
-class Request(object):
+class BaseRequest(object):
 
     ## Options:
     default_charset = None
@@ -597,31 +597,6 @@ class Request(object):
                     raise TypeError(
                         "Unexpected keyword: %s=%r" % (name, value))
                 setattr(self, name, value)
-
-    def __setattr__(self, attr, value, DEFAULT=[]):
-        ## FIXME: I don't know why I need this guard (though experimentation says I do)
-        if getattr(self.__class__, attr, DEFAULT) is not DEFAULT or attr.startswith('_'):
-            object.__setattr__(self, attr, value)
-        else:
-            self.environ.setdefault('webob.adhoc_attrs', {})[attr] = value
-
-    def __getattr__(self, attr):
-        ## FIXME: I don't know why I need this guard (though experimentation says I do)
-        if attr in self.__class__.__dict__:
-            return object.__getattribute__(self, attr)
-        try:
-            return self.environ['webob.adhoc_attrs'][attr]
-        except KeyError:
-            raise AttributeError(attr)
-
-    def __delattr__(self, attr):
-        ## FIXME: I don't know why I need this guard (though experimentation says I do)
-        if attr in self.__class__.__dict__:
-            return object.__delattr__(self, attr)
-        try:
-            del self.environ['webob.adhoc_attrs'][attr]
-        except KeyError:
-            raise AttributeError(attr)
 
     def _body_file__get(self):
         """
@@ -1398,9 +1373,13 @@ class Request(object):
     user_agent = environ_getter('HTTP_USER_AGENT', rfc_section='14.43')
 
     def __repr__(self):
-        msg = '<%s at 0x%x %s %s>' % (
+        try:
+            name = '%s %s' % (self.method, self.url)
+        except KeyError:
+            name = '(invalid WSGI environ)'
+        msg = '<%s at 0x%x %s>' % (
             self.__class__.__name__,
-            abs(id(self)), self.method, self.url)
+            abs(id(self)), name)
         return msg
 
     def __str__(self, skip_body=False):
@@ -1570,8 +1549,35 @@ class Request(object):
 
     blank = classmethod(blank)
 
+class AdhocAttrMixin(object):
+    def __setattr__(self, attr, value, DEFAULT=object()):
+        ## FIXME: I don't know why I need this guard (though experimentation says I do)
+        if getattr(self.__class__, attr, DEFAULT) is not DEFAULT or attr.startswith('_'):
+            object.__setattr__(self, attr, value)
+        else:
+            self.environ.setdefault('webob.adhoc_attrs', {})[attr] = value
 
+    def __getattr__(self, attr, DEFAULT=object()):
+        ## FIXME: I don't know why I need this guard (though experimentation says I do)
+        if getattr(self.__class__, attr, DEFAULT) is not DEFAULT:
+            return object.__getattribute__(self, attr)
+        try:
+            return self.environ['webob.adhoc_attrs'][attr]
+        except KeyError:
+            raise AttributeError(attr)
 
+    def __delattr__(self, attr, DEFAULT=object()):
+        ## FIXME: I don't know why I need this guard (though experimentation says I do)
+        if getattr(self.__class__, attr, DEFAULT) is not DEFAULT:
+            return object.__delattr__(self, attr)
+        try:
+            del self.environ['webob.adhoc_attrs'][attr]
+        except KeyError:
+            raise AttributeError(attr)
+    
+
+class Request(AdhocAttrMixin, BaseRequest):
+    """ The default request implementation """
 
 ################
 ################
