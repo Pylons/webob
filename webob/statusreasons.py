@@ -64,4 +64,4 @@ status_reasons = {
     505: 'HTTP Version Not Supported',
     507: 'Insufficient Storage',
     510: 'Not Extended',
-    }
+}

@@ -1013,9 +1013,8 @@ class AppIterRange(object):
         assert start >= 0, "Bad start: %r" % start
         assert stop is None or (stop >= 0 and stop >= start), (
             "Bad stop: %r" % stop)
-        self.app_iter = app_iter
-        self.app_iterator = iter(app_iter)
-        self._pos = 0 # position in app_iterator
+        self.app_iter = iter(app_iter)
+        self._pos = 0 # position in app_iter
         self.start = start
         self.stop = stop
 
@@ -1024,7 +1023,7 @@ class AppIterRange(object):
 
     def _skip_start(self):
         start, stop = self.start, self.stop
-        for chunk in self.app_iterator:
+        for chunk in self.app_iter:
             self._pos += len(chunk)
             if self._pos < start:
                 continue
@@ -1048,7 +1047,7 @@ class AppIterRange(object):
         if stop is not None and self._pos >= stop:
             raise StopIteration
 
-        chunk = self.app_iterator.next()
+        chunk = self.app_iter.next()
         self._pos += len(chunk)
 
         if stop is None or self._pos <= stop:
@@ -1062,7 +1061,6 @@ class AppIterRange(object):
 
 
 class EmptyResponse(object):
-
     """An empty WSGI response.
 
     An iterator that immediately stops. Optionally provides a close
