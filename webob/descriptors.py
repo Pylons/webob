@@ -1,5 +1,6 @@
-import re
-from datetime import datetime, date, timedelta
+import warnings
+import re, textwrap
+from datetime import datetime, date
 
 from webob.byterange import Range, ContentRange
 from webob.etag import AnyETag, NoETag, ETagMatcher, IfRange, NoIfRange

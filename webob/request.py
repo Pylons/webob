@@ -1,4 +1,4 @@
-import sys, tempfile
+import sys, tempfile, warnings
 import urllib, urlparse, cgi
 from Cookie import BaseCookie
 from cStringIO import StringIO
