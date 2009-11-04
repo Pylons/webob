@@ -4,7 +4,7 @@ Does parsing of ETag-related headers: If-None-Matches, If-Matches
 Also If-Range parsing
 """
 
-import webob
+from webob import datetime_utils
 
 __all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'NoIfRange']
 
@@ -116,7 +116,7 @@ class ETagMatcher(object):
             value = rest
         return cls(results, weak_results)
     parse = classmethod(parse)
-                    
+
     def __str__(self):
         # FIXME: should I quote these?
         items = list(self.etags)
@@ -141,7 +141,7 @@ class IfRange(object):
         if self.date is None:
             date = '*'
         else:
-            date = webob._serialize_date(self.date)
+            date = datetime_utils._serialize_date(self.date)
         return '<%s etag=%s, date=%s>' % (
             self.__class__.__name__,
             etag, date)
@@ -150,7 +150,7 @@ class IfRange(object):
         if self.etag is not None:
             return str(self.etag)
         elif self.date:
-            return webob._serialize_date(self.date)
+            return datetime_utils._serialize_date(self.date)
         else:
             return ''
 
@@ -185,7 +185,7 @@ class IfRange(object):
             etag = NoETag()
         elif value and value.endswith(' GMT'):
             # Must be a date
-            date = webob._parse_date(value)
+            date = datetime_utils._parse_date(value)
         else:
             etag = ETagMatcher.parse(value)
         return cls(etag=etag, date=date)
@@ -195,7 +195,7 @@ class _NoIfRange(object):
     """
     Represents a missing If-Range header
     """
-    
+
     def __repr__(self):
         return '<Empty If-Range>'
 
