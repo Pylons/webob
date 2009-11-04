@@ -6,10 +6,7 @@ import urlparse
 import re
 import textwrap
 from Cookie import BaseCookie
-from rfc822 import parsedate_tz, mktime_tz, formatdate
-from datetime import datetime, date, timedelta, tzinfo
-import time
-import calendar
+from datetime import datetime, date, timedelta
 import tempfile
 import warnings
 from webob.datastruct import EnvironHeaders
@@ -25,6 +22,13 @@ try:
 except NameError:
     from webob.compat import sorted
 
+from webob.descriptors import *
+from webob.datetime_utils import *
+from webob.datetime_utils import (
+    _parse_date, _parse_date_delta,
+    _serialize_date, _serialize_date_delta, _serialize_cookie_date
+)
+
 _CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
 _SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
 _PARAM_RE = re.compile(r'([a-z0-9]+)=(?:"([^"]*)"|([a-z0-9_.-]*))', re.I)
@@ -38,18 +42,6 @@ else:
 
 
 __all__ = ['Request', 'Response', 'UTC', 'day', 'week', 'hour', 'minute', 'second', 'month', 'year', 'html_escape']
-
-class _UTC(tzinfo):
-    def dst(self, dt):
-        return timedelta(0)
-    def utcoffset(self, dt):
-        return timedelta(0)
-    def tzname(self, dt):
-        return 'UTC'
-    def __repr__(self):
-        return 'UTC'
-
-UTC = _UTC()
 
 def html_escape(s):
     """HTML-escape a string or object
@@ -75,140 +67,10 @@ def html_escape(s):
         s = s.encode('ascii', 'xmlcharrefreplace')
     return s
 
-def timedelta_to_seconds(td):
-    """
-    Converts a timedelta instance to seconds.
-    """
-    return td.seconds + (td.days*24*60*60)
-
-day = timedelta(days=1)
-week = timedelta(weeks=1)
-hour = timedelta(hours=1)
-minute = timedelta(minutes=1)
-second = timedelta(seconds=1)
-# Estimate, I know; good enough for expirations
-month = timedelta(days=30)
-year = timedelta(days=365)
-
 class _NoDefault:
     def __repr__(self):
         return '(No Default)'
 NoDefault = _NoDefault()
-
-class environ_getter(object):
-    """For delegating an attribute to a key in self.environ."""
-
-    def __init__(self, key, default='', default_factory=None,
-                 settable=True, deletable=True, doc=None,
-                 rfc_section=None):
-        self.key = key
-        self.default = default
-        self.default_factory = default_factory
-        self.settable = settable
-        self.deletable = deletable
-        docstring = "Gets"
-        if self.settable:
-            docstring += " and sets"
-        if self.deletable:
-            docstring += " and deletes"
-        docstring += " the %r key from the environment." % self.key
-        docstring += _rfc_reference(self.key, rfc_section)
-        if doc:
-            docstring += '\n\n' + textwrap.dedent(doc)
-        self.__doc__ = docstring
-
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        if self.key not in obj.environ:
-            if self.default_factory:
-                val = obj.environ[self.key] = self.default_factory()
-                return val
-            else:
-                return self.default
-        return obj.environ[self.key]
-
-    def __set__(self, obj, value):
-        if not self.settable:
-            raise AttributeError("Read-only attribute (key %r)" % self.key)
-        if value is None:
-            if self.key in obj.environ:
-                del obj.environ[self.key]
-        else:
-            obj.environ[self.key] = value
-
-    def __delete__(self, obj):
-        if not self.deletable:
-            raise AttributeError("You cannot delete the key %r" % self.key)
-        del obj.environ[self.key]
-
-    def __repr__(self):
-        return '<Proxy for WSGI environ %r key>' % self.key
-
-class header_getter(object):
-    """For delegating an attribute to a header in self.headers"""
-
-    def __init__(self, header, default=None,
-                 settable=True, deletable=True, doc=None, rfc_section=None):
-        self.header = header
-        self.default = default
-        self.settable = settable
-        self.deletable = deletable
-        docstring = "Gets"
-        if self.settable:
-            docstring += " and sets"
-        if self.deletable:
-            docstring += " and deletes"
-        docstring += " the %s header" % self.header
-        docstring += _rfc_reference(self.header, rfc_section)
-        if doc:
-            docstring += '\n\n' + textwrap.dedent(doc)
-        self.__doc__ = docstring
-
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        return obj.headers.get(self.header, self.default)
-
-    def __set__(self, obj, value):
-        if not self.settable:
-            raise AttributeError("Read-only attribute (header %s)" % self.header)
-        if value is None:
-            if self.header in obj.headers:
-                del obj.headers[self.header]
-        else:
-            if isinstance(value, unicode):
-                # This is the standard encoding for headers:
-                value = value.encode('ISO-8859-1')
-            obj.headers[self.header] = value
-
-    def __delete__(self, obj):
-        if not self.deletable:
-            raise AttributeError("You cannot delete the header %s" % self.header)
-        del obj.headers[self.header]
-
-    def __repr__(self):
-        return '<Proxy for header %s>' % self.header
-
-class set_via_call(object):
-    def __init__(self, func, adapt_args=None):
-        self.func = func
-        self.adapt_args = adapt_args
-    def __get__(self, obj, type=None):
-        return self.__class__(self.func.__get__(obj, type))
-    def __set__(self, obj, value):
-        if self.adapt_args is None:
-            args, kw = (value,), {}
-        else:
-            result = self.adapt_args(value)
-            if result is None:
-                return
-            args, kw = result
-        self.func(obj, *args, **kw)
-    def __repr__(self):
-        return 'set_via_call(%r)' % self.func
-    def __call__(self, *args, **kw):
-        return self.func(*args, **kw)
 
 def _adapt_cache_expires(value):
     if value is False:
@@ -218,159 +80,8 @@ def _adapt_cache_expires(value):
     else:
         return (value,), {}
 
-class converter(object):
-    """
-    Wraps a descriptor, and applies additional conversions when reading and writing
-    """
-    def __init__(self, descriptor, getter_converter, setter_converter, convert_name=None, doc=None, converter_args=()):
-        self.descriptor = descriptor
-        self.getter_converter = getter_converter
-        self.setter_converter = setter_converter
-        self.convert_name = convert_name
-        self.converter_args = converter_args
-        docstring = descriptor.__doc__ or ''
-        docstring += "  Converts it as a "
-        if convert_name:
-            docstring += convert_name + '.'
-        else:
-            docstring += "%r and %r." % (getter_converter, setter_converter)
-        if doc:
-            docstring += '\n\n' + textwrap.dedent(doc)
-        self.__doc__ = docstring
 
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        value = self.descriptor.__get__(obj, type)
-        return self.getter_converter(value, *self.converter_args)
 
-    def __set__(self, obj, value):
-        value = self.setter_converter(value, *self.converter_args)
-        self.descriptor.__set__(obj, value)
-
-    def __delete__(self, obj):
-        self.descriptor.__delete__(obj)
-
-    def __repr__(self):
-        if self.convert_name:
-            name = ' %s' % self.convert_name
-        else:
-            name = ''
-        return '<Converted %r%s>' % (self.descriptor, name)
-
-def _rfc_reference(header, section):
-    if not section:
-        return ''
-    major_section = section.split('.')[0]
-    link = 'http://www.w3.org/Protocols/rfc2616/rfc2616-sec%s.html#sec%s' % (
-        major_section, section)
-    if header.startswith('HTTP_'):
-        header = header[5:].title().replace('_', '-')
-    return "  For more information on %s see `section %s <%s>`_." % (
-        header, section, link)
-
-class deprecated_property(object):
-    """
-    Wraps a descriptor, with a deprecation warning or error
-    """
-    def __init__(self, descriptor, attr, message, warning=True):
-        self.descriptor = descriptor
-        self.attr = attr
-        self.message = message
-        self.warning = warning
-
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        self.warn()
-        return self.descriptor.__get__(obj, type)
-
-    def __set__(self, obj, value):
-        self.warn()
-        self.descriptor.__set__(obj, value)
-
-    def __delete__(self, obj):
-        self.warn()
-        self.descriptor.__delete__(obj)
-
-    def __repr__(self):
-        return '<Deprecated attribute %s: %r>' % (
-            self.attr,
-            self.descriptor)
-
-    def warn(self):
-        if not self.warning:
-            raise DeprecationWarning(
-                'The attribute %s is deprecated: %s' % (self.attr, self.message))
-        else:
-            warnings.warn(
-                'The attribute %s is deprecated: %s' % (self.attr, self.message),
-                DeprecationWarning,
-                stacklevel=3)
-
-def _parse_date(value):
-    if not value:
-        return None
-    t = parsedate_tz(value)
-    if t is None:
-        # Could not parse
-        return None
-    if t[-1] is None:
-        # No timezone given.  None would mean local time, but we'll force UTC
-        t = t[:9] + (0,)
-    t = mktime_tz(t)
-    return datetime.fromtimestamp(t, UTC)
-
-def _serialize_date(dt):
-    if dt is None:
-        return None
-    if isinstance(dt, unicode):
-        dt = dt.encode('ascii')
-    if isinstance(dt, str):
-        return dt
-    if isinstance(dt, timedelta):
-        dt = datetime.now() + dt
-    if isinstance(dt, (datetime, date)):
-        dt = dt.timetuple()
-    if isinstance(dt, (tuple, time.struct_time)):
-        dt = calendar.timegm(dt)
-    if not isinstance(dt, (float, int, long)):
-        raise ValueError(
-            "You must pass in a datetime, date, time tuple, or integer object, not %r" % dt)
-    return formatdate(dt)
-
-def _serialize_cookie_date(dt):
-    if dt is None:
-        return None
-    if isinstance(dt, unicode):
-        dt = dt.encode('ascii')
-    if isinstance(dt, timedelta):
-        dt = datetime.now() + dt
-    if isinstance(dt, (datetime, date)):
-        dt = dt.timetuple()
-    return time.strftime('%a, %d-%b-%Y %H:%M:%S GMT', dt)
-
-def _parse_date_delta(value):
-    """
-    like _parse_date, but also handle delta seconds
-    """
-    if not value:
-        return None
-    try:
-        value = int(value)
-    except ValueError:
-        pass
-    else:
-        delta = timedelta(seconds=value)
-        return datetime.now() + delta
-    return _parse_date(value)
-
-def _serialize_date_delta(value):
-    if not value and value != 0:
-        return None
-    if isinstance(value, (float, int)):
-        return str(int(value))
-    return _serialize_date(value)
 
 def _parse_etag(value, default=True):
     if value is None:
@@ -1574,7 +1285,7 @@ class AdhocAttrMixin(object):
             del self.environ['webob.adhoc_attrs'][attr]
         except KeyError:
             raise AttributeError(attr)
-    
+
 
 class Request(AdhocAttrMixin, BaseRequest):
     """ The default request implementation """
