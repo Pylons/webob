@@ -17,7 +17,7 @@ from webob.descriptors import *
 from webob.datetime_utils import *
 from webob import descriptors, datetime_utils
 
-
+__all__ = ['Response']
 
 _PARAM_RE = re.compile(r'([a-z0-9]+)=(?:"([^"]*)"|([a-z0-9_.-]*))', re.I)
 _OK_PARAM_RE = re.compile(r'^[a-z0-9_.-]+$', re.I)
@@ -26,9 +26,8 @@ _OK_PARAM_RE = re.compile(r'^[a-z0-9_.-]+$', re.I)
 
 
 class Response(object):
-
     """
-    Represents a WSGI response
+        Represents a WSGI response
     """
 
     default_content_type = 'text/html'
@@ -292,7 +291,12 @@ class Response(object):
     def _content_type_params__del(self, value):
         self.headers['Content-Type'] = self.headers.get('Content-Type', '').split(';', 1)[0]
 
-    content_type_params = property(_content_type_params__get, _content_type_params__set, _content_type_params__del, doc=_content_type_params__get.__doc__)
+    content_type_params = property(
+    _content_type_params__get, 
+        _content_type_params__set, 
+        _content_type_params__del, 
+        doc=_content_type_params__get.__doc__
+    )
 
     def _headers__get(self):
         """
@@ -865,8 +869,8 @@ class Response(object):
                 # "416 Requested range not satisfiable" response
                 # seems to be the correct behavior according to the
                 # standard (SHOULD in RFC).
-                # But I'm not as sure if it is also the correct thing
-                # to do in reality -Sergey
+                # But I'm not as sure if it is also the best thing
+                # to do in practice -Sergey
 ##                 error_resp = Response(
 ##                     status = '416 Requested range not satisfiable',
 ##                     headers=list(self.headerlist),

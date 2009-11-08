@@ -1017,6 +1017,8 @@ class BaseRequest(object):
 
     blank = classmethod(blank)
 
+
+
 class AdhocAttrMixin(object):
     def __setattr__(self, attr, value, DEFAULT=object()):
         ## FIXME: I don't know why I need this guard (though experimentation says I do)
