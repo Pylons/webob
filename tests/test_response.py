@@ -1,5 +1,5 @@
 from StringIO import StringIO
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 from webob import *
 
 def simple_app(environ, start_response):
@@ -47,6 +47,38 @@ def test_HEAD_closes():
     eq_(res.status_int, 200)
     eq_(res.body, '')
     ok_(app_iter.closed)
+
+def test_content_length():
+    r0 = Response('x'*10, content_length=10)
+
+    req_head = Request.blank('/', method='HEAD')
+    r1 = req_head.get_response(r0)
+    eq_(r1.status_int, 200)
+    eq_(r1.body, '')
+    eq_(r1.content_length, 10)
+
+    req_get = Request.blank('/')
+    r2 = req_get.get_response(r0)
+    eq_(r2.status_int, 200)
+    eq_(r2.body, 'x'*10)
+    eq_(r2.content_length, 10)
+
+    r3 = Response(app_iter=['x']*10)
+    eq_(r3.content_length, None)
+    eq_(r3.body, 'x'*10)
+    eq_(r3.content_length, 10)
+
+    r4 = Response(app_iter=['x']*10, content_length=20) # wrong content_length
+    eq_(r4.content_length, 20)
+    assert_raises(AssertionError, lambda: r4.body)
+
+    req_range = Request.blank('/', range=(0,5))
+    r0.conditional_response = True
+    r5 = req_range.get_response(r0)
+    eq_(r5.status_int, 206)
+    eq_(r5.body, 'xxxxx')
+    eq_(r5.content_length, 5)
+
 
 def test_app_iter_range():
     req = Request.blank('/', range=(2,5))

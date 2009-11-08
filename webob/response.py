@@ -292,9 +292,9 @@ class Response(object):
         self.headers['Content-Type'] = self.headers.get('Content-Type', '').split(';', 1)[0]
 
     content_type_params = property(
-    _content_type_params__get, 
-        _content_type_params__set, 
-        _content_type_params__del, 
+        _content_type_params__get,
+        _content_type_params__set,
+        _content_type_params__del,
         doc=_content_type_params__get.__doc__
     )
 
@@ -321,15 +321,25 @@ class Response(object):
         """
         if self._body is None:
             if self._app_iter is None:
-                raise AttributeError(
-                    "No body has been set")
+                raise AttributeError("No body has been set")
             try:
-                self._body = ''.join(self._app_iter)
+                body = self._body = ''.join(self._app_iter)
             finally:
                 if hasattr(self._app_iter, 'close'):
                     self._app_iter.close()
             self._app_iter = None
-            self.content_length = len(self._body)
+            if self._request is not None and self._request.method == 'HEAD':
+                assert len(body) == 0, "HEAD responses must be empty"
+            elif len(body) == 0:
+                # if body-length is zero, we assume it's a HEAD response and leave content_lenght alone
+                pass
+            elif self.content_length is None:
+                self.content_length = len(body)
+            elif self.content_length != len(body):
+                raise AssertionError(
+                    "Content-Length is different from actual app_iter length (%r!=%r)"
+                    % (self.content_length, len(body))
+                )
         return self._body
 
     def _body__set(self, value):
