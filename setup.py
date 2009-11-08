@@ -31,7 +31,7 @@ environment.
       include_package_data=True,
       zip_safe=True,
       test_suite='nose.collector',
-      test_runner = 'unittest:TextTestRunner',
+      #test_runner = 'unittest:TextTestRunner',
       tests_require=['Tempita', 'WSGIProxy', 'WebTest', 'dtopt', 'nose',
                      'repoze.profile'],
       )
