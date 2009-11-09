@@ -60,6 +60,13 @@ hg tip
   ``webob.exc.HTTPNotFound(body='<notfound/>',
   content_type='application/xml')`` (i.e., non-HTML exceptions).
 
+* When a Location header is not absolute in a Response, it will be
+  made absolute when the Response is called as a WSGI application.
+  This makes the response less bound to a specific request.
+
+* Added :mod:`webob.dec`, a decorator for making WSGI applications
+  from functions with the signature ``resp = app(req)``.
+
 0.9.6.1
 -------
 
