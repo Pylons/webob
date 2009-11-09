@@ -584,8 +584,10 @@ Response
 webapp Response
 ===============
 
-The Google App Engine `webapp <>`_ framework uses the WebOb Request
-object, but does not use its Response object.
+The Google App Engine `webapp
+<http://code.google.com/appengine/docs/python/tools/webapp/>`_
+framework uses the WebOb Request object, but does not use its Response
+object.
 
 The constructor for ``webapp.Response`` does not take any arguments.
 The response is created by the framework, so you don't use it like

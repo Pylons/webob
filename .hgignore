@@ -1,2 +1,4 @@
 WebOb.egg-info
 .*\.py[co]$
+TEST*
+docs/_build/*

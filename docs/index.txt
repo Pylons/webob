@@ -5,6 +5,7 @@ WebOb
 
    reference
    modules/webob
+   modules/dec
    differences
    file-example
    wiki-example

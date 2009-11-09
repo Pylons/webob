@@ -1,0 +1,9 @@
+:mod:`webob` -- Request/Response objects
+========================================
+
+.. automodule:: webob.dec
+
+Decorator
+---------
+
+.. autoclass:: wsgify

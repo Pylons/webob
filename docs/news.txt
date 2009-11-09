@@ -47,12 +47,12 @@ hg tip
 * When ``req.POST`` is updated, the generated body will include the
   new values.
 
-* Added a ``POST`` parameter to :method:`webob.Request.blank`; when
+* Added a ``POST`` parameter to :meth:`webob.Request.blank`; when
   given this will create a request body for the POST parameters (list
   of two-tuples or dictionary-like object).  Note: this does not
   handle unicode or file uploads.
 
-* Added method :method:`webob.Response.merge_cookies`, which takes the
+* Added method :meth:`webob.Response.merge_cookies`, which takes the
   ``Set-Cookie`` headers from a Response, and merges them with another
   response or WSGI application.  (This is useful for flash messages.)
 
@@ -70,7 +70,7 @@ hg tip
 0.9.6.1
 -------
 
-* Fixed :method:`Response.__init__`, which for some content types would
+* Fixed :meth:`Response.__init__`, which for some content types would
   raise an exception.
 
 * The ``req.body`` property will not recreate a StringIO object
@@ -85,13 +85,13 @@ hg tip
   might have been ill-advised from the beginning, and affected
   performance, it has been removed (from Chris McDonough).
 
-* Speed ups for :method:`webob.Response.__init__` and
-  :method:`webob.Request.__init__`
+* Speed ups for :meth:`webob.Response.__init__` and
+  :meth:`webob.Request.__init__`
 
 * Fix defaulting of ``CONTENT_TYPE`` instead of ``CONTENT_LENGTH`` to
   0 in ``Request.str_POST``.
 
-* Added :method:`webob.Response.copy`
+* Added :meth:`webob.Response.copy`
 
 0.9.5
 -----
@@ -107,7 +107,7 @@ hg tip
 * Allow arbitrary keyword arguments to ``exc.HTTP*`` (the same
   keywords you can send to :class:`webob.Response`).
 
-* Allow setting :method:`webob.Response.cache_expires` (usually it is
+* Allow setting :meth:`webob.Response.cache_expires` (usually it is
   called as a method).  This is primarily to allow
   ``Response(cache_expires=True)``.
 

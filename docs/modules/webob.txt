@@ -55,7 +55,7 @@ Misc Functions
 .. autoclass:: webob.month
 .. autoclass:: webob.year
 
-.. autoclass:: webob.AppIterRange
+.. autoclass:: webob.response.AppIterRange
 
 .. automodule:: webob.multidict
 .. autoclass:: MultiDict
@@ -70,7 +70,7 @@ Misc Functions
 Descriptors
 -----------
 
-.. autoclass:: webob.environ_getter
-.. autoclass:: webob.header_getter
-.. autoclass:: webob.converter
-.. autoclass:: webob.deprecated_property
+.. autoclass:: webob.descriptors.environ_getter
+.. autoclass:: webob.descriptors.header_getter
+.. autoclass:: webob.descriptors.converter
+.. autoclass:: webob.descriptors.deprecated_property
