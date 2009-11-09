@@ -517,43 +517,8 @@ class Response(object):
             raise KeyError(
                 "No cookie has been set with the name %r" % key)
 
-    def _location__get(self):
-        """
-        Retrieve the Location header of the response, or None if there
-        is no header.  If the header is not absolute and this response
-        is associated with a request, make the header absolute.
-
-        For more information see `section 14.30
-        <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.30>`_.
-        """
-        if 'location' not in self.headers:
-            return None
-        location = self.headers['location']
-        if SCHEME_RE.search(location):
-            # Absolute
-            return location
-        if self.request is not None:
-            base_uri = self.request.url
-            location = urlparse.urljoin(base_uri, location)
-        return location
-
-    def _location__set(self, value):
-        if value is None:
-            del self.location
-            return
-        if isinstance(value, unicode):
-            value = value.encode('ISO-8859-1')
-        if not SCHEME_RE.search(value):
-            # Not absolute, see if we can make it absolute
-            if self.request is not None:
-                value = urlparse.urljoin(self.request.url, value)
-        self.headers['location'] = value
-
-    def _location__del(self):
-        if 'location' in self.headers:
-            del self.headers['location']
-
-    location = property(_location__get, _location__set, _location__del, doc=_location__get.__doc__)
+    ## FIXME: rfc_section?
+    location = header_getter('Location')
 
     accept_ranges = header_getter('Accept-Ranges', rfc_section='14.5')
 
@@ -833,11 +798,28 @@ class Response(object):
         """
         if self.conditional_response:
             return self.conditional_response_app(environ, start_response)
-        start_response(self.status, self.headerlist)
+        headerlist = self._abs_headerlist(environ)
+        start_response(self.status, headerlist)
         if environ['REQUEST_METHOD'] == 'HEAD':
             # Special case here...
             return EmptyResponse(self.app_iter)
         return self.app_iter
+
+    def _abs_headerlist(self, environ):
+        """Returns a headerlist, with the Location header possibly
+        made absolute given the request environ.
+        """
+        headerlist = self.headerlist
+        for name, value in headerlist:
+            if name.lower() == 'location':
+                if SCHEME_RE.search(value):
+                    break
+                new_location = urlparse.urljoin(
+                    _request_uri(environ), value)
+                headerlist = list(headerlist)
+                headerlist[headerlist.index((name, value))] = (name, new_location)
+                break
+        return headerlist
 
     _safe_methods = ('GET', 'HEAD')
 
@@ -851,6 +833,7 @@ class Response(object):
         """
         req = self.RequestClass(environ)
         status304 = False
+        headerlist = self._abs_headerlist(environ)
         if req.method in self._safe_methods:
             if req.if_modified_since and self.last_modified and self.last_modified <= req.if_modified_since:
                 status304 = True
@@ -862,10 +845,10 @@ class Response(object):
                     # Even if If-Modified-Since matched, if ETag doesn't then reject it
                     status304 = False
         if status304:
-            start_response('304 Not Modified', self.headerlist)
+            start_response('304 Not Modified', headerlist)
             return EmptyResponse(self.app_iter)
         if req.method == 'HEAD':
-            start_response(self.status, self.headerlist)
+            start_response(self.status, headerlist)
             return EmptyResponse(self.app_iter)
         if (req.range and req.if_range.match_response(self)
             and self.content_range is None
@@ -883,7 +866,7 @@ class Response(object):
                 # to do in practice -Sergey
 ##                 error_resp = Response(
 ##                     status = '416 Requested range not satisfiable',
-##                     headers=list(self.headerlist),
+##                     headers=list(headerlist),
 ##                     content_range = ContentRange(None, None, self.content_length),
 ##                     body = "Requested range not satisfiable",
 ##                 )
@@ -895,7 +878,7 @@ class Response(object):
                 if app_iter is not None:
                     partial_resp = Response(
                         status = '206 Partial Content',
-                        headers=list(self.headerlist),
+                        headers=list(headerlist),
                         content_range=content_range,
                         app_iter=app_iter,
                     )
@@ -903,7 +886,7 @@ class Response(object):
                     assert content_range.start is not None
                     partial_resp.content_length = content_range.stop - content_range.start
                     return partial_resp(environ, start_response)
-        start_response(self.status, self.headerlist)
+        start_response(self.status, headerlist)
         return self.app_iter
 
     def app_iter_range(self, start, stop):
@@ -1043,3 +1026,29 @@ class EmptyResponse(object):
 
     def next(self):
         raise StopIteration()
+
+def _request_uri(environ):
+    """Like wsgiref.url.request_uri, except eliminates :80 ports
+
+    Return the full request URI"""
+    url = environ['wsgi.url_scheme']+'://'
+    from urllib import quote
+
+    if environ.get('HTTP_HOST'):
+        url += environ['HTTP_HOST']
+    else:
+        url += environ['SERVER_NAME'] + ':' + environ['SERVER_PORT']
+    if url.endswith(':80') and environ['wsgi.url_scheme'] == 'http':
+        url = url[:-3]
+    elif url.endswith(':443') and environ['wsgi.url_scheme'] == 'https':
+        url = url[:-4]
+
+    url += quote(environ.get('SCRIPT_NAME') or '/')
+    from urllib import quote
+    path_info = quote(environ.get('PATH_INFO',''))
+    if not environ.get('SCRIPT_NAME'):
+        url += path_info[1:]
+    else:
+        url += path_info
+    return url
+    

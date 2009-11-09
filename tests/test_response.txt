@@ -137,21 +137,19 @@ properties:
     >>> (res.vary, res.headers['vary'])
     (['Cookie'], 'Cookie')
 
-The location header will try to absolutify itself if you have a
-request object attached.
+The location header will absolutify itself when the response
+application is actually served.  We can force this with
+``req.get_response``::
 
     >>> res.location = '/test.html'
     >>> from webob import Request
-    >>> res.request = Request.blank('/')
-    >>> res.location
-    'http://localhost/test.html'
-    >>> res.request = None
+    >>> req = Request.blank('/')
     >>> res.location
     '/test.html'
-    >>> res.request = Request.blank('/')
+    >>> req.get_response(res).location
+    'http://localhost/test.html'
     >>> res.location = '/test2.html'
-    >>> res.request = None
-    >>> res.location
+    >>> req.get_response(res).location
     'http://localhost/test2.html'
 
 There's some conditional response handling too (you have to turn on

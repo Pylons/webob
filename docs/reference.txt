@@ -779,7 +779,7 @@ After setting all these headers, here's the result:
     >>> for name, value in res.headerlist:
     ...     print '%s: %s' % (name, value)
     Content-Type: application/atom+xml; charset=utf8; type=entry
-    location: http://localhost/foo
+    Location: http://localhost/foo
     Accept-Ranges: bytes
     Age: 120
     Allow: GET, PUT
@@ -924,7 +924,7 @@ simple body is provided.
     >>> print str(req.get_response(exc)).strip()
     307 Temporary Redirect
     Content-Type: text/html; charset=UTF-8
-    location: http://localhost/path/to/foo
+    Location: http://localhost/path/to/foo
     Content-Length: 126
     <BLANKLINE>
     307 Temporary Redirect
@@ -940,7 +940,7 @@ request will an HTML response be given:
     >>> print str(req.get_response(exc)).strip()
     307 Temporary Redirect
     Content-Type: text/html; charset=UTF-8
-    location: http://localhost/path/to/foo
+    Location: http://localhost/path/to/foo
     Content-Length: 270
     <BLANKLINE>
     <html>
