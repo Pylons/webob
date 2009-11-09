@@ -1,5 +1,5 @@
-:mod:`webob` -- Request/Response objects
-========================================
+:mod:`webob.dec` -- WSGIfy decorator
+====================================
 
 .. automodule:: webob.dec
 
