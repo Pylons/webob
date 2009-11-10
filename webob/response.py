@@ -517,8 +517,7 @@ class Response(object):
             raise KeyError(
                 "No cookie has been set with the name %r" % key)
 
-    ## FIXME: rfc_section?
-    location = header_getter('Location')
+    location = header_getter('Location', rfc_section='14.30')
 
     accept_ranges = header_getter('Accept-Ranges', rfc_section='14.5')
 
@@ -1051,4 +1050,4 @@ def _request_uri(environ):
     else:
         url += path_info
     return url
-    
+
