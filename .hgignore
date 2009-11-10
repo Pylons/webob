@@ -1,4 +1,7 @@
+syntax: glob
+
 WebOb.egg-info
-.*\.py[co]$
+*.pyc
+*.pyo
 TEST*
 docs/_build/*
