@@ -262,7 +262,10 @@ class Response(object):
 
     def _content_type_params__get(self):
         """
-        Returns a dictionary of all the parameters in the content type.
+        A dictionary of all the parameters in the content type.
+
+        (This is not a view, set to change, modifications of the dict would not be
+        applied otherwise)
         """
         params = self.headers.get('Content-Type', '')
         if ';' not in params:
@@ -369,7 +372,7 @@ class Response(object):
 
     def _body_file__get(self):
         """
-        Returns a file-like object that can be used to write to the
+        A file-like object that can be used to write to the
         body.  If you passed in a list app_iter, that app_iter will be
         modified by writes.
         """
@@ -409,7 +412,8 @@ class Response(object):
         del self.body
 
     unicode_body = property(_unicode_body__get, _unicode_body__set, _unicode_body__del, doc=_unicode_body__get.__doc__)
-    ubody = unicode_body # this alias will work as long as subclasses don't redefine unicode_body
+    #ubody = unicode_body # this alias will work as long as subclasses don't redefine unicode_body
+    ubody = property(_unicode_body__get, _unicode_body__set, _unicode_body__del, doc="Alias for unicode_body")
 
     def _app_iter__get(self):
         """
@@ -420,8 +424,7 @@ class Response(object):
         """
         if self._app_iter is None:
             if self._body is None:
-                raise AttributeError(
-                    "No body or app_iter has been set")
+                raise AttributeError("No body or app_iter has been set")
             return [self._body]
         else:
             return self._app_iter
