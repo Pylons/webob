@@ -161,9 +161,9 @@ class Response(object):
         """
         The status as an integer
         """
-        return int(self.status.split()[0])
-    def _status_int__set(self, value):
-        self.status = value
+        return int(self._status.split()[0])
+    def _status_int__set(self, code):
+        self._status = '%d %s' % (code, status_reasons[code])
     status_int = property(_status_int__get, _status_int__set, doc=_status_int__get.__doc__)
 
     status_code = deprecated_property(
