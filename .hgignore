@@ -4,4 +4,5 @@ WebOb.egg-info
 *.pyc
 *.pyo
 TEST*
+testenv
 docs/_build/*
