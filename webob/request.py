@@ -132,7 +132,7 @@ class BaseRequest(object):
     content_type = property(_content_type__get, _content_type__set, _content_type__del,
                             _content_type__get.__doc__)
 
-    _charset_cache = None
+    _charset_cache = (None, None)
 
     def _charset__get(self):
         """Get the charset of the request.
@@ -148,16 +148,16 @@ class BaseRequest(object):
         then deleting the property will do nothing, and there will be
         no error).
         """
-        cache = self._charset_cache
         content_type = self.environ.get('CONTENT_TYPE', '')
-        if cache and cache[0] == content_type:
-            return cache[1]
+        cached_ctype, cached_charset = self._charset_cache
+        if cached_ctype == content_type:
+            return cached_charset
         charset_match = CHARSET_RE.search(content_type)
         if charset_match:
             result = charset_match.group(1).strip('"').strip()
         else:
             result = self.default_charset
-        self.__dict__['_charset_cache'] = (content_type, result)
+        self._charset_cache = (content_type, result)
         return result
     def _charset__set(self, charset):
         if charset is None or charset == '':
