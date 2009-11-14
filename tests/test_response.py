@@ -1,6 +1,7 @@
 from StringIO import StringIO
 from nose.tools import eq_, ok_, assert_raises
 from webob import *
+from webob import BaseRequest
 
 def simple_app(environ, start_response):
     start_response('200 OK', [
@@ -9,7 +10,7 @@ def simple_app(environ, start_response):
     return ['OK']
 
 def test_response():
-    req = Request.blank('/')
+    req = BaseRequest.blank('/')
     res = req.get_response(simple_app)
     assert res.status == '200 OK'
     assert res.status_int == 200

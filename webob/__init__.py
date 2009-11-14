@@ -34,7 +34,7 @@ def html_escape(s):
     return s
 
 
-Request.ResponseClass = Response
+BaseRequest.ResponseClass = Response
 Response.RequestClass = Request
 
 
