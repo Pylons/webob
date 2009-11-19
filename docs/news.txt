@@ -36,11 +36,11 @@ hg tip
 * Add Unicode versions of ``Request.script_name`` and ``path_info``:
   ``uscript_name`` and ``upath_info``.
 
-* Break __init__.py into four modules: request, response, descriptors and
+* Split __init__.py into four modules: request, response, descriptors and
   datetime_utils.
 
 * Fix ``Response.body`` access resetting Content-Length to zero
-  for HEAD reponses.
+  for HEAD responses.
 
 * Support passing Unicode bodies to :class:`WSGIHTTPException`
   constructors.
