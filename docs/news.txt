@@ -19,7 +19,7 @@ hg tip
 * Also, make sure that if the user-agent accepts multiple types and
   there are multiple matches to the types that the application offers,
   ``req.accept.best_match([..])`` returns the most specific match.
-  So if the server can satisfy either ``image/*`` and or ``text/plain``
+  So if the server can satisfy either ``image/*`` or ``text/plain``
   types, the latter will be picked independent from the order the accepted
   or offered types are listed (given they have the same quality rating).
 
@@ -55,7 +55,7 @@ hg tip
 * Fix :meth:`Response.md5_etag` setting Content-MD5 in incorrect
   format.
 
-* Add ``Request.authorization`` property for Autorization header.
+* Add ``Request.authorization`` property for Authorization header.
 
 * Make sure ETag value is always quoted (required by RFC)
 
