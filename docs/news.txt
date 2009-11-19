@@ -143,7 +143,7 @@ hg tip
 0.9.5
 -----
 
-* Fix `Request.blank('/').copy()` raising an exception.
+* Fix ``Request.blank('/').copy()`` raising an exception.
 
 * Fix a potential memory leak with HEAD requests and 304 responses.
 
@@ -177,7 +177,7 @@ hg tip
   removed. (Otherwise a lot of middleware would accidentally
   corrupt responses).
 
-* Fixed `Response.encode_content('identity')` case (was a no-op even
+* Fixed ``Response.encode_content('identity')`` case (was a no-op even
   for encoded bodies).
 
 * Fixed :meth:`Request.remove_conditional_headers` that was removing
