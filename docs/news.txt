@@ -28,6 +28,20 @@ hg tip
   content-ranges, failing to generate the correct body to satisfy the range
   from ``app_iter`` etc.
 
+* Fix assumption that presense of a ``seek`` method means that the stream
+  is seekable.
+
+* Add ``ubody`` alias for ``Response.unicode_body``
+
+* Add Unicode versions of ``Request.script_name`` and ``path_info``:
+  ``uscript_name`` and ``upath_info``.
+
+* Break __init__.py into four modules: request, response, descriptors and
+  datetime_utils.
+
+* Fix ``Response.body`` access resetting Content-Length to zero
+  for HEAD reponses.
+
 * Support passing Unicode bodies to :class:`WSGIHTTPException`
   constructors.
 
