@@ -197,6 +197,28 @@ Some headers are handled specifically (more should be added):
     >>> req.user_agent
     'MSIE-Win'
 
+    >>> req.cache_control
+    <CacheControl ''>
+    >>> req.cache_control.no_cache = True
+    >>> req.cache_control.max_age = 0
+    >>> req.cache_control
+    <CacheControl 'max-age=0, no-cache'>
+
+Unfortunately .cache_control is not a view:
+
+    >>> 'cache-control' in req.headers
+    False
+    >>> req.cache_control = req.cache_control
+    >>> 'cache-control' in req.headers
+    True
+    >>> req.headers['cache-control']
+    'max-age=0, no-cache'
+    >>> req.cache_control = {'no-transform': None, 'max-age': 100}
+    >>> req.headers['cache-control']
+    'max-age=100, no-transform'
+
+
+
 Accept-* headers are parsed into read-only objects that support
 containment tests, and some useful methods.  Note that parameters on
 mime types are not supported.
@@ -425,7 +447,7 @@ request instance itself.
         ...
     AttributeError: 'BaseRequest' object has no attribute 'foo'
 
-  
+
 
 
 

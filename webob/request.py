@@ -6,6 +6,7 @@ from cStringIO import StringIO
 from webob.acceptparse import Accept, MIMEAccept, NilAccept, MIMENilAccept, NoAccept
 from webob.datastruct import EnvironHeaders
 from webob.multidict import TrackableMultiDict, MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
+from webob.cachecontrol import CacheControl
 
 from webob.descriptors import *
 from webob.datetime_utils import *
@@ -783,7 +784,7 @@ class BaseRequest(object):
             value = ""
         if isinstance(value, dict):
             value = CacheControl(value, type='request')
-        elif isinstance(value, CacheControl):
+        if isinstance(value, CacheControl):
             str_value = str(value)
             env['HTTP_CACHE_CONTROL'] = str_value
             env['webob._cache_control'] = (str_value, value)
