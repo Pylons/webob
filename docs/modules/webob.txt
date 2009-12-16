@@ -46,14 +46,13 @@ Misc Functions
 
 .. comment:
    not sure what to do with these constants; not autoclass
-
-.. autoclass:: webob.day
-.. autoclass:: webob.week
-.. autoclass:: webob.hour
-.. autoclass:: webob.minute
-.. autoclass:: webob.second
-.. autoclass:: webob.month
-.. autoclass:: webob.year
+   .. autoclass:: webob.day
+   .. autoclass:: webob.week
+   .. autoclass:: webob.hour
+   .. autoclass:: webob.minute
+   .. autoclass:: webob.second
+   .. autoclass:: webob.month
+   .. autoclass:: webob.year
 
 .. autoclass:: webob.response.AppIterRange
 
