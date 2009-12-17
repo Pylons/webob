@@ -3,8 +3,8 @@ News
 
 .. contents::
 
-hg tip
-------
+0.9.7
+-----
 
 * Moved repository from svn location to
   http://bitbucket.org/ianb/webob/
