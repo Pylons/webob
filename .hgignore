@@ -6,3 +6,4 @@ WebOb.egg-info
 TEST*
 testenv
 docs/_build/*
+dist/
