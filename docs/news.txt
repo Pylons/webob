@@ -3,6 +3,11 @@ News
 
 .. contents::
 
+hg tip
+------
+
+* Fix an import problem with Pylons
+
 0.9.7
 -----
 

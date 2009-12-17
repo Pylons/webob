@@ -2,6 +2,10 @@ import cgi
 from webob.datetime_utils import *
 from webob.request import *
 from webob.response import *
+# Pylons has imported UnicodeMultiDict directly from this location; so
+# we're putting it here just to help them out (though it has also been
+# fixed in Pylons tip on 17 Dec 2009)
+from webob.multidict import UnicodeMultiDict
 
 __all__ = [
     'Request', 'Response',
