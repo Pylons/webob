@@ -28,7 +28,6 @@ environment.
       url='http://pythonpaste.org/webob/',
       license='MIT',
       packages=['webob', 'webob.util'],
-      include_package_data=True,
       zip_safe=True,
       test_suite='nose.collector',
       #test_runner = 'unittest:TextTestRunner',
