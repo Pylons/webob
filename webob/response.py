@@ -331,10 +331,10 @@ class Response(object):
                 if hasattr(self._app_iter, 'close'):
                     self._app_iter.close()
             self._app_iter = None
-            if self._request is not None and self._request.method == 'HEAD':
+            if self._environ is not None and self._environ['REQUEST_METHOD'] == 'HEAD':
                 assert len(body) == 0, "HEAD responses must be empty"
             elif len(body) == 0:
-                # if body-length is zero, we assume it's a HEAD response and leave content_lenght alone
+                # if body-length is zero, we assume it's a HEAD response and leave content_length alone
                 pass
             elif self.content_length is None:
                 self.content_length = len(body)
@@ -648,8 +648,8 @@ class Response(object):
         self.body = new_body
 
     def decode_content(self):
-        content_encoding = self.content_encoding
-        if not content_encoding or content_encoding == 'identity':
+        content_encoding = self.content_encoding or 'identity'
+        if content_encoding == 'identity':
             return
         if content_encoding != 'gzip':
             raise ValueError(
@@ -855,6 +855,7 @@ class Response(object):
         if req.method == 'HEAD':
             start_response(self.status, headerlist)
             return EmptyResponse(self.app_iter)
+        # FIXME: we should handle HEAD requests with Range
         if (req.range and req.if_range.match_response(self)
             and self.content_range is None
             and req.method == 'GET'
