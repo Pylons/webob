@@ -71,6 +71,13 @@ Cookie handling is done through methods:
     >>> res.unset_cookie('test')
     >>> res.headers.getall('set-cookie')
     ['test2=value2; expires="... GMT"; Max-Age=10000; Path=/']
+    >>> res.set_cookie('test2', 'value2-add')
+    >>> res.headers.getall('set-cookie')
+    ['test2=value2; expires="... GMT"; Max-Age=10000; Path=/', 'test2=value2-add; Path=/']
+    >>> res.set_cookie('test2', 'value2-replace', overwrite=True)
+    >>> res.headers.getall('set-cookie')
+    ['test2=value2-replace; Path=/']
+
 
 Most headers are available in a parsed getter/setter form through
 properties:

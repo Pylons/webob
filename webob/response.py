@@ -444,12 +444,14 @@ class Response(object):
 
     def set_cookie(self, key, value='', max_age=None,
                    path='/', domain=None, secure=None, httponly=False,
-                   version=None, comment=None, expires=None):
+                   version=None, comment=None, expires=None, overwrite=False):
         """
         Set (add) a cookie for the response
         """
         if isinstance(value, unicode) and self.charset is not None:
             value = '"%s"' % value.encode(self.charset)
+        if overwrite:
+            self.unset_cookie(key, strict=False)
         cookies = BaseCookie()
         cookies[key] = value
         if isinstance(max_age, timedelta):
@@ -496,7 +498,7 @@ class Response(object):
         self.set_cookie(key, '', path=path, domain=domain,
                         max_age=0, expires=timedelta(days=-5))
 
-    def unset_cookie(self, key):
+    def unset_cookie(self, key, strict=True):
         """
         Unset a cookie with the given name (remove it from the
         response).  If there are multiple cookies (e.g., two cookies
@@ -505,6 +507,8 @@ class Response(object):
         """
         existing = self.headers.getall('Set-Cookie')
         if not existing:
+            if not strict:
+                return
             raise KeyError("No cookies at all have been set")
         del self.headers['Set-Cookie']
         found = False
@@ -520,7 +524,7 @@ class Response(object):
                 # strips quotes from expires= parameter, so better use
                 # it as is, if it hasn't changed
                 self._add_cookie(header)
-        if not found:
+        if strict and not found:
             raise KeyError(
                 "No cookie has been set with the name %r" % key)
 
