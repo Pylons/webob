@@ -461,7 +461,7 @@ class Response(object):
         if isinstance(expires, datetime):
             expires = '"'+datetime_utils._serialize_cookie_date(expires)+'"'
         for var_name, var_value in [
-            ('max_age', max_age),
+            ('max-age', max_age),
             ('path', path),
             ('domain', domain),
             ('secure', secure),
@@ -469,15 +469,21 @@ class Response(object):
             ('version', version),
             ('comment', comment),
             ('expires', expires),
-            ]:
+        ]:
             if var_value is not None and var_value is not False:
-                cookies[key][var_name.replace('_', '-')] = str(var_value)
-        header_value = cookies[key].output(header='').lstrip()
-        if header_value.endswith(';'):
-            # Python 2.4 adds a trailing ; to the end, strip it to be
-            # consistent with 2.5
-            header_value = header_value[:-1]
-        self.headerlist.append(('Set-Cookie', header_value))
+                cookies[key][var_name] = str(var_value)
+        self._add_cookie(cookies)
+
+    def _add_cookie(self, cookie):
+        if not isinstance(cookie, str):
+            cookie = cookie.output(header='').lstrip()
+            if cookie.endswith(';'):
+                # Python 2.4 adds a trailing ; to the end, strip it to be
+                # consistent with 2.5
+                cookie = cookie[:-1]
+        if cookie:
+            self.headerlist.append(('Set-Cookie', cookie))
+
 
     def delete_cookie(self, key, path='/', domain=None):
         """
@@ -499,8 +505,7 @@ class Response(object):
         """
         existing = self.headers.getall('Set-Cookie')
         if not existing:
-            raise KeyError(
-                "No cookies at all have been set")
+            raise KeyError("No cookies at all have been set")
         del self.headers['Set-Cookie']
         found = False
         for header in existing:
@@ -509,13 +514,12 @@ class Response(object):
             if key in cookies:
                 found = True
                 del cookies[key]
-                header = cookies.output(header='').lstrip()
-            if header:
-                if header.endswith(';'):
-                    # Python 2.4 adds a trailing ; to the end, strip it
-                    # to be consistent with 2.5
-                    header = header[:-1]
-                self.headers.add('Set-Cookie', header)
+                self._add_cookie(cookies)
+            else:
+                # this branching is required because Cookie.Morsel.output()
+                # strips quotes from expires= parameter, so better use
+                # it as is, if it hasn't changed
+                self._add_cookie(header)
         if not found:
             raise KeyError(
                 "No cookie has been set with the name %r" % key)
