@@ -917,7 +917,7 @@ class BaseRequest(object):
             status, headers, app_iter = self.call_application(
                 application, catch_exc_info=False)
         return self.ResponseClass(
-            status=status, headerlist=headers, app_iter=app_iter,
+            status=status, headerlist=list(headers), app_iter=app_iter,
             request=self)
 
     #@classmethod

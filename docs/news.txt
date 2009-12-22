@@ -3,6 +3,13 @@ News
 
 .. contents::
 
+hg tip
+------
+
+* Don't share response headers when getting a response like ``resp =
+  req.get_response(some_app)``; this can avoid some funny errors with
+  modifying headers and reusing Response objects.
+
 0.9.7.1
 -------
 
