@@ -10,6 +10,13 @@ hg tip
   req.get_response(some_app)``; this can avoid some funny errors with
   modifying headers and reusing Response objects.
 
+* Add `overwrite` argument to :meth:`Response.set_cookie` that make the
+  new value overwrite the previously set. `False` by default.
+
+* Add `strict` argument to :meth:`Response.unset_cookie` that controls
+  if an exception should be raised in case there are no cookies to unset.
+  `True` by default.
+
 0.9.7.1
 -------
 
