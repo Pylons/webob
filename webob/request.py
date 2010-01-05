@@ -761,7 +761,10 @@ class BaseRequest(object):
 
     ## FIXME: 14.8 Authorization
     ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.8
-    authorization = header_getter('Authorization', rfc_section='14.8') # anything else?
+    authorization = converter(
+        header_getter('Authorization', rfc_section='14.8'),
+        descriptors.parse_auth, descriptors.serialize_auth,
+    )
 
 
     def _cache_control__get(self):

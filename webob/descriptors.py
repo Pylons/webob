@@ -416,3 +416,13 @@ def _serialize_accept(value, header_name, AcceptClass, NilClass):
         return None
     return value
 
+def parse_auth(val):
+    if val is not None:
+        return val.split(' ', 1)
+    return val
+
+def serialize_auth(val):
+    if isinstance(val, (tuple, list)):
+        assert len(val) == 2
+        return '%s %s' % val
+    return val

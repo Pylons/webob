@@ -5,6 +5,11 @@ News
 
 hg tip
 ------
+* WWW-Authenticate response header is accessible as
+  ``response.www_authenticate``
+
+* ``response.www_authenticate`` and ``request.authorization`` hold None
+  or tuple ``(auth_method, auth_data)``
 
 * Don't share response headers when getting a response like ``resp =
   req.get_response(some_app)``; this can avoid some funny errors with

@@ -734,8 +734,11 @@ class Response(object):
         header_getter('Vary', rfc_section='14.44'),
         descriptors._parse_list, descriptors._serialize_list, 'list')
 
-    ## FIXME: 14.47 WWW-Authenticate
-    ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.47
+    www_authenticate = converter(
+        header_getter('WWW-Authenticate', rfc_section='14.47'),
+        descriptors.parse_auth, descriptors.serialize_auth,
+    )
+
 
 
     def _request__get(self):
