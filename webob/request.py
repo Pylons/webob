@@ -759,8 +759,6 @@ class BaseRequest(object):
         descriptors._parse_accept, descriptors._serialize_accept, 'accept header',
         converter_args=('Accept-Language', Accept, NilAccept))
 
-    ## FIXME: 14.8 Authorization
-    ## http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.8
     authorization = converter(
         header_getter('Authorization', rfc_section='14.8'),
         descriptors.parse_auth, descriptors.serialize_auth,

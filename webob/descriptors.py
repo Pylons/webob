@@ -416,13 +416,31 @@ def _serialize_accept(value, header_name, AcceptClass, NilClass):
         return None
     return value
 
+
+def parse_params(params):
+    r = {}
+    for pair in params.split(', '):
+        key, value = pair.split('=')
+        r[key] = value.strip('"')
+    return r
+
 def parse_auth(val):
     if val is not None:
-        return val.split(' ', 1)
+        authtype, params = val.split(' ', 1)
+        if authtype in ('Basic', 'Digest', 'WSSE'):
+            if authtype == 'Basic' and '"' not in params:
+                # this is the "Authentication: Basic XXXXX==" case
+                pass
+            else:
+                params = parse_params(params)
+        return authtype, params
     return val
 
 def serialize_auth(val):
     if isinstance(val, (tuple, list)):
-        assert len(val) == 2
-        return '%s %s' % val
+        authtype, params = val
+        if isinstance(params, dict):
+            params = ', '.join(map('%s="%s"'.__mod__, params.items()))
+        assert isinstance(params, str)
+        return '%s %s' % (authtype, params)
     return val

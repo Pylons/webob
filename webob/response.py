@@ -734,6 +734,7 @@ class Response(object):
         header_getter('Vary', rfc_section='14.44'),
         descriptors._parse_list, descriptors._serialize_list, 'list')
 
+    ## FIXME: the standard allows this to be a list of challenges
     www_authenticate = converter(
         header_getter('WWW-Authenticate', rfc_section='14.47'),
         descriptors.parse_auth, descriptors.serialize_auth,

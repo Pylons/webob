@@ -9,7 +9,9 @@ hg tip
   ``response.www_authenticate``
 
 * ``response.www_authenticate`` and ``request.authorization`` hold None
-  or tuple ``(auth_method, auth_data)``
+  or tuple ``(auth_method, params)`` where ``params`` is a dictionary
+  (or a string when ``auth_method`` is not one of 'Basic', 'Digest'
+  or 'WSSE' and for Authenticate: Basic ...)
 
 * Don't share response headers when getting a response like ``resp =
   req.get_response(some_app)``; this can avoid some funny errors with
