@@ -27,6 +27,8 @@ hg tip
   if an exception should be raised in case there are no cookies to unset.
   `True` by default.
 
+* Fix ``req.GET.copy()``
+
 0.9.7.1
 -------
 
