@@ -233,15 +233,10 @@ ${body}''')
         else:
             content_type = 'text/plain'
             body = self.plain_body(environ)
-        if isinstance(body, unicode):
-            charset = 'UTF-8'
-        else:
-            charset = None
         resp = Response(body,
             status=self.status,
             headerlist=headerlist,
-            content_type=content_type,
-            charset=charset
+            content_type=content_type
         )
         return resp(environ, start_response)
 
