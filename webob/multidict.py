@@ -464,6 +464,9 @@ class TrackableMultiDict(MultiDict):
     def __repr__(self):
         items = ', '.join(['(%r, %r)' % v for v in self.iteritems()])
         return '%s([%s])' % (self.name or self.__class__.__name__, items)
+    def copy(self):
+        # Copies shouldn't be tracked
+        return MultiDict(self)
 
 class NestedMultiDict(MultiDict):
     """

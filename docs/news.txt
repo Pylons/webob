@@ -10,6 +10,8 @@ hg tip
   req.get_response(some_app)``; this can avoid some funny errors with
   modifying headers and reusing Response objects.
 
+* Fix ``req.GET.copy()``
+
 0.9.7.1
 -------
 
