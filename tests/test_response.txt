@@ -224,12 +224,16 @@ That was easier; we'll try it with a iterator for the body::
     >>> req = Request.blank('/')
     >>> req.range = (1, 5)
     >>> result = req.get_response(res)
-    >>> # Because we don't know the length of the app_iter, this
-    >>> # doesn't work:
+
+Because we don't know the length of the app_iter, this doesn't work::
+
     >>> result.body
     '0123456789'
     >>> print result.content_range
     None
+
+But it will, if we set content_length::
+    >>> res.content_length = 10
     >>> req.range = (5, None)
     >>> result = req.get_response(res)
     >>> result.body
@@ -330,3 +334,10 @@ But they come out as str::
 
     >>> res.etag
     'fran\xe7ais'
+
+
+Unicode can come up in unexpected places, make sure it doesn't break things
+(this particular case could be caused by a `from __future__ import unicode_literals`)::
+
+    >>> Request.blank('/', method=u'POST').get_response(exc.HTTPMethodNotAllowed())
+    <Response at ... 405 Method Not Allowed>

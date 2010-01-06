@@ -5,6 +5,9 @@ News
 
 hg tip
 ------
+* Fix issue with WSGIHTTPException inadvertently generating unicode body
+  and failing to encode it
+
 * WWW-Authenticate response header is accessible as
   ``response.www_authenticate``
 
