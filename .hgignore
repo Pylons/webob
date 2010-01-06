@@ -7,3 +7,4 @@ TEST*
 testenv
 docs/_build/*
 dist/
+build/
