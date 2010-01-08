@@ -162,7 +162,7 @@ application is actually served.  We can force this with
 There's some conditional response handling too (you have to turn on
 conditioanl_response)::
 
-    >>> res = Response(conditional_response=True) # doctest: +ELLIPSIS
+    >>> res = Response('abc', conditional_response=True) # doctest: +ELLIPSIS
     >>> req = Request.blank('/')
     >>> res.etag = 'tag'
     >>> req.if_none_match = 'tag'
@@ -174,8 +174,10 @@ conditioanl_response)::
     >>> del req.if_none_match
     >>> req.if_modified_since = datetime(2005, 1, 1, 12, 1, tzinfo=UTC)
     >>> res.last_modified = datetime(2005, 1, 1, 12, 1, tzinfo=UTC)
-    >>> req.get_response(res)
-    <Response ... 304 Not Modified>
+    >>> print req.get_response(res)
+    304 Not Modified
+    ETag: "other-tag"
+    Last-Modified: Sat, 01 Jan 2005 12:01:00 GMT
     >>> res.last_modified = datetime(2006, 1, 1, 12, 1, tzinfo=UTC)
     >>> req.get_response(res)
     <Response ... 200 OK>

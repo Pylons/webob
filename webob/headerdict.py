@@ -14,9 +14,10 @@ class HeaderDict(MultiDict):
     Like a MultiDict, this wraps a list.  Keys are normalized
     for case and whitespace.
     """
-
-    def normalize(self, key):
+    #@staticmethod
+    def normalize(key):
         return str(key).lower().strip()
+    normalize = staticmethod(normalize)
 
     def __getitem__(self, key):
         normalize = self.normalize

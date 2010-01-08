@@ -858,6 +858,11 @@ class Response(object):
                     # Even if If-Modified-Since matched, if ETag doesn't then reject it
                     status304 = False
         if status304:
+            remove_headers = ['content-length', 'content-type']
+            headerlist = filter(
+                lambda (k,v): HeaderDict.normalize(k) not in remove_headers,
+                headerlist
+            )
             start_response('304 Not Modified', headerlist)
             return EmptyResponse(self.app_iter)
         if req.method == 'HEAD':
