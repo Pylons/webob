@@ -121,14 +121,14 @@ class Response(object):
 
     def copy(self):
         """Makes a copy of the response"""
-        if self._app_iter is not None:
-            app_iter = self._app_iter
-        else:
-            app_iter = [self._body]
+        # we need to do this for app_iter to be reusable
+        app_iter = list(self.app_iter)
+        # and this to make sure app_iter instances are different
+        self.app_iter = list(app_iter)
         return self.__class__(
             content_type=False,
             status=self._status,
-            headerlist=self._headerlist,
+            headerlist=self._headerlist[:],
             app_iter=app_iter,
             conditional_response=self.conditional_response)
 

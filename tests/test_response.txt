@@ -343,3 +343,26 @@ Unicode can come up in unexpected places, make sure it doesn't break things
 
     >>> Request.blank('/', method=u'POST').get_response(exc.HTTPMethodNotAllowed())
     <Response at ... 405 Method Not Allowed>
+
+Copying Responses should copy their internal structures
+
+    >>> r = Response(app_iter=[])
+    >>> r2 = r.copy()
+    >>> r.headerlist is r2.headerlist
+    False
+    >>> r.app_iter is r2.app_iter
+    False
+
+    >>> r = Response(app_iter=iter(['foo']))
+    >>> r2 = r.copy()
+    >>> del r2.content_type
+    >>> r2.body_file.write(' bar')
+    >>> print r
+    200 OK
+    Content-Type: text/html; charset=UTF-8
+    <BLANKLINE>
+    foo
+    >>> print r2
+    200 OK
+    <BLANKLINE>
+    foo bar
