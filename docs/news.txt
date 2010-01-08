@@ -33,6 +33,8 @@ hg tip
   :meth:`Response.conditional_response_app` exclude Content-{Length/Type}
   headers
 
+* Fix ``Response.copy()`` not being an independent copy
+
 
 0.9.7.1
 -------
