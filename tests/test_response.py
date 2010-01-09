@@ -39,6 +39,12 @@ def test_response():
     assert res.content_encoding is None
     assert res.body == 'a body'
 
+def test_response_copy():
+    r = Response(app_iter=iter(['a']))
+    r2 = r.copy()
+    eq_(r.body, 'a')
+    eq_(r2.body, 'a')
+
 
 def test_HEAD_closes():
     req = Request.blank('/')

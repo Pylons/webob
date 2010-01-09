@@ -123,6 +123,7 @@ class Response(object):
         """Makes a copy of the response"""
         # we need to do this for app_iter to be reusable
         app_iter = list(self.app_iter)
+        iter_close(self.app_iter)
         # and this to make sure app_iter instances are different
         self.app_iter = list(app_iter)
         return self.__class__(
@@ -328,8 +329,7 @@ class Response(object):
             try:
                 body = self._body = ''.join(self._app_iter)
             finally:
-                if hasattr(self._app_iter, 'close'):
-                    self._app_iter.close()
+                iter_close(self._app_iter)
             self._app_iter = None
             if self._environ is not None and self._environ['REQUEST_METHOD'] == 'HEAD':
                 assert len(body) == 0, "HEAD responses must be empty"
@@ -883,13 +883,13 @@ class Response(object):
                 # standard (SHOULD in RFC).
                 # But I'm not as sure if it is also the best thing
                 # to do in practice -Sergey
+##                 iter_close(self.app_iter)##
 ##                 error_resp = Response(
 ##                     status = '416 Requested range not satisfiable',
 ##                     headers=list(headerlist),
 ##                     content_range = ContentRange(None, None, self.content_length),
 ##                     body = "Requested range not satisfiable",
 ##                 )
-##                 # FIXME: self.app_iter will not get closed
 ##                 return error_resp(environ, start_response)
 ##
             else:
@@ -1022,8 +1022,7 @@ class AppIterRange(object):
             return chunk[:stop-self._pos]
 
     def close(self):
-        if hasattr(self.app_iter, 'close'):
-            self.app_iter.close()
+        iter_close(self.app_iter)
 
 
 class EmptyResponse(object):
@@ -1071,3 +1070,7 @@ def _request_uri(environ):
         url += path_info
     return url
 
+
+def iter_close(iter):
+    if hasattr(iter, 'close'):
+        iter.close()
