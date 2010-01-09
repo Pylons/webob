@@ -209,10 +209,15 @@ Also range response::
     >>> str(req.range)
     'bytes=0-19'
     >>> result = req.get_response(res)
-    >>> result.body
-    '0123456789'
+    >>> print result
+    416 Requested Range Not Satisfiable
+    Content-Type: text/html; charset=UTF-8
+    Content-Range: bytes */10
+    Content-Length: 43
+    <BLANKLINE>
+    Requested range not satisfiable: bytes=0-19
     >>> print result.content_range
-    None
+    bytes */10
 
     >>> Request.blank('/', range=(1,2)).get_response(
     ...     Response('0123456789', conditional_response=True)).content_length
@@ -258,14 +263,17 @@ Ranges requesting x last bytes are supported too:
     1
 
 
-Those ranges are also discarded if not satisfiable:
+If those ranges are not satisfiable, a 416 error is returned:
 
     >>> req.range = 'bytes=-100'
     >>> result = req.get_response(res)
+    >>> result.status
+    '416 Requested Range Not Satisfiable'
+    >>> result.content_range
+    <ContentRange bytes */10>
     >>> result.body
-    '0123456789'
-    >>> print result.content_range
-    None
+    'Requested range not satisfiable: bytes=-100'
+
 
 If we set Content-Length then we can use it with an app_iter
 

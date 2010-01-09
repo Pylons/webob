@@ -35,6 +35,9 @@ hg tip
 
 * Fix ``Response.copy()`` not being an independent copy
 
+* When the requested range is not satisfiable, return a 416 error
+  (was returning entire body)
+
 
 0.9.7.1
 -------

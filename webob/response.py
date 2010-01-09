@@ -876,22 +876,17 @@ class Response(object):
             and self.content_length is not None
         ):
             content_range = req.range.content_range(self.content_length)
+            # FIXME: we should support If-Range
             if content_range is None:
-                pass
-                # "416 Requested range not satisfiable" response
-                # seems to be the correct behavior according to the
-                # standard (SHOULD in RFC).
-                # But I'm not as sure if it is also the best thing
-                # to do in practice -Sergey
-##                 iter_close(self.app_iter)##
-##                 error_resp = Response(
-##                     status = '416 Requested range not satisfiable',
-##                     headers=list(headerlist),
-##                     content_range = ContentRange(None, None, self.content_length),
-##                     body = "Requested range not satisfiable",
-##                 )
-##                 return error_resp(environ, start_response)
-##
+                iter_close(self.app_iter)
+                error_resp = Response(
+                    status_int=416,
+                    headers=list(headerlist),
+                    content_range = ContentRange(None, None, self.content_length),
+                )
+                error_resp.body = "Requested range not satisfiable: %s" % req.range
+                #error_resp.content_length = None
+                return error_resp(environ, start_response)
             else:
                 app_iter = self.app_iter_range(content_range.start, content_range.stop)
                 if app_iter is not None:
