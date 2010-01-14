@@ -38,6 +38,8 @@ hg tip
 * When the requested range is not satisfiable, return a 416 error
   (was returning entire body)
 
+* Truncate response for range requests that go beyond the end of body
+  (was treating as invalid).
 
 0.9.7.1
 -------

@@ -38,7 +38,8 @@ class Range(object):
             if start < 0:
                 start += length
         if _is_content_range_valid(start, end, length):
-            return (start, end)
+            stop = min(end, length)
+            return (start, stop)
         else:
             return None
 
@@ -103,8 +104,7 @@ class Range(object):
             Will return None if the header is invalid
         """
         if not header:
-            raise TypeError(
-                "The header must not be empty")
+            raise TypeError("The header must not be empty")
         ranges = []
         last_end = 0
         try:
@@ -174,16 +174,16 @@ class ContentRange(object):
 
     def __iter__(self):
         """
-        Mostly so you can unpack this, like:
+            Mostly so you can unpack this, like:
 
-            start, stop, length = res.content_range
+                start, stop, length = res.content_range
         """
         return iter([self.start, self.stop, self.length])
 
     #@classmethod
     def parse(cls, value):
         """
-        Parse the header.  May return None if it cannot parse.
+            Parse the header.  May return None if it cannot parse.
         """
         if value is None:
             return None
@@ -217,18 +217,25 @@ class ContentRange(object):
             except ValueError:
                 # Parse problem
                 return None
-            if not _is_content_range_valid(start, stop, length):
-                return None
-            return cls(start, stop, length)
+            if _is_content_range_valid(start, stop, length, response=True):
+                return cls(start, stop, length)
+            return None
+
     parse = classmethod(parse)
 
 
-def _is_content_range_valid(start, stop, length):
+def _is_content_range_valid(start, stop, length, response=False):
     if (start is None) != (stop is None):
         return False
     elif start is None:
         return length is None or length >= 0
     elif length is None:
         return 0 <= start < stop
+    elif start >= stop:
+        return False
+    elif response and stop > length:
+        # "content-range: bytes 0-50/10" is invalid for a response
+        # "range: bytes 0-50" is valid for a request to a 10-bytes entity
+        return False
     else:
-        return 0 <= start < stop <= length
+        return 0 <= start < length

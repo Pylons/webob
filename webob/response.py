@@ -879,12 +879,15 @@ class Response(object):
             # FIXME: we should support If-Range
             if content_range is None:
                 iter_close(self.app_iter)
+                # FIXME: we should use exc.HTTPRequestRangeNotSatisfiable
+                # and let it generate the response body in correct content-type
                 error_resp = Response(
                     status_int=416,
                     headers=list(headerlist),
                     content_range = ContentRange(None, None, self.content_length),
                 )
                 error_resp.body = "Requested range not satisfiable: %s" % req.range
+                error_resp.content_type = 'text/plain'
                 #error_resp.content_length = None
                 return error_resp(environ, start_response)
             else:

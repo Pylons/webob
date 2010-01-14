@@ -204,20 +204,35 @@ Also range response::
     (1, 5, 10)
     >>> result.content_length
     4
-    >>> # Now an invalid range:
-    >>> req.range = (0, 20)
+
+
+    >>> req.range = (5, 20)
     >>> str(req.range)
-    'bytes=0-19'
+    'bytes=5-19'
+    >>> result = req.get_response(res)
+    >>> print result
+    206 Partial Content
+    Content-Type: text/html; charset=UTF-8
+    Content-Range: bytes 5-9/10
+    Content-Length: 5
+    <BLANKLINE>
+    56789
+    >>> tuple(result.content_range)
+    (5, 10, 10)
+
+And an invalid requested range:
+
+    >>> req.range = (10, 20)
     >>> result = req.get_response(res)
     >>> print result
     416 Requested Range Not Satisfiable
-    Content-Type: text/html; charset=UTF-8
     Content-Range: bytes */10
-    Content-Length: 43
+    Content-Length: 44
+    Content-Type: text/plain; charset=UTF-8
     <BLANKLINE>
-    Requested range not satisfiable: bytes=0-19
-    >>> print result.content_range
-    bytes */10
+    Requested range not satisfiable: bytes=10-19
+    >>> str(result.content_range)
+    'bytes */10'
 
     >>> Request.blank('/', range=(1,2)).get_response(
     ...     Response('0123456789', conditional_response=True)).content_length
