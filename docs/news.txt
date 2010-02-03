@@ -3,8 +3,9 @@ News
 
 .. contents::
 
-hg tip
-------
+0.9.8
+-----
+
 * Fix issue with WSGIHTTPException inadvertently generating unicode body
   and failing to encode it
 

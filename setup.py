@@ -1,7 +1,7 @@
 from setuptools import setup
 import sys, os
 
-version = '0.9.7.1.post'
+version = '0.9.8'
 
 setup(name='WebOb',
       version=version,
