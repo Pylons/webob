@@ -1,4 +1,5 @@
 recursive-include docs *.txt
+include docs/conf.py
 recursive-exclude docs/_build/_sources *
 recursive-include docs/_build *.html
 recursive-include tests *.txt *.py
