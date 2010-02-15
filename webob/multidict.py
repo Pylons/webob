@@ -620,32 +620,3 @@ class NoVars(object):
     iteritems = iterkeys
     values = keys
     itervalues = iterkeys
-
-__test__ = {
-    'general': """
-    >>> d = MultiDict(a=1, b=2)
-    >>> d['a']
-    1
-    >>> d.getall('c')
-    []
-    >>> d.add('a', 2)
-    >>> d['a']
-    2
-    >>> d.getall('a')
-    [1, 2]
-    >>> d['b'] = 4
-    >>> d.getall('b')
-    [4]
-    >>> d.keys()
-    ['a', 'a', 'b']
-    >>> d.items()
-    [('a', 1), ('a', 2), ('b', 4)]
-    >>> d.mixed() == {'a': [1, 2], 'b': 4}
-    True
-    >>> MultiDict([('a', 'b')], c=2)
-    MultiDict([('a', 'b'), ('c', 2)])
-    """}
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod()
