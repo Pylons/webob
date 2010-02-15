@@ -1,0 +1,35 @@
+
+
+  >>> from webob import html_escape
+  >>> html_escape(None)
+  ''
+  >>> html_escape(' ')
+  ' '
+  >>> html_escape('&egrave;')
+  '&amp;egrave;'
+  >>> html_escape(u'\xe9')
+  '&#233;'
+
+  >>> class HTML(object):
+  ...   def __html__(self):
+  ...       return '<div>hello</div>'
+
+  >>> html_escape(HTML())
+  '<div>hello</div>'
+
+  >>> class Unicode(object):
+  ...   def __unicode__(self):
+  ...       return u'\xe9'
+
+  >>> html_escape(Unicode())
+  '&#233;'
+
+  >>> class UnsafeAttrs(object):
+  ...     attr = 'value'
+  ...     def __getattr__(self):
+  ...         return self.attr
+  ...     def __repr__(self):
+  ...         return '<UnsafeAttrs>'
+
+  >>> html_escape(UnsafeAttrs())
+  '&lt;UnsafeAttrs&gt;'
