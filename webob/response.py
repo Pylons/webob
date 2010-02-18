@@ -448,8 +448,10 @@ class Response(object):
         """
         Set (add) a cookie for the response
         """
-        if isinstance(value, unicode) and self.charset is not None:
-            value = '"%s"' % value.encode(self.charset)
+        if isinstance(value, unicode):
+            value = '"%s"' % value.encode(self.charset or 'ASCII')
+        elif ' ' in value:
+            value = '"%s"' % value
         if overwrite:
             self.unset_cookie(key, strict=False)
         cookies = BaseCookie()
