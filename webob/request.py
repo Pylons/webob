@@ -1,6 +1,6 @@
 import sys, tempfile, warnings
 import urllib, urlparse, cgi
-from Cookie import BaseCookie
+from Cookie import BaseCookie, Morsel, CookieError
 from cStringIO import StringIO
 
 from webob.acceptparse import Accept, MIMEAccept, NilAccept, MIMENilAccept, NoAccept
@@ -24,6 +24,37 @@ class _NoDefault:
         return '(No Default)'
 NoDefault = _NoDefault()
 
+
+class _ExtendedMorsel(Morsel):
+    _reserved = {'httponly': 'HttpOnly'}
+    _reserved.update(Morsel._reserved)
+
+    def __init__(self, name=None, value=None):
+        Morsel.__init__(self)
+        if name is not None:
+            self.set(name, value, value)
+
+    def OutputString(self, attrs=None):
+        httponly = self.pop('httponly', False)
+        result = Morsel.OutputString(self, attrs).rstrip('\t ;')
+        if httponly:
+            result += '; HttpOnly'
+        return result
+
+
+class _ExtendedCookie(BaseCookie):
+    """Form of the base cookie that doesn't raise a `CookieError` for
+    malformed keys.  This has the advantage that broken cookies submitted
+    by nonstandard browsers don't cause the cookie to be empty.
+    """
+
+    def _BaseCookie__set(self, key, real_value, coded_value):
+        morsel = self.get(key, _ExtendedMorsel())
+        try:
+            morsel.set(key, real_value, coded_value)
+        except CookieError:
+            pass
+        dict.__setitem__(self, key, morsel)
 
 
 class BaseRequest(object):
@@ -607,7 +638,7 @@ class BaseRequest(object):
                 return vars
         vars = {}
         if source:
-            cookies = BaseCookie()
+            cookies = _ExtendedCookie()
             cookies.load(source)
             for name in cookies:
                 value = cookies[name].value

@@ -6,6 +6,8 @@ News
 hg tip
 ------
 
+* Pull in werkzeug Cookie fix for malformed cookie bug.
+
 0.9.8
 -----
 
