@@ -149,6 +149,15 @@ def test_bad_cookie():
     assert req.cookies == {}
     req.headers['Cookie'] = '=foo'
     assert req.cookies == {}
+    req.headers['Cookie'] = 'dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cdc762809248d4beed; a=42'
+    assert req.cookies == {
+        'CP':           u'null*',
+        'PHPSESSID':    u'0a539d42abc001cdc762809248d4beed',
+        'a':            u'42',
+        'dismiss-top':  u'6'
+    }
+    req.headers['Cookie'] = 'fo234{=bar blub=Blah'
+    assert req.cookies == {'blub': 'Blah'}
 
 def test_params():
     req = Request.blank('/?a=1&b=2')
