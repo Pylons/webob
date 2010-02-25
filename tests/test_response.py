@@ -45,6 +45,11 @@ def test_response_copy():
     eq_(r.body, 'a')
     eq_(r2.body, 'a')
 
+def test_http_only_cookie():
+    req = Request.blank('/')
+    res = req.get_response(Response('blah'))
+    res.set_cookie("foo", "foo", httponly=True)
+    eq_(res.headers['set-cookie'], 'foo=foo; Path=/; HttpOnly')
 
 def test_HEAD_closes():
     req = Request.blank('/')

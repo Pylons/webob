@@ -2,7 +2,6 @@ import re
 import urlparse
 from cStringIO import StringIO
 
-from Cookie import BaseCookie
 from datetime import datetime, date, timedelta
 
 from webob.headerdict import HeaderDict
@@ -16,6 +15,7 @@ except NameError:
 from webob.descriptors import *
 from webob.datetime_utils import *
 from webob import descriptors, datetime_utils
+from webob.util.cookie import _ExtendedCookie, _ExtendedMorsel
 
 __all__ = ['Response']
 
@@ -454,8 +454,7 @@ class Response(object):
             value = '"%s"' % value
         if overwrite:
             self.unset_cookie(key, strict=False)
-        cookies = BaseCookie()
-        cookies[key] = value
+        morsel = _ExtendedMorsel(key, value)
         if isinstance(max_age, timedelta):
             max_age = max_age.seconds + max_age.days*24*60*60
         if max_age is not None and expires is None:
@@ -475,8 +474,8 @@ class Response(object):
             ('expires', expires),
         ]:
             if var_value is not None and var_value is not False:
-                cookies[key][var_name] = str(var_value)
-        self._add_cookie(cookies)
+                morsel[var_name] = str(var_value)
+        self._add_cookie(morsel)
 
     def _add_cookie(self, cookie):
         if not isinstance(cookie, str):
@@ -515,7 +514,7 @@ class Response(object):
         del self.headers['Set-Cookie']
         found = False
         for header in existing:
-            cookies = BaseCookie()
+            cookies = _ExtendedCookie()
             cookies.load(header)
             if key in cookies:
                 found = True

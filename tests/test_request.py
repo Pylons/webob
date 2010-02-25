@@ -159,6 +159,11 @@ def test_bad_cookie():
     req.headers['Cookie'] = 'fo234{=bar blub=Blah'
     assert req.cookies == {'blub': 'Blah'}
 
+def test_cookie_quoting():
+    req = Request.blank('/')
+    req.headers['Cookie'] = 'foo="?foo"; Path=/'
+    assert req.cookies == {'foo': '?foo'}
+
 def test_params():
     req = Request.blank('/?a=1&b=2')
     req.method = 'POST'
