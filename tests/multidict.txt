@@ -21,3 +21,72 @@
     True
     >>> MultiDict([('a', 'b')], c=2)
     MultiDict([('a', 'b'), ('c', 2)])
+    >>> MultiDict(1,2,3)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "webob/multidict.py", line 29, in __init__
+        "MultiDict can only be called with one positional argument")
+    TypeError: MultiDict can only be called with one positional argument
+    >>> d.getone('a')
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "webob/multidict.py", line 113, in getone
+        raise KeyError('Multiple values match %r: %r' % (key, v))
+    KeyError: "Multiple values match 'a': [1, 2]"
+    >>> d.getone('b')
+    4
+    >>> d.getone('g')
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "webob/multidict.py", line 111, in getone
+        raise KeyError('Key not found: %r' % key)
+    KeyError: "Key not found: 'g'"
+    >>> MultiDict.view_list(None)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "webob/multidict.py", line 51, in view_list
+        % (cls.__name__, lst))
+    TypeError: MultiDict.view_list(obj) takes only actual list objects, not None
+    >>> d.dict_of_lists()
+    {'a': [1, 2], 'b': [4]}
+    >>> 'b' in d
+    True
+    >>> 'e' in d
+    False
+    >>> d.clear()
+    >>> 'b' in d
+    False
+    >>> d['a'] = 4
+    >>> d.add('a', 5)
+    >>> e = d.copy()
+    >>> 'a' in e
+    True
+    >>> e.clear()
+    >>> e['f'] = 42
+    >>> d.update(e)
+    >>> d
+    MultiDict([('a', 4), ('a', 5), ('f', 42)])
+    >>> f = d.pop('a')
+    >>> f
+    4
+    >>> d['a']
+    5
+    >>> d.pop('g', 42)
+    42
+    >>> d.pop('n')
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "webob/multidict.py", line 195, in pop
+        raise KeyError(key)
+    KeyError: 'n'
+    >>> d.pop(4, 2, 3)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "webob/multidict.py", line 186, in pop
+        + repr(1 + len(args))
+    TypeError: pop expected at most 2 arguments, got 3
+    >>> d.setdefault('g', []).append(4)
+    >>> d
+    MultiDict([('a', 5), ('f', 42), ('g', [4])])
+    
+    
