@@ -8,3 +8,4 @@ testenv
 docs/_build/*
 dist/
 build/
+html_coverage/*
