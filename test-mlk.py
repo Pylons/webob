@@ -1,25 +1,29 @@
-from mext.test_suite import *
+import sys, subprocess
 
-suite = TestSuite('tests', coverage='html_coverage', pkg='webob')
+def create_suite():
+    from mext.test_suite import TestSuite
+    suite = TestSuite('tests', coverage='html_coverage', pkg='webob')
 
-for test in ['do-it-yourself', 'file-example', 'index', 'reference']:
-    suite.add_doctest('../docs/' + test)
+    for test in ['do-it-yourself', 'file-example', 'index', 'reference']:
+        suite.add_doctest('../docs/' + test)
+    map(suite.add_doctest, ['test_dec', 'test_request', 'test_response', 'multidict'])
 
-map(suite.add_doctest, ['test_dec', 'test_request', 'test_response', 'multidict'])
-
-
-try:
     for test in ['test_request', 'test_response']:
         suite.add_unittest(test, nose=True)
-except ImportError:
-    if __name__ != '__main__':
-        raise
-    import subprocess, sys
-    subprocess.check_call("pip install -q -E testenv nose dtopt meld3 paste pyprof2calltree repoze.profile tempita webtest wsgiproxy mext.test coverage")
-    subprocess.check_call("testenv\Scripts\python.exe %s" % __file__, stdout=sys.stdout, stderr=sys.stdout) #@@ make non-win-specific
-    sys.exit()
-
+    return suite
 
 if __name__ == '__main__':
-    #suite.run_text(verbose=True)
-    suite.run_text()
+    try:
+        suite = create_suite()
+        #suite.run_text(verbose=True)
+        suite.run_text()
+    except ImportError:
+        subprocess.check_call("pip install -q -E testenv nose dtopt meld3 paste pyprof2calltree repoze.profile tempita webtest wsgiproxy mext.test coverage")
+        #@@ make non-win-specific
+        subprocess.check_call(
+            "testenv\Scripts\python.exe %s" % __file__,
+            stdout=sys.stdout,
+            stderr=sys.stderr
+        )
+else:
+    suite = create_suite()
