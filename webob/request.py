@@ -986,8 +986,7 @@ def environ_from_url(path):
     if SCHEME_RE.search(path):
         scheme, netloc, path, qs, fragment = urlparse.urlsplit(path)
         if fragment:
-            raise TypeError(
-                "Path cannot contain a fragment (%r)" % fragment)
+            raise TypeError("Path cannot contain a fragment (%r)" % fragment)
         if qs:
             path += '?' + qs
         if ':' not in netloc:

@@ -236,8 +236,8 @@ ${body}''')
         resp = Response(body,
             status=self.status,
             headerlist=headerlist,
-            content_type=content_type
         )
+        resp.content_type = content_type
         return resp(environ, start_response)
 
     def __call__(self, environ, start_response):
