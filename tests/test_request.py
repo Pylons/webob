@@ -32,7 +32,6 @@ def simpleapp(environ, start_response):
 def test_gets():
     app = TestApp(simpleapp)
     res = app.get('/')
-    print res
     assert 'Hello' in res
     assert "get is GET([])" in res
     assert "post is <NoVars: Not a form request>" in res
