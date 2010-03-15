@@ -18,10 +18,15 @@ if __name__ == '__main__':
         #suite.run_text(verbose=True)
         suite.run_text()
     except ImportError:
-        subprocess.check_call("pip install -q -E testenv nose dtopt meld3 paste pyprof2calltree repoze.profile tempita webtest wsgiproxy mext.test coverage")
+        if 'inner' in sys.argv:
+            raise
+        subprocess.check_call(
+            "pip install -q -E testenv nose dtopt meld3 paste pyprof2calltree "
+                "repoze.profile tempita webtest wsgiproxy mext.test>=0.2 coverage"
+        )
         #@@ make non-win-specific
         subprocess.check_call(
-            "testenv\Scripts\python.exe %s" % __file__,
+            "testenv\Scripts\python.exe %s inner" % __file__,
             stdout=sys.stdout,
             stderr=sys.stderr
         )
