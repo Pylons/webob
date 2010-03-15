@@ -199,13 +199,13 @@ Some examples:
 .. code-block:: python
 
     >>> req = Request.blank('/test?check=a&check=b&name=Bob')
-    >>> req.GET
+    >>> req.str_GET
     GET([('check', 'a'), ('check', 'b'), ('name', 'Bob')])
-    >>> req.GET['check']
+    >>> req.str_GET['check']
     'b'
-    >>> req.GET.getall('check')
+    >>> req.str_GET.getall('check')
     ['a', 'b']
-    >>> req.GET.items()
+    >>> req.str_GET.items()
     [('check', 'a'), ('check', 'b'), ('name', 'Bob')]
 
 We'll have to create a request body and change the method to get
@@ -213,15 +213,15 @@ POST.  Until we do that, the variables are boring:
 
 .. code-block:: python
 
-    >>> req.POST
+    >>> req.str_POST
     <NoVars: Not a form request>
-    >>> req.POST.items()  # NoVars can be read like a dict, but not written
+    >>> req.str_POST.items()  # NoVars can be read like a dict, but not written
     []
     >>> req.method = 'POST'
     >>> req.body = 'name=Joe&email=joe@example.com'
-    >>> req.POST
+    >>> req.str_POST
     MultiDict([('name', 'Joe'), ('email', 'joe@example.com')])
-    >>> req.POST['name']
+    >>> req.str_POST['name']
     'Joe'
 
 Often you won't care where the variables come from.  (Even if you care
@@ -231,13 +231,13 @@ contains variables from both sources:
 
 .. code-block:: python
 
-    >>> req.params
+    >>> req.str_params
     NestedMultiDict([('check', 'a'), ('check', 'b'), ('name', 'Bob'), ('name', 'Joe'), ('email', 'joe@example.com')])
-    >>> req.params['name']
+    >>> req.str_params['name']
     'Bob'
-    >>> req.params.getall('name')
+    >>> req.str_params.getall('name')
     ['Bob', 'Joe']
-    >>> for name, value in req.params.items():
+    >>> for name, value in req.str_params.items():
     ...     print '%s: %r' % (name, value)
     check: 'a'
     check: 'b'
@@ -255,9 +255,9 @@ Content-Type.
     >>> req.body = body = 'var1=value1&var2=value2&rep=1&rep=2'
     >>> req.environ['CONTENT_LENGTH'] = str(len(req.body))
     >>> req.environ['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
-    >>> req.GET
+    >>> req.str_GET
     GET([('check', 'a'), ('check', 'b'), ('name', 'Bob')])
-    >>> req.POST
+    >>> req.str_POST
     MultiDict([('var1', 'value1'), ('var2', 'value2'), ('rep', '1'), ('rep', '2')])
 
 Unicode Variables
@@ -292,7 +292,7 @@ they will be decoded into Unicode strings if you set the charset.
     >>> req.cookies
     UnicodeMultiDict([('test', u'value')])
     >>> req.charset = None
-    >>> req.cookies
+    >>> req.str_cookies
     {'test': 'value'}
 
 Modifying the request
@@ -923,9 +923,9 @@ simple body is provided.
     >>> req = Request.blank('/path/to/something')
     >>> print str(req.get_response(exc)).strip()
     307 Temporary Redirect
-    Content-Type: text/html; charset=UTF-8
     Location: http://localhost/path/to/foo
     Content-Length: 126
+    Content-Type: text/plain; charset=UTF-8
     <BLANKLINE>
     307 Temporary Redirect
     <BLANKLINE>
@@ -939,9 +939,9 @@ request will an HTML response be given:
     >>> req.accept += 'text/html'
     >>> print str(req.get_response(exc)).strip()
     307 Temporary Redirect
-    Content-Type: text/html; charset=UTF-8
     Location: http://localhost/path/to/foo
     Content-Length: 270
+    Content-Type: text/html; charset=UTF-8
     <BLANKLINE>
     <html>
      <head>

@@ -27,7 +27,6 @@ NoDefault = _NoDefault()
 
 class BaseRequest(object):
     ## Options:
-    default_charset = None
     unicode_errors = 'strict'
     decode_param_names = False
     ## The limit after which request bodies should be stored on disk
@@ -45,15 +44,12 @@ class BaseRequest(object):
         d = self.__dict__
         d['environ'] = environ
         if charset is not NoDefault:
-            d['default_charset'] = charset
-        elif hasattr(self.__class__, 'charset') and isinstance(self.__class__.charset, str):
-            # This is here for backward compatibility; default_charset
-            # used to be named simply charset:
-            warnings.warn(
-                'The class attribute charset is deprecated; use default_charset instead',
-                DeprecationWarning)
-            self.__class__.default_charset = self.__class__.charset
-            del self.__class__.charset
+            self.charset = charset
+        cls = self.__class__
+        if (isinstance(getattr(cls, 'charset', None), str)
+            or hasattr(cls, 'default_charset')
+        ):
+            raise DeprecationWarning("The class attr [default_]charset is deprecated")
         if unicode_errors is not NoDefault:
             d['unicode_errors'] = unicode_errors
         if decode_param_names is not NoDefault:
@@ -156,7 +152,7 @@ class BaseRequest(object):
         if charset_match:
             result = charset_match.group(1).strip('"').strip()
         else:
-            result = self.default_charset
+            result = 'UTF-8'
         self._charset_cache = (content_type, result)
         return result
     def _charset__set(self, charset):
@@ -514,10 +510,9 @@ class BaseRequest(object):
         Like ``.str_POST``, but may decode values and keys
         """
         vars = self.str_POST
-        if self.charset:
-            vars = UnicodeMultiDict(vars, encoding=self.charset,
-                                    errors=self.unicode_errors,
-                                    decode_keys=self.decode_param_names)
+        vars = UnicodeMultiDict(vars, encoding=self.charset,
+                                errors=self.unicode_errors,
+                                decode_keys=self.decode_param_names)
         return vars
 
     POST = property(POST, doc=POST.__doc__)
@@ -561,10 +556,9 @@ class BaseRequest(object):
         Like ``.str_GET``, but may decode values and keys
         """
         vars = self.str_GET
-        if self.charset:
-            vars = UnicodeMultiDict(vars, encoding=self.charset,
-                                    errors=self.unicode_errors,
-                                    decode_keys=self.decode_param_names)
+        vars = UnicodeMultiDict(vars, encoding=self.charset,
+                                errors=self.unicode_errors,
+                                decode_keys=self.decode_param_names)
         return vars
 
     GET = property(GET, doc=GET.__doc__)
@@ -586,10 +580,9 @@ class BaseRequest(object):
         Like ``.str_params``, but may decode values and keys
         """
         params = self.str_params
-        if self.charset:
-            params = UnicodeMultiDict(params, encoding=self.charset,
-                                      errors=self.unicode_errors,
-                                      decode_keys=self.decode_param_names)
+        params = UnicodeMultiDict(params, encoding=self.charset,
+                                  errors=self.unicode_errors,
+                                  decode_keys=self.decode_param_names)
         return params
 
     params = property(params, doc=params.__doc__)
@@ -626,10 +619,9 @@ class BaseRequest(object):
         Like ``.str_cookies``, but may decode values and keys
         """
         vars = self.str_cookies
-        if self.charset:
-            vars = UnicodeMultiDict(vars, encoding=self.charset,
-                                    errors=self.unicode_errors,
-                                    decode_keys=self.decode_param_names)
+        vars = UnicodeMultiDict(vars, encoding=self.charset,
+                                errors=self.unicode_errors,
+                                decode_keys=self.decode_param_names)
         return vars
 
     cookies = property(cookies, doc=cookies.__doc__)

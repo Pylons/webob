@@ -101,15 +101,12 @@ There are also variables to access the variables and body:
     >>> vars = req.str_POST
     >>> vars
     MultiDict([('var1', 'value1'), ('var2', 'value2'), ('rep', '1'), ('rep', '2')])
-    >>> vars is req.str_POST
-    True
-    >>> req.POST
-    MultiDict([('var1', 'value1'), ('var2', 'value2'), ('rep', '1'), ('rep', '2')])
-    >>> req.charset = 'utf8'
-    >>> req.decode_param_names
+    >>> vars is req.POST
     False
     >>> req.POST
     UnicodeMultiDict([('var1', u'value1'), ('var2', u'value2'), ('rep', u'1'), ('rep', u'2')])
+    >>> req.decode_param_names
+    False
 
 Note that the variables are there for GET requests and non-form requests,
 but they are empty and read-only:
@@ -136,12 +133,12 @@ but they are empty and read-only:
 You can also get access to the query string variables, of course:
 
     >>> req = Request.blank('/?a=b&d=e&d=f')
-    >>> req.GET
+    >>> req.str_GET
     GET([('a', 'b'), ('d', 'e'), ('d', 'f')])
     >>> req.GET['d']
-    'f'
+    u'f'
     >>> req.GET.getall('d')
-    ['e', 'f']
+    [u'e', u'f']
     >>> req.method = 'POST'
     >>> req.body = 'x=y&d=g'
     >>> isinstance(req.body_file, InputType)
@@ -149,11 +146,11 @@ You can also get access to the query string variables, of course:
     >>> req.environ['CONTENT_LENGTH']
     '7'
     >>> req.params
-    NestedMultiDict([('a', 'b'), ('d', 'e'), ('d', 'f'), ('x', 'y'), ('d', 'g')])
+    UnicodeMultiDict([('a', u'b'), ('d', u'e'), ('d', u'f'), ('x', u'y'), ('d', u'g')])
     >>> req.params['d']
-    'f'
+    u'f'
     >>> req.params.getall('d')
-    ['e', 'f', 'g']
+    [u'e', u'f', u'g']
 
 Cookies are viewed as a dictionary (*view only*):
 
@@ -162,7 +159,7 @@ Cookies are viewed as a dictionary (*view only*):
     >>> sorted(req.str_cookies.items())
     [('var1', 'value1'), ('var2', 'value2')]
     >>> sorted(req.cookies.items())
-    [('var1', 'value1'), ('var2', 'value2')]
+    [('var1', u'value1'), ('var2', u'value2')]
     >>> req.charset = 'utf8'
     >>> sorted(req.cookies.items())
     [('var1', u'value1'), ('var2', u'value2')]
@@ -357,9 +354,9 @@ Some query tests:
 Some updating of the query string:
 
     >>> req = Request.blank('http://localhost/foo?a=b')
-    >>> req.GET
+    >>> req.str_GET
     GET([('a', 'b')])
-    >>> req.GET['c'] = 'd'
+    >>> req.str_GET['c'] = 'd'
     >>> req.query_string
     'a=b&c=d'
 
@@ -380,7 +377,7 @@ And for dealing with file uploads:
     ... <html>Some text...</html>
     ... --foobar--
     ... '''
-    >>> req.POST
+    >>> req.str_POST
     MultiDict([('a', 'b'), ('upload', FieldStorage('upload', 'test.html'))])
     >>> print req.body.replace('\r', '') # doctest: +REPORT_UDIFF
     --foobar
@@ -394,7 +391,7 @@ And for dealing with file uploads:
     <html>Some text...</html>
     --foobar--
     >>> req.POST['c'] = 'd'
-    >>> req.POST
+    >>> req.str_POST
     MultiDict([('a', 'b'), ('upload', FieldStorage('upload', 'test.html')), ('c', 'd')])
     >>> req.body_file
     <FakeCGIBody at ... viewing MultiDict([('a'...d')])>
@@ -417,7 +414,7 @@ And for dealing with file uploads:
 Also reparsing works through the fake body:
 
     >>> del req.environ['webob._parsed_post_vars']
-    >>> req.POST
+    >>> req.str_POST
     MultiDict([('a', 'b'), ('upload', FieldStorage('upload', 'test.html')), ('c', 'd')])
 
 A ``BaseRequest`` class exists for the purpose of usage by web
