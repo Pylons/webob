@@ -241,6 +241,7 @@ ${body}''')
         return resp(environ, start_response)
 
     def __call__(self, environ, start_response):
+        # FIXME: ensure HEAD and GET response headers are identical
         if environ['REQUEST_METHOD'] == 'HEAD':
             start_response(self.status, self.headerlist)
             return []

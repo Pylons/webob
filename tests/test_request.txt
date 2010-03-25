@@ -446,6 +446,16 @@ request instance itself.
 
 
 
-
-
-
+    >>> req = BaseRequest.blank('//foo')
+    >>> print req.path_info_pop('x')
+    None
+    >>> req.script_name
+    ''
+    >>> print BaseRequest.blank('/foo').path_info_pop('/')
+    None
+    >>> BaseRequest.blank('/foo').path_info_pop('foo')
+    'foo'
+    >>> BaseRequest.blank('/foo').path_info_pop('fo+')
+    'foo'
+    >>> BaseRequest.blank('//1000').path_info_pop('\d+')
+    '1000'

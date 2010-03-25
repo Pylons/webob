@@ -280,7 +280,7 @@ class BaseRequest(object):
             url = self.path_url
         return urlparse.urljoin(url, other_url)
 
-    def path_info_pop(self):
+    def path_info_pop(self, pattern=None):
         """
         'Pops' off the next segment of PATH_INFO, pushing it onto
         SCRIPT_NAME, and returning the popped segment.  Returns None if
@@ -288,21 +288,29 @@ class BaseRequest(object):
 
         Does not return ``''`` when there's an empty segment (like
         ``/path//path``); these segments are just ignored.
+
+        Optional ``pattern`` argument is a regexp to match the return value
+        before returning. If there is no match, no changes are made to the
+        request and None is returned.
         """
         path = self.path_info
         if not path:
             return None
+        sname = self.script_name
         while path.startswith('/'):
-            self.script_name += '/'
+            sname += '/'
             path = path[1:]
+        if pattern is not None:
+            if not re.match(pattern, path):
+                return None
         if '/' not in path:
-            self.script_name += path
+            self.script_name = sname + path
             self.path_info = ''
             return path
         else:
             segment, path = path.split('/', 1)
             self.path_info = '/' + path
-            self.script_name += segment
+            self.script_name = sname + segment
             return segment
 
     def path_info_peek(self):
