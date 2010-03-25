@@ -459,3 +459,5 @@ request instance itself.
     'foo'
     >>> BaseRequest.blank('//1000').path_info_pop('\d+')
     '1000'
+    >>> BaseRequest.blank('/1000/x').path_info_pop('\d+')
+    '1000'

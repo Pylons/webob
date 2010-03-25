@@ -300,18 +300,14 @@ class BaseRequest(object):
         while path.startswith('/'):
             sname += '/'
             path = path[1:]
-        if pattern is not None:
-            if not re.match(pattern, path):
-                return None
-        if '/' not in path:
-            self.script_name = sname + path
-            self.path_info = ''
-            return path
-        else:
-            segment, path = path.split('/', 1)
-            self.path_info = '/' + path
-            self.script_name = sname + segment
-            return segment
+        idx = path.find('/')
+        if idx == -1:
+            idx = len(path)
+        r = path[:idx]
+        if pattern is None or re.match(pattern, r):
+            self.script_name = sname + r
+            self.path_info = path[idx:]
+            return r
 
     def path_info_peek(self):
         """
