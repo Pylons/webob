@@ -296,16 +296,16 @@ class BaseRequest(object):
         path = self.path_info
         if not path:
             return None
-        sname = self.script_name
+        slashes = ''
         while path.startswith('/'):
-            sname += '/'
+            slashes += '/'
             path = path[1:]
         idx = path.find('/')
         if idx == -1:
             idx = len(path)
         r = path[:idx]
         if pattern is None or re.match(pattern, r):
-            self.script_name = sname + r
+            self.script_name += slashes + r
             self.path_info = path[idx:]
             return r
 

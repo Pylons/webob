@@ -419,8 +419,8 @@ def _serialize_accept(value, header_name, AcceptClass, NilClass):
 
 def parse_params(params):
     r = {}
-    for pair in params.split(', '):
-        key, value = pair.split('=')
+    for pair in params.split(','):
+        key, value = pair.strip().split('=')
         r[key] = value.strip('"')
     return r
 
