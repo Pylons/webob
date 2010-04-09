@@ -42,23 +42,18 @@ class EnvironHeaders(DictMixin):
         self.environ = environ
 
 
-    def __getitem__(self, item):
-        return self.environ[_trans_name(item)]
+    def __getitem__(self, hname):
+        return self.environ[_trans_name(hname)]
 
-    def __setitem__(self, item, value):
-        self.environ[_trans_name(item)] = value
+    def __setitem__(self, hname, value):
+        self.environ[_trans_name(hname)] = value
 
-    def __delitem__(self, item):
-        del self.environ[_trans_name(item)]
-
-    def __iter__(self):
-        for key in self.environ:
-            name = _trans_key(key)
-            if name is not None:
-                yield name
+    def __delitem__(self, hname):
+        del self.environ[_trans_name(hname)]
 
     def keys(self):
-        return list(iter(self))
+        return filter(None, map(_trans_key, self.environ))
 
-    def __contains__(self, item):
-        return _trans_name(item) in self.environ
+    def __contains__(self, hname):
+        key = _trans_name(hname)
+        return key and (key in self.environ)
