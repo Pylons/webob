@@ -217,3 +217,11 @@ def test_broken_clen_header():
     req = Request.blank('/')
     req.environ['HTTP_CONTENT_LENGTH'] = '0'
     req.headers.items()
+
+
+def test_nonstr_keys():
+    # non-string env keys shouldn't break req.headers
+    req = Request.blank('/')
+    req.environ[1] = 1
+    req.headers.items()
+
