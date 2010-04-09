@@ -4,6 +4,29 @@ Contains some data structures.
 
 from webob.util.dictmixin import DictMixin
 
+key2header = {
+    'CONTENT_TYPE': 'Content-Type',
+    'CONTENT_LENGTH': 'Content-Length',
+    'HTTP_CONTENT_TYPE': 'Content_Type',
+    'HTTP_CONTENT_LENGTH': 'Content_Length',
+}
+
+header2key = dict([(v.upper(),k) for (k,v) in key2header.items()])
+
+def _trans_key(key):
+    if key in key2header:
+        return key2header[key]
+    elif key.startswith('HTTP_'):
+        return key[5:].replace('_', '-').title()
+    else:
+        return None
+
+def _trans_name(name):
+    name = name.upper()
+    if name in header2key:
+        return header2key[name]
+    return 'HTTP_'+name.replace('-', '_')
+
 class EnvironHeaders(DictMixin):
     """An object that represents the headers as present in a
     WSGI environment.
@@ -18,36 +41,19 @@ class EnvironHeaders(DictMixin):
     def __init__(self, environ):
         self.environ = environ
 
-    def _trans_name(self, name):
-        key = 'HTTP_'+name.replace('-', '_').upper()
-        if key == 'HTTP_CONTENT_LENGTH':
-            key = 'CONTENT_LENGTH'
-        elif key == 'HTTP_CONTENT_TYPE':
-            key = 'CONTENT_TYPE'
-        return key
 
-    def _trans_key(self, key):
-        if key == 'CONTENT_TYPE':
-            return 'Content-Type'
-        elif key == 'CONTENT_LENGTH':
-            return 'Content-Length'
-        elif key.startswith('HTTP_'):
-            return key[5:].replace('_', '-').title()
-        else:
-            return None
-        
     def __getitem__(self, item):
-        return self.environ[self._trans_name(item)]
+        return self.environ[_trans_name(item)]
 
     def __setitem__(self, item, value):
-        self.environ[self._trans_name(item)] = value
+        self.environ[_trans_name(item)] = value
 
     def __delitem__(self, item):
-        del self.environ[self._trans_name(item)]
+        del self.environ[_trans_name(item)]
 
     def __iter__(self):
         for key in self.environ:
-            name = self._trans_key(key)
+            name = _trans_key(key)
             if name is not None:
                 yield name
 
@@ -55,4 +61,4 @@ class EnvironHeaders(DictMixin):
         return list(iter(self))
 
     def __contains__(self, item):
-        return self._trans_name(item) in self.environ
+        return _trans_name(item) in self.environ

@@ -211,3 +211,9 @@ def test_copy():
     assert req.body_file is old_body_file
 
 
+def test_broken_clen_header():
+    # if the UA sends "content_length: ..' header (the name is wrong)
+    # it should not break the req.headers.items()
+    req = Request.blank('/')
+    req.environ['HTTP_CONTENT_LENGTH'] = '0'
+    req.headers.items()
