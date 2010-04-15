@@ -225,3 +225,9 @@ def test_nonstr_keys():
     req.environ[1] = 1
     req.headers.items()
 
+
+def test_authorization():
+    req = Request.blank('/')
+    req.authorization = 'Digest uri="/?a=b"'
+    assert req.authorization == ('Digest', {'uri': '/?a=b'})
+
