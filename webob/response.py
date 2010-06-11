@@ -114,10 +114,51 @@ class Response(object):
 
     def __str__(self, skip_body=False):
         parts = [self.status]
+        if not skip_body:
+            # Force enumeration of the body (to set content-length)
+            self.body
         parts += map('%s: %s'.__mod__, self.headerlist)
         if not skip_body and self.body:
             parts += ['', self.body]
         return '\n'.join(parts)
+
+    @classmethod
+    def from_file(cls, fp):
+        """Reads a response from a file-like object (it must implement
+        ``.read(size)`` and ``.readline()``).
+
+        It will read up to the end of the response, not the end of the
+        file.
+
+        This reads the response as represented by ``str(resp)``; it
+        may not read every valid HTTP response properly.  Responses
+        must have a ``Content-Length``"""
+        kw = {}
+        headerlist = kw['headerlist'] = []
+        kw['status'] = fp.readline()
+        content_length = None
+        while 1:
+            line = fp.readline()
+            line = line.strip()
+            if not line:
+                # end of headers
+                break
+            if line and (line.startswith(' ') or line.startswith('\t')):
+                # Continuation
+                assert headerlist
+                headerlist[-1] = (headerlist[-1][0],
+                                  '%s, %s' % (headerlist[-1][1], line.strip()))
+            else:
+                header_name, value = line.split(':', 1)
+                value = value.strip()
+                if header_name.lower() == 'content-length':
+                    content_length = int(value)
+                headerlist.append((header_name, value))
+        if content_length:
+            kw['body'] = fp.read(content_length)
+        else:
+            kw['body'] = ''
+        return cls(**kw)
 
     def copy(self):
         """Makes a copy of the response"""

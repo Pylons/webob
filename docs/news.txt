@@ -8,6 +8,10 @@ hg tip
 
 * Pull in werkzeug Cookie fix for malformed cookie bug.
 
+* Implement :method:`Request.from_file` and
+  :method:`Response.from_file` which are kind of the inversion of
+  ``str(req)`` and ``str(resp)``
+
 0.9.8
 -----
 
@@ -407,4 +411,3 @@ Bugfixes and Small Changes
 
 First release.  Nothing is new, or everything is new, depending on how
 you think about it.
-

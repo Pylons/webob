@@ -2,6 +2,7 @@ from StringIO import StringIO
 from nose.tools import eq_, ok_, assert_raises
 from webob import *
 from webob import BaseRequest
+from cStringIO import StringIO
 
 def simple_app(environ, start_response):
     start_response('200 OK', [
@@ -114,3 +115,17 @@ def test_app_iter_range():
         res = req.get_response(r)
         eq_(list(res.content_range), [2,5,6])
         eq_(res.body, '234', 'body=%r; app_iter=%r' % (res.body, app_iter))
+
+def test_from_file():
+    resp = Response('test')
+    equal_resp(resp)
+
+    resp = Response(app_iter=iter(['test ', 'body']),
+                    content_type='text/plain')
+    equal_resp(resp)
+
+def equal_resp(resp):
+    input = StringIO(str(resp))
+    resp2 = Response.from_file(input)
+    eq_(resp.body, resp2.body)
+    eq_(resp.headers, resp2.headers)

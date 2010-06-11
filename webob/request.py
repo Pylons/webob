@@ -861,6 +861,47 @@ class BaseRequest(object):
             parts += ['', self.body]
         return '\n'.join(parts)
 
+    @classmethod
+    def from_file(cls, fp):
+        """Reads a request from a file-like object (it must implement
+        ``.read(size)`` and ``.readline()``).
+
+        It will read up to the end of the request, not the end of the
+        file.
+
+        This reads the request as represented by ``str(req)``; it may
+        not read every valid HTTP request properly."""
+        kw = {}
+        headers = kw['headers'] = {}
+        environ = kw['environ'] = {}
+        start_line = fp.readline()
+        method, resource, http_version = start_line.split(None, 2)
+        method = method.upper()
+        environ['SERVER_PROTOCOL'] = http_version
+        kw['method'] = method
+        kw['path'] = resource
+        last_header = None
+        while 1:
+            line = fp.readline()
+            line = line.strip()
+            if not line:
+                # end of headers
+                break
+            if line and (line.startswith(' ') or line.startswith('\t')):
+                # Continuation
+                assert last_header is not None
+                headers[last_header] = '%s, %s' % (headers[last_header], line.strip())
+            else:
+                last_header, value = line.split(':', 1)
+                last_header = last_header.lower()
+                if last_header in headers:
+                    headers[last_header] = '%s, %s' % (headers[last_header], value.strip())
+                else:
+                    headers[last_header] = value.strip()
+        content_length = int(headers.get('content-length', 0))
+        kw['body'] = fp.read(content_length)
+        return cls.blank(**kw)
+
     def call_application(self, application, catch_exc_info=False):
         """
         Call the given WSGI application, returning ``(status_string,

@@ -1,6 +1,7 @@
 from webob import Request
 from webtest import TestApp
 from nose.tools import eq_, ok_, assert_raises
+from cStringIO import StringIO
 
 def simpleapp(environ, start_response):
     status = '200 OK'
@@ -231,3 +232,27 @@ def test_authorization():
     req.authorization = 'Digest uri="/?a=b"'
     assert req.authorization == ('Digest', {'uri': '/?a=b'})
 
+
+def test_from_file():
+    req = Request.blank('http://example.com:8000/test.html?params')
+    equal_req(req)
+
+    req = Request.blank('http://example.com/test2')
+    req.method = 'POST'
+    req.body = 'test=example'
+    equal_req(req)
+
+def equal_req(req):
+    input = StringIO(str(req))
+    req2 = Request.from_file(input)
+    eq_(req.url, req2.url)
+    headers1 = dict(req.headers)
+    headers2 = dict(req2.headers)
+    eq_(int(headers1.get('Content-Length', '0')),
+        int(headers2.get('Content-Length', '0')))
+    if 'Content-Length' in headers1:
+        del headers1['Content-Length']
+    if 'Content-Length' in headers2:
+        del headers2['Content-Length']
+    eq_(headers1, headers2)
+    eq_(req.body, req2.body)

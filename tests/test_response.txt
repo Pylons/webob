@@ -383,9 +383,11 @@ Copying Responses should copy their internal structures
     >>> print r
     200 OK
     Content-Type: text/html; charset=UTF-8
+    Content-Length: 3
     <BLANKLINE>
     foo
     >>> print r2
     200 OK
+    Content-Length: 7
     <BLANKLINE>
     foo bar
