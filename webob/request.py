@@ -875,7 +875,10 @@ class BaseRequest(object):
         headers = kw['headers'] = {}
         environ = kw['environ'] = {}
         start_line = fp.readline()
-        method, resource, http_version = start_line.split(None, 2)
+        try:
+            method, resource, http_version = start_line.split(None, 2)
+        except ValueError:
+            raise ValueError('Bad HTTP request line: %r' % start_line)
         method = method.upper()
         environ['SERVER_PROTOCOL'] = http_version
         kw['method'] = method
@@ -892,7 +895,10 @@ class BaseRequest(object):
                 assert last_header is not None
                 headers[last_header] = '%s, %s' % (headers[last_header], line.strip())
             else:
-                last_header, value = line.split(':', 1)
+                try:
+                    last_header, value = line.split(':', 1)
+                except ValueError:
+                    raise ValueError('Bad header line: %r' % line)
                 last_header = last_header.lower()
                 if last_header in headers:
                     headers[last_header] = '%s, %s' % (headers[last_header], value.strip())
