@@ -135,7 +135,7 @@ class Response(object):
         must have a ``Content-Length``"""
         kw = {}
         headerlist = kw['headerlist'] = []
-        kw['status'] = fp.readline()
+        kw['status'] = fp.readline().strip()
         content_length = None
         while 1:
             line = fp.readline()
@@ -149,7 +149,11 @@ class Response(object):
                 headerlist[-1] = (headerlist[-1][0],
                                   '%s, %s' % (headerlist[-1][1], line.strip()))
             else:
-                header_name, value = line.split(':', 1)
+                try:
+                    header_name, value = line.split(':', 1)
+                except ValueError:
+                    print 'pos', fp.tell()
+                    raise ValueError('Bad header line: %r' % line)
                 value = value.strip()
                 if header_name.lower() == 'content-length':
                     content_length = int(value)
