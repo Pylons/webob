@@ -152,7 +152,6 @@ class Response(object):
                 try:
                     header_name, value = line.split(':', 1)
                 except ValueError:
-                    print 'pos', fp.tell()
                     raise ValueError('Bad header line: %r' % line)
                 value = value.strip()
                 if header_name.lower() == 'content-length':
