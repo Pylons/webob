@@ -41,6 +41,7 @@ We won't focus much on the server, but we will use WebOb to handle the applicati
     >>> print resp
     200 OK
     Content-Type: text/html
+    Content-Length: 12
     <BLANKLINE>
     Hello World!
 
