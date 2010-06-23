@@ -13,6 +13,10 @@ object to help create WSGI responses.
 The objects map much of the specified behavior of HTTP, including
 header parsing and accessors for other standard parts of the
 environment.
+
+You may install the `in-development version of WebOb
+<http://bitbucket.org/ianb/webob/get/tip.gz#egg=WebOb-dev>`_ with
+``pip install WebOb==dev`` (or ``easy_install WebOb==dev``).
 """,
       classifiers=[
         "Development Status :: 4 - Beta",
