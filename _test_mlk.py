@@ -21,8 +21,7 @@ if __name__ == '__main__':
         if 'inner' in sys.argv:
             raise
         subprocess.check_call(
-            "pip install -q -E testenv nose dtopt meld3 paste pyprof2calltree "
-                "repoze.profile tempita webtest wsgiproxy mext.test>=0.4 coverage"
+            "pip install -q -E testenv nose dtopt webtest mext.test>=0.4 coverage"
         )
         #@@ make non-win-specific
         subprocess.check_call(

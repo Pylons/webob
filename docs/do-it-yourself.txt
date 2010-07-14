@@ -141,7 +141,7 @@ To do this we'll need a couple pieces:
 Routing: Templates
 ~~~~~~~~~~~~~~~~~~
 
-To do the matching, we'll compile those templates to regular expressions.  
+To do the matching, we'll compile those templates to regular expressions.
 
 .. code-block:: python
    :linenos:
@@ -169,7 +169,7 @@ To do the matching, we'll compile those templates to regular expressions.
 
 **line 2:** Here we create the regular expression.  The ``re.VERBOSE`` flag makes the regular expression parser ignore whitespace and allow comments, so we can avoid some of the feel of line-noise.  This matches any variables, i.e., ``{var:regex}`` (where ``:regex`` is optional).  Note that there are two groups we capture: ``match.group(1)`` will be the variable name, and ``match.group(2)`` will be the regular expression (or None when there is no regular expression).  Note that ``(?:...)?`` means that the section is optional.
 
-**line 10**: This variable will hold the regular expression that we are creating.  
+**line 10**: This variable will hold the regular expression that we are creating.
 
 **line 11**: This contains the position of the end of the last match.
 
@@ -356,7 +356,7 @@ Now let's test that application:
     <BLANKLINE>
     Hello Ian!
 
-    
+
 Another Controller
 ------------------
 
@@ -554,7 +554,7 @@ We'll also let you pass an instantiated template in instead of a template name, 
 .. code-block:: python
 
     >>> import os
-    >>> import tempita
+    >>> import tempita #doctest: +SKIP
     >>> def render(template, **vars):
     ...     if isinstance(template, basestring):
     ...         caller_location = sys._getframe(1).f_globals['__file__']
