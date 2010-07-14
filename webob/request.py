@@ -929,8 +929,7 @@ class BaseRequest(object):
             captured[:] = [status, headers, exc_info]
             return output.append
         app_iter = application(self.environ, start_response)
-        if (not captured
-            or output):
+        if output or not captured:
             try:
                 output.extend(app_iter)
             finally:

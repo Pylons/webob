@@ -232,6 +232,19 @@ def test_authorization():
     req.authorization = 'Digest uri="/?a=b"'
     assert req.authorization == ('Digest', {'uri': '/?a=b'})
 
+def test_authorization2():
+    from webob.descriptors import parse_auth_params
+    for s, d in [
+       ('x=y', {'x': 'y'}),
+       ('x="y"', {'x': 'y'}),
+       ('x=y,z=z', {'x': 'y', 'z': 'z'}),
+       ('x=y, z=z', {'x': 'y', 'z': 'z'}),
+       ('x="y",z=z', {'x': 'y', 'z': 'z'}),
+       ('x="y", z=z', {'x': 'y', 'z': 'z'}),
+       ('x="y,x", z=z', {'x': 'y,x', 'z': 'z'}),
+    ]:
+        eq_(parse_auth_params(s), d)
+
 
 def test_from_file():
     req = Request.blank('http://example.com:8000/test.html?params')

@@ -416,12 +416,12 @@ def _serialize_accept(value, header_name, AcceptClass, NilClass):
         return None
     return value
 
+_rx_auth_param = re.compile(r'([a-z]+)=(".*?"|[^,]*)(?:\Z|, *)')
 
-def parse_params(params):
+def parse_auth_params(params):
     r = {}
-    for pair in params.split(','):
-        key, value = pair.strip().split('=',1)
-        r[key] = value.strip('"')
+    for k, v in _rx_auth_param.findall(params):
+        r[k] = v.strip('"')
     return r
 
 # see http://lists.w3.org/Archives/Public/ietf-http-wg/2009OctDec/0297.html
@@ -436,7 +436,7 @@ def parse_auth(val):
                 # this is the "Authentication: Basic XXXXX==" case
                 pass
             else:
-                params = parse_params(params)
+                params = parse_auth_params(params)
         return authtype, params
     return val
 

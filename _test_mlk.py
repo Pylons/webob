@@ -9,7 +9,7 @@ def create_suite():
     map(suite.add_doctest, ['test_dec', 'test_request', 'test_response', 'multidict'])
 
     for test in ['test_request', 'test_response']:
-        suite.add_unittest(test, nose=True)
+        suite.add_nosetest(test)
     return suite
 
 if __name__ == '__main__':
@@ -22,7 +22,7 @@ if __name__ == '__main__':
             raise
         subprocess.check_call(
             "pip install -q -E testenv nose dtopt meld3 paste pyprof2calltree "
-                "repoze.profile tempita webtest wsgiproxy mext.test>=0.2 coverage"
+                "repoze.profile tempita webtest wsgiproxy mext.test>=0.4 coverage"
         )
         #@@ make non-win-specific
         subprocess.check_call(
