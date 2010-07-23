@@ -6,7 +6,12 @@ Gives a multi-value dictionary object (MultiDict) plus several wrappers
 import cgi
 import copy
 import sys
-from webob.util.dictmixin import DictMixin
+
+try:
+    from UserDict import DictMixin
+except ImportError:
+    from webob.util.dictmixin import DictMixin
+
 try:
     reversed
 except NameError:
@@ -472,7 +477,7 @@ class NestedMultiDict(MultiDict):
     """
     Wraps several MultiDict objects, treating it as one large MultiDict
     """
-    
+
     def __init__(self, *dicts):
         self.dicts = dicts
 
@@ -553,7 +558,7 @@ class NestedMultiDict(MultiDict):
                 yield key
 
     iterkeys = __iter__
-    
+
 class NoVars(object):
     """
     Represents no variables; used when no variables
@@ -561,7 +566,7 @@ class NoVars(object):
 
     This is read-only
     """
-    
+
     def __init__(self, reason=None):
         self.reason = reason or 'N/A'
 

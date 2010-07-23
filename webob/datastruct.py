@@ -2,7 +2,10 @@
 Contains some data structures.
 """
 
-from webob.util.dictmixin import DictMixin
+try:
+    from UserDict import DictMixin
+except ImportError:
+    from webob.util.dictmixin import DictMixin
 
 key2header = {
     'CONTENT_TYPE': 'Content-Type',
