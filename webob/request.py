@@ -983,14 +983,7 @@ class BaseRequest(object):
         ``decode_param_names``).
         """
         env = environ_from_url(path)
-        if POST is not None:
-            env['REQUEST_METHOD'] = 'POST'
-            if hasattr(POST, 'items'):
-                POST = POST.items()
-            body = urllib.urlencode(POST)
-            env['wsgi.input'] = StringIO(body)
-            env['CONTENT_LENGTH'] = str(len(body))
-            env['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
+        environ_add_POST(env, POST)
         if base_url:
             scheme, netloc, path, query, fragment = urlparse.urlsplit(base_url)
             if query or fragment:
@@ -1065,6 +1058,18 @@ def environ_from_url(path):
         'wsgi.run_once': False,
     }
     return env
+
+def environ_add_POST(env, data):
+    if data is None:
+        return
+    env['REQUEST_METHOD'] = 'POST'
+    if hasattr(data, 'items'):
+        data = data.items()
+    if not isinstance(data, str):
+        data = urllib.urlencode(data)
+    env['wsgi.input'] = StringIO(data)
+    env['CONTENT_LENGTH'] = str(len(data))
+    env['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
 
 
 class AdhocAttrMixin(object):
