@@ -37,22 +37,24 @@ class environ_getter(object):
     def __get__(self, obj, type=None):
         if obj is None:
             return self
-        if self.key not in obj.environ:
+        try:
+            return obj.environ[self.key]
+        except KeyError:
             if self.default_factory:
                 val = obj.environ[self.key] = self.default_factory()
                 return val
             else:
                 return self.default
-        return obj.environ[self.key]
+
 
     def __set__(self, obj, value):
         if not self.settable:
             raise AttributeError("Read-only attribute (key %r)" % self.key)
-        if value is None:
-            if self.key in obj.environ:
-                del obj.environ[self.key]
-        else:
+        if value is not None:
             obj.environ[self.key] = value
+        elif self.key in obj.environ:
+            del obj.environ[self.key]
+
 
     def __delete__(self, obj):
         if not self.deletable:
