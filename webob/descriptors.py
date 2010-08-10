@@ -256,7 +256,7 @@ class UnicodePathProperty(object):
 ########################
 
 
-def _adapt_cache_expires(value):
+def adapt_cache_expires(value):
     if value is False:
         return None
     if value is True:
@@ -267,7 +267,7 @@ def _adapt_cache_expires(value):
 
 
 
-def _parse_etag(value, default=True):
+def parse_etag(value, default=True):
     if value is None:
         value = ''
     value = value.strip()
@@ -281,7 +281,7 @@ def _parse_etag(value, default=True):
     else:
         return ETagMatcher.parse(value)
 
-def _serialize_etag(value, default=True):
+def serialize_etag(value, default=True):
     if value is None:
         return None
     if value is AnyETag:
@@ -292,7 +292,7 @@ def _serialize_etag(value, default=True):
     return str(value)
 
 # FIXME: weak entity tags are not supported, would need special class
-def _parse_etag_response(value):
+def parse_etag_response(value):
     """
     See:
         * http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.19
@@ -305,17 +305,17 @@ def _parse_etag_response(value):
             value = value.replace('\\"', '"')
         return value
 
-def _serialize_etag_response(value):
+def serialize_etag_response(value):
     if value is not None:
         return '"%s"' % value.replace('"', '\\"')
 
-def _parse_if_range(value):
+def parse_if_range(value):
     if not value:
         return NoIfRange
     else:
         return IfRange.parse(value)
 
-def _serialize_if_range(value):
+def serialize_if_range(value):
     if value is None:
         return value
     if isinstance(value, (datetime, date)):
@@ -324,13 +324,13 @@ def _serialize_if_range(value):
         value = str(value)
     return value or None
 
-def _parse_range(value):
+def parse_range(value):
     if not value:
         return None
     # Might return None too:
     return Range.parse(value)
 
-def _serialize_range(value):
+def serialize_range(value):
     if isinstance(value, (list, tuple)):
         if len(value) != 2:
             raise ValueError(
@@ -342,12 +342,12 @@ def _serialize_range(value):
     value = str(value)
     return value or None
 
-def _parse_int(value):
+def parse_int(value):
     if value is None or value == '':
         return None
     return int(value)
 
-def _parse_int_safe(value):
+def parse_int_safe(value):
     if value is None or value == '':
         return None
     try:
@@ -355,18 +355,18 @@ def _parse_int_safe(value):
     except ValueError:
         return None
 
-def _serialize_int(value):
+def serialize_int(value):
     if value is None:
         return None
     return str(value)
 
-def _parse_content_range(value):
+def parse_content_range(value):
     if not value or not value.strip():
         return None
     # May still return None
     return ContentRange.parse(value)
 
-def _serialize_content_range(value):
+def serialize_content_range(value):
     if value is None:
         return None
     if isinstance(value, (tuple, list)):
@@ -385,7 +385,7 @@ def _serialize_content_range(value):
         return None
     return value
 
-def _parse_list(value):
+def parse_list(value):
     if value is None:
         return None
     value = value.strip()
@@ -394,7 +394,7 @@ def _parse_list(value):
     return [v.strip() for v in value.split(',')
             if v.strip()]
 
-def _serialize_list(value):
+def serialize_list(value):
     if not value:
         return None
     if isinstance(value, unicode):
@@ -403,12 +403,12 @@ def _serialize_list(value):
         return value
     return ', '.join(map(str, value))
 
-def _parse_accept(value, header_name, AcceptClass, NilClass):
+def parse_accept(value, header_name, AcceptClass, NilClass):
     if not value:
         return NilClass(header_name)
     return AcceptClass(header_name, value)
 
-def _serialize_accept(value, header_name, AcceptClass, NilClass):
+def serialize_accept(value, header_name, AcceptClass, NilClass):
     if not value or isinstance(value, NilClass):
         return None
     if isinstance(value, (list, tuple, dict)):

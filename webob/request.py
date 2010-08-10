@@ -9,7 +9,6 @@ from webob.cachecontrol import CacheControl
 
 from webob.descriptors import *
 from webob.datetime_utils import *
-from webob import descriptors
 from webob.util.cookie import _ExtendedCookie
 
 __all__ = ['BaseRequest', 'Request']
@@ -91,14 +90,14 @@ class BaseRequest(object):
     path_info = environ_getter('PATH_INFO')
     content_length = converter(
         environ_getter('CONTENT_LENGTH', rfc_section='14.13'),
-        descriptors._parse_int_safe, descriptors._serialize_int, 'int')
+        parse_int_safe, serialize_int, 'int')
     remote_user = environ_getter('REMOTE_USER', default=None)
     remote_addr = environ_getter('REMOTE_ADDR', default=None)
     query_string = environ_getter('QUERY_STRING')
     server_name = environ_getter('SERVER_NAME')
     server_port = converter(
         environ_getter('SERVER_PORT'),
-        descriptors._parse_int, descriptors._serialize_int, 'int')
+        parse_int, serialize_int, 'int')
 
     uscript_name = UnicodePathProperty('SCRIPT_NAME')
     upath_info = UnicodePathProperty('PATH_INFO')
@@ -738,27 +737,27 @@ class BaseRequest(object):
 
     accept = converter(
         environ_getter('HTTP_ACCEPT', rfc_section='14.1'),
-        descriptors._parse_accept, descriptors._serialize_accept, 'MIME Accept',
+        parse_accept, serialize_accept, 'MIME Accept',
         converter_args=('Accept', MIMEAccept, MIMENilAccept))
 
     accept_charset = converter(
         environ_getter('HTTP_ACCEPT_CHARSET', rfc_section='14.2'),
-        descriptors._parse_accept, descriptors._serialize_accept, 'accept header',
+        parse_accept, serialize_accept, 'accept header',
         converter_args=('Accept-Charset', Accept, NilAccept))
 
     accept_encoding = converter(
         environ_getter('HTTP_ACCEPT_ENCODING', rfc_section='14.3'),
-        descriptors._parse_accept, descriptors._serialize_accept, 'accept header',
+        parse_accept, serialize_accept, 'accept header',
         converter_args=('Accept-Encoding', Accept, NoAccept))
 
     accept_language = converter(
         environ_getter('HTTP_ACCEPT_LANGUAGE', rfc_section='14.4'),
-        descriptors._parse_accept, descriptors._serialize_accept, 'accept header',
+        parse_accept, serialize_accept, 'accept header',
         converter_args=('Accept-Language', Accept, NilAccept))
 
     authorization = converter(
         header_getter('Authorization', rfc_section='14.8'),
-        descriptors.parse_auth, descriptors.serialize_auth,
+        parse_auth, serialize_auth,
     )
 
 
@@ -806,7 +805,7 @@ class BaseRequest(object):
 
     if_match = converter(
         environ_getter('HTTP_IF_MATCH', rfc_section='14.24'),
-        descriptors._parse_etag, descriptors._serialize_etag, 'ETag', converter_args=(True,))
+        parse_etag, serialize_etag, 'ETag', converter_args=(True,))
 
     if_modified_since = converter(
         environ_getter('HTTP_IF_MODIFIED_SINCE', rfc_section='14.25'),
@@ -814,11 +813,11 @@ class BaseRequest(object):
 
     if_none_match = converter(
         environ_getter('HTTP_IF_NONE_MATCH', rfc_section='14.26'),
-        descriptors._parse_etag, descriptors._serialize_etag, 'ETag', converter_args=(False,))
+        parse_etag, serialize_etag, 'ETag', converter_args=(False,))
 
     if_range = converter(
         environ_getter('HTTP_IF_RANGE', rfc_section='14.27'),
-        descriptors._parse_if_range, descriptors._serialize_if_range, 'IfRange object')
+        parse_if_range, serialize_if_range, 'IfRange object')
 
     if_unmodified_since = converter(
         environ_getter('HTTP_IF_UNMODIFIED_SINCE', rfc_section='14.28'),
@@ -826,13 +825,13 @@ class BaseRequest(object):
 
     max_forwards = converter(
         environ_getter('HTTP_MAX_FORWARDS', rfc_section='14.31'),
-        descriptors._parse_int, descriptors._serialize_int, 'int')
+        parse_int, serialize_int, 'int')
 
     pragma = environ_getter('HTTP_PRAGMA', rfc_section='14.32')
 
     range = converter(
         environ_getter('HTTP_RANGE', rfc_section='14.35'),
-        descriptors._parse_range, descriptors._serialize_range, 'Range object')
+        parse_range, serialize_range, 'Range object')
 
     referer = environ_getter('HTTP_REFERER', rfc_section='14.36')
     referrer = referer

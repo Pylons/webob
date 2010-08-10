@@ -10,7 +10,6 @@ from webob.cachecontrol import CacheControl, serialize_cache_control
 
 from webob.descriptors import *
 from webob.datetime_utils import *
-from webob import descriptors
 from webob.util.cookie import _ExtendedCookie, _ExtendedMorsel
 from webob.util import sorted
 
@@ -576,11 +575,11 @@ class Response(object):
 
     age = converter(
         header_getter('Age', rfc_section='14.6'),
-        descriptors._parse_int_safe, descriptors._serialize_int, 'int')
+        parse_int_safe, serialize_int, 'int')
 
     allow = converter(
         header_getter('Allow', rfc_section='14.7'),
-        descriptors._parse_list, descriptors._serialize_list, 'list')
+        parse_list, serialize_list, 'list')
 
     _cache_control_obj = None
 
@@ -660,7 +659,7 @@ class Response(object):
         for name, value in kw.items():
             setattr(cache_control, name, value)
 
-    cache_expires = set_via_call(_cache_expires, descriptors._adapt_cache_expires)
+    cache_expires = set_via_call(_cache_expires, adapt_cache_expires)
 
     # FIXME: a special ContentDisposition type would be nice
     content_disposition = header_getter('Content-Disposition',
@@ -711,7 +710,7 @@ class Response(object):
 
     content_language = converter(
         header_getter('Content-Language', rfc_section='14.12'),
-        descriptors._parse_list, descriptors._serialize_list, 'list')
+        parse_list, serialize_list, 'list')
 
     content_location = header_getter(
         'Content-Location', rfc_section='14.14')
@@ -721,11 +720,11 @@ class Response(object):
 
     content_range = converter(
         header_getter('Content-Range', rfc_section='14.16'),
-        descriptors._parse_content_range, descriptors._serialize_content_range, 'ContentRange object')
+        parse_content_range, serialize_content_range, 'ContentRange object')
 
     content_length = converter(
         header_getter('Content-Length', rfc_section='14.17'),
-        descriptors._parse_int, descriptors._serialize_int, 'int')
+        parse_int, serialize_int, 'int')
 
     date = converter(
         header_getter('Date', rfc_section='14.18'),
@@ -733,7 +732,7 @@ class Response(object):
 
     etag = converter(
         header_getter('ETag', rfc_section='14.19'),
-        descriptors._parse_etag_response, descriptors._serialize_etag_response, 'Entity tag')
+        parse_etag_response, serialize_etag_response, 'Entity tag')
 
     def md5_etag(self, body=None, set_content_md5=False):
         """
@@ -774,12 +773,12 @@ class Response(object):
     ## Maybe for all listy headers.
     vary = converter(
         header_getter('Vary', rfc_section='14.44'),
-        descriptors._parse_list, descriptors._serialize_list, 'list')
+        parse_list, serialize_list, 'list')
 
     ## FIXME: the standard allows this to be a list of challenges
     www_authenticate = converter(
         header_getter('WWW-Authenticate', rfc_section='14.47'),
-        descriptors.parse_auth, descriptors.serialize_auth,
+        parse_auth, serialize_auth,
     )
 
 
