@@ -14,11 +14,10 @@ __all__ = ['MultiDict', 'UnicodeMultiDict', 'NestedMultiDict', 'NoVars',
            'TrackableMultiDict']
 
 class MultiDict(DictMixin):
-
     """
-    An ordered dictionary that can have multiple values for each key.
-    Adds the methods getall, getone, mixed, and add to the normal
-    dictionary interface.
+        An ordered dictionary that can have multiple values for each key.
+        Adds the methods getall, getone, mixed, and add to the normal
+        dictionary interface.
     """
 
     def __init__(self, *args, **kw):
@@ -59,13 +58,12 @@ class MultiDict(DictMixin):
         Create a dict from a cgi.FieldStorage instance
         """
         obj = cls()
-        if fs.list:
-            # fs.list can be None when there's nothing to parse
-            for field in fs.list:
-                if field.filename:
-                    obj.add(field.name, field)
-                else:
-                    obj.add(field.name, field.value)
+        # fs.list can be None when there's nothing to parse
+        for field in fs.list or ():
+            if field.filename:
+                obj.add(field.name, field)
+            else:
+                obj.add(field.name, field.value)
         return obj
 
     from_fieldstorage = classmethod(from_fieldstorage)
@@ -136,16 +134,12 @@ class MultiDict(DictMixin):
 
     def dict_of_lists(self):
         """
-        Returns a dictionary where each key is associated with a
-        list of values.
+        Returns a dictionary where each key is associated with a list of values.
         """
-        result = {}
-        for key, value in self.iteritems():
-            if key in result:
-                result[key].append(value)
-            else:
-                result[key] = [value]
-        return result
+        r = {}
+        for key, val in self.iteritems():
+            r.setdefault(key, []).append(val)
+        return r
 
     def __delitem__(self, key):
         items = self._items

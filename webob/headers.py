@@ -1,7 +1,3 @@
-"""
-Represents the response header list as a dictionary-like object.
-"""
-
 from webob.multidict import MultiDict
 from webob.util import reversed, DictMixin
 
@@ -140,7 +136,6 @@ class EnvironHeaders(DictMixin):
     def __init__(self, environ):
         self.environ = environ
 
-
     def __getitem__(self, hname):
         return self.environ[_trans_name(hname)]
 
@@ -154,5 +149,4 @@ class EnvironHeaders(DictMixin):
         return filter(None, map(_trans_key, self.environ))
 
     def __contains__(self, hname):
-        key = _trans_name(hname)
-        return key and (key in self.environ)
+        return _trans_name(hname) in self.environ
