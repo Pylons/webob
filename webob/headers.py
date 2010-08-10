@@ -33,29 +33,17 @@ class ResponseHeaders(MultiDict):
         return result
 
     def mixed(self):
-        result = {}
-        multi = {}
-        for key, value in self.iteritems():
-            key = norm(key)
-            if key in result:
-                if key in multi:
-                    result[key].append(value)
-                else:
-                    result[key] = [result[key], value]
-                    multi[key] = None
-            else:
-                result[key] = value
-        return result
+        r = self.dict_of_lists()
+        for key, val in r.iteritems():
+            if len(val) == 1:
+                r[key] = val[0]
+        return r
 
     def dict_of_lists(self):
-        result = {}
-        for key, value in self.iteritems():
-            key = norm(key)
-            if key in result:
-                result[key].append(value)
-            else:
-                result[key] = [value]
-        return result
+        r = {}
+        for key, val in self.iteritems():
+            r.setdefault(norm(key), []).append(val)
+        return r
 
     def __setitem__(self, key, value):
         norm_key = norm(key)
