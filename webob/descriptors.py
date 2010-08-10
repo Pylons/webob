@@ -121,25 +121,6 @@ class header_getter(object):
     def __repr__(self):
         return '<Proxy for header %s>' % self.header
 
-class set_via_call(object):
-    def __init__(self, func, adapt_args=None):
-        self.func = func
-        self.adapt_args = adapt_args
-    def __get__(self, obj, type=None):
-        return self.__class__(self.func.__get__(obj, type))
-    def __set__(self, obj, value):
-        if self.adapt_args is None:
-            args, kw = (value,), {}
-        else:
-            result = self.adapt_args(value)
-            if result is None:
-                return
-            args, kw = result
-        self.func(obj, *args, **kw)
-    def __repr__(self):
-        return 'set_via_call(%r)' % self.func
-    def __call__(self, *args, **kw):
-        return self.func(*args, **kw)
 
 
 class converter(object):
@@ -256,13 +237,6 @@ class UnicodePathProperty(object):
 ########################
 
 
-def adapt_cache_expires(value):
-    if value is False:
-        return None
-    if value is True:
-        return (0,), {}
-    else:
-        return (value,), {}
 
 
 

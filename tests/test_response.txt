@@ -391,3 +391,10 @@ Copying Responses should copy their internal structures
     Content-Length: 7
     <BLANKLINE>
     foo bar
+
+
+Additional Response constructor keywords are used to set attributes
+
+    >>> r = Response(cache_expires=True)
+    >>> r.headers['Cache-Control']
+    'max-age=0, must-revalidate, no-cache, no-store'

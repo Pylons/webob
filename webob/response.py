@@ -631,14 +631,18 @@ class Response(object):
 
     def _cache_expires(self, seconds=0, **kw):
         """
-        Set expiration on this request.  This sets the response to
-        expire in the given seconds, and any other attributes are used
-        for cache_control (e.g., private=True, etc).
+            Set expiration on this request.  This sets the response to
+            expire in the given seconds, and any other attributes are used
+            for cache_control (e.g., private=True, etc).
         """
-        cache_control = self.cache_control
-        if isinstance(seconds, timedelta):
+        if seconds is True:
+            seconds = 0
+        elif isinstance(seconds, timedelta):
             seconds = timedelta_to_seconds(seconds)
-        if not seconds:
+        cache_control = self.cache_control
+        if seconds is None:
+            pass
+        elif not seconds:
             # To really expire something, you have to force a
             # bunch of these cache control attributes, and IE may
             # not pay attention to those still so we also set
@@ -659,7 +663,7 @@ class Response(object):
         for name, value in kw.items():
             setattr(cache_control, name, value)
 
-    cache_expires = set_via_call(_cache_expires, adapt_cache_expires)
+    cache_expires = property(lambda self: self._cache_expires, _cache_expires)
 
     # FIXME: a special ContentDisposition type would be nice
     content_disposition = header_getter('Content-Disposition',
