@@ -2,8 +2,8 @@ import sys, tempfile, warnings
 import urllib, urlparse, cgi
 from cStringIO import StringIO
 
+from webob.headers import EnvironHeaders
 from webob.acceptparse import Accept, MIMEAccept, NilAccept, MIMENilAccept, NoAccept
-from webob.datastruct import EnvironHeaders
 from webob.multidict import TrackableMultiDict, MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
 from webob.cachecontrol import CacheControl
 
@@ -1107,8 +1107,6 @@ class Request(AdhocAttrMixin, BaseRequest):
 #########################
 ## Helper classes and monkeypatching
 #########################
-
-
 
 
 def _cgi_FieldStorage__repr__patch(self):

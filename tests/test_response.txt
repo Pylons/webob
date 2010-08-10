@@ -36,7 +36,7 @@ for the various pieces:
     >>> res.status_int
     200
     >>> res.headers
-    HeaderDict([('Content-Type', 'text/html; charset=UTF-8'), ('Content-Length', '4')])
+    ResponseHeaders([('Content-Type', 'text/html; charset=UTF-8'), ('Content-Length', '4')])
     >>> res.headerlist
     [('Content-Type', 'text/html; charset=UTF-8'), ('Content-Length', '4')]
 
@@ -348,7 +348,7 @@ Some tests of exceptions::
     'text/plain'
     >>> res = exc.HTTPNotModified()
     >>> res.headers
-    HeaderDict([])
+    ResponseHeaders([])
 
 Headers can be set to unicode values::
 

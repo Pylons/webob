@@ -7,15 +7,8 @@ import cgi
 import copy
 import sys
 
-try:
-    from UserDict import DictMixin
-except ImportError:
-    from webob.util.dictmixin import DictMixin
+from webob.util import DictMixin, reversed
 
-try:
-    reversed
-except NameError:
-    from webob.util.reversed import reversed
 
 __all__ = ['MultiDict', 'UnicodeMultiDict', 'NestedMultiDict', 'NoVars',
            'TrackableMultiDict']

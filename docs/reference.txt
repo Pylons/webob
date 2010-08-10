@@ -170,7 +170,7 @@ All request headers are available through a dictionary-like object
 
 .. code-block:: python
 
-    >>> from webob.compat import sorted
+    >>> from webob.util import sorted
     >>> req.headers['Content-Type'] = 'application/x-www-urlencoded'
     >>> sorted(req.headers.items())
     [('Content-Length', '4'), ('Content-Type', 'application/x-www-urlencoded'), ('Host', 'localhost:80')]
@@ -527,7 +527,7 @@ A handier response can be had with:
     >>> res.status
     '200 OK'
     >>> res.headers
-    HeaderDict([('Content-type', 'text/plain')])
+    ResponseHeaders([('Content-type', 'text/plain')])
     >>> res.body
     'Hi!'
 
@@ -619,7 +619,7 @@ the list in ``res.headers``:
 .. code-block:: python
 
     >>> res.headers
-    HeaderDict([('Content-Type', 'text/html; charset=utf8'), ('Content-Length', '4')])
+    ResponseHeaders([('Content-Type', 'text/html; charset=utf8'), ('Content-Length', '4')])
 
 This is case-insensitive.  It can support multiple values for a key,
 though only if you use ``res.headers.add(key, value)`` or read them

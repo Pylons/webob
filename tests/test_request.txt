@@ -12,7 +12,7 @@ fresh environment dictionary with all the basic keys such a dictionary
 should have.
 
     >>> from cStringIO import InputType
-    >>> from webob.compat import sorted
+    >>> from webob.util import sorted
     >>> from dtopt import ELLIPSIS
     >>> from webob import Request, UTC
     >>> req = Request.blank('/')

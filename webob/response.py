@@ -4,18 +4,15 @@ from cStringIO import StringIO
 
 from datetime import datetime, date, timedelta
 
-from webob.headerdict import HeaderDict
+from webob.headers import ResponseHeaders, normalize_header
 from webob.statusreasons import status_reasons
 from webob.cachecontrol import CacheControl, serialize_cache_control
-try:
-    sorted
-except NameError:
-    from webob.compat import sorted
 
 from webob.descriptors import *
 from webob.datetime_utils import *
 from webob import descriptors, datetime_utils
 from webob.util.cookie import _ExtendedCookie, _ExtendedMorsel
+from webob.util import sorted
 
 __all__ = ['Response']
 
@@ -351,7 +348,7 @@ class Response(object):
         The headers in a dictionary-like object
         """
         if self._headers is None:
-            self._headers = HeaderDict.view_list(self.headerlist)
+            self._headers = ResponseHeaders.view_list(self.headerlist)
         return self._headers
 
     def _headers__set(self, value):
@@ -903,9 +900,9 @@ class Response(object):
                     # Even if If-Modified-Since matched, if ETag doesn't then reject it
                     status304 = False
         if status304:
-            remove_headers = ['content-length', 'content-type']
+            remove_headers = ('content-length', 'content-type')
             headerlist = filter(
-                lambda (k,v): HeaderDict.normalize(k) not in remove_headers,
+                lambda (k,v): normalize_header(k) not in remove_headers,
                 headerlist
             )
             start_response('304 Not Modified', headerlist)
