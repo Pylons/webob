@@ -4,7 +4,7 @@ from datetime import datetime, date
 
 from webob.byterange import Range, ContentRange
 from webob.etag import AnyETag, NoETag, ETagMatcher, IfRange, NoIfRange
-from webob import datetime_utils
+from webob.datetime_utils import serialize_date
 
 
 CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
@@ -319,7 +319,7 @@ def _serialize_if_range(value):
     if value is None:
         return value
     if isinstance(value, (datetime, date)):
-        return datetime_utils._serialize_date(value)
+        return serialize_date(value)
     if not isinstance(value, str):
         value = str(value)
     return value or None

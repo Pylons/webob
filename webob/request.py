@@ -9,7 +9,7 @@ from webob.cachecontrol import CacheControl
 
 from webob.descriptors import *
 from webob.datetime_utils import *
-from webob import descriptors, datetime_utils
+from webob import descriptors
 from webob.util.cookie import _ExtendedCookie
 
 __all__ = ['BaseRequest', 'Request']
@@ -802,7 +802,7 @@ class BaseRequest(object):
 
     date = converter(
         environ_getter('HTTP_DATE', rfc_section='14.8'),
-        datetime_utils._parse_date, datetime_utils._serialize_date, 'HTTP date')
+        parse_date, serialize_date, 'HTTP date')
 
     if_match = converter(
         environ_getter('HTTP_IF_MATCH', rfc_section='14.24'),
@@ -810,7 +810,7 @@ class BaseRequest(object):
 
     if_modified_since = converter(
         environ_getter('HTTP_IF_MODIFIED_SINCE', rfc_section='14.25'),
-        datetime_utils._parse_date, datetime_utils._serialize_date, 'HTTP date')
+        parse_date, serialize_date, 'HTTP date')
 
     if_none_match = converter(
         environ_getter('HTTP_IF_NONE_MATCH', rfc_section='14.26'),
@@ -822,7 +822,7 @@ class BaseRequest(object):
 
     if_unmodified_since = converter(
         environ_getter('HTTP_IF_UNMODIFIED_SINCE', rfc_section='14.28'),
-        datetime_utils._parse_date, datetime_utils._serialize_date, 'HTTP date')
+        parse_date, serialize_date, 'HTTP date')
 
     max_forwards = converter(
         environ_getter('HTTP_MAX_FORWARDS', rfc_section='14.31'),

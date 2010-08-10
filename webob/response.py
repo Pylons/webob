@@ -10,7 +10,7 @@ from webob.cachecontrol import CacheControl, serialize_cache_control
 
 from webob.descriptors import *
 from webob.datetime_utils import *
-from webob import descriptors, datetime_utils
+from webob import descriptors
 from webob.util.cookie import _ExtendedCookie, _ExtendedMorsel
 from webob.util import sorted
 
@@ -503,7 +503,7 @@ class Response(object):
         if isinstance(expires, timedelta):
             expires = datetime.utcnow() + expires
         if isinstance(expires, datetime):
-            expires = '"'+datetime_utils._serialize_cookie_date(expires)+'"'
+            expires = '"%s"' % serialize_cookie_date(expires)
         for var_name, var_value in [
             ('max-age', max_age),
             ('path', path),
@@ -729,7 +729,7 @@ class Response(object):
 
     date = converter(
         header_getter('Date', rfc_section='14.18'),
-        datetime_utils._parse_date, datetime_utils._serialize_date, 'HTTP date')
+        parse_date, serialize_date, 'HTTP date')
 
     etag = converter(
         header_getter('ETag', rfc_section='14.19'),
@@ -756,17 +756,17 @@ class Response(object):
 
     expires = converter(
         header_getter('Expires', rfc_section='14.21'),
-        datetime_utils._parse_date, datetime_utils._serialize_date, 'HTTP date')
+        parse_date, serialize_date, 'HTTP date')
 
     last_modified = converter(
         header_getter('Last-Modified', rfc_section='14.29'),
-        datetime_utils._parse_date, datetime_utils._serialize_date, 'HTTP date')
+        parse_date, serialize_date, 'HTTP date')
 
     pragma = header_getter('Pragma', rfc_section='14.32')
 
     retry_after = converter(
         header_getter('Retry-After', rfc_section='14.37'),
-        datetime_utils._parse_date_delta, datetime_utils._serialize_date_delta, 'HTTP date or delta seconds')
+        parse_date_delta, serialize_date_delta, 'HTTP date or delta seconds')
 
     server = header_getter('Server', rfc_section='14.38')
 

@@ -5,7 +5,9 @@ from rfc822 import parsedate_tz, mktime_tz, formatdate
 
 __all__ = [
     'UTC', 'timedelta_to_seconds',
-    'year', 'month', 'week', 'day', 'hour', 'minute', 'second'
+    'year', 'month', 'week', 'day', 'hour', 'minute', 'second',
+    'parse_date', 'serialize_date', 'serialize_cookie_date',
+    'parse_date_delta', 'serialize_date_delta',
 ]
 
 class _UTC(tzinfo):
@@ -38,7 +40,7 @@ month = timedelta(days=30)
 year = timedelta(days=365)
 
 
-def _parse_date(value):
+def parse_date(value):
     if not value:
         return None
     t = parsedate_tz(value)
@@ -51,7 +53,7 @@ def _parse_date(value):
     t = mktime_tz(t)
     return datetime.fromtimestamp(t, UTC)
 
-def _serialize_date(dt):
+def serialize_date(dt):
     if dt is None:
         return None
     if isinstance(dt, unicode):
@@ -69,7 +71,7 @@ def _serialize_date(dt):
             "You must pass in a datetime, date, time tuple, or integer object, not %r" % dt)
     return formatdate(dt)
 
-def _serialize_cookie_date(dt):
+def serialize_cookie_date(dt):
     if dt is None:
         return None
     if isinstance(dt, unicode):
@@ -80,7 +82,7 @@ def _serialize_cookie_date(dt):
         dt = dt.timetuple()
     return time.strftime('%a, %d-%b-%Y %H:%M:%S GMT', dt)
 
-def _parse_date_delta(value):
+def parse_date_delta(value):
     """
     like _parse_date, but also handle delta seconds
     """
@@ -95,7 +97,7 @@ def _parse_date_delta(value):
         return datetime.now() + delta
     return _parse_date(value)
 
-def _serialize_date_delta(value):
+def serialize_date_delta(value):
     if not value and value != 0:
         return None
     if isinstance(value, (float, int)):
