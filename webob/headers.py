@@ -10,36 +10,33 @@ __all__ = ['ResponseHeaders', 'EnvironHeaders', 'normalize_header']
 def normalize_header(hname):
     return str(hname).lower().strip()
 
+norm = normalize_header
+
 class ResponseHeaders(MultiDict):
     """
         Dictionary view on the response headerlist.
         Keys are normalized for case and whitespace.
     """
-    normalize = staticmethod(normalize_header)
-
     def __getitem__(self, key):
-        normalize = self.normalize
-        key = normalize(key)
+        key = norm(key)
         for k, v in reversed(self._items):
-            if normalize(k) == key:
+            if norm(k) == key:
                 return v
         raise KeyError(key)
 
     def getall(self, key):
-        normalize = self.normalize
-        key = normalize(key)
+        key = norm(key)
         result = []
         for k, v in self._items:
-            if normalize(k) == key:
+            if norm(k) == key:
                 result.append(v)
         return result
 
     def mixed(self):
         result = {}
         multi = {}
-        normalize = self.normalize
         for key, value in self.iteritems():
-            key = normalize(key)
+            key = norm(key)
             if key in result:
                 if key in multi:
                     result[key].append(value)
@@ -52,9 +49,8 @@ class ResponseHeaders(MultiDict):
 
     def dict_of_lists(self):
         result = {}
-        normalize = self.normalize
         for key, value in self.iteritems():
-            key = normalize(key)
+            key = norm(key)
             if key in result:
                 result[key].append(value)
             else:
@@ -62,41 +58,37 @@ class ResponseHeaders(MultiDict):
         return result
 
     def __setitem__(self, key, value):
-        normalize = self.normalize
-        norm_key = normalize(key)
+        norm_key = norm(key)
         items = self._items
         for i in range(len(items)-1, -1, -1):
-            if normalize(items[i][0]) == norm_key:
+            if norm(items[i][0]) == norm_key:
                 del items[i]
         self._items.append((key, value))
 
     def __delitem__(self, key):
-        normalize = self.normalize
-        key = normalize(key)
+        key = norm(key)
         items = self._items
         found = False
         for i in range(len(items)-1, -1, -1):
-            if normalize(items[i][0]) == key:
+            if norm(items[i][0]) == key:
                 del items[i]
                 found = True
         if not found:
             raise KeyError(key)
 
     def __contains__(self, key):
-        normalize = self.normalize
-        key = normalize(key)
+        key = norm(key)
         for k, v in self._items:
-            if normalize(k) == key:
+            if norm(k) == key:
                 return True
         return False
 
     has_key = __contains__
 
     def setdefault(self, key, default=None):
-        normalize = self.normalize
-        c_key = normalize(key)
+        c_key = norm(key)
         for k, v in self._items:
-            if normalize(k) == c_key:
+            if norm(k) == c_key:
                 return v
         self._items.append((key, default))
         return default
@@ -105,9 +97,9 @@ class ResponseHeaders(MultiDict):
         if len(args) > 1:
             raise TypeError, "pop expected at most 2 arguments, got "\
                               + repr(1 + len(args))
-        key = self.normalize(key)
+        key = norm(key)
         for i in range(len(self._items)):
-            if self.normalize(self._items[i][0]) == key:
+            if norm(self._items[i][0]) == key:
                 v = self._items[i][1]
                 del self._items[i]
                 return v
