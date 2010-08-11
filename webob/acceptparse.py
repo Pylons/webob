@@ -56,6 +56,8 @@ class Accept(object):
                     break
             else:
                 self._parsed.append(('iso-8859-1', 1))
+        elif header_name == 'Accept-Language':
+            self._match = self._match_lang
 
 
     def __repr__(self):
@@ -185,12 +187,11 @@ class Accept(object):
         Return all the matches in order of quality, with fallback (if
         given) at the end.
         """
-        items = [i for i, q
-                    in sorted(self._parsed, key=lambda iq: -iq[1])]
+        items = [i for i, q in sorted(self._parsed, key=lambda iq: -iq[1])]
         if fallback:
             for index, item in enumerate(items):
                 if self._match(item, fallback):
-                    items[index+1:] = []
+                    items[index:] = [fallback]
                     break
             else:
                 items.append(fallback)
@@ -198,6 +199,12 @@ class Accept(object):
 
     def _match(self, mask, item):
         return mask == '*' or item.lower() == mask.lower()
+
+    def _match_lang(self, mask, item):
+        return (mask == '*'
+            or item.lower() == mask.lower()
+            or item.lower().split('-')[0] == mask.lower()
+        )
 
 
 

@@ -47,10 +47,10 @@ def test_language_parsing():
     assert "The languages are: ['en-US']" in res
 
     res = app.get('/', headers={'Accept-Language':'da, en-gb;q=0.8, en;q=0.7'})
-    assert "languages are: ['da', 'en-gb', 'en', 'en-US']" in res
+    assert "languages are: ['da', 'en-gb', 'en-US']" in res
 
     res = app.get('/', headers={'Accept-Language':'en-gb;q=0.8, da, en;q=0.7'})
-    assert "languages are: ['da', 'en-gb', 'en', 'en-US']" in res
+    assert "languages are: ['da', 'en-gb', 'en-US']" in res
 
 def test_mime_parsing():
     app = TestApp(simpleapp)

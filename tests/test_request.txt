@@ -267,7 +267,11 @@ mime types are not supported.
     >>> req.accept_language.best_matches('es')
     ['es']
     >>> req.accept_language.best_matches('ES')
-    ['es']
+    ['ES']
+
+    >>> req = Request.blank('/', accept_language='en;q=0.5')
+    >>> req.accept_language.best_match(['en-gb'])
+    'en-gb'
 
     >>> req = Request.blank('/', accept_charset='utf-8;q=0.5')
     >>> req.accept_charset.best_match(['iso-8859-1', 'utf-8'])
