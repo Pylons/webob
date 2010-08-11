@@ -2,10 +2,11 @@ import warnings
 import re, textwrap
 from datetime import datetime, date
 
-from webob.headers import normalize_header as norm
+from webob.headers import normalize_header as norm, _trans_name as header_to_key
 from webob.byterange import Range, ContentRange
 from webob.etag import AnyETag, NoETag, ETagMatcher, IfRange, NoIfRange
 from webob.datetime_utils import serialize_date
+from webob.acceptparse import Accept, NilAccept
 
 
 CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
@@ -72,44 +73,53 @@ def _rfc_reference(header, section):
         header, section, link)
 
 
-class converter(object):
-    """
-    Wraps a descriptor, and applies additional conversions when reading and writing
-    """
-    def __init__(self, descriptor, getter_converter, setter_converter, convert_name=None, converter_args=()):
-        self.descriptor = descriptor
-        self.getter_converter = getter_converter
-        self.setter_converter = setter_converter
-        self.convert_name = convert_name
-        self.converter_args = converter_args
-        docstring = descriptor.__doc__ or ''
-        docstring += "  Converts it as a "
-        if convert_name:
-            docstring += convert_name + '.'
-        else:
-            docstring += "%r and %r." % (getter_converter, setter_converter)
-        self.__doc__ = docstring
+def converter(prop, parse, serialize, convert_name=None, converter_args=()):
+    assert isinstance(prop, property)
+    doc = prop.__doc__ or ''
+    doc += "  Converts it as a "
+    if convert_name:
+        doc += convert_name + '.'
+    else:
+        doc += "%r and %r." % (parse, serialize)
+    hget, hset = prop.fget, prop.fset
+    if converter_args:
+        def fget(r):
+            return parse(hget(r), *converter_args)
+        def fset(r, val):
+            if val is not None:
+                val = serialize(val, *converter_args)
+            hset(r, val)
+    else:
+        def fget(r):
+            return parse(hget(r))
+        def fset(r, val):
+            if val is not None:
+                val = serialize(val)
+            hset(r, val)
+    return property(fget, fset, prop.fdel, doc)
 
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        value = self.descriptor.__get__(obj, type)
-        return self.getter_converter(value, *self.converter_args)
 
-    def __set__(self, obj, value):
-        if value is not None:
-            value = self.setter_converter(value, *self.converter_args)
-        self.descriptor.__set__(obj, value)
 
-    def __delete__(self, obj):
-        self.descriptor.__delete__(obj)
 
-    def __repr__(self):
-        if self.convert_name:
-            name = ' %s' % self.convert_name
-        else:
-            name = ''
-        return '<Converted %r%s>' % (self.descriptor, name)
+
+def etag_property(key, default, rfc_section):
+    prop = environ_getter(key, None, rfc_section)
+    return converter(prop, parse_etag, serialize_etag, 'ETag', converter_args=(default,))
+
+
+def accept_property(header, rfc_section,
+    AcceptClass=Accept, NilClass=NilAccept, convert_name='accept header'
+):
+    key = header_to_key(header)
+    prop = environ_getter(key, None, rfc_section)
+    return converter(prop, parse_accept, serialize_accept, convert_name,
+        converter_args=(header, AcceptClass, NilClass)
+    )
+
+
+
+
+
 
 
 class deprecated_property(object):

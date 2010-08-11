@@ -735,25 +735,11 @@ class BaseRequest(object):
             if key in self.environ:
                 del self.environ[key]
 
-    accept = converter(
-        environ_getter('HTTP_ACCEPT', None, '14.1'),
-        parse_accept, serialize_accept, 'MIME Accept',
-        converter_args=('Accept', MIMEAccept, MIMENilAccept))
 
-    accept_charset = converter(
-        environ_getter('HTTP_ACCEPT_CHARSET', None, '14.2'),
-        parse_accept, serialize_accept, 'accept header',
-        converter_args=('Accept-Charset', Accept, NilAccept))
-
-    accept_encoding = converter(
-        environ_getter('HTTP_ACCEPT_ENCODING', None, '14.3'),
-        parse_accept, serialize_accept, 'accept header',
-        converter_args=('Accept-Encoding', Accept, NoAccept))
-
-    accept_language = converter(
-        environ_getter('HTTP_ACCEPT_LANGUAGE', None, '14.4'),
-        parse_accept, serialize_accept, 'accept header',
-        converter_args=('Accept-Language', Accept, NilAccept))
+    accept = accept_property('Accept', '14.1', MIMEAccept, MIMENilAccept, 'MIME Accept')
+    accept_charset = accept_property('Accept-Charset', '14.2')
+    accept_encoding = accept_property('Accept-Encoding', '14.3', NilClass=NoAccept)
+    accept_language = accept_property('Accept-Language', '14.4')
 
     authorization = converter(
         environ_getter('HTTP_AUTHORIZATION', None, '14.8'),
@@ -799,21 +785,18 @@ class BaseRequest(object):
 
     cache_control = property(_cache_control__get, _cache_control__set, _cache_control__del, doc=_cache_control__get.__doc__)
 
+
+    if_match = etag_property('HTTP_IF_MATCH', True, '14.24')
+    if_none_match = etag_property('HTTP_IF_NONE_MATCH', False, '14.26')
+
     date = converter(
         environ_getter('HTTP_DATE', None, '14.8'),
         parse_date, serialize_date, 'HTTP date')
-
-    if_match = converter(
-        environ_getter('HTTP_IF_MATCH', None, '14.24'),
-        parse_etag, serialize_etag, 'ETag', converter_args=(True,))
 
     if_modified_since = converter(
         environ_getter('HTTP_IF_MODIFIED_SINCE', None, '14.25'),
         parse_date, serialize_date, 'HTTP date')
 
-    if_none_match = converter(
-        environ_getter('HTTP_IF_NONE_MATCH', None, '14.26'),
-        parse_etag, serialize_etag, 'ETag', converter_args=(False,))
 
     if_range = converter(
         environ_getter('HTTP_IF_RANGE', None, '14.27'),
