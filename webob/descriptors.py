@@ -84,26 +84,18 @@ def _rfc_reference(header, section):
         header, section, link)
 
 
-def converter(prop, parse, serialize, convert_name=None, converter_args=()):
+def converter(prop, parse, serialize, convert_name=None):
     assert isinstance(prop, property)
     convert_name = convert_name or "%r and %r" % (parse, serialize)
     doc = prop.__doc__ or ''
     doc += "  Converts it as a %s." % convert_name
     hget, hset = prop.fget, prop.fset
-    if converter_args:
-        def fget(r):
-            return parse(hget(r), *converter_args)
-        def fset(r, val):
-            if val is not None:
-                val = serialize(val, *converter_args)
-            hset(r, val)
-    else:
-        def fget(r):
-            return parse(hget(r))
-        def fset(r, val):
-            if val is not None:
-                val = serialize(val)
-            hset(r, val)
+    def fget(r):
+        return parse(hget(r))
+    def fset(r, val):
+        if val is not None:
+            val = serialize(val)
+        hset(r, val)
     return property(fget, fset, prop.fdel, doc)
 
 
@@ -116,10 +108,23 @@ def accept_property(header, rfc_section,
     AcceptClass=Accept, NilClass=NilAccept, convert_name='accept header'
 ):
     key = header_to_key(header)
-    prop = environ_getter(key, None, rfc_section)
-    return converter(prop, parse_accept, serialize_accept, convert_name,
-        converter_args=(header, AcceptClass, NilClass)
-    )
+    doc = "Gets and sets the %r key in the environment." % key
+    doc += _rfc_reference(key, rfc_section)
+    doc += "  Converts it as a %s." % convert_name
+    def fget(req):
+        value = req.environ.get(key)
+        if not value:
+            return NilClass(header)
+        return AcceptClass(header, value)
+    def fset(req, val):
+        if val:
+            if isinstance(val, (list, tuple, dict)):
+                val = AcceptClass(header, '') + val
+            val = str(val)
+        req.environ[key] = val or None
+    def fdel(req):
+        del req.environ[key]
+    return property(fget, fset, fdel, doc)
 
 
 
@@ -307,20 +312,8 @@ def serialize_list(value):
         return value
     return ', '.join(map(str, value))
 
-def parse_accept(value, header_name, AcceptClass, NilClass):
-    if not value:
-        return NilClass(header_name)
-    return AcceptClass(header_name, value)
 
-def serialize_accept(value, header_name, AcceptClass, NilClass):
-    if not value or isinstance(value, NilClass): #@@ make bool(NilClass()) == False
-        return None
-    if isinstance(value, (list, tuple, dict)):
-        value = NilClass(header_name) + value
-    value = str(value).strip()
-    if not value:
-        return None
-    return value
+
 
 _rx_auth_param = re.compile(r'([a-z]+)=(".*?"|[^,]*)(?:\Z|, *)')
 
