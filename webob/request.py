@@ -790,22 +790,13 @@ class BaseRequest(object):
     if_match = etag_property('HTTP_IF_MATCH', AnyETag, '14.24')
     if_none_match = etag_property('HTTP_IF_NONE_MATCH', NoETag, '14.26')
 
-    date = converter(
-        environ_getter('HTTP_DATE', None, '14.8'),
-        parse_date, serialize_date, 'HTTP date')
-
-    if_modified_since = converter(
-        environ_getter('HTTP_IF_MODIFIED_SINCE', None, '14.25'),
-        parse_date, serialize_date, 'HTTP date')
-
-
+    date = converter_date(environ_getter('HTTP_DATE', None, '14.8'))
+    if_modified_since = converter_date(environ_getter('HTTP_IF_MODIFIED_SINCE', None, '14.25'))
+    if_unmodified_since = converter_date(environ_getter('HTTP_IF_UNMODIFIED_SINCE', None, '14.28'))
     if_range = converter(
         environ_getter('HTTP_IF_RANGE', None, '14.27'),
         parse_if_range, serialize_if_range, 'IfRange object')
 
-    if_unmodified_since = converter(
-        environ_getter('HTTP_IF_UNMODIFIED_SINCE', None, '14.28'),
-        parse_date, serialize_date, 'HTTP date')
 
     max_forwards = converter(
         environ_getter('HTTP_MAX_FORWARDS', None, '14.31'),

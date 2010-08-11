@@ -103,10 +103,12 @@ def serialize_list(value):
 
 
 
+def converter_date(prop):
+    return converter(prop, parse_date, serialize_date, 'HTTP date')
 
 def date_header(header, rfc_section):
-    prop = header_getter(header, rfc_section)
-    return converter(prop, parse_date, serialize_date, 'HTTP date')
+    return converter_date(header_getter(header, rfc_section))
+
 
 
 
