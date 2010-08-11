@@ -87,7 +87,7 @@ properties:
     (10, '10')
     >>> res.allow = ['GET', 'PUT']
     >>> res.allow, res.headers['allow']
-    (['GET', 'PUT'], 'GET, PUT')
+    (('GET', 'PUT'), 'GET, PUT')
     >>> res.cache_control
     <CacheControl ''>
     >>> print res.cache_control.max_age
@@ -115,7 +115,7 @@ properties:
     ('gzip', 'gzip')
     >>> res.content_language = 'en'
     >>> (res.content_language, res.headers['content-language'])
-    (['en'], 'en')
+    (('en',), 'en')
     >>> res.content_location = 'http://localhost:8080'
     >>> res.headers['content-location']
     'http://localhost:8080'
@@ -142,7 +142,7 @@ properties:
     'Python/foo'
     >>> res.vary = ['Cookie']
     >>> (res.vary, res.headers['vary'])
-    (['Cookie'], 'Cookie')
+    (('Cookie',), 'Cookie')
 
 The location header will absolutify itself when the response
 application is actually served.  We can force this with

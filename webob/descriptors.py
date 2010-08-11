@@ -81,9 +81,28 @@ def converter(prop, parse, serialize, convert_name=None):
         hset(r, val)
     return property(fget, fset, prop.fdel, doc)
 
+
+
 def list_header(header, rfc_section):
     prop = header_getter(header, rfc_section)
     return converter(prop, parse_list, serialize_list, 'list')
+
+def parse_list(value):
+    if not value:
+        return None
+    return tuple(filter(None, [v.strip() for v in value.split(',')]))
+
+def serialize_list(value):
+    if isinstance(value, unicode):
+        return str(value)
+    elif isinstance(value, str):
+        return value
+    else:
+        return ', '.join(map(str, value))
+
+
+
+
 
 def date_header(header, rfc_section):
     prop = header_getter(header, rfc_section)
@@ -227,22 +246,6 @@ def serialize_content_range(value):
     if not value:
         return None
     return value
-
-def parse_list(value):
-    if value is None:
-        return None
-    value = value.strip()
-    if not value:
-        return None
-    return [v.strip() for v in value.split(',')
-            if v.strip()]
-
-def serialize_list(value):
-    if isinstance(value, unicode):
-        value = str(value)
-    if isinstance(value, str):
-        return value
-    return ', '.join(map(str, value))
 
 
 
