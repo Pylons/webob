@@ -12,31 +12,24 @@ QUOTES_RE = re.compile('"(.*)"')
 SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
 
 
-class environ_getter(object):
-    """For delegating an attribute to a key in self.environ."""
+_not_given = object()
 
-    def __init__(self, key, default='', rfc_section=None):
-        self.key = key
-        self.default = default
-        self.__doc__ = "Gets, sets and deletes the %r key from the environment." % key
-        self.__doc__ += _rfc_reference(key, rfc_section)
+def environ_getter(key, default=_not_given, rfc_section=None):
+    doc = "Gets and sets the %r key in the environment." % key
+    doc += _rfc_reference(key, rfc_section)
+    if default is _not_given:
+        def fget(req):
+            return req.environ[key]
+        fdel = None
+    else:
+        def fget(req):
+            return req.environ.get(key, default)
+        def fdel(req):
+            del req.environ[key]
+    def fset(req, val):
+        req.environ[key] = val
+    return property(fget, fset, fdel, doc=doc)
 
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        return obj.environ.get(self.key, self.default)
-
-    def __set__(self, obj, value):
-        if value is not None:
-            obj.environ[self.key] = value
-        elif self.key in obj.environ:
-            del obj.environ[self.key]
-
-    def __delete__(self, obj):
-        del obj.environ[self.key]
-
-    def __repr__(self):
-        return '<Proxy for WSGI environ %r key>' % self.key
 
 def _rfc_reference(header, section):
     if not section:
