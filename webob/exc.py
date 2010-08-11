@@ -190,6 +190,9 @@ ${body}''')
             del self.content_type
             del self.content_length
 
+    def __str__(self):
+        return self.detail or self.explanation
+
     def _make_body(self, environ, escape):
         args = {
             'explanation': escape(self.explanation),
@@ -663,4 +666,6 @@ for name, value in globals().items():
         __all__.append(name)
         if getattr(value, 'code', None):
             status_map[value.code]=value
+        if hasattr(value, 'explanation'):
+            value.explanation = ' '.join(value.explanation.strip().split())
 del name, value

@@ -398,3 +398,15 @@ Additional Response constructor keywords are used to set attributes
     >>> r = Response(cache_expires=True)
     >>> r.headers['Cache-Control']
     'max-age=0, must-revalidate, no-cache, no-store'
+
+
+
+    >>> from webob.exc import HTTPBadRequest
+    >>> raise HTTPBadRequest('bad data')
+    Traceback (most recent call last):
+    ...
+    HTTPBadRequest: bad data
+    >>> raise HTTPBadRequest()
+    Traceback (most recent call last):
+    ...
+    HTTPBadRequest: The server could not comply with the request since it is either malformed or otherwise incorrect.
