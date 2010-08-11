@@ -31,6 +31,28 @@ def environ_getter(key, default=_not_given, rfc_section=None):
     return property(fget, fset, fdel, doc=doc)
 
 
+def header_getter(header, rfc_section=None):
+    doc = "Gets and sets and deletes the %s header." % header
+    doc += _rfc_reference(header, rfc_section)
+
+    def fget(ob):
+        return ob.headers.get(header)
+
+    def fset(ob, value):
+        if value is None:
+            ob.headers.pop(header, None)
+        else:
+            if isinstance(value, unicode):
+                # This is the standard encoding for headers:
+                value = value.encode('ISO-8859-1')
+            ob.headers[header] = value
+
+    def fdel(ob):
+        del ob.headers[header]
+
+    return property(fget, fset, fdel, doc)
+
+
 def _rfc_reference(header, section):
     if not section:
         return ''
@@ -41,37 +63,6 @@ def _rfc_reference(header, section):
         header = header[5:].title().replace('_', '-')
     return " For more information on %s see `section %s <%s>`_." % (
         header, section, link)
-
-
-class header_getter(object):
-    """For delegating an attribute to a header in self.headers"""
-
-    def __init__(self, header, default=None, rfc_section=None):
-        self.header = header
-        self.default = default
-        self.__doc__ = "Gets and sets and deletes the %s header." % header
-        self.__doc__ += _rfc_reference(header, rfc_section)
-
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        return obj.headers.get(self.header, self.default)
-
-    def __set__(self, obj, value):
-        if value is None:
-            obj.headers.pop(self.header, None)
-        else:
-            if isinstance(value, unicode):
-                # This is the standard encoding for headers:
-                value = value.encode('ISO-8859-1')
-            obj.headers[self.header] = value
-
-    def __delete__(self, obj):
-        del obj.headers[self.header]
-
-    def __repr__(self):
-        return '<Proxy for header %s>' % self.header
-
 
 
 class converter(object):

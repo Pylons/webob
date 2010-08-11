@@ -89,7 +89,7 @@ class BaseRequest(object):
     script_name = environ_getter('SCRIPT_NAME')
     path_info = environ_getter('PATH_INFO')
     content_length = converter(
-        environ_getter('CONTENT_LENGTH', None, rfc_section='14.13'),
+        environ_getter('CONTENT_LENGTH', None, '14.13'),
         parse_int_safe, serialize_int, 'int')
     remote_user = environ_getter('REMOTE_USER', None)
     remote_addr = environ_getter('REMOTE_ADDR', None)
@@ -736,27 +736,27 @@ class BaseRequest(object):
                 del self.environ[key]
 
     accept = converter(
-        environ_getter('HTTP_ACCEPT', None, rfc_section='14.1'),
+        environ_getter('HTTP_ACCEPT', None, '14.1'),
         parse_accept, serialize_accept, 'MIME Accept',
         converter_args=('Accept', MIMEAccept, MIMENilAccept))
 
     accept_charset = converter(
-        environ_getter('HTTP_ACCEPT_CHARSET', None, rfc_section='14.2'),
+        environ_getter('HTTP_ACCEPT_CHARSET', None, '14.2'),
         parse_accept, serialize_accept, 'accept header',
         converter_args=('Accept-Charset', Accept, NilAccept))
 
     accept_encoding = converter(
-        environ_getter('HTTP_ACCEPT_ENCODING', None, rfc_section='14.3'),
+        environ_getter('HTTP_ACCEPT_ENCODING', None, '14.3'),
         parse_accept, serialize_accept, 'accept header',
         converter_args=('Accept-Encoding', Accept, NoAccept))
 
     accept_language = converter(
-        environ_getter('HTTP_ACCEPT_LANGUAGE', None, rfc_section='14.4'),
+        environ_getter('HTTP_ACCEPT_LANGUAGE', None, '14.4'),
         parse_accept, serialize_accept, 'accept header',
         converter_args=('Accept-Language', Accept, NilAccept))
 
     authorization = converter(
-        header_getter('Authorization', rfc_section='14.8'),
+        environ_getter('HTTP_AUTHORIZATION', None, '14.8'),
         parse_auth, serialize_auth,
     )
 
@@ -800,43 +800,43 @@ class BaseRequest(object):
     cache_control = property(_cache_control__get, _cache_control__set, _cache_control__del, doc=_cache_control__get.__doc__)
 
     date = converter(
-        environ_getter('HTTP_DATE', None, rfc_section='14.8'),
+        environ_getter('HTTP_DATE', None, '14.8'),
         parse_date, serialize_date, 'HTTP date')
 
     if_match = converter(
-        environ_getter('HTTP_IF_MATCH', None, rfc_section='14.24'),
+        environ_getter('HTTP_IF_MATCH', None, '14.24'),
         parse_etag, serialize_etag, 'ETag', converter_args=(True,))
 
     if_modified_since = converter(
-        environ_getter('HTTP_IF_MODIFIED_SINCE', None, rfc_section='14.25'),
+        environ_getter('HTTP_IF_MODIFIED_SINCE', None, '14.25'),
         parse_date, serialize_date, 'HTTP date')
 
     if_none_match = converter(
-        environ_getter('HTTP_IF_NONE_MATCH', None, rfc_section='14.26'),
+        environ_getter('HTTP_IF_NONE_MATCH', None, '14.26'),
         parse_etag, serialize_etag, 'ETag', converter_args=(False,))
 
     if_range = converter(
-        environ_getter('HTTP_IF_RANGE', None, rfc_section='14.27'),
+        environ_getter('HTTP_IF_RANGE', None, '14.27'),
         parse_if_range, serialize_if_range, 'IfRange object')
 
     if_unmodified_since = converter(
-        environ_getter('HTTP_IF_UNMODIFIED_SINCE', None, rfc_section='14.28'),
+        environ_getter('HTTP_IF_UNMODIFIED_SINCE', None, '14.28'),
         parse_date, serialize_date, 'HTTP date')
 
     max_forwards = converter(
-        environ_getter('HTTP_MAX_FORWARDS', None, rfc_section='14.31'),
+        environ_getter('HTTP_MAX_FORWARDS', None, '14.31'),
         parse_int, serialize_int, 'int')
 
-    pragma = environ_getter('HTTP_PRAGMA', None, rfc_section='14.32')
+    pragma = environ_getter('HTTP_PRAGMA', None, '14.32')
 
     range = converter(
-        environ_getter('HTTP_RANGE', None, rfc_section='14.35'),
+        environ_getter('HTTP_RANGE', None, '14.35'),
         parse_range, serialize_range, 'Range object')
 
-    referer = environ_getter('HTTP_REFERER', None, rfc_section='14.36')
+    referer = environ_getter('HTTP_REFERER', None, '14.36')
     referrer = referer
 
-    user_agent = environ_getter('HTTP_USER_AGENT', None, rfc_section='14.43')
+    user_agent = environ_getter('HTTP_USER_AGENT', None, '14.43')
 
     def __repr__(self):
         try:
