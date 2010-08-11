@@ -1,4 +1,4 @@
-import sys, subprocess
+import sys, subprocess, site
 
 def create_suite():
     from mext.test_suite import TestSuite
@@ -12,22 +12,13 @@ def create_suite():
         suite.add_nosetest(test)
     return suite
 
-if __name__ == '__main__':
-    try:
-        suite = create_suite()
-        #suite.run_text(verbose=True)
-        suite.run_text()
-    except ImportError:
-        if 'inner' in sys.argv:
-            raise
-        subprocess.check_call(
-            "pip install -q -E testenv nose dtopt webtest mext.test>=0.4 coverage"
-        )
-        #@@ make non-win-specific
-        subprocess.check_call(
-            "testenv\Scripts\python.exe %s inner" % __file__,
-            stdout=sys.stdout,
-            stderr=sys.stderr
-        )
-else:
+
+try:
     suite = create_suite()
+except ImportError:
+    subprocess.check_call("pip install -q -E testenv nose dtopt webtest mext.test>=0.4 coverage")
+    site.addsitedir('testenv/Lib/site-packages')
+    suite = create_suite()
+
+if __name__ == '__main__':
+    suite.run_text()
