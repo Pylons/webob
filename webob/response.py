@@ -569,16 +569,16 @@ class Response(object):
             raise KeyError(
                 "No cookie has been set with the name %r" % key)
 
-    location = header_getter('Location', rfc_section='14.30')
+    location = header_getter('Location', '14.30')
 
-    accept_ranges = header_getter('Accept-Ranges', rfc_section='14.5')
+    accept_ranges = header_getter('Accept-Ranges', '14.5')
 
     age = converter(
-        header_getter('Age', rfc_section='14.6'),
+        header_getter('Age', '14.6'),
         parse_int_safe, serialize_int, 'int')
 
     allow = converter(
-        header_getter('Allow', rfc_section='14.7'),
+        header_getter('Allow', '14.7'),
         parse_list, serialize_list, 'list')
 
     _cache_control_obj = None
@@ -667,9 +667,9 @@ class Response(object):
 
     # FIXME: a special ContentDisposition type would be nice
     content_disposition = header_getter('Content-Disposition',
-                                        rfc_section='19.5.1')
+                                        '19.5.1')
 
-    content_encoding = header_getter('Content-Encoding', rfc_section='14.11')
+    content_encoding = header_getter('Content-Encoding', '14.11')
 
     def encode_content(self, encoding='gzip'):
         """
@@ -713,29 +713,29 @@ class Response(object):
         self.body = new_body
 
     content_language = converter(
-        header_getter('Content-Language', rfc_section='14.12'),
+        header_getter('Content-Language', '14.12'),
         parse_list, serialize_list, 'list')
 
     content_location = header_getter(
-        'Content-Location', rfc_section='14.14')
+        'Content-Location', '14.14')
 
     content_md5 = header_getter(
-        'Content-MD5', rfc_section='14.14')
+        'Content-MD5', '14.14')
 
     content_range = converter(
-        header_getter('Content-Range', rfc_section='14.16'),
+        header_getter('Content-Range', '14.16'),
         parse_content_range, serialize_content_range, 'ContentRange object')
 
     content_length = converter(
-        header_getter('Content-Length', rfc_section='14.17'),
+        header_getter('Content-Length', '14.17'),
         parse_int, serialize_int, 'int')
 
     date = converter(
-        header_getter('Date', rfc_section='14.18'),
+        header_getter('Date', '14.18'),
         parse_date, serialize_date, 'HTTP date')
 
     etag = converter(
-        header_getter('ETag', rfc_section='14.19'),
+        header_getter('ETag', '14.19'),
         parse_etag_response, serialize_etag_response, 'Entity tag')
 
     def md5_etag(self, body=None, set_content_md5=False):
@@ -758,30 +758,30 @@ class Response(object):
             self.content_md5 = md5_digest
 
     expires = converter(
-        header_getter('Expires', rfc_section='14.21'),
+        header_getter('Expires', '14.21'),
         parse_date, serialize_date, 'HTTP date')
 
     last_modified = converter(
-        header_getter('Last-Modified', rfc_section='14.29'),
+        header_getter('Last-Modified', '14.29'),
         parse_date, serialize_date, 'HTTP date')
 
-    pragma = header_getter('Pragma', rfc_section='14.32')
+    pragma = header_getter('Pragma', '14.32')
 
     retry_after = converter(
-        header_getter('Retry-After', rfc_section='14.37'),
+        header_getter('Retry-After', '14.37'),
         parse_date_delta, serialize_date_delta, 'HTTP date or delta seconds')
 
-    server = header_getter('Server', rfc_section='14.38')
+    server = header_getter('Server', '14.38')
 
     ## FIXME: I realize response.vary += 'something' won't work.  It should.
     ## Maybe for all listy headers.
     vary = converter(
-        header_getter('Vary', rfc_section='14.44'),
+        header_getter('Vary', '14.44'),
         parse_list, serialize_list, 'list')
 
     ## FIXME: the standard allows this to be a list of challenges
     www_authenticate = converter(
-        header_getter('WWW-Authenticate', rfc_section='14.47'),
+        header_getter('WWW-Authenticate', '14.47'),
         parse_auth, serialize_auth,
     )
 

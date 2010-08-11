@@ -2,6 +2,7 @@ import warnings
 import re, textwrap
 from datetime import datetime, date
 
+from webob.headers import normalize_header as norm
 from webob.byterange import Range, ContentRange
 from webob.etag import AnyETag, NoETag, ETagMatcher, IfRange, NoIfRange
 from webob.datetime_utils import serialize_date
@@ -31,24 +32,30 @@ def environ_getter(key, default=_not_given, rfc_section=None):
     return property(fget, fset, fdel, doc=doc)
 
 
-def header_getter(header, rfc_section=None):
+
+def header_getter(header, rfc_section):
     doc = "Gets and sets and deletes the %s header." % header
     doc += _rfc_reference(header, rfc_section)
+    key = norm(header)
 
-    def fget(ob):
-        return ob.headers.get(header)
+    def fget(r):
+        for k, v in r._headerlist:
+            if norm(k) == key:
+                return v
 
-    def fset(ob, value):
-        if value is None:
-            ob.headers.pop(header, None)
-        else:
+    def fset(r, value):
+        fdel(r)
+        if value is not None:
             if isinstance(value, unicode):
                 # This is the standard encoding for headers:
                 value = value.encode('ISO-8859-1')
-            ob.headers[header] = value
+            r._headerlist.append((header, value))
 
-    def fdel(ob):
-        del ob.headers[header]
+    def fdel(r):
+        items = r._headerlist
+        for i in range(len(items)-1, -1, -1):
+            if norm(items[i][0]) == key:
+                del items[i]
 
     return property(fget, fset, fdel, doc)
 
