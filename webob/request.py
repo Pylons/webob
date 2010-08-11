@@ -5,7 +5,7 @@ from cStringIO import StringIO
 from webob.headers import EnvironHeaders
 from webob.acceptparse import accept_property, Accept, MIMEAccept, NilAccept, MIMENilAccept, NoAccept
 from webob.multidict import TrackableMultiDict, MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
-from webob.cachecontrol import CacheControl
+from webob.cachecontrol import CacheControl, serialize_cache_control
 from webob.etag import etag_property, AnyETag, NoETag
 
 from webob.descriptors import *
@@ -758,14 +758,13 @@ class BaseRequest(object):
         cache_header, cache_obj = env.get('webob._cache_control', (None, None))
         if cache_obj is not None and cache_header == value:
             return cache_obj
-        cache_obj = CacheControl.parse(value, type='request')
+        cache_obj = CacheControl.parse(value, updates_to=self._update_cache_control, type='request')
         env['webob._cache_control'] = (value, cache_obj)
         return cache_obj
 
     def _cache_control__set(self, value):
         env = self.environ
-        if not value:
-            value = ""
+        value = value or ''
         if isinstance(value, dict):
             value = CacheControl(value, type='request')
         if isinstance(value, CacheControl):
@@ -774,8 +773,7 @@ class BaseRequest(object):
             env['webob._cache_control'] = (str_value, value)
         else:
             env['HTTP_CACHE_CONTROL'] = str(value)
-            if 'webob._cache_control' in env:
-                del env['webob._cache_control']
+            env['webob._cache_control'] = (None, None)
 
     def _cache_control__del(self, value):
         env = self.environ
@@ -783,6 +781,9 @@ class BaseRequest(object):
             del env['HTTP_CACHE_CONTROL']
         if 'webob._cache_control' in env:
             del env['webob._cache_control']
+
+    def _update_cache_control(self, prop_dict):
+        self.environ['HTTP_CACHE_CONTROL'] = serialize_cache_control(prop_dict)
 
     cache_control = property(_cache_control__get, _cache_control__set, _cache_control__del, doc=_cache_control__get.__doc__)
 

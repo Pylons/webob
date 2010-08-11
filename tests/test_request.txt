@@ -201,11 +201,8 @@ Some headers are handled specifically (more should be added):
     >>> req.cache_control
     <CacheControl 'max-age=0, no-cache'>
 
-Unfortunately .cache_control is not a view:
+.cache_control is a view:
 
-    >>> 'cache-control' in req.headers
-    False
-    >>> req.cache_control = req.cache_control
     >>> 'cache-control' in req.headers
     True
     >>> req.headers['cache-control']
