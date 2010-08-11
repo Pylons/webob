@@ -34,15 +34,9 @@ def environ_getter(key, default=_not_given, rfc_section=None):
 
 
 def upath_property(key):
-    doc = 'upath_property(%r)' % (key)
     def fget(req):
         return req.environ[key].decode('UTF8', req.unicode_errors)
-    def fset(req, path):
-        if not isinstance(path, unicode):
-            path = path.decode('ASCII') # or just throw an error?
-        str_path = path.encode('UTF8', req.unicode_errors)
-        req.environ[key] = str_path
-    return property(fget, fset, doc=doc)
+    return property(fget, doc='upath_property(%r)' % key)
 
 
 def header_getter(header, rfc_section):
