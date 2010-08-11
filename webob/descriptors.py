@@ -210,8 +210,6 @@ def parse_etag(value, default=True):
         return ETagMatcher.parse(value)
 
 def serialize_etag(value, default=True):
-    if value is None:
-        return None
     if value is AnyETag:
         if default:
             return None
@@ -234,8 +232,7 @@ def parse_etag_response(value):
         return value
 
 def serialize_etag_response(value):
-    if value is not None:
-        return '"%s"' % value.replace('"', '\\"')
+    return '"%s"' % value.replace('"', '\\"')
 
 def parse_if_range(value):
     if not value:
@@ -244,8 +241,6 @@ def parse_if_range(value):
         return IfRange.parse(value)
 
 def serialize_if_range(value):
-    if value is None:
-        return value
     if isinstance(value, (datetime, date)):
         return serialize_date(value)
     if not isinstance(value, str):
@@ -283,10 +278,7 @@ def parse_int_safe(value):
     except ValueError:
         return None
 
-def serialize_int(value):
-    if value is None:
-        return None
-    return str(value)
+serialize_int = str
 
 def parse_content_range(value):
     if not value or not value.strip():
@@ -295,8 +287,6 @@ def parse_content_range(value):
     return ContentRange.parse(value)
 
 def serialize_content_range(value):
-    if value is None:
-        return None
     if isinstance(value, (tuple, list)):
         if len(value) not in (2, 3):
             raise ValueError(
@@ -323,8 +313,6 @@ def parse_list(value):
             if v.strip()]
 
 def serialize_list(value):
-    if not value:
-        return None
     if isinstance(value, unicode):
         value = str(value)
     if isinstance(value, str):
@@ -337,7 +325,7 @@ def parse_accept(value, header_name, AcceptClass, NilClass):
     return AcceptClass(header_name, value)
 
 def serialize_accept(value, header_name, AcceptClass, NilClass):
-    if not value or isinstance(value, NilClass):
+    if not value or isinstance(value, NilClass): #@@ make bool(NilClass()) == False
         return None
     if isinstance(value, (list, tuple, dict)):
         value = NilClass(header_name) + value

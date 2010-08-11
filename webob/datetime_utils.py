@@ -54,8 +54,6 @@ def parse_date(value):
     return datetime.fromtimestamp(t, UTC)
 
 def serialize_date(dt):
-    if dt is None:
-        return None
     if isinstance(dt, unicode):
         dt = dt.encode('ascii')
     if isinstance(dt, str):
@@ -72,8 +70,6 @@ def serialize_date(dt):
     return formatdate(dt)
 
 def serialize_cookie_date(dt):
-    if dt is None:
-        return None
     if isinstance(dt, unicode):
         dt = dt.encode('ascii')
     if isinstance(dt, timedelta):
@@ -84,23 +80,22 @@ def serialize_cookie_date(dt):
 
 def parse_date_delta(value):
     """
-    like _parse_date, but also handle delta seconds
+    like parse_date, but also handle delta seconds
     """
     if not value:
         return None
     try:
         value = int(value)
     except ValueError:
-        pass
+        return parse_date(value)
     else:
         delta = timedelta(seconds=value)
         return datetime.now() + delta
-    return _parse_date(value)
+
 
 def serialize_date_delta(value):
-    if not value and value != 0:
-        return None
     if isinstance(value, (float, int)):
         return str(int(value))
-    return _serialize_date(value)
+    else:
+        return serialize_date(value)
 
