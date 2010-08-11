@@ -2,7 +2,7 @@ import warnings
 import re, textwrap
 from datetime import datetime, date
 
-from webob.headers import normalize_header as norm, _trans_name as header_to_key
+from webob.headers import _trans_name as header_to_key
 from webob.byterange import Range, ContentRange
 from webob.etag import AnyETag, NoETag, ETagMatcher, IfRange, NoIfRange
 from webob.datetime_utils import serialize_date
@@ -42,11 +42,11 @@ def upath_property(key):
 def header_getter(header, rfc_section):
     doc = "Gets and sets and deletes the %s header." % header
     doc += _rfc_reference(header, rfc_section)
-    key = norm(header)
+    key = header.lower()
 
     def fget(r):
         for k, v in r._headerlist:
-            if norm(k) == key:
+            if k.lower() == key:
                 return v
 
     def fset(r, value):
@@ -60,7 +60,7 @@ def header_getter(header, rfc_section):
     def fdel(r):
         items = r._headerlist
         for i in range(len(items)-1, -1, -1):
-            if norm(items[i][0]) == key:
+            if items[i][0].lower() == key:
                 del items[i]
 
     return property(fget, fset, fdel, doc)

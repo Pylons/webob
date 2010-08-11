@@ -4,7 +4,7 @@ from cStringIO import StringIO
 
 from datetime import datetime, date, timedelta
 
-from webob.headers import ResponseHeaders, normalize_header
+from webob.headers import ResponseHeaders
 from webob.statusreasons import status_reasons
 from webob.cachecontrol import CacheControl, serialize_cache_control
 
@@ -904,7 +904,7 @@ class Response(object):
         if status304:
             remove_headers = ('content-length', 'content-type')
             headerlist = filter(
-                lambda (k,v): normalize_header(k) not in remove_headers,
+                lambda (k,v): k.lower() not in remove_headers,
                 headerlist
             )
             start_response('304 Not Modified', headerlist)

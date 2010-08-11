@@ -1,12 +1,7 @@
 from webob.multidict import MultiDict
 from webob.util import reversed, DictMixin
 
-__all__ = ['ResponseHeaders', 'EnvironHeaders', 'normalize_header']
-
-def normalize_header(hname):
-    return str(hname).lower().strip()
-
-norm = normalize_header
+__all__ = ['ResponseHeaders', 'EnvironHeaders']
 
 class ResponseHeaders(MultiDict):
     """
@@ -14,17 +9,17 @@ class ResponseHeaders(MultiDict):
         Keys are normalized for case and whitespace.
     """
     def __getitem__(self, key):
-        key = norm(key)
+        key = key.lower()
         for k, v in reversed(self._items):
-            if norm(k) == key:
+            if k.lower() == key:
                 return v
         raise KeyError(key)
 
     def getall(self, key):
-        key = norm(key)
+        key = key.lower()
         result = []
         for k, v in self._items:
-            if norm(k) == key:
+            if k.lower() == key:
                 result.append(v)
         return result
 
@@ -38,41 +33,41 @@ class ResponseHeaders(MultiDict):
     def dict_of_lists(self):
         r = {}
         for key, val in self.iteritems():
-            r.setdefault(norm(key), []).append(val)
+            r.setdefault(key.lower(), []).append(val)
         return r
 
     def __setitem__(self, key, value):
-        norm_key = norm(key)
+        norm_key = key.lower()
         items = self._items
         for i in range(len(items)-1, -1, -1):
-            if norm(items[i][0]) == norm_key:
+            if items[i][0].lower() == norm_key:
                 del items[i]
         self._items.append((key, value))
 
     def __delitem__(self, key):
-        key = norm(key)
+        key = key.lower()
         items = self._items
         found = False
         for i in range(len(items)-1, -1, -1):
-            if norm(items[i][0]) == key:
+            if items[i][0].lower() == key:
                 del items[i]
                 found = True
         if not found:
             raise KeyError(key)
 
     def __contains__(self, key):
-        key = norm(key)
+        key = key.lower()
         for k, v in self._items:
-            if norm(k) == key:
+            if k.lower() == key:
                 return True
         return False
 
     has_key = __contains__
 
     def setdefault(self, key, default=None):
-        c_key = norm(key)
+        c_key = key.lower()
         for k, v in self._items:
-            if norm(k) == c_key:
+            if k.lower() == c_key:
                 return v
         self._items.append((key, default))
         return default
@@ -81,9 +76,9 @@ class ResponseHeaders(MultiDict):
         if len(args) > 1:
             raise TypeError, "pop expected at most 2 arguments, got "\
                               + repr(1 + len(args))
-        key = norm(key)
+        key = key.lower()
         for i in range(len(self._items)):
-            if norm(self._items[i][0]) == key:
+            if self._items[i][0].lower() == key:
                 v = self._items[i][1]
                 del self._items[i]
                 return v
