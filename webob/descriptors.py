@@ -15,14 +15,11 @@ SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
 class environ_getter(object):
     """For delegating an attribute to a key in self.environ."""
 
-    def __init__(self, key, default='', doc=None, rfc_section=None):
+    def __init__(self, key, default='', rfc_section=None):
         self.key = key
         self.default = default
-        docstring = "Gets, sets and deletes the %r key from the environment." % key
-        docstring += _rfc_reference(key, rfc_section)
-        if doc:
-            docstring += '\n\n' + textwrap.dedent(doc)
-        self.__doc__ = docstring
+        self.__doc__ = "Gets, sets and deletes the %r key from the environment." % key
+        self.__doc__ += _rfc_reference(key, rfc_section)
 
     def __get__(self, obj, type=None):
         if obj is None:
@@ -56,14 +53,11 @@ def _rfc_reference(header, section):
 class header_getter(object):
     """For delegating an attribute to a header in self.headers"""
 
-    def __init__(self, header, default=None, doc=None, rfc_section=None):
+    def __init__(self, header, default=None, rfc_section=None):
         self.header = header
         self.default = default
-        docstring = "Gets and sets and deletes the %s header" % header
-        docstring += _rfc_reference(header, rfc_section)
-        if doc:
-            docstring += '\n\n' + textwrap.dedent(doc)
-        self.__doc__ = docstring
+        self.__doc__ = "Gets and sets and deletes the %s header." % header
+        self.__doc__ += _rfc_reference(header, rfc_section)
 
     def __get__(self, obj, type=None):
         if obj is None:
@@ -91,7 +85,7 @@ class converter(object):
     """
     Wraps a descriptor, and applies additional conversions when reading and writing
     """
-    def __init__(self, descriptor, getter_converter, setter_converter, convert_name=None, doc=None, converter_args=()):
+    def __init__(self, descriptor, getter_converter, setter_converter, convert_name=None, converter_args=()):
         self.descriptor = descriptor
         self.getter_converter = getter_converter
         self.setter_converter = setter_converter
@@ -103,8 +97,6 @@ class converter(object):
             docstring += convert_name + '.'
         else:
             docstring += "%r and %r." % (getter_converter, setter_converter)
-        if doc:
-            docstring += '\n\n' + textwrap.dedent(doc)
         self.__doc__ = docstring
 
     def __get__(self, obj, type=None):
@@ -114,7 +106,8 @@ class converter(object):
         return self.getter_converter(value, *self.converter_args)
 
     def __set__(self, obj, value):
-        value = self.setter_converter(value, *self.converter_args)
+        if value is not None:
+            value = self.setter_converter(value, *self.converter_args)
         self.descriptor.__set__(obj, value)
 
     def __delete__(self, obj):
