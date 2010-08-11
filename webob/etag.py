@@ -5,8 +5,32 @@ Also If-Range parsing
 """
 
 from webob.datetime_utils import *
+from webob.util import rfc_reference
 
-__all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'NoIfRange']
+__all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'NoIfRange', 'etag_property']
+
+
+def etag_property(key, default, rfc_section):
+    doc = "Gets and sets the %r key in the environment." % key
+    doc += rfc_reference(key, rfc_section)
+    doc += "  Converts it as a Etag."
+    def fget(req):
+        value = req.environ.get(key)
+        if not value:
+            return default
+        elif value == '*':
+            return AnyETag
+        else:
+            return ETagMatcher.parse(value)
+    def fset(req, val):
+        if val is None:
+            req.environ[key] = None
+        else:
+            req.environ[key] = str(val)
+    def fdel(req):
+        del req.environ[key]
+    return property(fget, fset, fdel, doc=doc)
+
 
 class _AnyETag(object):
     """
@@ -212,3 +236,5 @@ class _NoIfRange(object):
         return True
 
 NoIfRange = _NoIfRange()
+
+

@@ -2,11 +2,10 @@ import warnings
 import re, textwrap
 from datetime import datetime, date
 
-from webob.headers import _trans_name as header_to_key
 from webob.byterange import Range, ContentRange
-from webob.etag import AnyETag, NoETag, ETagMatcher, IfRange, NoIfRange
+from webob.etag import IfRange, NoIfRange
 from webob.datetime_utils import serialize_date
-from webob.acceptparse import Accept, NilAccept
+from webob.util import rfc_reference
 
 
 CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
@@ -18,7 +17,7 @@ _not_given = object()
 
 def environ_getter(key, default=_not_given, rfc_section=None):
     doc = "Gets and sets the %r key in the environment." % key
-    doc += _rfc_reference(key, rfc_section)
+    doc += rfc_reference(key, rfc_section)
     if default is _not_given:
         def fget(req):
             return req.environ[key]
@@ -41,7 +40,7 @@ def upath_property(key):
 
 def header_getter(header, rfc_section):
     doc = "Gets and sets and deletes the %s header." % header
-    doc += _rfc_reference(header, rfc_section)
+    doc += rfc_reference(header, rfc_section)
     key = header.lower()
 
     def fget(r):
@@ -66,16 +65,6 @@ def header_getter(header, rfc_section):
     return property(fget, fset, fdel, doc)
 
 
-def _rfc_reference(header, section):
-    if not section:
-        return ''
-    major_section = section.split('.')[0]
-    link = 'http://www.w3.org/Protocols/rfc2616/rfc2616-sec%s.html#sec%s' % (
-        major_section, section)
-    if header.startswith('HTTP_'):
-        header = header[5:].title().replace('_', '-')
-    return " For more information on %s see `section %s <%s>`_." % (
-        header, section, link)
 
 
 def converter(prop, parse, serialize, convert_name=None):
@@ -98,27 +87,6 @@ def converter(prop, parse, serialize, convert_name=None):
 
 
 
-def accept_property(header, rfc_section,
-    AcceptClass=Accept, NilClass=NilAccept, convert_name='accept header'
-):
-    key = header_to_key(header)
-    doc = "Gets and sets the %r key in the environment." % key
-    doc += _rfc_reference(key, rfc_section)
-    doc += "  Converts it as a %s." % convert_name
-    def fget(req):
-        value = req.environ.get(key)
-        if not value:
-            return NilClass(header)
-        return AcceptClass(header, value)
-    def fset(req, val):
-        if val:
-            if isinstance(val, (list, tuple, dict)):
-                val = AcceptClass(header, '') + val
-            val = str(val)
-        req.environ[key] = val or None
-    def fdel(req):
-        del req.environ[key]
-    return property(fget, fset, fdel, doc)
 
 
 
@@ -177,31 +145,6 @@ class deprecated_property(object):
 #
 # ETag-related properties
 #
-
-
-def etag_property(key, default, rfc_section):
-    doc = "Gets and sets the %r key in the environment." % key
-    doc += _rfc_reference(key, rfc_section)
-    doc += "  Converts it as a Etag."
-    def fget(req):
-        value = req.environ.get(key)
-        if not value:
-            return default
-        elif value == '*':
-            return AnyETag
-        else:
-            return ETagMatcher.parse(value)
-    def fset(req, val):
-        if val is None:
-            req.environ[key] = None
-        else:
-            req.environ[key] = str(val)
-    def fdel(req):
-        del req.environ[key]
-    return property(fget, fset, fdel, doc=doc)
-
-
-
 
 
 # FIXME: weak entity tags are not supported, would need special class

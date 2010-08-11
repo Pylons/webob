@@ -3,9 +3,10 @@ import urllib, urlparse, cgi
 from cStringIO import StringIO
 
 from webob.headers import EnvironHeaders
-from webob.acceptparse import Accept, MIMEAccept, NilAccept, MIMENilAccept, NoAccept
+from webob.acceptparse import accept_property, Accept, MIMEAccept, NilAccept, MIMENilAccept, NoAccept
 from webob.multidict import TrackableMultiDict, MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
 from webob.cachecontrol import CacheControl
+from webob.etag import etag_property, AnyETag, NoETag
 
 from webob.descriptors import *
 from webob.datetime_utils import *

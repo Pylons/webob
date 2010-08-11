@@ -10,10 +10,14 @@ exists, but this ignores them.
 """
 
 import re
-from webob.util import sorted
+from webob.util import sorted, rfc_reference
+from webob.headers import _trans_name as header_to_key
 
 part_re = re.compile(
     r',\s*([^\s;,\n]+)(?:[^,]*?;\s*q=([0-9.]*))?')
+
+
+
 
 def parse_accept(value):
     """
@@ -322,3 +326,26 @@ class MIMEAccept(Accept):
 class MIMENilAccept(NilAccept):
     MasterClass = MIMEAccept
 
+
+
+def accept_property(header, rfc_section,
+    AcceptClass=Accept, NilClass=NilAccept, convert_name='accept header'
+):
+    key = header_to_key(header)
+    doc = "Gets and sets the %r key in the environment." % key
+    doc += rfc_reference(key, rfc_section)
+    doc += "  Converts it as a %s." % convert_name
+    def fget(req):
+        value = req.environ.get(key)
+        if not value:
+            return NilClass(header)
+        return AcceptClass(header, value)
+    def fset(req, val):
+        if val:
+            if isinstance(val, (list, tuple, dict)):
+                val = AcceptClass(header, '') + val
+            val = str(val)
+        req.environ[key] = val or None
+    def fdel(req):
+        del req.environ[key]
+    return property(fget, fset, fdel, doc)
