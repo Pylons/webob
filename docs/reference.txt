@@ -996,7 +996,27 @@ To enable this you must create the response like
     >>> req.if_none_match = 'opaque-tag'
     >>> req.get_response(res)
     <Response ... 304 Not Modified>
+
+    >>> req.if_none_match = '*'
+    >>> 'x' in req.if_none_match
+    True
+    >>> req.if_none_match = req.if_none_match
+    >>> 'x' in req.if_none_match
+    True
+    >>> req.if_none_match = None
+    >>> 'x' in req.if_none_match
+    False
+    >>> req.if_match = None
+    >>> 'x' in req.if_match
+    True
+    >>> req.if_match = req.if_match
+    >>> 'x' in req.if_match
+    True
+    >>> req.headers.get('If-Match')
+    '*'
+
     >>> del req.if_none_match
+
     >>> req.range = (1, 5)
     >>> result = req.get_response(res)
     >>> result.headers['content-range']

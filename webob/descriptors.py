@@ -33,6 +33,17 @@ def environ_getter(key, default=_not_given, rfc_section=None):
     return property(fget, fset, fdel, doc=doc)
 
 
+def upath_property(key):
+    doc = 'upath_property(%r)' % (key)
+    def fget(req):
+        return req.environ[key].decode('UTF8', req.unicode_errors)
+    def fset(req, path):
+        if not isinstance(path, unicode):
+            path = path.decode('ASCII') # or just throw an error?
+        str_path = path.encode('UTF8', req.unicode_errors)
+        req.environ[key] = str_path
+    return property(fget, fset, doc=doc)
+
 
 def header_getter(header, rfc_section):
     doc = "Gets and sets and deletes the %s header." % header
@@ -75,12 +86,9 @@ def _rfc_reference(header, section):
 
 def converter(prop, parse, serialize, convert_name=None, converter_args=()):
     assert isinstance(prop, property)
+    convert_name = convert_name or "%r and %r" % (parse, serialize)
     doc = prop.__doc__ or ''
-    doc += "  Converts it as a "
-    if convert_name:
-        doc += convert_name + '.'
-    else:
-        doc += "%r and %r." % (parse, serialize)
+    doc += "  Converts it as a %s." % convert_name
     hget, hset = prop.fget, prop.fset
     if converter_args:
         def fget(r):
@@ -102,9 +110,6 @@ def converter(prop, parse, serialize, convert_name=None, converter_args=()):
 
 
 
-def etag_property(key, default, rfc_section):
-    prop = environ_getter(key, None, rfc_section)
-    return converter(prop, parse_etag, serialize_etag, 'ETag', converter_args=(default,))
 
 
 def accept_property(header, rfc_section,
@@ -162,28 +167,6 @@ class deprecated_property(object):
                 stacklevel=3)
 
 
-class UnicodePathProperty(object):
-    """
-        upath_info and uscript_name descriptor implementation
-    """
-
-    def __init__(self, key):
-        self.key = key
-
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        str_path = obj.environ[self.key]
-        return str_path.decode('UTF8', obj.unicode_errors)
-
-    def __set__(self, obj, path):
-        if not isinstance(path, unicode):
-            path = path.decode('ASCII') # or just throw an error?
-        str_path = path.encode('UTF8', obj.unicode_errors)
-        obj.environ[self.key] = str_path
-
-    def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.key)
 
 
 
@@ -192,31 +175,35 @@ class UnicodePathProperty(object):
 ########################
 
 
+#
+# ETag-related properties
+#
 
 
-
-
-def parse_etag(value, default=True):
-    if value is None:
-        value = ''
-    value = value.strip()
-    if not value:
-        if default:
+def etag_property(key, default, rfc_section):
+    doc = "Gets and sets the %r key in the environment." % key
+    doc += _rfc_reference(key, rfc_section)
+    doc += "  Converts it as a Etag."
+    def fget(req):
+        value = req.environ.get(key)
+        if not value:
+            return default
+        elif value == '*':
             return AnyETag
         else:
-            return NoETag
-    if value == '*':
-        return AnyETag
-    else:
-        return ETagMatcher.parse(value)
-
-def serialize_etag(value, default=True):
-    if value is AnyETag:
-        if default:
-            return None
+            return ETagMatcher.parse(value)
+    def fset(req, val):
+        if val is None:
+            req.environ[key] = None
         else:
-            return '*'
-    return str(value)
+            req.environ[key] = str(val)
+    def fdel(req):
+        del req.environ[key]
+    return property(fget, fset, fdel, doc=doc)
+
+
+
+
 
 # FIXME: weak entity tags are not supported, would need special class
 def parse_etag_response(value):

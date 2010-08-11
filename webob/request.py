@@ -99,8 +99,8 @@ class BaseRequest(object):
         environ_getter('SERVER_PORT'),
         parse_int, serialize_int, 'int')
 
-    uscript_name = UnicodePathProperty('SCRIPT_NAME')
-    upath_info = UnicodePathProperty('PATH_INFO')
+    uscript_name = upath_property('SCRIPT_NAME')
+    upath_info = upath_property('PATH_INFO')
 
 
     def _content_type__get(self):
@@ -786,8 +786,8 @@ class BaseRequest(object):
     cache_control = property(_cache_control__get, _cache_control__set, _cache_control__del, doc=_cache_control__get.__doc__)
 
 
-    if_match = etag_property('HTTP_IF_MATCH', True, '14.24')
-    if_none_match = etag_property('HTTP_IF_NONE_MATCH', False, '14.26')
+    if_match = etag_property('HTTP_IF_MATCH', AnyETag, '14.24')
+    if_none_match = etag_property('HTTP_IF_NONE_MATCH', NoETag, '14.26')
 
     date = converter(
         environ_getter('HTTP_DATE', None, '14.8'),
