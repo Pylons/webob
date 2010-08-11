@@ -15,21 +15,11 @@ SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
 class environ_getter(object):
     """For delegating an attribute to a key in self.environ."""
 
-    def __init__(self, key, default='', default_factory=None,
-                 settable=True, deletable=True, doc=None,
-                 rfc_section=None):
+    def __init__(self, key, default='', doc=None, rfc_section=None):
         self.key = key
         self.default = default
-        self.default_factory = default_factory
-        self.settable = settable
-        self.deletable = deletable
-        docstring = "Gets"
-        if self.settable:
-            docstring += " and sets"
-        if self.deletable:
-            docstring += " and deletes"
-        docstring += " the %r key from the environment." % self.key
-        docstring += _rfc_reference(self.key, rfc_section)
+        docstring = "Gets, sets and deletes the %r key from the environment." % key
+        docstring += _rfc_reference(key, rfc_section)
         if doc:
             docstring += '\n\n' + textwrap.dedent(doc)
         self.__doc__ = docstring
@@ -37,28 +27,15 @@ class environ_getter(object):
     def __get__(self, obj, type=None):
         if obj is None:
             return self
-        try:
-            return obj.environ[self.key]
-        except KeyError:
-            if self.default_factory:
-                val = obj.environ[self.key] = self.default_factory()
-                return val
-            else:
-                return self.default
-
+        return obj.environ.get(self.key, self.default)
 
     def __set__(self, obj, value):
-        if not self.settable:
-            raise AttributeError("Read-only attribute (key %r)" % self.key)
         if value is not None:
             obj.environ[self.key] = value
         elif self.key in obj.environ:
             del obj.environ[self.key]
 
-
     def __delete__(self, obj):
-        if not self.deletable:
-            raise AttributeError("You cannot delete the key %r" % self.key)
         del obj.environ[self.key]
 
     def __repr__(self):
@@ -72,26 +49,18 @@ def _rfc_reference(header, section):
         major_section, section)
     if header.startswith('HTTP_'):
         header = header[5:].title().replace('_', '-')
-    return "  For more information on %s see `section %s <%s>`_." % (
+    return " For more information on %s see `section %s <%s>`_." % (
         header, section, link)
 
 
 class header_getter(object):
     """For delegating an attribute to a header in self.headers"""
 
-    def __init__(self, header, default=None,
-                 settable=True, deletable=True, doc=None, rfc_section=None):
+    def __init__(self, header, default=None, doc=None, rfc_section=None):
         self.header = header
         self.default = default
-        self.settable = settable
-        self.deletable = deletable
-        docstring = "Gets"
-        if self.settable:
-            docstring += " and sets"
-        if self.deletable:
-            docstring += " and deletes"
-        docstring += " the %s header" % self.header
-        docstring += _rfc_reference(self.header, rfc_section)
+        docstring = "Gets and sets and deletes the %s header" % header
+        docstring += _rfc_reference(header, rfc_section)
         if doc:
             docstring += '\n\n' + textwrap.dedent(doc)
         self.__doc__ = docstring
@@ -102,11 +71,8 @@ class header_getter(object):
         return obj.headers.get(self.header, self.default)
 
     def __set__(self, obj, value):
-        if not self.settable:
-            raise AttributeError("Read-only attribute (header %s)" % self.header)
         if value is None:
-            if self.header in obj.headers:
-                del obj.headers[self.header]
+            obj.headers.pop(self.header, None)
         else:
             if isinstance(value, unicode):
                 # This is the standard encoding for headers:
@@ -114,8 +80,6 @@ class header_getter(object):
             obj.headers[self.header] = value
 
     def __delete__(self, obj):
-        if not self.deletable:
-            raise AttributeError("You cannot delete the header %s" % self.header)
         del obj.headers[self.header]
 
     def __repr__(self):
@@ -209,11 +173,8 @@ class UnicodePathProperty(object):
         upath_info and uscript_name descriptor implementation
     """
 
-    def __init__(self, key, doc=None):
+    def __init__(self, key):
         self.key = key
-        #if doc:
-        #    docstring += textwrap.dedent(doc)
-        #self.__doc__ = docstring
 
     def __get__(self, obj, type=None):
         if obj is None:
