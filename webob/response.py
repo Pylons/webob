@@ -31,6 +31,10 @@ class Response(object):
     unicode_errors = 'strict'
     default_conditional_response = False
 
+    #
+    # __init__, from_file, copy
+    #
+
     def __init__(self, body=None, status=None, headerlist=None, app_iter=None,
                  request=None, content_type=None, conditional_response=None,
                  **kw):
@@ -102,21 +106,6 @@ class Response(object):
                     "Unexpected keyword: %s=%r" % (name, value))
             setattr(self, name, value)
 
-    def __repr__(self):
-        return '<%s at 0x%x %s>' % (
-            self.__class__.__name__,
-            abs(id(self)),
-            self.status)
-
-    def __str__(self, skip_body=False):
-        parts = [self.status]
-        if not skip_body:
-            # Force enumeration of the body (to set content-length)
-            self.body
-        parts += map('%s: %s'.__mod__, self.headerlist)
-        if not skip_body and self.body:
-            parts += ['', self.body]
-        return '\n'.join(parts)
 
     @classmethod
     def from_file(cls, fp):
@@ -173,6 +162,29 @@ class Response(object):
             app_iter=app_iter,
             conditional_response=self.conditional_response)
 
+
+    #
+    # __repr__, __str__
+    #
+
+    def __repr__(self):
+        return '<%s at 0x%x %s>' % (self.__class__.__name__, abs(id(self)), self.status)
+
+    def __str__(self, skip_body=False):
+        parts = [self.status]
+        if not skip_body:
+            # Force enumeration of the body (to set content-length)
+            self.body
+        parts += map('%s: %s'.__mod__, self.headerlist)
+        if not skip_body and self.body:
+            parts += ['', self.body]
+        return '\n'.join(parts)
+
+
+    #
+    # status, status_int
+    #
+
     def _status__get(self):
         """
         The status string
@@ -211,6 +223,11 @@ class Response(object):
         status_int, 'status_code', 'use .status or .status_int instead',
         warning=False)
 
+
+    #
+    # headerslist, headers
+    #
+
     def _headerlist__get(self):
         """
         The list of response headers
@@ -230,118 +247,6 @@ class Response(object):
 
     headerlist = property(_headerlist__get, _headerlist__set, _headerlist__del, doc=_headerlist__get.__doc__)
 
-    def _charset__get(self):
-        """
-        Get/set the charset (in the Content-Type)
-        """
-        header = self.headers.get('Content-Type')
-        if not header:
-            return None
-        match = CHARSET_RE.search(header)
-        if match:
-            return match.group(1)
-        return None
-
-    def _charset__set(self, charset):
-        if charset is None:
-            del self.charset
-            return
-        try:
-            header = self.headers.pop('Content-Type')
-        except KeyError:
-            raise AttributeError(
-                "You cannot set the charset when no content-type is defined")
-        match = CHARSET_RE.search(header)
-        if match:
-            header = header[:match.start()] + header[match.end():]
-        header += '; charset=%s' % charset
-        self.headers['Content-Type'] = header
-
-    def _charset__del(self):
-        try:
-            header = self.headers.pop('Content-Type')
-        except KeyError:
-            # Don't need to remove anything
-            return
-        match = CHARSET_RE.search(header)
-        if match:
-            header = header[:match.start()] + header[match.end():]
-        self.headers['Content-Type'] = header
-
-    charset = property(_charset__get, _charset__set, _charset__del, doc=_charset__get.__doc__)
-
-    def _content_type__get(self):
-        """
-        Get/set the Content-Type header (or None), *without* the
-        charset or any parameters.
-
-        If you include parameters (or ``;`` at all) when setting the
-        content_type, any existing parameters will be deleted;
-        otherwise they will be preserved.
-        """
-        header = self.headers.get('Content-Type')
-        if not header:
-            return None
-        return header.split(';', 1)[0]
-
-    def _content_type__set(self, value):
-        if ';' not in value:
-            header = self.headers.get('Content-Type', '')
-            if ';' in header:
-                params = header.split(';', 1)[1]
-                value += ';' + params
-        self.headers['Content-Type'] = value
-
-    def _content_type__del(self):
-        try:
-            del self.headers['Content-Type']
-        except KeyError:
-            pass
-
-    content_type = property(_content_type__get, _content_type__set,
-                            _content_type__del, doc=_content_type__get.__doc__)
-
-    def _content_type_params__get(self):
-        """
-        A dictionary of all the parameters in the content type.
-
-        (This is not a view, set to change, modifications of the dict would not be
-        applied otherwise)
-        """
-        params = self.headers.get('Content-Type', '')
-        if ';' not in params:
-            return {}
-        params = params.split(';', 1)[1]
-        result = {}
-        for match in _PARAM_RE.finditer(params):
-            result[match.group(1)] = match.group(2) or match.group(3) or ''
-        return result
-
-    def _content_type_params__set(self, value_dict):
-        if not value_dict:
-            del self.content_type_params
-            return
-        params = []
-        for k, v in sorted(value_dict.items()):
-            if not _OK_PARAM_RE.search(v):
-                ## FIXME: I'm not sure what to do with "'s in the parameter value
-                ## I think it might be simply illegal
-                v = '"%s"' % v.replace('"', '\\"')
-            params.append('; %s=%s' % (k, v))
-        ct = self.headers.pop('Content-Type', '').split(';', 1)[0]
-        ct += ''.join(params)
-        self.headers['Content-Type'] = ct
-
-    def _content_type_params__del(self, value):
-        self.headers['Content-Type'] = self.headers.get('Content-Type', '').split(';', 1)[0]
-
-    content_type_params = property(
-        _content_type_params__get,
-        _content_type_params__set,
-        _content_type_params__del,
-        doc=_content_type_params__get.__doc__
-    )
-
     def _headers__get(self):
         """
         The headers in a dictionary-like object
@@ -357,6 +262,11 @@ class Response(object):
         self._headers = None
 
     headers = property(_headers__get, _headers__set, doc=_headers__get.__doc__)
+
+
+    #
+    # body
+    #
 
     def _body__get(self):
         """
@@ -410,24 +320,10 @@ class Response(object):
 
     body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
 
-    def _body_file__get(self):
-        """
-        A file-like object that can be used to write to the
-        body.  If you passed in a list app_iter, that app_iter will be
-        modified by writes.
-        """
-        return ResponseBodyFile(self)
 
-    def _body_file__del(self):
-        del self.body
-
-    body_file = property(_body_file__get, fdel=_body_file__del, doc=_body_file__get.__doc__)
-
-    def write(self, text):
-        if isinstance(text, unicode):
-            self.unicode_body += text
-        else:
-            self.body += text
+    #
+    # unicode_body
+    #
 
     def _unicode_body__get(self):
         """
@@ -453,6 +349,36 @@ class Response(object):
 
     unicode_body = property(_unicode_body__get, _unicode_body__set, _unicode_body__del, doc=_unicode_body__get.__doc__)
     ubody = property(_unicode_body__get, _unicode_body__set, _unicode_body__del, doc="Alias for unicode_body")
+
+
+
+    #
+    # body_file, write(text)
+    #
+
+    def _body_file__get(self):
+        """
+        A file-like object that can be used to write to the
+        body.  If you passed in a list app_iter, that app_iter will be
+        modified by writes.
+        """
+        return ResponseBodyFile(self)
+
+    def _body_file__del(self):
+        del self.body
+
+    body_file = property(_body_file__get, fdel=_body_file__del, doc=_body_file__get.__doc__)
+
+    def write(self, text):
+        if isinstance(text, unicode):
+            self.unicode_body += text
+        else:
+            self.body += text
+
+
+    #
+    # app_iter
+    #
 
     def _app_iter__get(self):
         """
@@ -480,6 +406,194 @@ class Response(object):
         self._app_iter = self._body = None
 
     app_iter = property(_app_iter__get, _app_iter__set, _app_iter__del, doc=_app_iter__get.__doc__)
+
+
+
+    #
+    # headers attrs
+    #
+
+    allow = list_header('Allow', '14.7')
+    ## FIXME: I realize response.vary += 'something' won't work.  It should.
+    ## Maybe for all listy headers.
+    vary = list_header('Vary', '14.44')
+
+    content_length = converter(
+        header_getter('Content-Length', '14.17'),
+        parse_int, serialize_int, 'int')
+
+    content_encoding = header_getter('Content-Encoding', '14.11')
+    content_language = list_header('Content-Language', '14.12')
+    content_location = header_getter('Content-Location', '14.14')
+    content_md5 = header_getter('Content-MD5', '14.14')
+    # FIXME: a special ContentDisposition type would be nice
+    content_disposition = header_getter('Content-Disposition', '19.5.1')
+
+    accept_ranges = header_getter('Accept-Ranges', '14.5')
+    content_range = converter(
+        header_getter('Content-Range', '14.16'),
+        parse_content_range, serialize_content_range, 'ContentRange object')
+
+    date = date_header('Date', '14.18')
+    expires = date_header('Expires', '14.21')
+    last_modified = date_header('Last-Modified', '14.29')
+
+    etag = converter(
+        header_getter('ETag', '14.19'),
+        parse_etag_response, serialize_etag_response, 'Entity tag')
+
+    location = header_getter('Location', '14.30')
+    pragma = header_getter('Pragma', '14.32')
+    age = converter(
+        header_getter('Age', '14.6'),
+        parse_int_safe, serialize_int, 'int')
+
+    retry_after = converter(
+        header_getter('Retry-After', '14.37'),
+        parse_date_delta, serialize_date_delta, 'HTTP date or delta seconds')
+
+    server = header_getter('Server', '14.38')
+
+
+    ## FIXME: the standard allows this to be a list of challenges
+    www_authenticate = converter(
+        header_getter('WWW-Authenticate', '14.47'),
+        parse_auth, serialize_auth,
+    )
+
+
+    #
+    # charset
+    #
+
+    def _charset__get(self):
+        """
+        Get/set the charset (in the Content-Type)
+        """
+        header = self.headers.get('Content-Type')
+        if not header:
+            return None
+        match = CHARSET_RE.search(header)
+        if match:
+            return match.group(1)
+        return None
+
+    def _charset__set(self, charset):
+        if charset is None:
+            del self.charset
+            return
+        try:
+            header = self.headers.pop('Content-Type')
+        except KeyError:
+            raise AttributeError(
+                "You cannot set the charset when no content-type is defined")
+        match = CHARSET_RE.search(header)
+        if match:
+            header = header[:match.start()] + header[match.end():]
+        header += '; charset=%s' % charset
+        self.headers['Content-Type'] = header
+
+    def _charset__del(self):
+        try:
+            header = self.headers.pop('Content-Type')
+        except KeyError:
+            # Don't need to remove anything
+            return
+        match = CHARSET_RE.search(header)
+        if match:
+            header = header[:match.start()] + header[match.end():]
+        self.headers['Content-Type'] = header
+
+    charset = property(_charset__get, _charset__set, _charset__del, doc=_charset__get.__doc__)
+
+
+    #
+    # content_type
+    #
+
+    def _content_type__get(self):
+        """
+        Get/set the Content-Type header (or None), *without* the
+        charset or any parameters.
+
+        If you include parameters (or ``;`` at all) when setting the
+        content_type, any existing parameters will be deleted;
+        otherwise they will be preserved.
+        """
+        header = self.headers.get('Content-Type')
+        if not header:
+            return None
+        return header.split(';', 1)[0]
+
+    def _content_type__set(self, value):
+        if ';' not in value:
+            header = self.headers.get('Content-Type', '')
+            if ';' in header:
+                params = header.split(';', 1)[1]
+                value += ';' + params
+        self.headers['Content-Type'] = value
+
+    def _content_type__del(self):
+        try:
+            del self.headers['Content-Type']
+        except KeyError:
+            pass
+
+    content_type = property(_content_type__get, _content_type__set,
+                            _content_type__del, doc=_content_type__get.__doc__)
+
+
+    #
+    # content_type_params
+    #
+
+    def _content_type_params__get(self):
+        """
+        A dictionary of all the parameters in the content type.
+
+        (This is not a view, set to change, modifications of the dict would not be
+        applied otherwise)
+        """
+        params = self.headers.get('Content-Type', '')
+        if ';' not in params:
+            return {}
+        params = params.split(';', 1)[1]
+        result = {}
+        for match in _PARAM_RE.finditer(params):
+            result[match.group(1)] = match.group(2) or match.group(3) or ''
+        return result
+
+    def _content_type_params__set(self, value_dict):
+        if not value_dict:
+            del self.content_type_params
+            return
+        params = []
+        for k, v in sorted(value_dict.items()):
+            if not _OK_PARAM_RE.search(v):
+                ## FIXME: I'm not sure what to do with "'s in the parameter value
+                ## I think it might be simply illegal
+                v = '"%s"' % v.replace('"', '\\"')
+            params.append('; %s=%s' % (k, v))
+        ct = self.headers.pop('Content-Type', '').split(';', 1)[0]
+        ct += ''.join(params)
+        self.headers['Content-Type'] = ct
+
+    def _content_type_params__del(self, value):
+        self.headers['Content-Type'] = self.headers.get('Content-Type', '').split(';', 1)[0]
+
+    content_type_params = property(
+        _content_type_params__get,
+        _content_type_params__set,
+        _content_type_params__del,
+        doc=_content_type_params__get.__doc__
+    )
+
+
+
+
+    #
+    # set_cookie, unset_cookie, delete_cookie, merge_cookies
+    #
 
     def set_cookie(self, key, value='', max_age=None,
                    path='/', domain=None, secure=None, httponly=False,
@@ -568,17 +682,32 @@ class Response(object):
             raise KeyError(
                 "No cookie has been set with the name %r" % key)
 
-    location = header_getter('Location', '14.30')
 
-    accept_ranges = header_getter('Accept-Ranges', '14.5')
+    def merge_cookies(self, resp):
+        """Merge the cookies that were set on this response with the
+        given `resp` object (which can be any WSGI application).
 
-    age = converter(
-        header_getter('Age', '14.6'),
-        parse_int_safe, serialize_int, 'int')
+        If the `resp` is a :class:`webob.Response` object, then the
+        other object will be modified in-place.
+        """
+        if not self.headers.get('Set-Cookie'):
+            return resp
+        if isinstance(resp, Response):
+            for header in self.headers.getall('Set-Cookie'):
+                resp.headers.add('Set-Cookie', header)
+            return resp
+        else:
+            def repl_app(environ, start_response):
+                def repl_start_response(status, headers, exc_info=None):
+                    headers.extend(self.headers.getall('Set-Cookie'))
+                    return start_response(status, headers, exc_info=exc_info)
+                return resp(environ, repl_start_response)
+            return repl_app
 
-    allow = converter(
-        header_getter('Allow', '14.7'),
-        parse_list, serialize_list, 'list')
+
+    #
+    # cache_control
+    #
 
     _cache_control_obj = None
 
@@ -628,6 +757,11 @@ class Response(object):
 
     cache_control = property(_cache_control__get, _cache_control__set, _cache_control__del, doc=_cache_control__get.__doc__)
 
+
+    #
+    # cache_expires
+    #
+
     def _cache_expires(self, seconds=0, **kw):
         """
             Set expiration on this request.  This sets the response to
@@ -664,11 +798,11 @@ class Response(object):
 
     cache_expires = property(lambda self: self._cache_expires, _cache_expires)
 
-    # FIXME: a special ContentDisposition type would be nice
-    content_disposition = header_getter('Content-Disposition',
-                                        '19.5.1')
 
-    content_encoding = header_getter('Content-Encoding', '14.11')
+
+    #
+    # encode_content, decode_content, md5_etag
+    #
 
     def encode_content(self, encoding='gzip'):
         """
@@ -711,32 +845,6 @@ class Response(object):
         self.content_encoding = None
         self.body = new_body
 
-    content_language = converter(
-        header_getter('Content-Language', '14.12'),
-        parse_list, serialize_list, 'list')
-
-    content_location = header_getter(
-        'Content-Location', '14.14')
-
-    content_md5 = header_getter(
-        'Content-MD5', '14.14')
-
-    content_range = converter(
-        header_getter('Content-Range', '14.16'),
-        parse_content_range, serialize_content_range, 'ContentRange object')
-
-    content_length = converter(
-        header_getter('Content-Length', '14.17'),
-        parse_int, serialize_int, 'int')
-
-    date = converter(
-        header_getter('Date', '14.18'),
-        parse_date, serialize_date, 'HTTP date')
-
-    etag = converter(
-        header_getter('ETag', '14.19'),
-        parse_etag_response, serialize_etag_response, 'Entity tag')
-
     def md5_etag(self, body=None, set_content_md5=False):
         """
         Generate an etag for the response object using an MD5 hash of
@@ -756,35 +864,10 @@ class Response(object):
         if set_content_md5:
             self.content_md5 = md5_digest
 
-    expires = converter(
-        header_getter('Expires', '14.21'),
-        parse_date, serialize_date, 'HTTP date')
 
-    last_modified = converter(
-        header_getter('Last-Modified', '14.29'),
-        parse_date, serialize_date, 'HTTP date')
-
-    pragma = header_getter('Pragma', '14.32')
-
-    retry_after = converter(
-        header_getter('Retry-After', '14.37'),
-        parse_date_delta, serialize_date_delta, 'HTTP date or delta seconds')
-
-    server = header_getter('Server', '14.38')
-
-    ## FIXME: I realize response.vary += 'something' won't work.  It should.
-    ## Maybe for all listy headers.
-    vary = converter(
-        header_getter('Vary', '14.44'),
-        parse_list, serialize_list, 'list')
-
-    ## FIXME: the standard allows this to be a list of challenges
-    www_authenticate = converter(
-        header_getter('WWW-Authenticate', '14.47'),
-        parse_auth, serialize_auth,
-    )
-
-
+    #
+    # request
+    #
 
     def _request__get(self):
         """
@@ -810,6 +893,11 @@ class Response(object):
 
     request = property(_request__get, _request__set, _request__del, doc=_request__get.__doc__)
 
+
+    #
+    # environ
+    #
+
     def _environ__get(self):
         """
         Get/set the request environ associated with this response, if
@@ -828,26 +916,11 @@ class Response(object):
 
     environ = property(_environ__get, _environ__set, _environ__del, doc=_environ__get.__doc__)
 
-    def merge_cookies(self, resp):
-        """Merge the cookies that were set on this response with the
-        given `resp` object (which can be any WSGI application).
 
-        If the `resp` is a :class:`webob.Response` object, then the
-        other object will be modified in-place.
-        """
-        if not self.headers.get('Set-Cookie'):
-            return resp
-        if isinstance(resp, Response):
-            for header in self.headers.getall('Set-Cookie'):
-                resp.headers.add('Set-Cookie', header)
-            return resp
-        else:
-            def repl_app(environ, start_response):
-                def repl_start_response(status, headers, exc_info=None):
-                    headers.extend(self.headers.getall('Set-Cookie'))
-                    return start_response(status, headers, exc_info=exc_info)
-                return resp(environ, repl_start_response)
-            return repl_app
+
+    #
+    # __call__, conditional_response_app
+    #
 
     def __call__(self, environ, start_response):
         """

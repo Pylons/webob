@@ -4,7 +4,7 @@ from datetime import datetime, date
 
 from webob.byterange import Range, ContentRange
 from webob.etag import IfRange, NoIfRange
-from webob.datetime_utils import serialize_date
+from webob.datetime_utils import parse_date, serialize_date
 from webob.util import rfc_reference
 
 
@@ -81,13 +81,13 @@ def converter(prop, parse, serialize, convert_name=None):
         hset(r, val)
     return property(fget, fset, prop.fdel, doc)
 
+def list_header(header, rfc_section):
+    prop = header_getter(header, rfc_section)
+    return converter(prop, parse_list, serialize_list, 'list')
 
-
-
-
-
-
-
+def date_header(header, rfc_section):
+    prop = header_getter(header, rfc_section)
+    return converter(prop, parse_date, serialize_date, 'HTTP date')
 
 
 
@@ -140,11 +140,6 @@ class deprecated_property(object):
 ########################
 ## Converter functions
 ########################
-
-
-#
-# ETag-related properties
-#
 
 
 # FIXME: weak entity tags are not supported, would need special class
