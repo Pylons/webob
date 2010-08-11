@@ -269,6 +269,10 @@ mime types are not supported.
     >>> req.accept_language.best_matches('ES')
     ['es']
 
+    >>> req = Request.blank('/', accept_charset='utf-8;q=0.5')
+    >>> req.accept_charset.best_match(['iso-8859-1', 'utf-8'])
+    'iso-8859-1'
+
 The If-Range header is a combination of a possible conditional date or
 etag match::
 

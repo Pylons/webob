@@ -50,6 +50,13 @@ class Accept(object):
         self.header_name = header_name
         self.header_value = header_value
         self._parsed = parse_accept(header_value)
+        if header_name == 'Accept-Charset':
+            for k, v in self._parsed:
+                if k == '*' or k == 'iso-8859-1':
+                    break
+            else:
+                self._parsed.append(('iso-8859-1', 1))
+
 
     def __repr__(self):
         return '<%s at 0x%x %s: %s>' % (
