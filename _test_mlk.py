@@ -1,4 +1,4 @@
-import sys, subprocess, site
+import sys, subprocess, site, os
 
 def create_suite():
     from mext.test_suite import TestSuite
@@ -16,7 +16,8 @@ def create_suite():
 try:
     suite = create_suite()
 except ImportError:
-    subprocess.check_call("pip install -q -E testenv nose dtopt webtest mext.test>=0.4 coverage")
+    if not os.path.exists('testenv'):
+        subprocess.check_call("pip install -q -E testenv nose dtopt webtest mext.test>=0.4 coverage")
     site.addsitedir('testenv/Lib/site-packages')
     suite = create_suite()
 
