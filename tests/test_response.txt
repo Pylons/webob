@@ -185,6 +185,13 @@ conditioanl_response)::
     >>> req.get_response(res)
     <Response ... 200 OK>
 
+Weak etags::
+
+    >>> req = Request.blank('/', if_none_match='W/"test"')
+    >>> res = Response(conditional_response=True, etag='test')
+    >>> req.get_response(res).status
+    '304 Not Modified'
+
 Also range response::
 
     >>> res = Response('0123456789', conditional_response=True)

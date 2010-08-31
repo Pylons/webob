@@ -91,7 +91,7 @@ class ETagMatcher(object):
         self.weak_etags = weak_etags
 
     def __contains__(self, other):
-        return other in self.etags
+        return other in self.etags or other in self.weak_etags
 
     def weak_match(self, other):
         if other.lower().startswith('w/'):
