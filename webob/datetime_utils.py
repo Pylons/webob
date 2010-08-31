@@ -69,6 +69,10 @@ def serialize_date(dt):
             "You must pass in a datetime, date, time tuple, or integer object, not %r" % dt)
     return formatdate(dt)
 
+
+weekdays = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
+months = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
+
 def serialize_cookie_date(dt):
     if isinstance(dt, unicode):
         dt = dt.encode('ascii')
@@ -76,7 +80,8 @@ def serialize_cookie_date(dt):
         dt = datetime.now() + dt
     if isinstance(dt, (datetime, date)):
         dt = dt.timetuple()
-    return time.strftime('%a, %d-%b-%Y %H:%M:%S GMT', dt)
+    r = time.strftime('%%s, %d-%%s-%Y %H:%M:%S GMT', dt)
+    return r % (weekdays[dt[6]], months[dt[1]-1])
 
 def parse_date_delta(value):
     """
