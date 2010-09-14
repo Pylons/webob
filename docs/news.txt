@@ -3,8 +3,10 @@ News
 
 .. contents::
 
-hg tip
-------
+1.0
+---
+
+* 1.0, yay!
 
 * Pull in werkzeug Cookie fix for malformed cookie bug.
 
