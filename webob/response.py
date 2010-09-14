@@ -280,6 +280,14 @@ class Response(object):
                 body = self._body = ''.join(self._app_iter)
             finally:
                 iter_close(self._app_iter)
+            if isinstance(body, unicode):
+                app_iter_repr = repr(self._app_iter)
+                if len(app_iter_repr) > 50:
+                    app_iter_repr = (
+                        app_iter_repr[:30] + '...' + app_iter_repr[-10:])
+                raise ValueError(
+                    'An item of the app_iter (%s) was unicode, causing a unicode body: %r'
+                    % (app_iter_repr, body))
             self._app_iter = None
             if self._environ is not None and self._environ['REQUEST_METHOD'] == 'HEAD':
                 assert len(body) == 0, "HEAD responses must be empty"
