@@ -14,7 +14,7 @@ News
   :meth:`Response.from_file` which are kind of the inversion of
   ``str(req)`` and ``str(resp)``
 
-* Add optional ``pattern`` argument to :method:`Request.path_info_pop` that requires
+* Add optional ``pattern`` argument to :meth:`Request.path_info_pop` that requires
   the ``path_info`` segment to match the passed regexp to get popped and returned.
 
 * Rewrite most of descriptor implementations for speed.
@@ -25,19 +25,19 @@ News
 
 * Change :method:``HTTPError.__str__`` to better conform to PEP 352.
 
-* Make :attribute:`Request.cache_control` a view on the headers.
+* Make :attr:`Request.cache_control` a view on the headers.
 
 * Correct Accept-Language and Accept-Charset matching to fully conform to the HTTP spec.
 
-* Expose parts of :classmethod:`Request.blank` as :function:`environ_from_url(url)`
-  and :function:`environ_add_POST(env, data)`
+* Expose parts of :meth:`Request.blank` as :func:`environ_from_url(url)`
+  and :func:`environ_add_POST(env, data)`
 
 * Fix Authorization header parsing for some corner cases.
 
 * Fix an error generated if the user-agent sends a 'Content_Length' header
   (note the underscore).
 
-* Kill :attribute:`Request.default_attribute`.
+* Kill :attr:`Request.default_attribute`.
 
 * Fix the ``headerlist`` and ``content_type`` constructor arguments priorities
   for :class:`HTTPError` and subclasses.
