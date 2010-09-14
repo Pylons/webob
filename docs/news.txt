@@ -10,8 +10,8 @@ News
 
 * Pull in werkzeug Cookie fix for malformed cookie bug.
 
-* Implement :classmethod:`Request.from_file` and
-  :classmethod:`Response.from_file` which are kind of the inversion of
+* Implement :meth:`Request.from_file` and
+  :meth:`Response.from_file` which are kind of the inversion of
   ``str(req)`` and ``str(resp)``
 
 * Add optional ``pattern`` argument to :method:`Request.path_info_pop` that requires
