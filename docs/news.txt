@@ -23,14 +23,14 @@ News
 
 * Move code around so that there are fewer compat modules.
 
-* Change :method:``HTTPError.__str__`` to better conform to PEP 352.
+* Change :meth:``HTTPError.__str__`` to better conform to PEP 352.
 
 * Make :attr:`Request.cache_control` a view on the headers.
 
 * Correct Accept-Language and Accept-Charset matching to fully conform to the HTTP spec.
 
-* Expose parts of :meth:`Request.blank` as :func:`environ_from_url(url)`
-  and :func:`environ_add_POST(env, data)`
+* Expose parts of :meth:`Request.blank` as :func:`environ_from_url`
+  and :func:`environ_add_POST`
 
 * Fix Authorization header parsing for some corner cases.
 
