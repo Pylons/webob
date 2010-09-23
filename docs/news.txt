@@ -48,6 +48,11 @@ News
 
 * Improve overall test coverage.
 
+* Rename class ``webob.datastruct.EnvironHeaders`` to ``webob.headers.EnvironHeaders``
+
+* Rename class ``webob.headerdict.HeaderDict`` to ``webob.headers.ResponseHeaders``
+
+* Rename class ``webob.updatedict.UpdateDict`` to ``webob.cachecontrol.UpdateDict``
 
 0.9.8
 -----
