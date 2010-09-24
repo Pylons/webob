@@ -19,7 +19,7 @@ News
 
 * Rewrite most of descriptor implementations for speed.
 
-* Reorder descriptor declarations in an attempt to make their grouping more logical.
+* Reorder descriptor declarations to group them by their semantics.
 
 * Move code around so that there are fewer compat modules.
 
@@ -37,7 +37,9 @@ News
 * Fix an error generated if the user-agent sends a 'Content_Length' header
   (note the underscore).
 
-* Kill :attr:`Request.default_attribute`.
+* Kill :attr:`Request.default_charset`. Request charset defaults to UTF-8.
+  This ensures that all values in ``req.GET``, ``req.POST`` and ``req.params``
+  are always unicode.
 
 * Fix the ``headerlist`` and ``content_type`` constructor arguments priorities
   for :class:`HTTPError` and subclasses.
