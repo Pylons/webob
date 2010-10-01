@@ -75,11 +75,8 @@ References:
 import re
 import urlparse
 import sys
-try:
-    from string import Template
-except ImportError:
-    from webob.util.stringtemplate import Template
 import types
+from string import Template
 from webob import Response, Request, html_escape
 
 newstyle_exceptions = issubclass(Exception, object)
