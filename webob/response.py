@@ -606,29 +606,31 @@ class Response(object):
 
     def set_cookie(self, key, value='', max_age=None,
                    path='/', domain=None, secure=False, httponly=False,
-                   version=None, comment=None, expires=None, overwrite=False):
+                   comment=None, expires=None, overwrite=False):
         """
         Set (add) a cookie for the response
         """
         if overwrite:
             self.unset_cookie(key, strict=False)
+        if expires is None and max_age is not None:
+            if isinstance(max_age, int):
+                max_age = timedelta(seconds=max_age)
+            expires = datetime.utcnow() + max_age
+        elif max_age is None and expires is not None:
+            max_age = expires - datetime.utcnow()
+
         morsel = Morsel(key, value)
-        #@@ move to Morsel.__setitem__
-        if isinstance(max_age, timedelta):
-            max_age = max_age.seconds + max_age.days*24*60*60
-        if max_age is not None and expires is None:
-            expires = datetime.utcnow() + timedelta(seconds=max_age)
-        for var_name, var_value in [
-            ('max-age', max_age),
-            ('path', path),
-            ('domain', domain),
-            ('secure', secure),
-            ('httponly', httponly),
-            ('version', version),
-            ('comment', comment),
-            ('expires', expires),
-        ]:
-            morsel[var_name] = var_value
+        data=dict(
+            path=path,
+            domain=domain,
+            comment=comment,
+            expires=expires,
+            max_age=max_age,
+            secure=secure,
+            httponly=httponly
+        )
+        for k, v in data.iteritems():
+            setattr(morsel, k, v)
         self._add_cookie(morsel)
 
     def _add_cookie(self, cookie):

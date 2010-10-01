@@ -35,30 +35,43 @@ class Cookie(dict):
 
 
 
+def cookie_prop(key, serialize=lambda v: v):
+    def fset(self, v):
+        self[key] = serialize(v)
+    return property(lambda self: self[key], fset)
+
+def _serialize_max_age(v):
+    if isinstance(v, timedelta):
+        return str(v.seconds + v.days*24*60*60)
+    elif isinstance(v, int):
+        return str(v)
+    else:
+        return v
 
 class Morsel(dict):
+    __slots__ = ('name', 'value')
     def __init__(self, name, value):
         assert name.lower() not in _cookie_props
         assert not needs_quoting(name)
         self.name = name
         self.value = value
+        self.update(dict.fromkeys(_cookie_props, None))
+
+    path = cookie_prop('path')
+    domain = cookie_prop('domain')
+    comment = cookie_prop('comment')
+
+    def _set_expires(self, v):
+        self['expires'] = serialize_cookie_date(v)
+    expires = property(None, _set_expires) #@@ _get_expires
+
+    httponly = cookie_prop('httponly', bool)
+    secure = cookie_prop('secure', bool)
+    max_age = cookie_prop('max-age', _serialize_max_age)
 
     def __setitem__(self, k, v):
         k = k.lower()
         if k in _cookie_props:
-            if isinstance(v, str) or v is None:
-                pass
-            elif isinstance(v, bool):
-                v = 't'*v
-            elif k == 'expires':
-                v = serialize_cookie_date(v)
-            elif isinstance(v, int):
-                v = str(v)
-            else:
-                raise TypeError(type(v))
-            if not v:
-                self.pop(k, None)
-                return
             dict.__setitem__(self, k, v)
 
     def __str__(self):
@@ -66,13 +79,15 @@ class Morsel(dict):
         suffixes = []
         RA = result.append
         RA("%s=%s" % (self.name, _quote(self.value)))
-        for k,v in sorted(self.items()):
-            if v and k in _cookie_props:
-                assert isinstance(v, str)
-                if k in ('secure', 'httponly'):
-                    suffixes.append(_cookie_props[k])
-                else:
-                    RA("%s=%s" % (_cookie_props[k], _quote(v)))
+        for k in _cookie_valprops:
+            v = self[k]
+            if v:
+                assert isinstance(v, str), v
+                RA("%s=%s" % (_cookie_props[k], _quote(v)))
+        if self.secure:
+            RA('secure')
+        if self.httponly:
+            RA('HttpOnly')
         return '; '.join(result+suffixes)
 
     def __repr__(self):
@@ -87,6 +102,8 @@ _cookie_props = {
     "secure" : "secure",
     "httponly" : "HttpOnly",
 }
+_cookie_valprops = list(set(_cookie_props) - set(['secure', 'httponly']))
+_cookie_valprops.sort()
 
 
 
@@ -154,7 +171,11 @@ def _quote(v):
 
 
 def serialize_cookie_date(v):
-    if isinstance(v, int):
+    if v is None:
+        return None
+    elif isinstance(v, str):
+        return v
+    elif isinstance(v, int):
         v = timedelta(seconds=v)
     #if isinstance(v, unicode):
     #    v = v.encode('ascii')
