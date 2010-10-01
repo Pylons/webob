@@ -657,11 +657,8 @@ class Response(object):
         cookies will be deleted.
         """
         existing = self.headers.getall('Set-Cookie')
-        if not existing:
-            if not strict:
-                return
-            raise KeyError("No cookies at all have been set")
-        found = False
+        if not existing and not strict:
+            return
         cookies = Cookie()
         for header in existing:
             cookies.load(header)
@@ -690,7 +687,7 @@ class Response(object):
         else:
             def repl_app(environ, start_response):
                 def repl_start_response(status, headers, exc_info=None):
-                    headers.extend(self.headers.getall('Set-Cookie'))
+                    headers = headers + self.headers.getall('Set-Cookie')
                     return start_response(status, headers, exc_info=exc_info)
                 return resp(environ, repl_start_response)
             return repl_app
