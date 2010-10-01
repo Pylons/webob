@@ -1,215 +1,3 @@
-#!/usr/bin/env python
-#
-
-####
-# Copyright 2000 by Timothy O'Malley <timo@alum.mit.edu>
-#
-#                All Rights Reserved
-#
-# Permission to use, copy, modify, and distribute this software
-# and its documentation for any purpose and without fee is hereby
-# granted, provided that the above copyright notice appear in all
-# copies and that both that copyright notice and this permission
-# notice appear in supporting documentation, and that the name of
-# Timothy O'Malley  not be used in advertising or publicity
-# pertaining to distribution of the software without specific, written
-# prior permission.
-#
-# Timothy O'Malley DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS
-# SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-# AND FITNESS, IN NO EVENT SHALL Timothy O'Malley BE LIABLE FOR
-# ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
-# WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
-# ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-# PERFORMANCE OF THIS SOFTWARE.
-#
-####
-#
-# Id: Cookie.py,v 2.29 2000/08/23 05:28:49 timo Exp
-#   by Timothy O'Malley <timo@alum.mit.edu>
-#
-#  Cookie.py is a Python module for the handling of HTTP
-#  cookies as a Python dictionary.  See RFC 2109 for more
-#  information on cookies.
-#
-#  The original idea to treat Cookies as a dictionary came from
-#  Dave Mitchell (davem@magnet.com) in 1995, when he released the
-#  first version of nscookie.py.
-#
-####
-
-r"""
-Here's a sample session to show how to use this module.
-At the moment, this is the only documentation.
-
-The Basics
-----------
-
-Importing is easy..
-
-   >>> import Cookie
-
-Most of the time you start by creating a cookie.  Cookies come in
-three flavors, each with slightly different encoding semantics, but
-more on that later.
-
-   >>> C = Cookie.SimpleCookie()
-   >>> C = Cookie.SerialCookie()
-   >>> C = Cookie.SmartCookie()
-
-[Note: Long-time users of Cookie.py will remember using
-Cookie.Cookie() to create an Cookie object.  Although deprecated, it
-is still supported by the code.  See the Backward Compatibility notes
-for more information.]
-
-Once you've created your Cookie, you can add values just as if it were
-a dictionary.
-
-   >>> C = Cookie.SmartCookie()
-   >>> C["fig"] = "newton"
-   >>> C["sugar"] = "wafer"
-   >>> C.output()
-   'Set-Cookie: fig=newton\r\nSet-Cookie: sugar=wafer'
-
-Notice that the printable representation of a Cookie is the
-appropriate format for a Set-Cookie: header.  This is the
-default behavior.  You can change the header and printed
-attributes by using the .output() function
-
-   >>> C = Cookie.SmartCookie()
-   >>> C["rocky"] = "road"
-   >>> C["rocky"]["path"] = "/cookie"
-   >>> print C.output(header="Cookie:")
-   Cookie: rocky=road; Path=/cookie
-   >>> print C.output(attrs=[], header="Cookie:")
-   Cookie: rocky=road
-
-The load() method of a Cookie extracts cookies from a string.  In a
-CGI script, you would use this method to extract the cookies from the
-HTTP_COOKIE environment variable.
-
-   >>> C = Cookie.SmartCookie()
-   >>> C.load("chips=ahoy; vienna=finger")
-   >>> C.output()
-   'Set-Cookie: chips=ahoy\r\nSet-Cookie: vienna=finger'
-
-The load() method is darn-tootin smart about identifying cookies
-within a string.  Escaped quotation marks, nested semicolons, and other
-such trickeries do not confuse it.
-
-   >>> C = Cookie.SmartCookie()
-   >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
-   >>> print C
-   Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;"
-
-Each element of the Cookie also supports all of the RFC 2109
-Cookie attributes.  Here's an example which sets the Path
-attribute.
-
-   >>> C = Cookie.SmartCookie()
-   >>> C["oreo"] = "doublestuff"
-   >>> C["oreo"]["path"] = "/"
-   >>> print C
-   Set-Cookie: oreo=doublestuff; Path=/
-
-Each dictionary element has a 'value' attribute, which gives you
-back the value associated with the key.
-
-   >>> C = Cookie.SmartCookie()
-   >>> C["twix"] = "none for you"
-   >>> C["twix"].value
-   'none for you'
-
-
-A Bit More Advanced
--------------------
-
-As mentioned before, there are three different flavors of Cookie
-objects, each with different encoding/decoding semantics.  This
-section briefly discusses the differences.
-
-SimpleCookie
-
-The SimpleCookie expects that all values should be standard strings.
-Just to be sure, SimpleCookie invokes the str() builtin to convert
-the value to a string, when the values are set dictionary-style.
-
-   >>> C = Cookie.SimpleCookie()
-   >>> C["number"] = 7
-   >>> C["string"] = "seven"
-   >>> C["number"].value
-   '7'
-   >>> C["string"].value
-   'seven'
-   >>> C.output()
-   'Set-Cookie: number=7\r\nSet-Cookie: string=seven'
-
-
-SerialCookie
-
-The SerialCookie expects that all values should be serialized using
-cPickle (or pickle, if cPickle isn't available).  As a result of
-serializing, SerialCookie can save almost any Python object to a
-value, and recover the exact same object when the cookie has been
-returned.  (SerialCookie can yield some strange-looking cookie
-values, however.)
-
-   >>> C = Cookie.SerialCookie()
-   >>> C["number"] = 7
-   >>> C["string"] = "seven"
-   >>> C["number"].value
-   7
-   >>> C["string"].value
-   'seven'
-   >>> C.output()
-   'Set-Cookie: number="I7\\012."\r\nSet-Cookie: string="S\'seven\'\\012p1\\012."'
-
-Be warned, however, if SerialCookie cannot de-serialize a value (because
-it isn't a valid pickle'd object), IT WILL RAISE AN EXCEPTION.
-
-
-SmartCookie
-
-The SmartCookie combines aspects of each of the other two flavors.
-When setting a value in a dictionary-fashion, the SmartCookie will
-serialize (ala cPickle) the value *if and only if* it isn't a
-Python string.  String objects are *not* serialized.  Similarly,
-when the load() method parses out values, it attempts to de-serialize
-the value.  If it fails, then it fallsback to treating the value
-as a string.
-
-   >>> C = Cookie.SmartCookie()
-   >>> C["number"] = 7
-   >>> C["string"] = "seven"
-   >>> C["number"].value
-   7
-   >>> C["string"].value
-   'seven'
-   >>> C.output()
-   'Set-Cookie: number="I7\\012."\r\nSet-Cookie: string=seven'
-
-
-Backwards Compatibility
------------------------
-
-In order to keep compatibilty with earlier versions of Cookie.py,
-it is still possible to use Cookie.Cookie() to create a Cookie.  In
-fact, this simply returns a SmartCookie.
-
-   >>> C = Cookie.Cookie()
-   >>> print C.__class__.__name__
-   SmartCookie
-
-
-Finis.
-"""  #"
-#     ^
-#     |----helps out font-lock
-
-#
-# Import our required modules
-#
 import string
 
 try:
@@ -219,16 +7,12 @@ except ImportError:
 
 import re, warnings
 
-__all__ = ["CookieError","BaseCookie","SimpleCookie","SerialCookie",
-           "SmartCookie","Cookie"]
+__all__ = ["CookieError","BaseCookie","SimpleCookie", "SmartCookie","Cookie"]
 
 _nulljoin = ''.join
 _semispacejoin = '; '.join
 _spacejoin = ' '.join
 
-#
-# Define an exception visible to External modules
-#
 class CookieError(Exception):
     pass
 
@@ -307,20 +91,15 @@ _Translator       = {
 
 _idmap = ''.join(chr(x) for x in xrange(256))
 
-def _quote(str, LegalChars=_LegalChars,
-           idmap=_idmap, translate=string.translate):
-    #
+def _quote(str, LegalChars=_LegalChars, idmap=_idmap, translate=string.translate):
     # If the string does not need to be double-quoted,
     # then just return the string.  Otherwise, surround
     # the string in doublequotes and precede quote (with a \)
     # special characters.
-    #
     if "" == translate(str, idmap, LegalChars):
         return str
     else:
         return '"' + _nulljoin( map(_Translator.get, str, str) ) + '"'
-# end _quote
-
 
 _OctalPatt = re.compile(r"\\[0-3][0-7][0-7]")
 _QuotePatt = re.compile(r"[\\].")
@@ -389,7 +168,6 @@ def _getdate(future=0, weekdayname=_weekdayname, monthname=_monthname):
            (weekdayname[wd], day, monthname[month], year, hh, mm, ss)
 
 
-#
 # A class to hold ONE key,value pair.
 # In a cookie, each such pair may have several attributes.
 #       so this class is used to keep the attributes associated
@@ -398,7 +176,7 @@ def _getdate(future=0, weekdayname=_weekdayname, monthname=_monthname):
 #       is used to hold the network representation of the
 #       value.  This is most useful when Python objects are
 #       pickled for network transit.
-#
+
 
 class Morsel(dict):
     # RFC 2109 lists these attributes as reserved:
@@ -414,31 +192,33 @@ class Morsel(dict):
     # This dictionary provides a mapping from the lowercase
     # variant on the left to the appropriate traditional
     # formatting on the right.
-    _reserved = { "expires" : "expires",
-                   "path"        : "Path",
-                   "comment" : "Comment",
-                   "domain"      : "Domain",
-                   "max-age" : "Max-Age",
-                   "secure"      : "secure",
-                   "httponly"  : "httponly",
-                   "version" : "Version",
-                   }
+    _reserved = {
+        "expires" : "expires",
+        "path" : "Path",
+        "comment" : "Comment",
+        "domain" : "Domain",
+        "max-age" : "Max-Age",
+        "secure" : "secure",
+        "httponly" : "HttpOnly",
+        "version" : "Version",
+    }
 
-    def __init__(self):
+    def __init__(self, name=None, value=None):
         # Set defaults
         self.key = self.value = self.coded_value = None
-
         # Set default attributes
         for K in self._reserved:
             dict.__setitem__(self, K, "")
-    # end __init__
+        if name is not None:
+            self.set(name, value, value)
+
+
 
     def __setitem__(self, K, V):
         K = K.lower()
         if not K in self._reserved:
             raise CookieError("Invalid Attribute %s" % K)
         dict.__setitem__(self, K, V)
-    # end __setitem__
 
     def isReservedKey(self, K):
         return K.lower() in self._reserved
@@ -466,23 +246,11 @@ class Morsel(dict):
     __str__ = output
 
     def __repr__(self):
-        return '<%s: %s=%s>' % (self.__class__.__name__,
-                                self.key, repr(self.value) )
-
-    def js_output(self, attrs=None):
-        # Print javascript
-        return """
-        <script type="text/javascript">
-        <!-- begin hiding
-        document.cookie = \"%s\";
-        // end hiding -->
-        </script>
-        """ % ( self.OutputString(attrs), )
-    # end js_output()
+        return '<%s: %s=%s>' % (self.__class__.__name__, self.key, repr(self.value) )
 
     def OutputString(self, attrs=None):
-        # Build up our result
-        #
+        httponly = self.pop('httponly', False)
+
         result = []
         RA = result.append
 
@@ -508,10 +276,11 @@ class Morsel(dict):
             else:
                 RA("%s=%s" % (self._reserved[K], V))
 
-        # Return the result
-        return _semispacejoin(result)
-    # end OutputString
-# end Morsel class
+        result = _semispacejoin(result)
+        result = result.rstrip('\t ;')
+        if httponly:
+            result += '; HttpOnly'
+        return result
 
 
 
@@ -676,105 +445,6 @@ class SimpleCookie(BaseCookie):
         return strval, _quote( strval )
 # end SimpleCookie
 
-class SerialCookie(BaseCookie):
-    """SerialCookie
-    SerialCookie supports arbitrary objects as cookie values. All
-    values are serialized (using cPickle) before being sent to the
-    client.  All incoming values are assumed to be valid Pickle
-    representations.  IF AN INCOMING VALUE IS NOT IN A VALID PICKLE
-    FORMAT, THEN AN EXCEPTION WILL BE RAISED.
-
-    Note: Large cookie values add overhead because they must be
-    retransmitted on every HTTP transaction.
-
-    Note: HTTP has a 2k limit on the size of a cookie.  This class
-    does not check for this limit, so be careful!!!
-    """
-    def __init__(self, input=None):
-        warnings.warn("SerialCookie class is insecure; do not use it",
-                      DeprecationWarning)
-        BaseCookie.__init__(self, input)
-    # end __init__
-    def value_decode(self, val):
-        # This could raise an exception!
-        return loads( _unquote(val) ), val
-    def value_encode(self, val):
-        return val, _quote( dumps(val) )
-# end SerialCookie
-
-class SmartCookie(BaseCookie):
-    """SmartCookie
-    SmartCookie supports arbitrary objects as cookie values.  If the
-    object is a string, then it is quoted.  If the object is not a
-    string, however, then SmartCookie will use cPickle to serialize
-    the object into a string representation.
-
-    Note: Large cookie values add overhead because they must be
-    retransmitted on every HTTP transaction.
-
-    Note: HTTP has a 2k limit on the size of a cookie.  This class
-    does not check for this limit, so be careful!!!
-    """
-    def __init__(self, input=None):
-        warnings.warn("Cookie/SmartCookie class is insecure; do not use it",
-                      DeprecationWarning)
-        BaseCookie.__init__(self, input)
-    # end __init__
-    def value_decode(self, val):
-        strval = _unquote(val)
-        try:
-            return loads(strval), val
-        except:
-            return strval, val
-    def value_encode(self, val):
-        if type(val) == type(""):
-            return val, _quote(val)
-        else:
-            return val, _quote( dumps(val) )
-# end SmartCookie
-
-
-###########################################################
-# Backwards Compatibility:  Don't break any existing code!
-
-# We provide Cookie() as an alias for SmartCookie()
-Cookie = SmartCookie
-
-#
-###########################################################
-
-def _test():
-    import doctest, Cookie
-    return doctest.testmod(Cookie)
-
-if __name__ == "__main__":
-    _test()
-
-
-#Local Variables:
-#tab-width: 4
-#end:
-
-# Cookie fixes for the standard library
-# These fixed SimpleCookie classes are from werkzeug.
-
-class ExtendedMorsel(Morsel):
-    _reserved = {'httponly': 'HttpOnly'}
-    _reserved.update(Morsel._reserved)
-
-    def __init__(self, name=None, value=None):
-        Morsel.__init__(self)
-        if name is not None:
-            self.set(name, value, value)
-
-    def OutputString(self, attrs=None):
-        httponly = self.pop('httponly', False)
-        result = Morsel.OutputString(self, attrs).rstrip('\t ;')
-        if httponly:
-            result += '; HttpOnly'
-        return result
-
-
 class ExtendedCookie(BaseCookie):
     """Form of the base cookie that doesn't raise a `CookieError` for
     malformed keys.  This has the advantage that broken cookies submitted
@@ -782,7 +452,7 @@ class ExtendedCookie(BaseCookie):
     """
 
     def _BaseCookie__set(self, key, real_value, coded_value):
-        morsel = self.get(key, ExtendedMorsel())
+        morsel = self.get(key, Morsel())
         try:
             morsel.set(key, real_value, coded_value)
         except CookieError:

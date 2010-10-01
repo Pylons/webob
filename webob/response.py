@@ -11,7 +11,7 @@ from webob.cachecontrol import CacheControl, serialize_cache_control
 
 from webob.descriptors import *
 from webob.datetime_utils import *
-from webob.Cookie import ExtendedCookie, ExtendedMorsel
+from webob.Cookie import ExtendedCookie, Morsel
 
 __all__ = ['Response']
 
@@ -616,7 +616,7 @@ class Response(object):
             value = '"%s"' % value
         if overwrite:
             self.unset_cookie(key, strict=False)
-        morsel = ExtendedMorsel(key, value)
+        morsel = Morsel(key, value)
         if isinstance(max_age, timedelta):
             max_age = max_age.seconds + max_age.days*24*60*60
         if max_age is not None and expires is None:
