@@ -64,10 +64,10 @@ class Morsel(dict):
     def _set_expires(self, v):
         self['expires'] = serialize_cookie_date(v)
     expires = property(None, _set_expires) #@@ _get_expires
+    max_age = cookie_prop('max-age', _serialize_max_age)
 
     httponly = cookie_prop('httponly', bool)
     secure = cookie_prop('secure', bool)
-    max_age = cookie_prop('max-age', _serialize_max_age)
 
     def __setitem__(self, k, v):
         k = k.lower()
@@ -76,7 +76,6 @@ class Morsel(dict):
 
     def __str__(self):
         result = []
-        suffixes = []
         RA = result.append
         RA("%s=%s" % (self.name, _quote(self.value)))
         for k in _cookie_valprops:
@@ -88,7 +87,7 @@ class Morsel(dict):
             RA('secure')
         if self.httponly:
             RA('HttpOnly')
-        return '; '.join(result+suffixes)
+        return '; '.join(result)
 
     def __repr__(self):
         return '<%s: %s=%s>' % (self.__class__.__name__, self.name, repr(self.value))
