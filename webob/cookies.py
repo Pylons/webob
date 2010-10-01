@@ -34,6 +34,8 @@ class Cookie(dict):
 
 
 
+
+
 class Morsel(dict):
     def __init__(self, name, value):
         assert name.lower() not in _cookie_props
@@ -69,10 +71,10 @@ class Morsel(dict):
                 assert isinstance(v, str)
                 if k in ('secure', 'httponly'):
                     suffixes.append(_cookie_props[k])
+                elif k == 'expires':
+                    RA('expires="%s"' % v)
                 else:
-                    if k == 'expires':
-                        v = '"%s"' % v
-                    RA("%s=%s" % (_cookie_props[k], v))
+                    RA("%s=%s" % (_cookie_props[k], _quote(v)))
         return '; '.join(result+suffixes)
 
     def __repr__(self):
@@ -126,7 +128,7 @@ def _unquote(v):
 # serializing
 #
 
-_legal_chars = string.ascii_letters + string.digits + "!#$%&'*+-.^_`|~"
+_legal_chars = string.ascii_letters + string.digits + "!#$%&'*+-.^_`|~/"
 _trans_noop = ''.join(chr(x) for x in xrange(256))
 
 
