@@ -170,7 +170,6 @@ All request headers are available through a dictionary-like object
 
 .. code-block:: python
 
-    >>> from webob.util import sorted
     >>> req.headers['Content-Type'] = 'application/x-www-urlencoded'
     >>> sorted(req.headers.items())
     [('Content-Length', '4'), ('Content-Type', 'application/x-www-urlencoded'), ('Host', 'localhost:80')]

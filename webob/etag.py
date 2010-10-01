@@ -199,7 +199,7 @@ class IfRange(object):
         """
         return self.match(etag=response.etag, last_modified=response.last_modified)
 
-    #@classmethod
+    @classmethod
     def parse(cls, value):
         """
         Parse this from a header value.
@@ -213,7 +213,6 @@ class IfRange(object):
         else:
             etag = ETagMatcher.parse(value)
         return cls(etag=etag, date=date)
-    parse = classmethod(parse)
 
 class _NoIfRange(object):
     """

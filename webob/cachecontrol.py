@@ -3,8 +3,6 @@ Represents the Cache-Control header
 """
 
 import re
-from webob.util import sorted
-
 
 class UpdateDict(dict):
     """
@@ -130,7 +128,7 @@ class CacheControl(object):
         self.properties = properties
         self.type = type
 
-    #@classmethod
+    @classmethod
     def parse(cls, header, updates_to=None, type=None):
         """
         Parse the header, returning a CacheControl object.
@@ -156,8 +154,6 @@ class CacheControl(object):
         if updates_to:
             props.updated_args = (obj,)
         return obj
-
-    parse = classmethod(parse)
 
     def __repr__(self):
         return '<CacheControl %r>' % str(self)

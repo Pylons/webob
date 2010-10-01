@@ -10,7 +10,7 @@ exists, but this ignores them.
 """
 
 import re
-from webob.util import sorted, rfc_reference
+from webob.util import rfc_reference
 from webob.headers import _trans_name as header_to_key
 
 part_re = re.compile(

@@ -81,7 +81,7 @@ class Range(object):
             self.__class__.__name__,
             ', '.join(map(repr, self.ranges)))
 
-    #@classmethod
+    @classmethod
     def parse(cls, header):
         """
             Parse the header; may return None if header is invalid
@@ -93,9 +93,8 @@ class Range(object):
         if units != 'bytes' or ranges is None:
             return None
         return cls(ranges)
-    parse = classmethod(parse)
 
-    #@staticmethod
+    @staticmethod
     def parse_bytes(header):
         """
             Parse a Range header into (bytes, list_of_ranges).
@@ -139,7 +138,6 @@ class Range(object):
             # Range header was not present.  How do I log this?
             return None
         return (units, ranges)
-    parse_bytes = staticmethod(parse_bytes)
 
 
 class ContentRange(object):
@@ -180,7 +178,7 @@ class ContentRange(object):
         """
         return iter([self.start, self.stop, self.length])
 
-    #@classmethod
+    @classmethod
     def parse(cls, value):
         """
             Parse the header.  May return None if it cannot parse.
@@ -221,7 +219,6 @@ class ContentRange(object):
                 return cls(start, stop, length)
             return None
 
-    parse = classmethod(parse)
 
 
 def _is_content_range_valid(start, stop, length, response=False):

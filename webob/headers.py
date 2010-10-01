@@ -1,5 +1,5 @@
 from webob.multidict import MultiDict
-from webob.util import reversed, DictMixin
+from UserDict import DictMixin
 
 __all__ = ['ResponseHeaders', 'EnvironHeaders']
 

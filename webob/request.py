@@ -939,7 +939,7 @@ class BaseRequest(object):
             status=status, headerlist=list(headers), app_iter=app_iter,
             request=self)
 
-    #@classmethod
+    @classmethod
     def blank(cls, path, environ=None, base_url=None, headers=None, POST=None, **kw):
         """
         Create a blank request environ (and Request wrapper) with the
@@ -988,8 +988,6 @@ class BaseRequest(object):
         if headers is not None:
             obj.headers.update(headers)
         return obj
-
-    blank = classmethod(blank)
 
 
 def environ_from_url(path):
@@ -1172,13 +1170,11 @@ class FakeCGIBody(object):
             self.__class__.__name__,
             abs(id(self)), inner)
 
-    #@classmethod
+    @classmethod
     def update_environ(cls, environ, vars):
         obj = cls(vars, environ.get('CONTENT_TYPE', 'application/x-www-form-urlencoded'))
         environ['CONTENT_LENGTH'] = '-1'
         environ['wsgi.input'] = obj
-
-    update_environ = classmethod(update_environ)
 
 
 def _encode_multipart(vars, content_type):

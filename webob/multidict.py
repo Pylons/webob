@@ -7,7 +7,8 @@ import cgi
 import copy
 import sys
 
-from webob.util import DictMixin, reversed
+from UserDict import DictMixin
+
 
 
 __all__ = ['MultiDict', 'UnicodeMultiDict', 'NestedMultiDict', 'NoVars',
@@ -37,7 +38,7 @@ class MultiDict(DictMixin):
         if kw:
             self._items.extend(kw.iteritems())
 
-    #@classmethod
+    @classmethod
     def view_list(cls, lst):
         """
         Create a dict that is a view on the given list
@@ -50,9 +51,7 @@ class MultiDict(DictMixin):
         obj._items = lst
         return obj
 
-    view_list = classmethod(view_list)
-
-    #@classmethod
+    @classmethod
     def from_fieldstorage(cls, fs):
         """
         Create a dict from a cgi.FieldStorage instance
@@ -65,8 +64,6 @@ class MultiDict(DictMixin):
             else:
                 obj.add(field.name, field.value)
         return obj
-
-    from_fieldstorage = classmethod(from_fieldstorage)
 
     def __getitem__(self, key):
         for k, v in reversed(self._items):

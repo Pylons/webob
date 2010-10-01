@@ -11,7 +11,6 @@ from webob.cachecontrol import CacheControl, serialize_cache_control
 from webob.descriptors import *
 from webob.datetime_utils import *
 from webob.util.cookie import _ExtendedCookie, _ExtendedMorsel
-from webob.util import sorted
 
 __all__ = ['Response']
 
