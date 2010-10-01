@@ -3,7 +3,7 @@
 These fixed SimpleCookie classes are from werkzeug.
 
 """
-from Cookie import BaseCookie, Morsel, CookieError
+from webob.Cookie import BaseCookie, Morsel, CookieError
 
 class _ExtendedMorsel(Morsel):
     _reserved = {'httponly': 'HttpOnly'}
