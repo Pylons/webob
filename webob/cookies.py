@@ -12,7 +12,7 @@ class Cookie(dict):
     def load(self, data):
         ckey = None
         for key, val in _rx_cookie.findall(data):
-            if key.lower() in _cookie_props:
+            if key.lower() in _cookie_propertys:
                 if ckey:
                     self[ckey][key] = _unquote(val)
             elif key[0] == '$':
@@ -35,12 +35,12 @@ class Cookie(dict):
 
 
 
-def cookie_prop(key, serialize=lambda v: v):
+def cookie_property(key, serialize=lambda v: v):
     def fset(self, v):
         self[key] = serialize(v)
     return property(lambda self: self[key], fset)
 
-def _serialize_max_age(v):
+def serialize_max_age(v):
     if isinstance(v, timedelta):
         return str(v.seconds + v.days*24*60*60)
     elif isinstance(v, int):
@@ -48,30 +48,40 @@ def _serialize_max_age(v):
     else:
         return v
 
+def serialize_cookie_date(v):
+    if v is None:
+        return None
+    elif isinstance(v, str):
+        return v
+    elif isinstance(v, int):
+        v = timedelta(seconds=v)
+    if isinstance(v, timedelta):
+        v = datetime.utcnow() + v
+    if isinstance(v, (datetime, date)):
+        v = v.timetuple()
+    r = time.strftime('%%s, %d-%%s-%Y %H:%M:%S GMT', v)
+    return r % (weekdays[v[6]], months[v[1]])
+
 class Morsel(dict):
     __slots__ = ('name', 'value')
     def __init__(self, name, value):
-        assert name.lower() not in _cookie_props
+        assert name.lower() not in _cookie_propertys
         assert not needs_quoting(name)
         self.name = name
         self.value = value
-        self.update(dict.fromkeys(_cookie_props, None))
+        self.update(dict.fromkeys(_cookie_propertys, None))
 
-    path = cookie_prop('path')
-    domain = cookie_prop('domain')
-    comment = cookie_prop('comment')
-
-    def _set_expires(self, v):
-        self['expires'] = serialize_cookie_date(v)
-    expires = property(None, _set_expires) #@@ _get_expires
-    max_age = cookie_prop('max-age', _serialize_max_age)
-
-    httponly = cookie_prop('httponly', bool)
-    secure = cookie_prop('secure', bool)
+    path = cookie_property('path')
+    domain = cookie_property('domain')
+    comment = cookie_property('comment')
+    expires = cookie_property('expires', serialize_cookie_date)
+    max_age = cookie_property('max-age', serialize_max_age)
+    httponly = cookie_property('httponly', bool)
+    secure = cookie_property('secure', bool)
 
     def __setitem__(self, k, v):
         k = k.lower()
-        if k in _cookie_props:
+        if k in _cookie_propertys:
             dict.__setitem__(self, k, v)
 
     def __str__(self):
@@ -82,7 +92,7 @@ class Morsel(dict):
             v = self[k]
             if v:
                 assert isinstance(v, str), v
-                RA("%s=%s" % (_cookie_props[k], _quote(v)))
+                RA("%s=%s" % (_cookie_propertys[k], _quote(v)))
         if self.secure:
             RA('secure')
         if self.httponly:
@@ -92,7 +102,7 @@ class Morsel(dict):
     def __repr__(self):
         return '<%s: %s=%s>' % (self.__class__.__name__, self.name, repr(self.value))
 
-_cookie_props = {
+_cookie_propertys = {
     "expires" : "expires",
     "path" : "Path",
     "comment" : "Comment",
@@ -101,7 +111,7 @@ _cookie_props = {
     "secure" : "secure",
     "httponly" : "HttpOnly",
 }
-_cookie_valprops = list(set(_cookie_props) - set(['secure', 'httponly']))
+_cookie_valprops = list(set(_cookie_propertys) - set(['secure', 'httponly']))
 _cookie_valprops.sort()
 
 
@@ -169,21 +179,6 @@ def _quote(v):
     return v
 
 
-def serialize_cookie_date(v):
-    if v is None:
-        return None
-    elif isinstance(v, str):
-        return v
-    elif isinstance(v, int):
-        v = timedelta(seconds=v)
-    #if isinstance(v, unicode):
-    #    v = v.encode('ascii')
-    if isinstance(v, timedelta):
-        v = datetime.utcnow() + v
-    if isinstance(v, (datetime, date)):
-        v = v.timetuple()
-    r = time.strftime('%%s, %d-%%s-%Y %H:%M:%S GMT', v)
-    return r % (weekdays[v[6]], months[v[1]])
 
 #print _quote(serialize_cookie_date(0))
 
