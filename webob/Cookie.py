@@ -1,14 +1,10 @@
 import string, re
 
-__all__ = ['Cookie', 'CookieError']
+__all__ = ['Cookie']
 
 _nulljoin = ''.join
 _semispacejoin = '; '.join
 _spacejoin = ' '.join
-
-class CookieError(Exception):
-    pass
-
 
 # These quoting routines conform to the RFC2109 specification, which in
 # turn references the character definitions from RFC2068.  They provide
@@ -18,10 +14,10 @@ class CookieError(Exception):
 # quoted with a preceeding '\' slash.
 #
 # These are taken from RFC2068 and RFC2109.
-#       _LegalChars       is the list of chars which don't require "'s
+#       _legal_chars       is the list of chars which don't require "'s
 #       _Translator       hash-table for fast quoting
 #
-_LegalChars       = string.ascii_letters + string.digits + "!#$%&'*+-.^_`|~"
+_legal_chars       = string.ascii_letters + string.digits + "!#$%&'*+-.^_`|~"
 _Translator       = {
     '\000' : '\\000',  '\001' : '\\001',  '\002' : '\\002',
     '\003' : '\\003',  '\004' : '\\004',  '\005' : '\\005',
@@ -84,15 +80,15 @@ _Translator       = {
 
 _idmap = ''.join(chr(x) for x in xrange(256))
 
-def _quote(str, LegalChars=_LegalChars, idmap=_idmap, translate=string.translate):
+def _quote(str, legal_chars=_legal_chars, idmap=_idmap, translate=string.translate):
     # If the string does not need to be double-quoted,
     # then just return the string.  Otherwise, surround
     # the string in doublequotes and precede quote (with a \)
     # special characters.
-    if "" == translate(str, idmap, LegalChars):
+    if "" == translate(str, idmap, legal_chars):
         return str
     else:
-        return '"' + _nulljoin( map(_Translator.get, str, str) ) + '"'
+        return '"' + _nulljoin(map(_Translator.get, str, str)) + '"'
 
 _OctalPatt = re.compile(r"\\[0-3][0-7][0-7]")
 _QuotePatt = re.compile(r"[\\].")
@@ -128,13 +124,13 @@ def _unquote(str):
         j = k = -1
         if Omatch: j = Omatch.start(0)
         if Qmatch: k = Qmatch.start(0)
-        if Qmatch and ( not Omatch or k < j ):     # QuotePatt matched
+        if Qmatch and (not Omatch or k < j):     # QuotePatt matched
             res.append(str[i:k])
             res.append(str[k+1])
             i = k+2
         else:                                      # OctalPatt matched
             res.append(str[i:j])
-            res.append( chr( int(str[j+1:j+4], 8) ) )
+            res.append(chr(int(str[j+1:j+4], 8)))
             i = j+4
     return _nulljoin(res)
 # end _unquote
@@ -171,36 +167,23 @@ def _getdate(future=0, weekdayname=_weekdayname, monthname=_monthname):
 #       pickled for network transit.
 
 
-class Morsel(dict):
-    # RFC 2109 lists these attributes as reserved:
-    #   path       comment         domain
-    #   max-age    secure      version
-    #
-    # For historical reasons, these attributes are also reserved:
-    #   expires
-    #
-    # This is an extension from Microsoft:
-    #   httponly
-    #
-    # This dictionary provides a mapping from the lowercase
-    # variant on the left to the appropriate traditional
-    # formatting on the right.
-    _reserved = {
-        "expires" : "expires",
-        "path" : "Path",
-        "comment" : "Comment",
-        "domain" : "Domain",
-        "max-age" : "Max-Age",
-        "secure" : "secure",
-        "httponly" : "HttpOnly",
-        "version" : "Version",
-    }
+_cookie_props = {
+    "expires" : "expires",
+    "path" : "Path",
+    "comment" : "Comment",
+    "domain" : "Domain",
+    "max-age" : "Max-Age",
+    "secure" : "secure",
+    "httponly" : "HttpOnly",
+    "version" : "Version",
+}
 
+class Morsel(dict):
     def __init__(self, name=None, value=None):
         # Set defaults
         self.key = self.value = self.coded_value = None
         # Set default attributes
-        for K in self._reserved:
+        for K in _cookie_props:
             dict.__setitem__(self, K, "")
         if name is not None:
             self.set(name, value, value)
@@ -209,37 +192,30 @@ class Morsel(dict):
 
     def __setitem__(self, K, V):
         K = K.lower()
-        if not K in self._reserved:
-            raise CookieError("Invalid Attribute %s" % K)
-        dict.__setitem__(self, K, V)
+        if K in _cookie_props:
+            dict.__setitem__(self, K, V)
 
     def isReservedKey(self, K):
-        return K.lower() in self._reserved
+        return K.lower() in _cookie_props
     # end isReservedKey
 
     def set(self, key, val, coded_val,
-            LegalChars=_LegalChars,
+            legal_chars=_legal_chars,
             idmap=_idmap, translate=string.translate):
-        # First we verify that the key isn't a reserved word
-        # Second we make sure it only contains legal characters
-        if key.lower() in self._reserved:
-            raise CookieError("Attempt to set a reserved key: %s" % key)
-        if "" != translate(key, idmap, LegalChars):
-            raise CookieError("Illegal key value: %s" % key)
-
-        # It's a good key, so save it.
-        self.key                 = key
-        self.value               = val
-        self.coded_value         = coded_val
-    # end set
+        assert key.lower() not in _cookie_props
+        if "" != translate(key, idmap, legal_chars):
+            return
+        self.key = key
+        self.value = val
+        self.coded_value = coded_val
 
     def output(self, attrs=None, header = "Set-Cookie:"):
-        return "%s %s" % ( header, self.OutputString(attrs) )
+        return "%s %s" % (header, self.OutputString(attrs))
 
     __str__ = output
 
     def __repr__(self):
-        return '<%s: %s=%s>' % (self.__class__.__name__, self.key, repr(self.value) )
+        return '<%s: %s=%s>' % (self.__class__.__name__, self.key, repr(self.value))
 
     def OutputString(self, attrs=None):
         httponly = self.pop('httponly', False)
@@ -252,22 +228,22 @@ class Morsel(dict):
 
         # Now add any defined attributes
         if attrs is None:
-            attrs = self._reserved
+            attrs = _cookie_props
         items = self.items()
         items.sort()
         for K,V in items:
             if V == "": continue
             if K not in attrs: continue
             if K == "expires" and type(V) == type(1):
-                RA("%s=%s" % (self._reserved[K], _getdate(V)))
+                RA("%s=%s" % (_cookie_props[K], _getdate(V)))
             elif K == "max-age" and type(V) == type(1):
-                RA("%s=%d" % (self._reserved[K], V))
+                RA("%s=%d" % (_cookie_props[K], V))
             elif K == "secure":
-                RA(str(self._reserved[K]))
+                RA(str(_cookie_props[K]))
             elif K == "httponly":
-                RA(str(self._reserved[K]))
+                RA(str(_cookie_props[K]))
             else:
-                RA("%s=%s" % (self._reserved[K], V))
+                RA("%s=%s" % (_cookie_props[K], V))
 
         result = _semispacejoin(result)
         result = result.rstrip('\t ;')
@@ -286,11 +262,11 @@ class Morsel(dict):
 # result, the parsing rules here are less strict.
 #
 
-_LegalCharsPatt  = r"[\w\d!#%&'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]"
-_CookiePattern = re.compile(
+_re_legal_chars  = r"[\w\d!#%&'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]"
+_rx_cookie = re.compile(
     r"(?x)"                       # This is a Verbose pattern
     r"(?P<key>"                   # Start of group 'key'
-    ""+ _LegalCharsPatt +"+?"     # Any word of at least one letter, nongreedy
+    ""+ _re_legal_chars +"+?"     # Any word of at least one letter, nongreedy
     r")"                          # End of group 'key'
     r"\s*=\s*"                    # Equal Sign
     r"(?P<val>"                   # Start of group 'val'
@@ -298,44 +274,21 @@ _CookiePattern = re.compile(
     r"|"                            # or
     r"\w{3},\s[\w\d-]{9,11}\s[\d:]{8}\sGMT" # Special case for "expires" attr
     r"|"                            # or
-    ""+ _LegalCharsPatt +"*"        # Any word or empty string
+    ""+ _re_legal_chars +"*"        # Any word or empty string
     r")"                          # End of group 'val'
     r"\s*;?"                      # Probably ending in a semi-colon
-    )
+)
 
 
-# At long last, here is the cookie class.
-#   Using this class is almost just like using a dictionary.
-# See this module's docstring for example usage.
-#
 class Cookie(dict):
     def __init__(self, input=None):
-        if input:
-            self._load(input)
-
-    def _load(self, str, patt=_CookiePattern):
-        i = 0            # Our starting point
-        n = len(str)     # Length of string
-        M = None         # current morsel
-
-        while 0 <= i < n:
-            # Start looking for a cookie
-            match = patt.search(str, i)
-            if not match: break          # No more cookies
-
-            K,V = match.group("key"), match.group("val")
-            i = match.end(0)
-
-            # Parse the key, value in case it's metainfo
-            if K[0] == "$":
-                # We ignore attributes which pertain to the cookie
-                # mechanism as a whole.  See RFC 2109.
-                # (Does anyone care?)
+        if not input:
+            return
+        M = None
+        for K,V in _rx_cookie.findall(input):
+            if K.lower() in _cookie_props:
                 if M:
-                    M[ K[1:] ] = V
-            elif K.lower() in Morsel._reserved:
-                if M:
-                    M[ K ] = _unquote(V)
+                    M[K] = _unquote(V)
             else:
                 rval, cval = self.value_decode(V)
                 self._set(K, rval, cval)
@@ -369,10 +322,7 @@ class Cookie(dict):
     def _set(self, key, real_value, coded_value):
         """Private method for setting a cookie's value"""
         morsel = self.get(key, Morsel())
-        try:
-            morsel.set(key, real_value, coded_value)
-        except CookieError:
-            pass
+        morsel.set(key, real_value, coded_value)
         dict.__setitem__(self, key, morsel)
 
     def __setitem__(self, key, value):
@@ -387,7 +337,7 @@ class Cookie(dict):
         items = self.items()
         items.sort()
         for K,V in items:
-            result.append( V.output(attrs, header) )
+            result.append(V.output(attrs, header))
         return sep.join(result)
 
     __str__ = output
@@ -397,6 +347,6 @@ class Cookie(dict):
         items = self.items()
         items.sort()
         for K,V in items:
-            L.append( '%s=%s' % (K,repr(V.value) ) )
+            L.append('%s=%s' % (K,repr(V.value)))
         return '<%s: %s>' % (self.__class__.__name__, _spacejoin(L))
 
