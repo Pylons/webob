@@ -12,7 +12,7 @@ def simpleapp(environ, start_response):
     return [
         'Hello world!\n',
         'The get is %r' % request.str_GET,
-        ' and Val is %s\n' % request.GET.get('name'),
+        ' and Val is %s\n' % request.str_GET.get('name'),
         'The languages are: %s\n' % request.accept_language.best_matches('en-US'),
         'The accepttypes is: %s\n' % request.accept.best_match(['application/xml', 'text/html']),
         'post is %r\n' % request.str_POST,
