@@ -11,7 +11,7 @@ from webob.cachecontrol import CacheControl, serialize_cache_control
 
 from webob.descriptors import *
 from webob.datetime_utils import *
-from webob.Cookie import Cookie, Morsel
+from webob.cookies import Cookie, Morsel
 
 __all__ = ['Response']
 

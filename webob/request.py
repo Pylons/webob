@@ -10,7 +10,7 @@ from webob.etag import etag_property, AnyETag, NoETag
 
 from webob.descriptors import *
 from webob.datetime_utils import *
-from webob.Cookie import Cookie
+from webob.cookies import Cookie
 
 __all__ = ['BaseRequest', 'Request']
 
