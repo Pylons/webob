@@ -17,6 +17,7 @@ __all__ = ['Response']
 _PARAM_RE = re.compile(r'([a-z0-9]+)=(?:"([^"]*)"|([a-z0-9_.-]*))', re.I)
 _OK_PARAM_RE = re.compile(r'^[a-z0-9_.-]+$', re.I)
 
+_gzip_header = '\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff'
 
 
 
@@ -826,15 +827,19 @@ class Response(object):
             if self.content_encoding == encoding:
                 return
             self.decode_content()
-        from webob.util.safegzip import GzipFile
+
+        from gzip import GzipFile
         f = StringIO()
         gzip_f = GzipFile(filename='', mode='w', fileobj=f)
         gzip_f.write(self.body)
         gzip_f.close()
-        new_body = f.getvalue()
-        f.close()
+
+        f.seek(len(_gzip_header))
+        self.app_iter = [_gzip_header, f.read()]
+        self.content_length = f.tell()
         self.content_encoding = 'gzip'
-        self.body = new_body
+        f.close()
+
 
     def decode_content(self):
         content_encoding = self.content_encoding or 'identity'
@@ -843,14 +848,14 @@ class Response(object):
         if content_encoding != 'gzip':
             raise ValueError(
                 "I don't know how to decode the content %s" % content_encoding)
-        from webob.util.safegzip import GzipFile
+        from gzip import GzipFile
         f = StringIO(self.body)
         gzip_f = GzipFile(filename='', mode='r', fileobj=f)
-        new_body = gzip_f.read()
+        self.body = gzip_f.read()
+        self.content_encoding = None
         gzip_f.close()
         f.close()
-        self.content_encoding = None
-        self.body = new_body
+
 
     def md5_etag(self, body=None, set_content_md5=False):
         """

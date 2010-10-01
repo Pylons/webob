@@ -35,7 +35,7 @@ def test_response():
     res = Response('a body', '200 OK', content_type='text/html')
     res.encode_content()
     assert res.content_encoding == 'gzip'
-    assert res.body == '\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xffKTH\xcaO\xa9\x04\x00\xf6\x86GI\x06\x00\x00\x00'
+    eq_(res.body, '\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xffKTH\xcaO\xa9\x04\x00\xf6\x86GI\x06\x00\x00\x00')
     res.decode_content()
     assert res.content_encoding is None
     assert res.body == 'a body'
