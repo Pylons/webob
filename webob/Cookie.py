@@ -11,52 +11,37 @@ _trans_noop = ''.join(chr(x) for x in xrange(256))
 
 
 _escape_map = dict((chr(i), '\\%03o' % i) for i in xrange(256))
+_escape_map.update(zip(_legal_chars, _legal_chars))
 _escape_map['"'] = '\\"'
 _escape_map['\\'] = '\\\\'
-_escape_char = _escape_map.get
+_escape_char = _escape_map.__getitem__
 
-def needs_escaping(v):
+def needs_quoting(v):
     return string.translate(v, _trans_noop, _legal_chars)
 
 def _quote(v):
-    if needs_escaping(v):
-        return '"' + _nulljoin(map(_escape_char, v, v)) + '"'
+    if needs_quoting(v):
+        return '"' + _nulljoin(map(_escape_char, v)) + '"'
     return v
 
-_OctalPatt = re.compile(r"\\[0-3][0-7][0-7]")
-_QuotePatt = re.compile(r"[\\].")
+_rx_unquote = re.compile(r'\\([0-3][0-7][0-7]|.)')
 
-def _unquote(str):
-    if not str or str[0] != str[-1] != '"':
-        return str
-    str = str[1:-1]
-    # Check for special sequences.  Examples:
-    #    \012 --> \n
-    #    \"   --> "
-    #
-    i = 0
-    n = len(str)
-    res = []
-    while 0 <= i < n:
-        Omatch = _OctalPatt.search(str, i)
-        Qmatch = _QuotePatt.search(str, i)
-        if not Omatch and not Qmatch:              # Neither matched
-            res.append(str[i:])
-            break
-        # else:
-        j = k = -1
-        if Omatch: j = Omatch.start(0)
-        if Qmatch: k = Qmatch.start(0)
-        if Qmatch and (not Omatch or k < j):     # QuotePatt matched
-            res.append(str[i:k])
-            res.append(str[k+1])
-            i = k+2
-        else:                                      # OctalPatt matched
-            res.append(str[i:j])
-            res.append(chr(int(str[j+1:j+4], 8)))
-            i = j+4
-    return _nulljoin(res)
-# end _unquote
+def _unquote(v):
+    if not v or v[0] != v[-1] != '"':
+        return v
+    v = v[1:-1]
+    def _ch_unquote(m):
+        v = m.group(1)
+        if v.isdigit():
+            return chr(int(v, 8))
+        return v
+    return _rx_unquote.sub(_ch_unquote, v)
+
+#assert _quote('a"\xff') == r'"a\"\377"'
+#assert _unquote(r'"a\"\377"') == 'a"\xff'
+
+
+
 
 # The _getdate() routine is used to set the expiration time in
 # the cookie's HTTP header.      By default, _getdate() returns the
@@ -118,13 +103,9 @@ class Morsel(dict):
         if K in _cookie_props:
             dict.__setitem__(self, K, V)
 
-    def isReservedKey(self, K):
-        return K.lower() in _cookie_props
-    # end isReservedKey
-
     def set(self, key, val, coded_val):
         assert key.lower() not in _cookie_props
-        if needs_escaping(key):
+        if needs_quoting(key):
             return
         self.key = key
         self.value = val
