@@ -35,7 +35,7 @@ You may install the `in-development version of WebOb
     author_email='ianb@colorstudy.com',
     url='http://pythonpaste.org/webob/',
     license='MIT',
-    packages=['webob', 'webob.util'],
+    packages=['webob'],
     zip_safe=True,
     test_suite='nose.collector',
     tests_require=['Tempita', 'WSGIProxy', 'WebTest', 'dtopt', 'nose', 'repoze.profile'],
