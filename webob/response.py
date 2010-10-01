@@ -11,7 +11,7 @@ from webob.cachecontrol import CacheControl, serialize_cache_control
 
 from webob.descriptors import *
 from webob.datetime_utils import *
-from webob.Cookie import ExtendedCookie, Morsel
+from webob.Cookie import Cookie, Morsel
 
 __all__ = ['Response']
 
@@ -676,8 +676,7 @@ class Response(object):
         del self.headers['Set-Cookie']
         found = False
         for header in existing:
-            cookies = ExtendedCookie()
-            cookies.load(header)
+            cookies = Cookie(header)
             if key in cookies:
                 found = True
                 del cookies[key]

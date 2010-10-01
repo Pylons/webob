@@ -10,7 +10,7 @@ from webob.etag import etag_property, AnyETag, NoETag
 
 from webob.descriptors import *
 from webob.datetime_utils import *
-from webob.Cookie import ExtendedCookie
+from webob.Cookie import Cookie
 
 __all__ = ['BaseRequest', 'Request']
 
@@ -603,8 +603,7 @@ class BaseRequest(object):
                 return vars
         vars = {}
         if source:
-            cookies = ExtendedCookie()
-            cookies.load(source)
+            cookies = Cookie(source)
             for name in cookies:
                 value = cookies[name].value
                 if value is None:

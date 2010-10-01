@@ -1,13 +1,6 @@
-import string
+import string, re
 
-try:
-    from cPickle import dumps, loads
-except ImportError:
-    from pickle import dumps, loads
-
-import re, warnings
-
-__all__ = ["CookieError","BaseCookie","SimpleCookie", "SmartCookie","Cookie"]
+__all__ = ['Cookie', 'CookieError']
 
 _nulljoin = ''.join
 _semispacejoin = '; '.join
@@ -315,93 +308,12 @@ _CookiePattern = re.compile(
 #   Using this class is almost just like using a dictionary.
 # See this module's docstring for example usage.
 #
-class BaseCookie(dict):
-    # A container class for a set of Morsels
-    #
-
-    def value_decode(self, val):
-        """real_value, coded_value = value_decode(STRING)
-        Called prior to setting a cookie's value from the network
-        representation.  The VALUE is the value read from HTTP
-        header.
-        Override this function to modify the behavior of cookies.
-        """
-        return val, val
-    # end value_encode
-
-    def value_encode(self, val):
-        """real_value, coded_value = value_encode(VALUE)
-        Called prior to setting a cookie's value from the dictionary
-        representation.  The VALUE is the value being assigned.
-        Override this function to modify the behavior of cookies.
-        """
-        strval = str(val)
-        return strval, strval
-    # end value_encode
-
+class Cookie(dict):
     def __init__(self, input=None):
-        if input: self.load(input)
-    # end __init__
+        if input:
+            self._load(input)
 
-    def __set(self, key, real_value, coded_value):
-        """Private method for setting a cookie's value"""
-        M = self.get(key, Morsel())
-        M.set(key, real_value, coded_value)
-        dict.__setitem__(self, key, M)
-    # end __set
-
-    def __setitem__(self, key, value):
-        """Dictionary style assignment."""
-        rval, cval = self.value_encode(value)
-        self.__set(key, rval, cval)
-    # end __setitem__
-
-    def output(self, attrs=None, header="Set-Cookie:", sep="\015\012"):
-        """Return a string suitable for HTTP."""
-        result = []
-        items = self.items()
-        items.sort()
-        for K,V in items:
-            result.append( V.output(attrs, header) )
-        return sep.join(result)
-    # end output
-
-    __str__ = output
-
-    def __repr__(self):
-        L = []
-        items = self.items()
-        items.sort()
-        for K,V in items:
-            L.append( '%s=%s' % (K,repr(V.value) ) )
-        return '<%s: %s>' % (self.__class__.__name__, _spacejoin(L))
-
-    def js_output(self, attrs=None):
-        """Return a string suitable for JavaScript."""
-        result = []
-        items = self.items()
-        items.sort()
-        for K,V in items:
-            result.append( V.js_output(attrs) )
-        return _nulljoin(result)
-    # end js_output
-
-    def load(self, rawdata):
-        """Load cookies from a string (presumably HTTP_COOKIE) or
-        from a dictionary.  Loading cookies from a dictionary 'd'
-        is equivalent to calling:
-            map(Cookie.__setitem__, d.keys(), d.values())
-        """
-        if type(rawdata) == type(""):
-            self.__ParseString(rawdata)
-        else:
-            # self.update() wouldn't call our custom __setitem__
-            for k, v in rawdata.items():
-                self[k] = v
-        return
-    # end load()
-
-    def __ParseString(self, str, patt=_CookiePattern):
+    def _load(self, str, patt=_CookiePattern):
         i = 0            # Our starting point
         n = len(str)     # Length of string
         M = None         # current morsel
@@ -426,35 +338,65 @@ class BaseCookie(dict):
                     M[ K ] = _unquote(V)
             else:
                 rval, cval = self.value_decode(V)
-                self.__set(K, rval, cval)
+                self._set(K, rval, cval)
                 M = self[K]
-    # end __ParseString
-# end BaseCookie class
 
-class SimpleCookie(BaseCookie):
-    """SimpleCookie
-    SimpleCookie supports strings as cookie values.  When setting
-    the value using the dictionary assignment notation, SimpleCookie
-    calls the builtin str() to convert the value to a string.  Values
-    received from HTTP are kept as strings.
-    """
-    def value_decode(self, val):
-        return _unquote( val ), val
-    def value_encode(self, val):
+
+    @staticmethod
+    def value_decode(val):
+        """real_value, coded_value = value_decode(STRING)
+        Called prior to setting a cookie's value from the network
+        representation.  The VALUE is the value read from HTTP
+        header.
+        Override this function to modify the behavior of cookies.
+        """
+        return val, val
+        #return _unquote(val), val
+
+    @staticmethod
+    def value_encode(val):
+        """real_value, coded_value = value_encode(VALUE)
+        Called prior to setting a cookie's value from the dictionary
+        representation.  The VALUE is the value being assigned.
+        Override this function to modify the behavior of cookies.
+        """
         strval = str(val)
-        return strval, _quote( strval )
-# end SimpleCookie
+        return strval, strval
+        #return strval, _quote(strval)
 
-class ExtendedCookie(BaseCookie):
-    """Form of the base cookie that doesn't raise a `CookieError` for
-    malformed keys.  This has the advantage that broken cookies submitted
-    by nonstandard browsers don't cause the cookie to be empty.
-    """
 
-    def _BaseCookie__set(self, key, real_value, coded_value):
+
+    def _set(self, key, real_value, coded_value):
+        """Private method for setting a cookie's value"""
         morsel = self.get(key, Morsel())
         try:
             morsel.set(key, real_value, coded_value)
         except CookieError:
             pass
         dict.__setitem__(self, key, morsel)
+
+    def __setitem__(self, key, value):
+        """Dictionary style assignment."""
+        rval, cval = self.value_encode(value)
+        self._set(key, rval, cval)
+
+
+    def output(self, attrs=None, header="Set-Cookie:", sep="\015\012"):
+        """Return a string suitable for HTTP."""
+        result = []
+        items = self.items()
+        items.sort()
+        for K,V in items:
+            result.append( V.output(attrs, header) )
+        return sep.join(result)
+
+    __str__ = output
+
+    def __repr__(self):
+        L = []
+        items = self.items()
+        items.sort()
+        for K,V in items:
+            L.append( '%s=%s' % (K,repr(V.value) ) )
+        return '<%s: %s>' % (self.__class__.__name__, _spacejoin(L))
+
