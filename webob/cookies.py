@@ -71,8 +71,6 @@ class Morsel(dict):
                 assert isinstance(v, str)
                 if k in ('secure', 'httponly'):
                     suffixes.append(_cookie_props[k])
-                elif k == 'expires':
-                    RA('expires="%s"' % v)
                 else:
                     RA("%s=%s" % (_cookie_props[k], _quote(v)))
         return '; '.join(result+suffixes)
@@ -98,7 +96,8 @@ _cookie_props = {
 #
 
 _re_quoted = r'"(?:[^\"]|\.)*"'  # any doublequoted string
-_re_legal_char  = r"[\w\d!#%&'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]"
+_legal_special_chars = "~!@#$%^&*()_+=-`.?|:/(){}<>',"
+_re_legal_char  = r"[\w\d%s]" % ''.join(map(r'\%s'.__mod__, _legal_special_chars))
 _re_expires_val = r"\w{3},\s[\w\d-]{9,11}\s[\d:]{8}\sGMT"
 _rx_cookie = re.compile(
     # key
@@ -128,12 +127,14 @@ def _unquote(v):
 # serializing
 #
 
-_legal_chars = string.ascii_letters + string.digits + "!#$%&'*+-.^_`|~/"
 _trans_noop = ''.join(chr(x) for x in xrange(256))
 
-
+_no_escape_special_chars = "!#$%&'*+-.^_`|~/"
+_no_escape_chars = string.ascii_letters + string.digits + _no_escape_special_chars
+#_no_escape_chars = string.ascii_letters + string.digits + _legal_special_chars
+_escape_noop_chars = _no_escape_chars+':, '
 _escape_map = dict((chr(i), '\\%03o' % i) for i in xrange(256))
-_escape_map.update(zip(_legal_chars, _legal_chars))
+_escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
 _escape_map['"'] = '\\"'
 _escape_map['\\'] = '\\\\'
 _escape_char = _escape_map.__getitem__
@@ -144,7 +145,7 @@ months = (None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 
 
 def needs_quoting(v):
-    return string.translate(v, _trans_noop, _legal_chars)
+    return string.translate(v, _trans_noop, _no_escape_chars)
 
 def _quote(v):
     if needs_quoting(v):
@@ -164,8 +165,7 @@ def serialize_cookie_date(v):
     r = time.strftime('%%s, %d-%%s-%Y %H:%M:%S GMT', v)
     return r % (weekdays[v[6]], months[v[1]])
 
-
-
+#print _quote(serialize_cookie_date(0))
 
 #assert _quote('a"\xff') == r'"a\"\377"'
 #assert _unquote(r'"a\"\377"') == 'a"\xff'
