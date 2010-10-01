@@ -605,47 +605,35 @@ class Response(object):
     #
 
     def set_cookie(self, key, value='', max_age=None,
-                   path='/', domain=None, secure=None, httponly=False,
+                   path='/', domain=None, secure=False, httponly=False,
                    version=None, comment=None, expires=None, overwrite=False):
         """
         Set (add) a cookie for the response
         """
-        if isinstance(value, unicode):
-            value = '"%s"' % value.encode(self.charset or 'ASCII')
-        elif ' ' in value:
-            value = '"%s"' % value
         if overwrite:
             self.unset_cookie(key, strict=False)
         morsel = Morsel(key, value)
+        #@@ move to Morsel.__setitem__
         if isinstance(max_age, timedelta):
             max_age = max_age.seconds + max_age.days*24*60*60
         if max_age is not None and expires is None:
             expires = datetime.utcnow() + timedelta(seconds=max_age)
-        if isinstance(expires, timedelta):
-            expires = datetime.utcnow() + expires
-        if isinstance(expires, datetime):
-            expires = '"%s"' % serialize_cookie_date(expires)
         for var_name, var_value in [
             ('max-age', max_age),
             ('path', path),
             ('domain', domain),
             ('secure', secure),
-            ('HttpOnly', httponly),
+            ('httponly', httponly),
             ('version', version),
             ('comment', comment),
             ('expires', expires),
         ]:
-            if var_value is not None and var_value is not False:
-                morsel[var_name] = str(var_value)
+            morsel[var_name] = var_value
         self._add_cookie(morsel)
 
     def _add_cookie(self, cookie):
         if not isinstance(cookie, str):
-            cookie = cookie.output(header='').lstrip()
-            if cookie.endswith(';'):
-                # Python 2.4 adds a trailing ; to the end, strip it to be
-                # consistent with 2.5
-                cookie = cookie[:-1]
+            cookie = str(cookie)
         if cookie:
             self.headerlist.append(('Set-Cookie', cookie))
 
@@ -673,22 +661,17 @@ class Response(object):
             if not strict:
                 return
             raise KeyError("No cookies at all have been set")
-        del self.headers['Set-Cookie']
         found = False
+        cookies = Cookie()
         for header in existing:
-            cookies = Cookie(header)
-            if key in cookies:
-                found = True
-                del cookies[key]
-                self._add_cookie(cookies)
-            else:
-                # this branching is required because Cookie.Morsel.output()
-                # strips quotes from expires= parameter, so better use
-                # it as is, if it hasn't changed
-                self._add_cookie(header)
-        if strict and not found:
-            raise KeyError(
-                "No cookie has been set with the name %r" % key)
+            cookies.load(header)
+        if key in cookies:
+            del self.headers['Set-Cookie']
+            del cookies[key]
+            #for val in cookies.values():
+            self._add_cookie(cookies)
+        elif strict:
+            raise KeyError("No cookie has been set with the name %r" % key)
 
 
     def merge_cookies(self, resp):

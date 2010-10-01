@@ -608,9 +608,6 @@ class BaseRequest(object):
                 value = cookies[name].value
                 if value is None:
                     continue
-                unquote_match = QUOTES_RE.match(value)
-                if unquote_match is not None:
-                    value = unquote_match.group(1)
                 vars[name] = value
         env['webob._parsed_cookies'] = (vars, source)
         return vars

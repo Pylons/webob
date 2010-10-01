@@ -6,7 +6,7 @@ from rfc822 import parsedate_tz, mktime_tz, formatdate
 __all__ = [
     'UTC', 'timedelta_to_seconds',
     'year', 'month', 'week', 'day', 'hour', 'minute', 'second',
-    'parse_date', 'serialize_date', 'serialize_cookie_date',
+    'parse_date', 'serialize_date',
     'parse_date_delta', 'serialize_date_delta',
 ]
 
@@ -70,18 +70,6 @@ def serialize_date(dt):
     return formatdate(dt)
 
 
-weekdays = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
-months = (None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
-
-def serialize_cookie_date(dt):
-    if isinstance(dt, unicode):
-        dt = dt.encode('ascii')
-    if isinstance(dt, timedelta):
-        dt = datetime.now() + dt
-    if isinstance(dt, (datetime, date)):
-        dt = dt.timetuple()
-    r = time.strftime('%%s, %d-%%s-%Y %H:%M:%S GMT', dt)
-    return r % (weekdays[dt[6]], months[dt[1]])
 
 def parse_date_delta(value):
     """
@@ -94,8 +82,7 @@ def parse_date_delta(value):
     except ValueError:
         return parse_date(value)
     else:
-        delta = timedelta(seconds=value)
-        return datetime.now() + delta
+        return datetime.now() + timedelta(seconds=value)
 
 
 def serialize_date_delta(value):

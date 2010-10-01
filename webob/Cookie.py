@@ -39,22 +39,24 @@ def _unquote(v):
 
 
 
+import time
+from datetime import datetime, date, timedelta
 
-# The _getdate() routine is used to set the expiration time in
-# the cookie's HTTP header.      By default, _getdate() returns the
-# current time in the appropriate "expires" format for a
-# Set-Cookie header.     The one optional argument is an offset from
-# now, in seconds.      For example, an offset of -3600 means "one hour ago".
-# The offset may be a floating point number.
+weekdays = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
+months = (None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
 
-from time import gmtime, time
-from datetime_utils import months, weekdays
 
-def _getdate(future=0):
-    now = time()
-    year, month, day, hh, mm, ss, wd, y, z = gmtime(now + future)
-    return "%s, %02d-%3s-%4d %02d:%02d:%02d GMT" % \
-           (weekdays[wd], day, months[month], year, hh, mm, ss)
+def serialize_cookie_date(v):
+    if isinstance(v, int):
+        v = timedelta(seconds=v)
+    #if isinstance(v, unicode):
+    #    v = v.encode('ascii')
+    if isinstance(v, timedelta):
+        v = datetime.utcnow() + v
+    if isinstance(v, (datetime, date)):
+        v = v.timetuple()
+    r = time.strftime('%%s, %d-%%s-%Y %H:%M:%S GMT', v)
+    return r % (weekdays[v[6]], months[v[1]])
 
 
 # A class to hold ONE key,value pair.
@@ -71,69 +73,51 @@ _cookie_props = {
     "max-age" : "Max-Age",
     "secure" : "secure",
     "httponly" : "HttpOnly",
-    "version" : "Version",
 }
 
 class Morsel(dict):
-    def __init__(self, name=None, value=None):
-        # Set defaults
-        self.key = self.value = None
-        # Set default attributes
-        for K in _cookie_props:
-            dict.__setitem__(self, K, "")
-        if name is not None:
-            self.set(name, value)
+    def __init__(self, name, value):
+        assert name.lower() not in _cookie_props
+        assert not needs_quoting(name)
+        self.name = name
+        self.value = value
 
+    def __setitem__(self, k, v):
+        k = k.lower()
+        if k in _cookie_props:
+            if isinstance(v, str) or v is None:
+                pass
+            elif isinstance(v, bool):
+                v = '1'*v
+            elif k == 'expires':
+                v = serialize_cookie_date(v)
+            elif isinstance(v, int):
+                v = str(v)
+            else:
+                raise TypeError(type(v))
+            if not v:
+                self.pop(k, None)
+                return
+            dict.__setitem__(self, k, v)
 
-
-    def __setitem__(self, K, V):
-        K = K.lower()
-        if K in _cookie_props:
-            dict.__setitem__(self, K, V)
-
-    def set(self, key, val):
-        assert key.lower() not in _cookie_props
-        if needs_quoting(key):
-            return
-        self.key = key
-        self.value = val
-
-    def output(self, header="Set-Cookie:"):
-        return "%s %s" % (header, self.OutputString())
-
-    __str__ = output
+    def __str__(self):
+        result = []
+        suffixes = []
+        RA = result.append
+        RA("%s=%s" % (self.name, _quote(self.value)))
+        for k,v in sorted(self.items()):
+            if v and k in _cookie_props:
+                assert isinstance(v, str)
+                if k in ('secure', 'httponly'):
+                    suffixes.append(_cookie_props[k])
+                else:
+                    if k == 'expires':
+                        v = '"%s"' % v
+                    RA("%s=%s" % (_cookie_props[k], v))
+        return '; '.join(result+suffixes)
 
     def __repr__(self):
-        return '<%s: %s=%s>' % (self.__class__.__name__, self.key, repr(self.value))
-
-    def OutputString(self):
-        httponly = False
-
-        result = []
-        RA = result.append
-        # First, the key=value pair
-        RA("%s=%s" % (self.key, _quote(self.value)))
-
-        items = self.items()
-        items.sort()
-        for K,V in items:
-            if V == "": continue
-            if K not in _cookie_props: continue
-            if K == "expires" and type(V) == type(1):
-                RA("%s=%s" % (_cookie_props[K], _getdate(V)))
-            elif K == "max-age" and type(V) == type(1):
-                RA("%s=%d" % (_cookie_props[K], V))
-            elif K == "secure":
-                RA(str(_cookie_props[K]))
-            elif K == "httponly":
-                httponly = True
-            else:
-                RA("%s=%s" % (_cookie_props[K], V))
-        if httponly:
-            RA('HttpOnly')
-        result = '; '.join(result)
-        return result
-
+        return '<%s: %s=%s>' % (self.__class__.__name__, self.name, repr(self.value))
 
 
 _re_quoted = r'"(?:[^\"]|\.)*"'  # any doublequoted string
@@ -151,31 +135,28 @@ _rx_cookie = re.compile(
 
 class Cookie(dict):
     def __init__(self, input=None):
-        if not input:
-            return
-        M = None
-        for key, val in _rx_cookie.findall(input):
+        if input:
+            self.load(input)
+
+    def load(self, data):
+        ckey = None
+        for key, val in _rx_cookie.findall(data):
             if key.lower() in _cookie_props:
-                if M:
-                    M[key] = _unquote(val)
+                if ckey:
+                    self[ckey][key] = _unquote(val)
             elif key[0] == '$':
                 continue
             else:
-                M = self._set(key, _unquote(val))
+                self[key] = _unquote(val)
+                ckey = key
 
-    def _set(self, key, val):
-        morsel = self.get(key, Morsel())
-        morsel.set(key, val)
-        dict.__setitem__(self, key, morsel)
-        return morsel
+    def __setitem__(self, key, val):
+        if needs_quoting(key):
+            return
+        dict.__setitem__(self, key, Morsel(key, val))
 
-    __setitem__ = _set
-
-    def output(self, attrs=None, header="Set-Cookie:", sep="\r\n"):
-        """Return a string suitable for HTTP."""
-        return sep.join(m.output(attrs, header) for _,v in sorted(self.items()))
-
-    __str__ = output
+    def __str__(self):
+        return '; '.join(str(m) for _,m in sorted(self.items()))
 
     def __repr__(self):
         items = ['%s=%s' % (k, v.value) for k,v in sorted(self.items())]
@@ -183,3 +164,6 @@ class Cookie(dict):
 
 
 #print repr(Cookie('foo=bar'))
+# c = Cookie('bad_cookie=; expires="... GMT"; Max-Age=0; Path=/')
+# print c
+#print c['bad_cookie'].items()
