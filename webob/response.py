@@ -1,5 +1,6 @@
 import re
 import urlparse
+import zlib, struct
 from cStringIO import StringIO
 
 from datetime import datetime, date, timedelta
@@ -812,34 +813,24 @@ class Response(object):
     # encode_content, decode_content, md5_etag
     #
 
-    def encode_content(self, encoding='gzip'):
+    def encode_content(self, encoding='gzip', lazy=False):
         """
         Encode the content with the given encoding (only gzip and
         identity are supported).
         """
+        assert encoding in ('identity', 'gzip'), "Unknown encoding: %r" % encoding
         if encoding == 'identity':
             self.decode_content()
             return
-        if encoding != 'gzip':
-            raise ValueError(
-                "Unknown encoding: %r" % encoding)
-        if self.content_encoding:
-            if self.content_encoding == encoding:
-                return
-            self.decode_content()
-
-        from gzip import GzipFile
-        f = StringIO()
-        gzip_f = GzipFile(filename='', mode='w', fileobj=f)
-        gzip_f.write(self.body)
-        gzip_f.close()
-
-        f.seek(len(_gzip_header))
-        self.app_iter = [_gzip_header, f.read()]
-        self.content_length = f.tell()
+        if self.content_encoding == 'gzip':
+            return
+        if lazy:
+            self.app_iter = gzip_app_iter(self.app_iter)
+            del self.content_length
+        else:
+            self.app_iter = list(gzip_app_iter(self.app_iter))
+            self.content_length = sum(map(len, self.app_iter))
         self.content_encoding = 'gzip'
-        f.close()
-
 
     def decode_content(self):
         content_encoding = self.content_encoding or 'identity'
@@ -1201,3 +1192,16 @@ def _request_uri(environ):
 def iter_close(iter):
     if hasattr(iter, 'close'):
         iter.close()
+
+def gzip_app_iter(app_iter):
+    size = 0
+    crc = zlib.crc32("") & 0xffffffffL
+    compress = zlib.compressobj(9, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 0)
+
+    yield _gzip_header
+    for item in app_iter:
+        size += len(item)
+        crc = zlib.crc32(item, crc) & 0xffffffffL
+        yield compress.compress(item)
+    yield compress.flush()
+    yield struct.pack("<2L", crc, size & 0xffffffffL)
