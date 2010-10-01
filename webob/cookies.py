@@ -12,7 +12,7 @@ class Cookie(dict):
     def load(self, data):
         ckey = None
         for key, val in _rx_cookie.findall(data):
-            if key.lower() in _cookie_propertys:
+            if key.lower() in _c_keys:
                 if ckey:
                     self[ckey][key] = _unquote(val)
             elif key[0] == '$':
@@ -65,11 +65,11 @@ def serialize_cookie_date(v):
 class Morsel(dict):
     __slots__ = ('name', 'value')
     def __init__(self, name, value):
-        assert name.lower() not in _cookie_propertys
+        assert name.lower() not in _c_keys
         assert not needs_quoting(name)
         self.name = name
         self.value = value
-        self.update(dict.fromkeys(_cookie_propertys, None))
+        self.update(dict.fromkeys(_c_keys, None))
 
     path = cookie_property('path')
     domain = cookie_property('domain')
@@ -81,18 +81,18 @@ class Morsel(dict):
 
     def __setitem__(self, k, v):
         k = k.lower()
-        if k in _cookie_propertys:
+        if k in _c_keys:
             dict.__setitem__(self, k, v)
 
     def __str__(self):
         result = []
         RA = result.append
         RA("%s=%s" % (self.name, _quote(self.value)))
-        for k in _cookie_valprops:
+        for k in _c_valkeys:
             v = self[k]
             if v:
                 assert isinstance(v, str), v
-                RA("%s=%s" % (_cookie_propertys[k], _quote(v)))
+                RA("%s=%s" % (_c_renames[k], _quote(v)))
         if self.secure:
             RA('secure')
         if self.httponly:
@@ -102,17 +102,16 @@ class Morsel(dict):
     def __repr__(self):
         return '<%s: %s=%s>' % (self.__class__.__name__, self.name, repr(self.value))
 
-_cookie_propertys = {
+_c_renames = {
     "expires" : "expires",
     "path" : "Path",
     "comment" : "Comment",
     "domain" : "Domain",
     "max-age" : "Max-Age",
-    "secure" : "secure",
-    "httponly" : "HttpOnly",
 }
-_cookie_valprops = list(set(_cookie_propertys) - set(['secure', 'httponly']))
-_cookie_valprops.sort()
+_c_valkeys = sorted(_c_renames)
+_c_keys = set(_c_renames)
+_c_keys.update(['secure', 'httponly'])
 
 
 
