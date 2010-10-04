@@ -6,12 +6,12 @@ from cStringIO import StringIO
 from datetime import datetime, date, timedelta
 
 from webob.headers import ResponseHeaders
-from webob.statusreasons import status_reasons
 from webob.cachecontrol import CacheControl, serialize_cache_control
 
 from webob.descriptors import *
 from webob.datetime_utils import *
 from webob.cookies import Cookie, Morsel
+from webob.util import status_reasons
 
 __all__ = ['Response']
 
