@@ -269,3 +269,7 @@ def equal_req(req):
         del headers2['Content-Length']
     eq_(headers1, headers2)
     eq_(req.body, req2.body)
+
+def test_req_kw_none_val():
+    assert 'content-length' not in Request({}, content_length=None).headers
+    assert 'content-type' not in Request({}, content_type=None).headers

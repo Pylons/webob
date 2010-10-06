@@ -58,8 +58,7 @@ class BaseRequest(object):
             my_class = self.__class__
             for name, value in kw.iteritems():
                 if not hasattr(my_class, name):
-                    raise TypeError(
-                        "Unexpected keyword: %s=%r" % (name, value))
+                    raise TypeError("Unexpected keyword: %s=%r" % (name, value))
                 setattr(self, name, value)
 
     def _body_file__get(self):
@@ -115,6 +114,9 @@ class BaseRequest(object):
         """
         return self.environ.get('CONTENT_TYPE', '').split(';', 1)[0]
     def _content_type__set(self, value):
+        if value is None:
+            del self.content_type
+            return
         value = str(value)
         if ';' not in value:
             content_type = self.environ.get('CONTENT_TYPE', '')

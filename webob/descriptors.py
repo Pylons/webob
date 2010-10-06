@@ -21,14 +21,20 @@ def environ_getter(key, default=_not_given, rfc_section=None):
     if default is _not_given:
         def fget(req):
             return req.environ[key]
+        def fset(req, val):
+            req.environ[key] = val
         fdel = None
     else:
         def fget(req):
             return req.environ.get(key, default)
+        def fset(req, val):
+            if val is None:
+                if key in req.environ:
+                    del req.environ[key]
+            else:
+                req.environ[key] = val
         def fdel(req):
             del req.environ[key]
-    def fset(req, val):
-        req.environ[key] = val
     return property(fget, fset, fdel, doc=doc)
 
 
@@ -52,8 +58,7 @@ def header_getter(header, rfc_section):
         fdel(r)
         if value is not None:
             if isinstance(value, unicode):
-                # This is the standard encoding for headers:
-                value = value.encode('ISO-8859-1')
+                value = value.encode('ISO-8859-1') # standard encoding for headers
             r._headerlist.append((header, value))
 
     def fdel(r):
