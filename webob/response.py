@@ -619,6 +619,8 @@ class Response(object):
         elif max_age is None and expires is not None:
             max_age = expires - datetime.utcnow()
 
+        if isinstance(value, unicode):
+            value = value.encode('utf8')
         morsel = Morsel(key, value)
         data=dict(
             path=path,

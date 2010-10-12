@@ -67,7 +67,11 @@ class Morsel(dict):
     def __init__(self, name, value):
         assert name.lower() not in _c_keys
         assert not needs_quoting(name)
+        assert isinstance(value, str)
         self.name = name
+        # we can encode the unicode value as UTF-8 here,
+        # but then the decoded cookie would still be str,
+        # so we don't do that
         self.value = value
         self.update(dict.fromkeys(_c_keys, None))
 
@@ -170,7 +174,7 @@ months = (None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 
 
 def needs_quoting(v):
-    return string.translate(v, _trans_noop, _no_escape_chars)
+    return v.translate(_trans_noop, _no_escape_chars)
 
 def _quote(v):
     if needs_quoting(v):

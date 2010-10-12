@@ -39,6 +39,7 @@ def test_response():
     res.decode_content()
     assert res.content_encoding is None
     assert res.body == 'a body'
+    res.set_cookie('x', u'foo') # test unicode value
 
 def test_response_copy():
     r = Response(app_iter=iter(['a']))
