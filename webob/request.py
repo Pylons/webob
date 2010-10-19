@@ -197,6 +197,7 @@ class BaseRequest(object):
 
     headers = property(_headers__get, _headers__set, doc=_headers__get.__doc__)
 
+    @property
     def host_url(self):
         """
         The URL through the host (no path)
@@ -223,29 +224,29 @@ class BaseRequest(object):
         if port:
             url += ':%s' % port
         return url
-    host_url = property(host_url, doc=host_url.__doc__)
 
+    @property
     def application_url(self):
         """
         The URL including SCRIPT_NAME (no PATH_INFO or query string)
         """
         return self.host_url + urllib.quote(self.environ.get('SCRIPT_NAME', ''))
-    application_url = property(application_url, doc=application_url.__doc__)
 
+    @property
     def path_url(self):
         """
         The URL including SCRIPT_NAME and PATH_INFO, but not QUERY_STRING
         """
         return self.application_url + urllib.quote(self.environ.get('PATH_INFO', ''))
-    path_url = property(path_url, doc=path_url.__doc__)
 
+    @property
     def path(self):
         """
         The path of the request, without host or query string
         """
         return urllib.quote(self.script_name) + urllib.quote(self.path_info)
-    path = property(path, doc=path.__doc__)
 
+    @property
     def path_qs(self):
         """
         The path of the request, without host but with query string
@@ -255,8 +256,8 @@ class BaseRequest(object):
         if qs:
             path += '?' + qs
         return path
-    path_qs = property(path_qs, doc=path_qs.__doc__)
 
+    @property
     def url(self):
         """
         The full request URL, including QUERY_STRING
@@ -265,7 +266,7 @@ class BaseRequest(object):
         if self.environ.get('QUERY_STRING'):
             url += '?' + self.environ['QUERY_STRING']
         return url
-    url = property(url, doc=url.__doc__)
+
 
     def relative_url(self, other_url, to_application=False):
         """
@@ -395,6 +396,7 @@ class BaseRequest(object):
 
     urlargs = property(_urlargs__get, _urlargs__set, _urlargs__del, _urlargs__get.__doc__)
 
+    @property
     def is_xhr(self):
         """Returns a boolean if X-Requested-With is present and ``XMLHttpRequest``
 
@@ -403,7 +405,6 @@ class BaseRequest(object):
         (or you set the header yourself manually).  Currently
         Prototype and jQuery are known to set this header."""
         return self.environ.get('HTTP_X_REQUESTED_WITH', '') == 'XMLHttpRequest'
-    is_xhr = property(is_xhr, doc=is_xhr.__doc__)
 
     def _host__get(self):
         """Host name provided in HTTP_HOST, with fall-back to SERVER_NAME"""
@@ -461,6 +462,8 @@ class BaseRequest(object):
 
     body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
 
+
+    @property
     def str_POST(self):
         """
         Return a MultiDict containing all the variables from a form
@@ -506,11 +509,9 @@ class BaseRequest(object):
         env['webob._parsed_post_vars'] = (vars, self.body_file)
         return vars
 
-    str_POST = property(str_POST, doc=str_POST.__doc__)
 
-    str_postvars = deprecated_property(str_POST, 'str_postvars',
-                                       'use str_POST instead')
 
+    @property
     def POST(self):
         """
         Like ``.str_POST``, but may decode values and keys
@@ -521,11 +522,9 @@ class BaseRequest(object):
                                 decode_keys=self.decode_param_names)
         return vars
 
-    POST = property(POST, doc=POST.__doc__)
 
-    postvars = deprecated_property(POST, 'postvars',
-                                   'use POST instead')
 
+    @property
     def str_GET(self):
         """
         Return a MultiDict containing all the variables from the
@@ -546,17 +545,14 @@ class BaseRequest(object):
         env['webob._parsed_query_vars'] = (vars, source)
         return vars
 
-    str_GET = property(str_GET, doc=str_GET.__doc__)
-
-    str_queryvars = deprecated_property(str_GET, 'str_queryvars',
-                                        'use str_GET instead')
-
     def _update_get(self, vars, key=None, value=None):
         env = self.environ
         qs = urllib.urlencode(vars.items())
         env['QUERY_STRING'] = qs
         env['webob._parsed_query_vars'] = (vars, qs)
 
+
+    @property
     def GET(self):
         """
         Like ``.str_GET``, but may decode values and keys
@@ -567,11 +563,14 @@ class BaseRequest(object):
                                 decode_keys=self.decode_param_names)
         return vars
 
-    GET = property(GET, doc=GET.__doc__)
 
-    queryvars = deprecated_property(GET, 'queryvars',
-                                    'use GET instead')
+    str_postvars = deprecated_property(str_POST, 'str_postvars', 'use str_POST instead')
+    postvars = deprecated_property(POST, 'postvars', 'use POST instead')
+    str_queryvars = deprecated_property(str_GET, 'str_queryvars', 'use str_GET instead')
+    queryvars = deprecated_property(GET, 'queryvars', 'use GET instead')
 
+
+    @property
     def str_params(self):
         """
         A dictionary-like object containing both the parameters from
@@ -579,8 +578,8 @@ class BaseRequest(object):
         """
         return NestedMultiDict(self.str_GET, self.str_POST)
 
-    str_params = property(str_params, doc=str_params.__doc__)
 
+    @property
     def params(self):
         """
         Like ``.str_params``, but may decode values and keys
@@ -591,8 +590,8 @@ class BaseRequest(object):
                                   decode_keys=self.decode_param_names)
         return params
 
-    params = property(params, doc=params.__doc__)
 
+    @property
     def str_cookies(self):
         """
         Return a *plain* dictionary of cookies as found in the request.
@@ -614,8 +613,7 @@ class BaseRequest(object):
         env['webob._parsed_cookies'] = (vars, source)
         return vars
 
-    str_cookies = property(str_cookies, doc=str_cookies.__doc__)
-
+    @property
     def cookies(self):
         """
         Like ``.str_cookies``, but may decode values and keys
@@ -626,7 +624,6 @@ class BaseRequest(object):
                                 decode_keys=self.decode_param_names)
         return vars
 
-    cookies = property(cookies, doc=cookies.__doc__)
 
     def copy(self):
         """
