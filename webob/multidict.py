@@ -283,10 +283,12 @@ class UnicodeMultiDict(DictMixin):
             # decode FieldStorage's field name and filename
             value = copy.copy(value)
             if self.decode_keys:
-                value.name = value.name.decode(self.encoding, self.errors)
+                if not isinstance(value.name, unicode):
+                    value.name = value.name.decode(self.encoding, self.errors)
             if value.filename:
-                value.filename = value.filename.decode(self.encoding,
-                                                       self.errors)
+                if not isinstance(value.filename, unicode):
+                    value.filename = value.filename.decode(self.encoding,
+                                                           self.errors)
         elif not isinstance(value, unicode):
             try:
                 value = value.decode(self.encoding, self.errors)

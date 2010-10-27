@@ -3,6 +3,16 @@ News
 
 .. contents::
 
+Post-1.0
+---------
+
+* If a UnicodeMultiDict was used as the ``multi`` argument of another
+  UnicodeMultiDict, and a ``cgi.FieldStorage`` with a ``filename``
+  with high-order characters was present in the underlying
+  UnicodeMultiDict, a ``UnicodeEncodeError`` would be raised when any
+  helper method caused the ``_decode_value`` method to be called,
+  because the method would try to decode an already decoded string.
+
 1.0
 ---
 

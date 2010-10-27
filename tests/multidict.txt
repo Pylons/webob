@@ -89,4 +89,17 @@
     >>> d
     MultiDict([('a', 5), ('f', 42), ('g', [4])])
     
-    
+    >>> import cgi
+    >>> fs = cgi.FieldStorage()
+    >>> fs.filename = '\xc3\xb8'
+    >>> plain = MultiDict(key='\xc3\xb8', fs=fs)
+    >>> ua = UnicodeMultiDict(multi=plain, encoding='utf-8')
+    >>> ua.getall('key')
+    [u'\xf8']
+    >>> ua.getall('fs')
+    [FieldStorage(None, u'\xf8', [])]
+    >>> ub = UnicodeMultiDict(multi=ua, encoding='utf-8')
+    >>> ub.getall('key')
+    [u'\xf8']
+    >>> ub.getall('fs')
+    [FieldStorage(None, u'\xf8', [])]
