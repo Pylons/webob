@@ -26,8 +26,10 @@ class Cookie(dict):
             return
         dict.__setitem__(self, key, Morsel(key, val))
 
-    def __str__(self):
-        return '; '.join(str(m) for _,m in sorted(self.items()))
+    def serialize(self, full=True):
+        return '; '.join(m.serialize(full) for _,m in sorted(self.items()))
+
+    __str__ = serialize
 
     def __repr__(self):
         return '<%s: [%s]>' % (self.__class__.__name__, ', '.join(map(repr, self.values())))
@@ -88,20 +90,23 @@ class Morsel(dict):
         if k in _c_keys:
             dict.__setitem__(self, k, v)
 
-    def __str__(self):
+    def serialize(self, full=True):
         result = []
-        RA = result.append
-        RA("%s=%s" % (self.name, _quote(self.value)))
-        for k in _c_valkeys:
-            v = self[k]
-            if v:
-                assert isinstance(v, str), v
-                RA("%s=%s" % (_c_renames[k], _quote(v)))
-        if self.secure:
-            RA('secure')
-        if self.httponly:
-            RA('HttpOnly')
+        add = result.append
+        add("%s=%s" % (self.name, _quote(self.value)))
+        if full:
+            for k in _c_valkeys:
+                v = self[k]
+                if v:
+                    assert isinstance(v, str), v
+                    add("%s=%s" % (_c_renames[k], _quote(v)))
+            if self.secure:
+                add('secure')
+            if self.httponly:
+                add('HttpOnly')
         return '; '.join(result)
+
+    __str__ = serialize
 
     def __repr__(self):
         return '<%s: %s=%s>' % (self.__class__.__name__, self.name, repr(self.value))
