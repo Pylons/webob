@@ -41,6 +41,12 @@ def test_response():
     assert res.body == 'a body'
     res.set_cookie('x', u'foo') # test unicode value
 
+def test_headers():
+    r = Response()
+    tval = 'application/x-test'
+    r.headers.update({'content-type': tval})
+    eq_(r.headers.getall('content-type'), [tval])
+
 def test_response_copy():
     r = Response(app_iter=iter(['a']))
     r2 = r.copy()
@@ -130,3 +136,4 @@ def equal_resp(resp):
     resp2 = Response.from_file(input)
     eq_(resp.body, resp2.body)
     eq_(resp.headers, resp2.headers)
+

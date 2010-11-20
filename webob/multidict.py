@@ -17,14 +17,13 @@ __all__ = ['MultiDict', 'UnicodeMultiDict', 'NestedMultiDict', 'NoVars',
 class MultiDict(DictMixin):
     """
         An ordered dictionary that can have multiple values for each key.
-        Adds the methods getall, getone, mixed, and add to the normal
+        Adds the methods getall, getone, mixed and extend and add to the normal
         dictionary interface.
     """
 
     def __init__(self, *args, **kw):
         if len(args) > 1:
-            raise TypeError(
-                "MultiDict can only be called with one positional argument")
+            raise TypeError("MultiDict can only be called with one positional argument")
         if args:
             if hasattr(args[0], 'iteritems'):
                 items = list(args[0].iteritems())
@@ -186,7 +185,7 @@ class MultiDict(DictMixin):
     def popitem(self):
         return self._items.pop()
 
-    def update(self, other=None, **kwargs):
+    def extend(self, other=None, **kwargs):
         if other is None:
             pass
         elif hasattr(other, 'items'):
