@@ -1,8 +1,4 @@
-import re
-import urlparse
-import zlib, struct
-from cStringIO import StringIO
-
+import sys, re, urlparse, zlib, struct
 from datetime import datetime, date, timedelta
 
 from webob.headers import ResponseHeaders
@@ -823,6 +819,7 @@ class Response(object):
             raise ValueError(
                 "I don't know how to decode the content %s" % content_encoding)
         from gzip import GzipFile
+        from webob.request import StringIO
         f = StringIO(self.body)
         gzip_f = GzipFile(filename='', mode='r', fileobj=f)
         self.body = gzip_f.read()
