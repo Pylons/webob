@@ -11,7 +11,11 @@ You can instantiate a request using ``Request.blank()``, to create a
 fresh environment dictionary with all the basic keys such a dictionary
 should have.
 
-    >>> from cStringIO import InputType
+    >>> import sys
+    >>> if sys.version >= '2.7':
+    ...     from io import BytesIO as InputType
+    ... else:
+    ...     from cStringIO import InputType
     >>> from dtopt import ELLIPSIS
     >>> from webob import Request, UTC
     >>> req = Request.blank('/')
@@ -140,8 +144,6 @@ You can also get access to the query string variables, of course:
     [u'e', u'f']
     >>> req.method = 'POST'
     >>> req.body = 'x=y&d=g'
-    >>> isinstance(req.body_file, InputType)
-    True
     >>> req.environ['CONTENT_LENGTH']
     '7'
     >>> req.params
@@ -333,12 +335,10 @@ this doesn't exercise it well):
     >>> req = Request.blank('/')
     >>> req.content_length = length
     >>> req.body_file = data
-    >>> isinstance(req.body_file, InputType)
-    True
     >>> len(req.body)
     10250
     >>> req.body_file
-    <...cStringIO... object at ...>
+    <...IO... object at ...>
     >>> req.body_file.tell()
     0
 

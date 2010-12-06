@@ -1,6 +1,9 @@
 import sys, tempfile, warnings
 import urllib, urlparse, cgi
-from cStringIO import StringIO
+if sys.version >= '2.7':
+    from io import BytesIO as StringIO
+else:
+    from cStringIO import StringIO
 
 from webob.headers import EnvironHeaders
 from webob.acceptparse import accept_property, Accept, MIMEAccept, NilAccept, MIMENilAccept, NoAccept
