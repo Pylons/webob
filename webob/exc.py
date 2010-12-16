@@ -1,6 +1,6 @@
 """
 HTTP Exception
-
+--------------
 This module processes Python exceptions that relate to HTTP exceptions
 by defining a set of exceptions, all subclasses of HTTPException.
 Each exception, in addition to being a Python exception that can be
@@ -63,6 +63,93 @@ Exception
         * 503 - HTTPServiceUnavailable
         * 504 - HTTPGatewayTimeout
         * 505 - HTTPVersionNotSupported
+
+Subclass usage notes:
+---------------------
+
+The HTTPException class is complicated by 4 factors:
+
+  1. The content given to the exception may either be plain-text or
+     as html-text.
+
+  2. The template may want to have string-substitutions taken from
+     the current ``environ`` or values from incoming headers. This
+     is especially troublesome due to case sensitivity.
+
+  3. The final output may either be text/plain or text/html
+     mime-type as requested by the client application.
+
+  4. Each exception has a default explanation, but those who
+     raise exceptions may want to provide additional detail.
+
+Subclass attributes and call parameters are designed to provide an easier path
+through the complications.
+
+Attributes:
+
+   ``code``
+       the HTTP status code for the exception
+
+   ``title``
+       remainder of the status line (stuff after the code)
+
+   ``explanation``
+       a plain-text explanation of the error message that is
+       not subject to environment or header substitutions;
+       it is accessible in the template via %(explanation)s
+
+   ``detail``
+       a plain-text message customization that is not subject
+       to environment or header substitutions; accessible in
+       the template via %(detail)s
+
+   ``body_template``
+       a content fragment (in HTML) used for environment and
+       header substitution; the default template includes both
+       the explanation and further detail provided in the
+       message
+
+Parameters:
+
+   ``detail``
+     a plain-text override of the default ``detail``
+
+   ``headers``
+     a list of (k,v) header pairs
+
+   ``comment``
+     a plain-text additional information which is
+     usually stripped/hidden for end-users
+
+   ``body_template``
+     a string.Template object containing a content fragment in HTML
+     that frames the explanation and further detail
+
+To override the template (which is HTML content) or the plain-text
+explanation, one must subclass the given exception; or customize it
+after it has been created.  This particular breakdown of a message
+into explanation, detail and template allows both the creation of
+plain-text and html messages for various clients as well as
+error-free substitution of environment variables and headers.
+
+
+The subclasses of :class:`~_HTTPMove` 
+(:class:`~HTTPMultipleChoices`, :class:`~HTTPMovedPermanently`,
+:class:`~HTTPFound`, :class:`~HTTPSeeOther`, :class:`~HTTPUseProxy` and
+:class:`~HTTPTemporaryRedirect`) are redirections that require a ``Location`` 
+field. Reflecting this, these subclasses have two additional keyword arguments:
+``location`` and ``add_slash``.
+
+Parameters:
+
+    ``location``
+      to set the location immediately
+
+    ``add_slash``
+      set to True to redirect to the same URL as the request, except with a 
+      ``/`` appended
+    
+Relative URLs in the location will be resolved to absolute.
 
 References:
 
@@ -289,6 +376,8 @@ class HTTPRedirection(WSGIHTTPException):
 class HTTPOk(WSGIHTTPException):
     """
     Base class for the 200's status code (successful responses)
+    
+    code: 200, title: OK
     """
     code = 200
     title = 'OK'
@@ -298,29 +387,59 @@ class HTTPOk(WSGIHTTPException):
 ############################################################
 
 class HTTPCreated(HTTPOk):
+    """
+    subclass of :class:`~HTTPOk`
+    
+    code: 201, title: Created
+    """
     code = 201
     title = 'Created'
 
 class HTTPAccepted(HTTPOk):
+    """
+    subclass of :class:`~HTTPOk`
+    
+    code: 202, title: Accepted
+    """
     code = 202
     title = 'Accepted'
     explanation = 'The request is accepted for processing.'
 
 class HTTPNonAuthoritativeInformation(HTTPOk):
+    """
+    subclass of :class:`~HTTPOk`
+    
+    code: 203, title: Non-Authoritative Information
+    """
     code = 203
     title = 'Non-Authoritative Information'
 
 class HTTPNoContent(HTTPOk):
+    """
+    subclass of :class:`~HTTPOk`
+    
+    code: 204, title: No Content
+    """
     code = 204
     title = 'No Content'
     empty_body = True
 
 class HTTPResetContent(HTTPOk):
+    """
+    subclass of :class:`~HTTPOk`
+    
+    code: 205, title: Reset Content
+    """
     code = 205
     title = 'Reset Content'
     empty_body = True
 
 class HTTPPartialContent(HTTPOk):
+    """
+    subclass of :class:`~HTTPOk`
+    
+    code: 206, title: Partial Content
+    """
     code = 206
     title = 'Partial Content'
 
@@ -377,14 +496,29 @@ ${html_comment}''')
             environ, start_response)
 
 class HTTPMultipleChoices(_HTTPMove):
+    """
+    subclass of :class:`~_HTTPMove`
+    
+    code: 300, title: Multiple Choices
+    """
     code = 300
     title = 'Multiple Choices'
 
 class HTTPMovedPermanently(_HTTPMove):
+    """
+    subclass of :class:`~_HTTPMove`
+    
+    code: 301, title: Moved Permanently
+    """
     code = 301
     title = 'Moved Permanently'
 
 class HTTPFound(_HTTPMove):
+    """
+    subclass of :class:`~_HTTPMove`
+    
+    code: 302, title: Found
+    """
     code = 302
     title = 'Found'
     explanation = 'The resource was found at'
@@ -392,16 +526,31 @@ class HTTPFound(_HTTPMove):
 # This one is safe after a POST (the redirected location will be
 # retrieved with GET):
 class HTTPSeeOther(_HTTPMove):
+    """
+    subclass of :class:`~_HTTPMove`
+    
+    code: 303, title: See Other
+    """
     code = 303
     title = 'See Other'
 
 class HTTPNotModified(HTTPRedirection):
+    """
+    subclass of :class:`~HTTPRedirection`
+    
+    code: 304, title: Not Modified
+    """
     # FIXME: this should include a date or etag header
     code = 304
     title = 'Not Modified'
     empty_body = True
 
 class HTTPUseProxy(_HTTPMove):
+    """
+    subclass of :class:`~_HTTPMove`
+    
+    code: 305, title: Use Proxy
+    """
     # Not a move, but looks a little like one
     code = 305
     title = 'Use Proxy'
@@ -409,6 +558,11 @@ class HTTPUseProxy(_HTTPMove):
         'The resource must be accessed through a proxy located at')
 
 class HTTPTemporaryRedirect(_HTTPMove):
+    """
+    subclass of :class:`~_HTTPMove`
+    
+    code: 307, title: Temporary Redirect
+    """
     code = 307
     title = 'Temporary Redirect'
 
@@ -434,6 +588,11 @@ class HTTPBadRequest(HTTPClientError):
     pass
 
 class HTTPUnauthorized(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 401, title: Unauthorized
+    """
     code = 401
     title = 'Unauthorized'
     explanation = (
@@ -443,21 +602,41 @@ class HTTPUnauthorized(HTTPClientError):
         'does not understand how to supply the credentials required.\r\n')
 
 class HTTPPaymentRequired(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 402, title: Payment Required
+    """
     code = 402
     title = 'Payment Required'
     explanation = ('Access was denied for financial reasons.')
 
 class HTTPForbidden(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 403, title: Forbidden
+    """
     code = 403
     title = 'Forbidden'
     explanation = ('Access was denied to this resource.')
 
 class HTTPNotFound(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 404, title: Not Found
+    """
     code = 404
     title = 'Not Found'
     explanation = ('The resource could not be found.')
 
 class HTTPMethodNotAllowed(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 405, title: Method Not Allowed
+    """
     code = 405
     title = 'Method Not Allowed'
     # override template since we need an environment variable
@@ -466,6 +645,11 @@ The method ${REQUEST_METHOD} is not allowed for this resource. <br /><br />
 ${detail}''')
 
 class HTTPNotAcceptable(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 406, title: Not Acceptable
+    """
     code = 406
     title = 'Not Acceptable'
     # override template since we need an environment variable
@@ -475,49 +659,94 @@ The resource could not be generated that was acceptable to your browser
 ${detail}''')
 
 class HTTPProxyAuthenticationRequired(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 407, title: Proxy Authentication Required
+    """
     code = 407
     title = 'Proxy Authentication Required'
     explanation = ('Authentication with a local proxy is needed.')
 
 class HTTPRequestTimeout(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 408, title: Request Timeout
+    """
     code = 408
     title = 'Request Timeout'
     explanation = ('The server has waited too long for the request to '
                    'be sent by the client.')
 
 class HTTPConflict(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 409, title: Conflict
+    """
     code = 409
     title = 'Conflict'
     explanation = ('There was a conflict when trying to complete '
                    'your request.')
 
 class HTTPGone(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 410, title: Gone
+    """
     code = 410
     title = 'Gone'
     explanation = ('This resource is no longer available.  No forwarding '
                    'address is given.')
 
 class HTTPLengthRequired(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 411, title: Length Required
+    """
     code = 411
     title = 'Length Required'
     explanation = ('Content-Length header required.')
 
 class HTTPPreconditionFailed(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 412, title: Precondition Failed
+    """
     code = 412
     title = 'Precondition Failed'
     explanation = ('Request precondition failed.')
 
 class HTTPRequestEntityTooLarge(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 413, title: Request Entity Too Large
+    """
     code = 413
     title = 'Request Entity Too Large'
     explanation = ('The body of your request was too large for this server.')
 
 class HTTPRequestURITooLong(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 414, title: Request-URI Too Long
+    """
     code = 414
     title = 'Request-URI Too Long'
     explanation = ('The request URI was too long for this server.')
 
 class HTTPUnsupportedMediaType(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 415, title: Unsupported Media Type
+    """
     code = 415
     title = 'Unsupported Media Type'
     # override template since we need an environment variable
@@ -527,28 +756,53 @@ The request media type ${CONTENT_TYPE} is not supported by this server.
 ${detail}''')
 
 class HTTPRequestRangeNotSatisfiable(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 416, title: Request Range Not Satisfiable
+    """
     code = 416
     title = 'Request Range Not Satisfiable'
     explanation = ('The Range requested is not available.')
 
 class HTTPExpectationFailed(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 417, title: Expectation Failed
+    """
     code = 417
     title = 'Expectation Failed'
     explanation = ('Expectation failed.')
 
 class HTTPUnprocessableEntity(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 422, title: Unprocessable Entity
+    """
     ## Note: from WebDAV
     code = 422
     title = 'Unprocessable Entity'
     explanation = 'Unable to process the contained instructions'
 
 class HTTPLocked(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 423, title: Locked
+    """
     ## Note: from WebDAV
     code = 423
     title = 'Locked'
     explanation = ('The resource is locked')
 
 class HTTPFailedDependency(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+    
+    code: 424, title: Failed Dependency
+    """
     ## Note: from WebDAV
     code = 424
     title = 'Failed Dependency'
@@ -585,6 +839,11 @@ class HTTPInternalServerError(HTTPServerError):
     pass
 
 class HTTPNotImplemented(HTTPServerError):
+    """
+    subclass of :class:`~HTTPServerError`
+    
+    code: 501, title: Not Implemented
+    """
     code = 501
     title = 'Not Implemented'
     template = Template('''
@@ -592,27 +851,52 @@ The request method ${REQUEST_METHOD} is not implemented for this server. <br /><
 ${detail}''')
 
 class HTTPBadGateway(HTTPServerError):
+    """
+    subclass of :class:`~HTTPServerError`
+    
+    code: 502, title: Bad Gateway
+    """
     code = 502
     title = 'Bad Gateway'
     explanation = ('Bad gateway.')
 
 class HTTPServiceUnavailable(HTTPServerError):
+    """
+    subclass of :class:`~HTTPServerError`
+    
+    code: 503, title: Service Unavailable
+    """
     code = 503
     title = 'Service Unavailable'
     explanation = ('The server is currently unavailable. '
                    'Please try again at a later time.')
 
 class HTTPGatewayTimeout(HTTPServerError):
+    """
+    subclass of :class:`~HTTPServerError`
+    
+    code: 504, title: Gateway Timeout
+    """
     code = 504
     title = 'Gateway Timeout'
     explanation = ('The gateway has timed out.')
 
 class HTTPVersionNotSupported(HTTPServerError):
+    """
+    subclass of :class:`~HTTPServerError`
+    
+    code: 505, title: HTTP Version Not Supported
+    """
     code = 505
     title = 'HTTP Version Not Supported'
     explanation = ('The HTTP version is not supported.')
 
 class HTTPInsufficientStorage(HTTPServerError):
+    """
+    subclass of :class:`~HTTPServerError`
+    
+    code: 507, title: Insufficient Storage
+    """
     code = 507
     title = 'Insufficient Storage'
     explanation = ('There was not enough space to save the resource')
