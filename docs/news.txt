@@ -13,6 +13,10 @@ Post-1.0
   helper method caused the ``_decode_value`` method to be called,
   because the method would try to decode an already decoded string.
 
+* Fix tests to pass under Python 2.4.
+
+* Add descriptive docstrings to each exception in ``webob.exc``.
+
 1.0
 ---
 
