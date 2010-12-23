@@ -389,6 +389,9 @@ class HTTPOk(WSGIHTTPException):
 class HTTPCreated(HTTPOk):
     """
     subclass of :class:`~HTTPOk`
+
+    This indicates that request has been fulfilled and resulted in a new
+    resource being created.
     
     code: 201, title: Created
     """
@@ -398,7 +401,10 @@ class HTTPCreated(HTTPOk):
 class HTTPAccepted(HTTPOk):
     """
     subclass of :class:`~HTTPOk`
-    
+
+    This indicates that the request has been accepted for processing, but the
+    processing has not been completed.
+
     code: 202, title: Accepted
     """
     code = 202
@@ -408,7 +414,11 @@ class HTTPAccepted(HTTPOk):
 class HTTPNonAuthoritativeInformation(HTTPOk):
     """
     subclass of :class:`~HTTPOk`
-    
+
+    This indicates that the returned metainformation in the entity-header is
+    not the definitive set as available from the origin server, but is
+    gathered from a local or a third-party copy.
+
     code: 203, title: Non-Authoritative Information
     """
     code = 203
@@ -417,6 +427,10 @@ class HTTPNonAuthoritativeInformation(HTTPOk):
 class HTTPNoContent(HTTPOk):
     """
     subclass of :class:`~HTTPOk`
+
+    This indicates that the server has fulfilled the request but does
+    not need to return an entity-body, and might want to return updated
+    metainformation.
     
     code: 204, title: No Content
     """
@@ -427,6 +441,10 @@ class HTTPNoContent(HTTPOk):
 class HTTPResetContent(HTTPOk):
     """
     subclass of :class:`~HTTPOk`
+
+    This indicates that the the server has fulfilled the request and
+    the user agent SHOULD reset the document view which caused the
+    request to be sent.
     
     code: 205, title: Reset Content
     """
@@ -437,6 +455,9 @@ class HTTPResetContent(HTTPOk):
 class HTTPPartialContent(HTTPOk):
     """
     subclass of :class:`~HTTPOk`
+
+    This indicates that the server has fulfilled the partial GET
+    request for the resource.
     
     code: 206, title: Partial Content
     """
@@ -498,6 +519,12 @@ ${html_comment}''')
 class HTTPMultipleChoices(_HTTPMove):
     """
     subclass of :class:`~_HTTPMove`
+
+    This indicates that the requested resource corresponds to any one
+    of a set of representations, each with its own specific location,
+    and agent-driven negotiation information is being provided so that
+    the user can select a preferred representation and redirect its
+    request to that location.
     
     code: 300, title: Multiple Choices
     """
@@ -507,7 +534,11 @@ class HTTPMultipleChoices(_HTTPMove):
 class HTTPMovedPermanently(_HTTPMove):
     """
     subclass of :class:`~_HTTPMove`
-    
+
+    This indicates that the requested resource has been assigned a new
+    permanent URI and any future references to this resource SHOULD use
+    one of the returned URIs.
+
     code: 301, title: Moved Permanently
     """
     code = 301
@@ -516,6 +547,9 @@ class HTTPMovedPermanently(_HTTPMove):
 class HTTPFound(_HTTPMove):
     """
     subclass of :class:`~_HTTPMove`
+
+    This indicates that the requested resource resides temporarily under
+    a different URI.
     
     code: 302, title: Found
     """
@@ -528,6 +562,10 @@ class HTTPFound(_HTTPMove):
 class HTTPSeeOther(_HTTPMove):
     """
     subclass of :class:`~_HTTPMove`
+
+    This indicates that the response to the request can be found under
+    a different URI and SHOULD be retrieved using a GET method on that
+    resource.
     
     code: 303, title: See Other
     """
@@ -537,7 +575,11 @@ class HTTPSeeOther(_HTTPMove):
 class HTTPNotModified(HTTPRedirection):
     """
     subclass of :class:`~HTTPRedirection`
-    
+
+    This indicates that if the client has performed a conditional GET
+    request and access is allowed, but the document has not been
+    modified, the server SHOULD respond with this status code.
+
     code: 304, title: Not Modified
     """
     # FIXME: this should include a date or etag header
@@ -548,6 +590,9 @@ class HTTPNotModified(HTTPRedirection):
 class HTTPUseProxy(_HTTPMove):
     """
     subclass of :class:`~_HTTPMove`
+
+    This indicates that the requested resource MUST be accessed through
+    the proxy given by the Location field.
     
     code: 305, title: Use Proxy
     """
@@ -560,6 +605,9 @@ class HTTPUseProxy(_HTTPMove):
 class HTTPTemporaryRedirect(_HTTPMove):
     """
     subclass of :class:`~_HTTPMove`
+
+    This indicates that the requested resource resides temporarily
+    under a different URI.
     
     code: 307, title: Temporary Redirect
     """
@@ -590,6 +638,8 @@ class HTTPBadRequest(HTTPClientError):
 class HTTPUnauthorized(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
+
+    This indicates that the request requires user authentication.
     
     code: 401, title: Unauthorized
     """
@@ -614,7 +664,10 @@ class HTTPPaymentRequired(HTTPClientError):
 class HTTPForbidden(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
-    
+
+    This indicates that the server understood the request, but is
+    refusing to fulfill it.
+
     code: 403, title: Forbidden
     """
     code = 403
@@ -624,6 +677,9 @@ class HTTPForbidden(HTTPClientError):
 class HTTPNotFound(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
+
+    This indicates that the server did not find anything matching the
+    Request-URI.
     
     code: 404, title: Not Found
     """
@@ -634,7 +690,10 @@ class HTTPNotFound(HTTPClientError):
 class HTTPMethodNotAllowed(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
-    
+
+    This indicates that the method specified in the Request-Line is
+    not allowed for the resource identified by the Request-URI.
+
     code: 405, title: Method Not Allowed
     """
     code = 405
@@ -647,6 +706,11 @@ ${detail}''')
 class HTTPNotAcceptable(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
+
+    This indicates the resource identified by the request is only
+    capable of generating response entities which have content
+    characteristics not acceptable according to the accept headers
+    sent in the request.
     
     code: 406, title: Not Acceptable
     """
@@ -661,6 +725,9 @@ ${detail}''')
 class HTTPProxyAuthenticationRequired(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
+
+    This is similar to 401, but indicates that the client must first
+    authenticate itself with the proxy.
     
     code: 407, title: Proxy Authentication Required
     """
@@ -671,6 +738,9 @@ class HTTPProxyAuthenticationRequired(HTTPClientError):
 class HTTPRequestTimeout(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
+
+    This indicates that the client did not produce a request within
+    the time that the server was prepared to wait.
     
     code: 408, title: Request Timeout
     """
@@ -682,6 +752,9 @@ class HTTPRequestTimeout(HTTPClientError):
 class HTTPConflict(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
+
+    This indicates that the request could not be completed due to a
+    conflict with the current state of the resource.
     
     code: 409, title: Conflict
     """
@@ -693,6 +766,9 @@ class HTTPConflict(HTTPClientError):
 class HTTPGone(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
+
+    This indicates that the requested resource is no longer available
+    at the server and no forwarding address is known.
     
     code: 410, title: Gone
     """
@@ -704,6 +780,9 @@ class HTTPGone(HTTPClientError):
 class HTTPLengthRequired(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
+
+    This indicates that the the server refuses to accept the request
+    without a defined Content-Length.
     
     code: 411, title: Length Required
     """
@@ -714,6 +793,10 @@ class HTTPLengthRequired(HTTPClientError):
 class HTTPPreconditionFailed(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
+
+    This indicates that the precondition given in one or more of the
+    request-header fields evaluated to false when it was tested on the
+    server.
     
     code: 412, title: Precondition Failed
     """
@@ -724,7 +807,11 @@ class HTTPPreconditionFailed(HTTPClientError):
 class HTTPRequestEntityTooLarge(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
-    
+
+    This indicates that the server is refusing to process a request
+    because the request entity is larger than the server is willing or
+    able to process.
+
     code: 413, title: Request Entity Too Large
     """
     code = 413
@@ -734,6 +821,10 @@ class HTTPRequestEntityTooLarge(HTTPClientError):
 class HTTPRequestURITooLong(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
+
+    This indicates that the server is refusing to service the request
+    because the Request-URI is longer than the server is willing to
+    interpret.
     
     code: 414, title: Request-URI Too Long
     """
@@ -744,6 +835,10 @@ class HTTPRequestURITooLong(HTTPClientError):
 class HTTPUnsupportedMediaType(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
+
+    This indicates that the server is refusing to service the request
+    because the entity of the request is in a format not supported by
+    the requested resource for the requested method.
     
     code: 415, title: Unsupported Media Type
     """
@@ -758,6 +853,12 @@ ${detail}''')
 class HTTPRequestRangeNotSatisfiable(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
+
+    The server SHOULD return a response with this status code if a
+    request included a Range request-header field, and none of the
+    range-specifier values in this field overlap the current extent
+    of the selected resource, and the request did not include an
+    If-Range request-header field.
     
     code: 416, title: Request Range Not Satisfiable
     """
@@ -768,6 +869,9 @@ class HTTPRequestRangeNotSatisfiable(HTTPClientError):
 class HTTPExpectationFailed(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
+
+    This indidcates that the expectation given in an Expect
+    request-header field could not be met by this server.
     
     code: 417, title: Expectation Failed
     """
@@ -778,6 +882,9 @@ class HTTPExpectationFailed(HTTPClientError):
 class HTTPUnprocessableEntity(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
+
+    This indicates that the server is unable to process the contained
+    instructions. Only for WebDAV.
     
     code: 422, title: Unprocessable Entity
     """
@@ -789,6 +896,8 @@ class HTTPUnprocessableEntity(HTTPClientError):
 class HTTPLocked(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
+
+    This indicates that the resource is locked. Only for WebDAV
     
     code: 423, title: Locked
     """
@@ -800,6 +909,10 @@ class HTTPLocked(HTTPClientError):
 class HTTPFailedDependency(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
+
+    This indicates that the method could not be performed because the
+    requested action depended on another action and that action failed.
+    Only for WebDAV.
     
     code: 424, title: Failed Dependency
     """
@@ -841,6 +954,9 @@ class HTTPInternalServerError(HTTPServerError):
 class HTTPNotImplemented(HTTPServerError):
     """
     subclass of :class:`~HTTPServerError`
+
+    This indicates that the server does not support the functionality
+    required to fulfill the request.
     
     code: 501, title: Not Implemented
     """
@@ -853,6 +969,10 @@ ${detail}''')
 class HTTPBadGateway(HTTPServerError):
     """
     subclass of :class:`~HTTPServerError`
+
+    This indicates that the server, while acting as a gateway or proxy,
+    received an invalid response from the upstream server it accessed
+    in attempting to fulfill the request.
     
     code: 502, title: Bad Gateway
     """
@@ -863,6 +983,9 @@ class HTTPBadGateway(HTTPServerError):
 class HTTPServiceUnavailable(HTTPServerError):
     """
     subclass of :class:`~HTTPServerError`
+
+    This indicates that the server is currently unable to handle the
+    request due to a temporary overloading or maintenance of the server.
     
     code: 503, title: Service Unavailable
     """
@@ -874,7 +997,12 @@ class HTTPServiceUnavailable(HTTPServerError):
 class HTTPGatewayTimeout(HTTPServerError):
     """
     subclass of :class:`~HTTPServerError`
-    
+
+    This indicates that the server, while acting as a gateway or proxy,
+    did not receive a timely response from the upstream server specified
+    by the URI (e.g. HTTP, FTP, LDAP) or some other auxiliary server
+    (e.g. DNS) it needed to access in attempting to complete the request.
+
     code: 504, title: Gateway Timeout
     """
     code = 504
@@ -884,7 +1012,11 @@ class HTTPGatewayTimeout(HTTPServerError):
 class HTTPVersionNotSupported(HTTPServerError):
     """
     subclass of :class:`~HTTPServerError`
-    
+
+    This indicates that the server does not support, or refuses to
+    support, the HTTP protocol version that was used in the request
+    message.
+
     code: 505, title: HTTP Version Not Supported
     """
     code = 505
@@ -894,6 +1026,9 @@ class HTTPVersionNotSupported(HTTPServerError):
 class HTTPInsufficientStorage(HTTPServerError):
     """
     subclass of :class:`~HTTPServerError`
+
+    This indicates that the server does not have enough space to save
+    the resource.
     
     code: 507, title: Insufficient Storage
     """
