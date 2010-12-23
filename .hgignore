@@ -10,3 +10,4 @@ dist/
 build/
 html_coverage/*
 .coverage
+*.egg
