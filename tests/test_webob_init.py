@@ -1,5 +1,3 @@
-# 32, 37
-
 from webob import html_escape
 from nose.tools import ok_
 
