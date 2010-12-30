@@ -1,5 +1,4 @@
 # -*- coding: UTF-8 -*-
-# 19, 96
 
 import calendar
 import datetime
