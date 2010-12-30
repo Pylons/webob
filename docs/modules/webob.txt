@@ -18,7 +18,7 @@ Request
 .. automodule:: webob.cachecontrol
 .. autoclass:: CacheControl
 
-.. automodule:: webob.datastruct
+.. automodule:: webob.headers
 .. autoclass:: EnvironHeaders
 
 .. automodule:: webob.etag
@@ -35,8 +35,8 @@ Response
 
 .. autoclass:: webob.cachecontrol.CacheControl
 
-.. automodule:: webob.headerdict
-.. autoclass:: HeaderDict
+.. automodule:: webob.headers
+.. autoclass:: ResponseHeaders
 
 
 Misc Functions
@@ -62,8 +62,8 @@ Misc Functions
 .. autoclass:: NestedMultiDict
 .. autoclass:: NoVars
 
-.. automodule:: webob.updatedict
-.. autoclass:: webob.updatedict.UpdateDict
+.. automodule:: webob.cachecontrol
+.. autoclass:: webob.cachecontrol.UpdateDict
 
 
 Descriptors

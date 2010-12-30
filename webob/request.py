@@ -1,16 +1,19 @@
 import sys, tempfile, warnings
 import urllib, urlparse, cgi
-from Cookie import BaseCookie
-from cStringIO import StringIO
+if sys.version >= '2.7':
+    from io import BytesIO as StringIO
+else:
+    from cStringIO import StringIO
 
-from webob.acceptparse import Accept, MIMEAccept, NilAccept, MIMENilAccept, NoAccept
-from webob.datastruct import EnvironHeaders
+from webob.headers import EnvironHeaders
+from webob.acceptparse import accept_property, Accept, MIMEAccept, NilAccept, MIMENilAccept, NoAccept
 from webob.multidict import TrackableMultiDict, MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
-from webob.cachecontrol import CacheControl
+from webob.cachecontrol import CacheControl, serialize_cache_control
+from webob.etag import etag_property, AnyETag, NoETag
 
 from webob.descriptors import *
 from webob.datetime_utils import *
-from webob import descriptors, datetime_utils
+from webob.cookies import Cookie
 
 __all__ = ['BaseRequest', 'Request']
 
@@ -25,10 +28,8 @@ class _NoDefault:
 NoDefault = _NoDefault()
 
 
-
 class BaseRequest(object):
     ## Options:
-    default_charset = None
     unicode_errors = 'strict'
     decode_param_names = False
     ## The limit after which request bodies should be stored on disk
@@ -46,15 +47,12 @@ class BaseRequest(object):
         d = self.__dict__
         d['environ'] = environ
         if charset is not NoDefault:
-            d['default_charset'] = charset
-        elif hasattr(self.__class__, 'charset') and isinstance(self.__class__.charset, str):
-            # This is here for backward compatibility; default_charset
-            # used to be named simply charset:
-            warnings.warn(
-                'The class attribute charset is deprecated; use default_charset instead',
-                DeprecationWarning)
-            self.__class__.default_charset = self.__class__.charset
-            del self.__class__.charset
+            self.charset = charset
+        cls = self.__class__
+        if (isinstance(getattr(cls, 'charset', None), str)
+            or hasattr(cls, 'default_charset')
+        ):
+            raise DeprecationWarning("The class attr [default_]charset is deprecated")
         if unicode_errors is not NoDefault:
             d['unicode_errors'] = unicode_errors
         if decode_param_names is not NoDefault:
@@ -63,8 +61,7 @@ class BaseRequest(object):
             my_class = self.__class__
             for name, value in kw.iteritems():
                 if not hasattr(my_class, name):
-                    raise TypeError(
-                        "Unexpected keyword: %s=%r" % (name, value))
+                    raise TypeError("Unexpected keyword: %s=%r" % (name, value))
                 setattr(self, name, value)
 
     def _body_file__get(self):
@@ -95,18 +92,18 @@ class BaseRequest(object):
     script_name = environ_getter('SCRIPT_NAME')
     path_info = environ_getter('PATH_INFO')
     content_length = converter(
-        environ_getter('CONTENT_LENGTH', rfc_section='14.13'),
-        descriptors._parse_int_safe, descriptors._serialize_int, 'int')
-    remote_user = environ_getter('REMOTE_USER', default=None)
-    remote_addr = environ_getter('REMOTE_ADDR', default=None)
-    query_string = environ_getter('QUERY_STRING')
+        environ_getter('CONTENT_LENGTH', None, '14.13'),
+        parse_int_safe, serialize_int, 'int')
+    remote_user = environ_getter('REMOTE_USER', None)
+    remote_addr = environ_getter('REMOTE_ADDR', None)
+    query_string = environ_getter('QUERY_STRING', '')
     server_name = environ_getter('SERVER_NAME')
     server_port = converter(
         environ_getter('SERVER_PORT'),
-        descriptors._parse_int, descriptors._serialize_int, 'int')
+        parse_int, serialize_int, 'int')
 
-    uscript_name = UnicodePathProperty('SCRIPT_NAME')
-    upath_info = UnicodePathProperty('PATH_INFO')
+    uscript_name = upath_property('SCRIPT_NAME')
+    upath_info = upath_property('PATH_INFO')
 
 
     def _content_type__get(self):
@@ -120,6 +117,9 @@ class BaseRequest(object):
         """
         return self.environ.get('CONTENT_TYPE', '').split(';', 1)[0]
     def _content_type__set(self, value):
+        if value is None:
+            del self.content_type
+            return
         value = str(value)
         if ';' not in value:
             content_type = self.environ.get('CONTENT_TYPE', '')
@@ -157,7 +157,7 @@ class BaseRequest(object):
         if charset_match:
             result = charset_match.group(1).strip('"').strip()
         else:
-            result = self.default_charset
+            result = 'UTF-8'
         self._charset_cache = (content_type, result)
         return result
     def _charset__set(self, charset):
@@ -200,6 +200,7 @@ class BaseRequest(object):
 
     headers = property(_headers__get, _headers__set, doc=_headers__get.__doc__)
 
+    @property
     def host_url(self):
         """
         The URL through the host (no path)
@@ -226,29 +227,29 @@ class BaseRequest(object):
         if port:
             url += ':%s' % port
         return url
-    host_url = property(host_url, doc=host_url.__doc__)
 
+    @property
     def application_url(self):
         """
         The URL including SCRIPT_NAME (no PATH_INFO or query string)
         """
         return self.host_url + urllib.quote(self.environ.get('SCRIPT_NAME', ''))
-    application_url = property(application_url, doc=application_url.__doc__)
 
+    @property
     def path_url(self):
         """
         The URL including SCRIPT_NAME and PATH_INFO, but not QUERY_STRING
         """
         return self.application_url + urllib.quote(self.environ.get('PATH_INFO', ''))
-    path_url = property(path_url, doc=path_url.__doc__)
 
+    @property
     def path(self):
         """
         The path of the request, without host or query string
         """
         return urllib.quote(self.script_name) + urllib.quote(self.path_info)
-    path = property(path, doc=path.__doc__)
 
+    @property
     def path_qs(self):
         """
         The path of the request, without host but with query string
@@ -258,8 +259,8 @@ class BaseRequest(object):
         if qs:
             path += '?' + qs
         return path
-    path_qs = property(path_qs, doc=path_qs.__doc__)
 
+    @property
     def url(self):
         """
         The full request URL, including QUERY_STRING
@@ -268,7 +269,7 @@ class BaseRequest(object):
         if self.environ.get('QUERY_STRING'):
             url += '?' + self.environ['QUERY_STRING']
         return url
-    url = property(url, doc=url.__doc__)
+
 
     def relative_url(self, other_url, to_application=False):
         """
@@ -285,7 +286,7 @@ class BaseRequest(object):
             url = self.path_url
         return urlparse.urljoin(url, other_url)
 
-    def path_info_pop(self):
+    def path_info_pop(self, pattern=None):
         """
         'Pops' off the next segment of PATH_INFO, pushing it onto
         SCRIPT_NAME, and returning the popped segment.  Returns None if
@@ -293,22 +294,26 @@ class BaseRequest(object):
 
         Does not return ``''`` when there's an empty segment (like
         ``/path//path``); these segments are just ignored.
+
+        Optional ``pattern`` argument is a regexp to match the return value
+        before returning. If there is no match, no changes are made to the
+        request and None is returned.
         """
         path = self.path_info
         if not path:
             return None
+        slashes = ''
         while path.startswith('/'):
-            self.script_name += '/'
+            slashes += '/'
             path = path[1:]
-        if '/' not in path:
-            self.script_name += path
-            self.path_info = ''
-            return path
-        else:
-            segment, path = path.split('/', 1)
-            self.path_info = '/' + path
-            self.script_name += segment
-            return segment
+        idx = path.find('/')
+        if idx == -1:
+            idx = len(path)
+        r = path[:idx]
+        if pattern is None or re.match(pattern, r):
+            self.script_name += slashes + r
+            self.path_info = path[idx:]
+            return r
 
     def path_info_peek(self):
         """
@@ -394,6 +399,7 @@ class BaseRequest(object):
 
     urlargs = property(_urlargs__get, _urlargs__set, _urlargs__del, _urlargs__get.__doc__)
 
+    @property
     def is_xhr(self):
         """Returns a boolean if X-Requested-With is present and ``XMLHttpRequest``
 
@@ -402,7 +408,6 @@ class BaseRequest(object):
         (or you set the header yourself manually).  Currently
         Prototype and jQuery are known to set this header."""
         return self.environ.get('HTTP_X_REQUESTED_WITH', '') == 'XMLHttpRequest'
-    is_xhr = property(is_xhr, doc=is_xhr.__doc__)
 
     def _host__get(self):
         """Host name provided in HTTP_HOST, with fall-back to SERVER_NAME"""
@@ -460,6 +465,8 @@ class BaseRequest(object):
 
     body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
 
+
+    @property
     def str_POST(self):
         """
         Return a MultiDict containing all the variables from a form
@@ -505,27 +512,22 @@ class BaseRequest(object):
         env['webob._parsed_post_vars'] = (vars, self.body_file)
         return vars
 
-    str_POST = property(str_POST, doc=str_POST.__doc__)
 
-    str_postvars = deprecated_property(str_POST, 'str_postvars',
-                                       'use str_POST instead')
 
+    @property
     def POST(self):
         """
         Like ``.str_POST``, but may decode values and keys
         """
         vars = self.str_POST
-        if self.charset:
-            vars = UnicodeMultiDict(vars, encoding=self.charset,
-                                    errors=self.unicode_errors,
-                                    decode_keys=self.decode_param_names)
+        vars = UnicodeMultiDict(vars, encoding=self.charset,
+                                errors=self.unicode_errors,
+                                decode_keys=self.decode_param_names)
         return vars
 
-    POST = property(POST, doc=POST.__doc__)
 
-    postvars = deprecated_property(POST, 'postvars',
-                                   'use POST instead')
 
+    @property
     def str_GET(self):
         """
         Return a MultiDict containing all the variables from the
@@ -546,33 +548,32 @@ class BaseRequest(object):
         env['webob._parsed_query_vars'] = (vars, source)
         return vars
 
-    str_GET = property(str_GET, doc=str_GET.__doc__)
-
-    str_queryvars = deprecated_property(str_GET, 'str_queryvars',
-                                        'use str_GET instead')
-
     def _update_get(self, vars, key=None, value=None):
         env = self.environ
         qs = urllib.urlencode(vars.items())
         env['QUERY_STRING'] = qs
         env['webob._parsed_query_vars'] = (vars, qs)
 
+
+    @property
     def GET(self):
         """
         Like ``.str_GET``, but may decode values and keys
         """
         vars = self.str_GET
-        if self.charset:
-            vars = UnicodeMultiDict(vars, encoding=self.charset,
-                                    errors=self.unicode_errors,
-                                    decode_keys=self.decode_param_names)
+        vars = UnicodeMultiDict(vars, encoding=self.charset,
+                                errors=self.unicode_errors,
+                                decode_keys=self.decode_param_names)
         return vars
 
-    GET = property(GET, doc=GET.__doc__)
 
-    queryvars = deprecated_property(GET, 'queryvars',
-                                    'use GET instead')
+    str_postvars = deprecated_property(str_POST, 'str_postvars', 'use str_POST instead')
+    postvars = deprecated_property(POST, 'postvars', 'use POST instead')
+    str_queryvars = deprecated_property(str_GET, 'str_queryvars', 'use str_GET instead')
+    queryvars = deprecated_property(GET, 'queryvars', 'use GET instead')
 
+
+    @property
     def str_params(self):
         """
         A dictionary-like object containing both the parameters from
@@ -580,21 +581,20 @@ class BaseRequest(object):
         """
         return NestedMultiDict(self.str_GET, self.str_POST)
 
-    str_params = property(str_params, doc=str_params.__doc__)
 
+    @property
     def params(self):
         """
         Like ``.str_params``, but may decode values and keys
         """
         params = self.str_params
-        if self.charset:
-            params = UnicodeMultiDict(params, encoding=self.charset,
-                                      errors=self.unicode_errors,
-                                      decode_keys=self.decode_param_names)
+        params = UnicodeMultiDict(params, encoding=self.charset,
+                                  errors=self.unicode_errors,
+                                  decode_keys=self.decode_param_names)
         return params
 
-    params = property(params, doc=params.__doc__)
 
+    @property
     def str_cookies(self):
         """
         Return a *plain* dictionary of cookies as found in the request.
@@ -607,31 +607,26 @@ class BaseRequest(object):
                 return vars
         vars = {}
         if source:
-            cookies = BaseCookie()
-            cookies.load(source)
+            cookies = Cookie(source)
             for name in cookies:
                 value = cookies[name].value
-                unquote_match = QUOTES_RE.match(value)
-                if unquote_match is not None:
-                    value = unquote_match.group(1)
+                if value is None:
+                    continue
                 vars[name] = value
         env['webob._parsed_cookies'] = (vars, source)
         return vars
 
-    str_cookies = property(str_cookies, doc=str_cookies.__doc__)
-
+    @property
     def cookies(self):
         """
         Like ``.str_cookies``, but may decode values and keys
         """
         vars = self.str_cookies
-        if self.charset:
-            vars = UnicodeMultiDict(vars, encoding=self.charset,
-                                    errors=self.unicode_errors,
-                                    decode_keys=self.decode_param_names)
+        vars = UnicodeMultiDict(vars, encoding=self.charset,
+                                errors=self.unicode_errors,
+                                decode_keys=self.decode_param_names)
         return vars
 
-    cookies = property(cookies, doc=cookies.__doc__)
 
     def copy(self):
         """
@@ -739,29 +734,15 @@ class BaseRequest(object):
             if key in self.environ:
                 del self.environ[key]
 
-    accept = converter(
-        environ_getter('HTTP_ACCEPT', rfc_section='14.1'),
-        descriptors._parse_accept, descriptors._serialize_accept, 'MIME Accept',
-        converter_args=('Accept', MIMEAccept, MIMENilAccept))
 
-    accept_charset = converter(
-        environ_getter('HTTP_ACCEPT_CHARSET', rfc_section='14.2'),
-        descriptors._parse_accept, descriptors._serialize_accept, 'accept header',
-        converter_args=('Accept-Charset', Accept, NilAccept))
-
-    accept_encoding = converter(
-        environ_getter('HTTP_ACCEPT_ENCODING', rfc_section='14.3'),
-        descriptors._parse_accept, descriptors._serialize_accept, 'accept header',
-        converter_args=('Accept-Encoding', Accept, NoAccept))
-
-    accept_language = converter(
-        environ_getter('HTTP_ACCEPT_LANGUAGE', rfc_section='14.4'),
-        descriptors._parse_accept, descriptors._serialize_accept, 'accept header',
-        converter_args=('Accept-Language', Accept, NilAccept))
+    accept = accept_property('Accept', '14.1', MIMEAccept, MIMENilAccept, 'MIME Accept')
+    accept_charset = accept_property('Accept-Charset', '14.2')
+    accept_encoding = accept_property('Accept-Encoding', '14.3', NilClass=NoAccept)
+    accept_language = accept_property('Accept-Language', '14.4')
 
     authorization = converter(
-        header_getter('Authorization', rfc_section='14.8'),
-        descriptors.parse_auth, descriptors.serialize_auth,
+        environ_getter('HTTP_AUTHORIZATION', None, '14.8'),
+        parse_auth, serialize_auth,
     )
 
 
@@ -775,14 +756,13 @@ class BaseRequest(object):
         cache_header, cache_obj = env.get('webob._cache_control', (None, None))
         if cache_obj is not None and cache_header == value:
             return cache_obj
-        cache_obj = CacheControl.parse(value, type='request')
+        cache_obj = CacheControl.parse(value, updates_to=self._update_cache_control, type='request')
         env['webob._cache_control'] = (value, cache_obj)
         return cache_obj
 
     def _cache_control__set(self, value):
         env = self.environ
-        if not value:
-            value = ""
+        value = value or ''
         if isinstance(value, dict):
             value = CacheControl(value, type='request')
         if isinstance(value, CacheControl):
@@ -791,8 +771,7 @@ class BaseRequest(object):
             env['webob._cache_control'] = (str_value, value)
         else:
             env['HTTP_CACHE_CONTROL'] = str(value)
-            if 'webob._cache_control' in env:
-                del env['webob._cache_control']
+            env['webob._cache_control'] = (None, None)
 
     def _cache_control__del(self, value):
         env = self.environ
@@ -801,46 +780,37 @@ class BaseRequest(object):
         if 'webob._cache_control' in env:
             del env['webob._cache_control']
 
+    def _update_cache_control(self, prop_dict):
+        self.environ['HTTP_CACHE_CONTROL'] = serialize_cache_control(prop_dict)
+
     cache_control = property(_cache_control__get, _cache_control__set, _cache_control__del, doc=_cache_control__get.__doc__)
 
-    date = converter(
-        environ_getter('HTTP_DATE', rfc_section='14.8'),
-        datetime_utils._parse_date, datetime_utils._serialize_date, 'HTTP date')
 
-    if_match = converter(
-        environ_getter('HTTP_IF_MATCH', rfc_section='14.24'),
-        descriptors._parse_etag, descriptors._serialize_etag, 'ETag', converter_args=(True,))
+    if_match = etag_property('HTTP_IF_MATCH', AnyETag, '14.24')
+    if_none_match = etag_property('HTTP_IF_NONE_MATCH', NoETag, '14.26')
 
-    if_modified_since = converter(
-        environ_getter('HTTP_IF_MODIFIED_SINCE', rfc_section='14.25'),
-        datetime_utils._parse_date, datetime_utils._serialize_date, 'HTTP date')
-
-    if_none_match = converter(
-        environ_getter('HTTP_IF_NONE_MATCH', rfc_section='14.26'),
-        descriptors._parse_etag, descriptors._serialize_etag, 'ETag', converter_args=(False,))
-
+    date = converter_date(environ_getter('HTTP_DATE', None, '14.8'))
+    if_modified_since = converter_date(environ_getter('HTTP_IF_MODIFIED_SINCE', None, '14.25'))
+    if_unmodified_since = converter_date(environ_getter('HTTP_IF_UNMODIFIED_SINCE', None, '14.28'))
     if_range = converter(
-        environ_getter('HTTP_IF_RANGE', rfc_section='14.27'),
-        descriptors._parse_if_range, descriptors._serialize_if_range, 'IfRange object')
+        environ_getter('HTTP_IF_RANGE', None, '14.27'),
+        parse_if_range, serialize_if_range, 'IfRange object')
 
-    if_unmodified_since = converter(
-        environ_getter('HTTP_IF_UNMODIFIED_SINCE', rfc_section='14.28'),
-        datetime_utils._parse_date, datetime_utils._serialize_date, 'HTTP date')
 
     max_forwards = converter(
-        environ_getter('HTTP_MAX_FORWARDS', rfc_section='14.31'),
-        descriptors._parse_int, descriptors._serialize_int, 'int')
+        environ_getter('HTTP_MAX_FORWARDS', None, '14.31'),
+        parse_int, serialize_int, 'int')
 
-    pragma = environ_getter('HTTP_PRAGMA', rfc_section='14.32')
+    pragma = environ_getter('HTTP_PRAGMA', None, '14.32')
 
     range = converter(
-        environ_getter('HTTP_RANGE', rfc_section='14.35'),
-        descriptors._parse_range, descriptors._serialize_range, 'Range object')
+        environ_getter('HTTP_RANGE', None, '14.35'),
+        parse_range, serialize_range, 'Range object')
 
-    referer = environ_getter('HTTP_REFERER', rfc_section='14.36')
+    referer = environ_getter('HTTP_REFERER', None, '14.36')
     referrer = referer
 
-    user_agent = environ_getter('HTTP_USER_AGENT', rfc_section='14.43')
+    user_agent = environ_getter('HTTP_USER_AGENT', None, '14.43')
 
     def __repr__(self):
         try:
@@ -864,6 +834,53 @@ class BaseRequest(object):
             parts += ['', self.body]
         return '\n'.join(parts)
 
+    @classmethod
+    def from_file(cls, fp):
+        """Reads a request from a file-like object (it must implement
+        ``.read(size)`` and ``.readline()``).
+
+        It will read up to the end of the request, not the end of the
+        file.
+
+        This reads the request as represented by ``str(req)``; it may
+        not read every valid HTTP request properly."""
+        kw = {}
+        headers = kw['headers'] = {}
+        environ = kw['environ'] = {}
+        start_line = fp.readline()
+        try:
+            method, resource, http_version = start_line.split(None, 2)
+        except ValueError:
+            raise ValueError('Bad HTTP request line: %r' % start_line)
+        method = method.upper()
+        environ['SERVER_PROTOCOL'] = http_version
+        kw['method'] = method
+        kw['path'] = resource
+        last_header = None
+        while 1:
+            line = fp.readline()
+            line = line.strip()
+            if not line:
+                # end of headers
+                break
+            if line and (line.startswith(' ') or line.startswith('\t')):
+                # Continuation
+                assert last_header is not None
+                headers[last_header] = '%s, %s' % (headers[last_header], line.strip())
+            else:
+                try:
+                    last_header, value = line.split(':', 1)
+                except ValueError:
+                    raise ValueError('Bad header line: %r' % line)
+                last_header = last_header.lower()
+                if last_header in headers:
+                    headers[last_header] = '%s, %s' % (headers[last_header], value.strip())
+                else:
+                    headers[last_header] = value.strip()
+        content_length = int(headers.get('content-length', 0))
+        kw['body'] = fp.read(content_length)
+        return cls.blank(**kw)
+
     def call_application(self, application, catch_exc_info=False):
         """
         Call the given WSGI application, returning ``(status_string,
@@ -885,8 +902,7 @@ class BaseRequest(object):
             captured[:] = [status, headers, exc_info]
             return output.append
         app_iter = application(self.environ, start_response)
-        if (not captured
-            or output):
+        if output or not captured:
             try:
                 output.extend(app_iter)
             finally:
@@ -921,7 +937,7 @@ class BaseRequest(object):
             status=status, headerlist=list(headers), app_iter=app_iter,
             request=self)
 
-    #@classmethod
+    @classmethod
     def blank(cls, path, environ=None, base_url=None, headers=None, POST=None, **kw):
         """
         Create a blank request environ (and Request wrapper) with the
@@ -939,54 +955,8 @@ class BaseRequest(object):
         Any extra keyword will be passed to ``__init__`` (e.g.,
         ``decode_param_names``).
         """
-        if SCHEME_RE.search(path):
-            scheme, netloc, path, qs, fragment = urlparse.urlsplit(path)
-            if fragment:
-                raise TypeError(
-                    "Path cannot contain a fragment (%r)" % fragment)
-            if qs:
-                path += '?' + qs
-            if ':' not in netloc:
-                if scheme == 'http':
-                    netloc += ':80'
-                elif scheme == 'https':
-                    netloc += ':443'
-                else:
-                    raise TypeError("Unknown scheme: %r" % scheme)
-        else:
-            scheme = 'http'
-            netloc = 'localhost:80'
-        if path and '?' in path:
-            path_info, query_string = path.split('?', 1)
-            path_info = urllib.unquote(path_info)
-        else:
-            path_info = urllib.unquote(path)
-            query_string = ''
-        env = {
-            'REQUEST_METHOD': 'GET',
-            'SCRIPT_NAME': '',
-            'PATH_INFO': path_info or '',
-            'QUERY_STRING': query_string,
-            'SERVER_NAME': netloc.split(':')[0],
-            'SERVER_PORT': netloc.split(':')[1],
-            'HTTP_HOST': netloc,
-            'SERVER_PROTOCOL': 'HTTP/1.0',
-            'wsgi.version': (1, 0),
-            'wsgi.url_scheme': scheme,
-            'wsgi.input': StringIO(''),
-            'wsgi.errors': sys.stderr,
-            'wsgi.multithread': False,
-            'wsgi.multiprocess': False,
-            'wsgi.run_once': False,
-            }
-        if POST is not None:
-            env['REQUEST_METHOD'] = 'POST'
-            if hasattr(POST, 'items'):
-                POST = POST.items()
-            body = urllib.urlencode(POST)
-            env['wsgi.input'] = StringIO(body)
-            env['CONTENT_LENGTH'] = str(len(body))
-            env['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
+        env = environ_from_url(path)
+        environ_add_POST(env, POST)
         if base_url:
             scheme, netloc, path, query, fragment = urlparse.urlsplit(base_url)
             if query or fragment:
@@ -1017,8 +987,60 @@ class BaseRequest(object):
             obj.headers.update(headers)
         return obj
 
-    blank = classmethod(blank)
 
+def environ_from_url(path):
+    if SCHEME_RE.search(path):
+        scheme, netloc, path, qs, fragment = urlparse.urlsplit(path)
+        if fragment:
+            raise TypeError("Path cannot contain a fragment (%r)" % fragment)
+        if qs:
+            path += '?' + qs
+        if ':' not in netloc:
+            if scheme == 'http':
+                netloc += ':80'
+            elif scheme == 'https':
+                netloc += ':443'
+            else:
+                raise TypeError("Unknown scheme: %r" % scheme)
+    else:
+        scheme = 'http'
+        netloc = 'localhost:80'
+    if path and '?' in path:
+        path_info, query_string = path.split('?', 1)
+        path_info = urllib.unquote(path_info)
+    else:
+        path_info = urllib.unquote(path)
+        query_string = ''
+    env = {
+        'REQUEST_METHOD': 'GET',
+        'SCRIPT_NAME': '',
+        'PATH_INFO': path_info or '',
+        'QUERY_STRING': query_string,
+        'SERVER_NAME': netloc.split(':')[0],
+        'SERVER_PORT': netloc.split(':')[1],
+        'HTTP_HOST': netloc,
+        'SERVER_PROTOCOL': 'HTTP/1.0',
+        'wsgi.version': (1, 0),
+        'wsgi.url_scheme': scheme,
+        'wsgi.input': StringIO(''),
+        'wsgi.errors': sys.stderr,
+        'wsgi.multithread': False,
+        'wsgi.multiprocess': False,
+        'wsgi.run_once': False,
+    }
+    return env
+
+def environ_add_POST(env, data):
+    if data is None:
+        return
+    env['REQUEST_METHOD'] = 'POST'
+    if hasattr(data, 'items'):
+        data = data.items()
+    if not isinstance(data, str):
+        data = urllib.urlencode(data)
+    env['wsgi.input'] = StringIO(data)
+    env['CONTENT_LENGTH'] = str(len(data))
+    env['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
 
 
 class AdhocAttrMixin(object):
@@ -1058,20 +1080,16 @@ class Request(AdhocAttrMixin, BaseRequest):
 #########################
 
 
-
-
 def _cgi_FieldStorage__repr__patch(self):
     """ monkey patch for FieldStorage.__repr__
 
-    Unbelievely, the default __repr__ on FieldStorage reads
+    Unbelievably, the default __repr__ on FieldStorage reads
     the entire file content instead of being sane about it.
     This is a simple replacement that doesn't do that
     """
     if self.file:
-        return "FieldStorage(%r, %r)" % (
-                self.name, self.filename)
-    return "FieldStorage(%r, %r, %r)" % (
-             self.name, self.filename, self.value)
+        return "FieldStorage(%r, %r)" % (self.name, self.filename)
+    return "FieldStorage(%r, %r, %r)" % (self.name, self.filename, self.value)
 
 cgi.FieldStorage.__repr__ = _cgi_FieldStorage__repr__patch
 
@@ -1150,13 +1168,11 @@ class FakeCGIBody(object):
             self.__class__.__name__,
             abs(id(self)), inner)
 
-    #@classmethod
+    @classmethod
     def update_environ(cls, environ, vars):
         obj = cls(vars, environ.get('CONTENT_TYPE', 'application/x-www-form-urlencoded'))
         environ['CONTENT_LENGTH'] = '-1'
         environ['wsgi.input'] = obj
-
-    update_environ = classmethod(update_environ)
 
 
 def _encode_multipart(vars, content_type):

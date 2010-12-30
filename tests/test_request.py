@@ -1,6 +1,7 @@
 from webob import Request
 from webtest import TestApp
 from nose.tools import eq_, ok_, assert_raises
+from cStringIO import StringIO
 
 def simpleapp(environ, start_response):
     status = '200 OK'
@@ -10,13 +11,13 @@ def simpleapp(environ, start_response):
     request.remote_user = 'bob'
     return [
         'Hello world!\n',
-        'The get is %r' % request.GET,
-        ' and Val is %s\n' % request.GET.get('name'),
+        'The get is %r' % request.str_GET,
+        ' and Val is %s\n' % request.str_GET.get('name'),
         'The languages are: %s\n' % request.accept_language.best_matches('en-US'),
         'The accepttypes is: %s\n' % request.accept.best_match(['application/xml', 'text/html']),
-        'post is %r\n' % request.POST,
-        'params is %r\n' % request.params,
-        'cookies is %r\n' % request.cookies,
+        'post is %r\n' % request.str_POST,
+        'params is %r\n' % request.str_params,
+        'cookies is %r\n' % request.str_cookies,
         'body: %r\n' % request.body,
         'method: %s\n' % request.method,
         'remote_user: %r\n' % request.environ['REMOTE_USER'],
@@ -32,7 +33,6 @@ def simpleapp(environ, start_response):
 def test_gets():
     app = TestApp(simpleapp)
     res = app.get('/')
-    print res
     assert 'Hello' in res
     assert "get is GET([])" in res
     assert "post is <NoVars: Not a form request>" in res
@@ -47,10 +47,10 @@ def test_language_parsing():
     assert "The languages are: ['en-US']" in res
 
     res = app.get('/', headers={'Accept-Language':'da, en-gb;q=0.8, en;q=0.7'})
-    assert "languages are: ['da', 'en-gb', 'en', 'en-US']" in res
+    assert "languages are: ['da', 'en-gb', 'en-US']" in res
 
     res = app.get('/', headers={'Accept-Language':'en-gb;q=0.8, da, en;q=0.7'})
-    assert "languages are: ['da', 'en-gb', 'en', 'en-US']" in res
+    assert "languages are: ['da', 'en-gb', 'en-US']" in res
 
 def test_mime_parsing():
     app = TestApp(simpleapp)
@@ -149,6 +149,20 @@ def test_bad_cookie():
     assert req.cookies == {}
     req.headers['Cookie'] = '=foo'
     assert req.cookies == {}
+    req.headers['Cookie'] = 'dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cdc762809248d4beed; a=42'
+    eq_(req.cookies, {
+        'CP':           u'null*',
+        'PHPSESSID':    u'0a539d42abc001cdc762809248d4beed',
+        'a':            u'42',
+        'dismiss-top':  u'6'
+    })
+    req.headers['Cookie'] = 'fo234{=bar blub=Blah'
+    assert req.cookies == {'blub': 'Blah'}
+
+def test_cookie_quoting():
+    req = Request.blank('/')
+    req.headers['Cookie'] = 'foo="?foo"; Path=/'
+    assert req.cookies == {'foo': '?foo'}
 
 def test_params():
     req = Request.blank('/?a=1&b=2')
@@ -198,3 +212,64 @@ def test_copy():
     assert req.body_file is old_body_file
 
 
+def test_broken_clen_header():
+    # if the UA sends "content_length: ..' header (the name is wrong)
+    # it should not break the req.headers.items()
+    req = Request.blank('/')
+    req.environ['HTTP_CONTENT_LENGTH'] = '0'
+    req.headers.items()
+
+
+def test_nonstr_keys():
+    # non-string env keys shouldn't break req.headers
+    req = Request.blank('/')
+    req.environ[1] = 1
+    req.headers.items()
+
+
+def test_authorization():
+    req = Request.blank('/')
+    req.authorization = 'Digest uri="/?a=b"'
+    assert req.authorization == ('Digest', {'uri': '/?a=b'})
+
+def test_authorization2():
+    from webob.descriptors import parse_auth_params
+    for s, d in [
+       ('x=y', {'x': 'y'}),
+       ('x="y"', {'x': 'y'}),
+       ('x=y,z=z', {'x': 'y', 'z': 'z'}),
+       ('x=y, z=z', {'x': 'y', 'z': 'z'}),
+       ('x="y",z=z', {'x': 'y', 'z': 'z'}),
+       ('x="y", z=z', {'x': 'y', 'z': 'z'}),
+       ('x="y,x", z=z', {'x': 'y,x', 'z': 'z'}),
+    ]:
+        eq_(parse_auth_params(s), d)
+
+
+def test_from_file():
+    req = Request.blank('http://example.com:8000/test.html?params')
+    equal_req(req)
+
+    req = Request.blank('http://example.com/test2')
+    req.method = 'POST'
+    req.body = 'test=example'
+    equal_req(req)
+
+def equal_req(req):
+    input = StringIO(str(req))
+    req2 = Request.from_file(input)
+    eq_(req.url, req2.url)
+    headers1 = dict(req.headers)
+    headers2 = dict(req2.headers)
+    eq_(int(headers1.get('Content-Length', '0')),
+        int(headers2.get('Content-Length', '0')))
+    if 'Content-Length' in headers1:
+        del headers1['Content-Length']
+    if 'Content-Length' in headers2:
+        del headers2['Content-Length']
+    eq_(headers1, headers2)
+    eq_(req.body, req2.body)
+
+def test_req_kw_none_val():
+    assert 'content-length' not in Request({}, content_length=None).headers
+    assert 'content-type' not in Request({}, content_type=None).headers

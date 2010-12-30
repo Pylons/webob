@@ -6,27 +6,24 @@ Gives a multi-value dictionary object (MultiDict) plus several wrappers
 import cgi
 import copy
 import sys
-from webob.util.dictmixin import DictMixin
-try:
-    reversed
-except NameError:
-    from webob.util.reversed import reversed
+
+from UserDict import DictMixin
+
+
 
 __all__ = ['MultiDict', 'UnicodeMultiDict', 'NestedMultiDict', 'NoVars',
            'TrackableMultiDict']
 
 class MultiDict(DictMixin):
-
     """
-    An ordered dictionary that can have multiple values for each key.
-    Adds the methods getall, getone, mixed, and add to the normal
-    dictionary interface.
+        An ordered dictionary that can have multiple values for each key.
+        Adds the methods getall, getone, mixed and extend and add to the normal
+        dictionary interface.
     """
 
     def __init__(self, *args, **kw):
         if len(args) > 1:
-            raise TypeError(
-                "MultiDict can only be called with one positional argument")
+            raise TypeError("MultiDict can only be called with one positional argument")
         if args:
             if hasattr(args[0], 'iteritems'):
                 items = list(args[0].iteritems())
@@ -40,7 +37,7 @@ class MultiDict(DictMixin):
         if kw:
             self._items.extend(kw.iteritems())
 
-    #@classmethod
+    @classmethod
     def view_list(cls, lst):
         """
         Create a dict that is a view on the given list
@@ -53,24 +50,19 @@ class MultiDict(DictMixin):
         obj._items = lst
         return obj
 
-    view_list = classmethod(view_list)
-
-    #@classmethod
+    @classmethod
     def from_fieldstorage(cls, fs):
         """
         Create a dict from a cgi.FieldStorage instance
         """
         obj = cls()
-        if fs.list:
-            # fs.list can be None when there's nothing to parse
-            for field in fs.list:
-                if field.filename:
-                    obj.add(field.name, field)
-                else:
-                    obj.add(field.name, field.value)
+        # fs.list can be None when there's nothing to parse
+        for field in fs.list or ():
+            if field.filename:
+                obj.add(field.name, field)
+            else:
+                obj.add(field.name, field.value)
         return obj
-
-    from_fieldstorage = classmethod(from_fieldstorage)
 
     def __getitem__(self, key):
         for k, v in reversed(self._items):
@@ -138,16 +130,12 @@ class MultiDict(DictMixin):
 
     def dict_of_lists(self):
         """
-        Returns a dictionary where each key is associated with a
-        list of values.
+        Returns a dictionary where each key is associated with a list of values.
         """
-        result = {}
-        for key, value in self.iteritems():
-            if key in result:
-                result[key].append(value)
-            else:
-                result[key] = [value]
-        return result
+        r = {}
+        for key, val in self.iteritems():
+            r.setdefault(key, []).append(val)
+        return r
 
     def __delitem__(self, key):
         items = self._items
@@ -197,7 +185,7 @@ class MultiDict(DictMixin):
     def popitem(self):
         return self._items.pop()
 
-    def update(self, other=None, **kwargs):
+    def extend(self, other=None, **kwargs):
         if other is None:
             pass
         elif hasattr(other, 'items'):
@@ -294,10 +282,12 @@ class UnicodeMultiDict(DictMixin):
             # decode FieldStorage's field name and filename
             value = copy.copy(value)
             if self.decode_keys:
-                value.name = value.name.decode(self.encoding, self.errors)
+                if not isinstance(value.name, unicode):
+                    value.name = value.name.decode(self.encoding, self.errors)
             if value.filename:
-                value.filename = value.filename.decode(self.encoding,
-                                                       self.errors)
+                if not isinstance(value.filename, unicode):
+                    value.filename = value.filename.decode(self.encoding,
+                                                           self.errors)
         elif not isinstance(value, unicode):
             try:
                 value = value.decode(self.encoding, self.errors)
@@ -472,7 +462,7 @@ class NestedMultiDict(MultiDict):
     """
     Wraps several MultiDict objects, treating it as one large MultiDict
     """
-    
+
     def __init__(self, *dicts):
         self.dicts = dicts
 
@@ -553,7 +543,7 @@ class NestedMultiDict(MultiDict):
                 yield key
 
     iterkeys = __iter__
-    
+
 class NoVars(object):
     """
     Represents no variables; used when no variables
@@ -561,7 +551,7 @@ class NoVars(object):
 
     This is read-only
     """
-    
+
     def __init__(self, reason=None):
         self.reason = reason or 'N/A'
 

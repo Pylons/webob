@@ -10,13 +10,14 @@ exists, but this ignores them.
 """
 
 import re
-try:
-    sorted
-except NameError:
-    from webob.compat import sorted
+from webob.util import rfc_reference
+from webob.headers import _trans_name as header_to_key
 
 part_re = re.compile(
     r',\s*([^\s;,\n]+)(?:[^,]*?;\s*q=([0-9.]*))?')
+
+
+
 
 def parse_accept(value):
     """
@@ -53,6 +54,15 @@ class Accept(object):
         self.header_name = header_name
         self.header_value = header_value
         self._parsed = parse_accept(header_value)
+        if header_name == 'Accept-Charset':
+            for k, v in self._parsed:
+                if k == '*' or k == 'iso-8859-1':
+                    break
+            else:
+                self._parsed.append(('iso-8859-1', 1))
+        elif header_name == 'Accept-Language':
+            self._match = self._match_lang
+
 
     def __repr__(self):
         return '<%s at 0x%x %s: %s>' % (
@@ -181,12 +191,11 @@ class Accept(object):
         Return all the matches in order of quality, with fallback (if
         given) at the end.
         """
-        items = [i for i, q
-                    in sorted(self._parsed, key=lambda iq: -iq[1])]
+        items = [i for i, q in sorted(self._parsed, key=lambda iq: -iq[1])]
         if fallback:
             for index, item in enumerate(items):
                 if self._match(item, fallback):
-                    items[index+1:] = []
+                    items[index:] = [fallback]
                     break
             else:
                 items.append(fallback)
@@ -194,6 +203,12 @@ class Accept(object):
 
     def _match(self, mask, item):
         return mask == '*' or item.lower() == mask.lower()
+
+    def _match_lang(self, mask, item):
+        return (mask == '*'
+            or item.lower() == mask.lower()
+            or item.lower().split('-')[0] == mask.lower()
+        )
 
 
 
@@ -311,3 +326,26 @@ class MIMEAccept(Accept):
 class MIMENilAccept(NilAccept):
     MasterClass = MIMEAccept
 
+
+
+def accept_property(header, rfc_section,
+    AcceptClass=Accept, NilClass=NilAccept, convert_name='accept header'
+):
+    key = header_to_key(header)
+    doc = "Gets and sets the %r key in the environment." % key
+    doc += rfc_reference(key, rfc_section)
+    doc += "  Converts it as a %s." % convert_name
+    def fget(req):
+        value = req.environ.get(key)
+        if not value:
+            return NilClass(header)
+        return AcceptClass(header, value)
+    def fset(req, val):
+        if val:
+            if isinstance(val, (list, tuple, dict)):
+                val = AcceptClass(header, '') + val
+            val = str(val)
+        req.environ[key] = val or None
+    def fdel(req):
+        del req.environ[key]
+    return property(fget, fset, fdel, doc)

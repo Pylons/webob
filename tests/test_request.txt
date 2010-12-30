@@ -11,8 +11,11 @@ You can instantiate a request using ``Request.blank()``, to create a
 fresh environment dictionary with all the basic keys such a dictionary
 should have.
 
-    >>> from cStringIO import InputType
-    >>> from webob.compat import sorted
+    >>> import sys
+    >>> if sys.version >= '2.7':
+    ...     from io import BytesIO as InputType
+    ... else:
+    ...     from cStringIO import InputType
     >>> from dtopt import ELLIPSIS
     >>> from webob import Request, UTC
     >>> req = Request.blank('/')
@@ -101,15 +104,12 @@ There are also variables to access the variables and body:
     >>> vars = req.str_POST
     >>> vars
     MultiDict([('var1', 'value1'), ('var2', 'value2'), ('rep', '1'), ('rep', '2')])
-    >>> vars is req.str_POST
-    True
-    >>> req.POST
-    MultiDict([('var1', 'value1'), ('var2', 'value2'), ('rep', '1'), ('rep', '2')])
-    >>> req.charset = 'utf8'
-    >>> req.decode_param_names
+    >>> vars is req.POST
     False
     >>> req.POST
     UnicodeMultiDict([('var1', u'value1'), ('var2', u'value2'), ('rep', u'1'), ('rep', u'2')])
+    >>> req.decode_param_names
+    False
 
 Note that the variables are there for GET requests and non-form requests,
 but they are empty and read-only:
@@ -136,24 +136,22 @@ but they are empty and read-only:
 You can also get access to the query string variables, of course:
 
     >>> req = Request.blank('/?a=b&d=e&d=f')
-    >>> req.GET
+    >>> req.str_GET
     GET([('a', 'b'), ('d', 'e'), ('d', 'f')])
     >>> req.GET['d']
-    'f'
+    u'f'
     >>> req.GET.getall('d')
-    ['e', 'f']
+    [u'e', u'f']
     >>> req.method = 'POST'
     >>> req.body = 'x=y&d=g'
-    >>> isinstance(req.body_file, InputType)
-    True
     >>> req.environ['CONTENT_LENGTH']
     '7'
     >>> req.params
-    NestedMultiDict([('a', 'b'), ('d', 'e'), ('d', 'f'), ('x', 'y'), ('d', 'g')])
+    UnicodeMultiDict([('a', u'b'), ('d', u'e'), ('d', u'f'), ('x', u'y'), ('d', u'g')])
     >>> req.params['d']
-    'f'
+    u'f'
     >>> req.params.getall('d')
-    ['e', 'f', 'g']
+    [u'e', u'f', u'g']
 
 Cookies are viewed as a dictionary (*view only*):
 
@@ -162,7 +160,7 @@ Cookies are viewed as a dictionary (*view only*):
     >>> sorted(req.str_cookies.items())
     [('var1', 'value1'), ('var2', 'value2')]
     >>> sorted(req.cookies.items())
-    [('var1', 'value1'), ('var2', 'value2')]
+    [('var1', u'value1'), ('var2', u'value2')]
     >>> req.charset = 'utf8'
     >>> sorted(req.cookies.items())
     [('var1', u'value1'), ('var2', u'value2')]
@@ -191,8 +189,8 @@ Some headers are handled specifically (more should be added):
     >>> req.if_modified_since = datetime(2005, 1, 1, 12, 0)
     >>> req.if_modified_since < datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
     True
-    >>> req.user_agent
-    ''
+    >>> req.user_agent is None
+    True
     >>> req.user_agent = 'MSIE-Win'
     >>> req.user_agent
     'MSIE-Win'
@@ -204,11 +202,8 @@ Some headers are handled specifically (more should be added):
     >>> req.cache_control
     <CacheControl 'max-age=0, no-cache'>
 
-Unfortunately .cache_control is not a view:
+.cache_control is a view:
 
-    >>> 'cache-control' in req.headers
-    False
-    >>> req.cache_control = req.cache_control
     >>> 'cache-control' in req.headers
     True
     >>> req.headers['cache-control']
@@ -270,7 +265,15 @@ mime types are not supported.
     >>> req.accept_language.best_matches('es')
     ['es']
     >>> req.accept_language.best_matches('ES')
-    ['es']
+    ['ES']
+
+    >>> req = Request.blank('/', accept_language='en;q=0.5')
+    >>> req.accept_language.best_match(['en-gb'])
+    'en-gb'
+
+    >>> req = Request.blank('/', accept_charset='utf-8;q=0.5')
+    >>> req.accept_charset.best_match(['iso-8859-1', 'utf-8'])
+    'iso-8859-1'
 
 The If-Range header is a combination of a possible conditional date or
 etag match::
@@ -332,12 +335,10 @@ this doesn't exercise it well):
     >>> req = Request.blank('/')
     >>> req.content_length = length
     >>> req.body_file = data
-    >>> isinstance(req.body_file, InputType)
-    True
     >>> len(req.body)
     10250
     >>> req.body_file
-    <...cStringIO... object at ...>
+    <...IO... object at ...>
     >>> req.body_file.tell()
     0
 
@@ -357,9 +358,9 @@ Some query tests:
 Some updating of the query string:
 
     >>> req = Request.blank('http://localhost/foo?a=b')
-    >>> req.GET
+    >>> req.str_GET
     GET([('a', 'b')])
-    >>> req.GET['c'] = 'd'
+    >>> req.str_GET['c'] = 'd'
     >>> req.query_string
     'a=b&c=d'
 
@@ -380,7 +381,7 @@ And for dealing with file uploads:
     ... <html>Some text...</html>
     ... --foobar--
     ... '''
-    >>> req.POST
+    >>> req.str_POST
     MultiDict([('a', 'b'), ('upload', FieldStorage('upload', 'test.html'))])
     >>> print req.body.replace('\r', '') # doctest: +REPORT_UDIFF
     --foobar
@@ -394,7 +395,7 @@ And for dealing with file uploads:
     <html>Some text...</html>
     --foobar--
     >>> req.POST['c'] = 'd'
-    >>> req.POST
+    >>> req.str_POST
     MultiDict([('a', 'b'), ('upload', FieldStorage('upload', 'test.html')), ('c', 'd')])
     >>> req.body_file
     <FakeCGIBody at ... viewing MultiDict([('a'...d')])>
@@ -417,7 +418,7 @@ And for dealing with file uploads:
 Also reparsing works through the fake body:
 
     >>> del req.environ['webob._parsed_post_vars']
-    >>> req.POST
+    >>> req.str_POST
     MultiDict([('a', 'b'), ('upload', FieldStorage('upload', 'test.html')), ('c', 'd')])
 
 A ``BaseRequest`` class exists for the purpose of usage by web
@@ -449,6 +450,18 @@ request instance itself.
 
 
 
-
-
-
+    >>> req = BaseRequest.blank('//foo')
+    >>> print req.path_info_pop('x')
+    None
+    >>> req.script_name
+    ''
+    >>> print BaseRequest.blank('/foo').path_info_pop('/')
+    None
+    >>> BaseRequest.blank('/foo').path_info_pop('foo')
+    'foo'
+    >>> BaseRequest.blank('/foo').path_info_pop('fo+')
+    'foo'
+    >>> BaseRequest.blank('//1000').path_info_pop('\d+')
+    '1000'
+    >>> BaseRequest.blank('/1000/x').path_info_pop('\d+')
+    '1000'

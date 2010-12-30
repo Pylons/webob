@@ -2,6 +2,7 @@ from StringIO import StringIO
 from nose.tools import eq_, ok_, assert_raises
 from webob import *
 from webob import BaseRequest
+from cStringIO import StringIO
 
 def simple_app(environ, start_response):
     start_response('200 OK', [
@@ -34,10 +35,17 @@ def test_response():
     res = Response('a body', '200 OK', content_type='text/html')
     res.encode_content()
     assert res.content_encoding == 'gzip'
-    assert res.body == '\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xffKTH\xcaO\xa9\x04\x00\xf6\x86GI\x06\x00\x00\x00'
+    eq_(res.body, '\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xffKTH\xcaO\xa9\x04\x00\xf6\x86GI\x06\x00\x00\x00')
     res.decode_content()
     assert res.content_encoding is None
     assert res.body == 'a body'
+    res.set_cookie('x', u'foo') # test unicode value
+
+def test_headers():
+    r = Response()
+    tval = 'application/x-test'
+    r.headers.update({'content-type': tval})
+    eq_(r.headers.getall('content-type'), [tval])
 
 def test_response_copy():
     r = Response(app_iter=iter(['a']))
@@ -45,6 +53,11 @@ def test_response_copy():
     eq_(r.body, 'a')
     eq_(r2.body, 'a')
 
+def test_http_only_cookie():
+    req = Request.blank('/')
+    res = req.get_response(Response('blah'))
+    res.set_cookie("foo", "foo", httponly=True)
+    eq_(res.headers['set-cookie'], 'foo=foo; Path=/; HttpOnly')
 
 def test_HEAD_closes():
     req = Request.blank('/')
@@ -109,3 +122,18 @@ def test_app_iter_range():
         res = req.get_response(r)
         eq_(list(res.content_range), [2,5,6])
         eq_(res.body, '234', 'body=%r; app_iter=%r' % (res.body, app_iter))
+
+def test_from_file():
+    resp = Response('test')
+    equal_resp(resp)
+
+    resp = Response(app_iter=iter(['test ', 'body']),
+                    content_type='text/plain')
+    equal_resp(resp)
+
+def equal_resp(resp):
+    input = StringIO(str(resp))
+    resp2 = Response.from_file(input)
+    eq_(resp.body, resp2.body)
+    eq_(resp.headers, resp2.headers)
+

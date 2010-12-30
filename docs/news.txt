@@ -3,8 +3,72 @@ News
 
 .. contents::
 
-hg tip
-------
+Post-1.0
+---------
+
+* If a UnicodeMultiDict was used as the ``multi`` argument of another
+  UnicodeMultiDict, and a ``cgi.FieldStorage`` with a ``filename``
+  with high-order characters was present in the underlying
+  UnicodeMultiDict, a ``UnicodeEncodeError`` would be raised when any
+  helper method caused the ``_decode_value`` method to be called,
+  because the method would try to decode an already decoded string.
+
+* Fix tests to pass under Python 2.4.
+
+* Add descriptive docstrings to each exception in ``webob.exc``.
+
+1.0
+---
+
+* 1.0, yay!
+
+* Pull in werkzeug Cookie fix for malformed cookie bug.
+
+* Implement :meth:`Request.from_file` and
+  :meth:`Response.from_file` which are kind of the inversion of
+  ``str(req)`` and ``str(resp)``
+
+* Add optional ``pattern`` argument to :meth:`Request.path_info_pop` that requires
+  the ``path_info`` segment to match the passed regexp to get popped and returned.
+
+* Rewrite most of descriptor implementations for speed.
+
+* Reorder descriptor declarations to group them by their semantics.
+
+* Move code around so that there are fewer compat modules.
+
+* Change :meth:``HTTPError.__str__`` to better conform to PEP 352.
+
+* Make :attr:`Request.cache_control` a view on the headers.
+
+* Correct Accept-Language and Accept-Charset matching to fully conform to the HTTP spec.
+
+* Expose parts of :meth:`Request.blank` as :func:`environ_from_url`
+  and :func:`environ_add_POST`
+
+* Fix Authorization header parsing for some corner cases.
+
+* Fix an error generated if the user-agent sends a 'Content_Length' header
+  (note the underscore).
+
+* Kill :attr:`Request.default_charset`. Request charset defaults to UTF-8.
+  This ensures that all values in ``req.GET``, ``req.POST`` and ``req.params``
+  are always unicode.
+
+* Fix the ``headerlist`` and ``content_type`` constructor arguments priorities
+  for :class:`HTTPError` and subclasses.
+
+* Add support for weak etags to conditional Response objects.
+
+* Fix locale-dependence for some cookie dates strings.
+
+* Improve overall test coverage.
+
+* Rename class ``webob.datastruct.EnvironHeaders`` to ``webob.headers.EnvironHeaders``
+
+* Rename class ``webob.headerdict.HeaderDict`` to ``webob.headers.ResponseHeaders``
+
+* Rename class ``webob.updatedict.UpdateDict`` to ``webob.cachecontrol.UpdateDict``
 
 0.9.8
 -----
@@ -405,4 +469,3 @@ Bugfixes and Small Changes
 
 First release.  Nothing is new, or everything is new, depending on how
 you think about it.
-

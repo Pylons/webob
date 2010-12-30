@@ -4,9 +4,33 @@ Does parsing of ETag-related headers: If-None-Matches, If-Matches
 Also If-Range parsing
 """
 
-from webob import datetime_utils
+from webob.datetime_utils import *
+from webob.util import rfc_reference
 
-__all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'NoIfRange']
+__all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'NoIfRange', 'etag_property']
+
+
+def etag_property(key, default, rfc_section):
+    doc = "Gets and sets the %r key in the environment." % key
+    doc += rfc_reference(key, rfc_section)
+    doc += "  Converts it as a Etag."
+    def fget(req):
+        value = req.environ.get(key)
+        if not value:
+            return default
+        elif value == '*':
+            return AnyETag
+        else:
+            return ETagMatcher.parse(value)
+    def fset(req, val):
+        if val is None:
+            req.environ[key] = None
+        else:
+            req.environ[key] = str(val)
+    def fdel(req):
+        del req.environ[key]
+    return property(fget, fset, fdel, doc=doc)
+
 
 class _AnyETag(object):
     """
@@ -67,7 +91,7 @@ class ETagMatcher(object):
         self.weak_etags = weak_etags
 
     def __contains__(self, other):
-        return other in self.etags
+        return other in self.etags or other in self.weak_etags
 
     def weak_match(self, other):
         if other.lower().startswith('w/'):
@@ -141,7 +165,7 @@ class IfRange(object):
         if self.date is None:
             date = '*'
         else:
-            date = datetime_utils._serialize_date(self.date)
+            date = serialize_date(self.date)
         return '<%s etag=%s, date=%s>' % (
             self.__class__.__name__,
             etag, date)
@@ -150,7 +174,7 @@ class IfRange(object):
         if self.etag is not None:
             return str(self.etag)
         elif self.date:
-            return datetime_utils._serialize_date(self.date)
+            return serialize_date(self.date)
         else:
             return ''
 
@@ -175,7 +199,7 @@ class IfRange(object):
         """
         return self.match(etag=response.etag, last_modified=response.last_modified)
 
-    #@classmethod
+    @classmethod
     def parse(cls, value):
         """
         Parse this from a header value.
@@ -185,11 +209,10 @@ class IfRange(object):
             etag = NoETag()
         elif value and value.endswith(' GMT'):
             # Must be a date
-            date = datetime_utils._parse_date(value)
+            date = parse_date(value)
         else:
             etag = ETagMatcher.parse(value)
         return cls(etag=etag, date=date)
-    parse = classmethod(parse)
 
 class _NoIfRange(object):
     """
@@ -212,3 +235,5 @@ class _NoIfRange(object):
         return True
 
 NoIfRange = _NoIfRange()
+
+

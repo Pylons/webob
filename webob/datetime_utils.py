@@ -5,7 +5,9 @@ from rfc822 import parsedate_tz, mktime_tz, formatdate
 
 __all__ = [
     'UTC', 'timedelta_to_seconds',
-    'year', 'month', 'week', 'day', 'hour', 'minute', 'second'
+    'year', 'month', 'week', 'day', 'hour', 'minute', 'second',
+    'parse_date', 'serialize_date',
+    'parse_date_delta', 'serialize_date_delta',
 ]
 
 class _UTC(tzinfo):
@@ -38,7 +40,7 @@ month = timedelta(days=30)
 year = timedelta(days=365)
 
 
-def _parse_date(value):
+def parse_date(value):
     if not value:
         return None
     t = parsedate_tz(value)
@@ -51,9 +53,7 @@ def _parse_date(value):
     t = mktime_tz(t)
     return datetime.fromtimestamp(t, UTC)
 
-def _serialize_date(dt):
-    if dt is None:
-        return None
+def serialize_date(dt):
     if isinstance(dt, unicode):
         dt = dt.encode('ascii')
     if isinstance(dt, str):
@@ -69,36 +69,25 @@ def _serialize_date(dt):
             "You must pass in a datetime, date, time tuple, or integer object, not %r" % dt)
     return formatdate(dt)
 
-def _serialize_cookie_date(dt):
-    if dt is None:
-        return None
-    if isinstance(dt, unicode):
-        dt = dt.encode('ascii')
-    if isinstance(dt, timedelta):
-        dt = datetime.now() + dt
-    if isinstance(dt, (datetime, date)):
-        dt = dt.timetuple()
-    return time.strftime('%a, %d-%b-%Y %H:%M:%S GMT', dt)
 
-def _parse_date_delta(value):
+
+def parse_date_delta(value):
     """
-    like _parse_date, but also handle delta seconds
+    like parse_date, but also handle delta seconds
     """
     if not value:
         return None
     try:
         value = int(value)
     except ValueError:
-        pass
+        return parse_date(value)
     else:
-        delta = timedelta(seconds=value)
-        return datetime.now() + delta
-    return _parse_date(value)
+        return datetime.now() + timedelta(seconds=value)
 
-def _serialize_date_delta(value):
-    if not value and value != 0:
-        return None
+
+def serialize_date_delta(value):
     if isinstance(value, (float, int)):
         return str(int(value))
-    return _serialize_date(value)
+    else:
+        return serialize_date(value)
 

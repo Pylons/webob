@@ -36,7 +36,7 @@ for the various pieces:
     >>> res.status_int
     200
     >>> res.headers
-    HeaderDict([('Content-Type', 'text/html; charset=UTF-8'), ('Content-Length', '4')])
+    ResponseHeaders([('Content-Type', 'text/html; charset=UTF-8'), ('Content-Length', '4')])
     >>> res.headerlist
     [('Content-Type', 'text/html; charset=UTF-8'), ('Content-Length', '4')]
 
@@ -87,7 +87,7 @@ properties:
     (10, '10')
     >>> res.allow = ['GET', 'PUT']
     >>> res.allow, res.headers['allow']
-    (['GET', 'PUT'], 'GET, PUT')
+    (('GET', 'PUT'), 'GET, PUT')
     >>> res.cache_control
     <CacheControl ''>
     >>> print res.cache_control.max_age
@@ -115,7 +115,7 @@ properties:
     ('gzip', 'gzip')
     >>> res.content_language = 'en'
     >>> (res.content_language, res.headers['content-language'])
-    (['en'], 'en')
+    (('en',), 'en')
     >>> res.content_location = 'http://localhost:8080'
     >>> res.headers['content-location']
     'http://localhost:8080'
@@ -142,7 +142,7 @@ properties:
     'Python/foo'
     >>> res.vary = ['Cookie']
     >>> (res.vary, res.headers['vary'])
-    (['Cookie'], 'Cookie')
+    (('Cookie',), 'Cookie')
 
 The location header will absolutify itself when the response
 application is actually served.  We can force this with
@@ -184,6 +184,13 @@ conditioanl_response)::
     >>> res.last_modified = None
     >>> req.get_response(res)
     <Response ... 200 OK>
+
+Weak etags::
+
+    >>> req = Request.blank('/', if_none_match='W/"test"')
+    >>> res = Response(conditional_response=True, etag='test')
+    >>> req.get_response(res).status
+    '304 Not Modified'
 
 Also range response::
 
@@ -348,7 +355,7 @@ Some tests of exceptions::
     'text/plain'
     >>> res = exc.HTTPNotModified()
     >>> res.headers
-    HeaderDict([])
+    ResponseHeaders([])
 
 Headers can be set to unicode values::
 
@@ -383,9 +390,30 @@ Copying Responses should copy their internal structures
     >>> print r
     200 OK
     Content-Type: text/html; charset=UTF-8
+    Content-Length: 3
     <BLANKLINE>
     foo
     >>> print r2
     200 OK
+    Content-Length: 7
     <BLANKLINE>
     foo bar
+
+
+Additional Response constructor keywords are used to set attributes
+
+    >>> r = Response(cache_expires=True)
+    >>> r.headers['Cache-Control']
+    'max-age=0, must-revalidate, no-cache, no-store'
+
+
+
+    >>> from webob.exc import HTTPBadRequest
+    >>> raise HTTPBadRequest('bad data')
+    Traceback (most recent call last):
+    ...
+    HTTPBadRequest: bad data
+    >>> raise HTTPBadRequest()
+    Traceback (most recent call last):
+    ...
+    HTTPBadRequest: The server could not comply with the request since it is either malformed or otherwise incorrect.

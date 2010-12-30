@@ -3,8 +3,9 @@ import re, textwrap
 from datetime import datetime, date
 
 from webob.byterange import Range, ContentRange
-from webob.etag import AnyETag, NoETag, ETagMatcher, IfRange, NoIfRange
-from webob import datetime_utils
+from webob.etag import IfRange, NoIfRange
+from webob.datetime_utils import parse_date, serialize_date
+from webob.util import rfc_reference
 
 
 CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
@@ -12,173 +13,111 @@ QUOTES_RE = re.compile('"(.*)"')
 SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
 
 
-class environ_getter(object):
-    """For delegating an attribute to a key in self.environ."""
+_not_given = object()
 
-    def __init__(self, key, default='', default_factory=None,
-                 settable=True, deletable=True, doc=None,
-                 rfc_section=None):
-        self.key = key
-        self.default = default
-        self.default_factory = default_factory
-        self.settable = settable
-        self.deletable = deletable
-        docstring = "Gets"
-        if self.settable:
-            docstring += " and sets"
-        if self.deletable:
-            docstring += " and deletes"
-        docstring += " the %r key from the environment." % self.key
-        docstring += _rfc_reference(self.key, rfc_section)
-        if doc:
-            docstring += '\n\n' + textwrap.dedent(doc)
-        self.__doc__ = docstring
-
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        if self.key not in obj.environ:
-            if self.default_factory:
-                val = obj.environ[self.key] = self.default_factory()
-                return val
+def environ_getter(key, default=_not_given, rfc_section=None):
+    doc = "Gets and sets the %r key in the environment." % key
+    doc += rfc_reference(key, rfc_section)
+    if default is _not_given:
+        def fget(req):
+            return req.environ[key]
+        def fset(req, val):
+            req.environ[key] = val
+        fdel = None
+    else:
+        def fget(req):
+            return req.environ.get(key, default)
+        def fset(req, val):
+            if val is None:
+                if key in req.environ:
+                    del req.environ[key]
             else:
-                return self.default
-        return obj.environ[self.key]
-
-    def __set__(self, obj, value):
-        if not self.settable:
-            raise AttributeError("Read-only attribute (key %r)" % self.key)
-        if value is None:
-            if self.key in obj.environ:
-                del obj.environ[self.key]
-        else:
-            obj.environ[self.key] = value
-
-    def __delete__(self, obj):
-        if not self.deletable:
-            raise AttributeError("You cannot delete the key %r" % self.key)
-        del obj.environ[self.key]
-
-    def __repr__(self):
-        return '<Proxy for WSGI environ %r key>' % self.key
-
-def _rfc_reference(header, section):
-    if not section:
-        return ''
-    major_section = section.split('.')[0]
-    link = 'http://www.w3.org/Protocols/rfc2616/rfc2616-sec%s.html#sec%s' % (
-        major_section, section)
-    if header.startswith('HTTP_'):
-        header = header[5:].title().replace('_', '-')
-    return "  For more information on %s see `section %s <%s>`_." % (
-        header, section, link)
+                req.environ[key] = val
+        def fdel(req):
+            del req.environ[key]
+    return property(fget, fset, fdel, doc=doc)
 
 
-class header_getter(object):
-    """For delegating an attribute to a header in self.headers"""
+def upath_property(key):
+    def fget(req):
+        return req.environ[key].decode('UTF8', req.unicode_errors)
+    return property(fget, doc='upath_property(%r)' % key)
 
-    def __init__(self, header, default=None,
-                 settable=True, deletable=True, doc=None, rfc_section=None):
-        self.header = header
-        self.default = default
-        self.settable = settable
-        self.deletable = deletable
-        docstring = "Gets"
-        if self.settable:
-            docstring += " and sets"
-        if self.deletable:
-            docstring += " and deletes"
-        docstring += " the %s header" % self.header
-        docstring += _rfc_reference(self.header, rfc_section)
-        if doc:
-            docstring += '\n\n' + textwrap.dedent(doc)
-        self.__doc__ = docstring
 
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        return obj.headers.get(self.header, self.default)
+def header_getter(header, rfc_section):
+    doc = "Gets and sets and deletes the %s header." % header
+    doc += rfc_reference(header, rfc_section)
+    key = header.lower()
 
-    def __set__(self, obj, value):
-        if not self.settable:
-            raise AttributeError("Read-only attribute (header %s)" % self.header)
-        if value is None:
-            if self.header in obj.headers:
-                del obj.headers[self.header]
-        else:
+    def fget(r):
+        for k, v in r._headerlist:
+            if k.lower() == key:
+                return v
+
+    def fset(r, value):
+        fdel(r)
+        if value is not None:
             if isinstance(value, unicode):
-                # This is the standard encoding for headers:
-                value = value.encode('ISO-8859-1')
-            obj.headers[self.header] = value
+                value = value.encode('ISO-8859-1') # standard encoding for headers
+            r._headerlist.append((header, value))
 
-    def __delete__(self, obj):
-        if not self.deletable:
-            raise AttributeError("You cannot delete the header %s" % self.header)
-        del obj.headers[self.header]
+    def fdel(r):
+        items = r._headerlist
+        for i in range(len(items)-1, -1, -1):
+            if items[i][0].lower() == key:
+                del items[i]
 
-    def __repr__(self):
-        return '<Proxy for header %s>' % self.header
-
-class set_via_call(object):
-    def __init__(self, func, adapt_args=None):
-        self.func = func
-        self.adapt_args = adapt_args
-    def __get__(self, obj, type=None):
-        return self.__class__(self.func.__get__(obj, type))
-    def __set__(self, obj, value):
-        if self.adapt_args is None:
-            args, kw = (value,), {}
-        else:
-            result = self.adapt_args(value)
-            if result is None:
-                return
-            args, kw = result
-        self.func(obj, *args, **kw)
-    def __repr__(self):
-        return 'set_via_call(%r)' % self.func
-    def __call__(self, *args, **kw):
-        return self.func(*args, **kw)
+    return property(fget, fset, fdel, doc)
 
 
-class converter(object):
-    """
-    Wraps a descriptor, and applies additional conversions when reading and writing
-    """
-    def __init__(self, descriptor, getter_converter, setter_converter, convert_name=None, doc=None, converter_args=()):
-        self.descriptor = descriptor
-        self.getter_converter = getter_converter
-        self.setter_converter = setter_converter
-        self.convert_name = convert_name
-        self.converter_args = converter_args
-        docstring = descriptor.__doc__ or ''
-        docstring += "  Converts it as a "
-        if convert_name:
-            docstring += convert_name + '.'
-        else:
-            docstring += "%r and %r." % (getter_converter, setter_converter)
-        if doc:
-            docstring += '\n\n' + textwrap.dedent(doc)
-        self.__doc__ = docstring
 
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        value = self.descriptor.__get__(obj, type)
-        return self.getter_converter(value, *self.converter_args)
 
-    def __set__(self, obj, value):
-        value = self.setter_converter(value, *self.converter_args)
-        self.descriptor.__set__(obj, value)
+def converter(prop, parse, serialize, convert_name=None):
+    assert isinstance(prop, property)
+    convert_name = convert_name or "%r and %r" % (parse, serialize)
+    doc = prop.__doc__ or ''
+    doc += "  Converts it as a %s." % convert_name
+    hget, hset = prop.fget, prop.fset
+    def fget(r):
+        return parse(hget(r))
+    def fset(r, val):
+        if val is not None:
+            val = serialize(val)
+        hset(r, val)
+    return property(fget, fset, prop.fdel, doc)
 
-    def __delete__(self, obj):
-        self.descriptor.__delete__(obj)
 
-    def __repr__(self):
-        if self.convert_name:
-            name = ' %s' % self.convert_name
-        else:
-            name = ''
-        return '<Converted %r%s>' % (self.descriptor, name)
+
+def list_header(header, rfc_section):
+    prop = header_getter(header, rfc_section)
+    return converter(prop, parse_list, serialize_list, 'list')
+
+def parse_list(value):
+    if not value:
+        return None
+    return tuple(filter(None, [v.strip() for v in value.split(',')]))
+
+def serialize_list(value):
+    if isinstance(value, unicode):
+        return str(value)
+    elif isinstance(value, str):
+        return value
+    else:
+        return ', '.join(map(str, value))
+
+
+
+
+def converter_date(prop):
+    return converter(prop, parse_date, serialize_date, 'HTTP date')
+
+def date_header(header, rfc_section):
+    return converter_date(header_getter(header, rfc_section))
+
+
+
+
+
 
 
 class deprecated_property(object):
@@ -221,31 +160,6 @@ class deprecated_property(object):
                 stacklevel=3)
 
 
-class UnicodePathProperty(object):
-    """
-        upath_info and uscript_name descriptor implementation
-    """
-
-    def __init__(self, key, doc=None):
-        self.key = key
-        #if doc:
-        #    docstring += textwrap.dedent(doc)
-        #self.__doc__ = docstring
-
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        str_path = obj.environ[self.key]
-        return str_path.decode('UTF8', obj.unicode_errors)
-
-    def __set__(self, obj, path):
-        if not isinstance(path, unicode):
-            path = path.decode('ASCII') # or just throw an error?
-        str_path = path.encode('UTF8', obj.unicode_errors)
-        obj.environ[self.key] = str_path
-
-    def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.key)
 
 
 
@@ -254,43 +168,8 @@ class UnicodePathProperty(object):
 ########################
 
 
-def _adapt_cache_expires(value):
-    if value is False:
-        return None
-    if value is True:
-        return (0,), {}
-    else:
-        return (value,), {}
-
-
-
-
-def _parse_etag(value, default=True):
-    if value is None:
-        value = ''
-    value = value.strip()
-    if not value:
-        if default:
-            return AnyETag
-        else:
-            return NoETag
-    if value == '*':
-        return AnyETag
-    else:
-        return ETagMatcher.parse(value)
-
-def _serialize_etag(value, default=True):
-    if value is None:
-        return None
-    if value is AnyETag:
-        if default:
-            return None
-        else:
-            return '*'
-    return str(value)
-
 # FIXME: weak entity tags are not supported, would need special class
-def _parse_etag_response(value):
+def parse_etag_response(value):
     """
     See:
         * http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.19
@@ -303,32 +182,29 @@ def _parse_etag_response(value):
             value = value.replace('\\"', '"')
         return value
 
-def _serialize_etag_response(value):
-    if value is not None:
-        return '"%s"' % value.replace('"', '\\"')
+def serialize_etag_response(value):
+    return '"%s"' % value.replace('"', '\\"')
 
-def _parse_if_range(value):
+def parse_if_range(value):
     if not value:
         return NoIfRange
     else:
         return IfRange.parse(value)
 
-def _serialize_if_range(value):
-    if value is None:
-        return value
+def serialize_if_range(value):
     if isinstance(value, (datetime, date)):
-        return datetime_utils._serialize_date(value)
+        return serialize_date(value)
     if not isinstance(value, str):
         value = str(value)
     return value or None
 
-def _parse_range(value):
+def parse_range(value):
     if not value:
         return None
     # Might return None too:
     return Range.parse(value)
 
-def _serialize_range(value):
+def serialize_range(value):
     if isinstance(value, (list, tuple)):
         if len(value) != 2:
             raise ValueError(
@@ -340,12 +216,12 @@ def _serialize_range(value):
     value = str(value)
     return value or None
 
-def _parse_int(value):
+def parse_int(value):
     if value is None or value == '':
         return None
     return int(value)
 
-def _parse_int_safe(value):
+def parse_int_safe(value):
     if value is None or value == '':
         return None
     try:
@@ -353,20 +229,15 @@ def _parse_int_safe(value):
     except ValueError:
         return None
 
-def _serialize_int(value):
-    if value is None:
-        return None
-    return str(value)
+serialize_int = str
 
-def _parse_content_range(value):
+def parse_content_range(value):
     if not value or not value.strip():
         return None
     # May still return None
     return ContentRange.parse(value)
 
-def _serialize_content_range(value):
-    if value is None:
-        return None
+def serialize_content_range(value):
     if isinstance(value, (tuple, list)):
         if len(value) not in (2, 3):
             raise ValueError(
@@ -383,45 +254,15 @@ def _serialize_content_range(value):
         return None
     return value
 
-def _parse_list(value):
-    if value is None:
-        return None
-    value = value.strip()
-    if not value:
-        return None
-    return [v.strip() for v in value.split(',')
-            if v.strip()]
-
-def _serialize_list(value):
-    if not value:
-        return None
-    if isinstance(value, unicode):
-        value = str(value)
-    if isinstance(value, str):
-        return value
-    return ', '.join(map(str, value))
-
-def _parse_accept(value, header_name, AcceptClass, NilClass):
-    if not value:
-        return NilClass(header_name)
-    return AcceptClass(header_name, value)
-
-def _serialize_accept(value, header_name, AcceptClass, NilClass):
-    if not value or isinstance(value, NilClass):
-        return None
-    if isinstance(value, (list, tuple, dict)):
-        value = NilClass(header_name) + value
-    value = str(value).strip()
-    if not value:
-        return None
-    return value
 
 
-def parse_params(params):
+
+_rx_auth_param = re.compile(r'([a-z]+)=(".*?"|[^,]*)(?:\Z|, *)')
+
+def parse_auth_params(params):
     r = {}
-    for pair in params.split(', '):
-        key, value = pair.split('=')
-        r[key] = value.strip('"')
+    for k, v in _rx_auth_param.findall(params):
+        r[k] = v.strip('"')
     return r
 
 # see http://lists.w3.org/Archives/Public/ietf-http-wg/2009OctDec/0297.html
@@ -436,7 +277,7 @@ def parse_auth(val):
                 # this is the "Authentication: Basic XXXXX==" case
                 pass
             else:
-                params = parse_params(params)
+                params = parse_auth_params(params)
         return authtype, params
     return val
 
