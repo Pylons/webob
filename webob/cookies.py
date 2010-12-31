@@ -139,7 +139,7 @@ _rx_cookie = re.compile(
     # =
     + r"\s*=\s*"
     # val
-    + r"(%s|%s|%s*)" % (_re_quoted, _re_expires_val, _re_legal_char)
+    + r"(%s|%s*|%s)" % (_re_quoted, _re_legal_char, _re_expires_val)
 )
 
 _rx_unquote = re.compile(r'\\([0-3][0-7][0-7]|.)')
