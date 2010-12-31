@@ -8,6 +8,7 @@ from webob.descriptors import *
 from webob.datetime_utils import *
 from webob.cookies import Cookie, Morsel
 from webob.util import status_reasons
+from webob.request import StringIO
 
 __all__ = ['Response']
 
@@ -819,7 +820,6 @@ class Response(object):
             raise ValueError(
                 "I don't know how to decode the content %s" % content_encoding)
         from gzip import GzipFile
-        from webob.request import StringIO
         f = StringIO(self.body)
         gzip_f = GzipFile(filename='', mode='r', fileobj=f)
         self.body = gzip_f.read()

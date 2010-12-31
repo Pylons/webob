@@ -6,6 +6,25 @@ News
 Post-1.0
 ---------
 
+* As WebOb requires Python 2.4 or later, drop some compatibility modules
+  and update the code to use the decorator syntax.
+
+* Implement optional on-the-fly response compression (``resp.encode_content(lazy=True)``)
+
+* Drop ``util.safezip`` module and make ``util`` a module instead of a subpackage.
+  Merge ``statusreasons`` into it.
+
+* Instead of using stdlib ``Cookie`` with monkeypatching, add a derived
+  but thoroughly rewritten, cleaner, safer and faster ``webob.cookies`` module.
+
+* Fix: ``Response.merge_cookies`` now copies the headers before modification instead of
+  doing it in-place.
+
+* Fix: setting request header attribute to ``None`` deletes that header.
+  (Bug only affected the 1.0 release).
+
+* Use ``io.BytesIO`` for the request body file on Python 2.7 and newer.
+
 * If a UnicodeMultiDict was used as the ``multi`` argument of another
   UnicodeMultiDict, and a ``cgi.FieldStorage`` with a ``filename``
   with high-order characters was present in the underlying
@@ -16,6 +35,10 @@ Post-1.0
 * Fix tests to pass under Python 2.4.
 
 * Add descriptive docstrings to each exception in ``webob.exc``.
+
+* Change the behaviour of ``MultiDict.update`` to overwrite existing header
+  values instead of adding new headers. The extending semantics are now available
+  via the ``extend`` method.
 
 * Fix a bug in ``webob.exc.WSGIHTTPException.__init__``.  If a list of
   ``headers`` was passed as a sequence which contained duplicate keys (for
