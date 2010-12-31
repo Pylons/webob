@@ -17,3 +17,10 @@ def test_exception_with_unicode_data():
     req = webob.Request.blank('/', method=u'POST')
     res = req.get_response(method_not_allowed_app)
     assert res.status_int == 405
+
+def test_WSGIHTTPException_headers():
+    from webob.exc import WSGIHTTPException
+    exc = WSGIHTTPException(headers=[('Set-Cookie', 'a=1'),
+                                     ('Set-Cookie', 'a=2')])
+    mixed = exc.headers.mixed()
+    assert mixed['set-cookie'] ==  ['a=1', 'a=2']

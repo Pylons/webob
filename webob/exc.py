@@ -264,7 +264,7 @@ ${body}''')
                           **kw)
         Exception.__init__(self, detail)
         if headers:
-            self.headers.update(headers)
+            self.headers.extend(headers)
         self.detail = detail
         self.comment = comment
         if body_template is not None:
