@@ -17,6 +17,13 @@ Post-1.0
 
 * Add descriptive docstrings to each exception in ``webob.exc``.
 
+* Fix a bug in ``webob.exc.WSGIHTTPException.__init__``.  If a list of
+  ``headers`` was passed as a sequence which contained duplicate keys (for
+  example, multiple ``Set-Cookie`` headers), all but one of those headers
+  would be lost, because the list was effectively flattened into a dictionary
+  as the result of calling ``self.headers.update``.  Fixed via calling
+  ``self.headers.extend`` instead.
+
 1.0
 ---
 
