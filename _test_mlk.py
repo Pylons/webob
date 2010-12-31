@@ -2,19 +2,19 @@ import sys, subprocess, site, os
 
 def create_suite():
     from mext.test_suite import TestSuite
-    suite = TestSuite('tests', coverage='html_coverage', pkg='webob')
+    suite = TestSuite('tests', coverage=True, pkg='webob')
 
     for test in ['do-it-yourself', 'file-example', 'index', 'reference']:
         suite.add_doctest('../docs/' + test)
-    map(suite.add_doctest, ['test_dec', 'test_request', 'test_response', 'multidict'])
+    map(suite.add_doctest, ['test_dec', 'test_request', 'test_response', 'html_escape', 'multidict'])
 
-    for test in ['test_request', 'test_response']:
+    for test in ['test_request', 'test_response', 'test_multidict']:
         suite.add_nosetest(test)
     return suite
 
 
 if not os.path.exists('testenv'):
-    subprocess.check_call("pip install -q -E testenv nose dtopt webtest mext.test>=0.4 coverage")
+    subprocess.check_call("pip install -q -E testenv nose dtopt webtest mext.test>=0.4.2 coverage")
 site.addsitedir('testenv/Lib/site-packages')
 suite = create_suite()
 

@@ -8,6 +8,6 @@ testenv
 docs/_build/*
 dist/
 build/
-html_coverage/*
 .coverage
 *.egg
+glob:_coverage
