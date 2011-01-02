@@ -488,11 +488,9 @@ class Response(object):
         if charset is None:
             del self.charset
             return
-        try:
-            header = self.headers.pop('Content-Type')
-        except KeyError:
-            raise AttributeError(
-                "You cannot set the charset when no content-type is defined")
+        header = self.headers.pop('Content-Type', None)
+        if header is None:
+            raise AttributeError("You cannot set the charset when no content-type is defined")
         match = CHARSET_RE.search(header)
         if match:
             header = header[:match.start()] + header[match.end():]
@@ -500,9 +498,8 @@ class Response(object):
         self.headers['Content-Type'] = header
 
     def _charset__del(self):
-        try:
-            header = self.headers.pop('Content-Type')
-        except KeyError:
+        header = self.headers.pop('Content-Type', None)
+        if header is None:
             # Don't need to remove anything
             return
         match = CHARSET_RE.search(header)
@@ -532,6 +529,9 @@ class Response(object):
         return header.split(';', 1)[0]
 
     def _content_type__set(self, value):
+        if not value:
+            self._cache_control__del()
+            return
         if ';' not in value:
             header = self.headers.get('Content-Type', '')
             if ';' in header:
