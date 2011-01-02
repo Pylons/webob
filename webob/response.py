@@ -584,14 +584,14 @@ class Response(object):
         ct += ''.join(params)
         self.headers['Content-Type'] = ct
 
-    def _content_type_params__del(self, value):
+    def _content_type_params__del(self):
         self.headers['Content-Type'] = self.headers.get('Content-Type', '').split(';', 1)[0]
 
     content_type_params = property(
         _content_type_params__get,
         _content_type_params__set,
         _content_type_params__del,
-        doc=_content_type_params__get.__doc__
+        _content_type_params__get.__doc__
     )
 
 
