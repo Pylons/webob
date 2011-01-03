@@ -11,3 +11,5 @@ build/
 .coverage
 *.egg
 glob:_coverage
+Session.vim
+html_coverage/**
