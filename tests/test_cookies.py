@@ -1,5 +1,4 @@
 # -*- coding: UTF-8 -*-
-# 151-154
 from datetime import timedelta
 from webob import cookies
 from nose.tools import ok_, assert_raises
