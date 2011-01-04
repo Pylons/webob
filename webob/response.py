@@ -488,11 +488,9 @@ class Response(object):
         if charset is None:
             del self.charset
             return
-        try:
-            header = self.headers.pop('Content-Type')
-        except KeyError:
-            raise AttributeError(
-                "You cannot set the charset when no content-type is defined")
+        header = self.headers.pop('Content-Type', None)
+        if header is None:
+            raise AttributeError("You cannot set the charset when no content-type is defined")
         match = CHARSET_RE.search(header)
         if match:
             header = header[:match.start()] + header[match.end():]
@@ -500,9 +498,8 @@ class Response(object):
         self.headers['Content-Type'] = header
 
     def _charset__del(self):
-        try:
-            header = self.headers.pop('Content-Type')
-        except KeyError:
+        header = self.headers.pop('Content-Type', None)
+        if header is None:
             # Don't need to remove anything
             return
         match = CHARSET_RE.search(header)
@@ -532,6 +529,9 @@ class Response(object):
         return header.split(';', 1)[0]
 
     def _content_type__set(self, value):
+        if not value:
+            self._cache_control__del()
+            return
         if ';' not in value:
             header = self.headers.get('Content-Type', '')
             if ';' in header:
@@ -584,14 +584,14 @@ class Response(object):
         ct += ''.join(params)
         self.headers['Content-Type'] = ct
 
-    def _content_type_params__del(self, value):
+    def _content_type_params__del(self):
         self.headers['Content-Type'] = self.headers.get('Content-Type', '').split(';', 1)[0]
 
     content_type_params = property(
         _content_type_params__get,
         _content_type_params__set,
         _content_type_params__del,
-        doc=_content_type_params__get.__doc__
+        _content_type_params__get.__doc__
     )
 
 
@@ -609,7 +609,11 @@ class Response(object):
         """
         if overwrite:
             self.unset_cookie(key, strict=False)
-        if expires is None and max_age is not None:
+        if value is None: # delete the cookie from the client
+            value = ''
+            max_age = 0
+            expires = timedelta(days=-5)
+        elif expires is None and max_age is not None:
             if isinstance(max_age, int):
                 max_age = timedelta(seconds=max_age)
             expires = datetime.utcnow() + max_age
@@ -618,26 +622,15 @@ class Response(object):
 
         if isinstance(value, unicode):
             value = value.encode('utf8')
-        morsel = Morsel(key, value)
-        data=dict(
-            path=path,
-            domain=domain,
-            comment=comment,
-            expires=expires,
-            max_age=max_age,
-            secure=secure,
-            httponly=httponly
-        )
-        for k, v in data.iteritems():
-            setattr(morsel, k, v)
-        self._add_cookie(morsel)
-
-    def _add_cookie(self, cookie):
-        if not isinstance(cookie, str):
-            cookie = str(cookie)
-        if cookie:
-            self.headerlist.append(('Set-Cookie', cookie))
-
+        m = Morsel(key, value)
+        m.path = path
+        m.domain = domain
+        m.comment = comment
+        m.expires = expires
+        m.max_age = max_age
+        m.secure = secure
+        m.httponly = httponly
+        self.headerlist.append(('Set-Cookie', str(m)))
 
     def delete_cookie(self, key, path='/', domain=None):
         """
@@ -647,15 +640,12 @@ class Response(object):
         This sets the cookie to the empty string, and max_age=0 so
         that it should expire immediately.
         """
-        self.set_cookie(key, '', path=path, domain=domain,
-                        max_age=0, expires=timedelta(days=-5))
+        self.set_cookie(key, None, path=path, domain=domain)
 
     def unset_cookie(self, key, strict=True):
         """
         Unset a cookie with the given name (remove it from the
-        response).  If there are multiple cookies (e.g., two cookies
-        with the same name and different paths or domains), all such
-        cookies will be deleted.
+        response).
         """
         existing = self.headers.getall('Set-Cookie')
         if not existing and not strict:
@@ -664,10 +654,10 @@ class Response(object):
         for header in existing:
             cookies.load(header)
         if key in cookies:
-            del self.headers['Set-Cookie']
             del cookies[key]
-            #for val in cookies.values():
-            self._add_cookie(cookies)
+            del self.headers['Set-Cookie']
+            if cookies:
+                self.headerlist.append(('Set-Cookie', str(cookies)))
         elif strict:
             raise KeyError("No cookie has been set with the name %r" % key)
 
@@ -806,7 +796,7 @@ class Response(object):
             return
         if lazy:
             self.app_iter = gzip_app_iter(self.app_iter)
-            del self.content_length
+            self.content_length = None
         else:
             self.app_iter = list(gzip_app_iter(self.app_iter))
             self.content_length = sum(map(len, self.app_iter))
