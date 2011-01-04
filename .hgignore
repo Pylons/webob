@@ -3,6 +3,7 @@ syntax: glob
 WebOb.egg-info
 *.pyc
 *.pyo
+*.swp
 TEST*
 testenv
 docs/_build/*
