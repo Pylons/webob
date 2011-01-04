@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
-# 57, 59, 151-154
+# 151-154
+from datetime import timedelta
 from webob import cookies
 from nose.tools import ok_, assert_raises
 
@@ -44,7 +45,14 @@ def test_serialize_cookie_date():
         * input value is an int, should be converted to timedelta and we should
           continue the rest of the process
     """
-    pass
+    ok_(cookies.serialize_cookie_date('Tue, 04-Jan-2011 13:43:50 GMT')==\
+        'Tue, 04-Jan-2011 13:43:50 GMT', 'We passed a string, should get the '
+        'same one')
+    ok_(cookies.serialize_cookie_date(None)==None, 'We passed None, should '
+        'get None')
+    ok_(cookies.serialize_cookie_date(timedelta(seconds=10))==\
+        cookies.serialize_cookie_date(10), 'Passing a int to method should '
+        'return the same result as passing a timedelta')
 
 def test_ch_unquote():
     """Inner method _ch_unquote in cookies._unquote is not tested"""
@@ -60,4 +68,6 @@ def test_ch_unquote():
     v = cookies._unquote(str_)
     ok_(v==u'\"hello world', 'Wrong output from _unquote. Expected: %r, '
         'Got: %r' % (u'\"hello world', v))
+    # example extracted from webob.cookies
+    ok_(cookies._unquote(r'"a\"\377"')=='a"\xff')
 
