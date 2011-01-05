@@ -1,6 +1,7 @@
 from webob import Request
+from webob.request import NoDefault
 from webtest import TestApp
-from nose.tools import eq_, ok_, assert_raises
+from nose.tools import eq_, ok_, assert_raises, raises
 from cStringIO import StringIO
 
 def simpleapp(environ, start_response):
@@ -273,3 +274,22 @@ def equal_req(req):
 def test_req_kw_none_val():
     assert 'content-length' not in Request({}, content_length=None).headers
     assert 'content-type' not in Request({}, content_type=None).headers
+
+def test_repr_nodefault():
+    nd = NoDefault
+    eq_(repr(nd), '(No Default)')
+
+@raises(TypeError)
+def test_request_noenviron_param():
+    Request(environ=None)
+
+@raises(ValueError)
+def test_environ_getter():
+    """Parameter environ_getter in Request is no longer value and should raise
+    an error in case it's used"""
+    class env(object):
+        def __init__(self, env):
+            self.env = env
+        def env_getter(self):
+            return self.env
+    Request(environ_getter=env({'a':1}).env_getter)
