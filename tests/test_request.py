@@ -197,7 +197,7 @@ class UnseekableInput(object):
             self.pos += size
             return t
 
-def test_copy():
+def test_copy_body():
     req = Request.blank('/', method='POST', body='some text', request_body_tempfile_limit=1)
     old_body_file = req.body_file
     req.copy_body()
@@ -211,7 +211,6 @@ def test_copy():
     old_body_file = req.body_file
     req.make_body_seekable()
     assert req.body_file is old_body_file
-
 
 def test_broken_clen_header():
     # if the UA sends "content_length: ..' header (the name is wrong)
