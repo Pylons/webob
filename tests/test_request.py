@@ -220,7 +220,6 @@ def test_broken_clen_header():
     req.environ['HTTP_CONTENT_LENGTH'] = '0'
     req.headers.items()
 
-
 def test_nonstr_keys():
     # non-string env keys shouldn't break req.headers
     req = Request.blank('/')
@@ -245,7 +244,6 @@ def test_authorization2():
        ('x="y,x", z=z', {'x': 'y,x', 'z': 'z'}),
     ]:
         eq_(parse_auth_params(s), d)
-
 
 def test_from_file():
     req = Request.blank('http://example.com:8000/test.html?params')
@@ -285,8 +283,10 @@ def test_request_noenviron_param():
 
 @raises(ValueError)
 def test_environ_getter():
-    """Parameter environ_getter in Request is no longer valid and should raise
-    an error in case it's used"""
+    """
+    Parameter environ_getter in Request is no longer valid and should raise
+    an error in case it's used
+    """
     class env(object):
         def __init__(self, env):
             self.env = env
@@ -295,8 +295,10 @@ def test_environ_getter():
     Request(environ_getter=env({'a':1}).env_getter)
 
 def test_unicode_errors():
-    """Passing unicode_errors != NoDefault should assign value to
-    dictionary['unicode_errors'], else not"""
+    """
+    Passing unicode_errors != NoDefault should assign value to
+    dictionary['unicode_errors'], else not
+    """
     r = Request({'a':1}, unicode_errors='strict')
     ok_('unicode_errors' in r.__dict__)
     r = Request({'a':1}, unicode_errors=NoDefault)
@@ -304,8 +306,10 @@ def test_unicode_errors():
 
 @raises(DeprecationWarning)
 def test_charset_deprecation1():
-    """Any class that inherits from BaseRequest cannot define a default_charset
-    attribute"""
+    """
+    Any class that inherits from BaseRequest cannot define a default_charset
+    attribute
+    """
     class NewRequest(BaseRequest):
         default_charset = 'utf-8'
         def __init__(self, environ, **kw):
@@ -314,8 +318,10 @@ def test_charset_deprecation1():
 
 @raises(DeprecationWarning)
 def test_charset_deprecation2():
-    """Any class that inherits from BaseRequest cannot define a charset attr
-    that is instance of str"""
+    """
+    Any class that inherits from BaseRequest cannot define a charset attr
+    that is instance of str
+    """
     class NewRequest(BaseRequest):
         charset = 'utf-8'
         def __init__(self, environ, **kw):
@@ -324,8 +330,10 @@ def test_charset_deprecation2():
 
 @raises(TypeError)
 def test_unexpected_kw():
-    """Passed an attr in kw that does not exist in the class, should raise an
-    error"""
+    """
+    Passed an attr in kw that does not exist in the class, should raise an
+    error
+    """
     r = Request({'a':1}, **{'this_does_not_exist':1})
 
 def test_expected_kw():
@@ -335,16 +343,14 @@ def test_expected_kw():
     eq_(getattr(r, 'server_name', None), '127.0.0.1')
 
 def test_body_file_setter():
-    """"If body_file is passed and it's instance of str, we define
+    """"
+    If body_file is passed and it's instance of str, we define
     environ['wsgi.input'] and content_length. Plus, while deleting the
-    attribute, we should get '' and 0 respectively"""
+    attribute, we should get '' and 0 respectively
+    """
     r = Request({'a':1}, **{'body_file':'hello world'}) 
     eq_(r.environ['wsgi.input'].getvalue(), 'hello world')
     eq_(int(r.environ['CONTENT_LENGTH']), len('hello world'))
     del r.body_file
     eq_(r.environ['wsgi.input'].getvalue(), '')
     eq_(int(r.environ['CONTENT_LENGTH']), 0)
-
-
-
-
