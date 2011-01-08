@@ -1,5 +1,5 @@
 from webob import Request
-from webob.request import NoDefault
+from webob.request import NoDefault, BaseRequest
 from webtest import TestApp
 from nose.tools import eq_, ok_, assert_raises, raises
 from cStringIO import StringIO
@@ -285,7 +285,7 @@ def test_request_noenviron_param():
 
 @raises(ValueError)
 def test_environ_getter():
-    """Parameter environ_getter in Request is no longer value and should raise
+    """Parameter environ_getter in Request is no longer valid and should raise
     an error in case it's used"""
     class env(object):
         def __init__(self, env):
@@ -293,3 +293,58 @@ def test_environ_getter():
         def env_getter(self):
             return self.env
     Request(environ_getter=env({'a':1}).env_getter)
+
+def test_unicode_errors():
+    """Passing unicode_errors != NoDefault should assign value to
+    dictionary['unicode_errors'], else not"""
+    r = Request({'a':1}, unicode_errors='strict')
+    ok_('unicode_errors' in r.__dict__)
+    r = Request({'a':1}, unicode_errors=NoDefault)
+    ok_('unicode_errors' not in r.__dict__)
+
+@raises(DeprecationWarning)
+def test_charset_deprecation1():
+    """Any class that inherits from BaseRequest cannot define a default_charset
+    attribute"""
+    class NewRequest(BaseRequest):
+        default_charset = 'utf-8'
+        def __init__(self, environ, **kw):
+            super(NewRequest, self).__init__(environ, **kw) 
+    r = NewRequest({'a':1})
+
+@raises(DeprecationWarning)
+def test_charset_deprecation2():
+    """Any class that inherits from BaseRequest cannot define a charset attr
+    that is instance of str"""
+    class NewRequest(BaseRequest):
+        charset = 'utf-8'
+        def __init__(self, environ, **kw):
+            super(NewRequest, self).__init__(environ, **kw) 
+    r = NewRequest({'a':1})
+
+@raises(TypeError)
+def test_unexpected_kw():
+    """Passed an attr in kw that does not exist in the class, should raise an
+    error"""
+    r = Request({'a':1}, **{'this_does_not_exist':1})
+
+def test_expected_kw():
+    """Passed an attr in kw that does exist in the class, should be ok"""
+    r = Request({'a':1}, **{'charset':'utf-8', 'server_name':'127.0.0.1'}) 
+    eq_(getattr(r, 'charset', None), 'utf-8')
+    eq_(getattr(r, 'server_name', None), '127.0.0.1')
+
+def test_body_file_setter():
+    """"If body_file is passed and it's instance of str, we define
+    environ['wsgi.input'] and content_length. Plus, while deleting the
+    attribute, we should get '' and 0 respectively"""
+    r = Request({'a':1}, **{'body_file':'hello world'}) 
+    eq_(r.environ['wsgi.input'].getvalue(), 'hello world')
+    eq_(int(r.environ['CONTENT_LENGTH']), len('hello world'))
+    del r.body_file
+    eq_(r.environ['wsgi.input'].getvalue(), '')
+    eq_(int(r.environ['CONTENT_LENGTH']), 0)
+
+
+
+
