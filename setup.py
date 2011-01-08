@@ -39,5 +39,5 @@ You may install the `in-development version of WebOb
     zip_safe=True,
     test_suite='nose.collector',
     tests_require=['Tempita', 'WSGIProxy', 'WebTest', 'dtopt', 'nose',
-                   'coverage' 'repoze.profile'],
+                   'coverage', 'repoze.profile'],
 )
