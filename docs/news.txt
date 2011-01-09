@@ -3,8 +3,8 @@ News
 
 .. contents::
 
-Post-1.0
----------
+1.0.1
+-----
 
 * As WebOb requires Python 2.4 or later, drop some compatibility modules
   and update the code to use the decorator syntax.
