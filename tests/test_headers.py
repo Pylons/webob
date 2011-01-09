@@ -1,18 +1,16 @@
 # -*- coding: UTF-8 -*-
 from webob import headers
-from nose.tools import ok_, raises
+from nose.tools import ok_,assert_raises
 
 class TestError(Exception):
     pass
 
-@raises(KeyError)
 def test_raise_keyerror():
-    """Deleting a missing key from ResponseHeaders should raise a KeyError"""
+    """Deleting a missing key from ResponseHeaders should raise a KeyError
+    Deleting a present key should not raise an error at all
+    """
     d = headers.ResponseHeaders()
-    del d['b']
-
-def test_delete_key():
-    """Deleting a present key should not raise an error at all"""
+    assert_raises(KeyError, d.__delitem__, 'b')
     d = headers.ResponseHeaders(a=1)
     del d['a']
     ok_('a' not in d)
@@ -53,13 +51,10 @@ def test_pop():
         raise(TestError('We did not get the expected error. We got %r' % \
                         e.args[0]))
 
-@raises(KeyError)
 def  test_delitem_environheaders():
     """The name of this method pretty much explains it all"""
     d = headers.EnvironHeaders({'CONTENT_LENGTH':10})
     del d['CONTENT-LENGTH']
     ok_('CONTENT-LENGTH' not in d)
     ok_(len(d)==0)
-    del d['CONTENT-LENGTH']
-
-
+    assert_raises(KeyError, d.__delitem__, 'CONTENT-LENGTH')

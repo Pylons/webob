@@ -1,7 +1,7 @@
 from webob import Request
 from webob.request import NoDefault, BaseRequest
 from webtest import TestApp
-from nose.tools import eq_, ok_, assert_raises, raises
+from nose.tools import eq_, ok_, assert_raises
 from cStringIO import StringIO
 
 def simpleapp(environ, start_response):
@@ -276,11 +276,10 @@ def test_repr_nodefault():
     nd = NoDefault
     eq_(repr(nd), '(No Default)')
 
-@raises(TypeError)
 def test_request_noenviron_param():
-    Request(environ=None)
+    """Environ is a a mandatory not null param in Request"""
+    assert_raises(TypeError, Request, environ=None) 
 
-@raises(ValueError)
 def test_environ_getter():
     """
     Parameter environ_getter in Request is no longer valid and should raise
@@ -291,7 +290,7 @@ def test_environ_getter():
             self.env = env
         def env_getter(self):
             return self.env
-    Request(environ_getter=env({'a':1}).env_getter)
+    assert_raises(ValueError, Request, environ_getter=env({'a':1}).env_getter)
 
 def test_unicode_errors():
     """
@@ -303,40 +302,31 @@ def test_unicode_errors():
     r = Request({'a':1}, unicode_errors=NoDefault)
     ok_('unicode_errors' not in r.__dict__)
 
-@raises(DeprecationWarning)
-def test_charset_deprecation1():
+def test_charset_deprecation():
     """
     Any class that inherits from BaseRequest cannot define a default_charset
-    attribute
+    attribute.
+    Any class that inherits from BaseRequest cannot define a charset attr
+    that is instance of str
     """
     class NewRequest(BaseRequest):
         default_charset = 'utf-8'
         def __init__(self, environ, **kw):
             super(NewRequest, self).__init__(environ, **kw) 
-    r = NewRequest({'a':1})
-
-@raises(DeprecationWarning)
-def test_charset_deprecation2():
-    """
-    Any class that inherits from BaseRequest cannot define a charset attr
-    that is instance of str
-    """
+    assert_raises(DeprecationWarning, NewRequest, {'a':1})
     class NewRequest(BaseRequest):
         charset = 'utf-8'
         def __init__(self, environ, **kw):
             super(NewRequest, self).__init__(environ, **kw) 
-    r = NewRequest({'a':1})
+    assert_raises(DeprecationWarning, NewRequest, {'a':1})
 
-@raises(TypeError)
 def test_unexpected_kw():
     """
     Passed an attr in kw that does not exist in the class, should raise an
     error
+    Passed an attr in kw that does exist in the class, should be ok
     """
-    r = Request({'a':1}, **{'this_does_not_exist':1})
-
-def test_expected_kw():
-    """Passed an attr in kw that does exist in the class, should be ok"""
+    assert_raises(TypeError, Request, {'a':1}, **{'this_does_not_exist':1})
     r = Request({'a':1}, **{'charset':'utf-8', 'server_name':'127.0.0.1'}) 
     eq_(getattr(r, 'charset', None), 'utf-8')
     eq_(getattr(r, 'server_name', None), '127.0.0.1')
