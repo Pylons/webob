@@ -1,5 +1,5 @@
 from webob import Request
-from webob.request import NoDefault, BaseRequest
+from webob.request import NoDefault, BaseRequest, AdhocAttrMixin
 from webtest import TestApp
 from nose.tools import eq_, ok_, assert_raises
 from cStringIO import StringIO
@@ -319,6 +319,16 @@ def test_charset_deprecation():
         def __init__(self, environ, **kw):
             super(NewRequest, self).__init__(environ, **kw) 
     assert_raises(DeprecationWarning, NewRequest, {'a':1})
+    class NewRequest(AdhocAttrMixin, BaseRequest):
+        default_charset = 'utf-8'
+        def __init__(self, environ, **kw):
+            super(NewRequest, self).__init__(environ, **kw) 
+    assert_raises(DeprecationWarning, NewRequest, {'a':1})
+    class NewRequest(AdhocAttrMixin, BaseRequest):
+        charset = 'utf-8'
+        def __init__(self, environ, **kw):
+            super(NewRequest, self).__init__(environ, **kw) 
+    assert_raises(DeprecationWarning, NewRequest, {'a':1})
 
 def test_unexpected_kw():
     """
@@ -343,3 +353,63 @@ def test_body_file_setter():
     del r.body_file
     eq_(r.environ['wsgi.input'].getvalue(), '')
     eq_(int(r.environ['CONTENT_LENGTH']), 0)
+
+def test_conttype_set_del():
+    """
+    Deleting content_type attr from a request should update the environ dict
+    Assigning content_type should replace first option of the environ dict
+    """
+    r = Request({'a':1}, **{'content_type':'text/html'}) 
+    ok_('CONTENT_TYPE' in r.environ)
+    ok_(hasattr(r, 'content_type'))
+    del r.content_type
+    ok_('CONTENT_TYPE' not in r.environ)
+    a = Request({'a':1},**{'content_type':'charset=utf-8;application/atom+xml;type=entry'})
+    ok_(a.environ['CONTENT_TYPE']=='charset=utf-8;application/atom+xml;type=entry')
+    a.content_type = 'charset=utf-8'
+    ok_(a.environ['CONTENT_TYPE']=='charset=utf-8;application/atom+xml;type=entry')
+
+def test_headers():
+    """
+    Setting headers in init and later with a property, should update the info
+    """
+    headers = {'Host': 'www.example.com', 
+               'Accept-Language': 'en-us,en;q=0.5',
+               'Accept-Encoding': 'gzip,deflate',
+               'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
+               'Keep-Alive': '115',
+               'Connection': 'keep-alive',
+               'Cache-Control': 'max-age=0'}
+    r = Request({'a':1}, headers=headers)
+    for i in headers.keys():
+        ok_(i in r.headers and
+            'HTTP_'+i.upper().replace('-', '_') in r.environ)
+    r.headers = {'Server':'Apache'}
+    eq_(r.environ.keys(), ['a',  'HTTP_SERVER'])
+
+def test_host_url():
+    """
+    Request has a read only property host_url that combines several keys to
+    create a host_url
+    """
+    a = Request({'wsgi.url_scheme':'http'}, **{'host':'www.example.com'})
+    eq_(a.host_url, 'http://www.example.com')
+    a = Request({'wsgi.url_scheme':'http'}, **{'server_name':'localhost',
+                                               'server_port':5000})
+    eq_(a.host_url, 'http://localhost:5000')
+    a = Request({'wsgi.url_scheme':'https'}, **{'server_name':'localhost',
+                                                'server_port':443})
+    eq_(a.host_url, 'https://localhost')
+
+def test_path_info_p():
+    """
+    Peek path_info to see what's coming
+    Pop path_info until there's nothing remaining
+    """
+    a = Request({'a':1}, **{'path_info':'/foo/bar','script_name':''})
+    eq_(a.path_info_peek(), 'foo')
+    eq_(a.path_info_pop(), 'foo')
+    eq_(a.path_info_peek(), 'bar')
+    eq_(a.path_info_pop(), 'bar')
+    eq_(a.path_info_peek(), None)
+    eq_(a.path_info_pop(), None)
