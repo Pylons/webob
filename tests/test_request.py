@@ -413,3 +413,22 @@ def test_path_info_p():
     eq_(a.path_info_pop(), 'bar')
     eq_(a.path_info_peek(), None)
     eq_(a.path_info_pop(), None)
+
+def test_urlvars_set_del():
+    """
+    Testing urlvars setter/getter/deleter
+    """
+    a = Request({'wsgiorg.routing_args':((),{'x':'y'}), 
+                 'paste.urlvars':{'test':'value'}})
+    a.urlvars = {'hello':'world'}
+    ok_('paste.urlvars' not in a.environ)
+    eq_(a.environ['wsgiorg.routing_args'], ((), {'hello':'world'}))
+    del a.urlvars
+    ok_('wsgiorg.routing_args' not in a.environ)
+    a = Request({'paste.urlvars':{'test':'value'}})
+    eq_(a.urlvars, {'test':'value'})
+    a.urlvars = {'hello':'world'}
+    eq_(a.environ['paste.urlvars'], {'hello':'world'})
+    del a.urlvars
+    ok_('paste.urlvars' not in a.environ)
+
