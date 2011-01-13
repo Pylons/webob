@@ -414,7 +414,7 @@ def test_path_info_p():
     eq_(a.path_info_peek(), None)
     eq_(a.path_info_pop(), None)
 
-def test_urlvars_set_del():
+def test_urlvars_property():
     """
     Testing urlvars setter/getter/deleter
     """
@@ -431,4 +431,21 @@ def test_urlvars_set_del():
     eq_(a.environ['paste.urlvars'], {'hello':'world'})
     del a.urlvars
     ok_('paste.urlvars' not in a.environ)
+
+def test_urlargs_property():
+    """
+    Testing urlargs setter/getter/deleter
+    """
+    a = Request({'paste.urlvars':{'test':'value'}})
+    eq_(a.urlargs, ())
+    a.urlargs = {'hello':'world'}
+    eq_(a.environ['wsgiorg.routing_args'], ({'hello':'world'},
+                                            {'test':'value'}))
+    a = Request({'a':1})
+    a.urlargs = {'hello':'world'}
+    eq_(a.environ['wsgiorg.routing_args'], ({'hello':'world'}, {}))
+    del a.urlargs
+    ok_('wsgiorg.routing_args' not in a.environ)
+
+
 
