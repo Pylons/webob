@@ -3,6 +3,7 @@ from webob.request import NoDefault, BaseRequest, AdhocAttrMixin
 from webtest import TestApp
 from nose.tools import eq_, ok_, assert_raises
 from cStringIO import StringIO
+import string
 
 def simpleapp(environ, start_response):
     status = '200 OK'
@@ -447,5 +448,39 @@ def test_urlargs_property():
     del a.urlargs
     ok_('wsgiorg.routing_args' not in a.environ)
 
+def test_host_property():
+    """
+    Testing host setter/getter/deleter
+    """
+    a = Request({'wsgi.url_scheme':'http'}, **{'server_name':'localhost',
+                                               'server_port':5000})
+    eq_(a.host, "localhost:5000")
+    a.host = "localhost:5000"
+    ok_('HTTP_HOST' in a.environ)
+    del a.host
+    ok_('HTTP_HOST' not in a.environ)
 
+def test_body_property():
+    """
+    Testing body setter/getter/deleter
+    The last part of this test fails, see:
+        http://trac.pythonpaste.org/pythonpaste/ticket/459
+    """
+    a = Request({'CONTENT_LENGTH':'?'})
+    # I cannot think of a case where somebody would put anything else than a
+    # numerical value in CONTENT_LENGTH, Google didn't help either
+    eq_(a.body, '')
+    # I need to implement a not seekable stringio like object.
+    class DummyIO(object):
+        def __init__(self, txt):
+            self.txt = txt
+        def read(self, n):
+            return self.txt[0:n]
+    len_strl = a.request_body_tempfile_limit/len(string.letters)+1
+    r = Request({'a':1}, **{'body_file':DummyIO(string.letters*len_strl)}) 
+    eq_(len(r.body), len(string.letters*len_strl)-1)
+    assert_raises(TypeError, setattr, r, 'body', unicode('hello world'))
+    r.body = None
+    ok_(getattr(r,'body',None)==None)
+        
 
