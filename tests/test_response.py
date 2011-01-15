@@ -43,8 +43,8 @@ def test_response():
     assert res.content_encoding is None
     assert res.body == 'a body'
     res.set_cookie('x', u'foo') # test unicode value
-    assert_raises(TypeError,
-                  Response, app_iter=iter(['a']), body="somebody")
+    assert_raises(TypeError, Response, app_iter=iter(['a']),
+                  body="somebody")
 
 def test_headers():
     r = Response()
