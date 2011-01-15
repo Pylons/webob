@@ -481,6 +481,4 @@ def test_body_property():
     eq_(len(r.body), len(string.letters*len_strl)-1)
     assert_raises(TypeError, setattr, r, 'body', unicode('hello world'))
     r.body = None
-    ok_(getattr(r,'body',None)==None)
-        
-
+    eq_(r.body, '')
