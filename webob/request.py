@@ -460,7 +460,7 @@ class BaseRequest(object):
         self.body_file = body_file
         self.environ['CONTENT_LENGTH'] = str(len(value))
 
-    def _body__del(self, value):
+    def _body__del(self):
         del self.body_file
 
     body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
