@@ -1,8 +1,11 @@
-from StringIO import StringIO
 from nose.tools import eq_, ok_, assert_raises
 from webob import *
 from webob import BaseRequest
-from cStringIO import StringIO
+import sys
+if sys.version >= '2.7':
+    from io import BytesIO as StringIO
+else:
+    from cStringIO import StringIO
 
 def simple_app(environ, start_response):
     start_response('200 OK', [
