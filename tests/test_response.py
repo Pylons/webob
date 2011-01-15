@@ -45,6 +45,9 @@ def test_response():
     res.set_cookie('x', u'foo') # test unicode value
     assert_raises(TypeError, Response, app_iter=iter(['a']),
                   body="somebody")
+    del req.environ
+    eq_(Response(request=req)._environ, req)
+    eq_(Response(request=req)._request, None)
 
 def test_headers():
     r = Response()
