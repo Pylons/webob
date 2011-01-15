@@ -43,6 +43,8 @@ def test_response():
     assert res.content_encoding is None
     assert res.body == 'a body'
     res.set_cookie('x', u'foo') # test unicode value
+    assert_raises(TypeError,
+                  Response, app_iter=iter(['a']), body="somebody")
 
 def test_headers():
     r = Response()
@@ -102,7 +104,6 @@ def test_content_length():
     eq_(r5.body, 'xxxxx')
     eq_(r5.content_length, 5)
 
-
 def test_app_iter_range():
     req = Request.blank('/', range=(2,5))
     for app_iter in [
@@ -139,4 +140,3 @@ def equal_resp(resp):
     resp2 = Response.from_file(input)
     eq_(resp.body, resp2.body)
     eq_(resp.headers, resp2.headers)
-
