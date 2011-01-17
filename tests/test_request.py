@@ -463,8 +463,6 @@ def test_host_property():
 def test_body_property():
     """
     Testing body setter/getter/deleter
-    The last part of this test fails, see:
-        http://trac.pythonpaste.org/pythonpaste/ticket/459
     """
     a = Request({'CONTENT_LENGTH':'?'})
     # I cannot think of a case where somebody would put anything else than a
@@ -476,9 +474,16 @@ def test_body_property():
             self.txt = txt
         def read(self, n):
             return self.txt[0:n]
-    len_strl = a.request_body_tempfile_limit/len(string.letters)+1
+    len_strl = BaseRequest.request_body_tempfile_limit/len(string.letters)+1
     r = Request({'a':1}, **{'body_file':DummyIO(string.letters*len_strl)}) 
     eq_(len(r.body), len(string.letters*len_strl)-1)
     assert_raises(TypeError, setattr, r, 'body', unicode('hello world'))
     r.body = None
     eq_(r.body, '')
+
+def test_str_post():
+    """
+    Testing srt_POST property
+    """
+    pass
+
