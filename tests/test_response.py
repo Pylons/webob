@@ -142,3 +142,18 @@ def equal_resp(resp):
     resp2 = Response.from_file(input)
     eq_(resp.body, resp2.body)
     eq_(resp.headers, resp2.headers)
+
+def test_content_type_in_headerlist():
+    # Couldn't manage to clone Response in order to modify class
+    # attributes safely. Shouldn't classes be fresh imported for every
+    # test?
+    default_content_type = Response.default_content_type
+    Response.default_content_type = None
+    try:
+        res = Response(headerlist=[('Content-Type', 'text/html')],
+                            charset='utf8')
+        ok_(res._headerlist)
+        eq_(res.charset, 'utf8')
+    finally:
+        Response.default_content_type = default_content_type
+
