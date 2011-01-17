@@ -460,7 +460,7 @@ class BaseRequest(object):
         self.body_file = body_file
         self.environ['CONTENT_LENGTH'] = str(len(value))
 
-    def _body__del(self, value):
+    def _body__del(self):
         del self.body_file
 
     body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
@@ -686,8 +686,6 @@ class BaseRequest(object):
         input = self.body_file
         if hasattr(input, 'seek'):
             # Just in case someone has read parts of the body already
-            ## FIXME: Should we use .tell() to try to put the body
-            ## back to its previous position?
             input.seek(0)
         if length in (-1, None):
             body = self.body
@@ -773,7 +771,7 @@ class BaseRequest(object):
             env['HTTP_CACHE_CONTROL'] = str(value)
             env['webob._cache_control'] = (None, None)
 
-    def _cache_control__del(self, value):
+    def _cache_control__del(self):
         env = self.environ
         if 'HTTP_CACHE_CONTROL' in env:
             del env['HTTP_CACHE_CONTROL']

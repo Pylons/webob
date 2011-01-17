@@ -1,4 +1,4 @@
-from webob import Request
+from webob import Request, BaseRequest
 from webtest import TestApp
 from nose.tools import eq_, ok_, assert_raises
 from cStringIO import StringIO
@@ -210,6 +210,14 @@ def test_copy():
     old_body_file = req.body_file
     req.make_body_seekable()
     assert req.body_file is old_body_file
+
+def test_set_body():
+    req = BaseRequest.blank('/', body='foo')
+    eq_(req.body, 'foo')
+    eq_(req.content_length, 3)
+    del req.body
+    eq_(req.body, '')
+    eq_(req.content_length, 0)
 
 
 def test_broken_clen_header():
