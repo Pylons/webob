@@ -1,4 +1,5 @@
-import sys, subprocess, site, os
+import sys, site, os
+from os.path import *
 
 def create_suite():
     from mext.test_suite import TestSuite
@@ -12,10 +13,15 @@ def create_suite():
         suite.add_nosetest(test)
     return suite
 
+testenv_dir = join(os.environ['TEMP'], 'webob-testenv')
+if not exists(testenv_dir):
+    os.makedirs(testenv_dir)
+    from setuptools.command.easy_install import main
+    site.USER_SITE = testenv_dir
+    libs = 'nose dtopt webtest mext.test>=0.4.2 coverage'.split()
+    main(['-x', '-N', '-d', testenv_dir] + libs)
 
-if not os.path.exists('testenv'):
-    subprocess.check_call("pip install -q -E testenv nose dtopt webtest mext.test>=0.4.2 coverage")
-site.addsitedir('testenv/Lib/site-packages')
+site.addsitedir(testenv_dir)
 suite = create_suite()
 
 if __name__ == '__main__':
