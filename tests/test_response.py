@@ -139,12 +139,6 @@ def test_from_file():
                     content_type='text/plain')
     equal_resp(resp)
 
-def equal_resp(resp):
-    input = StringIO(str(resp))
-    resp2 = Response.from_file(input)
-    eq_(resp.body, resp2.body)
-    eq_(resp.headers, resp2.headers)
-
 def test_content_type_in_headerlist():
     # Couldn't manage to clone Response in order to modify class
     # attributes safely. Shouldn't classes be fresh imported for every
@@ -159,3 +153,8 @@ def test_content_type_in_headerlist():
     finally:
         Response.default_content_type = default_content_type
 
+def equal_resp(resp):
+    input = StringIO(str(resp))
+    resp2 = Response.from_file(input)
+    eq_(resp.body, resp2.body)
+    eq_(resp.headers, resp2.headers)
