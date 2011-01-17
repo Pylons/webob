@@ -1,4 +1,4 @@
-import sys, site, os
+import sys, site, os, tempfile
 from os.path import *
 
 def create_suite():
@@ -13,7 +13,7 @@ def create_suite():
         suite.add_nosetest(test)
     return suite
 
-testenv_dir = join(os.environ['TEMP'], 'webob-testenv')
+testenv_dir = join(tempfile.gettempdir(), 'webob-testenv')
 if not exists(testenv_dir):
     os.makedirs(testenv_dir)
     from setuptools.command.easy_install import main
