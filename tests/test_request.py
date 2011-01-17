@@ -1,5 +1,5 @@
-from webob import Request
-from webob.request import NoDefault, BaseRequest, AdhocAttrMixin
+from webob import Request, BaseRequest
+from webob.request import NoDefault, AdhocAttrMixin
 from webtest import TestApp
 from nose.tools import eq_, ok_, assert_raises
 from cStringIO import StringIO
@@ -213,12 +213,22 @@ def test_copy_body():
     req.make_body_seekable()
     assert req.body_file is old_body_file
 
+def test_set_body():
+    req = BaseRequest.blank('/', body='foo')
+    eq_(req.body, 'foo')
+    eq_(req.content_length, 3)
+    del req.body
+    eq_(req.body, '')
+    eq_(req.content_length, 0)
+
+
 def test_broken_clen_header():
     # if the UA sends "content_length: ..' header (the name is wrong)
     # it should not break the req.headers.items()
     req = Request.blank('/')
     req.environ['HTTP_CONTENT_LENGTH'] = '0'
     req.headers.items()
+
 
 def test_nonstr_keys():
     # non-string env keys shouldn't break req.headers
@@ -244,6 +254,7 @@ def test_authorization2():
        ('x="y,x", z=z', {'x': 'y,x', 'z': 'z'}),
     ]:
         eq_(parse_auth_params(s), d)
+
 
 def test_from_file():
     req = Request.blank('http://example.com:8000/test.html?params')
@@ -480,10 +491,3 @@ def test_body_property():
     assert_raises(TypeError, setattr, r, 'body', unicode('hello world'))
     r.body = None
     eq_(r.body, '')
-
-def test_str_post():
-    """
-    Testing srt_POST property
-    """
-    pass
-
