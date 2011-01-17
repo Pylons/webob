@@ -1,6 +1,5 @@
 from nose.tools import eq_, ok_, assert_raises
-from webob import *
-from webob import BaseRequest
+from webob import BaseRequest, Request, Response
 import sys
 if sys.version >= '2.7':
     from io import BytesIO as StringIO
