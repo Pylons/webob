@@ -49,6 +49,8 @@ def test_response():
     del req.environ
     eq_(Response(request=req)._environ, req)
     eq_(Response(request=req)._request, None)
+    assert_raises(TypeError, Response, charset=None,
+                  body=u"unicode body")
 
 def test_headers():
     r = Response()
