@@ -51,6 +51,7 @@ def test_response():
     eq_(Response(request=req)._request, None)
     assert_raises(TypeError, Response, charset=None,
                   body=u"unicode body")
+    assert_raises(TypeError, Response, wrong_key='dummy')
 
 def test_headers():
     r = Response()
