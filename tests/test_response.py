@@ -155,8 +155,8 @@ def test_from_file():
                     content_type='text/plain')
     equal_resp(res)
 
-def equal_resp(resp):
-    input_ = StringIO(str(resp))
-    resp2 = Response.from_file(input_)
-    eq_(resp.body, resp2.body)
-    eq_(resp.headers, resp2.headers)
+def equal_resp(res):
+    input_ = StringIO(str(res))
+    res2 = Response.from_file(input_)
+    eq_(res.body, res2.body)
+    eq_(res.headers, res2.headers)
