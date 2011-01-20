@@ -135,12 +135,11 @@ def test_app_iter_range():
         eq_(res.body, '234', 'body=%r; app_iter=%r' % (res.body, app_iter))
 
 def test_from_file():
-    resp = Response('test')
-    equal_resp(resp)
-
-    resp = Response(app_iter=iter(['test ', 'body']),
+    res = Response('test')
+    equal_resp(res)
+    res = Response(app_iter=iter(['test ', 'body']),
                     content_type='text/plain')
-    equal_resp(resp)
+    equal_resp(res)
 
 def test_content_type_in_headerlist():
     # Couldn't manage to clone Response in order to modify class
