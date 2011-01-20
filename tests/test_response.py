@@ -167,3 +167,7 @@ def test_from_file_w_leading_space_in_header():
     file_w_space = StringIO('200 OK\n\tContent-Type: text/html; charset=UTF-8')
     res2 = Response.from_file(file_w_space)
     eq_(res1.headers, res2.headers)
+
+def test_file_bad_header():
+    file_w_bh = StringIO('200 OK\nBad Header')
+    assert_raises(ValueError, Response.from_file, file_w_bh)
