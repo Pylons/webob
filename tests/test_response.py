@@ -134,13 +134,6 @@ def test_app_iter_range():
         eq_(list(res.content_range), [2,5,6])
         eq_(res.body, '234', 'body=%r; app_iter=%r' % (res.body, app_iter))
 
-def test_from_file():
-    res = Response('test')
-    equal_resp(res)
-    res = Response(app_iter=iter(['test ', 'body']),
-                    content_type='text/plain')
-    equal_resp(res)
-
 def test_content_type_in_headerlist():
     # Couldn't manage to clone Response in order to modify class
     # attributes safely. Shouldn't classes be fresh imported for every
@@ -154,6 +147,13 @@ def test_content_type_in_headerlist():
         eq_(res.charset, 'utf8')
     finally:
         Response.default_content_type = default_content_type
+
+def test_from_file():
+    res = Response('test')
+    equal_resp(res)
+    res = Response(app_iter=iter(['test ', 'body']),
+                    content_type='text/plain')
+    equal_resp(res)
 
 def equal_resp(resp):
     input = StringIO(str(resp))
