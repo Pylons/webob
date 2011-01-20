@@ -156,7 +156,7 @@ def test_from_file():
     equal_resp(res)
 
 def equal_resp(resp):
-    input = StringIO(str(resp))
-    resp2 = Response.from_file(input)
+    input_ = StringIO(str(resp))
+    resp2 = Response.from_file(input_)
     eq_(resp.body, resp2.body)
     eq_(resp.headers, resp2.headers)
