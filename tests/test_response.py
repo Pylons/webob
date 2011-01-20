@@ -160,3 +160,10 @@ def equal_resp(res):
     res2 = Response.from_file(input_)
     eq_(res.body, res2.body)
     eq_(res.headers, res2.headers)
+
+def test_from_file_w_leading_space_in_header():
+    # Make sure the removal of code dealing with leading spaces is safe
+    res1 = Response()
+    file_w_space = StringIO('200 OK\n\tContent-Type: text/html; charset=UTF-8')
+    res2 = Response.from_file(file_w_space)
+    eq_(res1.headers, res2.headers)
