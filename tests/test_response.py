@@ -49,6 +49,9 @@ def test_response():
     del req.environ
     eq_(Response(request=req)._environ, req)
     eq_(Response(request=req)._request, None)
+    assert_raises(TypeError, Response, charset=None,
+                  body=u"unicode body")
+    assert_raises(TypeError, Response, wrong_key='dummy')
 
 def test_headers():
     r = Response()
@@ -131,14 +134,6 @@ def test_app_iter_range():
         eq_(list(res.content_range), [2,5,6])
         eq_(res.body, '234', 'body=%r; app_iter=%r' % (res.body, app_iter))
 
-def test_from_file():
-    resp = Response('test')
-    equal_resp(resp)
-
-    resp = Response(app_iter=iter(['test ', 'body']),
-                    content_type='text/plain')
-    equal_resp(resp)
-
 def test_content_type_in_headerlist():
     # Couldn't manage to clone Response in order to modify class
     # attributes safely. Shouldn't classes be fresh imported for every
@@ -153,8 +148,26 @@ def test_content_type_in_headerlist():
     finally:
         Response.default_content_type = default_content_type
 
-def equal_resp(resp):
-    input = StringIO(str(resp))
-    resp2 = Response.from_file(input)
-    eq_(resp.body, resp2.body)
-    eq_(resp.headers, resp2.headers)
+def test_from_file():
+    res = Response('test')
+    equal_resp(res)
+    res = Response(app_iter=iter(['test ', 'body']),
+                    content_type='text/plain')
+    equal_resp(res)
+
+def equal_resp(res):
+    input_ = StringIO(str(res))
+    res2 = Response.from_file(input_)
+    eq_(res.body, res2.body)
+    eq_(res.headers, res2.headers)
+
+def test_from_file_w_leading_space_in_header():
+    # Make sure the removal of code dealing with leading spaces is safe
+    res1 = Response()
+    file_w_space = StringIO('200 OK\n\tContent-Type: text/html; charset=UTF-8')
+    res2 = Response.from_file(file_w_space)
+    eq_(res1.headers, res2.headers)
+
+def test_file_bad_header():
+    file_w_bh = StringIO('200 OK\nBad Header')
+    assert_raises(ValueError, Response.from_file, file_w_bh)
