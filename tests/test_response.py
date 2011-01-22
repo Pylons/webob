@@ -39,9 +39,25 @@ def test_response():
     res.decode_content()
     assert res.content_encoding is None
     assert res.body == 'a body'
+
+def test_cookies():
+    res = Response()
     res.set_cookie('x', u'\N{BLACK SQUARE}') # test unicode value
     eq_(res.headers.getall('set-cookie'), ['x="\\342\\226\\240"; Path=/']) # uft8 encoded
+    r2 = res.merge_cookies(simple_app)
+    r2 = BaseRequest.blank('/').get_response(r2)
+    eq_(r2.headerlist,
+        [('Content-Type', 'text/html; charset=utf8'),
+        ('Set-Cookie', 'x="\\342\\226\\240"; Path=/'),
+        ]
+    )
     res.set_cookie('x', 'bar', max_age=year) # test expires
+
+def test_http_only_cookie():
+    req = Request.blank('/')
+    res = req.get_response(Response('blah'))
+    res.set_cookie("foo", "foo", httponly=True)
+    eq_(res.headers['set-cookie'], 'foo=foo; Path=/; HttpOnly')
 
 def test_headers():
     r = Response()
@@ -54,12 +70,6 @@ def test_response_copy():
     r2 = r.copy()
     eq_(r.body, 'a')
     eq_(r2.body, 'a')
-
-def test_http_only_cookie():
-    req = Request.blank('/')
-    res = req.get_response(Response('blah'))
-    res.set_cookie("foo", "foo", httponly=True)
-    eq_(res.headers['set-cookie'], 'foo=foo; Path=/; HttpOnly')
 
 def test_HEAD_closes():
     req = Request.blank('/')

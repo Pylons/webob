@@ -432,7 +432,6 @@ class Response(object):
     content_language = list_header('Content-Language', '14.12')
     content_location = header_getter('Content-Location', '14.14')
     content_md5 = header_getter('Content-MD5', '14.14')
-    # FIXME: a special ContentDisposition type would be nice
     content_disposition = header_getter('Content-Disposition', '19.5.1')
 
     accept_ranges = header_getter('Accept-Ranges', '14.5')
@@ -460,8 +459,7 @@ class Response(object):
 
     server = header_getter('Server', '14.38')
 
-
-    ## FIXME: the standard allows this to be a list of challenges
+    # FIXME: the standard allows this to be a list of challenges
     www_authenticate = converter(
         header_getter('WWW-Authenticate', '14.47'),
         parse_auth, serialize_auth,
@@ -676,10 +674,10 @@ class Response(object):
                 resp.headers.add('Set-Cookie', header)
             return resp
         else:
+            c_headers = [h for h in self.headerlist if h[0].lower() == 'set-cookie']
             def repl_app(environ, start_response):
                 def repl_start_response(status, headers, exc_info=None):
-                    headers = headers + self.headers.getall('Set-Cookie')
-                    return start_response(status, headers, exc_info=exc_info)
+                    return start_response(status, headers+c_headers, exc_info=exc_info)
                 return resp(environ, repl_start_response)
             return repl_app
 
