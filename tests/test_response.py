@@ -39,7 +39,9 @@ def test_response():
     res.decode_content()
     assert res.content_encoding is None
     assert res.body == 'a body'
-    res.set_cookie('x', u'foo') # test unicode value
+    res.set_cookie('x', u'\N{BLACK SQUARE}') # test unicode value
+    eq_(res.headers.getall('set-cookie'), ['x="\\342\\226\\240"; Path=/']) # uft8 encoded
+    res.set_cookie('x', 'bar', max_age=year) # test expires
 
 def test_headers():
     r = Response()
