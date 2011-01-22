@@ -219,9 +219,9 @@ Also range response::
     >>> result = req.get_response(res)
     >>> print result
     206 Partial Content
-    Content-Type: text/html; charset=UTF-8
-    Content-Range: bytes 5-9/10
     Content-Length: 5
+    Content-Range: bytes 5-9/10
+    Content-Type: text/html; charset=UTF-8
     <BLANKLINE>
     56789
     >>> tuple(result.content_range)
@@ -233,9 +233,9 @@ And an invalid requested range:
     >>> result = req.get_response(res)
     >>> print result
     416 Requested Range Not Satisfiable
-    Content-Range: bytes */10
     Content-Length: 44
-    Content-Type: text/plain; charset=UTF-8
+    Content-Range: bytes */10
+    Content-Type: text/plain
     <BLANKLINE>
     Requested range not satisfiable: bytes=10-19
     >>> str(result.content_range)

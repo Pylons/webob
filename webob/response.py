@@ -936,22 +936,12 @@ class Response(object):
         status304 = False
         headerlist = self._abs_headerlist(environ)
         if req.method in self._safe_methods:
-            if req.if_modified_since and self.last_modified and self.last_modified <= req.if_modified_since:
-                status304 = True
             if req.if_none_match and self.etag:
-                ## FIXME: should a weak match be okay?
-                if self.etag in req.if_none_match:
-                    status304 = True
-                else:
-                    # Even if If-Modified-Since matched, if ETag doesn't then reject it
-                    status304 = False
+                status304 = self.etag in req.if_none_match
+            elif req.if_modified_since and self.last_modified:
+                status304 = self.last_modified <= req.if_modified_since
         if status304:
-            remove_headers = ('content-length', 'content-type')
-            headerlist = filter(
-                lambda (k,v): k.lower() not in remove_headers,
-                headerlist
-            )
-            start_response('304 Not Modified', headerlist)
+            start_response('304 Not Modified', filter_headers(headerlist))
             return EmptyResponse(self.app_iter)
         if req.method == 'HEAD':
             start_response(self.status, headerlist)
@@ -967,30 +957,25 @@ class Response(object):
             # FIXME: we should support If-Range
             if content_range is None:
                 iter_close(self.app_iter)
-                # FIXME: we should use exc.HTTPRequestRangeNotSatisfiable
-                # and let it generate the response body in correct content-type
-                error_resp = Response(
-                    status_int=416,
-                    headers=list(headerlist),
-                    content_range = ContentRange(None, None, self.content_length),
-                )
-                error_resp.body = "Requested range not satisfiable: %s" % req.range
-                error_resp.content_type = 'text/plain'
-                #error_resp.content_length = None
-                return error_resp(environ, start_response)
+                body = "Requested range not satisfiable: %s" % req.range
+                headerlist = [
+                    ('Content-Length', str(len(body))),
+                    ('Content-Range', str(ContentRange(None, None, self.content_length))),
+                    ('Content-Type', 'text/plain'),
+                ] + filter_headers(headerlist)
+                start_response('416 Requested Range Not Satisfiable', headerlist)
+                return [body]
             else:
                 app_iter = self.app_iter_range(content_range.start, content_range.stop)
                 if app_iter is not None:
-                    partial_resp = Response(
-                        status = '206 Partial Content',
-                        headers=list(headerlist),
-                        content_range=content_range,
-                        app_iter=app_iter,
-                    )
-                    # this should be guaranteed by Range.range_for_length(length)
-                    assert content_range.start is not None
-                    partial_resp.content_length = content_range.stop - content_range.start
-                    return partial_resp(environ, start_response)
+                    assert content_range.start is not None # this should be guaranteed by Range.range_for_length(length)
+                    headerlist = [
+                        ('Content-Length', str(content_range.stop - content_range.start)),
+                        ('Content-Range', str(content_range)),
+                    ] + filter_headers(headerlist, ('content-length',))
+                    start_response('206 Partial Content', headerlist)
+                    return app_iter
+
         start_response(self.status, headerlist)
         return self.app_iter
 
@@ -1006,6 +991,9 @@ class Response(object):
             return app_iter.app_iter_range(start, stop)
         return AppIterRange(app_iter, start, stop)
 
+
+def filter_headers(hlist, remove_headers=('content-length', 'content-type')):
+    return [h for h in hlist if (h[0].lower() not in remove_headers)]
 
 
 class ResponseBodyFile(object):
