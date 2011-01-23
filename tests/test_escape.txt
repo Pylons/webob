@@ -1,0 +1,56 @@
+A test for html_escape:
+
+    >>> from webob import html_escape
+
+The usual unsafe characters are escaped:
+
+    >>> html_escape('these chars: < > & "')
+    'these chars: &lt; &gt; &amp; &quot;'
+
+XXX The apostrophe is *not* escaped, which some might consider to be
+a serious bug (see, e.g. http://www.cvedetails.com/cve/CVE-2010-2480/)
+
+##  >>> html_escape("'")
+##  "&#39;"
+
+Unicode strings are also converted to ASCII:
+
+    >>> html_escape(u'the majestic m\xf8ose')
+    'the majestic m&#248;ose'
+
+8-bit strings are passed through
+
+    >>> html_escape(u'the majestic m\xf8ose'.encode('utf-8'))
+    'the majestic m\xc3\xb8ose'
+
+``None`` is treated specially, and returns the empty string.
+
+    >>> html_escape(None)
+    ''
+
+Objects that define a ``__html__`` method handle their own escaping
+
+    >>> class Markup(object):
+    ...     def __html__(self):
+    ...         return '<blink>:</blink>'
+    >>> html_escape(Markup())
+    '<blink>:</blink>'
+
+Things that are not strings are converted to strings and then escaped
+
+    >>> html_escape(42)
+    '42'
+    >>> html_escape(Exception("expected a '<'."))
+    "expected a '&lt;'."
+
+If an object implements both ``__str__`` and ``__unicode__``, the latter
+is preferred
+
+    >>> class SuperMoose(object):
+    ...     def __str__(self):
+    ...         return u'm\xf8ose'.encode('UTF-8')
+    ...     def __unicode__(self):
+    ...         return u'm\xf8ose'
+    >>> html_escape(SuperMoose())
+    'm&#248;ose'
+
