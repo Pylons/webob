@@ -189,3 +189,14 @@ def test_set_status():
     res.status = u"OK 200"
     eq_(res.status, "OK 200")
     assert_raises(TypeError, setattr, res, 'status', float(200))
+
+def test_set_headerlist():
+    res = Response()
+    # looks like a list
+    res.headerlist = (('Content-Type', 'text/html; charset=UTF-8'),)
+    eq_(res.headerlist, [('Content-Type', 'text/html; charset=UTF-8')])
+    # has items
+    res.headerlist = {'Content-Type': 'text/html; charset=UTF-8'}
+    eq_(res.headerlist, [('Content-Type', 'text/html; charset=UTF-8')])
+    del res.headerlist
+    eq_(res.headerlist, [])
