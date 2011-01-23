@@ -183,3 +183,9 @@ def test_from_file_w_leading_space_in_header():
 def test_file_bad_header():
     file_w_bh = StringIO('200 OK\nBad Header')
     assert_raises(ValueError, Response.from_file, file_w_bh)
+
+def test_set_status():
+    res = Response()
+    res.status = u"OK 200"
+    eq_(res.status, "OK 200")
+    assert_raises(TypeError, setattr, res, 'status', float(200))
