@@ -64,7 +64,6 @@ def test_cookies():
         ('Set-Cookie', 'x="\\342\\226\\240"; Path=/'),
         ]
     )
-    res.set_cookie('x', 'bar', max_age=year) # test expires
 
 def test_http_only_cookie():
     req = Request.blank('/')
