@@ -473,7 +473,7 @@ def test_host_property():
 
 def test_body_property():
     """
-    Testing body setter/getter/deleter
+    Testing body setter/getter/deleter plus making sure body has a seek method
     """
     a = Request({'CONTENT_LENGTH':'?'})
     # I cannot think of a case where somebody would put anything else than a
@@ -491,3 +491,28 @@ def test_body_property():
     assert_raises(TypeError, setattr, r, 'body', unicode('hello world'))
     r.body = None
     eq_(r.body, '')
+    r = Request({'a':1}, **{'body_file':DummyIO(string.letters)}) 
+    ok_(hasattr(r.body_file, 'seek')==False)
+    r.make_body_seekable()
+    ok_(hasattr(r.body_file, 'seek')==True)
+    r = Request({'a':1}, **{'body_file':StringIO(string.letters)}) 
+    ok_(hasattr(r.body_file, 'seek')==True)
+    r.make_body_seekable()
+    ok_(hasattr(r.body_file, 'seek')==True)
+
+def test_copy_body():
+    """Testing Request copy body"""
+    req = BaseRequest({'CONTENT_LENGTH':'0', 'body':''}) 
+    assert req.copy_body() is None
+    req = Request({'a':1}, **{'body_file':'hello world'}) 
+    eq_(req.copy_body(), None)
+    lim = req.request_body_tempfile_limit
+    req = Request({'a':1}, **{'body_file':string.letters*(lim+1)}) 
+    assert req.copy_body() is None
+    req = BaseRequest({'a':1}, **{'body_file':''}) 
+    req.content_length = None
+    assert req.copy_body() is None
+    # What's the point for the 'else' statement in copy_body (corresponding to
+    # the 'if body is None: ... else' lines (ref. line 702)? Looks to me
+    # there's no way to get there
+
