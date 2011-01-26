@@ -249,7 +249,7 @@ class UnicodeMultiDict(DictMixin):
     is enabled.
 
     """
-    def __init__(self, multi=None, encoding=None, errors='strict',
+    def __init__(self, multi, encoding=None, errors='strict',
                  decode_keys=False):
         self.multi = multi
         if encoding is None:
