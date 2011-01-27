@@ -508,11 +508,15 @@ def test_copy_body():
     eq_(req.copy_body(), None)
     lim = req.request_body_tempfile_limit
     req = Request({'a':1}, **{'body_file':string.letters*(lim+1)}) 
-    assert req.copy_body() is None
+    req.copy_body()
+    assert isinstance(req.body_file, file)
     req = BaseRequest({'a':1}, **{'body_file':''}) 
+    old_f = req.body_file
     req.content_length = None
-    assert req.copy_body() is None
-    # What's the point for the 'else' statement in copy_body (corresponding to
-    # the 'if body is None: ... else' lines (ref. line 702)? Looks to me
-    # there's no way to get there
+    req.copy_body()
+    assert old_f!=req.body_file
+    req = Request({'a':1}, **{'body_file':string.letters*(lim+1)}) 
+    req.content_length = -1
+    req.copy_body()
+    assert isinstance(req.body_file, file)
 
