@@ -520,3 +520,17 @@ def test_copy_body():
     req.copy_body()
     assert isinstance(req.body_file, file)
 
+def test_repr_invalid():
+    """If we have an invalid WSGI environ, the repr should tell us"""
+    req = BaseRequest({'CONTENT_LENGTH':'0', 'body':''}) 
+    ok_(repr(req).endswith('(invalid WSGI environ)>'))
+
+def test_from_file():
+    """If we pass a file with garbage to from_file method it should raise an
+    error
+    TODO: work in progress
+    """
+    a = StringIO('hello world')
+    assert_raises(ValueError, BaseRequest.from_file, a)
+
+
