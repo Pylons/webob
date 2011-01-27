@@ -528,7 +528,7 @@ class Response(object):
 
     def _content_type__set(self, value):
         if not value:
-            self._cache_control__del()
+            self._content_type__del()
             return
         if ';' not in value:
             header = self.headers.get('Content-Type', '')
@@ -538,10 +538,7 @@ class Response(object):
         self.headers['Content-Type'] = value
 
     def _content_type__del(self):
-        try:
-            del self.headers['Content-Type']
-        except KeyError:
-            pass
+        self.headers.pop('Content-Type', None)
 
     content_type = property(_content_type__get, _content_type__set,
                             _content_type__del, doc=_content_type__get.__doc__)
