@@ -53,6 +53,19 @@ def test_response():
                   body=u"unicode body")
     assert_raises(TypeError, Response, wrong_key='dummy')
 
+def test_content_type():
+    r = Response()
+    # default ctype and charset
+    eq_(r.content_type, 'text/html')
+    eq_(r.charset, 'UTF-8')
+    # setting to none, removes the header
+    r.content_type = None
+    eq_(r.content_type, None)
+    eq_(r.charset, None)
+    # can set missing ctype
+    r.content_type = None
+    eq_(r.content_type, None)
+
 def test_cookies():
     res = Response()
     res.set_cookie('x', u'\N{BLACK SQUARE}') # test unicode value
