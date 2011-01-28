@@ -1,7 +1,7 @@
 from webob import Request, BaseRequest
 from webob.request import NoDefault, AdhocAttrMixin
 from webtest import TestApp
-from nose.tools import eq_, ok_, assert_raises
+from nose.tools import eq_, ok_, assert_raises, assert_false
 from cStringIO import StringIO
 import string
 
@@ -528,9 +528,22 @@ def test_repr_invalid():
 def test_from_file():
     """If we pass a file with garbage to from_file method it should raise an
     error
-    TODO: work in progress
     """
-    a = StringIO('hello world')
-    assert_raises(ValueError, BaseRequest.from_file, a)
-
+    assert_raises(ValueError, BaseRequest.from_file, StringIO('hello world'))
+    val_file = StringIO(
+        "GET /webob/ HTTP/1.1\n"
+        "Host: pythonpaste.org\n"
+        "User-Agent: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.13)"
+        "Gecko/20101206 Ubuntu/10.04 (lucid) Firefox/3.6.13\n"
+        "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;"
+        "q=0.8\n"
+        "Accept-Language: en-us,en;q=0.5\n"
+        "Accept-Encoding: gzip,deflate\n"
+        "Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\n"
+        "Keep-Alive: 115\n"
+        "Connection: keep-alive\n"
+    )
+    req = BaseRequest.from_file(val_file)
+    assert isinstance(req, BaseRequest)
+    assert_false(repr(req).endswith('(invalid WSGI environ)>'))
 
