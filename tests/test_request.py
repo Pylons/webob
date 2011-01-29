@@ -527,7 +527,7 @@ def test_repr_invalid():
 
 def test_from_file():
     """If we pass a file with garbage to from_file method it should raise an
-    error
+    error plus missing bits in from_file method
     """
     assert_raises(ValueError, BaseRequest.from_file, StringIO('hello world'))
     val_file = StringIO(
@@ -540,10 +540,17 @@ def test_from_file():
         "Accept-Language: en-us,en;q=0.5\n"
         "Accept-Encoding: gzip,deflate\n"
         "Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\n"
+        # duplicate on porpouse
+        "Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\n"
         "Keep-Alive: 115\n"
         "Connection: keep-alive\n"
     )
     req = BaseRequest.from_file(val_file)
     assert isinstance(req, BaseRequest)
     assert_false(repr(req).endswith('(invalid WSGI environ)>'))
+    val_file = StringIO(
+        "GET /webob/ HTTP/1.1\n"
+        "Host pythonpaste.org\n"
+    )
+    assert_raises(ValueError, BaseRequest.from_file, val_file)
 
