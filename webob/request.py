@@ -820,7 +820,13 @@ class BaseRequest(object):
             abs(id(self)), name)
         return msg
 
-    def __str__(self, skip_body=False):
+    def as_string(self, skip_body=False):
+        """
+            Return HTTP string representing this request.
+            If skip_body is True, exclude the body.
+            If skip_body is an integer larger than one, skip body
+            only if its length is bigger than that number.
+        """
         url = self.url
         host = self.host_url
         assert url.startswith(host)
@@ -828,9 +834,17 @@ class BaseRequest(object):
         parts = ['%s %s %s' % (self.method, url, self.environ['SERVER_PROTOCOL'])]
         self.headers.setdefault('Host', self.host)
         parts += map('%s: %s'.__mod__, sorted(self.headers.items()))
-        if not skip_body and self.method in ('PUT', 'POST'):
-            parts += ['', self.body]
+        if self.method in ('PUT', 'POST'):
+            if skip_body > 1:
+                if len(self.body) > skip_body:
+                    parts += ['<body skipped (len=%s)>' % len(self.body)]
+                else:
+                    skip_body = False
+            if not skip_body:
+                parts += ['', self.body]
         return '\n'.join(parts)
+
+    __str__ = as_string
 
     @classmethod
     def from_file(cls, fp):

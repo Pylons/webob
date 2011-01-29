@@ -21,8 +21,9 @@ should have.
     >>> req = Request.blank('/')
     >>> req # doctest: +ELLIPSIS
     <Request at ... GET http://localhost/>
-    >>> print repr(str(req))
-    'GET / HTTP/1.0\nHost: localhost:80'
+    >>> print req
+    GET / HTTP/1.0
+    Host: localhost:80
     >>> req.environ # doctest: +ELLIPSIS
     {...}
     >>> isinstance(req.body_file, InputType)
@@ -465,3 +466,42 @@ request instance itself.
     '1000'
     >>> BaseRequest.blank('/1000/x').path_info_pop('\d+')
     '1000'
+
+
+    >>> req = Request.blank('/', method='PUT', body='x'*10)
+
+str(req) returns the request as HTTP request string
+
+    >>> print req
+    PUT / HTTP/1.0
+    Content-Length: 10
+    Host: localhost:80
+    <BLANKLINE>
+    xxxxxxxxxx
+
+req.as_string() does the same but also can take additional argument `skip_body`
+skip_body=True excludes the body from the result
+
+    >>> print req.as_string(skip_body=True)
+    PUT / HTTP/1.0
+    Content-Length: 10
+    Host: localhost:80
+
+
+skip_body=<int> excludes the body from the result if it's longer than that number
+
+    >>> print req.as_string(skip_body=5)
+    PUT / HTTP/1.0
+    Content-Length: 10
+    Host: localhost:80
+    <body skipped (len=10)>
+
+but not if it's shorter
+
+    >>> print req.as_string(skip_body=100)
+    PUT / HTTP/1.0
+    Content-Length: 10
+    Host: localhost:80
+    <BLANKLINE>
+    xxxxxxxxxx
+
