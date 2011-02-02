@@ -76,12 +76,11 @@ class BaseRequest(object):
         return self.environ['wsgi.input']
     def _body_file__set(self, value):
         if isinstance(value, str):
-            length = len(value)
+            self.environ['CONTENT_LENGTH'] = str(len(value))
             value = StringIO(value)
         else:
-            length = -1
+            self.environ.pop('CONTENT_LENGTH', None)
         self.environ['wsgi.input'] = value
-        self.environ['CONTENT_LENGTH'] = str(length)
     def _body_file__del(self):
         self.environ['wsgi.input'] = StringIO('')
         self.environ['CONTENT_LENGTH'] = '0'
