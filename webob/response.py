@@ -801,17 +801,22 @@ class Response(object):
         content_encoding = self.content_encoding or 'identity'
         if content_encoding == 'identity':
             return
-        if content_encoding != 'gzip':
+        if content_encoding not in ('gzip', 'deflate'):
             raise ValueError(
                 "I don't know how to decode the content %s" % content_encoding)
-        from gzip import GzipFile
-        f = StringIO(self.body)
-        gzip_f = GzipFile(filename='', mode='r', fileobj=f)
-        self.body = gzip_f.read()
-        self.content_encoding = None
-        gzip_f.close()
-        f.close()
-
+        if content_encoding == 'gzip':
+            from gzip import GzipFile
+            f = StringIO(self.body)
+            gzip_f = GzipFile(filename='', mode='r', fileobj=f)
+            self.body = gzip_f.read()
+            self.content_encoding = None
+            gzip_f.close()
+            f.close()
+        else:
+            import zlib
+            # Weird feature: http://bugs.python.org/issue5784
+            self.body = zlib.decompress(self.body, -15)
+            self.content_encoding = None
 
     def md5_etag(self, body=None, set_content_md5=False):
         """

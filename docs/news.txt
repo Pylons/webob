@@ -3,6 +3,11 @@ News
 
 .. contents::
 
+hg tip
+------
+
+* Support for the ``deflate`` method with ``resp.decode_content()`
+
 1.0.1
 -----
 
