@@ -425,39 +425,23 @@ class BaseRequest(object):
         """
         Return the content of the request body.
         """
-        try:
-            length = int(self.environ.get('CONTENT_LENGTH', '0'))
-        except ValueError:
-            return ''
-        # maybe we should use .tell() before reading and then use it to seek back?
-        body = self.body_file.read(length)
-        try:
-            self.body_file.seek(0)
-        except (AttributeError, IOError):
-            # AttributeError is thrown if body_file doesn't have a .seek method
-            # IOError is thrown if body_file is stdin (or wrapped stdin)
-            tempfile_limit = self.request_body_tempfile_limit
-            if tempfile_limit and len(body) > tempfile_limit:
-                fileobj = tempfile.TemporaryFile()
-                fileobj.write(body)
-                fileobj.seek(0)
-            else:
-                fileobj = StringIO(body)
-            # We don't want/need to lose CONTENT_LENGTH here (as setting
-            # self.body_file would do):
-            self.environ['wsgi.input'] = fileobj
-        return body
+        self.make_body_seekable()
+        clen = self.content_length
+        if clen is None:
+            clen = -1
+        r = self.body_file.read(clen)
+        self.body_file.seek(0)
+        return r
 
     def _body__set(self, value):
         if value is None:
             del self.body
             return
         if not isinstance(value, str):
-            raise TypeError(
-                "You can only set Request.body to a str (not %r)" % type(value))
-        body_file = StringIO(value)
-        self.body_file = body_file
+            raise TypeError("You can only set Request.body to a str (not %r)" % type(value))
+        self.environ['wsgi.input'] = StringIO(value)
         self.environ['CONTENT_LENGTH'] = str(len(value))
+
 
     def _body__del(self):
         del self.body_file
@@ -652,6 +636,14 @@ class BaseRequest(object):
         env['REQUEST_METHOD'] = 'GET'
         return self.__class__(env)
 
+    @property
+    def is_body_seekable(self):
+        try:
+            self.body_file.seek(0, 1) # relative seek
+            return True
+        except (AttributeError, IOError):
+            return False
+
     def make_body_seekable(self):
         """
         This forces ``environ['wsgi.input']`` to be seekable.  That
@@ -661,11 +653,8 @@ class BaseRequest(object):
         The choice to copy to StringIO is made from
         ``self.request_body_tempfile_limit``
         """
-        input = self.body_file
-        if hasattr(input, 'seek'):
-            # It has a seek method, so we don't need to do anything
-            return
-        self.copy_body()
+        if not self.is_body_seekable:
+            self.copy_body()
 
     def copy_body(self):
         """
@@ -676,35 +665,33 @@ class BaseRequest(object):
         or a temporary file.
         """
         length = self.content_length
-        if length == 0:
-            # No real need to copy this, but of course it is free
-            self.body_file = StringIO('')
-            return
-        tempfile_limit = self.request_body_tempfile_limit
-        body = None
-        input = self.body_file
-        if hasattr(input, 'seek'):
-            # Just in case someone has read parts of the body already
-            input.seek(0)
-        if length in (-1, None):
-            body = self.body
-            length = len(body)
-            self.content_length = length
-        if tempfile_limit and length > tempfile_limit:
-            fileobj = tempfile.TemporaryFile()
-            if body is None:
-                while length:
-                    data = input.read(min(length, 4096))
-                    fileobj.write(data)
-                    length -= len(data)
-            else:
-                fileobj.write(body)
-            fileobj.seek(0)
+        if length:
+            did_copy = self._copy_body_tempfile()
+            if not did_copy:
+                self.body = self.body_file.read(length)
         else:
-            if body is None:
-                body = input.read(length)
-            fileobj = StringIO(body)
-        self.body_file = fileobj
+            self.body = self.body_file.read()
+            self._copy_body_tempfile()
+
+    def _copy_body_tempfile(self):
+        """
+            Copy wsgi.input to tempfile if necessary. Returns True if it did.
+        """
+        tempfile_limit = self.request_body_tempfile_limit
+        length = self.content_length
+        assert isinstance(length, int)
+        if not tempfile_limit or length <= tempfile_limit:
+            return False
+        fileobj = tempfile.TemporaryFile()
+        input = self.body_file
+        while length:
+            data = input.read(min(length, 65536))
+            fileobj.write(data)
+            length -= len(data)
+        fileobj.seek(0)
+        self.environ['wsgi.input'] = fileobj
+        return True
+
 
     def remove_conditional_headers(self, remove_encoding=True, remove_range=True,
                                         remove_match=True, remove_modified=True):
@@ -1111,10 +1098,12 @@ class FakeCGIBody(object):
         self._body = None
         self.position = 0
 
-    def seek(self, pos):
+    def seek(self, pos, rel=0):
         ## FIXME: this isn't strictly necessary, but it's important
         ## when modifying POST parameters.  I wish there was a better
         ## way to do this.
+        if rel != 0:
+            raise IOError
         self._body = None
         self.position = pos
 
