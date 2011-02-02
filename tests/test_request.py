@@ -211,6 +211,20 @@ def test_copy():
     req.make_body_seekable()
     assert req.body_file is old_body_file
 
+class UnseekableInputWithSeek(UnseekableInput):
+    def seek(self, pos):
+        raise IOError("Invalid seek!")
+
+def test_broken_seek():
+    # copy() should work even when the input has a broken seek method
+    req = Request.blank('/', method='POST', body_file=UnseekableInputWithSeek('0123456789'), content_length=10)
+    assert hasattr(req.body_file, 'seek')
+    assert_raises(IOError, req.body_file.seek, [0])
+    old_body_file = req.body_file
+    req2 = req.copy()
+    assert req2.body_file is not old_body_file
+    assert req2.body == '0123456789'
+
 def test_set_body():
     req = BaseRequest.blank('/', body='foo')
     eq_(req.body, 'foo')
