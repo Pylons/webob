@@ -670,7 +670,7 @@ class BaseRequest(object):
             if not did_copy:
                 self.body = self.body_file.read(length)
         else:
-            self.body = self.body_file.read()
+            self.body = self.body_file.read(-1)
             self._copy_body_tempfile()
 
     def _copy_body_tempfile(self):
