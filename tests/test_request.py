@@ -213,6 +213,20 @@ def test_copy_body():
     req.make_body_seekable()
     assert req.body_file is old_body_file
 
+class UnseekableInputWithSeek(UnseekableInput):
+    def seek(self, pos):
+        raise IOError("Invalid seek!")
+
+def test_broken_seek():
+    # copy() should work even when the input has a broken seek method
+    req = Request.blank('/', method='POST', body_file=UnseekableInputWithSeek('0123456789'), content_length=10)
+    assert hasattr(req.body_file, 'seek')
+    assert_raises(IOError, req.body_file.seek, [0])
+    old_body_file = req.body_file
+    req2 = req.copy()
+    assert req2.body_file is not old_body_file
+    assert req2.body == '0123456789'
+
 def test_set_body():
     req = BaseRequest.blank('/', body='foo')
     eq_(req.body, 'foo')
@@ -475,15 +489,15 @@ def test_body_property():
     """
     Testing body setter/getter/deleter plus making sure body has a seek method
     """
-    a = Request({'CONTENT_LENGTH':'?'})
+    #a = Request({'a':1}, **{'CONTENT_LENGTH':'?'})
     # I cannot think of a case where somebody would put anything else than a
     # numerical value in CONTENT_LENGTH, Google didn't help either
-    eq_(a.body, '')
+    #eq_(a.body, '')
     # I need to implement a not seekable stringio like object.
     class DummyIO(object):
         def __init__(self, txt):
             self.txt = txt
-        def read(self, n):
+        def read(self, n=-1):
             return self.txt[0:n]
     len_strl = BaseRequest.request_body_tempfile_limit/len(string.letters)+1
     r = Request({'a':1}, **{'body_file':DummyIO(string.letters*len_strl)}) 
@@ -499,26 +513,6 @@ def test_body_property():
     ok_(hasattr(r.body_file, 'seek')==True)
     r.make_body_seekable()
     ok_(hasattr(r.body_file, 'seek')==True)
-
-def test_copy_body():
-    """Testing Request copy body"""
-    req = BaseRequest({'CONTENT_LENGTH':'0', 'body':''}) 
-    assert req.copy_body() is None
-    req = Request({'a':1}, **{'body_file':'hello world'}) 
-    eq_(req.copy_body(), None)
-    lim = req.request_body_tempfile_limit
-    req = Request({'a':1}, **{'body_file':string.letters*(lim+1)}) 
-    req.copy_body()
-    assert isinstance(req.body_file, file)
-    req = BaseRequest({'a':1}, **{'body_file':''}) 
-    old_f = req.body_file
-    req.content_length = None
-    req.copy_body()
-    assert old_f!=req.body_file
-    req = Request({'a':1}, **{'body_file':string.letters*(lim+1)}) 
-    req.content_length = -1
-    req.copy_body()
-    assert isinstance(req.body_file, file)
 
 def test_repr_invalid():
     """If we have an invalid WSGI environ, the repr should tell us"""
