@@ -27,7 +27,7 @@ class Cookie(dict):
         dict.__setitem__(self, key, Morsel(key, val))
 
     def serialize(self, full=True):
-        return '; '.join(m.serialize(full) for _,m in sorted(self.items()))
+        return ', '.join(m.serialize(full) for _,m in sorted(self.items()))
 
     __str__ = serialize
 
