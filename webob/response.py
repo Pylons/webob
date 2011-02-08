@@ -651,8 +651,8 @@ class Response(object):
         if key in cookies:
             del cookies[key]
             del self.headers['Set-Cookie']
-            if cookies:
-                self.headerlist.append(('Set-Cookie', str(cookies)))
+            for m in cookies.values():
+                self.headerlist.append(('Set-Cookie', str(m)))
         elif strict:
             raise KeyError("No cookie has been set with the name %r" % key)
 

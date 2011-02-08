@@ -79,6 +79,17 @@ Cookie handling is done through methods:
     ['test2=value2-replace; Path=/']
 
 
+    >>> r = Response()
+    >>> r.set_cookie('x', 'x')
+    >>> r.set_cookie('y', 'y')
+    >>> r.set_cookie('z', 'z')
+    >>> r.headers.getall('set-cookie')
+    ['x=x; Path=/', 'y=y; Path=/', 'z=z; Path=/']
+    >>> r.unset_cookie('y')
+    >>> r.headers.getall('set-cookie')
+    ['x=x; Path=/', 'z=z; Path=/']
+
+
 Most headers are available in a parsed getter/setter form through
 properties:
 
