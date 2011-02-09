@@ -1,5 +1,7 @@
 from webob import Request, BaseRequest
-from webob.request import NoDefault, AdhocAttrMixin, environ_from_url
+from webob.request import (
+    NoDefault, AdhocAttrMixin, environ_from_url, environ_add_POST
+)
 from webtest import TestApp
 from nose.tools import eq_, ok_, assert_raises, assert_false
 from cStringIO import StringIO
@@ -574,7 +576,7 @@ def test_blank():
         req.environ.get('SERVER_PORT', None)== '443')
 
 def test_environ_from_url():
-    """Generating an environ just from an url"""
+    """Generating an environ just from an url plus testing environ_add_POST"""
     assert_raises(TypeError, environ_from_url, 
                   'http://www.example.com/foo?bar=baz#qux')
     assert_raises(TypeError, environ_from_url, 
@@ -595,3 +597,18 @@ def test_environ_from_url():
         req.get('SCRIPT_NAME', None)== '' and
         req.get('SERVER_NAME', None)== 'www.example.com' and
         req.get('SERVER_PORT', None)== '443')
+    environ_add_POST(req, None)
+    assert_false('CONTENT_TYPE' in req and 'CONTENT_LENGTH' in req)
+    environ_add_POST(req, {'hello':'world'})
+    ok_(req.get('HTTP_HOST', None)== 'www.example.com:443' and
+        req.get('PATH_INFO', None)== '/foo' and
+        req.get('QUERY_STRING', None)== 'bar=baz' and
+        req.get('REQUEST_METHOD', None)== 'POST' and
+        req.get('SCRIPT_NAME', None)== '' and
+        req.get('SERVER_NAME', None)== 'www.example.com' and
+        req.get('SERVER_PORT', None)== '443' and
+        req.get('CONTENT_LENGTH', None)=='11' and
+        req.get('CONTENT_TYPE', None)=='application/x-www-form-urlencoded')
+    eq_(req['wsgi.input'].read(), 'hello=world')
+
+
