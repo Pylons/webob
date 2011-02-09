@@ -1,5 +1,5 @@
 from webob import Request, BaseRequest
-from webob.request import NoDefault, AdhocAttrMixin
+from webob.request import NoDefault, AdhocAttrMixin, environ_from_url
 from webtest import TestApp
 from nose.tools import eq_, ok_, assert_raises, assert_false
 from cStringIO import StringIO
@@ -548,3 +548,50 @@ def test_from_file():
     )
     assert_raises(ValueError, BaseRequest.from_file, val_file)
 
+
+def test_blank():
+    """BaseRequest.blank class method"""
+    assert_raises(ValueError, BaseRequest.blank, 
+                  'www.example.com/foo?hello=world', None,
+                  'www.example.com/foo?hello=world')
+    assert_raises(ValueError, BaseRequest.blank, 
+                  'gopher.example.com/foo?hello=world', None,
+                  'gopher://gopher.example.com')
+    req = BaseRequest.blank('www.example.com/foo?hello=world', None, 
+                            'http://www.example.com')
+    ok_(req.environ.get('HTTP_HOST', None)== 'www.example.com:80' and
+        req.environ.get('PATH_INFO', None)== 'www.example.com/foo' and
+        req.environ.get('QUERY_STRING', None)== 'hello=world' and
+        req.environ.get('REQUEST_METHOD', None)== 'GET')
+    req = BaseRequest.blank('www.example.com/secure?hello=world', None, 
+                            'https://www.example.com/secure')
+    ok_(req.environ.get('HTTP_HOST', None)== 'www.example.com:443' and
+        req.environ.get('PATH_INFO', None)== 'www.example.com/secure' and
+        req.environ.get('QUERY_STRING', None)== 'hello=world' and
+        req.environ.get('REQUEST_METHOD', None)== 'GET' and
+        req.environ.get('SCRIPT_NAME', None)== '/secure' and
+        req.environ.get('SERVER_NAME', None)== 'www.example.com' and
+        req.environ.get('SERVER_PORT', None)== '443')
+
+def test_environ_from_url():
+    """Generating an environ just from an url"""
+    assert_raises(TypeError, environ_from_url, 
+                  'http://www.example.com/foo?bar=baz#qux')
+    assert_raises(TypeError, environ_from_url, 
+                  'gopher://gopher.example.com')
+    req = environ_from_url('http://www.example.com/foo?bar=baz') 
+    ok_(req.get('HTTP_HOST', None)== 'www.example.com:80' and
+        req.get('PATH_INFO', None)== '/foo' and
+        req.get('QUERY_STRING', None)== 'bar=baz' and
+        req.get('REQUEST_METHOD', None)== 'GET' and
+        req.get('SCRIPT_NAME', None)== '' and
+        req.get('SERVER_NAME', None)== 'www.example.com' and
+        req.get('SERVER_PORT', None)== '80')
+    req = environ_from_url('https://www.example.com/foo?bar=baz') 
+    ok_(req.get('HTTP_HOST', None)== 'www.example.com:443' and
+        req.get('PATH_INFO', None)== '/foo' and
+        req.get('QUERY_STRING', None)== 'bar=baz' and
+        req.get('REQUEST_METHOD', None)== 'GET' and
+        req.get('SCRIPT_NAME', None)== '' and
+        req.get('SERVER_NAME', None)== 'www.example.com' and
+        req.get('SERVER_PORT', None)== '443')
