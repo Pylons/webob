@@ -618,6 +618,7 @@ class BaseRequest(object):
 
         This only does a shallow copy, except of wsgi.input
         """
+        self.make_body_seekable()
         env = self.environ.copy()
         new_req = self.__class__(env)
         new_req.copy_body()
