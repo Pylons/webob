@@ -33,6 +33,8 @@ You may install the `in-development version of WebOb
     keywords='wsgi request web http',
     author='Ian Bicking',
     author_email='ianb@colorstudy.com',
+    maintainer='Sergey Schetinin',
+    maintainer_email='sergey@maluke.com',
     url='http://pythonpaste.org/webob/',
     license='MIT',
     packages=['webob'],

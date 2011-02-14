@@ -20,7 +20,7 @@ WebOb
 .. comment:
 
     >>> from dtopt import ELLIPSIS
-   
+
 
 Status & License
 ================
@@ -29,7 +29,9 @@ WebOb is an extraction and refinement of pieces from `Paste
 <http://pythonpaste.org/>`_.  It is under active development.
 Discussion should happen on the `Paste mailing lists
 <http://pythonpaste.org/community/>`_, and bugs can go on the `Paste
-trac instance <http://trac.pythonpaste.org/>`_.
+trac instance <http://trac.pythonpaste.org/>`_.  It was originally
+written by Ian Bicking, and the primary maintainer is now Sergey
+Schetnin.
 
 WebOb is released under an `MIT-style license <license.html>`_.
 
@@ -78,7 +80,7 @@ object:
 ``req.POST``:
     A `dictionary-like object`_ with all the variables in the request
     body.  This only has variables if the request was a ``POST`` and
-    it is a form submission.  
+    it is a form submission.
 
 ``req.params``:
     A `dictionary-like object`_ with a combination of everything in
@@ -254,7 +256,7 @@ The details are available in the `extracted Response documentation
 Instantiating the Response
 --------------------------
 
-Of course most of the time you just want to *make* a response.  
+Of course most of the time you just want to *make* a response.
 Generally any attribute of the response can be passed in as a keyword
 argument to the class; e.g.:
 
@@ -333,5 +335,3 @@ advanced HTTP techniques, while the `comment middleware example
 <comment-example.html>`_ shows middleware.  For applications it's more
 reasonable to use WebOb in the context of a larger framework.  `Pylons
 <http://pylonshq.com>`_ uses WebOb in 0.9.7+.
-
-
