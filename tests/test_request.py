@@ -212,7 +212,7 @@ def test_copy():
     assert req.body_file is old_body_file
 
 class UnseekableInputWithSeek(UnseekableInput):
-    def seek(self, pos):
+    def seek(self, pos, rel=0):
         raise IOError("Invalid seek!")
 
 def test_broken_seek():

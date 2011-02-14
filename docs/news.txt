@@ -6,7 +6,28 @@ News
 hg tip
 ------
 
+* Make `Response.set_cookie(key, None)` set the 'delete-cookie' (same as `.delete_cookie(key)`)
+
+* Fix `del resp.content_type`, `del req.body`, `del req.cache_control`
+
+* Fix `resp.merge_cookies()` when called with an argument that is not a Response instance.
+
+* Fix `resp.content_body = None` (was removing Cache-Control instead)
+
+* Make `req.upath_info` and `req.uscript_name` settable
+
+* Add :meth:`Request.as_string()` method
+
+* Fix `req.body_file = f` setting `CONTENT_LENGTH` to -1 (now removes from environ)
+
+* Fix handling of request bodies that have a `seek` method that exists but throws exceptions
+  when called (`copy()`, `copy_body()`, `make_seekable()`
+
+* Add a `req.is_body_seekable` property
+
 * Support for the ``deflate`` method with ``resp.decode_content()`
+
+
 
 1.0.1
 -----

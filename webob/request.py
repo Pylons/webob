@@ -429,8 +429,9 @@ class BaseRequest(object):
         clen = self.content_length
         if clen is None:
             clen = -1
-        r = self.body_file.read(clen)
-        self.body_file.seek(0)
+        f = self.environ['wsgi.input']
+        r = f.read(clen)
+        f.seek(0)
         return r
 
     def _body__set(self, value):
@@ -617,6 +618,7 @@ class BaseRequest(object):
 
         This only does a shallow copy, except of wsgi.input
         """
+        self.make_body_seekable()
         env = self.environ.copy()
         new_req = self.__class__(env)
         new_req.copy_body()
@@ -670,7 +672,7 @@ class BaseRequest(object):
             if not did_copy:
                 self.body = self.body_file.read(length)
         else:
-            self.body = self.body_file.read()
+            self.body = self.body_file.read(-1)
             self._copy_body_tempfile()
 
     def _copy_body_tempfile(self):
@@ -682,7 +684,7 @@ class BaseRequest(object):
         assert isinstance(length, int)
         if not tempfile_limit or length <= tempfile_limit:
             return False
-        fileobj = tempfile.TemporaryFile()
+        fileobj = self.make_tempfile()
         input = self.body_file
         while length:
             data = input.read(min(length, 65536))
@@ -691,6 +693,12 @@ class BaseRequest(object):
         fileobj.seek(0)
         self.environ['wsgi.input'] = fileobj
         return True
+
+    def make_tempfile(self):
+        """
+            Create a tempfile to store big request body
+        """
+        return tempfile.TemporaryFile()
 
 
     def remove_conditional_headers(self, remove_encoding=True, remove_range=True,
