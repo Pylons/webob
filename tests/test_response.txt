@@ -171,7 +171,7 @@ application is actually served.  We can force this with
     'http://localhost/test2.html'
 
 There's some conditional response handling too (you have to turn on
-conditioanl_response)::
+conditional_response)::
 
     >>> res = Response('abc', conditional_response=True) # doctest: +ELLIPSIS
     >>> req = Request.blank('/')

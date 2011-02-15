@@ -126,11 +126,6 @@ class Response(object):
             if not line:
                 # end of headers
                 break
-            if line and (line.startswith(' ') or line.startswith('\t')):
-                # Continuation
-                assert headerlist
-                headerlist[-1] = (headerlist[-1][0],
-                                  '%s, %s' % (headerlist[-1][1], line.strip()))
             else:
                 try:
                     header_name, value = line.split(':', 1)
