@@ -571,8 +571,6 @@ class Response(object):
         params = []
         for k, v in sorted(value_dict.items()):
             if not _OK_PARAM_RE.search(v):
-                ## FIXME: I'm not sure what to do with "'s in the parameter value
-                ## I think it might be simply illegal
                 v = '"%s"' % v.replace('"', '\\"')
             params.append('; %s=%s' % (k, v))
         ct = self.headers.pop('Content-Type', '').split(';', 1)[0]
@@ -945,13 +943,9 @@ class Response(object):
         if status304:
             start_response('304 Not Modified', filter_headers(headerlist))
             return EmptyResponse(self.app_iter)
-        if req.method == 'HEAD':
-            start_response(self.status, headerlist)
-            return EmptyResponse(self.app_iter)
-        # FIXME: we should handle HEAD requests with Range
         if (req.range and req.if_range.match_response(self)
             and self.content_range is None
-            and req.method == 'GET'
+            and req.method in ('HEAD', 'GET')
             and self.status_int == 200
             and self.content_length is not None
         ):
@@ -966,6 +960,8 @@ class Response(object):
                     ('Content-Type', 'text/plain'),
                 ] + filter_headers(headerlist)
                 start_response('416 Requested Range Not Satisfiable', headerlist)
+                if req.method == 'HEAD':
+                    return ()
                 return [body]
             else:
                 app_iter = self.app_iter_range(content_range.start, content_range.stop)
@@ -976,9 +972,13 @@ class Response(object):
                         ('Content-Range', str(content_range)),
                     ] + filter_headers(headerlist, ('content-length',))
                     start_response('206 Partial Content', headerlist)
+                    if req.method == 'HEAD':
+                        return EmptyResponse(app_iter)
                     return app_iter
 
         start_response(self.status, headerlist)
+        if req.method == 'HEAD':
+            return EmptyResponse(self.app_iter)
         return self.app_iter
 
     def app_iter_range(self, start, stop):

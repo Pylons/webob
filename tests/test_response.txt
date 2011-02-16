@@ -238,6 +238,14 @@ Also range response::
     >>> tuple(result.content_range)
     (5, 10, 10)
 
+    >>> req_head = req.copy()
+    >>> req_head.method = 'HEAD'
+    >>> print req_head.get_response(res)
+    206 Partial Content
+    Content-Length: 5
+    Content-Range: bytes 5-9/10
+    Content-Type: text/html; charset=UTF-8
+
 And an invalid requested range:
 
     >>> req.range = (10, 20)
@@ -251,6 +259,14 @@ And an invalid requested range:
     Requested range not satisfiable: bytes=10-19
     >>> str(result.content_range)
     'bytes */10'
+
+    >>> req_head = req.copy()
+    >>> req_head.method = 'HEAD'
+    >>> print req_head.get_response(res)
+    416 Requested Range Not Satisfiable
+    Content-Length: 44
+    Content-Range: bytes */10
+    Content-Type: text/plain
 
     >>> Request.blank('/', range=(1,2)).get_response(
     ...     Response('0123456789', conditional_response=True)).content_length
