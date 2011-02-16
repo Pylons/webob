@@ -88,7 +88,7 @@ class BaseRequest(object):
 
     scheme = environ_getter('wsgi.url_scheme')
     method = environ_getter('REQUEST_METHOD')
-    script_name = environ_getter('SCRIPT_NAME')
+    script_name = environ_getter('SCRIPT_NAME', '')
     path_info = environ_getter('PATH_INFO')
     content_length = converter(
         environ_getter('CONTENT_LENGTH', None, '14.13'),
