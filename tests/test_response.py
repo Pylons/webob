@@ -1,8 +1,12 @@
-from StringIO import StringIO
+import sys
+if sys.version >= '2.7':
+    from io import BytesIO as StringIO
+else:
+    from cStringIO import StringIO
+
 from nose.tools import eq_, ok_, assert_raises
-from webob import *
-from webob import BaseRequest
-from cStringIO import StringIO
+
+from webob import BaseRequest, Request, Response
 
 def simple_app(environ, start_response):
     start_response('200 OK', [
@@ -39,6 +43,15 @@ def test_response():
     res.decode_content()
     assert res.content_encoding is None
     assert res.body == 'a body'
+    res.set_cookie('x', u'foo') # test unicode value
+    assert_raises(TypeError, Response, app_iter=iter(['a']),
+                  body="somebody")
+    del req.environ
+    eq_(Response(request=req)._environ, req)
+    eq_(Response(request=req)._request, None)
+    assert_raises(TypeError, Response, charset=None,
+                  body=u"unicode body")
+    assert_raises(TypeError, Response, wrong_key='dummy')
 
 def test_content_type():
     r = Response()
@@ -64,7 +77,6 @@ def test_cookies():
         ('Set-Cookie', 'x="\\342\\226\\240"; Path=/'),
         ]
     )
-    res.set_cookie('x', 'bar', max_age=year) # test expires
 
 def test_http_only_cookie():
     req = Request.blank('/')
@@ -124,7 +136,6 @@ def test_content_length():
     eq_(r5.body, 'xxxxx')
     eq_(r5.content_length, 5)
 
-
 def test_app_iter_range():
     req = Request.blank('/', range=(2,5))
     for app_iter in [
@@ -148,17 +159,57 @@ def test_app_iter_range():
         eq_(list(res.content_range), [2,5,6])
         eq_(res.body, '234', 'body=%r; app_iter=%r' % (res.body, app_iter))
 
+def test_content_type_in_headerlist():
+    # Couldn't manage to clone Response in order to modify class
+    # attributes safely. Shouldn't classes be fresh imported for every
+    # test?
+    default_content_type = Response.default_content_type
+    Response.default_content_type = None
+    try:
+        res = Response(headerlist=[('Content-Type', 'text/html')],
+                            charset='utf8')
+        ok_(res._headerlist)
+        eq_(res.charset, 'utf8')
+    finally:
+        Response.default_content_type = default_content_type
+
 def test_from_file():
-    resp = Response('test')
-    equal_resp(resp)
-
-    resp = Response(app_iter=iter(['test ', 'body']),
+    res = Response('test')
+    equal_resp(res)
+    res = Response(app_iter=iter(['test ', 'body']),
                     content_type='text/plain')
-    equal_resp(resp)
+    equal_resp(res)
 
-def equal_resp(resp):
-    input = StringIO(str(resp))
-    resp2 = Response.from_file(input)
-    eq_(resp.body, resp2.body)
-    eq_(resp.headers, resp2.headers)
+def equal_resp(res):
+    input_ = StringIO(str(res))
+    res2 = Response.from_file(input_)
+    eq_(res.body, res2.body)
+    eq_(res.headers, res2.headers)
 
+def test_from_file_w_leading_space_in_header():
+    # Make sure the removal of code dealing with leading spaces is safe
+    res1 = Response()
+    file_w_space = StringIO('200 OK\n\tContent-Type: text/html; charset=UTF-8')
+    res2 = Response.from_file(file_w_space)
+    eq_(res1.headers, res2.headers)
+
+def test_file_bad_header():
+    file_w_bh = StringIO('200 OK\nBad Header')
+    assert_raises(ValueError, Response.from_file, file_w_bh)
+
+def test_set_status():
+    res = Response()
+    res.status = u"OK 200"
+    eq_(res.status, "OK 200")
+    assert_raises(TypeError, setattr, res, 'status', float(200))
+
+def test_set_headerlist():
+    res = Response()
+    # looks like a list
+    res.headerlist = (('Content-Type', 'text/html; charset=UTF-8'),)
+    eq_(res.headerlist, [('Content-Type', 'text/html; charset=UTF-8')])
+    # has items
+    res.headerlist = {'Content-Type': 'text/html; charset=UTF-8'}
+    eq_(res.headerlist, [('Content-Type', 'text/html; charset=UTF-8')])
+    del res.headerlist
+    eq_(res.headerlist, [])

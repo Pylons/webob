@@ -43,6 +43,10 @@ year = timedelta(days=365)
 def parse_date(value):
     if not value:
         return None
+    try:
+        value = str(value)
+    except:
+        return None
     t = parsedate_tz(value)
     if t is None:
         # Could not parse
