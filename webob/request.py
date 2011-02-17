@@ -667,7 +667,7 @@ class BaseRequest(object):
         or a temporary file.
         """
         length = self.content_length
-        if length:
+        if length is not None:
             did_copy = self._copy_body_tempfile()
             if not did_copy:
                 self.body = self.body_file.read(length)
