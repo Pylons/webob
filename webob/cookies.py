@@ -167,10 +167,12 @@ def _unquote(v):
 
 _trans_noop = ''.join(chr(x) for x in xrange(256))
 
+# these chars can be in cookie value w/o causing it to be quoted
 _no_escape_special_chars = "!#$%&'*+-.^_`|~/"
 _no_escape_chars = string.ascii_letters + string.digits + _no_escape_special_chars
-#_no_escape_chars = string.ascii_letters + string.digits + _legal_special_chars
+# these chars never need to be quoted
 _escape_noop_chars = _no_escape_chars+':, '
+# this is a map used to escape the values
 _escape_map = dict((chr(i), '\\%03o' % i) for i in xrange(256))
 _escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
 _escape_map['"'] = '\\"'
@@ -189,15 +191,3 @@ def _quote(v):
     if needs_quoting(v):
         return '"' + ''.join(map(_escape_char, v)) + '"'
     return v
-
-
-
-#print _quote(serialize_cookie_date(0))
-
-#assert _quote('a"\xff') == r'"a\"\377"'
-#assert _unquote(r'"a\"\377"') == 'a"\xff'
-
-#print repr(Cookie('foo=bar'))
-# c = Cookie('bad_cookie=; expires="... GMT"; Max-Age=0; Path=/')
-# print c
-#print c['bad_cookie'].items()

@@ -5,8 +5,7 @@ from nose.tools import ok_, assert_raises, eq_
 
 def test_cookie():
     """
-        Testing several missing features of cookies.Cookie.
-            * repr version
+        Test cookie parsing, serialization and `repr`
     """
     c = cookies.Cookie() # empty cookie
     eq_(repr(c), '<Cookie: []>')
@@ -16,16 +15,16 @@ def test_cookie():
     c = cookies.Cookie('dismiss-top=6;')
     eq_(repr(c), "<Cookie: [<Morsel: dismiss-top='6'>]>")
     # more complex cookie, (also mixing commas and semicolons)
-    c = cookies.Cookie("dismiss-top=6; CP=null*, "\
-                       "PHPSESSID=0a539d42abc001cdc762809248d4beed, a=42")
+    c = cookies.Cookie('dismiss-top=6; CP=null*, '\
+                       'PHPSESSID=0a539d42abc001cdc762809248d4beed, a="42,"')
     c_dict = dict((k,v.value) for k,v in c.items())
-    eq_(c_dict, {'a': '42',
+    eq_(c_dict, {'a': '42,',
         'CP': 'null*',
         'PHPSESSID': '0a539d42abc001cdc762809248d4beed',
         'dismiss-top': '6'
     })
     eq_(c.serialize(),
-        'CP=null*, PHPSESSID=0a539d42abc001cdc762809248d4beed, a=42, '
+        'CP=null*, PHPSESSID=0a539d42abc001cdc762809248d4beed, a="42,", '
         'dismiss-top=6')
     # reserved keys ($xx)
     c = cookies.Cookie('dismiss-top=6; CP=null*; $version=42; a=42')
@@ -41,6 +40,7 @@ def test_serialize_cookie_date():
             * input value is an int, should be converted to timedelta and we should
               continue the rest of the process
     """
+    assert '"' not in cookies._quote(cookies.serialize_cookie_date(0))
     ok_(cookies.serialize_cookie_date('Tue, 04-Jan-2011 13:43:50 GMT')==\
         'Tue, 04-Jan-2011 13:43:50 GMT', 'We passed a string, should get the '
         'same one')
@@ -54,19 +54,16 @@ def test_serialize_cookie_date():
     )
 
 def test_ch_unquote():
-    """Inner method _ch_unquote in cookies._unquote is not tested"""
-    str_ = u'"'+u'hello world'+u'"'
-    v = cookies._unquote(str_)
-    ok_(v==u'hello world', 'Wrong output from _unquote. Expected: %r, '
-        'Got: %r' % (u'hello world', v))
-    str_ = u'hello world'
-    v = cookies._unquote(str_)
-    ok_(v==u'hello world', 'Wrong output from _unquote. Expected: %r, '
-        'Got: %r' % (u'hello world', v))
-    str_ = u'"'+u'hello world'
-    v = cookies._unquote(str_)
-    ok_(v==u'\"hello world', 'Wrong output from _unquote. Expected: %r, '
-        'Got: %r' % (u'\"hello world', v))
-    # example extracted from webob.cookies
-    ok_(cookies._unquote(r'"a\"\377"')=='a"\xff')
-
+    eq_(cookies._unquote(u'"hello world'), u'"hello world')
+    eq_(cookies._unquote(u'hello world'), u'hello world')
+    for unq, q in [
+        ('hello world', '"hello world"'),
+        # quotation mark is escaped w/ backslash
+        ('"', r'"\""'),
+        # misc byte escaped as octal
+        ('\xff', r'"\377"'),
+        # combination
+        ('a"\xff', r'"a\"\377"'),
+    ]:
+        eq_(cookies._unquote(q), unq)
+        eq_(cookies._quote(unq), q)
