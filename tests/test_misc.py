@@ -6,11 +6,32 @@ from nose.tools import eq_ as eq, assert_raises
 
 def test_html_escape():
     for v, s in [
-        (None, ''),
+        # unsafe chars
+        ('these chars: < > & "', 'these chars: &lt; &gt; &amp; &quot;'),
         (' ', ' '),
         ('&egrave;', '&amp;egrave;'),
+        # The apostrophe is *not* escaped, which some might consider to be
+        # a serious bug (see, e.g. http://www.cvedetails.com/cve/CVE-2010-2480/)
+        (u'the majestic m\xf8ose', 'the majestic m&#248;ose'),
+        #("'", "&#39;")
+
+        # 8-bit strings are passed through
         (u'\xe9', '&#233;'),
+        (u'the majestic m\xf8ose'.encode('utf-8'), 'the majestic m\xc3\xb8ose'),
+
+        # ``None`` is treated specially, and returns the empty string.
+        (None, ''),
+
+        # Objects that define a ``__html__`` method handle their own escaping
         (t_esc_HTML(), '<div>hello</div>'),
+
+        # Things that are not strings are converted to strings and then escaped
+        (42, '42'),
+        (Exception("expected a '<'."), "expected a '&lt;'."),
+
+        # If an object implements both ``__str__`` and ``__unicode__``, the latter
+        # is preferred
+        (t_esc_SuperMoose(), 'm&#248;ose'),
         (t_esc_Unicode(), '&#233;'),
         (t_esc_UnsafeAttrs(), '&lt;UnsafeAttrs&gt;'),
     ]:
@@ -32,6 +53,14 @@ class t_esc_UnsafeAttrs(object):
         return self.attr
     def __repr__(self):
         return '<UnsafeAttrs>'
+
+class t_esc_SuperMoose(object):
+    def __str__(self):
+        return u'm\xf8ose'.encode('UTF-8')
+    def __unicode__(self):
+        return u'm\xf8ose'
+
+
 
 
 
