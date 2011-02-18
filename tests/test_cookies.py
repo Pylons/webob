@@ -40,7 +40,6 @@ def test_serialize_cookie_date():
             * input value is an int, should be converted to timedelta and we should
               continue the rest of the process
     """
-    assert '"' not in cookies._quote(cookies.serialize_cookie_date(0))
     ok_(cookies.serialize_cookie_date('Tue, 04-Jan-2011 13:43:50 GMT')==\
         'Tue, 04-Jan-2011 13:43:50 GMT', 'We passed a string, should get the '
         'same one')
