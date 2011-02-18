@@ -1,5 +1,4 @@
-import string, re
-import time
+import re, time, string
 from datetime import datetime, date, timedelta
 
 __all__ = ['Cookie']
