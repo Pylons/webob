@@ -15,13 +15,15 @@ def test_cookie():
     eq_(repr(c), "<Cookie: [<Morsel: dismiss-top='6'>]>")
     c = cookies.Cookie('dismiss-top=6;')
     eq_(repr(c), "<Cookie: [<Morsel: dismiss-top='6'>]>")
-    # more complex cookie
-    new_c = "<Cookie: [<Morsel: a='42'>, <Morsel: CP='null*'>, "\
-    "<Morsel: PHPSESSID='0a539d42abc001cdc762809248d4beed'>, "\
-    "<Morsel: dismiss-top='6'>]>"
-    c = cookies.Cookie("dismiss-top=6; CP=null*; "\
-                       "PHPSESSID=0a539d42abc001cdc762809248d4beed; a=42")
-    eq_(repr(c), new_c)
+    # more complex cookie, (also mixing commas and semicolons)
+    c = cookies.Cookie("dismiss-top=6; CP=null*, "\
+                       "PHPSESSID=0a539d42abc001cdc762809248d4beed, a=42")
+    c_dict = dict((k,v.value) for k,v in c.items())
+    eq_(c_dict, {'a': '42',
+        'CP': 'null*',
+        'PHPSESSID': '0a539d42abc001cdc762809248d4beed',
+        'dismiss-top': '6'
+    })
     eq_(c.serialize(),
         'CP=null*, PHPSESSID=0a539d42abc001cdc762809248d4beed, a=42, '
         'dismiss-top=6')
@@ -29,7 +31,7 @@ def test_cookie():
     c = cookies.Cookie('dismiss-top=6; CP=null*; $version=42; a=42')
     assert '$version' not in c
     c = cookies.Cookie('$reserved=42; a=$42')
-    eq(c.keys(), ['a'])
+    eq_(c.keys(), ['a'])
 
 def test_serialize_cookie_date():
     """
