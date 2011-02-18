@@ -13,7 +13,7 @@ site.addsitedir(testenv_dir)
 from mext.test_suite import TestSuite
 suite = TestSuite('tests', coverage=True, pkg='webob')
 
-doctests = ['test_dec', 'test_request', 'test_response', 'multidict']
+doctests = ['test_dec', 'test_request', 'test_response']
 doctests += map('../docs/'.__add__, ['do-it-yourself', 'file-example', 'index', 'reference'])
 map(suite.add_doctest, doctests)
 map(suite.add_nosetest, ['test_request', 'test_response', 'test_multidict', 'test_misc'])
