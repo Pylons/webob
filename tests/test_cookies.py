@@ -7,7 +7,6 @@ def test_cookie():
     """
         Testing several missing features of cookies.Cookie.
             * repr version
-            * ignoring a key-value for Cookie when key == $
     """
     c = cookies.Cookie() # empty cookie
     eq_(repr(c), '<Cookie: []>')
@@ -26,13 +25,11 @@ def test_cookie():
     eq_(c.serialize(),
         'CP=null*, PHPSESSID=0a539d42abc001cdc762809248d4beed, a=42, '
         'dismiss-top=6')
-    # data with key==$
-    c = cookies.Cookie('dismiss-top=6; CP=null*; $=42'\
-                       'PHPSESSID=0a539d42abc001cdc762809248d4beed; a=42')
-    ok_('$' not in c, 'Key $ should have been ignored')
-    c = cookies.Cookie('$=a; dismiss-top=6; CP=null*; $=42'\
-                       'PHPSESSID=0a539d42abc001cdc762809248d4beed; a=42')
-    ok_('$' not in c, 'Key $ should have been ignored')
+    # reserved keys ($xx)
+    c = cookies.Cookie('dismiss-top=6; CP=null*; $version=42; a=42')
+    assert '$version' not in c
+    c = cookies.Cookie('$reserved=42; a=$42')
+    eq(c.keys(), ['a'])
 
 def test_serialize_cookie_date():
     """

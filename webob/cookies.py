@@ -15,6 +15,8 @@ class Cookie(dict):
                 if ckey:
                     self[ckey][key] = _unquote(val)
             elif key[0] == '$':
+                # RFC2109: NAMEs that begin with $ are reserved for other uses
+                # and must not be used by applications.
                 continue
             else:
                 self[key] = _unquote(val)
