@@ -483,8 +483,10 @@ class BaseRequest(object):
                               environ=fs_environ,
                               keep_blank_values=True)
         vars = MultiDict.from_fieldstorage(fs)
-        FakeCGIBody.update_environ(env, vars)
-        env['webob._parsed_post_vars'] = (vars, self.body_file)
+        #ctype = self.content_type or 'application/x-www-form-urlencoded'
+        ctype = env.get('CONTENT_TYPE', 'application/x-www-form-urlencoded')
+        self.body_file = FakeCGIBody(vars, ctype)
+        env['webob._parsed_post_vars'] = (vars, self.body_file_raw)
         return vars
 
 
@@ -1164,12 +1166,6 @@ class FakeCGIBody(object):
         return '<%s at 0x%x viewing %s>' % (
             self.__class__.__name__,
             abs(id(self)), inner)
-
-    @classmethod
-    def update_environ(cls, environ, vars):
-        obj = cls(vars, environ.get('CONTENT_TYPE', 'application/x-www-form-urlencoded'))
-        environ['CONTENT_LENGTH'] = '-1'
-        environ['wsgi.input'] = obj
 
 
 def _encode_multipart(vars, content_type):
