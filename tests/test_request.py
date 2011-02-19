@@ -300,6 +300,13 @@ def test_req_kw_none_val():
     assert 'content-length' not in Request({}, content_length=None).headers
     assert 'content-type' not in Request({}, content_type=None).headers
 
+def test_env_keys():
+    req = Request.blank('/')
+    # SCRIPT_NAME can be missing
+    del req.environ['SCRIPT_NAME']
+    eq_(req.script_name, '')
+    eq_(req.uscript_name, u'')
+
 def test_repr_nodefault():
     nd = NoDefault
     eq_(repr(nd), '(No Default)')
