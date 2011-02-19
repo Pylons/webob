@@ -327,8 +327,7 @@ You can use them with responses::
     >>> start, end, length
     (0, 100, 1000)
 
-A quick test of caching the request body (now that we check for seek()
-this doesn't exercise it well):
+A quick test of caching the request body:
 
     >>> from cStringIO import StringIO
     >>> length = Request.request_body_tempfile_limit+10
@@ -336,11 +335,17 @@ this doesn't exercise it well):
     >>> req = Request.blank('/')
     >>> req.content_length = length
     >>> req.body_file = data
+    >>> req.body_file_raw
+    <...IO... object at ...>
     >>> len(req.body)
     10250
     >>> req.body_file
-    <...IO... object at ...>
-    >>> req.body_file.tell()
+    <open file ..., mode 'w+b' at ...>
+    >>> int(req.body_file.tell())
+    0
+    >>> req.POST
+    UnicodeMultiDict([])
+    >>> int(req.body_file.tell())
     0
 
 Some query tests:
@@ -398,8 +403,10 @@ And for dealing with file uploads:
     >>> req.POST['c'] = 'd'
     >>> req.str_POST
     MultiDict([('a', 'b'), ('upload', FieldStorage('upload', 'test.html')), ('c', 'd')])
-    >>> req.body_file
+    >>> req.body_file_raw
     <FakeCGIBody at ... viewing MultiDict([('a'...d')])>
+    >>> sorted(req.str_POST.keys())
+    ['a', 'c', 'upload']
     >>> print req.body.replace('\r', '') # doctestx: +REPORT_UDIFF
     --foobar
     Content-Disposition: form-data; name="a"

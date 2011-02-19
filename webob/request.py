@@ -66,25 +66,25 @@ class BaseRequest(object):
 
     def _body_file__get(self):
         """
-        Access the body of the request (wsgi.input) as a file-like
+        Access the body of the request (wsgi.input) as a seekable file-like
         object.
 
-        If you set this value, CONTENT_LENGTH will also be updated
-        (either set to -1, 0 if you delete the attribute, or if you
-        set the attribute to a string then the length of the string).
+        If you set this value, CONTENT_LENGTH will also be updated.
         """
-        return self.environ['wsgi.input']
+        self.make_body_seekable()
+        return self.body_file_raw
     def _body_file__set(self, value):
         if isinstance(value, str):
-            self.environ['CONTENT_LENGTH'] = str(len(value))
-            value = StringIO(value)
+            # FIXME: This should issue a warning
+            self.body = value
         else:
-            self.environ.pop('CONTENT_LENGTH', None)
-        self.environ['wsgi.input'] = value
+            self.content_length = None
+            self.body_file_raw = value
+            self.is_body_seekable = False
     def _body_file__del(self):
-        self.environ['wsgi.input'] = StringIO('')
-        self.environ['CONTENT_LENGTH'] = '0'
+        self.body = ''
     body_file = property(_body_file__get, _body_file__set, _body_file__del, doc=_body_file__get.__doc__)
+    body_file_raw = environ_getter('wsgi.input')
 
     scheme = environ_getter('wsgi.url_scheme')
     method = environ_getter('REQUEST_METHOD')
@@ -426,27 +426,17 @@ class BaseRequest(object):
         Return the content of the request body.
         """
         self.make_body_seekable()
-        clen = self.content_length
-        if clen is None:
-            clen = -1
-        f = self.environ['wsgi.input']
-        r = f.read(clen)
-        f.seek(0)
-        return r
-
+        return self.body_file.read(self.content_length)
     def _body__set(self, value):
         if value is None:
-            del self.body
-            return
+            value = ''
         if not isinstance(value, str):
             raise TypeError("You can only set Request.body to a str (not %r)" % type(value))
-        self.environ['wsgi.input'] = StringIO(value)
-        self.environ['CONTENT_LENGTH'] = str(len(value))
-
-
+        self.content_length = len(value)
+        self.body_file_raw = StringIO(value)
+        self.is_body_seekable = True
     def _body__del(self):
-        del self.body_file
-
+        self.body = ''
     body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
 
 
@@ -488,6 +478,7 @@ class BaseRequest(object):
         # default of 0 is better:
         fs_environ.setdefault('CONTENT_LENGTH', '0')
         fs_environ['QUERY_STRING'] = ''
+        self.body_file.seek(0)
         fs = cgi.FieldStorage(fp=self.body_file,
                               environ=fs_environ,
                               keep_blank_values=True)
@@ -638,25 +629,24 @@ class BaseRequest(object):
         env['REQUEST_METHOD'] = 'GET'
         return self.__class__(env)
 
-    @property
-    def is_body_seekable(self):
-        try:
-            self.body_file.seek(0, 1) # relative seek
-            return True
-        except (AttributeError, IOError):
-            return False
+    is_body_seekable = environ_getter('webob.is_body_seekable', False)
 
     def make_body_seekable(self):
         """
-        This forces ``environ['wsgi.input']`` to be seekable.  That
-        is, if it doesn't have a `seek` method already, the content is
-        copied into a StringIO or temporary file.
+        This forces ``environ['wsgi.input']`` to be seekable.
+        That means that, the content is copied into a StringIO or temporary file
+        and flagged as seekable, so that it will not be unnecessarily copied again.
+        After calling this method the .body_file is always seeked to the start of file
+        and .content_length is not None.
 
         The choice to copy to StringIO is made from
         ``self.request_body_tempfile_limit``
         """
-        if not self.is_body_seekable:
+        if self.is_body_seekable:
+            self.body_file_raw.seek(0)
+        else:
             self.copy_body()
+
 
     def copy_body(self):
         """
@@ -670,9 +660,9 @@ class BaseRequest(object):
         if length is not None:
             did_copy = self._copy_body_tempfile()
             if not did_copy:
-                self.body = self.body_file.read(length)
+                self.body = self.body_file_raw.read(length)
         else:
-            self.body = self.body_file.read(-1)
+            self.body = self.body_file_raw.read(-1)
             self._copy_body_tempfile()
 
     def _copy_body_tempfile(self):
@@ -685,18 +675,20 @@ class BaseRequest(object):
         if not tempfile_limit or length <= tempfile_limit:
             return False
         fileobj = self.make_tempfile()
-        input = self.body_file
+        input = self.body_file_raw
         while length:
             data = input.read(min(length, 65536))
             fileobj.write(data)
             length -= len(data)
         fileobj.seek(0)
-        self.environ['wsgi.input'] = fileobj
+        self.body_file_raw = fileobj
+        self.is_body_seekable = True
         return True
 
     def make_tempfile(self):
         """
-            Create a tempfile to store big request body
+            Create a tempfile to store big request body.
+            This API is not stable yet. A 'size' argument might be added.
         """
         return tempfile.TemporaryFile()
 
@@ -1033,6 +1025,7 @@ def environ_from_url(path):
         'wsgi.multithread': False,
         'wsgi.multiprocess': False,
         'wsgi.run_once': False,
+        #'webob.is_body_seekable': True,
     }
     return env
 
@@ -1045,6 +1038,7 @@ def environ_add_POST(env, data):
     if not isinstance(data, str):
         data = urllib.urlencode(data)
     env['wsgi.input'] = StringIO(data)
+    env['webob.is_body_seekable'] = True
     env['CONTENT_LENGTH'] = str(len(data))
     env['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
 

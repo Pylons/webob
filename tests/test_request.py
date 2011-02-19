@@ -198,17 +198,18 @@ class UnseekableInput(object):
 
 def test_copy():
     req = Request.blank('/', method='POST', body='some text', request_body_tempfile_limit=1)
-    old_body_file = req.body_file
+    old_body_file = req.body_file_raw
     req.copy_body()
-    assert req.body_file is not old_body_file
+    assert req.body_file_raw is not old_body_file
     req = Request.blank('/', method='POST', body_file=UnseekableInput('0123456789'), content_length=10)
-    assert not hasattr(req.body_file, 'seek')
-    old_body_file = req.body_file
+    assert not hasattr(req.body_file_raw, 'seek')
+    old_body_file = req.body_file_raw
     req.make_body_seekable()
-    assert req.body_file is not old_body_file
+    assert req.body_file_raw is not old_body_file
     assert req.body == '0123456789'
     old_body_file = req.body_file
     req.make_body_seekable()
+    assert req.body_file_raw is old_body_file
     assert req.body_file is old_body_file
 
 class UnseekableInputWithSeek(UnseekableInput):
@@ -218,20 +219,22 @@ class UnseekableInputWithSeek(UnseekableInput):
 def test_broken_seek():
     # copy() should work even when the input has a broken seek method
     req = Request.blank('/', method='POST', body_file=UnseekableInputWithSeek('0123456789'), content_length=10)
-    assert hasattr(req.body_file, 'seek')
-    assert_raises(IOError, req.body_file.seek, [0])
+    assert hasattr(req.body_file_raw, 'seek')
+    assert_raises(IOError, req.body_file_raw.seek, 0)
     old_body_file = req.body_file
     req2 = req.copy()
-    assert req2.body_file is not old_body_file
+    assert req2.body_file_raw is req2.body_file is not old_body_file
     assert req2.body == '0123456789'
 
 def test_set_body():
     req = BaseRequest.blank('/', body='foo')
+    assert req.is_body_seekable
     eq_(req.body, 'foo')
     eq_(req.content_length, 3)
     del req.body
     eq_(req.body, '')
     eq_(req.content_length, 0)
+
 
 
 def test_broken_clen_header():
