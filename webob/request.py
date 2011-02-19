@@ -622,12 +622,7 @@ class BaseRequest(object):
         then it becomes GET, and the request body is thrown away.
         """
         env = self.environ.copy()
-        env['wsgi.input'] = StringIO('')
-        env['CONTENT_LENGTH'] = '0'
-        if 'CONTENT_TYPE' in env:
-            del env['CONTENT_TYPE']
-        env['REQUEST_METHOD'] = 'GET'
-        return self.__class__(env)
+        return self.__class__(env, method='GET', content_type=None, body='')
 
     is_body_seekable = environ_getter('webob.is_body_seekable', False)
 
