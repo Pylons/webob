@@ -116,30 +116,26 @@ class Response(object):
         This reads the response as represented by ``str(resp)``; it
         may not read every valid HTTP response properly.  Responses
         must have a ``Content-Length``"""
-        kw = {}
-        headerlist = kw['headerlist'] = []
-        kw['status'] = fp.readline().strip()
+        headerlist = []
+        status = fp.readline().strip()
         content_length = None
         while 1:
-            line = fp.readline()
-            line = line.strip()
+            line = fp.readline().strip()
             if not line:
                 # end of headers
                 break
-            else:
-                try:
-                    header_name, value = line.split(':', 1)
-                except ValueError:
-                    raise ValueError('Bad header line: %r' % line)
-                value = value.strip()
-                if header_name.lower() == 'content-length':
-                    content_length = int(value)
-                headerlist.append((header_name, value))
-        if content_length:
-            kw['body'] = fp.read(content_length)
-        else:
-            kw['body'] = ''
-        return cls(**kw)
+            try:
+                header_name, value = line.split(':', 1)
+            except ValueError:
+                raise ValueError('Bad header line: %r' % line)
+            headerlist.append((header_name, value.strip()))
+        r = cls(
+            status=status,
+            headerlist=headerlist,
+            app_iter=(),
+        )
+        r.body = fp.read(r.content_length or 0)
+        return r
 
     def copy(self):
         """Makes a copy of the response"""

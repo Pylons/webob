@@ -88,6 +88,7 @@ class BaseRequest(object):
 
     scheme = environ_getter('wsgi.url_scheme')
     method = environ_getter('REQUEST_METHOD')
+    http_version = environ_getter('SERVER_PROTOCOL')
     script_name = environ_getter('SCRIPT_NAME', '')
     path_info = environ_getter('PATH_INFO')
     content_length = converter(
@@ -814,7 +815,7 @@ class BaseRequest(object):
         host = self.host_url
         assert url.startswith(host)
         url = url[len(host):]
-        parts = ['%s %s %s' % (self.method, url, self.environ['SERVER_PROTOCOL'])]
+        parts = ['%s %s %s' % (self.method, url, self.http_version)]
         self.headers.setdefault('Host', self.host)
         parts += map('%s: %s'.__mod__, sorted(self.headers.items()))
         if self.method in ('PUT', 'POST'):
@@ -839,38 +840,27 @@ class BaseRequest(object):
 
         This reads the request as represented by ``str(req)``; it may
         not read every valid HTTP request properly."""
-        kw = {}
-        headers = kw['headers'] = {}
-        environ = kw['environ'] = {}
         start_line = fp.readline()
         try:
             method, resource, http_version = start_line.split(None, 2)
         except ValueError:
             raise ValueError('Bad HTTP request line: %r' % start_line)
-        method = method.upper()
-        environ['SERVER_PROTOCOL'] = http_version
-        kw['method'] = method
-        kw['path'] = resource
-        last_header = None
+        r = cls(environ_from_url(resource),
+            http_version=http_version,
+            method=method.upper()
+        )
         while 1:
             line = fp.readline()
-            line = line.strip()
-            if not line:
+            if not line.strip():
                 # end of headers
                 break
-            else:
-                try:
-                    last_header, value = line.split(':', 1)
-                except ValueError:
-                    raise ValueError('Bad header line: %r' % line)
-                last_header = last_header.lower()
-                if last_header in headers:
-                    headers[last_header] = '%s, %s' % (headers[last_header], value.strip())
-                else:
-                    headers[last_header] = value.strip()
-        content_length = int(headers.get('content-length', 0))
-        kw['body'] = fp.read(content_length)
-        return cls.blank(**kw)
+            hname, hval = line.split(':', 1)
+            hval = hval.strip()
+            if hname in r.headers:
+                hval = r.headers[hname] + ', ' + hval
+            r.headers[hname] = hval
+        r.body = fp.read(r.content_length or 0)
+        return r
 
     def call_application(self, application, catch_exc_info=False):
         """
