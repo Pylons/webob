@@ -31,7 +31,7 @@ A very simple application looks like this:
 
 The ``environ`` argument is a dictionary with values like the environment in a CGI request.  The header ``Host:``, for instance, goes in ``environ['HTTP_HOST']``.  The path is in ``environ['SCRIPT_NAME']`` (which is the path leading *up to* the application), and ``environ['PATH_INFO']`` (the remaining path that the application should interpret).
 
-We won't focus much on the server, but we will use WebOb to handle the application.  WebOb in a way has a simple server interface.  To use it you create a new request with ``req = webob.Request('http://localhost/test')``, and then call the application with ``resp = req.get_response(app)``.  For example:
+We won't focus much on the server, but we will use WebOb to handle the application.  WebOb in a way has a simple server interface.  To use it you create a new request with ``req = webob.Request.blank('http://localhost/test')``, and then call the application with ``resp = req.get_response(app)``.  For example:
 
 .. code-block:: python
 
