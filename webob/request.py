@@ -457,21 +457,13 @@ class BaseRequest(object):
             return NoVars('Not a form request')
         if 'webob._parsed_post_vars' in env:
             vars, body_file = env['webob._parsed_post_vars']
-            if body_file is self.body_file:
-                return vars
-        # Paste compatibility:
-        if 'paste.parsed_formvars' in env:
-            # from paste.request.parse_formvars
-            vars, body_file = env['paste.parsed_formvars']
-            if body_file is self.body_file:
-                # FIXME: is it okay that this isn't *our* MultiDict?
+            if body_file is self.body_file_raw:
                 return vars
         content_type = self.content_type
-        if ';' in content_type:
-            content_type = content_type.split(';', 1)[0]
-        if (self.method == 'PUT' and not content_type) or \
-                content_type not in ('', 'application/x-www-form-urlencoded',
-                                     'multipart/form-data'):
+        if ((self.method == 'PUT' and not content_type)
+            or content_type not in
+                ('', 'application/x-www-form-urlencoded', 'multipart/form-data')
+        ):
             # Not an HTML form submission
             return NoVars('Not an HTML form submission (Content-Type: %s)'
                           % content_type)
