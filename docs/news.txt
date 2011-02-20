@@ -6,48 +6,48 @@ News
 1.0.2
 ------
 
-* Primary maintainer is now `Sergey Schetinin <http://self.maluke.com/>`.
+* Primary maintainer is now `Sergey Schetinin <http://self.maluke.com/>`_.
 
-* Issue tracker moved from `Trac <http://bit.ly/webob-tickets>` to bitbucket's `issue
-  tracker <https://bitbucket.org/ianb/webob/issues>`
+* Issue tracker moved from `Trac <http://bit.ly/webob-tickets>`_ to bitbucket's `issue
+  tracker <https://bitbucket.org/ianb/webob/issues>`_
 
 * WebOb 1.0.1 changed the behavior of ``MultiDict.update`` to be more in line with
   other dict-like objects. We now also issue a warning when we detect that the
   client code seems to expect the old, extending semantics.
 
-* Make `Response.set_cookie(key, None)` set the 'delete-cookie' (same as `.delete_cookie(key)`)
+* Make ``Response.set_cookie(key, None)`` set the 'delete-cookie' (same as ``.delete_cookie(key)``)
 
-* Make `req.upath_info` and `req.uscript_name` settable
+* Make ``req.upath_info`` and ``req.uscript_name`` settable
 
-* Add :meth:`Request.as_string()` method
+* Add :meth:``Request.as_string()`` method
 
-* Add a `req.is_body_seekable` property
+* Add a ``req.is_body_seekable`` property
 
-* Support for the ``deflate`` method with ``resp.decode_content()`
+* Support for the ``deflate`` method with ``resp.decode_content()``
 
-* To better conform to WSGI spec we no longer attempt to use seek on `wsgi.input` file
-  instead we assume it is not seekable unless `env['webob.is_body_seekable']` is set.
+* To better conform to WSGI spec we no longer attempt to use seek on ``wsgi.input`` file
+  instead we assume it is not seekable unless ``env['webob.is_body_seekable']`` is set.
   When making the body seekable we set that flag.
 
-* A call to `req.make_body_seekable()` now guarantees that the body is seekable, is at 0 position
-  and that a correct `req.content_length` is present.
+* A call to ``req.make_body_seekable()`` now guarantees that the body is seekable, is at 0 position
+  and that a correct ``req.content_length`` is present.
 
-* `req.body_file` is always seekable. To access `env['wsgi.input']` without any processing,
-  use `req.body_file_raw`.
+* ``req.body_file`` is always seekable. To access ``env['wsgi.input']`` without any processing,
+  use ``req.body_file_raw``.
 
 * Fix responses to HEAD requests with Range.
 
-* Fix `del resp.content_type`, `del req.body`, `del req.cache_control`
+* Fix ``del resp.content_type``, ``del req.body``, ``del req.cache_control``
 
-* Fix `resp.merge_cookies()` when called with an argument that is not a Response instance.
+* Fix ``resp.merge_cookies()`` when called with an argument that is not a Response instance.
 
-* Fix `resp.content_body = None` (was removing Cache-Control instead)
+* Fix ``resp.content_body = None`` (was removing Cache-Control instead)
 
-* Fix `req.body_file = f` setting `CONTENT_LENGTH` to -1 (now removes from environ)
+* Fix ``req.body_file = f`` setting ``CONTENT_LENGTH`` to ``-1`` (now removes from environ)
 
 * Fix: make sure req.copy() leaves the original with seekable body
 
-* Fix handling of WSGI environs with missing `SCRIPT_NAME`
+* Fix handling of WSGI environs with missing ``SCRIPT_NAME``
 
 * A lot of tests were added by Mariano Mara and Danny Navarro.
 
