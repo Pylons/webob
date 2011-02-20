@@ -40,5 +40,6 @@ You may install the `in-development version of WebOb
     packages=['webob'],
     zip_safe=True,
     test_suite='nose.collector',
-    tests_require=['Tempita', 'WSGIProxy', 'WebTest', 'dtopt', 'nose', 'repoze.profile'],
+    tests_require=['Tempita', 'WSGIProxy', 'WebTest', 'dtopt', 'nose',
+                   'coverage', 'repoze.profile'],
 )

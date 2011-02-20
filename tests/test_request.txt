@@ -423,6 +423,44 @@ And for dealing with file uploads:
     d
     --foobar--
 
+FakeCGIBody have both readline and readlines methods:
+
+    >>> req_ = Request.blank('/posty')
+    >>> req_.method = 'POST'
+    >>> req_.content_type = 'multipart/form-data; boundary="foobar"'
+    >>> req_.body = '''\
+    ... --foobar
+    ... Content-Disposition: form-data; name="a"
+    ...
+    ... b
+    ... --foobar
+    ... Content-Disposition: form-data; name="upload"; filename="test.html"
+    ... Content-Type: text/html
+    ...
+    ... <html>Some text...</html>
+    ... --foobar--
+    ... '''
+    >>> req_.str_POST
+    MultiDict([('a', 'b'), ('upload', FieldStorage('upload', 'test.html'))])
+    >>> print req_.body.replace('\r', '') # doctest: +REPORT_UDIFF
+    --foobar
+    Content-Disposition: form-data; name="a"
+    <BLANKLINE>
+    b
+    --foobar
+    Content-Disposition: form-data; name="upload"; filename="test.html"
+    Content-type: text/html
+    <BLANKLINE>
+    <html>Some text...</html>
+    --foobar--
+    >>> req_.POST['c'] = 'd'
+    >>> req_.str_POST
+    MultiDict([('a', 'b'), ('upload', FieldStorage('upload', 'test.html')), ('c', 'd')])
+    >>> req_.body_file_raw.readline()
+    '--foobar\r\n'
+    >>> [n.replace('\r', '') for n in req_.body_file.readlines()]
+    ['Content-Disposition: form-data; name="a"\n', '\n', 'b\n', '--foobar\n', 'Content-Disposition: form-data; name="upload"; filename="test.html"\n', 'Content-type: text/html\n', '\n', '<html>Some text...</html>\n', '--foobar\n', 'Content-Disposition: form-data; name="c"\n', '\n', 'd\n', '--foobar--']
+
 Also reparsing works through the fake body:
 
     >>> del req.environ['webob._parsed_post_vars']

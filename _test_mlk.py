@@ -13,11 +13,18 @@ site.addsitedir(testenv_dir)
 from mext.test_suite import TestSuite
 suite = TestSuite('tests', coverage=True, pkg='webob')
 
-doctests = ['test_dec', 'test_request', 'test_response', 'html_escape', 'multidict']
+doctests = ['test_dec', 'test_request', 'test_response']
 doctests += map('../docs/'.__add__, ['do-it-yourself', 'file-example', 'index', 'reference'])
 map(suite.add_doctest, doctests)
-map(suite.add_nosetest, ['test_request', 'test_response', 'test_multidict'])
+suite.add_unittest('test_multidict')
+map(suite.add_nosetest, [
+    'test_request', 'test_response', 'test_headers',
+    'test_cookies', 'test_exc',
+    'test_misc', 'test_datetime_utils',
+])
 
 
 if __name__ == '__main__':
     suite.run_text()
+
+

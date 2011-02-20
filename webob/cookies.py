@@ -1,5 +1,4 @@
-import string, re
-import time
+import re, time, string
 from datetime import datetime, date, timedelta
 
 __all__ = ['Cookie']
@@ -16,6 +15,8 @@ class Cookie(dict):
                 if ckey:
                     self[ckey][key] = _unquote(val)
             elif key[0] == '$':
+                # RFC2109: NAMEs that begin with $ are reserved for other uses
+                # and must not be used by applications.
                 continue
             else:
                 self[key] = _unquote(val)
@@ -133,7 +134,7 @@ _c_keys.update(['secure', 'httponly'])
 #
 
 _re_quoted = r'"(?:[^\"]|\.)*"'  # any doublequoted string
-_legal_special_chars = "~!@#$%^&*()_+=-`.?|:/(){}<>',"
+_legal_special_chars = "~!@#$%^&*()_+=-`.?|:/(){}<>'"
 _re_legal_char  = r"[\w\d%s]" % ''.join(map(r'\%s'.__mod__, _legal_special_chars))
 _re_expires_val = r"\w{3},\s[\w\d-]{9,11}\s[\d:]{8}\sGMT"
 _rx_cookie = re.compile(
@@ -166,10 +167,12 @@ def _unquote(v):
 
 _trans_noop = ''.join(chr(x) for x in xrange(256))
 
+# these chars can be in cookie value w/o causing it to be quoted
 _no_escape_special_chars = "!#$%&'*+-.^_`|~/"
 _no_escape_chars = string.ascii_letters + string.digits + _no_escape_special_chars
-#_no_escape_chars = string.ascii_letters + string.digits + _legal_special_chars
+# these chars never need to be quoted
 _escape_noop_chars = _no_escape_chars+':, '
+# this is a map used to escape the values
 _escape_map = dict((chr(i), '\\%03o' % i) for i in xrange(256))
 _escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
 _escape_map['"'] = '\\"'
@@ -188,15 +191,3 @@ def _quote(v):
     if needs_quoting(v):
         return '"' + ''.join(map(_escape_char, v)) + '"'
     return v
-
-
-
-#print _quote(serialize_cookie_date(0))
-
-#assert _quote('a"\xff') == r'"a\"\377"'
-#assert _unquote(r'"a\"\377"') == 'a"\xff'
-
-#print repr(Cookie('foo=bar'))
-# c = Cookie('bad_cookie=; expires="... GMT"; Max-Age=0; Path=/')
-# print c
-#print c['bad_cookie'].items()

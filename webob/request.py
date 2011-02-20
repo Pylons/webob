@@ -858,10 +858,6 @@ class BaseRequest(object):
             if not line:
                 # end of headers
                 break
-            if line and (line.startswith(' ') or line.startswith('\t')):
-                # Continuation
-                assert last_header is not None
-                headers[last_header] = '%s, %s' % (headers[last_header], line.strip())
             else:
                 try:
                     last_header, value = line.split(':', 1)

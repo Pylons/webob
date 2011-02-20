@@ -3,6 +3,7 @@ syntax: glob
 WebOb.egg-info
 *.pyc
 *.pyo
+*.swp
 TEST*
 testenv
 docs/_build/*
@@ -11,3 +12,8 @@ build/
 .coverage
 *.egg
 glob:_coverage
+Session.vim
+html_coverage/**
+*,cover
+*_fixt.py
+
