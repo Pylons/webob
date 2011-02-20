@@ -456,7 +456,7 @@ FakeCGIBody have both readline and readlines methods:
     >>> req_.POST['c'] = 'd'
     >>> req_.str_POST
     MultiDict([('a', 'b'), ('upload', FieldStorage('upload', 'test.html')), ('c', 'd')])
-    >>> req_.body_file.readline()
+    >>> req_.body_file_raw.readline()
     '--foobar\r\n'
     >>> [n.replace('\r', '') for n in req_.body_file.readlines()]
     ['Content-Disposition: form-data; name="a"\n', '\n', 'b\n', '--foobar\n', 'Content-Disposition: form-data; name="upload"; filename="test.html"\n', 'Content-type: text/html\n', '\n', '<html>Some text...</html>\n', '--foobar\n', 'Content-Disposition: form-data; name="c"\n', '\n', 'd\n', '--foobar--']

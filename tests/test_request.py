@@ -316,7 +316,7 @@ def test_repr_nodefault():
 
 def test_request_noenviron_param():
     """Environ is a a mandatory not null param in Request"""
-    assert_raises(TypeError, Request, environ=None) 
+    assert_raises(TypeError, Request, environ=None)
 
 def test_environ_getter():
     """
@@ -350,22 +350,22 @@ def test_charset_deprecation():
     class NewRequest(BaseRequest):
         default_charset = 'utf-8'
         def __init__(self, environ, **kw):
-            super(NewRequest, self).__init__(environ, **kw) 
+            super(NewRequest, self).__init__(environ, **kw)
     assert_raises(DeprecationWarning, NewRequest, {'a':1})
     class NewRequest(BaseRequest):
         charset = 'utf-8'
         def __init__(self, environ, **kw):
-            super(NewRequest, self).__init__(environ, **kw) 
+            super(NewRequest, self).__init__(environ, **kw)
     assert_raises(DeprecationWarning, NewRequest, {'a':1})
     class NewRequest(AdhocAttrMixin, BaseRequest):
         default_charset = 'utf-8'
         def __init__(self, environ, **kw):
-            super(NewRequest, self).__init__(environ, **kw) 
+            super(NewRequest, self).__init__(environ, **kw)
     assert_raises(DeprecationWarning, NewRequest, {'a':1})
     class NewRequest(AdhocAttrMixin, BaseRequest):
         charset = 'utf-8'
         def __init__(self, environ, **kw):
-            super(NewRequest, self).__init__(environ, **kw) 
+            super(NewRequest, self).__init__(environ, **kw)
     assert_raises(DeprecationWarning, NewRequest, {'a':1})
 
 def test_unexpected_kw():
@@ -375,7 +375,7 @@ def test_unexpected_kw():
     Passed an attr in kw that does exist in the class, should be ok
     """
     assert_raises(TypeError, Request, {'a':1}, **{'this_does_not_exist':1})
-    r = Request({'a':1}, **{'charset':'utf-8', 'server_name':'127.0.0.1'}) 
+    r = Request({'a':1}, **{'charset':'utf-8', 'server_name':'127.0.0.1'})
     eq_(getattr(r, 'charset', None), 'utf-8')
     eq_(getattr(r, 'server_name', None), '127.0.0.1')
 
@@ -385,7 +385,7 @@ def test_body_file_setter():
     environ['wsgi.input'] and content_length. Plus, while deleting the
     attribute, we should get '' and 0 respectively
     """
-    r = Request({'a':1}, **{'body_file':'hello world'}) 
+    r = Request({'a':1}, **{'body_file':'hello world'})
     eq_(r.environ['wsgi.input'].getvalue(), 'hello world')
     eq_(int(r.environ['CONTENT_LENGTH']), len('hello world'))
     del r.body_file
@@ -397,7 +397,7 @@ def test_conttype_set_del():
     Deleting content_type attr from a request should update the environ dict
     Assigning content_type should replace first option of the environ dict
     """
-    r = Request({'a':1}, **{'content_type':'text/html'}) 
+    r = Request({'a':1}, **{'content_type':'text/html'})
     ok_('CONTENT_TYPE' in r.environ)
     ok_(hasattr(r, 'content_type'))
     del r.content_type
@@ -411,7 +411,7 @@ def test_headers():
     """
     Setting headers in init and later with a property, should update the info
     """
-    headers = {'Host': 'www.example.com', 
+    headers = {'Host': 'www.example.com',
                'Accept-Language': 'en-us,en;q=0.5',
                'Accept-Encoding': 'gzip,deflate',
                'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
@@ -456,7 +456,7 @@ def test_urlvars_property():
     """
     Testing urlvars setter/getter/deleter
     """
-    a = Request({'wsgiorg.routing_args':((),{'x':'y'}), 
+    a = Request({'wsgiorg.routing_args':((),{'x':'y'}),
                  'paste.urlvars':{'test':'value'}})
     a.urlvars = {'hello':'world'}
     ok_('paste.urlvars' not in a.environ)
@@ -512,23 +512,23 @@ def test_body_property():
         def read(self, n=-1):
             return self.txt[0:n]
     len_strl = BaseRequest.request_body_tempfile_limit/len(string.letters)+1
-    r = Request({'a':1}, **{'body_file':DummyIO(string.letters*len_strl)}) 
+    r = Request({'a':1}, **{'body_file':DummyIO(string.letters*len_strl)})
     eq_(len(r.body), len(string.letters*len_strl)-1)
     assert_raises(TypeError, setattr, r, 'body', unicode('hello world'))
     r.body = None
     eq_(r.body, '')
-    r = Request({'a':1}, **{'body_file':DummyIO(string.letters)}) 
-    ok_(hasattr(r.body_file, 'seek')==False)
+    r = Request({'a':1}, **{'body_file':DummyIO(string.letters)})
+    assert not hasattr(r.body_file_raw, 'seek')
     r.make_body_seekable()
-    ok_(hasattr(r.body_file, 'seek')==True)
-    r = Request({'a':1}, **{'body_file':StringIO(string.letters)}) 
-    ok_(hasattr(r.body_file, 'seek')==True)
+    assert hasattr(r.body_file_raw, 'seek')
+    r = Request({'a':1}, **{'body_file':StringIO(string.letters)})
+    assert hasattr(r.body_file_raw, 'seek')
     r.make_body_seekable()
-    ok_(hasattr(r.body_file, 'seek')==True)
+    assert hasattr(r.body_file_raw, 'seek')
 
 def test_repr_invalid():
     """If we have an invalid WSGI environ, the repr should tell us"""
-    req = BaseRequest({'CONTENT_LENGTH':'0', 'body':''}) 
+    req = BaseRequest({'CONTENT_LENGTH':'0', 'body':''})
     ok_(repr(req).endswith('(invalid WSGI environ)>'))
 
 def test_from_file():
@@ -563,19 +563,19 @@ def test_from_file():
 
 def test_blank():
     """BaseRequest.blank class method"""
-    assert_raises(ValueError, BaseRequest.blank, 
+    assert_raises(ValueError, BaseRequest.blank,
                   'www.example.com/foo?hello=world', None,
                   'www.example.com/foo?hello=world')
-    assert_raises(ValueError, BaseRequest.blank, 
+    assert_raises(ValueError, BaseRequest.blank,
                   'gopher.example.com/foo?hello=world', None,
                   'gopher://gopher.example.com')
-    req = BaseRequest.blank('www.example.com/foo?hello=world', None, 
+    req = BaseRequest.blank('www.example.com/foo?hello=world', None,
                             'http://www.example.com')
     ok_(req.environ.get('HTTP_HOST', None)== 'www.example.com:80' and
         req.environ.get('PATH_INFO', None)== 'www.example.com/foo' and
         req.environ.get('QUERY_STRING', None)== 'hello=world' and
         req.environ.get('REQUEST_METHOD', None)== 'GET')
-    req = BaseRequest.blank('www.example.com/secure?hello=world', None, 
+    req = BaseRequest.blank('www.example.com/secure?hello=world', None,
                             'https://www.example.com/secure')
     ok_(req.environ.get('HTTP_HOST', None)== 'www.example.com:443' and
         req.environ.get('PATH_INFO', None)== 'www.example.com/secure' and
@@ -587,11 +587,11 @@ def test_blank():
 
 def test_environ_from_url():
     """Generating an environ just from an url plus testing environ_add_POST"""
-    assert_raises(TypeError, environ_from_url, 
+    assert_raises(TypeError, environ_from_url,
                   'http://www.example.com/foo?bar=baz#qux')
-    assert_raises(TypeError, environ_from_url, 
+    assert_raises(TypeError, environ_from_url,
                   'gopher://gopher.example.com')
-    req = environ_from_url('http://www.example.com/foo?bar=baz') 
+    req = environ_from_url('http://www.example.com/foo?bar=baz')
     ok_(req.get('HTTP_HOST', None)== 'www.example.com:80' and
         req.get('PATH_INFO', None)== '/foo' and
         req.get('QUERY_STRING', None)== 'bar=baz' and
@@ -599,7 +599,7 @@ def test_environ_from_url():
         req.get('SCRIPT_NAME', None)== '' and
         req.get('SERVER_NAME', None)== 'www.example.com' and
         req.get('SERVER_PORT', None)== '80')
-    req = environ_from_url('https://www.example.com/foo?bar=baz') 
+    req = environ_from_url('https://www.example.com/foo?bar=baz')
     ok_(req.get('HTTP_HOST', None)== 'www.example.com:443' and
         req.get('PATH_INFO', None)== '/foo' and
         req.get('QUERY_STRING', None)== 'bar=baz' and
