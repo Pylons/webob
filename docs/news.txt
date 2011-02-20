@@ -3,10 +3,39 @@ News
 
 .. contents::
 
-hg tip
+1.0.2
 ------
 
+* Primary maintainer is now `Sergey Schetinin <http://self.maluke.com/>`.
+
+* Issue tracker moved from `Trac <http://bit.ly/webob-tickets>` to bitbucket's `issue
+  tracker <https://bitbucket.org/ianb/webob/issues>`
+
+* WebOb 1.0.1 changed the behavior of ``MultiDict.update`` to be more in line with
+  other dict-like objects. We now also issue a warning when we detect that the
+  client code seems to expect the old, extending semantics.
+
 * Make `Response.set_cookie(key, None)` set the 'delete-cookie' (same as `.delete_cookie(key)`)
+
+* Make `req.upath_info` and `req.uscript_name` settable
+
+* Add :meth:`Request.as_string()` method
+
+* Add a `req.is_body_seekable` property
+
+* Support for the ``deflate`` method with ``resp.decode_content()`
+
+* To better conform to WSGI spec we no longer attempt to use seek on `wsgi.input` file
+  instead we assume it is not seekable unless `env['webob.is_body_seekable']` is set.
+  When making the body seekable we set that flag.
+
+* A call to `req.make_body_seekable()` now guarantees that the body is seekable, is at 0 position
+  and that a correct `req.content_length` is present.
+
+* `req.body_file` is always seekable. To access `env['wsgi.input']` without any processing,
+  use `req.body_file_raw`.
+
+* Fix responses to HEAD requests with Range.
 
 * Fix `del resp.content_type`, `del req.body`, `del req.cache_control`
 
@@ -14,18 +43,13 @@ hg tip
 
 * Fix `resp.content_body = None` (was removing Cache-Control instead)
 
-* Make `req.upath_info` and `req.uscript_name` settable
-
-* Add :meth:`Request.as_string()` method
-
 * Fix `req.body_file = f` setting `CONTENT_LENGTH` to -1 (now removes from environ)
 
-* Fix handling of request bodies that have a `seek` method that exists but throws exceptions
-  when called (`copy()`, `copy_body()`, `make_seekable()`
+* Fix: make sure req.copy() leaves the original with seekable body
 
-* Add a `req.is_body_seekable` property
+* Fix handling of WSGI environs with missing `SCRIPT_NAME`
 
-* Support for the ``deflate`` method with ``resp.decode_content()`
+* A lot of tests were added by Mariano Mara and Danny Navarro.
 
 
 
