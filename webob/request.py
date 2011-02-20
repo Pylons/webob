@@ -67,7 +67,8 @@ class BaseRequest(object):
     def _body_file__get(self):
         """
         Access the body of the request (wsgi.input) as a seekable file-like
-        object.
+        object. When you access this attribute, the input stream is always
+        seeked to the beginning.
 
         If you set this value, CONTENT_LENGTH will also be updated.
         """
@@ -426,7 +427,7 @@ class BaseRequest(object):
         """
         Return the content of the request body.
         """
-        self.make_body_seekable()
+        self.make_body_seekable() # we need this to have content_length
         return self.body_file.read(self.content_length)
     def _body__set(self, value):
         if value is None:
@@ -479,7 +480,6 @@ class BaseRequest(object):
         # default of 0 is better:
         fs_environ.setdefault('CONTENT_LENGTH', '0')
         fs_environ['QUERY_STRING'] = ''
-        self.body_file.seek(0)
         fs = cgi.FieldStorage(fp=self.body_file,
                               environ=fs_environ,
                               keep_blank_values=True)
