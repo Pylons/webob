@@ -1,5 +1,6 @@
-import cgi
-from webob import html_escape
+import cgi, sys
+from cStringIO import StringIO
+from webob import html_escape, Response
 from webob.multidict import *
 from nose.tools import eq_ as eq, assert_raises
 
@@ -138,3 +139,24 @@ def test_multidict_cgi():
     ub = UnicodeMultiDict(multi=ua, encoding='utf-8')
     eq(ub.getall('key'), [u'\xf8'])
     eq(repr(ub.getall('fs')), "[FieldStorage(None, u'\\xf8', [])]")
+
+def test_multidict_update_warning():
+    fcapture = StringIO()
+    stderr, sys.stderr = sys.stderr, fcapture
+
+    # test warning when duplicate keys are passed
+    r = Response()
+    r.headers.update([
+        ('Set-Cookie', 'a=b'),
+        ('Set-Cookie', 'x=y'),
+    ])
+    fcapture.seek(0)
+    assert 'Consider using .extend()' in fcapture.readline()
+
+    # but no warning on normal operation
+    fcapture.seek(0)
+    fcapture.truncate()
+    r.headers.update([('Set-Cookie', 'a=b')])
+    assert not fcapture.getvalue()
+
+    sys.stderr = stderr

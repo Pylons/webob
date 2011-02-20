@@ -3,10 +3,7 @@
 """
 Gives a multi-value dictionary object (MultiDict) plus several wrappers
 """
-import cgi
-import copy
-import sys
-
+import cgi, copy, sys, warnings
 from UserDict import DictMixin
 
 
@@ -184,6 +181,18 @@ class MultiDict(DictMixin):
 
     def popitem(self):
         return self._items.pop()
+
+    def update(self, *args, **kw):
+        if args:
+            lst = args[0]
+            if len(lst) != len(dict(lst)):
+                # this does not catch the cases where we overwrite existing keys,
+                # but those would produce too many warning
+                msg = ("Behavior of MultiDict.update() has changed "
+                    "and overwrites duplicate keys. Consider using .extend()"
+                )
+                warnings.warn(msg, stacklevel=2)
+        DictMixin.update(self, *args, **kw)
 
     def extend(self, other=None, **kwargs):
         if other is None:
@@ -448,8 +457,8 @@ class TrackableMultiDict(MultiDict):
         result = MultiDict.popitem(self)
         self.tracker(self)
         return result
-    def update(self, other=None, **kwargs):
-        MultiDict.update(self, other, **kwargs)
+    def update(self, *args, **kwargs):
+        MultiDict.update(self, *args, **kwargs)
         self.tracker(self)
     def __repr__(self):
         items = ', '.join(['(%r, %r)' % v for v in self.iteritems()])
