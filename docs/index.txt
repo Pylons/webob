@@ -28,8 +28,8 @@ Status & License
 WebOb is an extraction and refinement of pieces from `Paste
 <http://pythonpaste.org/>`_.  It is under active development.
 Discussion should happen on the `Paste mailing lists
-<http://pythonpaste.org/community/>`_, and bugs can go on the `Paste
-trac instance <http://trac.pythonpaste.org/>`_.  It was originally
+<http://pythonpaste.org/community/>`_, and bugs can go on the `issue tracker
+<https://bitbucket.org/ianb/webob/issues>`_.  It was originally
 written by `Ian Bicking <http://ianbicking.org/>`, and the primary
 maintainer is now `Sergey Schetinin <http://self.maluke.com/>`.
 
