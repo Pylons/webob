@@ -3,6 +3,19 @@ News
 
 .. contents::
 
+1.0.3
+------
+
+* Correct a caching issue introduced in WebOb 1.0.2 that was causing unnecessary reparsing
+  of POST requests.
+
+* Fix a bug regarding field names escaping for forms submitted as ``multipart/form-data``.
+  The problem was caused by a bug in stdlib ``cgi`` module but was triggered by the
+  reparsing mentioned above. For more infromation see `the bug report and discussion
+  <https://bitbucket.org/ianb/webob/issue/2>`_.
+
+* Add ``req.http_version`` attribute.
+
 1.0.2
 ------
 
