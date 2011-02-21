@@ -622,3 +622,20 @@ def test_environ_from_url():
     eq_(req['wsgi.input'].read(), 'hello=world')
 
 
+
+def test_cgi_escaping_fix():
+    req = Request.blank('/',
+        content_type='multipart/form-data; boundary=boundary',
+        POST=_cgi_escaping_body
+    )
+    eq_(req.POST.keys(), [' "'])
+    req.body_file.read()
+    eq_(req.POST.keys(), [' "'])
+
+_cgi_escaping_body = '''--boundary
+Content-Disposition: form-data; name="%20%22"
+
+
+--boundary--'''
+
+
