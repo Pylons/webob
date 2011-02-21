@@ -622,6 +622,23 @@ def test_environ_from_url():
     eq_(req['wsgi.input'].read(), 'hello=world')
 
 
+def test_post_does_not_reparse():
+    # test that there's no repetitive parsing is happening on every req.POST access
+    req = Request.blank('/',
+        content_type='multipart/form-data; boundary=boundary',
+        POST=_cgi_escaping_body
+    )
+    f0 = req.body_file_raw
+    post1 = req.str_POST
+    f1 = req.body_file_raw
+    assert f1 is not f0
+    post2 = req.str_POST
+    f2 = req.body_file_raw
+    assert post1 is post2
+    assert f1 is f2
+
+
+
 
 def test_cgi_escaping_fix():
     req = Request.blank('/',
