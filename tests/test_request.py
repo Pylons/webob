@@ -645,12 +645,12 @@ def test_cgi_escaping_fix():
         content_type='multipart/form-data; boundary=boundary',
         POST=_cgi_escaping_body
     )
-    eq_(req.POST.keys(), [' "'])
+    eq_(req.POST.keys(), ['%20%22"'])
     req.body_file.read()
-    eq_(req.POST.keys(), [' "'])
+    eq_(req.POST.keys(), ['%20%22"'])
 
 _cgi_escaping_body = '''--boundary
-Content-Disposition: form-data; name="%20%22"
+Content-Disposition: form-data; name="%20%22""
 
 
 --boundary--'''

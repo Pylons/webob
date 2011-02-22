@@ -53,19 +53,12 @@ class MultiDict(DictMixin):
         Create a dict from a cgi.FieldStorage instance
         """
         obj = cls()
-        if fs.type == 'multipart/form-data':
-            # cgi.FieldStorage parser for this ctype
-            # does not unquote the field names
-            fix_name = urllib.unquote
-        else:
-            fix_name = lambda n: n
         # fs.list can be None when there's nothing to parse
         for field in fs.list or ():
-            name = fix_name(field.name)
             if field.filename:
-                obj.add(name, field)
+                obj.add(field.name, field)
             else:
-                obj.add(name, field.value)
+                obj.add(field.name, field.value)
         return obj
 
     def __getitem__(self, key):
