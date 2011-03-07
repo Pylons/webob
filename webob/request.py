@@ -27,6 +27,7 @@ class _NoDefault:
         return '(No Default)'
 NoDefault = _NoDefault()
 
+PATH_SAFE = '/:@&+$,'
 
 class BaseRequest(object):
     ## Options:
@@ -234,21 +235,24 @@ class BaseRequest(object):
         """
         The URL including SCRIPT_NAME (no PATH_INFO or query string)
         """
-        return self.host_url + urllib.quote(self.environ.get('SCRIPT_NAME', ''))
+        return self.host_url + urllib.quote(
+            self.environ.get('SCRIPT_NAME', ''), PATH_SAFE)
 
     @property
     def path_url(self):
         """
         The URL including SCRIPT_NAME and PATH_INFO, but not QUERY_STRING
         """
-        return self.application_url + urllib.quote(self.environ.get('PATH_INFO', ''))
+        return self.application_url + urllib.quote(
+            self.environ.get('PATH_INFO', ''), PATH_SAFE)
 
     @property
     def path(self):
         """
         The path of the request, without host or query string
         """
-        return urllib.quote(self.script_name) + urllib.quote(self.path_info)
+        return (urllib.quote(self.script_name, PATH_SAFE) +
+                urllib.quote(self.path_info, PATH_SAFE))
 
     @property
     def path_qs(self):

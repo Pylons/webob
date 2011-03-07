@@ -168,6 +168,12 @@ def test_cookie_quoting():
     req.headers['Cookie'] = 'foo="?foo"; Path=/'
     assert req.cookies == {'foo': '?foo'}
 
+def test_path_quoting():
+    path = '/:@&+$,/bar'
+    req = Request.blank(path)
+    assert req.path == path
+    assert req.url.endswith(path)
+
 def test_params():
     req = Request.blank('/?a=1&b=2')
     req.method = 'POST'
