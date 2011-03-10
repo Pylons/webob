@@ -65,15 +65,13 @@ class BaseRequest(object):
                     raise TypeError("Unexpected keyword: %s=%r" % (name, value))
                 setattr(self, name, value)
 
+
     def _body_file__get(self):
         """
-        Access the body of the request (wsgi.input) as a seekable file-like
-        object.
-
-        If you get or set this value, CONTENT_LENGTH will also be updated.
+            Input stream of the request (wsgi.input).
+            Setting this property resets the content_length and seekable flag
+            (unlike setting req.body_file_raw).
         """
-        if not self.is_body_seekable:
-            self.make_body_seekable()
         return self.body_file_raw
     def _body_file__set(self, value):
         if isinstance(value, str):
@@ -87,6 +85,18 @@ class BaseRequest(object):
         self.body = ''
     body_file = property(_body_file__get, _body_file__set, _body_file__del, doc=_body_file__get.__doc__)
     body_file_raw = environ_getter('wsgi.input')
+    @property
+    def body_file_seekable(self):
+        """
+            Get the body of the request (wsgi.input) as a seekable file-like
+            object. Middleware and routing applications should use this attribute
+            over .body_file.
+
+            If you access this value, CONTENT_LENGTH will also be updated.
+        """
+        if not self.is_body_seekable:
+            self.make_body_seekable()
+        return self.body_file_raw
 
     scheme = environ_getter('wsgi.url_scheme')
     method = environ_getter('REQUEST_METHOD')
