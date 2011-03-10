@@ -432,7 +432,9 @@ class BaseRequest(object):
         Return the content of the request body.
         """
         self.make_body_seekable() # we need this to have content_length
-        return self.body_file.read(self.content_length)
+        r = self.body_file.read(self.content_length)
+        self.body_file.seek(0)
+        return r
     def _body__set(self, value):
         if value is None:
             value = ''
@@ -471,12 +473,14 @@ class BaseRequest(object):
             # Not an HTML form submission
             return NoVars('Not an HTML form submission (Content-Type: %s)'
                           % content_type)
+        if self.is_body_seekable:
+            self.body_file.seek(0)
         fs_environ = env.copy()
         # FieldStorage assumes a default CONTENT_LENGTH of -1, but a
         # default of 0 is better:
         fs_environ.setdefault('CONTENT_LENGTH', '0')
         fs_environ['QUERY_STRING'] = ''
-        fs = cgi.FieldStorage(fp=self.body_file,
+        fs = cgi.FieldStorage(fp=self.body_file_raw,
                               environ=fs_environ,
                               keep_blank_values=True)
         vars = MultiDict.from_fieldstorage(fs)
