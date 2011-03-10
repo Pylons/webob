@@ -661,6 +661,10 @@ def test_middleware_body():
     eq_(resp.body, 'abc')
     eq_(resp.headers['x-data'], 'abc')
 
+def test_body_file_noseek():
+    req = Request.blank('/', method='PUT', body='abc')
+    lst = [req.body_file.read(1) for i in range(3)]
+    eq_(lst, ['a','b','c'])
 
 def test_cgi_escaping_fix():
     req = Request.blank('/',

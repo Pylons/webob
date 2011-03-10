@@ -68,12 +68,12 @@ class BaseRequest(object):
     def _body_file__get(self):
         """
         Access the body of the request (wsgi.input) as a seekable file-like
-        object. When you access this attribute, the input stream is always
-        seeked to the beginning.
+        object.
 
-        If you set this value, CONTENT_LENGTH will also be updated.
+        If you get or set this value, CONTENT_LENGTH will also be updated.
         """
-        self.make_body_seekable()
+        if not self.is_body_seekable:
+            self.make_body_seekable()
         return self.body_file_raw
     def _body_file__set(self, value):
         if isinstance(value, str):
