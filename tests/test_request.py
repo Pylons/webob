@@ -644,6 +644,22 @@ def test_post_does_not_reparse():
     assert f1 is f2
 
 
+def test_middleware_body():
+    def app(env, sr):
+        sr('200 OK', [])
+        return [env['wsgi.input'].read()]
+
+    def mw(env, sr):
+        req = Request(env)
+        data = req.body_file.read()
+        resp = req.get_response(app)
+        resp.headers['x-data'] = data
+        return resp(env, sr)
+
+    req = Request.blank('/', method='PUT', body='abc')
+    resp = req.get_response(mw)
+    eq_(resp.body, 'abc')
+    eq_(resp.headers['x-data'], 'abc')
 
 
 def test_cgi_escaping_fix():

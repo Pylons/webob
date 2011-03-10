@@ -871,6 +871,8 @@ class BaseRequest(object):
         do this and there was an exception, the exception will be
         raised directly.
         """
+        if self.is_body_seekable:
+            self.body_file_raw.seek(0)
         captured = []
         output = []
         def start_response(status, headers, exc_info=None):
