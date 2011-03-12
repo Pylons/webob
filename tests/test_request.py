@@ -6,6 +6,7 @@ from webtest import TestApp
 from nose.tools import eq_, ok_, assert_raises, assert_false
 from cStringIO import StringIO
 import string
+import cgi
 
 def simpleapp(environ, start_response):
     status = '200 OK'
@@ -566,6 +567,53 @@ def test_from_file():
     )
     assert_raises(ValueError, BaseRequest.from_file, val_file)
 
+def test_from_file2():
+    """A valid request without a Content-Length header should still read the full body.
+    Also test parity between as_string and from_file.
+    """
+    val_file = StringIO(
+'\r\n'.join("""POST /webob/ HTTP/1.0
+Accept: */*
+Cache-Control: max-age=0
+Content-Type: multipart/form-data; boundary=----------------------------deb95b63e42a
+Host: pythonpaste.org
+User-Agent: UserAgent/1.0 (identifier-version) library/7.0 otherlibrary/0.8
+
+------------------------------deb95b63e42a
+Content-Disposition: form-data; name="foo"
+
+foo
+------------------------------deb95b63e42a
+Content-Disposition: form-data; name="bar"; filename="bar.txt"
+Content-type: application/octet-stream
+
+these are the contents of the file 'bar.txt'
+
+------------------------------deb95b63e42a--""".replace('\r','').split('\n')))
+    req = BaseRequest.from_file(val_file)
+    assert isinstance(req, BaseRequest)
+    assert_false(repr(req).endswith('(invalid WSGI environ)>'))
+    assert_false('\n' in req.http_version or '\r' in req.http_version)
+    assert ',' not in req.host
+    assert req.content_length is not None
+    assert req.content_length == 337
+    assert 'foo' in req.body
+    bar_contents = "these are the contents of the file 'bar.txt'\r\n"
+    assert bar_contents in req.body
+    assert req.params['foo'] == 'foo'
+    bar = req.params['bar']
+    assert isinstance(bar, cgi.FieldStorage)
+    assert bar.type == 'application/octet-stream'
+    bar.file.seek(0)
+    assert bar.file.read() == bar_contents
+    out = str(req)
+    val_file.seek(0)
+    contents = val_file.read()
+    # out should equal contents, except for the Content-Length header,
+    # so insert that.
+    i = contents.find('Content-Type')
+    contents = contents[:i] + 'Content-Length: 337\r\n' + contents[i:]
+    assert out == contents
 
 def test_blank():
     """BaseRequest.blank class method"""

@@ -827,16 +827,24 @@ class BaseRequest(object):
         url = url[len(host):]
         parts = ['%s %s %s' % (self.method, url, self.http_version)]
         self.headers.setdefault('Host', self.host)
-        parts += map('%s: %s'.__mod__, sorted(self.headers.items()))
+
+        # acquire body before we handle headers so that
+        # content-length will be set
+        body = None
         if self.method in ('PUT', 'POST'):
             if skip_body > 1:
                 if len(self.body) > skip_body:
-                    parts += ['<body skipped (len=%s)>' % len(self.body)]
+                    body = '<body skipped (len=%s)>' % len(self.body)
                 else:
                     skip_body = False
             if not skip_body:
-                parts += ['', self.body]
-        return '\n'.join(parts)
+                body = self.body
+
+        parts += map('%s: %s'.__mod__, sorted(self.headers.items()))
+        if body:
+            parts.extend( ['',body] )
+        # HTTP clearly specifies CRLF
+        return '\r\n'.join(parts)
 
     __str__ = as_string
 
@@ -852,7 +860,7 @@ class BaseRequest(object):
         not read every valid HTTP request properly."""
         start_line = fp.readline()
         try:
-            method, resource, http_version = start_line.split(None, 2)
+            method, resource, http_version = start_line.rstrip('\r\n').split(None, 2)
         except ValueError:
             raise ValueError('Bad HTTP request line: %r' % start_line)
         r = cls(environ_from_url(resource),
@@ -866,10 +874,15 @@ class BaseRequest(object):
                 break
             hname, hval = line.split(':', 1)
             hval = hval.strip()
-            if hname in r.headers:
+            if hname in r.headers and hname.lower() != 'host':
                 hval = r.headers[hname] + ', ' + hval
             r.headers[hname] = hval
-        r.body = fp.read(r.content_length or 0)
+        cl = r.content_length
+        if cl:
+            body = fp.read(cl)
+        else:
+            body = fp.read()
+        r.body = body
         return r
 
     def call_application(self, application, catch_exc_info=False):

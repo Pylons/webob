@@ -16,7 +16,7 @@ should have.
     ...     from io import BytesIO as InputType
     ... else:
     ...     from cStringIO import InputType
-    >>> from dtopt import ELLIPSIS
+    >>> from dtopt import ELLIPSIS, NORMALIZE_WHITESPACE
     >>> from webob import Request, UTC
     >>> req = Request.blank('/')
     >>> req # doctest: +ELLIPSIS
@@ -539,6 +539,7 @@ skip_body=<int> excludes the body from the result if it's longer than that numbe
     PUT / HTTP/1.0
     Content-Length: 10
     Host: localhost:80
+    <BLANKLINE>
     <body skipped (len=10)>
 
 but not if it's shorter
