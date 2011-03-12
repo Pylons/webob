@@ -850,6 +850,10 @@ class BaseRequest(object):
 
     @classmethod
     def from_string(cls, s):
+        """
+            Create a request from HTTP string. If the string contains
+            extra data after the request, raise a ValueError.
+        """
         f = StringIO(s)
         r = cls.from_file(f)
         if f.tell() != len(s):
@@ -858,11 +862,12 @@ class BaseRequest(object):
 
     @classmethod
     def from_file(cls, fp):
-        """Reads a request from a file-like object (it must implement
+        """Read a request from a file-like object (it must implement
         ``.read(size)`` and ``.readline()``).
 
         It will read up to the end of the request, not the end of the
-        file.
+        file (unless the request is a POST or PUT and has no
+        Content-Length, in that case, the entire file is read).
 
         This reads the request as represented by ``str(req)``; it may
         not read every valid HTTP request properly."""
