@@ -7,7 +7,7 @@ News
 ------
 
 * The field names escaping bug semi-fixed in 1.0.3 and originally blamed on cgi module
-  was in fact a webob.request._encode_multipart bug (also in Google Chrome) and was
+  was in fact a ``webob.request._encode_multipart`` bug (also in Google Chrome) and was
   lurking in webob code for quite some time -- 1.0.2 just made it trigger more often.
   Now it is fixed properly.
 
@@ -22,10 +22,10 @@ News
 * ``Request.get_response`` and ``Request.call_application`` seek the input body to start
   before calling the app (if possible).
 
-* Accessing ``req.body`` 'rewinds' the input stream back to pos 0 as well
+* Accessing ``req.body`` 'rewinds' the input stream back to pos 0 as well.
 
-* When accessing req.POST we now avoid making the body seekable as the input stream data
-  are preserved in FakeCGIBody anyway
+* When accessing ``req.POST`` we now avoid making the body seekable as the input stream data
+  are preserved in ``FakeCGIBody`` anyway.
 
 * Add new method ``Request.from_string``.
 
