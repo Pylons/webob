@@ -3,6 +3,38 @@ News
 
 .. contents::
 
+1.0.4
+------
+
+* The field names escaping bug semi-fixed in 1.0.3 and originally blamed on cgi module
+  was in fact a webob.request._encode_multipart bug (also in Google Chrome) and was
+  lurking in webob code for quite some time -- 1.0.2 just made it trigger more often.
+  Now it is fixed properly.
+
+* Make sure that req.url and related properties do not unnecessarily escape some chars
+  (``:@&+$``) in the URI path. See also `related ticket
+  <https://bitbucket.org/ianb/webob/issue/5>`_.
+
+* Revert some changes from 1.0.3 that have broken backwards compatibility for some apps.
+  Getting ``req.body_file`` does not make input stream seekable, but there's a new property
+  ``req.body_file_seekable`` that does.
+
+* ``Request.get_response`` and ``Request.call_application`` seek the input body to start
+  before calling the app (if possible).
+
+* Accessing ``req.body`` 'rewinds' the input stream back to pos 0 as well
+
+* When accessing req.POST we now avoid making the body seekable as the input stream data
+  are preserved in FakeCGIBody anyway
+
+* Add new method ``Request.from_string``.
+
+* Make sure ``Request.as_string()`` uses CRLF to separate headers.
+
+* Improve parity between ``Request.as_string()`` and ``.from_file``/``.from_string``
+  methods, so that the latter can parse output of the former and create a similar
+  request object which wasn't always the case previously.
+
 1.0.3
 ------
 
@@ -10,9 +42,8 @@ News
   of POST requests.
 
 * Fix a bug regarding field names escaping for forms submitted as ``multipart/form-data``.
-  The problem was caused by a bug in stdlib ``cgi`` module but was triggered by the
-  reparsing mentioned above. For more infromation see `the bug report and discussion
-  <https://bitbucket.org/ianb/webob/issue/2>`_.
+  For more infromation see `the bug report and discussion
+  <https://bitbucket.org/ianb/webob/issue/2>`_ and 1.0.4 notes for further fix.
 
 * Add ``req.http_version`` attribute.
 
@@ -46,7 +77,7 @@ News
   and that a correct ``req.content_length`` is present.
 
 * ``req.body_file`` is always seekable. To access ``env['wsgi.input']`` without any processing,
-  use ``req.body_file_raw``.
+  use ``req.body_file_raw``. (Partially reverted in 1.0.4)
 
 * Fix responses to HEAD requests with Range.
 
