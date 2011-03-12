@@ -826,7 +826,7 @@ class BaseRequest(object):
         assert url.startswith(host)
         url = url[len(host):]
         parts = ['%s %s %s' % (self.method, url, self.http_version)]
-        self.headers.setdefault('Host', self.host)
+        #self.headers.setdefault('Host', self.host)
 
         # acquire body before we handle headers so that
         # content-length will be set
@@ -849,6 +849,14 @@ class BaseRequest(object):
     __str__ = as_string
 
     @classmethod
+    def from_string(cls, s):
+        f = StringIO(s)
+        r = cls.from_file(f)
+        if f.tell() != len(s):
+            raise ValueError("The string contains more data than expected")
+        return r
+
+    @classmethod
     def from_file(cls, fp):
         """Reads a request from a file-like object (it must implement
         ``.read(size)`` and ``.readline()``).
@@ -867,6 +875,7 @@ class BaseRequest(object):
             http_version=http_version,
             method=method.upper()
         )
+        del r.environ['HTTP_HOST']
         while 1:
             line = fp.readline()
             if not line.strip():
@@ -874,15 +883,12 @@ class BaseRequest(object):
                 break
             hname, hval = line.split(':', 1)
             hval = hval.strip()
-            if hname in r.headers and hname.lower() != 'host':
+            if hname in r.headers:
                 hval = r.headers[hname] + ', ' + hval
             r.headers[hname] = hval
-        cl = r.content_length
-        if cl:
-            body = fp.read(cl)
-        else:
-            body = fp.read()
-        r.body = body
+        clen = r.content_length
+        if r.method in ('PUT', 'POST'):
+            r.body = fp.read(clen if (clen is not None) else -1)
         return r
 
     def call_application(self, application, catch_exc_info=False):

@@ -567,12 +567,11 @@ def test_from_file():
     )
     assert_raises(ValueError, BaseRequest.from_file, val_file)
 
-def test_from_file2():
-    """A valid request without a Content-Length header should still read the full body.
-    Also test parity between as_string and from_file.
-    """
-    val_file = StringIO(
-'\r\n'.join("""POST /webob/ HTTP/1.0
+def _norm_req(s):
+    return '\r\n'.join(s.strip().replace('\r','').split('\n'))
+
+_test_req = """
+POST /webob/ HTTP/1.0
 Accept: */*
 Cache-Control: max-age=0
 Content-Type: multipart/form-data; boundary=----------------------------deb95b63e42a
@@ -589,8 +588,22 @@ Content-type: application/octet-stream
 
 these are the contents of the file 'bar.txt'
 
-------------------------------deb95b63e42a--""".replace('\r','').split('\n')))
-    req = BaseRequest.from_file(val_file)
+------------------------------deb95b63e42a--
+"""
+_test_req2 = """
+POST / HTTP/1.0
+Content-Length: 0
+
+"""
+
+_test_req = _norm_req(_test_req)
+_test_req2 = _norm_req(_test_req2) + '\r\n'
+
+def test_from_string():
+    """A valid request without a Content-Length header should still read the full body.
+    Also test parity between as_string and from_string / from_file.
+    """
+    req = BaseRequest.from_string(_test_req)
     assert isinstance(req, BaseRequest)
     assert_false(repr(req).endswith('(invalid WSGI environ)>'))
     assert_false('\n' in req.http_version or '\r' in req.http_version)
@@ -606,14 +619,16 @@ these are the contents of the file 'bar.txt'
     assert bar.type == 'application/octet-stream'
     bar.file.seek(0)
     assert bar.file.read() == bar_contents
-    out = str(req)
-    val_file.seek(0)
-    contents = val_file.read()
     # out should equal contents, except for the Content-Length header,
     # so insert that.
-    i = contents.find('Content-Type')
-    contents = contents[:i] + 'Content-Length: 337\r\n' + contents[i:]
-    assert out == contents
+    _test_req_copy = _test_req.replace('Content-Type', 'Content-Length: 337\r\nContent-Type')
+    assert str(req) == _test_req_copy
+
+    req2 = BaseRequest.from_string(_test_req2)
+    assert 'host' not in req2.headers
+    eq_(str(req2), _test_req2.rstrip())
+    assert_raises(ValueError, BaseRequest.from_string, _test_req2+'xx')
+
 
 def test_blank():
     """BaseRequest.blank class method"""
