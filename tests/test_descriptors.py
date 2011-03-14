@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from nose.tools import eq_
 from nose.tools import ok_
 from nose.tools import assert_raises
@@ -34,7 +36,6 @@ def test_environ_getter_default():
 def test_environ_getter_rfc_section():
     from webob.descriptors import environ_getter
     desc = environ_getter('akey', rfc_section='14.3')
-    eq_(desc.__doc__, "Gets and sets the 'akey' key in the environment. For more information on akey see `section 14.3 <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3>`_.")
-
-
-
+    eq_(desc.__doc__, "Gets and sets the 'akey' key in the environment. For "
+        "more information on akey see `section 14.3 "
+        "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3>`_.")
