@@ -125,6 +125,11 @@ class NestedMultiDictTestCase(MultiDictTestCase):
         d = self._get_instance()
         self.assertRaises(KeyError, d.__getitem__, 'z')
     
+    def test_contains(self):
+        d = self._get_instance()
+        self.assertEquals(d.__contains__('a'), True)
+        self.assertEquals(d.__contains__('z'), False)
+
     def test_add(self):
         d = self._get_instance()
         self.assertRaises(KeyError, d.add, 'b', 3)
