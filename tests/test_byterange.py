@@ -1,0 +1,127 @@
+from webob.byterange import Range, ContentRange
+
+from nose.tools import assert_true, assert_false, assert_equal, assert_raises
+
+def test_satisfiable():
+    range = Range( ((0,99),) )
+    assert_true( range.satisfiable(100) )
+    assert_false( range.satisfiable(99) )
+
+def test_range_for_length_more_than_one_range():
+    # More than one range
+    range = Range( ((0,99), (100,199) ) )
+    assert_equal( range.range_for_length(100), None )
+
+def test_range_for_length_one_range_and_length_none():
+    # One range and length is None
+    range = Range( ((0,99), ) )
+    assert_equal( range.range_for_length( None ), None )
+
+def test_range_for_length_end_is_none():
+    # End is None
+    range = Range( ((0, None), ) )
+    assert_equal( range.range_for_length(100), (0,100) )
+
+def test_range_for_length_end_is_none_negative_start():
+    # End is None and start is negative
+    range = Range( ((-5, None), ) )
+    assert_equal( range.range_for_length(100), (95,100) )
+
+def test_range_start_none():
+    # Start is None
+    range = Range( ((None, 99), ) )
+    assert_equal( range.range_for_length(100), None )
+
+def test_range_str_1():
+    # Single range
+    range = Range( ((0, 100), ) )
+    assert_equal( str(range), 'bytes=0-99' )
+
+def test_range_str_2():
+    # Two ranges
+    range = Range( ((0, 100), (101, 200) ) )
+    assert_equal( str(range), 'bytes=0-99,101-199' )
+
+def test_range_str_3():
+    # Negative start
+    range = Range( ((-1, 100),) )
+    assert_raises( ValueError, range.__str__ )
+
+def test_range_str_4():
+    # Negative end
+    range = Range( ((0, 100),) )
+    # Manually set test values
+    range.ranges = ( (0, -100), )
+    assert_raises( ValueError, range.__str__ )
+
+def test_parse_valid_input():
+    range = Range( ((0, 100),) )
+    assert_equal( range.parse( 'bytes=0-99' ).__class__, Range )
+
+def test_parse_missing_equals_sign():
+    range = Range( ((0, 100),) )
+    assert_equal( range.parse( 'bytes 0-99' ), None )
+
+def test_parse_invalid_units():
+    range = Range( ((0, 100),) )
+    assert_equal( range.parse( 'words=0-99' ), None )
+
+def test_parse_bytes_valid_input():
+    range = Range( ((0, 100),) )
+    assert_equal( range.parse_bytes( 'bytes=0-99' ), ('bytes', [(0,100)] ) )
+
+def test_parse_bytes_missing_equals_sign():
+    range = Range( ((0, 100),) )
+    assert_equal( range.parse_bytes( 'bytes 0-99'), None )
+
+def test_parse_bytes_missing_dash():
+    range = Range( ((0, 100),) )
+    assert_equal( range.parse_bytes( 'bytes=0 99'), None )
+
+def test_parse_bytes_null_input():
+    range = Range( ((0, 100),) )
+    assert_raises( TypeError, range.parse_bytes, '' )
+
+def test_parse_bytes_two_many_ranges():
+    range = Range( ((0, 100),) )
+    assert_equal( range.parse_bytes( 'bytes=-100,-100' ), None )
+
+def test_parse_bytes_negative_start():
+    range = Range( ((0, 100),) )
+    assert_equal( range.parse_bytes( 'bytes=-0-99' ), None )
+
+def test_parse_bytes_start_greater_than_end():
+    range = Range( ((0, 100),) )
+    assert_equal( range.parse_bytes( 'bytes=99-0'), None )
+
+def test_parse_bytes_start_greater_than_last_end():
+    range = Range( ((0, 100),) )
+    assert_equal( range.parse_bytes( 'bytes=0-99,0-199'), None )
+
+def test_contentrange_bad_input():
+    assert_raises( ValueError, ContentRange, None, 99, None )
+
+def test_cr_parse_ok():
+    contentrange = ContentRange( 0, 99, 100 )
+    assert_true( contentrange.parse( 'bytes 0-99/100' ).__class__, ContentRange )
+
+def test_cr_parse_none():
+    contentrange = ContentRange( 0, 99, 100 )
+    assert_equal( contentrange.parse( None ), None )
+
+def test_cr_parse_no_bytes():
+    contentrange = ContentRange( 0, 99, 100 )
+    assert_equal( contentrange.parse( '0-99 100' ), None )
+
+def test_cr_parse_missing_slash():
+    contentrange = ContentRange( 0, 99, 100 )
+    assert_equal( contentrange.parse( 'bytes 0-99 100' ), None )
+
+def test_cr_parse_invalid_length():
+    contentrange = ContentRange( 0, 99, 100 )
+    assert_equal( contentrange.parse( 'bytes 0-99/xxx' ), None )
+
+def test_cr_parse_no_range():
+    contentrange = ContentRange( 0, 99, 100 )
+    assert_equal( contentrange.parse( 'bytes 0 99/100' ), None )
+
