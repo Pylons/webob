@@ -661,3 +661,18 @@ def test_merge_cookies_resp_is_wsgi_callable():
     assert len(L) == 1
     L[0][1]('200 OK', []) # invoke dummy_start_response assertion
     
+def test_body_get_body_is_None_len_app_iter_is_zero():
+    res = Response()
+    res._app_iter = StringIO()
+    res._body = None
+    result = res.body
+    eq_(result, '')
+
+def test_body_set_AttributeError_edgecase():
+    res = Response()
+    del res._app_iter
+    del res._body
+    res.body = 'abc'
+    eq_(res._body, 'abc')
+    eq_(res.content_length, 3)
+    eq_(res._app_iter, None)

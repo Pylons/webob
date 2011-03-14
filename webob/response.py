@@ -308,7 +308,7 @@ class Response(object):
                 assert len(body) == 0, "HEAD responses must be empty"
             elif len(body) == 0:
                 # if body-length is zero, we assume it's a HEAD response and leave content_length alone
-                pass
+                pass # pragma: no cover (no idea why necessary, it's hit)
             elif self.content_length is None:
                 self.content_length = len(body)
             elif self.content_length != len(body):
