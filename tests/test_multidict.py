@@ -160,8 +160,11 @@ class NestedMultiDictTestCase(MultiDictTestCase):
 
     def test_nonzero(self):
         d = self._get_instance()
-        assert d
-    
+        self.assertEqual(d.__nonzero__(), True)
+        d.dicts = [{}]
+        self.assertEqual(d.__nonzero__(), False)
+        assert not d
+
 class TrackableMultiDict(MultiDictTestCase):
     klass = multidict.TrackableMultiDict
 
@@ -218,4 +221,6 @@ class TrackableMultiDict(MultiDictTestCase):
         
         _list = [('a', 1), ('b', 2), ('c', 3)]
         for v in _list:
-            assert v in d._items 
+            assert v in d._items
+
+class NoVarsTestCase 
