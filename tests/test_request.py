@@ -538,7 +538,7 @@ def test_repr_invalid():
     req = BaseRequest({'CONTENT_LENGTH':'0', 'body':''})
     ok_(repr(req).endswith('(invalid WSGI environ)>'))
 
-def test_from_file():
+def test_from_file_2():
     """If we pass a file with garbage to from_file method it should raise an
     error plus missing bits in from_file method
     """
@@ -744,4 +744,19 @@ Content-Disposition: form-data; name="%20%22""
 
 --boundary--'''
 
+def test_content_type_none():
+    r = Request.blank('/', content_type='text/html')
+    assert r.content_type == 'text/html'
+    r.content_type = None
+    
+def test_charset_in_content_type():
+    r = Request({'CONTENT_TYPE':'text/html;charset=ascii'})
+    r.charset = 'shift-jis'
+    assert r.charset == 'shift-jis'
+    
+def test_body_file_seekable():
+    r = Request.blank('/')
+    r.body_file = StringIO('body')
+    assert r.body_file_seekable.read() == 'body'
 
+    
