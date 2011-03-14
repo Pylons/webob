@@ -233,7 +233,7 @@ def test_request_uri_https():
 	}
 	eq_(_request_uri(environ), 'https://test.com/foobar')
 	
-def test_body_is_none():
+def test_body_get_is_none():
     res = Response()
     res._body = None
     res._app_iter = None
@@ -241,13 +241,13 @@ def test_body_is_none():
                   body="somebody")
     assert_raises(AttributeError, res.__getattribute__, 'body')
 
-def test_body_is_unicode_notverylong():
+def test_body_get_is_unicode_notverylong():
     res = Response()
     res._app_iter = u'foo'
     res._body = None
     assert_raises(ValueError, res.__getattribute__, 'body')
     
-def test_body_is_unicode_verylong():
+def test_body_get_is_unicode_verylong():
     res = Response()
     res._app_iter = u'x' * 51
     res._body = None
@@ -263,5 +263,15 @@ def test_body_set_under_body_doesnt_exist():
     res.body = 'abc'
     eq_(res._body, 'abc')
     eq_(res.content_length, 3)
+    eq_(res._app_iter, None)
+    
+def test_body_del():
+    res = Response()
+    res._body = '123'
+    res.content_length = 3
+    res._app_iter = ()
+    del res.body
+    eq_(res._body, None)
+    eq_(res.content_length, None)
     eq_(res._app_iter, None)
     
