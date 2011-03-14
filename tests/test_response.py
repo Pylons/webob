@@ -306,3 +306,13 @@ def test_unicode_body_del():
     eq_(res._body, None)
     eq_(res.content_length, None)
     eq_(res._app_iter, None)
+
+def test_body_file_del():
+    res = Response()
+    res._body = '123'
+    res.content_length = 3
+    res._app_iter = ()
+    del res.body_file
+    eq_(res._body, None)
+    eq_(res.content_length, None)
+    eq_(res._app_iter, None)
