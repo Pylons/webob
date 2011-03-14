@@ -222,6 +222,16 @@ def test_request_uri_no_script_name():
 		'SCRIPT_NAME': '/foobar',
 	}
 	eq_(_request_uri(environ), 'http://test.com/foobar')
+
+def test_request_uri_https():
+	from webob.response import _request_uri
+	environ = {
+		'wsgi.url_scheme': 'https',
+		'SERVER_NAME': 'test.com',
+		'SERVER_PORT': '443',
+		'SCRIPT_NAME': '/foobar',
+	}
+	eq_(_request_uri(environ), 'http://test.com:443/foobar')
 	
 def test_body_is_none():
     res = Response()
