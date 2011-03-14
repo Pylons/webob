@@ -1,19 +1,46 @@
-import sys, tempfile
-import urllib, urlparse, cgi
+import cgi
+import re
+import sys
+import tempfile
+import urllib
+import urlparse
 if sys.version >= '2.7':
     from io import BytesIO as StringIO
 else:
     from cStringIO import StringIO # pragma nocover
 
-from webob.headers import EnvironHeaders
-from webob.acceptparse import accept_property, MIMEAccept, MIMENilAccept, NoAccept
-from webob.multidict import TrackableMultiDict, MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
-from webob.cachecontrol import CacheControl, serialize_cache_control
-from webob.etag import etag_property, AnyETag, NoETag
-
-from webob.descriptors import *
-from webob.datetime_utils import *
+from webob.acceptparse import MIMEAccept
+from webob.acceptparse import MIMENilAccept
+from webob.acceptparse import NoAccept
+from webob.acceptparse import accept_property
+from webob.cachecontrol import CacheControl
+from webob.cachecontrol import serialize_cache_control
 from webob.cookies import Cookie
+from webob.descriptors import CHARSET_RE
+from webob.descriptors import SCHEME_RE
+from webob.descriptors import converter
+from webob.descriptors import converter_date
+from webob.descriptors import deprecated_property
+from webob.descriptors import environ_getter
+from webob.descriptors import parse_auth
+from webob.descriptors import parse_if_range
+from webob.descriptors import parse_int
+from webob.descriptors import parse_int_safe
+from webob.descriptors import parse_range
+from webob.descriptors import serialize_auth
+from webob.descriptors import serialize_if_range
+from webob.descriptors import serialize_int
+from webob.descriptors import serialize_range
+from webob.descriptors import upath_property
+from webob.etag import AnyETag
+from webob.etag import NoETag
+from webob.etag import etag_property
+from webob.headers import EnvironHeaders
+from webob.multidict import MultiDict
+from webob.multidict import NestedMultiDict
+from webob.multidict import NoVars
+from webob.multidict import TrackableMultiDict
+from webob.multidict import UnicodeMultiDict
 
 __all__ = ['BaseRequest', 'Request']
 
