@@ -90,7 +90,7 @@ def test_converter_not_prop():
     from webob.descriptors import parse_int_safe
     from webob.descriptors import serialize_int
     assert_raises(AssertionError,converter,
-        {'CONTENT_LENGTH', None, '14.13'},
+        ('CONTENT_LENGTH', None, '14.13'),
         parse_int_safe, serialize_int, 'int')
 
 def test_converter_with_name():
@@ -119,10 +119,6 @@ def test_converter_without_name():
     desc = converter(
         environ_getter('CONTENT_LENGTH', '666', '14.13'),
         parse_int_safe, serialize_int)
-    eq_(desc.__doc__, "Gets and sets the 'CONTENT_LENGTH' key in the "
-        "environment. For more information on CONTENT_LENGTH see `section 14.13"
-        " <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.13>`_.  "
-        "Converts it using 'parse_int_safe' and 'str'.")
     eq_(desc.fget(req), 666)
     desc.fset(req, '999')
     eq_(desc.fget(req), 999)
@@ -161,3 +157,32 @@ def test_converter_delete():
         "Converts it using int.")
     eq_(desc.fget(req), 666)
     assert_raises(KeyError, desc.fdel, req)
+
+def test_list_header():
+    from webob.descriptors import list_header
+    desc = list_header('CONTENT_LENGTH', '14.13')
+    eq_(type(desc), property)
+
+def test_parse_list():
+    from webob.descriptors import parse_list
+    result = parse_list('avalue')
+    eq_(result, ('avalue',))
+    result = parse_list('avalue,avalue2')
+    eq_(result, ('avalue', 'avalue2'))
+
+def test_parse_list_unicode():
+    from webob.descriptors import parse_list
+    result = parse_list(u'avalue')
+    eq_(result, ('avalue',))
+    result = parse_list(u'avalue,avalue2')
+    eq_(result, ('avalue', 'avalue2'))
+
+def test_serilize_list():
+    from webob.descriptors import serialize_list
+    result = serialize_list(('avalue', 'avalue2'))
+    eq_(result, 'avalue, avalue2')
+
+def test_serilize_list_unicode():
+    from webob.descriptors import serialize_list
+    result = serialize_list((u'avalue', u'avalue2'))
+    eq_(result, 'avalue, avalue2')
