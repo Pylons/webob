@@ -72,7 +72,13 @@ class BaseRequestTests(unittest.TestCase):
         }
         req = Request.blank('/', environ)
         clone = req.copy_get()
-        self.assertEqual(clone.environ, req.environ)
+        for k, v in req.environ.items():
+            if k in ('CONTENT_LENGTH', 'webob.is_body_seekable'):
+                self.assert_(k not in clone.environ)
+            elif k == 'wsgi.input':
+                self.failIf(clone.environ[k] is v)
+            else:
+                self.assertEqual(clone.environ[k], v)
 
 
 class RequestTests_functional(unittest.TestCase):
