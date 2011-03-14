@@ -7,9 +7,9 @@ class RequestTests(unittest.TestCase):
         from webtest import TestApp
         app = TestApp(simpleapp)
         res = app.get('/')
-        assert 'Hello' in res
-        assert "get is GET([])" in res
-        assert "post is <NoVars: Not a form request>" in res
+        self.assert_('Hello' in res)
+        self.assert_("get is GET([])" in res)
+        self.assert_("post is <NoVars: Not a form request>" in res)
 
         res = app.get('/?name=george')
         res.mustcontain("get is GET([('name', 'george')])")
@@ -19,32 +19,32 @@ class RequestTests(unittest.TestCase):
         from webtest import TestApp
         app = TestApp(simpleapp)
         res = app.get('/')
-        assert "The languages are: ['en-US']" in res
+        self.assert_("The languages are: ['en-US']" in res)
 
-        res = app.get('/', headers={'Accept-Language':
-                                        'da, en-gb;q=0.8, en;q=0.7'})
-        assert "languages are: ['da', 'en-gb', 'en-US']" in res
+        res = app.get('/',
+                      headers={'Accept-Language': 'da, en-gb;q=0.8, en;q=0.7'})
+        self.assert_("languages are: ['da', 'en-gb', 'en-US']" in res)
 
-        res = app.get('/', headers={'Accept-Language':
-                                        'en-gb;q=0.8, da, en;q=0.7'})
-        assert "languages are: ['da', 'en-gb', 'en-US']" in res
+        res = app.get('/',
+                      headers={'Accept-Language': 'en-gb;q=0.8, da, en;q=0.7'})
+        self.assert_("languages are: ['da', 'en-gb', 'en-US']" in res)
 
     def test_mime_parsing(self):
         from webtest import TestApp
         app = TestApp(simpleapp)
         res = app.get('/', headers={'Accept':'text/html'})
-        assert "accepttypes is: text/html" in res
+        self.assert_("accepttypes is: text/html" in res)
 
         res = app.get('/', headers={'Accept':'application/xml'})
-        assert "accepttypes is: application/xml" in res
+        self.assert_("accepttypes is: application/xml" in res)
 
         res = app.get('/', headers={'Accept':'application/xml,*/*'})
-        assert "accepttypes is: application/xml" in res, res
+        self.assert_("accepttypes is: application/xml" in res)
 
     def test_accept_best_match(self):
         from webob import Request
-        assert not Request.blank('/').accept
-        assert not Request.blank('/', headers={'Accept': ''}).accept
+        self.assert_(not Request.blank('/').accept)
+        self.assert_(not Request.blank('/', headers={'Accept': ''}).accept)
         req = Request.blank('/', headers={'Accept':'text/plain'})
         self.assert_(req.accept)
         self.assertRaises(ValueError, req.accept.best_match, ['*/*'])
@@ -75,9 +75,7 @@ class RequestTests(unittest.TestCase):
 
         for accept, get in tests:
             req = Request.blank('/', headers={'Accept':accept})
-            assert req.accept.best_match(supported) == get, (
-                '%r generated %r instead of %r for %r' % (accept,
-                    req.accept.best_match(supported), get, supported))
+            self.assertEqual(req.accept.best_match(supported), get)
 
         supported = ['application/xbel+xml', 'text/xml']
         tests = [('text/*;q=0.5,*/*; q=0.1', 'text/xml'),
@@ -85,9 +83,7 @@ class RequestTests(unittest.TestCase):
 
         for accept, get in tests:
             req = Request.blank('/', headers={'Accept':accept})
-            assert req.accept.best_match(supported) == get, (
-                'Got %r instead of %r for %r' % (
-                    req.accept.best_match(supported), get, supported))
+            self.assertEqual(req.accept.best_match(supported), get)
 
         supported = ['application/json', 'text/html']
         tests = [
@@ -97,9 +93,7 @@ class RequestTests(unittest.TestCase):
 
         for accept, get in tests:
             req = Request.blank('/', headers={'Accept':accept})
-            assert req.accept.best_match(supported) == get, (
-                '%r generated %r instead of %r for %r' % (accept,
-                    req.accept.best_match(supported), get, supported))
+            self.assertEqual(req.accept.best_match(supported), get)
 
         offered = ['image/png', 'application/xml']
         tests = [
@@ -137,13 +131,13 @@ class RequestTests(unittest.TestCase):
         from webob import Request
         req = Request.blank('/')
         req.headers['Cookie'] = '070-it-:><?0'
-        assert req.cookies == {}
+        self.assertEqual(req.cookies, {})
         req.headers['Cookie'] = 'foo=bar'
-        assert req.cookies == {'foo': 'bar'}
+        self.assertEqual(req.cookies, {'foo': 'bar'})
         req.headers['Cookie'] = '...'
-        assert req.cookies == {}
+        self.assertEqual(req.cookies, {})
         req.headers['Cookie'] = '=foo'
-        assert req.cookies == {}
+        self.assertEqual(req.cookies, {})
         req.headers['Cookie'] = ('dismiss-top=6; CP=null*; '
             'PHPSESSID=0a539d42abc001cdc762809248d4beed; a=42')
         self.assertEqual(req.cookies, {
@@ -153,37 +147,39 @@ class RequestTests(unittest.TestCase):
             'dismiss-top':  u'6'
         })
         req.headers['Cookie'] = 'fo234{=bar blub=Blah'
-        assert req.cookies == {'blub': 'Blah'}
+        self.assertEqual(req.cookies, {'blub': 'Blah'})
 
     def test_cookie_quoting(self):
         from webob import Request
         req = Request.blank('/')
         req.headers['Cookie'] = 'foo="?foo"; Path=/'
-        assert req.cookies == {'foo': '?foo'}
+        self.assertEqual(req.cookies, {'foo': '?foo'})
 
     def test_path_quoting(self):
         from webob import Request
         path = '/:@&+$,/bar'
         req = Request.blank(path)
-        assert req.path == path
-        assert req.url.endswith(path)
+        self.assertEqual(req.path, path)
+        self.assert_(req.url.endswith(path))
 
     def test_params(self):
         from webob import Request
         req = Request.blank('/?a=1&b=2')
         req.method = 'POST'
         req.body = 'b=3'
-        assert req.params.items() == [('a', '1'), ('b', '2'), ('b', '3')]
+        self.assertEqual(req.params.items(),
+                         [('a', '1'), ('b', '2'), ('b', '3')])
         new_params = req.params.copy()
-        assert new_params.items() == [('a', '1'), ('b', '2'), ('b', '3')]
+        self.assertEqual(new_params.items(),
+                         [('a', '1'), ('b', '2'), ('b', '3')])
         new_params['b'] = '4'
-        assert new_params.items() == [('a', '1'), ('b', '4')]
+        self.assertEqual(new_params.items(), [('a', '1'), ('b', '4')])
         # The key name is \u1000:
         req = Request.blank('/?%E1%80%80=x',
                             decode_param_names=True, charset='UTF-8')
-        assert req.decode_param_names
-        assert u'\u1000' in req.GET.keys()
-        assert req.GET[u'\u1000'] == 'x'
+        self.assert_(req.decode_param_names)
+        self.assert_(u'\u1000' in req.GET.keys())
+        self.assertEqual(req.GET[u'\u1000'], 'x')
 
     def test_copy_body(self):
         from webob import Request
@@ -191,18 +187,18 @@ class RequestTests(unittest.TestCase):
                             request_body_tempfile_limit=1)
         old_body_file = req.body_file_raw
         req.copy_body()
-        assert req.body_file_raw is not old_body_file
+        self.assert_(req.body_file_raw is not old_body_file)
         req = Request.blank('/', method='POST',
                 body_file=UnseekableInput('0123456789'), content_length=10)
-        assert not hasattr(req.body_file_raw, 'seek')
+        self.assert_(not hasattr(req.body_file_raw, 'seek'))
         old_body_file = req.body_file_raw
         req.make_body_seekable()
-        assert req.body_file_raw is not old_body_file
-        assert req.body == '0123456789'
+        self.assert_(req.body_file_raw is not old_body_file)
+        self.assertEqual(req.body, '0123456789')
         old_body_file = req.body_file
         req.make_body_seekable()
-        assert req.body_file_raw is old_body_file
-        assert req.body_file is old_body_file
+        self.assert_(req.body_file_raw is old_body_file)
+        self.assert_(req.body_file is old_body_file)
 
     def test_broken_seek(self):
         # copy() should work even when the input has a broken seek method
@@ -210,24 +206,22 @@ class RequestTests(unittest.TestCase):
         req = Request.blank('/', method='POST',
                 body_file=UnseekableInputWithSeek('0123456789'),
                 content_length=10)
-        assert hasattr(req.body_file_raw, 'seek')
+        self.assert_(hasattr(req.body_file_raw, 'seek'))
         self.assertRaises(IOError, req.body_file_raw.seek, 0)
         old_body_file = req.body_file
         req2 = req.copy()
-        assert req2.body_file_raw is req2.body_file is not old_body_file
-        assert req2.body == '0123456789'
+        self.assert_(req2.body_file_raw is req2.body_file is not old_body_file)
+        self.assertEqual(req2.body, '0123456789')
 
     def test_set_body(self):
         from webob import BaseRequest
         req = BaseRequest.blank('/', body='foo')
-        assert req.is_body_seekable
+        self.assert_(req.is_body_seekable)
         self.assertEqual(req.body, 'foo')
         self.assertEqual(req.content_length, 3)
         del req.body
         self.assertEqual(req.body, '')
         self.assertEqual(req.content_length, 0)
-
-
 
     def test_broken_clen_header(self):
         # if the UA sends "content_length: ..' header (the name is wrong)
@@ -236,7 +230,6 @@ class RequestTests(unittest.TestCase):
         req = Request.blank('/')
         req.environ['HTTP_CONTENT_LENGTH'] = '0'
         req.headers.items()
-
 
     def test_nonstr_keys(self):
         # non-string env keys shouldn't break req.headers
@@ -250,7 +243,7 @@ class RequestTests(unittest.TestCase):
         from webob import Request
         req = Request.blank('/')
         req.authorization = 'Digest uri="/?a=b"'
-        assert req.authorization == ('Digest', {'uri': '/?a=b'})
+        self.assertEqual(req.authorization, ('Digest', {'uri': '/?a=b'}))
 
     def test_authorization2(self):
         from webob.descriptors import parse_auth_params
@@ -278,8 +271,9 @@ class RequestTests(unittest.TestCase):
 
     def test_req_kw_none_val(self):
         from webob import Request
-        assert 'content-length' not in Request({}, content_length=None).headers
-        assert 'content-type' not in Request({}, content_type=None).headers
+        request = Request({}, content_length=None)
+        self.assert_('content-length' not in request.headers)
+        self.assert_('content-type' not in request.headers)
 
     def test_env_keys(self):
         from webob import Request
@@ -504,14 +498,14 @@ class RequestTests(unittest.TestCase):
                           setattr, r, 'body', unicode('hello world'))
         r.body = None
         self.assertEqual(r.body, '')
-        r = Request({'a':1}, **{'body_file':DummyIO(string.letters)})
-        assert not hasattr(r.body_file_raw, 'seek')
+        r = Request({'a':1}, body_file=DummyIO(string.letters))
+        self.assert_(not hasattr(r.body_file_raw, 'seek'))
         r.make_body_seekable()
-        assert hasattr(r.body_file_raw, 'seek')
-        r = Request({'a':1}, **{'body_file':StringIO(string.letters)})
-        assert hasattr(r.body_file_raw, 'seek')
+        self.assert_(hasattr(r.body_file_raw, 'seek'))
+        r = Request({'a':1}, body_file=StringIO(string.letters))
+        self.assert_(hasattr(r.body_file_raw, 'seek'))
         r.make_body_seekable()
-        assert hasattr(r.body_file_raw, 'seek')
+        self.assert_(hasattr(r.body_file_raw, 'seek'))
 
     def test_repr_invalid(self):
         # If we have an invalid WSGI environ, the repr should tell us.
@@ -543,7 +537,7 @@ class RequestTests(unittest.TestCase):
             "Connection: keep-alive\n"
         )
         req = BaseRequest.from_file(val_file)
-        assert isinstance(req, BaseRequest)
+        self.assert_(isinstance(req, BaseRequest))
         self.assert_(not repr(req).endswith('(invalid WSGI environ)>'))
         val_file = StringIO(
             "GET /webob/ HTTP/1.1\n"
@@ -558,29 +552,29 @@ class RequestTests(unittest.TestCase):
         import cgi
         from webob import BaseRequest
         req = BaseRequest.from_string(_test_req)
-        assert isinstance(req, BaseRequest)
+        self.assert_(isinstance(req, BaseRequest))
         self.assert_(not repr(req).endswith('(invalid WSGI environ)>'))
         self.assert_('\n' not in req.http_version or '\r' in req.http_version)
-        assert ',' not in req.host
-        assert req.content_length is not None
-        assert req.content_length == 337
-        assert 'foo' in req.body
+        self.assert_(',' not in req.host)
+        self.assert_(req.content_length is not None)
+        self.assertEqual(req.content_length, 337)
+        self.assert_('foo' in req.body)
         bar_contents = "these are the contents of the file 'bar.txt'\r\n"
-        assert bar_contents in req.body
-        assert req.params['foo'] == 'foo'
+        self.assert_(bar_contents in req.body)
+        self.assertEqual(req.params['foo'], 'foo')
         bar = req.params['bar']
-        assert isinstance(bar, cgi.FieldStorage)
-        assert bar.type == 'application/octet-stream'
+        self.assert_(isinstance(bar, cgi.FieldStorage))
+        self.assertEqual(bar.type, 'application/octet-stream')
         bar.file.seek(0)
-        assert bar.file.read() == bar_contents
+        self.assertEqual(bar.file.read(), bar_contents)
         # out should equal contents, except for the Content-Length header,
         # so insert that.
         _test_req_copy = _test_req.replace('Content-Type',
                             'Content-Length: 337\r\nContent-Type')
-        assert str(req) == _test_req_copy
+        self.assertEqual(str(req), _test_req_copy)
 
         req2 = BaseRequest.from_string(_test_req2)
-        assert 'host' not in req2.headers
+        self.assert_('host' not in req2.headers)
         self.assertEqual(str(req2), _test_req2.rstrip())
         self.assertRaises(ValueError,
                           BaseRequest.from_string, _test_req2 + 'xx')
@@ -669,11 +663,11 @@ class RequestTests(unittest.TestCase):
         f0 = req.body_file_raw
         post1 = req.str_POST
         f1 = req.body_file_raw
-        assert f1 is not f0
+        self.assert_(f1 is not f0)
         post2 = req.str_POST
         f2 = req.body_file_raw
-        assert post1 is post2
-        assert f1 is f2
+        self.assert_(post1 is post2)
+        self.assert_(f1 is f2)
 
 
     def test_middleware_body(self):
@@ -713,196 +707,252 @@ class RequestTests(unittest.TestCase):
     def test_content_type_none(self):
         from webob import Request
         r = Request.blank('/', content_type='text/html')
-        assert r.content_type == 'text/html'
+        self.assertEqual(r.content_type, 'text/html')
         r.content_type = None
         
     def test_charset_in_content_type(self):
         from webob import Request
         r = Request({'CONTENT_TYPE':'text/html;charset=ascii'})
         r.charset = 'shift-jis'
-        assert r.charset == 'shift-jis'
+        self.assertEqual(r.charset, 'shift-jis')
         
     def test_body_file_seekable(self):
         from cStringIO import StringIO
         from webob import Request
         r = Request.blank('/')
         r.body_file = StringIO('body')
-        assert r.body_file_seekable.read() == 'body'
+        self.assertEqual(r.body_file_seekable.read(), 'body')
 
     def test_request_init(self):
         # port from doctest (docs/reference.txt)
         from webob import Request
         req = Request.blank('/article?id=1')
-        assert req.environ['HTTP_HOST'] == 'localhost:80'
-        assert req.environ['PATH_INFO'] == '/article'
-        assert req.environ['QUERY_STRING'] == 'id=1'
-        assert req.environ['REQUEST_METHOD'] == 'GET'
-        assert req.environ['SCRIPT_NAME'] == ''
-        assert req.environ['SERVER_NAME'] == 'localhost'
-        assert req.environ['SERVER_PORT'] == '80'
-        assert req.environ['SERVER_PROTOCOL'] == 'HTTP/1.0'
-        assert isinstance(req.environ['wsgi.errors'], file)
-        assert hasattr(req.environ['wsgi.input'], 'next')
-        assert req.environ['wsgi.multiprocess'] == False
-        assert req.environ['wsgi.multithread'] == False
-        assert req.environ['wsgi.run_once'] == False
-        assert req.environ['wsgi.url_scheme'] == 'http'
-        assert req.environ['wsgi.version'] == (1, 0)
+        self.assertEqual(req.environ['HTTP_HOST'], 'localhost:80')
+        self.assertEqual(req.environ['PATH_INFO'], '/article')
+        self.assertEqual(req.environ['QUERY_STRING'], 'id=1')
+        self.assertEqual(req.environ['REQUEST_METHOD'], 'GET')
+        self.assertEqual(req.environ['SCRIPT_NAME'], '')
+        self.assertEqual(req.environ['SERVER_NAME'], 'localhost')
+        self.assertEqual(req.environ['SERVER_PORT'], '80')
+        self.assertEqual(req.environ['SERVER_PROTOCOL'], 'HTTP/1.0')
+        self.assert_(isinstance(req.environ['wsgi.errors'], file))
+        self.assert_(hasattr(req.environ['wsgi.input'], 'next'))
+        self.assertEqual(req.environ['wsgi.multiprocess'], False)
+        self.assertEqual(req.environ['wsgi.multithread'], False)
+        self.assertEqual(req.environ['wsgi.run_once'], False)
+        self.assertEqual(req.environ['wsgi.url_scheme'], 'http')
+        self.assertEqual(req.environ['wsgi.version'], (1, 0))
 
         # Test body
-        assert hasattr(req.body_file, 'read')
-        assert req.body == ''
+        self.assert_(hasattr(req.body_file, 'read'))
+        self.assertEqual(req.body, '')
         req.body = 'test'
-        assert hasattr(req.body_file, 'read')
-        assert req.body == 'test'
+        self.assert_(hasattr(req.body_file, 'read'))
+        self.assertEqual(req.body, 'test')
 
         # Test method & URL
-        assert req.method == 'GET'
-        assert req.scheme == 'http'
-        assert req.script_name == ''  # The base of the URL
+        self.assertEqual(req.method, 'GET')
+        self.assertEqual(req.scheme, 'http')
+        self.assertEqual(req.script_name, '') # The base of the URL
         req.script_name = '/blog'  # make it more interesting
-        assert req.path_info == '/article'
-        assert req.content_type == ''  # Content-Type of the request body
-        assert req.remote_user is None  # The auth'ed user (there is none set)
-        assert req.remote_addr is None  # The remote IP
-        assert req.host == 'localhost:80'
-        assert req.host_url == 'http://localhost'
-        assert req.application_url == 'http://localhost/blog'
-        assert req.path_url == 'http://localhost/blog/article'
-        assert req.url == 'http://localhost/blog/article?id=1'
-        assert req.path == '/blog/article'
-        assert req.path_qs == '/blog/article?id=1'
-        assert req.query_string == 'id=1'
-        assert req.relative_url('archive') == 'http://localhost/blog/archive'
+        self.assertEqual(req.path_info, '/article')
+        # Content-Type of the request body
+        self.assertEqual(req.content_type, '')
+        # The auth'ed user (there is none set)
+        self.assert_(req.remote_user is None)
+        self.assert_(req.remote_addr is None)
+        self.assertEqual(req.host, 'localhost:80')
+        self.assertEqual(req.host_url, 'http://localhost')
+        self.assertEqual(req.application_url, 'http://localhost/blog')
+        self.assertEqual(req.path_url, 'http://localhost/blog/article')
+        self.assertEqual(req.url, 'http://localhost/blog/article?id=1')
+        self.assertEqual(req.path, '/blog/article')
+        self.assertEqual(req.path_qs, '/blog/article?id=1')
+        self.assertEqual(req.query_string, 'id=1')
+        self.assertEqual(req.relative_url('archive'),
+                         'http://localhost/blog/archive')
 
-        assert req.path_info_peek() == 'article'  # Doesn't change request
-        assert req.path_info_pop() == 'article'  # Does change request!
-        assert req.script_name == '/blog/article'
-        assert req.path_info == ''
+        # Doesn't change request
+        self.assertEqual(req.path_info_peek(), 'article')
+        # Does change request!
+        self.assertEqual(req.path_info_pop(), 'article')
+        self.assertEqual(req.script_name, '/blog/article')
+        self.assertEqual(req.path_info, '')
 
         # Headers
         req.headers['Content-Type'] = 'application/x-www-urlencoded'
-        assert sorted(req.headers.items()) == [('Content-Length', '4'),
-                                            ('Content-Type', 'application/x-www-urlencoded'),
-                                            ('Host', 'localhost:80')]
-        assert req.environ['CONTENT_TYPE'] == 'application/x-www-urlencoded'
+        self.assertEqual(sorted(req.headers.items()),
+                         [('Content-Length', '4'),
+                          ('Content-Type', 'application/x-www-urlencoded'),
+                          ('Host', 'localhost:80')])
+        self.assertEqual(req.environ['CONTENT_TYPE'],
+                         'application/x-www-urlencoded')
 
     def test_request_query_and_POST_vars(self):
         # port from doctest (docs/reference.txt)
 
         # Query & POST variables
         from webob import Request
-        req = Request.blank('/test?check=a&check=b&name=Bob')
-        from webob.multidict import TrackableMultiDict
-        GET = TrackableMultiDict([('check', 'a'), ('check', 'b'), ('name', 'Bob')])
-        assert req.str_GET == GET
-        assert req.str_GET['check'] == 'b'
-        assert req.str_GET.getall('check') == ['a', 'b']
-        assert req.str_GET.items() == [('check', 'a'), ('check', 'b'), ('name', 'Bob')]
-
+        from webob.multidict import MultiDict
+        from webob.multidict import NestedMultiDict
         from webob.multidict import NoVars
-        assert isinstance(req.str_POST, NoVars)
-        assert req.str_POST.items() == []  # NoVars can be read like a dict, but not written
+        from webob.multidict import TrackableMultiDict
+        req = Request.blank('/test?check=a&check=b&name=Bob')
+        GET = TrackableMultiDict([('check', 'a'),
+                                  ('check', 'b'),
+                                  ('name', 'Bob')])
+        self.assertEqual(req.str_GET, GET)
+        self.assertEqual(req.str_GET['check'], 'b')
+        self.assertEqual(req.str_GET.getall('check'), ['a', 'b'])
+        self.assertEqual(req.str_GET.items(),
+                         [('check', 'a'), ('check', 'b'), ('name', 'Bob')])
+
+        self.assert_(isinstance(req.str_POST, NoVars))
+        # NoVars can be read like a dict, but not written
+        self.assertEqual(req.str_POST.items(), [])
         req.method = 'POST'
         req.body = 'name=Joe&email=joe@example.com'
-        from webob.multidict import MultiDict
-        assert req.str_POST == MultiDict([('name', 'Joe'), ('email', 'joe@example.com')])
-        assert req.str_POST['name'] == 'Joe'
+        self.assertEqual(req.str_POST,
+                         MultiDict([('name', 'Joe'),
+                                    ('email', 'joe@example.com')]))
+        self.assertEqual(req.str_POST['name'], 'Joe')
 
-        from webob.multidict import NestedMultiDict
-        assert isinstance(req.str_params, NestedMultiDict)
-        assert req.str_params.items() == [('check', 'a'),
-                                        ('check', 'b'),
-                                        ('name', 'Bob'),
-                                        ('name', 'Joe'),
-                                        ('email', 'joe@example.com')]
-        assert req.str_params['name'] == 'Bob'
-        assert req.str_params.getall('name') == ['Bob', 'Joe']
+        self.assert_(isinstance(req.str_params, NestedMultiDict))
+        self.assertEqual(req.str_params.items(),
+                         [('check', 'a'),
+                          ('check', 'b'),
+                          ('name', 'Bob'),
+                          ('name', 'Joe'),
+                          ('email', 'joe@example.com')])
+        self.assertEqual(req.str_params['name'], 'Bob')
+        self.assertEqual(req.str_params.getall('name'), ['Bob', 'Joe'])
 
     def test_request_put(self):
+        from datetime import datetime
         from webob import Request
+        from webob import Response
+        from webob import UTC
+        from webob.acceptparse import MIMEAccept
+        from webob.byterange import Range
+        from webob.etag import ETagMatcher
+        from webob.etag import _NoIfRange
+        from webob.multidict import MultiDict
+        from webob.multidict import TrackableMultiDict
+        from webob.multidict import UnicodeMultiDict
         req = Request.blank('/test?check=a&check=b&name=Bob')
         req.method = 'PUT'
         req.body = 'var1=value1&var2=value2&rep=1&rep=2'
         req.environ['CONTENT_LENGTH'] = str(len(req.body))
         req.environ['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
-        from webob.multidict import TrackableMultiDict
-        GET = TrackableMultiDict([('check', 'a'), ('check', 'b'), ('name', 'Bob')])
-        assert req.str_GET == GET
-        from webob.multidict import MultiDict
-        assert req.str_POST == MultiDict([('var1', 'value1'), ('var2', 'value2'), ('rep', '1'), ('rep', '2')])
+        GET = TrackableMultiDict([('check', 'a'),
+                                  ('check', 'b'),
+                                  ('name', 'Bob')])
+        self.assertEqual(req.str_GET, GET)
+        self.assertEqual(req.str_POST, MultiDict(
+                                [('var1', 'value1'),
+                                 ('var2', 'value2'),
+                                 ('rep', '1'),
+                                 ('rep', '2')]))
 
         # Unicode
         req.charset = 'utf8'
-        from webob.multidict import UnicodeMultiDict
-        assert isinstance(req.GET, UnicodeMultiDict)
-        assert req.GET.items() == [('check', u'a'), ('check', u'b'), ('name', u'Bob')]
+        self.assert_(isinstance(req.GET, UnicodeMultiDict))
+        self.assertEqual(req.GET.items(),
+                         [('check', u'a'), ('check', u'b'), ('name', u'Bob')])
 
         # Cookies
         req.headers['Cookie'] = 'test=value'
-        assert isinstance(req.cookies, UnicodeMultiDict)
-        assert req.cookies.items() == [('test', u'value')]
+        self.assert_(isinstance(req.cookies, UnicodeMultiDict))
+        self.assertEqual(req.cookies.items(), [('test', u'value')])
         req.charset = None
-        assert req.str_cookies == {'test': 'value'}
+        self.assertEqual(req.str_cookies, {'test': 'value'})
 
         # Accept-* headers
-        assert 'text/html' in req.accept
+        self.assert_('text/html' in req.accept)
         req.accept = 'text/html;q=0.5, application/xhtml+xml;q=1'
-        from webob.acceptparse import MIMEAccept
-        assert isinstance(req.accept, MIMEAccept)
-        assert 'text/html' in req.accept
+        self.assert_(isinstance(req.accept, MIMEAccept))
+        self.assert_('text/html' in req.accept)
 
-        assert req.accept.first_match(['text/html',
-                                    'application/xhtml+xml']) == 'text/html'
-        assert req.accept.best_match(['text/html',
-                                    'application/xhtml+xml']) == 'application/xhtml+xml'
-        assert req.accept.best_matches() == ['application/xhtml+xml', 'text/html']
+        self.assertEqual(req.accept.first_match(['text/html',
+                                    'application/xhtml+xml']), 'text/html')
+        self.assertEqual(req.accept.best_match(['text/html',
+                                                'application/xhtml+xml']),
+                         'application/xhtml+xml')
+        self.assertEqual(req.accept.best_matches(),
+                         ['application/xhtml+xml', 'text/html'])
 
         req.accept_language = 'es, pt-BR'
-        assert req.accept_language.best_matches('en-US') == ['es',
-                                                            'pt-BR',
-                                                            'en-US']
-        assert req.accept_language.best_matches('es') == ['es']
+        self.assertEqual(req.accept_language.best_matches('en-US'),
+                         ['es', 'pt-BR', 'en-US'])
+        self.assertEqual(req.accept_language.best_matches('es'), ['es'])
 
         # Conditional Requests
         server_token = 'opaque-token'
-        assert not server_token in req.if_none_match # You shouldn't return 304
+        # shouldn't return 304
+        self.assert_(not server_token in req.if_none_match)
         req.if_none_match = server_token
-        from webob.etag import ETagMatcher
-        assert isinstance(req.if_none_match, ETagMatcher)
-        assert server_token in req.if_none_match # You *should* return 304
+        self.assert_(isinstance(req.if_none_match, ETagMatcher))
+        # You *should* return 304
+        self.assert_(server_token in req.if_none_match)
 
-        from webob import UTC
-        from datetime import datetime
         req.if_modified_since = datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
-        assert req.headers['If-Modified-Since'] == 'Sun, 01 Jan 2006 12:00:00 GMT'
+        self.assertEqual(req.headers['If-Modified-Since'],
+                         'Sun, 01 Jan 2006 12:00:00 GMT')
         server_modified = datetime(2005, 1, 1, 12, 0, tzinfo=UTC)
-        assert req.if_modified_since and req.if_modified_since >= server_modified
+        self.assert_(req.if_modified_since)
+        self.assert_(req.if_modified_since >= server_modified)
 
-        from webob.etag import _NoIfRange
-        assert isinstance(req.if_range, _NoIfRange)
-        assert req.if_range.match(etag='some-etag', last_modified=datetime(2005, 1, 1, 12, 0))
+        self.assert_(isinstance(req.if_range, _NoIfRange))
+        self.assert_(req.if_range.match(etag='some-etag',
+                     last_modified=datetime(2005, 1, 1, 12, 0)))
         req.if_range = 'opaque-etag'
-        assert not req.if_range.match(etag='other-etag')
-        assert req.if_range.match(etag='opaque-etag')
+        self.assert_(not req.if_range.match(etag='other-etag'))
+        self.assert_(req.if_range.match(etag='opaque-etag'))
 
-        from webob import Response
         res = Response(etag='opaque-etag')
-        assert req.if_range.match_response(res)
+        self.assert_(req.if_range.match_response(res))
 
         req.range = 'bytes=0-100'
-        from webob.byterange import Range
-        assert isinstance(req.range, Range)
-        assert req.range.ranges == [(0, 101)]
+        self.assert_(isinstance(req.range, Range))
+        self.assertEqual(req.range.ranges, [(0, 101)])
         cr = req.range.content_range(length=1000)
-        assert (cr.start, cr.stop, cr.length) == (0, 101, 1000)
+        self.assertEqual((cr.start, cr.stop, cr.length), (0, 101, 1000))
 
-        assert server_token in req.if_match # No If-Match means everything is ok
+        self.assert_(server_token in req.if_match)
+        # No If-Match means everything is ok
         req.if_match = server_token
-        assert server_token in req.if_match # Still OK
+        self.assert_(server_token in req.if_match)
+        # Still OK
         req.if_match = 'other-token'
         # Not OK, should return 412 Precondition Failed:
-        assert not server_token in req.if_match
+        self.assert_(not server_token in req.if_match)
+
+    def test_adhoc_attributes(self):
+        from webob import Request
+        req = Request.blank('/')
+        req.some_attr = 'blah blah blah'
+        new_req = Request(req.environ)
+        self.assertEqual(new_req.some_attr, 'blah blah blah')
+        self.assertEqual(req.environ['webob.adhoc_attrs'],
+                         {'some_attr': 'blah blah blah'})
+
+    def test_call_WSGI_app(self):
+        from webob import Request
+        req = Request.blank('/')
+        def wsgi_app(environ, start_response):
+            start_response('200 OK', [('Content-type', 'text/plain')])
+            return ['Hi!']
+        self.assertEqual(req.call_application(wsgi_app),
+                         ('200 OK', [('Content-type', 'text/plain')], ['Hi!']))
+
+        res = req.get_response(wsgi_app)
+        from webob.response import Response
+        self.assert_(isinstance(res, Response))
+        self.assertEqual(res.status, '200 OK')
+        from webob.headers import ResponseHeaders
+        self.assert_(isinstance(res.headers, ResponseHeaders))
+        self.assertEqual(res.headers.items(), [('Content-type', 'text/plain')])
+        self.assertEqual(res.body, 'Hi!')
 
     def equal_req(self, req):
         from cStringIO import StringIO
@@ -920,6 +970,7 @@ class RequestTests(unittest.TestCase):
             del headers2['Content-Length']
         self.assertEqual(headers1, headers2)
         self.assertEqual(req.body, req2.body)
+
 
 def simpleapp(environ, start_response):
     from webob import Request
@@ -1006,9 +1057,7 @@ class UnseekableInput(object):
             self.pos = len(self.data)
             return t
         else:
-            assert self.pos + size <= len(self.data), (
-                "Attempt to read past end (length=%s, position=%s, reading %s bytes)"
-                % (len(self.data), self.pos, size))
+            self.assert_(self.pos + size <= len(self.data))
             t = self.data[self.pos:self.pos+size]
             self.pos += size
             return t
