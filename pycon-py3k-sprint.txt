@@ -29,7 +29,7 @@ Coverage
 
 - webob.etag
 
-- webob.multidict
+- webob.multidict (joe)
 
 - webob.request (tseaver)
 
