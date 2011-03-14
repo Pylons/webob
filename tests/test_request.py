@@ -954,6 +954,37 @@ class RequestTests(unittest.TestCase):
         self.assertEqual(res.headers.items(), [('Content-type', 'text/plain')])
         self.assertEqual(res.body, 'Hi!')
 
+    def test_str_cookies_empty_environ(self):
+        from webob import Request
+        req = Request.blank('/')
+        self.assertEqual(req.str_cookies, {})
+
+    def test_str_cookies_w_webob_parsed_cookies_matching_source(self):
+        from webob import Request
+        environ = {
+            'HTTP_COOKIE': 'a=b',
+            'webob._parsed_cookies': ('a=b', {'a': 'b'}),
+        }
+        req = Request.blank('/', environ)
+        self.assertEqual(req.str_cookies, {'a': 'b'})
+
+    def test_str_cookies_w_webob_parsed_cookies_mismatched_source(self):
+        from webob import Request
+        environ = {
+            'HTTP_COOKIE': 'a=b',
+            'webob._parsed_cookies': ('a=b;c=d', {'a': 'b', 'c': 'd'}),
+        }
+        req = Request.blank('/', environ)
+        self.assertEqual(req.str_cookies, {'a': 'b'})
+
+    def test_str_cookies_wo_webob_parsed_cookies(self):
+        from webob import Request
+        environ = {
+            'HTTP_COOKIE': 'a=b',
+        }
+        req = Request.blank('/', environ)
+        self.assertEqual(req.str_cookies, {'a': 'b'})
+
     def equal_req(self, req):
         from cStringIO import StringIO
         from webob import Request
