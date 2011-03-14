@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from datetime import tzinfo
+from datetime import timedelta
+
 from nose.tools import eq_
 from nose.tools import ok_
 from nose.tools import assert_raises
@@ -7,6 +10,17 @@ from nose.tools import assert_false
 
 from webob import Request
 
+class GMT(tzinfo):
+    """UTC"""
+    ZERO = timedelta(0)
+    def utcoffset(self, dt):
+        return self.ZERO
+
+    def tzname(self, dt):
+        return "UTC"
+
+    def dst(self, dt):
+        return self.ZERO
 
 def test_environ_getter_only_key():
     from webob.descriptors import environ_getter
@@ -186,3 +200,32 @@ def test_serilize_list_unicode():
     from webob.descriptors import serialize_list
     result = serialize_list((u'avalue', u'avalue2'))
     eq_(result, 'avalue, avalue2')
+
+def test_converter_date():
+    import datetime
+    from webob.descriptors import converter_date
+    from webob.descriptors import environ_getter
+    req = Request.blank('/')
+    UTC = GMT()
+    desc = converter_date(environ_getter(
+        "HTTP_DATE", "Tue, 15 Nov 1994 08:12:31 GMT", "14.8"))
+    eq_(desc.fget(req),
+        datetime.datetime(1994, 11, 15, 8, 12, 31, tzinfo=UTC))
+    eq_(desc.__doc__, "Gets and sets the 'HTTP_DATE' key in the environment. "
+        "For more information on Date see `section 14.8 "
+        "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.8>`_.  "
+        "Converts it using HTTP date.")
+
+def test_date_header():
+    import datetime
+    from webob import Response
+    from webob.descriptors import date_header
+    resp = Response('aresponse')
+    UTC = GMT()
+    desc = date_header('HTTP_DATE', "14.8")
+    eq_(desc.fget(resp), None)
+    desc.fset(resp, "Tue, 15 Nov 1994 08:12:31 GMT")
+    eq_(desc.fget(resp), datetime.datetime(1994, 11, 15, 8, 12, 31, tzinfo=UTC))
+    desc.fdel(resp)
+    eq_(desc.fget(resp), None)
+
