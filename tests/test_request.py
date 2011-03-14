@@ -211,13 +211,13 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(req.content_type, 'application/xml+foobar')
 
     def test_content_type_getter_w_parameters(self):
-        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset=utf8',
+        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset="utf8"',
                   }
         req = self._makeOne(environ)
         self.assertEqual(req.content_type, 'application/xml+foobar')
 
     def test_content_type_setter_w_None(self):
-        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset=utf8',
+        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset="utf8"',
                   }
         req = self._makeOne(environ)
         req.content_type = None
@@ -225,15 +225,15 @@ class BaseRequestTests(unittest.TestCase):
         self.assert_('CONTENT_TYPE' not in environ)
 
     def test_content_type_setter_existing_paramter_no_new_paramter(self):
-        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset=utf8',
+        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset="utf8"',
                   }
         req = self._makeOne(environ)
         req.content_type = 'text/xml'
         self.assertEqual(req.content_type, 'text/xml')
-        self.assertEqual(environ['CONTENT_TYPE'], 'text/xml;charset=utf8')
+        self.assertEqual(environ['CONTENT_TYPE'], 'text/xml;charset="utf8"')
 
     def test_content_type_deleter_clears_environ_value(self):
-        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset=utf8',
+        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset="utf8"',
                   }
         req = self._makeOne(environ)
         del req.content_type
@@ -246,6 +246,124 @@ class BaseRequestTests(unittest.TestCase):
         del req.content_type
         self.assertEqual(req.content_type, '')
         self.assert_('CONTENT_TYPE' not in environ)
+
+    def test_charset_getter_cache_hit(self):
+        CT = 'application/xml+foobar'
+        environ = {'CONTENT_TYPE': CT,
+                  }
+        req = self._makeOne(environ)
+        req._charset_cache = (CT, 'cp1252')
+        self.assertEqual(req.charset, 'cp1252')
+
+    def test_charset_getter_cache_miss_w_parameter(self):
+        CT = 'application/xml+foobar;charset="utf8"'
+        environ = {'CONTENT_TYPE': CT,
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.charset, 'utf8')
+        self.assertEqual(req._charset_cache, (CT, 'utf8'))
+
+    def test_charset_getter_cache_miss_wo_parameter(self):
+        CT = 'application/xml+foobar'
+        environ = {'CONTENT_TYPE': CT,
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.charset, 'UTF-8')
+        self.assertEqual(req._charset_cache, (CT, 'UTF-8'))
+
+    def test_charset_setter_None_w_parameter(self):
+        CT = 'application/xml+foobar;charset="utf8"'
+        environ = {'CONTENT_TYPE': CT,
+                  }
+        req = self._makeOne(environ)
+        req.charset = None
+        self.assertEqual(environ['CONTENT_TYPE'], 'application/xml+foobar')
+        self.assertEqual(req.charset, 'UTF-8')
+
+    def test_charset_setter_empty_w_parameter(self):
+        CT = 'application/xml+foobar;charset="utf8"'
+        environ = {'CONTENT_TYPE': CT,
+                  }
+        req = self._makeOne(environ)
+        req.charset = ''
+        self.assertEqual(environ['CONTENT_TYPE'], 'application/xml+foobar')
+        self.assertEqual(req.charset, 'UTF-8')
+
+    def test_charset_setter_nonempty_w_parameter(self):
+        CT = 'application/xml+foobar;charset="utf8"'
+        environ = {'CONTENT_TYPE': CT,
+                  }
+        req = self._makeOne(environ)
+        req.charset = 'cp1252'
+        self.assertEqual(environ['CONTENT_TYPE'],
+                         #'application/xml+foobar; charset="cp1252"') WTF?
+                         'application/xml+foobar;charset=cp1252',
+                         )
+        self.assertEqual(req.charset, 'cp1252')
+
+    def test_charset_setter_nonempty_wo_parameter(self):
+        CT = 'application/xml+foobar'
+        environ = {'CONTENT_TYPE': CT,
+                  }
+        req = self._makeOne(environ)
+        req.charset = 'cp1252'
+        self.assertEqual(environ['CONTENT_TYPE'],
+                         'application/xml+foobar; charset="cp1252"',
+                         #'application/xml+foobar;charset=cp1252',  WTF?
+                         )
+        self.assertEqual(req.charset, 'cp1252')
+
+    def test_charset_deleter_w_parameter(self):
+        CT = 'application/xml+foobar;charset="utf8"'
+        environ = {'CONTENT_TYPE': CT,
+                  }
+        req = self._makeOne(environ)
+        del req.charset
+        self.assertEqual(environ['CONTENT_TYPE'], 'application/xml+foobar')
+        self.assertEqual(req.charset, 'UTF-8')
+
+    def test_headers_getter_miss(self):
+        CONTENT_TYPE = 'application/xml+foobar;charset="utf8"'
+        environ = {'CONTENT_TYPE': CONTENT_TYPE,
+                   'CONTENT_LENGTH': '123',
+                  }
+        req = self._makeOne(environ)
+        headers = req.headers
+        self.assertEqual(headers,
+                        {'Content-Type': CONTENT_TYPE,
+                         'Content-Length': '123'})
+        self.assertEqual(req._headers, headers)
+
+    def test_headers_getter_hit(self):
+        CONTENT_TYPE = 'application/xml+foobar;charset="utf8"'
+        environ = {'CONTENT_TYPE': CONTENT_TYPE,
+                   'CONTENT_LENGTH': '123',
+                  }
+        req = self._makeOne(environ)
+        req._headers = {'Foo': 'Bar'}
+        self.assertEqual(req.headers,
+                        {'Foo': 'Bar'})
+
+    def test_headers_setter(self):
+        CONTENT_TYPE = 'application/xml+foobar;charset="utf8"'
+        environ = {'CONTENT_TYPE': CONTENT_TYPE,
+                   'CONTENT_LENGTH': '123',
+                  }
+        req = self._makeOne(environ)
+        req._headers = {'Foo': 'Bar'}
+        req.headers = {'Qux': 'Spam'}
+        self.assertEqual(req.headers,
+                        {'Qux': 'Spam'})
+
+    def test_no_headers_deleter(self):
+        CONTENT_TYPE = 'application/xml+foobar;charset="utf8"'
+        environ = {'CONTENT_TYPE': CONTENT_TYPE,
+                   'CONTENT_LENGTH': '123',
+                  }
+        req = self._makeOne(environ)
+        def _test():
+            del req.headers
+        self.assertRaises(AttributeError, _test)
 
     def test_str_cookies_empty_environ(self):
         from webob import Request
