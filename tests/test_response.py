@@ -615,3 +615,31 @@ def test_unset_cookie_key_in_cookies():
     res.unset_cookie('a')
     eq_(res.headers.get('Set-Cookie'), None)
     
+def test_merge_cookies_no_set_cookie():
+    res = Response()
+    result = res.merge_cookies('abc')
+    eq_(result, 'abc')
+    
+def test_merge_cookies_resp_is_Response():
+    inner_res = Response()
+    res = Response()
+    res.set_cookie('a', '1')
+    result = res.merge_cookies(inner_res)
+    eq_(result.headers.getall('Set-Cookie'), ['a=1; Path=/'])
+    
+def test_merge_cookies_resp_is_wsgi_callable():
+    L = []
+    def dummy_wsgi_callable(environ, start_response):
+        L.append((environ, start_response))
+        return 'abc'
+    res = Response()
+    res.set_cookie('a', '1')
+    wsgiapp = res.merge_cookies(dummy_wsgi_callable)
+    environ = {}
+    def dummy_start_response(status, headers, exc_info=None):
+        eq_(headers, [('Set-Cookie', 'a=1; Path=/')])
+    result = wsgiapp(environ, dummy_start_response)
+    assert result == 'abc'
+    assert len(L) == 1
+    L[0][1]('200 OK', []) # invoke dummy_start_response assertion
+    
