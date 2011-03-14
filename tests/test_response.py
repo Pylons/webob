@@ -105,6 +105,25 @@ def test_HEAD_closes():
     eq_(res.body, '')
     ok_(app_iter.closed)
 
+def test_HEAD_conditional_response_returns_empty_response():
+    from webob.response import EmptyResponse
+    req = Request.blank('/')
+    req.method = 'HEAD'
+    app_iter = StringIO('foo')
+    res = Response(request=req, conditional_response=True)
+    class FakeRequest:
+        method = 'HEAD'
+        if_none_match = 'none'
+        if_modified_since = False
+        range = False
+        def __init__(self, env):
+            self.env = env
+    def start_response(status, headerlist):
+        pass
+    res.RequestClass = FakeRequest
+    result = res({}, start_response)
+    ok_(isinstance(result, EmptyResponse))
+
 def test_content_length():
     r0 = Response('x'*10, content_length=10)
 
