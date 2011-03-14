@@ -383,3 +383,26 @@ def test_charset_set_no_content_type_header():
     res = Response()
     res.headers.pop('Content-Type', None)
     assert_raises(AttributeError, res.__setattr__, 'charset', 'utf-8')
+
+def test_charset_del_no_content_type_header():
+    res = Response()
+    res.headers.pop('Content-Type', None)
+    eq_(res._charset__del(), None)
+
+def test_content_type_params_get_no_semicolon_in_content_type_header():
+    res = Response()
+    res.headers['Content-Type'] = 'foo'
+    eq_(res.content_type_params, {})
+
+def test_content_type_params_set_value_dict_empty():
+    res = Response()
+    res.headers['Content-Type'] = 'foo;bar'
+    res.content_type_params = None
+    eq_(res.headers['Content-Type'], 'foo')
+
+def test_content_type_params_set_ok_param_quoting():
+    res = Response()
+    res.content_type_params = {'a':''}
+    eq_(res.headers['Content-Type'], 'text/html; a=""')
+    
+    
