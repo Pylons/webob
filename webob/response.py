@@ -842,9 +842,9 @@ class Response(object):
         """
         if body is None:
             body = self.body
-        try:
+        try: # pragma: no cover
             from hashlib import md5
-        except ImportError:
+        except ImportError: # pragma: no cover
             from md5 import md5
         md5_digest = md5(body).digest().encode('base64').replace('\n', '')
         self.etag = md5_digest.strip('=')
