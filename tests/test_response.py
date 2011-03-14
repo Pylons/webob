@@ -130,6 +130,27 @@ def test_del_environ():
     eq_(res.environ, {'yo': 'mama'})
     del res.environ
     eq_(res.environ, None)
+    eq_(res.request, None)
+
+def test_set_request_environ():
+    res = Response()
+    class FakeRequest:
+        environ = {'jo': 'mama'}
+    res.request = FakeRequest
+    eq_(res.environ, {'jo': 'mama'})
+    eq_(res.request, FakeRequest)
+    res.environ = None
+    eq_(res.environ, None)
+    eq_(res.request, None)
+
+def test_del_request():
+    res = Response()
+    class FakeRequest:
+        environ = {}
+    res.request = FakeRequest
+    del res.request
+    eq_(res.environ, None)
+    eq_(res.request, None)
 
 def test_content_length():
     r0 = Response('x'*10, content_length=10)
