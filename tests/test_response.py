@@ -235,4 +235,7 @@ def test_body_is_unicode_verylong():
     res._body = None
     assert_raises(ValueError, res.__getattribute__, 'body')
     
+def test_body_set_not_unicode_or_str():
+    res = Response()
+    assert_raises(TypeError, res.__setattr__, 'body', object())
     
