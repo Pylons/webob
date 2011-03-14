@@ -560,4 +560,19 @@ def test_set_cookie_value_is_unicode():
     val = unicode('La Pe\xc3\xb1a', 'utf-8')
     res.set_cookie('a', val)
     eq_(res.headerlist[-1], (r'Set-Cookie', 'a="La Pe\\303\\261a"; Path=/'))
+
+def test_unset_cookie_not_existing_and_not_strict():
+    res = Response()
+    result = res.unset_cookie('a', strict=False)
+    assert result is None
+
+def test_unset_cookie_not_existing_and_strict():
+    res = Response()
+    assert_raises(KeyError, res.unset_cookie, 'a')
+    
+def test_unset_cookie_key_in_cookies():
+    res = Response()
+    res.headers['Set-Cookie'] = 'a=2; Path=/'
+    res.unset_cookie('a')
+    eq_(res.headers.get('Set-Cookie'), None)
     
