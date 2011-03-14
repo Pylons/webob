@@ -31,7 +31,7 @@ Coverage
 
 - webob.multidict
 
-- webob.request
+- webob.request (tseaver)
 
 - webob.response (caseman/mcdonc)
 
