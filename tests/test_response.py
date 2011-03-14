@@ -237,7 +237,17 @@ def test_app_iter_range_starts_after_iter_end():
 	from webob.response import AppIterRange
 	range = AppIterRange(iter([]), start=1, stop=1)
 	eq_(list(range), [])
-	
+
+def test_response_file_body_flush_is_no_op():
+    from webob.response import ResponseBodyFile
+    rbo = ResponseBodyFile(None)
+    rbo.flush()
+
+def test_response_file_body_close_not_implemented():
+    from webob.response import ResponseBodyFile
+    rbo = ResponseBodyFile(None)
+    assert_raises(NotImplementedError, rbo.close)
+
 def test_body_get_is_none():
     res = Response()
     res._body = None
