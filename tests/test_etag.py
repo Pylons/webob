@@ -171,41 +171,69 @@ class ETagMatcherTests(unittest.TestCase):
         self.assertEqual(matcher.__repr__(), '<ETag ETAG1 or ETAG2>')
 
     def test_parse_None(self):
-        matcher = self._makeOne(("ETAG1",), ("WEAK",))
+        matcher = self._makeOne(("ETAG",), ("WEAK",))
         et = matcher.parse(None)
         self.assertEqual(et.etags, [])
         self.assertEqual(et.weak_etags, [])
 
     def test_parse_anyetag(self):
         # these tests smell bad, are they useful?
-        matcher = self._makeOne(("ETAG1",), ("WEAK",))
+        matcher = self._makeOne(("ETAG",), ("WEAK",))
         et = matcher.parse('*')
         self.assertEqual(et.__dict__, {})
         self.assertEqual(et.__repr__(), '<ETag *>')
 
 
     def test_parse_one(self):
-        matcher = self._makeOne(("ETAG1",), ("WEAK",))
+        matcher = self._makeOne(("ETAG",), ("WEAK",))
         et = matcher.parse('ONE')
         self.assertEqual(et.etags, ['ONE'])
         self.assertEqual(et.weak_etags, [])
 
+    # .parse doesn't use the contructor values (etags [ ,weak_etags])
+
     def test_parse_commasep(self):
-        matcher = self._makeOne(("ETAG1",), ("WEAK",))
+        matcher = self._makeOne(("ETAG",), ("WEAK",))
         et = matcher.parse('ONE, TWO')
         self.assertEqual(et.etags, ['ONE', 'TWO'])
         self.assertEqual(et.weak_etags, [])
 
     def test_parse_commasep_w_weak(self):
-        matcher = self._makeOne(("ETAG1",), ("WEAK",))
+        matcher = self._makeOne(("ETAG",), ("WEAK",))
         et = matcher.parse('ONE, w/TWO')
         self.assertEqual(et.etags, ['ONE'])
         self.assertEqual(et.weak_etags, ['TWO'])
 
-    # def test_parse_quoted(self):
-    #     matcher = self._makeOne(("ETAG1",), ("WEAK",))
-    #     import pdb; pdb.set_trace()
-    #     et = matcher.parse('"ONE, TWO"')
-    #     self.assertEqual(et.etags, ['ONE', 'TWO'])
-    #     self.assertEqual(et.weak_etags, [])
+    def test_parse_quoted(self):
+        matcher = self._makeOne(("ETAG",), ("WEAK",))
+        et = matcher.parse('"ONE"')
+        self.assertEqual(et.etags, ['ONE'])
+        self.assertEqual(et.weak_etags, [])
+
+    def test_parse_quoted_two(self):
+        matcher = self._makeOne(("ETAG",), ("WEAK",))
+        et = matcher.parse('"ONE", "TWO"')
+        self.assertEqual(et.etags, ['ONE', 'TWO'])
+        self.assertEqual(et.weak_etags, [])
+
+    def test_parse_quoted_two_weak(self):
+        matcher = self._makeOne(("ETAG",), ("WEAK",))
+        et = matcher.parse('"ONE", W/"TWO"')
+        self.assertEqual(et.etags, ['ONE'])
+        self.assertEqual(et.weak_etags, ['TWO'])
+
+    def test_parse_wo_close_quote(self):
+        # Unsure if this is testing likely input
+        matcher = self._makeOne(("ETAG",), ("WEAK",))
+        et = matcher.parse('"ONE')
+        self.assertEqual(et.etags, ['ONE'])
+        self.assertEqual(et.weak_etags, [])
+
+    def test___str__etag(self):
+        matcher = self._makeOne(("ETAG",))
+        self.assertEqual(matcher.__str__(), 'ETAG')
+
+    def test___str__etag_w_weak(self):
+        matcher = self._makeOne(("ETAG",), ("WEAK",))
+        self.assertEqual(matcher.__str__(), 'ETAG, W/WEAK')
 

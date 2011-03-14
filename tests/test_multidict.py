@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+from nose.tools import raises
 from webob import multidict
 
 class MultiDictTestCase(unittest.TestCase):
     klass = multidict.MultiDict
     _list = [('a', u'\xe9'), ('a', 'e'), ('a', 'f'), ('b', 1)]
     data = multidict.MultiDict(_list)
-
+    
     def setUp(self):
         self.d = self._get_instance()
 
@@ -92,6 +93,26 @@ class MultiDictTestCase(unittest.TestCase):
 class UnicodeMultiDictTestCase(MultiDictTestCase):
     klass = multidict.UnicodeMultiDict
     
+    def test_decode_key(self):
+        d = self._get_instance()
+        d.decode_keys = True
+        
+        class Key(object):  
+            pass
+
+        key = Key()
+        self.assertEquals(key, d._decode_key(key))
+
+    def test_decode_value(self):
+        import cgi
+
+        d = self._get_instance()
+        d.decode_keys = True
+        
+        fs = cgi.FieldStorage()
+        fs.name = 'a'
+        self.assertEqual(d._decode_value(fs).name, 'a')
+        
 class NestedMultiDictTestCase(MultiDictTestCase):
     klass = multidict.NestedMultiDict
 

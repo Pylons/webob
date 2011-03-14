@@ -105,7 +105,7 @@ def test_converter_with_name():
     eq_(desc.__doc__, "Gets and sets the 'CONTENT_LENGTH' key in the "
         "environment. For more information on CONTENT_LENGTH see `section 14.13 "
         "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.13>`_.  "
-        "Converts it as a int.")
+        "Converts it using int.")
     eq_(desc.fget(req), 666)
     desc.fset(req, '999')
     eq_(desc.fget(req), 999)
@@ -136,7 +136,7 @@ def test_converter_none_for_wrong_type():
     eq_(desc.__doc__, "Gets and sets the 'CONTENT_LENGTH' key in the "
         "environment. For more information on CONTENT_LENGTH see `section 14.13 "
         "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.13>`_.  "
-        "Converts it as a int.")
+        "Converts it using int.")
     eq_(desc.fget(req), None)
     desc.fset(req, '999')
     eq_(desc.fget(req), 999)
@@ -154,7 +154,7 @@ def test_converter_delete():
     eq_(desc.__doc__, "Gets and sets the 'CONTENT_LENGTH' key in the "
         "environment. For more information on CONTENT_LENGTH see `section 14.13 "
         "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.13>`_.  "
-        "Converts it as a int.")
+        "Converts it using int.")
     eq_(desc.fget(req), 666)
     assert_raises(KeyError, desc.fdel, req)
 

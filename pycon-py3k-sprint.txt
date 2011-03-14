@@ -38,9 +38,9 @@ Coverage
 Doctest-to-Unit Test Conversion
 -------------------------------
 
-- tests/test_request.txt
+- tests/test_request.txt (aconrad)
 
-- tests/test_response.txt
+- tests/test_response.txt (groner)
 
 Test Running
 ------------
