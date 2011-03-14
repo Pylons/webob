@@ -328,3 +328,20 @@ def test_write_text():
     res.body = 'abc'
     res.write(u'a')
     eq_(res.unicode_body, 'abca')
+
+def test_app_iter_get_app_iter_is_None():
+    res = Response()
+    res._app_iter = None
+    res._body = None
+    assert_raises(AttributeError, res.__getattribute__, 'app_iter')
+
+def test_app_iter_del():
+    res = Response()
+    res.content_length = 3
+    res._app_iter = ['123']
+    del res.app_iter
+    eq_(res._app_iter, None)
+    eq_(res._body, None)
+    eq_(res.content_length, None)
+    
+    
