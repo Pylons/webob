@@ -753,7 +753,7 @@ class RequestTests(unittest.TestCase):
         # Test method & URL
         self.assertEqual(req.method, 'GET')
         self.assertEqual(req.scheme, 'http')
-        self.assertEqual(req.script_name, ''  # The base of the URL)
+        self.assertEqual(req.script_name, '') # The base of the URL
         req.script_name = '/blog'  # make it more interesting
         self.assertEqual(req.path_info, '/article')
         # Content-Type of the request body
@@ -793,8 +793,11 @@ class RequestTests(unittest.TestCase):
 
         # Query & POST variables
         from webob import Request
-        req = Request.blank('/test?check=a&check=b&name=Bob')
+        from webob.multidict import MultiDict
+        from webob.multidict import NestedMultiDict
+        from webob.multidict import NoVars
         from webob.multidict import TrackableMultiDict
+        req = Request.blank('/test?check=a&check=b&name=Bob')
         GET = TrackableMultiDict([('check', 'a'),
                                   ('check', 'b'),
                                   ('name', 'Bob')])
@@ -804,19 +807,16 @@ class RequestTests(unittest.TestCase):
         self.assertEqual(req.str_GET.items(),
                          [('check', 'a'), ('check', 'b'), ('name', 'Bob')])
 
-        from webob.multidict import NoVars
         self.assert_(isinstance(req.str_POST, NoVars))
         # NoVars can be read like a dict, but not written
         self.assertEqual(req.str_POST.items(), [])
         req.method = 'POST'
         req.body = 'name=Joe&email=joe@example.com'
-        from webob.multidict import MultiDict
         self.assertEqual(req.str_POST,
                          MultiDict([('name', 'Joe'),
                                     ('email', 'joe@example.com')]))
         self.assertEqual(req.str_POST['name'], 'Joe')
 
-        from webob.multidict import NestedMultiDict
         self.assert_(isinstance(req.str_params, NestedMultiDict))
         self.assertEqual(req.str_params.items(),
                          [('check', 'a'),
@@ -828,9 +828,17 @@ class RequestTests(unittest.TestCase):
         self.assertEqual(req.str_params.getall('name'), ['Bob', 'Joe'])
 
     def test_request_put(self):
+        from datetime import datetime
         from webob import Request
+        from webob import Response
+        from webob import UTC
+        from webob.acceptparse import MIMEAccept
+        from webob.byterange import Range
+        from webob.etag import ETagMatcher
+        from webob.etag import _NoIfRange
         from webob.multidict import MultiDict
         from webob.multidict import TrackableMultiDict
+        from webob.multidict import UnicodeMultiDict
         req = Request.blank('/test?check=a&check=b&name=Bob')
         req.method = 'PUT'
         req.body = 'var1=value1&var2=value2&rep=1&rep=2'
@@ -840,15 +848,14 @@ class RequestTests(unittest.TestCase):
                                   ('check', 'b'),
                                   ('name', 'Bob')])
         self.assertEqual(req.str_GET, GET)
-        self.assertEqual(req.str_POST, MultiDict()
+        self.assertEqual(req.str_POST, MultiDict(
                                 [('var1', 'value1'),
                                  ('var2', 'value2'),
                                  ('rep', '1'),
-                                 ('rep', '2')])
+                                 ('rep', '2')]))
 
         # Unicode
         req.charset = 'utf8'
-        from webob.multidict import UnicodeMultiDict
         self.assert_(isinstance(req.GET, UnicodeMultiDict))
         self.assertEqual(req.GET.items(),
                          [('check', u'a'), ('check', u'b'), ('name', u'Bob')])
@@ -863,7 +870,6 @@ class RequestTests(unittest.TestCase):
         # Accept-* headers
         self.assert_('text/html' in req.accept)
         req.accept = 'text/html;q=0.5, application/xhtml+xml;q=1'
-        from webob.acceptparse import MIMEAccept
         self.assert_(isinstance(req.accept, MIMEAccept))
         self.assert_('text/html' in req.accept)
 
@@ -885,13 +891,10 @@ class RequestTests(unittest.TestCase):
         # shouldn't return 304
         self.assert_(not server_token in req.if_none_match)
         req.if_none_match = server_token
-        from webob.etag import ETagMatcher
         self.assert_(isinstance(req.if_none_match, ETagMatcher))
         # You *should* return 304
         self.assert_(server_token in req.if_none_match)
 
-        from webob import UTC
-        from datetime import datetime
         req.if_modified_since = datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
         self.assertEqual(req.headers['If-Modified-Since'],
                          'Sun, 01 Jan 2006 12:00:00 GMT')
@@ -899,7 +902,6 @@ class RequestTests(unittest.TestCase):
         self.assert_(req.if_modified_since)
         self.assert_(req.if_modified_since >= server_modified)
 
-        from webob.etag import _NoIfRange
         self.assert_(isinstance(req.if_range, _NoIfRange))
         self.assert_(req.if_range.match(etag='some-etag',
                      last_modified=datetime(2005, 1, 1, 12, 0)))
@@ -907,12 +909,10 @@ class RequestTests(unittest.TestCase):
         self.assert_(not req.if_range.match(etag='other-etag'))
         self.assert_(req.if_range.match(etag='opaque-etag'))
 
-        from webob import Response
         res = Response(etag='opaque-etag')
         self.assert_(req.if_range.match_response(res))
 
         req.range = 'bytes=0-100'
-        from webob.byterange import Range
         self.assert_(isinstance(req.range, Range))
         self.assertEqual(req.range.ranges, [(0, 101)])
         cr = req.range.content_range(length=1000)
