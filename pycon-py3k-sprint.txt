@@ -3,6 +3,16 @@ Python 3 tasks
 
 Here are the tasks that require doing for the Pyramid sprint at Pycon 2011.
 
+Required Versions
+------------------
+
+Python 2.4+
+
+Testing Coverage
+----------------
+
+ $ python2.X setup.py nosetests --with-coverage
+
 Coverage
 --------
 
