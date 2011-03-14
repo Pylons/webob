@@ -47,3 +47,21 @@ def test_upath_property():
     eq_(desc.fget(req), '')
     desc.fset(req, 'avalue')
     eq_(desc.fget(req), 'avalue')
+
+def test_header_getter():
+    from webob.descriptors import header_getter
+    from webob import Response
+    resp = Response('aresp')
+    desc = header_getter('AHEADER', '14.3')
+    eq_(desc.__doc__, "Gets and sets and deletes the AHEADER header. For "
+        "more information on AHEADER see `section 14.3 "
+        "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3>`_.")
+    eq_(desc.fget(resp), None)
+    desc.fset(resp, 'avalue')
+    eq_(desc.fget(resp), 'avalue')
+    desc.fset(resp, None)
+    eq_(desc.fget(resp), None)
+    desc.fset(resp, 'avalue2')
+    eq_(desc.fget(resp), 'avalue2')
+    desc.fdel(resp)
+    eq_(desc.fget(resp), None)
