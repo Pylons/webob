@@ -46,4 +46,5 @@ See also: `changelog <http://pythonpaste.org/webob/news>`_,
     test_suite='nose.collector',
     tests_require=['Tempita', 'WSGIProxy', 'WebTest', 'dtopt', 'nose',
                    'coverage', 'repoze.profile'],
+    use_2to3=True,
 )
