@@ -222,4 +222,17 @@ def test_body_is_none():
     assert_raises(TypeError, Response, app_iter=iter(['a']),
                   body="somebody")
     assert_raises(AttributeError, res.__getattribute__, 'body')
+
+def test_body_is_unicode_notverylong():
+    res = Response()
+    res._app_iter = u'foo'
+    res._body = None
+    assert_raises(ValueError, res.__getattribute__, 'body')
+    
+def test_body_is_unicode_verylong():
+    res = Response()
+    res._app_iter = u'x' * 51
+    res._body = None
+    assert_raises(ValueError, res.__getattribute__, 'body')
+    
     
