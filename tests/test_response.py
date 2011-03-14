@@ -253,6 +253,14 @@ def test_response_file_body_writelines():
     rbo.writelines(['bar', 'baz'])
     eq_(res.app_iter, ['foo', 'bar', 'baz'])
 
+def test_response_file_body_write_non_str():
+    from webob.response import ResponseBodyFile
+    class FakeResponse:
+        pass
+    res = FakeResponse()
+    rbo = ResponseBodyFile(res)
+    assert_raises(TypeError, rbo.write, object())
+
 def test_response_file_body_write_empty_app_iter():
     from webob.response import ResponseBodyFile
     class FakeResponse:
