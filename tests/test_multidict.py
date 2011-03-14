@@ -232,3 +232,7 @@ class NoVarsTestCase(unittest.TestCase):
     def test_getitem(self):
         d = self._get_instance()
         self.assertRaises(KeyError, d.__getitem__, 'a')
+
+    def test_setitem(self):
+        d = self._get_instance()
+        self.assertRaises(KeyError, d.__setitem__, 'a')
