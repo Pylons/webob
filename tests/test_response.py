@@ -676,3 +676,57 @@ def test_body_set_AttributeError_edgecase():
     eq_(res._body, 'abc')
     eq_(res.content_length, 3)
     eq_(res._app_iter, None)
+
+def test_cache_control():
+    # covers webob/response.py:721-734, 761
+    res = Response()
+    eq_(repr(res.cache_control), "<CacheControl ''>")
+    eq_(res.cache_control.max_age, None)
+
+    res.cache_control.properties['max-age'] = None
+    eq_(res.cache_control.max_age, -1)
+
+    res.cache_control.max_age = 10
+    eq_(repr(res.cache_control), "<CacheControl 'max-age=10'>")
+    eq_(res.headers['cache-control'], 'max-age=10')
+
+    assert_raises(AttributeError, setattr, res.cache_control, 'max_stale', 10)
+
+    res.cache_control = {}
+    eq_(repr(res.cache_control), "<CacheControl ''>")
+
+    res.cache_expires = True
+    eq_(repr(res.cache_control), "<CacheControl 'max-age=0, must-revalidate, no-cache, no-store'>")
+
+def test_location():
+    # covers webob/response.py:934-938
+    res = Response()
+    res.location = '/test.html'
+    eq_(res.location, '/test.html')
+    req = Request.blank('/')
+    eq_(req.get_response(res).location, 'http://localhost/test.html')
+    res.location = '/test2.html'
+    eq_(req.get_response(res).location, 'http://localhost/test2.html')
+
+def test_request_uri_http():
+    # covers webob/response.py:1152
+    from webob.response import _request_uri
+    environ = {
+        'wsgi.url_scheme': 'http',
+        'SERVER_NAME': 'test.com',
+        'SERVER_PORT': '80',
+        'SCRIPT_NAME': '/foobar',
+    }
+    eq_(_request_uri(environ), 'http://test.com/foobar')
+
+def test_request_uri_no_script_name2():
+    # covers webob/response.py:1160
+    # There is a test_request_uri_no_script_name in test_response.py, but it
+    # sets SCRIPT_NAME.
+    from webob.response import _request_uri
+    environ = {
+        'wsgi.url_scheme': 'http',
+        'HTTP_HOST': 'test.com',
+        'PATH_INFO': '/foobar',
+    }
+    eq_(_request_uri(environ), 'http://test.com/foobar')
