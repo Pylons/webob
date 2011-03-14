@@ -243,6 +243,16 @@ def test_response_file_body_flush_is_no_op():
     rbo = ResponseBodyFile(None)
     rbo.flush()
 
+def test_response_file_body_writelines():
+    from webob.response import ResponseBodyFile
+    class FakeResponse:
+        pass
+    res = FakeResponse()
+    res._app_iter = res.app_iter = ['foo']
+    rbo = ResponseBodyFile(res)
+    rbo.writelines(['bar', 'baz'])
+    eq_(res.app_iter, ['foo', 'bar', 'baz'])
+
 def test_response_file_body_close_not_implemented():
     from webob.response import ResponseBodyFile
     rbo = ResponseBodyFile(None)
