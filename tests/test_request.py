@@ -1,7 +1,81 @@
 import unittest
 
+_marker = object()
 
-class RequestTests(unittest.TestCase):
+class BaseRequestTests(unittest.TestCase):
+
+    def _getTargetClass(self):
+        from webob import BaseRequest
+        return BaseRequest
+
+    def _makeOne(self, environ, environ_getter=None, charset=_marker,
+                 unicode_errors=_marker, decode_param_names=_marker, **kw):
+        from webob.request import NoDefault
+        if charset is _marker:
+            charset = NoDefault
+        if unicode_errors is _marker:
+            unicode_errors = NoDefault
+        if decode_param_names is _marker:
+            decode_param_names = NoDefault
+        return self._getTargetClass()(environ, environ_getter, charset,
+                                      unicode_errors, decode_param_names, **kw)
+
+    def test_ctor_environ_getter_raises_WTF(self):
+        # This API should be changed.
+        self.assertRaises(ValueError,
+                          self._makeOne, {}, environ_getter=object())
+
+    def test_ctor_wo_environ_raises_WTF(self):
+        # This API should be changed.
+        self.assertRaises(TypeError, self._makeOne, None)
+
+    def test_ctor_o_environ(self):
+        environ = {}
+        req = self._makeOne(environ)
+        self.assertEqual(req.environ, environ)
+
+    def test_str_cookies_empty_environ(self):
+        from webob import Request
+        req = Request.blank('/')
+        self.assertEqual(req.str_cookies, {})
+
+    def test_str_cookies_w_webob_parsed_cookies_matching_source(self):
+        from webob import Request
+        environ = {
+            'HTTP_COOKIE': 'a=b',
+            'webob._parsed_cookies': ('a=b', {'a': 'b'}),
+        }
+        req = Request.blank('/', environ)
+        self.assertEqual(req.str_cookies, {'a': 'b'})
+
+    def test_str_cookies_w_webob_parsed_cookies_mismatched_source(self):
+        from webob import Request
+        environ = {
+            'HTTP_COOKIE': 'a=b',
+            'webob._parsed_cookies': ('a=b;c=d', {'a': 'b', 'c': 'd'}),
+        }
+        req = Request.blank('/', environ)
+        self.assertEqual(req.str_cookies, {'a': 'b'})
+
+    def test_str_cookies_wo_webob_parsed_cookies(self):
+        from webob import Request
+        environ = {
+            'HTTP_COOKIE': 'a=b',
+        }
+        req = Request.blank('/', environ)
+        self.assertEqual(req.str_cookies, {'a': 'b'})
+
+    def test_copy_get(self):
+        from webob import Request
+        environ = {
+            'HTTP_COOKIE': 'a=b',
+        }
+        req = Request.blank('/', environ)
+        clone = req.copy_get()
+        self.assertEqual(clone.environ, req.environ)
+
+
+class RequestTests_functional(unittest.TestCase):
 
     def test_gets(self):
         from webtest import TestApp
@@ -953,37 +1027,6 @@ class RequestTests(unittest.TestCase):
         self.assert_(isinstance(res.headers, ResponseHeaders))
         self.assertEqual(res.headers.items(), [('Content-type', 'text/plain')])
         self.assertEqual(res.body, 'Hi!')
-
-    def test_str_cookies_empty_environ(self):
-        from webob import Request
-        req = Request.blank('/')
-        self.assertEqual(req.str_cookies, {})
-
-    def test_str_cookies_w_webob_parsed_cookies_matching_source(self):
-        from webob import Request
-        environ = {
-            'HTTP_COOKIE': 'a=b',
-            'webob._parsed_cookies': ('a=b', {'a': 'b'}),
-        }
-        req = Request.blank('/', environ)
-        self.assertEqual(req.str_cookies, {'a': 'b'})
-
-    def test_str_cookies_w_webob_parsed_cookies_mismatched_source(self):
-        from webob import Request
-        environ = {
-            'HTTP_COOKIE': 'a=b',
-            'webob._parsed_cookies': ('a=b;c=d', {'a': 'b', 'c': 'd'}),
-        }
-        req = Request.blank('/', environ)
-        self.assertEqual(req.str_cookies, {'a': 'b'})
-
-    def test_str_cookies_wo_webob_parsed_cookies(self):
-        from webob import Request
-        environ = {
-            'HTTP_COOKIE': 'a=b',
-        }
-        req = Request.blank('/', environ)
-        self.assertEqual(req.str_cookies, {'a': 'b'})
 
     def equal_req(self, req):
         from cStringIO import StringIO
