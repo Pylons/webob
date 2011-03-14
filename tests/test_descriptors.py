@@ -39,3 +39,11 @@ def test_environ_getter_rfc_section():
     eq_(desc.__doc__, "Gets and sets the 'akey' key in the environment. For "
         "more information on akey see `section 14.3 "
         "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3>`_.")
+
+def test_upath_property():
+    from webob.descriptors import upath_property
+    req = Request.blank('/')
+    desc = upath_property('akey')
+    eq_(desc.fget(req), '')
+    desc.fset(req, 'avalue')
+    eq_(desc.fget(req), 'avalue')
