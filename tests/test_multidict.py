@@ -5,13 +5,14 @@ from webob import multidict
 
 class MultiDictTestCase(unittest.TestCase):
     klass = multidict.MultiDict
-    data = multidict.MultiDict([('a', u'\xe9'), ('a', 'e'), ('a', 'f'), ('b', 1)])
+    _list = [('a', u'\xe9'), ('a', 'e'), ('a', 'f'), ('b', 1)]
+    data = multidict.MultiDict(_list)
 
     def setUp(self):
         self.d = self._get_instance()
 
     def _get_instance(self):
-        return self.klass(self.data.copy())
+        return self.klass(self.data.copy()) 
 
     def test_len(self):
         assert len(self.d) == 4 
@@ -132,6 +133,17 @@ class TrackableMultiDict(MultiDictTestCase):
     def _get_instance(self):
         def tracker(*args, **kwargs): pass
         return self.klass(self.data.copy(), __tracker=tracker, __name='tracker')
+
+    def test_inititems(self):
+        #The first argument passed into the __init__ method
+        class Arg:
+            def items(self):
+                return [('a', u'\xe9'), ('a', 'e'), ('a', 'f'), ('b', 1)] 
+         
+        d = self._get_instance()
+        d._items = None
+        d.__init__(Arg())
+        self.assertEquals(self.d._items, self._list)
 
     def test_nullextend(self):
         d = self._get_instance()
