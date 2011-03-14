@@ -204,6 +204,49 @@ class BaseRequestTests(unittest.TestCase):
         self.assert_(isinstance(req.upath_info, unicode))
         self.assertEqual(req.upath_info, '/path/info')
 
+    def test_content_type_getter_no_parameters(self):
+        environ = {'CONTENT_TYPE': 'application/xml+foobar',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.content_type, 'application/xml+foobar')
+
+    def test_content_type_getter_w_parameters(self):
+        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset=utf8',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.content_type, 'application/xml+foobar')
+
+    def test_content_type_setter_w_None(self):
+        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset=utf8',
+                  }
+        req = self._makeOne(environ)
+        req.content_type = None
+        self.assertEqual(req.content_type, '')
+        self.assert_('CONTENT_TYPE' not in environ)
+
+    def test_content_type_setter_existing_paramter_no_new_paramter(self):
+        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset=utf8',
+                  }
+        req = self._makeOne(environ)
+        req.content_type = 'text/xml'
+        self.assertEqual(req.content_type, 'text/xml')
+        self.assertEqual(environ['CONTENT_TYPE'], 'text/xml;charset=utf8')
+
+    def test_content_type_deleter_clears_environ_value(self):
+        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset=utf8',
+                  }
+        req = self._makeOne(environ)
+        del req.content_type
+        self.assertEqual(req.content_type, '')
+        self.assert_('CONTENT_TYPE' not in environ)
+
+    def test_content_type_deleter_no_environ_value(self):
+        environ = {}
+        req = self._makeOne(environ)
+        del req.content_type
+        self.assertEqual(req.content_type, '')
+        self.assert_('CONTENT_TYPE' not in environ)
+
     def test_str_cookies_empty_environ(self):
         from webob import Request
         req = Request.blank('/')
