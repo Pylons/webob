@@ -365,6 +365,106 @@ class BaseRequestTests(unittest.TestCase):
             del req.headers
         self.assertRaises(AttributeError, _test)
 
+    def test_host_url_w_http_host_and_no_port(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'HTTP_HOST': 'example.com',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.host_url, 'http://example.com')
+
+    def test_host_url_w_http_host_and_standard_port(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'HTTP_HOST': 'example.com:80',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.host_url, 'http://example.com')
+
+    def test_host_url_w_http_host_and_oddball_port(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'HTTP_HOST': 'example.com:8888',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.host_url, 'http://example.com:8888')
+
+    def test_host_url_w_http_host_https_and_no_port(self):
+        environ = {'wsgi.url_scheme': 'https',
+                   'HTTP_HOST': 'example.com',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.host_url, 'https://example.com')
+
+    def test_host_url_w_http_host_https_and_standard_port(self):
+        environ = {'wsgi.url_scheme': 'https',
+                   'HTTP_HOST': 'example.com:443',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.host_url, 'https://example.com')
+
+    def test_host_url_w_http_host_https_and_oddball_port(self):
+        environ = {'wsgi.url_scheme': 'https',
+                   'HTTP_HOST': 'example.com:4333',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.host_url, 'https://example.com:4333')
+
+    def test_host_url_wo_http_host(self):
+        environ = {'wsgi.url_scheme': 'https',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '4333',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.host_url, 'https://example.com:4333')
+
+    def test_application_url(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.application_url, 'http://example.com/script')
+
+    def test_path_url(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.path_url, 'http://example.com/script/path/info')
+
+    def test_path(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.path, '/script/path/info')
+
+    def test_path_qs_no_qs(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.path_qs, '/script/path/info')
+
+    def test_path_qs_w_qs(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                   'QUERY_STRING': 'foo=bar&baz=bam'
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.path_qs, '/script/path/info?foo=bar&baz=bam')
+
     def test_str_cookies_empty_environ(self):
         from webob import Request
         req = Request.blank('/')
