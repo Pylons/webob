@@ -275,3 +275,14 @@ def test_body_del():
     eq_(res.content_length, None)
     eq_(res._app_iter, None)
     
+def test_unicode_body_get_no_charset():
+    res = Response()
+    res.charset = None
+    assert_raises(AttributeError, res.__getattribute__, 'unicode_body')
+
+def test_unicode_body_get_decode():
+    res = Response()
+    res.charset = 'utf-8'
+    res.body = 'La Pe\xc3\xb1a'
+    eq_(res.unicode_body, unicode('La Pe\xc3\xb1a', 'utf-8'))
+    
