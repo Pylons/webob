@@ -1,4 +1,4 @@
-import sys, tempfile, warnings
+import sys, tempfile
 import urllib, urlparse, cgi
 if sys.version >= '2.7':
     from io import BytesIO as StringIO
@@ -6,7 +6,7 @@ else:
     from cStringIO import StringIO
 
 from webob.headers import EnvironHeaders
-from webob.acceptparse import accept_property, Accept, MIMEAccept, NilAccept, MIMENilAccept, NoAccept
+from webob.acceptparse import accept_property, MIMEAccept, MIMENilAccept, NoAccept
 from webob.multidict import TrackableMultiDict, MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
 from webob.cachecontrol import CacheControl, serialize_cache_control
 from webob.etag import etag_property, AnyETag, NoETag
@@ -38,8 +38,8 @@ class BaseRequest(object):
     ## in memory):
     request_body_tempfile_limit = 10*1024
 
-    def __init__(self, environ=None, environ_getter=None, charset=NoDefault, unicode_errors=NoDefault,
-                 decode_param_names=NoDefault, **kw):
+    def __init__(self, environ=None, environ_getter=None, charset=NoDefault,
+                 unicode_errors=NoDefault, decode_param_names=NoDefault, **kw):
         if environ_getter is not None:
             raise ValueError('The environ_getter argument is no longer '
                              'supported')
