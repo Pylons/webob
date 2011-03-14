@@ -21,7 +21,7 @@ Coverage
 
 - webob.byterange (ppaez)
 
-- webob.cachecontrol
+- webob.cachecontrol (whit)
 
 - webob.dec (rafrombrc)
 
