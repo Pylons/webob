@@ -476,4 +476,20 @@ def test_content_type_params_set_ok_param_quoting():
     res.content_type_params = {'a':''}
     eq_(res.headers['Content-Type'], 'text/html; a=""')
     
+def test_set_cookie_overwrite():
+    res = Response()
+    res.set_cookie('a', '1')
+    res.set_cookie('a', '2', overwrite=True)
+    eq_(res.headerlist[-1], ('Set-Cookie', 'a=2; Path=/'))
     
+def test_set_cookie_value_is_None():
+    res = Response()
+    res.set_cookie('a', None)
+    eq_(res.headerlist[-1][0], 'Set-Cookie')
+    val = [ x.strip() for x in res.headerlist[-1][1].split(';')]
+    assert len(val) == 4
+    val.sort()
+    eq_(val[0], 'Max-Age=0')
+    eq_(val[1], 'Path=/')
+    eq_(val[2], 'a=')
+    assert val[3].startswith('expires')
