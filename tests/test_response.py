@@ -231,7 +231,7 @@ def test_request_uri_https():
 		'SERVER_PORT': '443',
 		'SCRIPT_NAME': '/foobar',
 	}
-	eq_(_request_uri(environ), 'http://test.com:443/foobar')
+	eq_(_request_uri(environ), 'https://test.com/foobar')
 	
 def test_body_is_none():
     res = Response()
