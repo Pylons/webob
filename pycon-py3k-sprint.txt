@@ -33,7 +33,7 @@ Coverage
 
 - webob.request
 
-- webob.response
+- webob.response (caseman/mcdonc)
 
 Doctest-to-Unit Test Conversion
 -------------------------------
