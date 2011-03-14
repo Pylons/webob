@@ -527,3 +527,37 @@ def test_set_cookie_expires_is_None_and_max_age_is_int():
     eq_(val[1], 'Path=/')
     eq_(val[2], 'a=1')
     assert val[3].startswith('expires')
+
+def test_set_cookie_expires_is_None_and_max_age_is_timedelta():
+    from datetime import timedelta
+    res = Response()
+    res.set_cookie('a', '1', max_age=timedelta(seconds=100))
+    eq_(res.headerlist[-1][0], 'Set-Cookie')
+    val = [ x.strip() for x in res.headerlist[-1][1].split(';')]
+    assert len(val) == 4
+    val.sort()
+    eq_(val[0], 'Max-Age=100')
+    eq_(val[1], 'Path=/')
+    eq_(val[2], 'a=1')
+    assert val[3].startswith('expires')
+
+def test_set_cookie_expires_is_not_None_and_max_age_is_None():
+    import datetime
+    res = Response()
+    then = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+    res.set_cookie('a', '1', expires=then)
+    eq_(res.headerlist[-1][0], 'Set-Cookie')
+    val = [ x.strip() for x in res.headerlist[-1][1].split(';')]
+    assert len(val) == 4
+    val.sort()
+    eq_(val[0], 'Max-Age=86399')
+    eq_(val[1], 'Path=/')
+    eq_(val[2], 'a=1')
+    assert val[3].startswith('expires')
+
+def test_set_cookie_value_is_unicode():
+    res = Response()
+    val = unicode('La Pe\xc3\xb1a', 'utf-8')
+    res.set_cookie('a', val)
+    eq_(res.headerlist[-1], (r'Set-Cookie', 'a="La Pe\\303\\261a"; Path=/'))
+    
