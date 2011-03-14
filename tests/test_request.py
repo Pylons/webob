@@ -846,3 +846,87 @@ def test_request_query_and_POST_vars():
                                       ('email', 'joe@example.com')]
     assert req.str_params['name'] == 'Bob'
     assert req.str_params.getall('name') == ['Bob', 'Joe']
+
+def test_request_put():
+    req = Request.blank('/test?check=a&check=b&name=Bob')
+    req.method = 'PUT'
+    req.body = 'var1=value1&var2=value2&rep=1&rep=2'
+    req.environ['CONTENT_LENGTH'] = str(len(req.body))
+    req.environ['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
+    from webob.multidict import TrackableMultiDict
+    GET = TrackableMultiDict([('check', 'a'), ('check', 'b'), ('name', 'Bob')])
+    assert req.str_GET == GET
+    from webob.multidict import MultiDict
+    assert req.str_POST == MultiDict([('var1', 'value1'), ('var2', 'value2'), ('rep', '1'), ('rep', '2')])
+
+    # Unicode
+    req.charset = 'utf8'
+    from webob.multidict import UnicodeMultiDict
+    assert isinstance(req.GET, UnicodeMultiDict)
+    assert req.GET.items() == [('check', u'a'), ('check', u'b'), ('name', u'Bob')]
+
+    # Cookies
+    req.headers['Cookie'] = 'test=value'
+    assert isinstance(req.cookies, UnicodeMultiDict)
+    assert req.cookies.items() == [('test', u'value')]
+    req.charset = None
+    assert req.str_cookies == {'test': 'value'}
+
+    # Accept-* headers
+    assert 'text/html' in req.accept
+    req.accept = 'text/html;q=0.5, application/xhtml+xml;q=1'
+    from webob.acceptparse import MIMEAccept
+    assert isinstance(req.accept, MIMEAccept)
+    assert 'text/html' in req.accept
+
+    assert req.accept.first_match(['text/html',
+                                   'application/xhtml+xml']) == 'text/html'
+    assert req.accept.best_match(['text/html',
+                                  'application/xhtml+xml']) == 'application/xhtml+xml'
+    assert req.accept.best_matches() == ['application/xhtml+xml', 'text/html']
+
+    req.accept_language = 'es, pt-BR'
+    assert req.accept_language.best_matches('en-US') == ['es',
+                                                         'pt-BR',
+                                                         'en-US']
+    assert req.accept_language.best_matches('es') == ['es']
+
+    # Conditional Requests
+    server_token = 'opaque-token'
+    assert not server_token in req.if_none_match # You shouldn't return 304
+    req.if_none_match = server_token
+    from webob.etag import ETagMatcher
+    assert isinstance(req.if_none_match, ETagMatcher)
+    assert server_token in req.if_none_match # You *should* return 304
+
+    from webob import UTC
+    from datetime import datetime
+    req.if_modified_since = datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
+    assert req.headers['If-Modified-Since'] == 'Sun, 01 Jan 2006 12:00:00 GMT'
+    server_modified = datetime(2005, 1, 1, 12, 0, tzinfo=UTC)
+    assert req.if_modified_since and req.if_modified_since >= server_modified
+
+    from webob.etag import _NoIfRange
+    assert isinstance(req.if_range, _NoIfRange)
+    assert req.if_range.match(etag='some-etag', last_modified=datetime(2005, 1, 1, 12, 0))
+    req.if_range = 'opaque-etag'
+    assert not req.if_range.match(etag='other-etag')
+    assert req.if_range.match(etag='opaque-etag')
+
+    from webob import Response
+    res = Response(etag='opaque-etag')
+    assert req.if_range.match_response(res)
+
+    req.range = 'bytes=0-100'
+    from webob.byterange import Range
+    assert isinstance(req.range, Range)
+    assert req.range.ranges == [(0, 101)]
+    cr = req.range.content_range(length=1000)
+    assert (cr.start, cr.stop, cr.length) == (0, 101, 1000)
+
+    assert server_token in req.if_match # No If-Match means everything is ok
+    req.if_match = server_token
+    assert server_token in req.if_match # Still OK
+    req.if_match = 'other-token'
+    # Not OK, should return 412 Precondition Failed:
+    assert not server_token in req.if_match
