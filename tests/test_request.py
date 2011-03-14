@@ -772,7 +772,7 @@ def test_request_init():
     assert req.environ['SERVER_PROTOCOL'] == 'HTTP/1.0'
     assert isinstance(req.environ['wsgi.errors'], file)
     from cStringIO import StringIO
-    assert isinstance(req.environ['wsgi.input'], type(StringIO('dummy')))
+    assert hasattr(req.environ['wsgi.input'], 'next')
     assert req.environ['wsgi.multiprocess'] == False
     assert req.environ['wsgi.multithread'] == False
     assert req.environ['wsgi.run_once'] == False

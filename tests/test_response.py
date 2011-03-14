@@ -215,28 +215,28 @@ def test_set_headerlist():
     eq_(res.headerlist, [])
 
 def test_request_uri_no_script_name():
-	from webob.response import _request_uri
-	environ = {
-		'wsgi.url_scheme': 'http',
-		'HTTP_HOST': 'test.com',
-		'SCRIPT_NAME': '/foobar',
-	}
-	eq_(_request_uri(environ), 'http://test.com/foobar')
+    from webob.response import _request_uri
+    environ = {
+        'wsgi.url_scheme': 'http',
+        'HTTP_HOST': 'test.com',
+        'SCRIPT_NAME': '/foobar',
+    }
+    eq_(_request_uri(environ), 'http://test.com/foobar')
 
 def test_request_uri_https():
-	from webob.response import _request_uri
-	environ = {
-		'wsgi.url_scheme': 'https',
-		'SERVER_NAME': 'test.com',
-		'SERVER_PORT': '443',
-		'SCRIPT_NAME': '/foobar',
-	}
-	eq_(_request_uri(environ), 'https://test.com/foobar')
+    from webob.response import _request_uri
+    environ = {
+        'wsgi.url_scheme': 'https',
+        'SERVER_NAME': 'test.com',
+        'SERVER_PORT': '443',
+        'SCRIPT_NAME': '/foobar',
+    }
+    eq_(_request_uri(environ), 'https://test.com/foobar')
 
 def test_app_iter_range_starts_after_iter_end():
-	from webob.response import AppIterRange
-	range = AppIterRange(iter([]), start=1, stop=1)
-	eq_(list(range), [])
+    from webob.response import AppIterRange
+    range = AppIterRange(iter([]), start=1, stop=1)
+    eq_(list(range), [])
 
 def test_response_file_body_flush_is_no_op():
     from webob.response import ResponseBodyFile
