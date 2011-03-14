@@ -16,7 +16,7 @@ Testing Coverage
 Coverage
 --------
 
-- webob.acceptparse
+- webob.acceptparse (aconrad)
 
 - webob.byterange
 
