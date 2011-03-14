@@ -1,0 +1,41 @@
+Python 3 tasks
+==============
+
+Here are the tasks that require doing for the Pyramid sprint at Pycon 2011.
+
+Coverage
+--------
+
+- webob.acceptparse
+
+- webob.byterange
+
+- webob.cachecontrol
+
+- webob.dec
+
+- webob.descriptors
+
+- webob.etag
+
+- webob.multidict
+
+- webob.request
+
+- webob.response
+
+Doctest-to-Unit Test Conversion
+-------------------------------
+
+- tests/test_request.txt
+
+- tests/test_response.txt
+
+Test Running
+------------
+
+- Nose claims to be Python 3 compatible.
+
+- Casey has a Python 3 branch http://bitbucket.org/caseman/nose3-caseman-fix
+
+
