@@ -121,6 +121,10 @@ class UnicodeMultiDictTestCase(MultiDictTestCase):
 class NestedMultiDictTestCase(MultiDictTestCase):
     klass = multidict.NestedMultiDict
 
+    def test_getitem(self):
+        d = self._get_instance()
+        self.assertRaises(KeyError, d.__getitem__, 'z')
+    
     def test_add(self):
         d = self._get_instance()
         self.assertRaises(KeyError, d.add, 'b', 3)
