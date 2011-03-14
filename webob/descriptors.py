@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import warnings
 import re, textwrap
 from datetime import datetime, date
