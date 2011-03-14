@@ -756,9 +756,48 @@ def test_request_init():
     assert req.environ['SERVER_PORT'] == '80'
     assert req.environ['SERVER_PROTOCOL'] == 'HTTP/1.0'
     assert isinstance(req.environ['wsgi.errors'], file)
-    assert isinstance(req.environ['wsgi.input'], file)
+    from cStringIO import StringIO
+    assert isinstance(req.environ['wsgi.input'], type(StringIO('dummy')))
     assert req.environ['wsgi.multiprocess'] == False
     assert req.environ['wsgi.multithread'] == False
     assert req.environ['wsgi.run_once'] == False
     assert req.environ['wsgi.url_scheme'] == 'http'
     assert req.environ['wsgi.version'] == (1, 0)
+
+    # Test body
+    assert hasattr(req.body_file, 'read')
+    assert req.body == ''
+    req.body = 'test'
+    assert hasattr(req.body_file, 'read')
+    assert req.body == 'test'
+
+    # Test method & URL
+    assert req.method == 'GET'
+    assert req.scheme == 'http'
+    assert req.script_name == ''  # The base of the URL
+    req.script_name = '/blog'  # make it more interesting
+    assert req.path_info == '/article'
+    assert req.content_type == ''  # Content-Type of the request body
+    assert req.remote_user is None  # The auth'ed user (there is none set)
+    assert req.remote_addr is None  # The remote IP
+    assert req.host == 'localhost:80'
+    assert req.host_url == 'http://localhost'
+    assert req.application_url == 'http://localhost/blog'
+    assert req.path_url == 'http://localhost/blog/article'
+    assert req.url == 'http://localhost/blog/article?id=1'
+    assert req.path == '/blog/article'
+    assert req.path_qs == '/blog/article?id=1'
+    assert req.query_string == 'id=1'
+    assert req.relative_url('archive') == 'http://localhost/blog/archive'
+
+    assert req.path_info_peek() == 'article'  # Doesn't change request
+    assert req.path_info_pop() == 'article'  # Does change request!
+    assert req.script_name == '/blog/article'
+    assert req.path_info == ''
+
+    # Headers
+    req.headers['Content-Type'] = 'application/x-www-urlencoded'
+    assert sorted(req.headers.items()) == [('Content-Length', '4'),
+                                           ('Content-Type', 'application/x-www-urlencoded'),
+                                           ('Host', 'localhost:80')]
+    assert req.environ['CONTENT_TYPE'] == 'application/x-www-urlencoded'
