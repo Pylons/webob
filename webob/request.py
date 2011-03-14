@@ -1,4 +1,4 @@
-import sys, tempfile, warnings
+import sys, tempfile
 import urllib, urlparse, cgi
 if sys.version >= '2.7':
     from io import BytesIO as StringIO
@@ -6,7 +6,7 @@ else:
     from cStringIO import StringIO
 
 from webob.headers import EnvironHeaders
-from webob.acceptparse import accept_property, Accept, MIMEAccept, NilAccept, MIMENilAccept, NoAccept
+from webob.acceptparse import accept_property, MIMEAccept, MIMENilAccept, NoAccept
 from webob.multidict import TrackableMultiDict, MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
 from webob.cachecontrol import CacheControl, serialize_cache_control
 from webob.etag import etag_property, AnyETag, NoETag
