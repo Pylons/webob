@@ -19,7 +19,7 @@ Coverage
 
 - webob.acceptparse (aconrad)
 
-- webob.byterange
+- webob.byterange (ppaez)
 
 - webob.cachecontrol
 
