@@ -6,7 +6,7 @@ Here are the tasks that require doing for the Pyramid sprint at Pycon 2011.
 Coverage
 --------
 
-- webob.acceptparse
+- webob.acceptparse (aconrad)
 
 - webob.byterange
 
