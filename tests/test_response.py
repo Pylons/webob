@@ -3,6 +3,10 @@ if sys.version >= '2.7':
     from io import BytesIO as StringIO
 else:
     from cStringIO import StringIO
+try:
+    from hashlib import md5
+except ImportError:
+    from md5 import md5
 
 from nose.tools import eq_, ok_, assert_raises
 
@@ -173,6 +177,41 @@ def test_set_request():
     res.request = None
     eq_(res.environ, None)
     eq_(res.request, None)
+
+def test_md5_etag():
+    res = Response()
+    res.body = """\
+In A.D. 2101 
+War was beginning. 
+Captain: What happen ? 
+Mechanic: Somebody set up us the bomb. 
+Operator: We get signal. 
+Captain: What ! 
+Operator: Main screen turn on. 
+Captain: It's You !! 
+Cats: How are you gentlemen !! 
+Cats: All your base are belong to us. 
+Cats: You are on the way to destruction. 
+Captain: What you say !! 
+Cats: You have no chance to survive make your time. 
+Cats: HA HA HA HA .... 
+Captain: Take off every 'zig' !! 
+Captain: You know what you doing. 
+Captain: Move 'zig'. 
+Captain: For great justice."""
+    res.md5_etag()
+    ok_(res.etag)
+    ok_('\n' not in res.etag)
+    eq_(res.etag, 
+        md5(res.body).digest().encode('base64').replace('\n', '').strip('='))
+    eq_(res.content_md5, None)
+
+def test_md5_etag_set_content_md5():
+    res = Response()
+    b = 'The quick brown fox jumps over the lazy dog'
+    res.md5_etag(b, set_content_md5=True)
+    ok_(res.content_md5,
+        md5(b).digest().encode('base64').replace('\n', '').strip('='))
 
 def test_content_length():
     r0 = Response('x'*10, content_length=10)
