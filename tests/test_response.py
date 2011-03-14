@@ -124,6 +124,13 @@ def test_HEAD_conditional_response_returns_empty_response():
     result = res({}, start_response)
     ok_(isinstance(result, EmptyResponse))
 
+def test_del_environ():
+    res = Response()
+    res.environ = {'yo': 'mama'}
+    eq_(res.environ, {'yo': 'mama'})
+    del res.environ
+    eq_(res.environ, None)
+
 def test_content_length():
     r0 = Response('x'*10, content_length=10)
 
