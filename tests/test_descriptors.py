@@ -90,7 +90,7 @@ def test_converter_not_prop():
     from webob.descriptors import parse_int_safe
     from webob.descriptors import serialize_int
     assert_raises(AssertionError,converter,
-        {'CONTENT_LENGTH', None, '14.13'},
+        ('CONTENT_LENGTH', None, '14.13'),
         parse_int_safe, serialize_int, 'int')
 
 def test_converter_with_name():
