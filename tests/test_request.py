@@ -744,4 +744,21 @@ Content-Disposition: form-data; name="%20%22""
 
 --boundary--'''
 
-
+def test_request_init():
+    # port from doctest (docs/reference.txt)
+    req = Request.blank('/article?id=1')
+    assert req.environ['HTTP_HOST'] == 'localhost:80'
+    assert req.environ['PATH_INFO'] == '/article'
+    assert req.environ['QUERY_STRING'] == 'id=1'
+    assert req.environ['REQUEST_METHOD'] == 'GET'
+    assert req.environ['SCRIPT_NAME'] == ''
+    assert req.environ['SERVER_NAME'] == 'localhost'
+    assert req.environ['SERVER_PORT'] == '80'
+    assert req.environ['SERVER_PROTOCOL'] == 'HTTP/1.0'
+    assert isinstance(req.environ['wsgi.errors'], file)
+    assert isinstance(req.environ['wsgi.input'], file)
+    assert req.environ['wsgi.multiprocess'] == False
+    assert req.environ['wsgi.multithread'] == False
+    assert req.environ['wsgi.run_once'] == False
+    assert req.environ['wsgi.url_scheme'] == 'http'
+    assert req.environ['wsgi.version'] == (1, 0)
