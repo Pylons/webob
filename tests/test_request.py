@@ -465,6 +465,76 @@ class BaseRequestTests(unittest.TestCase):
         req = self._makeOne(environ)
         self.assertEqual(req.path_qs, '/script/path/info?foo=bar&baz=bam')
 
+    def test_url_no_qs(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.url, 'http://example.com/script/path/info')
+
+    def test_url_w_qs(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                   'QUERY_STRING': 'foo=bar&baz=bam'
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.url,
+                         'http://example.com/script/path/info?foo=bar&baz=bam')
+
+    def test_relative_url_to_app_true_wo_leading_slash(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                   'QUERY_STRING': 'foo=bar&baz=bam'
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.relative_url('other/page', True),
+                         'http://example.com/script/other/page')
+
+    def test_relative_url_to_app_true_w_leading_slash(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                   'QUERY_STRING': 'foo=bar&baz=bam'
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.relative_url('/other/page', True),
+                         'http://example.com/other/page')
+
+    def test_relative_url_to_app_false_other_w_leading_slash(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                   'QUERY_STRING': 'foo=bar&baz=bam'
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.relative_url('/other/page', False),
+                         'http://example.com/other/page')
+
+    def test_relative_url_to_app_false_other_wo_leading_slash(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                   'QUERY_STRING': 'foo=bar&baz=bam'
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.relative_url('other/page', False),
+                         'http://example.com/script/path/other/page')
+
     def test_str_cookies_empty_environ(self):
         from webob import Request
         req = Request.blank('/')
