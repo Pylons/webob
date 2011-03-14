@@ -277,6 +277,11 @@ def test_response_file_body_close_not_implemented():
     rbo = ResponseBodyFile(None)
     assert_raises(NotImplementedError, rbo.close)
 
+def test_response_file_body_repr():
+    from webob.response import ResponseBodyFile
+    rbo = ResponseBodyFile('yo')
+    eq_(repr(rbo), "<body_file for 'yo'>")
+
 def test_body_get_is_none():
     res = Response()
     res._body = None
