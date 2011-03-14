@@ -1,4 +1,5 @@
 import sys
+import zlib
 if sys.version >= '2.7':
     from io import BytesIO as StringIO
 else:
@@ -212,6 +213,23 @@ def test_md5_etag_set_content_md5():
     res.md5_etag(b, set_content_md5=True)
     ok_(res.content_md5,
         md5(b).digest().encode('base64').replace('\n', '').strip('='))
+
+def test_decode_content_defaults_to_identity():
+    res = Response()
+    res.body = 'There be dragons'
+    res.decode_content()
+    eq_(res.body, 'There be dragons')
+
+def test_decode_content_with_deflate():
+    res = Response()
+    b = 'Hey Hey Hey'
+    # Simulate inflate by chopping the headers off
+    # the gzip encoded data
+    res.body = zlib.compress(b)[2:-4]
+    res.content_encoding = 'deflate'
+    res.decode_content()
+    eq_(res.body, b)
+    eq_(res.content_encoding, None)
 
 def test_content_length():
     r0 = Response('x'*10, content_length=10)
