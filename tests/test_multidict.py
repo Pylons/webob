@@ -5,16 +5,16 @@ from webob import multidict
 
 class MultiDictTestCase(unittest.TestCase):
     klass = multidict.MultiDict
-    data = multidict.MultiDict([('a', u'\xe9'), ('a', 'e'), ('b', 1)])
+    data = multidict.MultiDict([('a', u'\xe9'), ('a', 'e'), ('a', 'f'), ('b', 1)])
 
     def setUp(self):
-        self.d =  self._get_instance()
+        self.d = self._get_instance()
 
     def _get_instance(self):
         return self.klass(self.data.copy())
 
     def test_len(self):
-        assert len(self.d) == 3
+        assert len(self.d) == 4 
 
     def test_getone(self):
         assert self.d.getone('b') == 1
@@ -24,7 +24,7 @@ class MultiDictTestCase(unittest.TestCase):
         assert self.d.getall('b') == [1]
 
     def test_dict_of_lists(self):
-        assert self.d.dict_of_lists() == {'a': [u'\xe9', u'e'], 'b': [1]}, self.d.dict_of_lists()
+        assert self.d.dict_of_lists() == {'a': [u'\xe9', u'e', u'f'], 'b': [1]}, self.d.dict_of_lists()
 
     def test_dict_api(self):
         assert 'a' in self.d.mixed()
@@ -34,7 +34,7 @@ class MultiDictTestCase(unittest.TestCase):
         assert ('b', 1) in self.d.iteritems()
         assert 1 in self.d.values()
         assert 1 in self.d.itervalues()
-        assert len(self.d) == 3
+        assert len(self.d) == 4 
 
     def test_set_del_item(self):
         d = self._get_instance()
@@ -52,7 +52,7 @@ class MultiDictTestCase(unittest.TestCase):
 
     def test_update(self):
         d = self._get_instance()
-        d.update(e=1)
+        d.update(e=1)    
         assert 'e' in d
         d.update(dict(x=1))
         assert 'x' in d
@@ -69,7 +69,7 @@ class MultiDictTestCase(unittest.TestCase):
     def test_add(self):
         d = self._get_instance()
         d.add('b', 3)
-        assert d.getall('b') == [1, 3]
+        assert d.getall('b') == [1, 3]    
 
     def test_copy(self):
         assert self.d.copy() is not self.d
@@ -86,12 +86,11 @@ class MultiDictTestCase(unittest.TestCase):
         d = self._get_instance()
         assert d
         d.clear()
-        assert not d
-
+        assert not d 
 
 class UnicodeMultiDictTestCase(MultiDictTestCase):
     klass = multidict.UnicodeMultiDict
-
+    
 class NestedMultiDictTestCase(MultiDictTestCase):
     klass = multidict.NestedMultiDict
 
@@ -126,10 +125,50 @@ class NestedMultiDictTestCase(MultiDictTestCase):
     def test_nonzero(self):
         d = self._get_instance()
         assert d
-
+    
 class TrackableMultiDict(MultiDictTestCase):
     klass = multidict.TrackableMultiDict
 
     def _get_instance(self):
         def tracker(*args, **kwargs): pass
         return self.klass(self.data.copy(), __tracker=tracker, __name='tracker')
+
+    def test_nullextend(self):
+        d = self._get_instance()
+        assert d.extend() == None
+        d.extend(test = 'a')
+        assert d['test'] == 'a'
+
+    def test_listextend(self):
+        class Other:
+            def items(self):
+                return [u'\xe9', u'e', r'f', 1]
+        
+        other = Other()
+        d = self._get_instance()
+        d.extend(other)
+        
+        _list = [u'\xe9', u'e', r'f', 1]
+        for v in _list:
+            assert v in d._items
+         
+    def test_dictextend(self):
+        class Other:
+            def __getitem__(self, item):
+                if item is 'a':
+                    return 1
+                elif item is 'b':
+                    return 2
+                elif item is 'c':
+                    return 3            
+    
+            def keys(self):
+                return ['a', 'b', 'c']
+        
+        other = Other()
+        d = self._get_instance()
+        d.extend(other)
+        
+        _list = [('a', 1), ('b', 2), ('c', 3)]
+        for v in _list:
+            assert v in d._items 
