@@ -360,3 +360,16 @@ def test_app_iter_del():
     eq_(res.content_length, None)
     
     
+def test_charset_set_charset_is_None():
+    res = Response()
+    res.charset = 'utf-8'
+    res._app_iter = ['123']
+    del res.app_iter
+    eq_(res._app_iter, None)
+    eq_(res._body, None)
+    eq_(res.content_length, None)
+    
+def test_charset_set_no_content_type_header():
+    res = Response()
+    res.headers.pop('Content-Type', None)
+    assert_raises(AttributeError, res.__setattr__, 'charset', 'utf-8')
