@@ -316,3 +316,15 @@ def test_body_file_del():
     eq_(res._body, None)
     eq_(res.content_length, None)
     eq_(res._app_iter, None)
+
+def test_write_unicode():
+    res = Response()
+    res.unicode_body = unicode('La Pe\xc3\xb1a', 'utf-8')
+    res.write(u'a')
+    eq_(res.unicode_body, unicode('La Pe\xc3\xb1aa', 'utf-8'))
+
+def test_write_text():
+    res = Response()
+    res.body = 'abc'
+    res.write(u'a')
+    eq_(res.unicode_body, 'abca')
