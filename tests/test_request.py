@@ -20,6 +20,13 @@ class BaseRequestTests(unittest.TestCase):
         return self._getTargetClass()(environ, environ_getter, charset,
                                       unicode_errors, decode_param_names, **kw)
 
+    def _makeStringIO(self, text):
+        try:
+            from io import BytesIO
+        except ImportError: # Python < 2.6
+            from StringIO import StringIO as BytesIO
+        return BytesIO(text)
+
     def test_ctor_environ_getter_raises_WTF(self):
         # This API should be changed.
         self.assertRaises(ValueError,
@@ -33,6 +40,169 @@ class BaseRequestTests(unittest.TestCase):
         environ = {}
         req = self._makeOne(environ)
         self.assertEqual(req.environ, environ)
+
+    def test_body_file_getter(self):
+        INPUT = self._makeStringIO('input')
+        environ = {'wsgi.input': INPUT}
+        req = self._makeOne(environ)
+        self.assert_(req.body_file is INPUT)
+
+    def test_body_file_setter_w_string(self):
+        BEFORE = self._makeStringIO('before')
+        AFTER = str('AFTER')
+        environ = {'wsgi.input': BEFORE,
+                   'CONTENT_LENGTH': len('before'),
+                  }
+        req = self._makeOne(environ)
+        req.body_file = AFTER
+        self.assertEqual(req.body_file.getvalue(), AFTER)
+        self.assertEqual(req.content_length, len(AFTER))
+
+    def test_body_file_setter_non_string(self):
+        BEFORE = self._makeStringIO('before')
+        AFTER =  self._makeStringIO('after')
+        environ = {'wsgi.input': BEFORE,
+                   'CONTENT_LENGTH': len('before'),
+                  }
+        req = self._makeOne(environ)
+        req.body_file = AFTER
+        self.assert_(req.body_file is AFTER)
+        self.assertEqual(req.content_length, None)
+
+    def test_body_file_deleter(self):
+        INPUT = self._makeStringIO('before')
+        environ = {'wsgi.input': INPUT,
+                   'CONTENT_LENGTH': len('before'),
+                  }
+        req = self._makeOne(environ)
+        del req.body_file
+        self.assertEqual(req.body_file.getvalue(), '')
+        self.assertEqual(req.content_length, 0)
+
+    def test_body_file_raw(self):
+        INPUT = self._makeStringIO('input')
+        environ = {'wsgi.input': INPUT,
+                   'CONTENT_LENGTH': len('input'),
+                  }
+        req = self._makeOne(environ)
+        self.assert_(req.body_file_raw is INPUT)
+
+    def test_body_file_seekable_input_not_seekable(self):
+        INPUT = self._makeStringIO('input')
+        INPUT.seek(1, 0) # consume
+        environ = {'wsgi.input': INPUT,
+                   'webob.is_body_seekable': False,
+                   'CONTENT_LENGTH': len('input'),
+                  }
+        req = self._makeOne(environ)
+        seekable = req.body_file_seekable
+        self.assert_(seekable is not INPUT)
+        self.assertEqual(seekable.getvalue(), 'nput')
+
+    def test_body_file_seekable_input_is_seekable(self):
+        INPUT = self._makeStringIO('input')
+        INPUT.seek(1, 0) # consume
+        environ = {'wsgi.input': INPUT,
+                   'webob.is_body_seekable': True,
+                   'CONTENT_LENGTH': len('input'),
+                  }
+        req = self._makeOne(environ)
+        seekable = req.body_file_seekable
+        self.assert_(seekable is INPUT)
+
+    def test_scheme(self):
+        environ = {'wsgi.url_scheme': 'something:',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.scheme, 'something:')
+
+    def test_method(self):
+        environ = {'REQUEST_METHOD': 'OPTIONS',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.method, 'OPTIONS')
+
+    def test_http_version(self):
+        environ = {'SERVER_PROTOCOL': '1.1',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.http_version, '1.1')
+
+    def test_script_name(self):
+        environ = {'SCRIPT_NAME': '/script',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.script_name, '/script')
+
+    def test_path_info(self):
+        environ = {'PATH_INFO': '/path/info',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.path_info, '/path/info')
+
+    def test_content_length_getter(self):
+        environ = {'CONTENT_LENGTH': '1234',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.content_length, 1234)
+
+    def test_content_length_setter_w_str(self):
+        environ = {'CONTENT_LENGTH': '1234',
+                  }
+        req = self._makeOne(environ)
+        req.content_length = '3456'
+        self.assertEqual(req.content_length, 3456)
+
+    def test_remote_user(self):
+        environ = {'REMOTE_USER': 'phred',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.remote_user, 'phred')
+
+    def test_remote_addr(self):
+        environ = {'REMOTE_ADDR': '1.2.3.4',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.remote_addr, '1.2.3.4')
+
+    def test_query_string(self):
+        environ = {'QUERY_STRING': 'foo=bar&baz=bam',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.query_string, 'foo=bar&baz=bam')
+
+    def test_server_name(self):
+        environ = {'SERVER_NAME': 'somehost.tld',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.server_name, 'somehost.tld')
+
+    def test_server_port_getter(self):
+        environ = {'SERVER_PORT': '6666',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.server_port, 6666)
+
+    def test_server_port_setter_with_string(self):
+        environ = {'SERVER_PORT': '6666',
+                  }
+        req = self._makeOne(environ)
+        req.server_port = '6667'
+        self.assertEqual(req.server_port, 6667)
+
+    def test_uscript_name(self):
+        environ = {'SCRIPT_NAME': '/script',
+                  }
+        req = self._makeOne(environ)
+        self.assert_(isinstance(req.uscript_name, unicode))
+        self.assertEqual(req.uscript_name, '/script')
+
+    def test_upath_info(self):
+        environ = {'PATH_INFO': '/path/info',
+                  }
+        req = self._makeOne(environ)
+        self.assert_(isinstance(req.upath_info, unicode))
+        self.assertEqual(req.upath_info, '/path/info')
 
     def test_str_cookies_empty_environ(self):
         from webob import Request
