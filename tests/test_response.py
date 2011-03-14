@@ -515,3 +515,15 @@ def test_set_cookie_value_is_None():
     eq_(val[1], 'Path=/')
     eq_(val[2], 'a=')
     assert val[3].startswith('expires')
+
+def test_set_cookie_expires_is_None_and_max_age_is_int():
+    res = Response()
+    res.set_cookie('a', '1', max_age=100)
+    eq_(res.headerlist[-1][0], 'Set-Cookie')
+    val = [ x.strip() for x in res.headerlist[-1][1].split(';')]
+    assert len(val) == 4
+    val.sort()
+    eq_(val[0], 'Max-Age=100')
+    eq_(val[1], 'Path=/')
+    eq_(val[2], 'a=1')
+    assert val[3].startswith('expires')
