@@ -29,7 +29,7 @@ class BaseRequestTests(unittest.TestCase):
         # This API should be changed.
         self.assertRaises(TypeError, self._makeOne, None)
 
-    def test_ctor_o_environ(self):
+    def test_ctor_w_environ(self):
         environ = {}
         req = self._makeOne(environ)
         self.assertEqual(req.environ, environ)
