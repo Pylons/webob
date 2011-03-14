@@ -616,6 +616,127 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(environ['SCRIPT_NAME'], '/script//path')
         self.assertEqual(environ['PATH_INFO'], '/info')
 
+    def test_path_info_peek_empty(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '',
+                  }
+        req = self._makeOne(environ)
+        peeked = req.path_info_peek()
+        self.assertEqual(peeked, None)
+        self.assertEqual(environ['SCRIPT_NAME'], '/script')
+        self.assertEqual(environ['PATH_INFO'], '')
+
+    def test_path_info_peek_just_leading_slash(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/',
+                  }
+        req = self._makeOne(environ)
+        peeked = req.path_info_peek()
+        self.assertEqual(peeked, '')
+        self.assertEqual(environ['SCRIPT_NAME'], '/script')
+        self.assertEqual(environ['PATH_INFO'], '/')
+
+    def test_path_info_peek_non_empty(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path',
+                  }
+        req = self._makeOne(environ)
+        peeked = req.path_info_peek()
+        self.assertEqual(peeked, 'path')
+        self.assertEqual(environ['SCRIPT_NAME'], '/script')
+        self.assertEqual(environ['PATH_INFO'], '/path')
+
+    def test_urlvars_getter_w_paste_key(self):
+        environ = {'paste.urlvars': {'foo': 'bar'},
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.urlvars, {'foo': 'bar'})
+
+    def test_urlvars_getter_w_wsgiorg_key(self):
+        environ = {'wsgiorg.routing_args': ((), {'foo': 'bar'}),
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.urlvars, {'foo': 'bar'})
+
+    def test_urlvars_getter_wo_keys(self):
+        environ = {}
+        req = self._makeOne(environ)
+        self.assertEqual(req.urlvars, {})
+        self.assertEqual(environ['wsgiorg.routing_args'], ((), {}))
+
+    def test_urlvars_setter_w_paste_key(self):
+        environ = {'paste.urlvars': {'foo': 'bar'},
+                  }
+        req = self._makeOne(environ)
+        req.urlvars = {'baz': 'bam'}
+        self.assertEqual(req.urlvars, {'baz': 'bam'})
+        self.assertEqual(environ['paste.urlvars'], {'baz': 'bam'})
+        self.assert_('wsgiorg.routing_args' not in environ)
+
+    def test_urlvars_setter_w_wsgiorg_key(self):
+        environ = {'wsgiorg.routing_args': ((), {'foo': 'bar'}),
+                   'paste.urlvars': {'qux': 'spam'},
+                  }
+        req = self._makeOne(environ)
+        req.urlvars = {'baz': 'bam'}
+        self.assertEqual(req.urlvars, {'baz': 'bam'})
+        self.assertEqual(environ['wsgiorg.routing_args'], ((), {'baz': 'bam'}))
+        self.assert_('paste.urlvars' not in environ)
+
+    def test_urlvars_setter_wo_keys(self):
+        environ = {}
+        req = self._makeOne(environ)
+        req.urlvars = {'baz': 'bam'}
+        self.assertEqual(req.urlvars, {'baz': 'bam'})
+        self.assertEqual(environ['wsgiorg.routing_args'], ((), {'baz': 'bam'}))
+        self.assert_('paste.urlvars' not in environ)
+
+    def test_urlvars_deleter_w_paste_key(self):
+        environ = {'paste.urlvars': {'foo': 'bar'},
+                  }
+        req = self._makeOne(environ)
+        del req.urlvars
+        self.assertEqual(req.urlvars, {})
+        self.assert_('paste.urlvars' not in environ)
+        self.assertEqual(environ['wsgiorg.routing_args'], ((), {}))
+
+    def test_urlvars_deleter_w_wsgiorg_key_non_empty_tuple(self):
+        environ = {'wsgiorg.routing_args': (('a', 'b'), {'foo': 'bar'}),
+                   'paste.urlvars': {'qux': 'spam'},
+                  }
+        req = self._makeOne(environ)
+        del req.urlvars
+        self.assertEqual(req.urlvars, {})
+        self.assertEqual(environ['wsgiorg.routing_args'], (('a', 'b'), {}))
+        self.assert_('paste.urlvars' not in environ)
+
+    def test_urlvars_deleter_w_wsgiorg_key_empty_tuple(self):
+        environ = {'wsgiorg.routing_args': ((), {'foo': 'bar'}),
+                   'paste.urlvars': {'qux': 'spam'},
+                  }
+        req = self._makeOne(environ)
+        del req.urlvars
+        self.assertEqual(req.urlvars, {})
+        self.assertEqual(environ['wsgiorg.routing_args'], ((), {}))
+        self.assert_('paste.urlvars' not in environ)
+
+    def test_urlvars_deleter_wo_keys(self):
+        environ = {}
+        req = self._makeOne(environ)
+        del req.urlvars
+        self.assertEqual(req.urlvars, {})
+        self.assertEqual(environ['wsgiorg.routing_args'], ((), {}))
+        self.assert_('paste.urlvars' not in environ)
+
     def test_str_cookies_empty_environ(self):
         from webob import Request
         req = Request.blank('/')
