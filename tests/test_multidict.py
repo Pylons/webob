@@ -112,6 +112,11 @@ class UnicodeMultiDictTestCase(MultiDictTestCase):
         fs = cgi.FieldStorage()
         fs.name = 'a'
         self.assertEqual(d._decode_value(fs).name, 'a')
+
+    def test_encode_key(self):
+        d = self._get_instance()
+        value = unicode('a')
+        self.assertEquals(d._encode_value(value),'a')
         
 class NestedMultiDictTestCase(MultiDictTestCase):
     klass = multidict.NestedMultiDict
