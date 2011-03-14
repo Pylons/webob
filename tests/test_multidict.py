@@ -223,4 +223,12 @@ class TrackableMultiDict(MultiDictTestCase):
         for v in _list:
             assert v in d._items
 
-class NoVarsTestCase 
+class NoVarsTestCase(unittest.TestCase):
+    klass = multidict.NoVars
+
+    def _get_instance(self):
+        return self.klass()
+
+    def test_getitem(self):
+        d = self._get_instance()
+        self.assertRaises(KeyError, d.__getitem__, 'a')
