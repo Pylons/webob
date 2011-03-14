@@ -214,7 +214,15 @@ def test_set_headerlist():
     del res.headerlist
     eq_(res.headerlist, [])
 
-
+def test_request_uri_no_script_name():
+	from webob.response import _request_uri
+	environ = {
+		'wsgi.url_scheme': 'http',
+		'HTTP_HOST': 'test.com',
+		'SCRIPT_NAME': '/foobar',
+	}
+	eq_(_request_uri(environ), 'http://test.com/foobar')
+	
 def test_body_is_none():
     res = Response()
     res._body = None
