@@ -535,6 +535,87 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(req.relative_url('other/page', False),
                          'http://example.com/script/path/other/page')
 
+    def test_path_info_pop_empty(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '',
+                  }
+        req = self._makeOne(environ)
+        popped = req.path_info_pop()
+        self.assertEqual(popped, None)
+        self.assertEqual(environ['SCRIPT_NAME'], '/script')
+
+    def test_path_info_pop_just_leading_slash(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/',
+                  }
+        req = self._makeOne(environ)
+        popped = req.path_info_pop()
+        self.assertEqual(popped, '')
+        self.assertEqual(environ['SCRIPT_NAME'], '/script/')
+        self.assertEqual(environ['PATH_INFO'], '')
+
+    def test_path_info_pop_non_empty_no_pattern(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                  }
+        req = self._makeOne(environ)
+        popped = req.path_info_pop()
+        self.assertEqual(popped, 'path')
+        self.assertEqual(environ['SCRIPT_NAME'], '/script/path')
+        self.assertEqual(environ['PATH_INFO'], '/info')
+
+    def test_path_info_pop_non_empty_w_pattern_miss(self):
+        import re
+        PATTERN = re.compile('miss')
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                  }
+        req = self._makeOne(environ)
+        popped = req.path_info_pop(PATTERN)
+        self.assertEqual(popped, None)
+        self.assertEqual(environ['SCRIPT_NAME'], '/script')
+        self.assertEqual(environ['PATH_INFO'], '/path/info')
+
+    def test_path_info_pop_non_empty_w_pattern_hit(self):
+        import re
+        PATTERN = re.compile('path')
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                  }
+        req = self._makeOne(environ)
+        popped = req.path_info_pop(PATTERN)
+        self.assertEqual(popped, 'path')
+        self.assertEqual(environ['SCRIPT_NAME'], '/script/path')
+        self.assertEqual(environ['PATH_INFO'], '/info')
+
+    def test_path_info_pop_skips_empty_elements(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '//path/info',
+                  }
+        req = self._makeOne(environ)
+        popped = req.path_info_pop()
+        self.assertEqual(popped, 'path')
+        self.assertEqual(environ['SCRIPT_NAME'], '/script//path')
+        self.assertEqual(environ['PATH_INFO'], '/info')
+
     def test_str_cookies_empty_environ(self):
         from webob import Request
         req = Request.blank('/')
