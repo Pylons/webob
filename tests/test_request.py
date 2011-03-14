@@ -211,13 +211,13 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(req.content_type, 'application/xml+foobar')
 
     def test_content_type_getter_w_parameters(self):
-        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset=utf8',
+        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset="utf8"',
                   }
         req = self._makeOne(environ)
         self.assertEqual(req.content_type, 'application/xml+foobar')
 
     def test_content_type_setter_w_None(self):
-        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset=utf8',
+        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset="utf8"',
                   }
         req = self._makeOne(environ)
         req.content_type = None
@@ -225,15 +225,15 @@ class BaseRequestTests(unittest.TestCase):
         self.assert_('CONTENT_TYPE' not in environ)
 
     def test_content_type_setter_existing_paramter_no_new_paramter(self):
-        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset=utf8',
+        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset="utf8"',
                   }
         req = self._makeOne(environ)
         req.content_type = 'text/xml'
         self.assertEqual(req.content_type, 'text/xml')
-        self.assertEqual(environ['CONTENT_TYPE'], 'text/xml;charset=utf8')
+        self.assertEqual(environ['CONTENT_TYPE'], 'text/xml;charset="utf8"')
 
     def test_content_type_deleter_clears_environ_value(self):
-        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset=utf8',
+        environ = {'CONTENT_TYPE': 'application/xml+foobar;charset="utf8"',
                   }
         req = self._makeOne(environ)
         del req.content_type
@@ -246,6 +246,496 @@ class BaseRequestTests(unittest.TestCase):
         del req.content_type
         self.assertEqual(req.content_type, '')
         self.assert_('CONTENT_TYPE' not in environ)
+
+    def test_charset_getter_cache_hit(self):
+        CT = 'application/xml+foobar'
+        environ = {'CONTENT_TYPE': CT,
+                  }
+        req = self._makeOne(environ)
+        req._charset_cache = (CT, 'cp1252')
+        self.assertEqual(req.charset, 'cp1252')
+
+    def test_charset_getter_cache_miss_w_parameter(self):
+        CT = 'application/xml+foobar;charset="utf8"'
+        environ = {'CONTENT_TYPE': CT,
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.charset, 'utf8')
+        self.assertEqual(req._charset_cache, (CT, 'utf8'))
+
+    def test_charset_getter_cache_miss_wo_parameter(self):
+        CT = 'application/xml+foobar'
+        environ = {'CONTENT_TYPE': CT,
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.charset, 'UTF-8')
+        self.assertEqual(req._charset_cache, (CT, 'UTF-8'))
+
+    def test_charset_setter_None_w_parameter(self):
+        CT = 'application/xml+foobar;charset="utf8"'
+        environ = {'CONTENT_TYPE': CT,
+                  }
+        req = self._makeOne(environ)
+        req.charset = None
+        self.assertEqual(environ['CONTENT_TYPE'], 'application/xml+foobar')
+        self.assertEqual(req.charset, 'UTF-8')
+
+    def test_charset_setter_empty_w_parameter(self):
+        CT = 'application/xml+foobar;charset="utf8"'
+        environ = {'CONTENT_TYPE': CT,
+                  }
+        req = self._makeOne(environ)
+        req.charset = ''
+        self.assertEqual(environ['CONTENT_TYPE'], 'application/xml+foobar')
+        self.assertEqual(req.charset, 'UTF-8')
+
+    def test_charset_setter_nonempty_w_parameter(self):
+        CT = 'application/xml+foobar;charset="utf8"'
+        environ = {'CONTENT_TYPE': CT,
+                  }
+        req = self._makeOne(environ)
+        req.charset = 'cp1252'
+        self.assertEqual(environ['CONTENT_TYPE'],
+                         #'application/xml+foobar; charset="cp1252"') WTF?
+                         'application/xml+foobar;charset=cp1252',
+                         )
+        self.assertEqual(req.charset, 'cp1252')
+
+    def test_charset_setter_nonempty_wo_parameter(self):
+        CT = 'application/xml+foobar'
+        environ = {'CONTENT_TYPE': CT,
+                  }
+        req = self._makeOne(environ)
+        req.charset = 'cp1252'
+        self.assertEqual(environ['CONTENT_TYPE'],
+                         'application/xml+foobar; charset="cp1252"',
+                         #'application/xml+foobar;charset=cp1252',  WTF?
+                         )
+        self.assertEqual(req.charset, 'cp1252')
+
+    def test_charset_deleter_w_parameter(self):
+        CT = 'application/xml+foobar;charset="utf8"'
+        environ = {'CONTENT_TYPE': CT,
+                  }
+        req = self._makeOne(environ)
+        del req.charset
+        self.assertEqual(environ['CONTENT_TYPE'], 'application/xml+foobar')
+        self.assertEqual(req.charset, 'UTF-8')
+
+    def test_headers_getter_miss(self):
+        CONTENT_TYPE = 'application/xml+foobar;charset="utf8"'
+        environ = {'CONTENT_TYPE': CONTENT_TYPE,
+                   'CONTENT_LENGTH': '123',
+                  }
+        req = self._makeOne(environ)
+        headers = req.headers
+        self.assertEqual(headers,
+                        {'Content-Type': CONTENT_TYPE,
+                         'Content-Length': '123'})
+        self.assertEqual(req._headers, headers)
+
+    def test_headers_getter_hit(self):
+        CONTENT_TYPE = 'application/xml+foobar;charset="utf8"'
+        environ = {'CONTENT_TYPE': CONTENT_TYPE,
+                   'CONTENT_LENGTH': '123',
+                  }
+        req = self._makeOne(environ)
+        req._headers = {'Foo': 'Bar'}
+        self.assertEqual(req.headers,
+                        {'Foo': 'Bar'})
+
+    def test_headers_setter(self):
+        CONTENT_TYPE = 'application/xml+foobar;charset="utf8"'
+        environ = {'CONTENT_TYPE': CONTENT_TYPE,
+                   'CONTENT_LENGTH': '123',
+                  }
+        req = self._makeOne(environ)
+        req._headers = {'Foo': 'Bar'}
+        req.headers = {'Qux': 'Spam'}
+        self.assertEqual(req.headers,
+                        {'Qux': 'Spam'})
+
+    def test_no_headers_deleter(self):
+        CONTENT_TYPE = 'application/xml+foobar;charset="utf8"'
+        environ = {'CONTENT_TYPE': CONTENT_TYPE,
+                   'CONTENT_LENGTH': '123',
+                  }
+        req = self._makeOne(environ)
+        def _test():
+            del req.headers
+        self.assertRaises(AttributeError, _test)
+
+    def test_host_url_w_http_host_and_no_port(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'HTTP_HOST': 'example.com',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.host_url, 'http://example.com')
+
+    def test_host_url_w_http_host_and_standard_port(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'HTTP_HOST': 'example.com:80',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.host_url, 'http://example.com')
+
+    def test_host_url_w_http_host_and_oddball_port(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'HTTP_HOST': 'example.com:8888',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.host_url, 'http://example.com:8888')
+
+    def test_host_url_w_http_host_https_and_no_port(self):
+        environ = {'wsgi.url_scheme': 'https',
+                   'HTTP_HOST': 'example.com',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.host_url, 'https://example.com')
+
+    def test_host_url_w_http_host_https_and_standard_port(self):
+        environ = {'wsgi.url_scheme': 'https',
+                   'HTTP_HOST': 'example.com:443',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.host_url, 'https://example.com')
+
+    def test_host_url_w_http_host_https_and_oddball_port(self):
+        environ = {'wsgi.url_scheme': 'https',
+                   'HTTP_HOST': 'example.com:4333',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.host_url, 'https://example.com:4333')
+
+    def test_host_url_wo_http_host(self):
+        environ = {'wsgi.url_scheme': 'https',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '4333',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.host_url, 'https://example.com:4333')
+
+    def test_application_url(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.application_url, 'http://example.com/script')
+
+    def test_path_url(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.path_url, 'http://example.com/script/path/info')
+
+    def test_path(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.path, '/script/path/info')
+
+    def test_path_qs_no_qs(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.path_qs, '/script/path/info')
+
+    def test_path_qs_w_qs(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                   'QUERY_STRING': 'foo=bar&baz=bam'
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.path_qs, '/script/path/info?foo=bar&baz=bam')
+
+    def test_url_no_qs(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.url, 'http://example.com/script/path/info')
+
+    def test_url_w_qs(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                   'QUERY_STRING': 'foo=bar&baz=bam'
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.url,
+                         'http://example.com/script/path/info?foo=bar&baz=bam')
+
+    def test_relative_url_to_app_true_wo_leading_slash(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                   'QUERY_STRING': 'foo=bar&baz=bam'
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.relative_url('other/page', True),
+                         'http://example.com/script/other/page')
+
+    def test_relative_url_to_app_true_w_leading_slash(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                   'QUERY_STRING': 'foo=bar&baz=bam'
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.relative_url('/other/page', True),
+                         'http://example.com/other/page')
+
+    def test_relative_url_to_app_false_other_w_leading_slash(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                   'QUERY_STRING': 'foo=bar&baz=bam'
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.relative_url('/other/page', False),
+                         'http://example.com/other/page')
+
+    def test_relative_url_to_app_false_other_wo_leading_slash(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                   'QUERY_STRING': 'foo=bar&baz=bam'
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.relative_url('other/page', False),
+                         'http://example.com/script/path/other/page')
+
+    def test_path_info_pop_empty(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '',
+                  }
+        req = self._makeOne(environ)
+        popped = req.path_info_pop()
+        self.assertEqual(popped, None)
+        self.assertEqual(environ['SCRIPT_NAME'], '/script')
+
+    def test_path_info_pop_just_leading_slash(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/',
+                  }
+        req = self._makeOne(environ)
+        popped = req.path_info_pop()
+        self.assertEqual(popped, '')
+        self.assertEqual(environ['SCRIPT_NAME'], '/script/')
+        self.assertEqual(environ['PATH_INFO'], '')
+
+    def test_path_info_pop_non_empty_no_pattern(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                  }
+        req = self._makeOne(environ)
+        popped = req.path_info_pop()
+        self.assertEqual(popped, 'path')
+        self.assertEqual(environ['SCRIPT_NAME'], '/script/path')
+        self.assertEqual(environ['PATH_INFO'], '/info')
+
+    def test_path_info_pop_non_empty_w_pattern_miss(self):
+        import re
+        PATTERN = re.compile('miss')
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                  }
+        req = self._makeOne(environ)
+        popped = req.path_info_pop(PATTERN)
+        self.assertEqual(popped, None)
+        self.assertEqual(environ['SCRIPT_NAME'], '/script')
+        self.assertEqual(environ['PATH_INFO'], '/path/info')
+
+    def test_path_info_pop_non_empty_w_pattern_hit(self):
+        import re
+        PATTERN = re.compile('path')
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path/info',
+                  }
+        req = self._makeOne(environ)
+        popped = req.path_info_pop(PATTERN)
+        self.assertEqual(popped, 'path')
+        self.assertEqual(environ['SCRIPT_NAME'], '/script/path')
+        self.assertEqual(environ['PATH_INFO'], '/info')
+
+    def test_path_info_pop_skips_empty_elements(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '//path/info',
+                  }
+        req = self._makeOne(environ)
+        popped = req.path_info_pop()
+        self.assertEqual(popped, 'path')
+        self.assertEqual(environ['SCRIPT_NAME'], '/script//path')
+        self.assertEqual(environ['PATH_INFO'], '/info')
+
+    def test_path_info_peek_empty(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '',
+                  }
+        req = self._makeOne(environ)
+        peeked = req.path_info_peek()
+        self.assertEqual(peeked, None)
+        self.assertEqual(environ['SCRIPT_NAME'], '/script')
+        self.assertEqual(environ['PATH_INFO'], '')
+
+    def test_path_info_peek_just_leading_slash(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/',
+                  }
+        req = self._makeOne(environ)
+        peeked = req.path_info_peek()
+        self.assertEqual(peeked, '')
+        self.assertEqual(environ['SCRIPT_NAME'], '/script')
+        self.assertEqual(environ['PATH_INFO'], '/')
+
+    def test_path_info_peek_non_empty(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '80',
+                   'SCRIPT_NAME': '/script',
+                   'PATH_INFO': '/path',
+                  }
+        req = self._makeOne(environ)
+        peeked = req.path_info_peek()
+        self.assertEqual(peeked, 'path')
+        self.assertEqual(environ['SCRIPT_NAME'], '/script')
+        self.assertEqual(environ['PATH_INFO'], '/path')
+
+    def test_urlvars_getter_w_paste_key(self):
+        environ = {'paste.urlvars': {'foo': 'bar'},
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.urlvars, {'foo': 'bar'})
+
+    def test_urlvars_getter_w_wsgiorg_key(self):
+        environ = {'wsgiorg.routing_args': ((), {'foo': 'bar'}),
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.urlvars, {'foo': 'bar'})
+
+    def test_urlvars_getter_wo_keys(self):
+        environ = {}
+        req = self._makeOne(environ)
+        self.assertEqual(req.urlvars, {})
+        self.assertEqual(environ['wsgiorg.routing_args'], ((), {}))
+
+    def test_urlvars_setter_w_paste_key(self):
+        environ = {'paste.urlvars': {'foo': 'bar'},
+                  }
+        req = self._makeOne(environ)
+        req.urlvars = {'baz': 'bam'}
+        self.assertEqual(req.urlvars, {'baz': 'bam'})
+        self.assertEqual(environ['paste.urlvars'], {'baz': 'bam'})
+        self.assert_('wsgiorg.routing_args' not in environ)
+
+    def test_urlvars_setter_w_wsgiorg_key(self):
+        environ = {'wsgiorg.routing_args': ((), {'foo': 'bar'}),
+                   'paste.urlvars': {'qux': 'spam'},
+                  }
+        req = self._makeOne(environ)
+        req.urlvars = {'baz': 'bam'}
+        self.assertEqual(req.urlvars, {'baz': 'bam'})
+        self.assertEqual(environ['wsgiorg.routing_args'], ((), {'baz': 'bam'}))
+        self.assert_('paste.urlvars' not in environ)
+
+    def test_urlvars_setter_wo_keys(self):
+        environ = {}
+        req = self._makeOne(environ)
+        req.urlvars = {'baz': 'bam'}
+        self.assertEqual(req.urlvars, {'baz': 'bam'})
+        self.assertEqual(environ['wsgiorg.routing_args'], ((), {'baz': 'bam'}))
+        self.assert_('paste.urlvars' not in environ)
+
+    def test_urlvars_deleter_w_paste_key(self):
+        environ = {'paste.urlvars': {'foo': 'bar'},
+                  }
+        req = self._makeOne(environ)
+        del req.urlvars
+        self.assertEqual(req.urlvars, {})
+        self.assert_('paste.urlvars' not in environ)
+        self.assertEqual(environ['wsgiorg.routing_args'], ((), {}))
+
+    def test_urlvars_deleter_w_wsgiorg_key_non_empty_tuple(self):
+        environ = {'wsgiorg.routing_args': (('a', 'b'), {'foo': 'bar'}),
+                   'paste.urlvars': {'qux': 'spam'},
+                  }
+        req = self._makeOne(environ)
+        del req.urlvars
+        self.assertEqual(req.urlvars, {})
+        self.assertEqual(environ['wsgiorg.routing_args'], (('a', 'b'), {}))
+        self.assert_('paste.urlvars' not in environ)
+
+    def test_urlvars_deleter_w_wsgiorg_key_empty_tuple(self):
+        environ = {'wsgiorg.routing_args': ((), {'foo': 'bar'}),
+                   'paste.urlvars': {'qux': 'spam'},
+                  }
+        req = self._makeOne(environ)
+        del req.urlvars
+        self.assertEqual(req.urlvars, {})
+        self.assertEqual(environ['wsgiorg.routing_args'], ((), {}))
+        self.assert_('paste.urlvars' not in environ)
+
+    def test_urlvars_deleter_wo_keys(self):
+        environ = {}
+        req = self._makeOne(environ)
+        del req.urlvars
+        self.assertEqual(req.urlvars, {})
+        self.assertEqual(environ['wsgiorg.routing_args'], ((), {}))
+        self.assert_('paste.urlvars' not in environ)
 
     def test_str_cookies_empty_environ(self):
         from webob import Request

@@ -661,3 +661,77 @@ def test_merge_cookies_resp_is_wsgi_callable():
     assert len(L) == 1
     L[0][1]('200 OK', []) # invoke dummy_start_response assertion
     
+def test_body_get_body_is_None_len_app_iter_is_zero():
+    res = Response()
+    res._app_iter = StringIO()
+    res._body = None
+    result = res.body
+    eq_(result, '')
+
+def test_body_set_AttributeError_edgecase():
+    res = Response()
+    del res._app_iter
+    del res._body
+    res.body = 'abc'
+    eq_(res._body, 'abc')
+    eq_(res.content_length, 3)
+    eq_(res._app_iter, None)
+
+def test_cache_control_get():
+    res = Response()
+    eq_(repr(res.cache_control), "<CacheControl ''>")
+    eq_(res.cache_control.max_age, None)
+
+def test_location():
+    # covers webob/response.py:934-938
+    res = Response()
+    res.location = '/test.html'
+    eq_(res.location, '/test.html')
+    req = Request.blank('/')
+    eq_(req.get_response(res).location, 'http://localhost/test.html')
+    res.location = '/test2.html'
+    eq_(req.get_response(res).location, 'http://localhost/test2.html')
+
+def test_request_uri_http():
+    # covers webob/response.py:1152
+    from webob.response import _request_uri
+    environ = {
+        'wsgi.url_scheme': 'http',
+        'SERVER_NAME': 'test.com',
+        'SERVER_PORT': '80',
+        'SCRIPT_NAME': '/foobar',
+    }
+    eq_(_request_uri(environ), 'http://test.com/foobar')
+
+def test_request_uri_no_script_name2():
+    # covers webob/response.py:1160
+    # There is a test_request_uri_no_script_name in test_response.py, but it
+    # sets SCRIPT_NAME.
+    from webob.response import _request_uri
+    environ = {
+        'wsgi.url_scheme': 'http',
+        'HTTP_HOST': 'test.com',
+        'PATH_INFO': '/foobar',
+    }
+    eq_(_request_uri(environ), 'http://test.com/foobar')
+
+def test_cache_control_object_max_age_ten():
+    res = Response()
+    res.cache_control.max_age = 10
+    eq_(repr(res.cache_control), "<CacheControl 'max-age=10'>")
+    eq_(res.headers['cache-control'], 'max-age=10')
+
+def test_cache_control_set_object_error():
+    res = Response()
+    assert_raises(AttributeError, setattr, res.cache_control, 'max_stale', 10)
+
+def test_cache_control_set_asdict():
+    res = Response()
+    res.cache_control = {}
+    eq_(repr(res.cache_control), "<CacheControl ''>")
+
+def test_cache_expires_set():
+    res = Response()
+    res.cache_expires = True
+    eq_(repr(res.cache_control),
+        "<CacheControl 'max-age=0, must-revalidate, no-cache, no-store'>")

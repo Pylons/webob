@@ -112,9 +112,23 @@ class UnicodeMultiDictTestCase(MultiDictTestCase):
         fs = cgi.FieldStorage()
         fs.name = 'a'
         self.assertEqual(d._decode_value(fs).name, 'a')
+
+    def test_encode_key(self):
+        d = self._get_instance()
+        value = unicode('a')
+        self.assertEquals(d._encode_value(value),'a')
         
 class NestedMultiDictTestCase(MultiDictTestCase):
     klass = multidict.NestedMultiDict
+
+    def test_getitem(self):
+        d = self._get_instance()
+        self.assertRaises(KeyError, d.__getitem__, 'z')
+    
+    def test_contains(self):
+        d = self._get_instance()
+        self.assertEquals(d.__contains__('a'), True)
+        self.assertEquals(d.__contains__('z'), False)
 
     def test_add(self):
         d = self._get_instance()
@@ -146,8 +160,11 @@ class NestedMultiDictTestCase(MultiDictTestCase):
 
     def test_nonzero(self):
         d = self._get_instance()
-        assert d
-    
+        self.assertEqual(d.__nonzero__(), True)
+        d.dicts = [{}]
+        self.assertEqual(d.__nonzero__(), False)
+        assert not d
+
 class TrackableMultiDict(MultiDictTestCase):
     klass = multidict.TrackableMultiDict
 
@@ -204,4 +221,18 @@ class TrackableMultiDict(MultiDictTestCase):
         
         _list = [('a', 1), ('b', 2), ('c', 3)]
         for v in _list:
-            assert v in d._items 
+            assert v in d._items
+
+class NoVarsTestCase(unittest.TestCase):
+    klass = multidict.NoVars
+
+    def _get_instance(self):
+        return self.klass()
+
+    def test_getitem(self):
+        d = self._get_instance()
+        self.assertRaises(KeyError, d.__getitem__, 'a')
+
+    def test_setitem(self):
+        d = self._get_instance()
+        self.assertRaises(KeyError, d.__setitem__, 'a')
