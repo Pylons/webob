@@ -3,7 +3,7 @@ import urllib, urlparse, cgi
 if sys.version >= '2.7':
     from io import BytesIO as StringIO
 else:
-    from cStringIO import StringIO
+    from cStringIO import StringIO # pragma nocover
 
 from webob.headers import EnvironHeaders
 from webob.acceptparse import accept_property, MIMEAccept, MIMENilAccept, NoAccept
@@ -20,7 +20,7 @@ __all__ = ['BaseRequest', 'Request']
 if sys.version >= '2.6':
     parse_qsl = urlparse.parse_qsl
 else:
-    parse_qsl = cgi.parse_qsl
+    parse_qsl = cgi.parse_qsl # pragma nocover
 
 class _NoDefault:
     def __repr__(self):

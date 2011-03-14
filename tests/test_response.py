@@ -214,12 +214,134 @@ def test_set_headerlist():
     del res.headerlist
     eq_(res.headerlist, [])
 
+def test_request_uri_no_script_name():
+	from webob.response import _request_uri
+	environ = {
+		'wsgi.url_scheme': 'http',
+		'HTTP_HOST': 'test.com',
+		'SCRIPT_NAME': '/foobar',
+	}
+	eq_(_request_uri(environ), 'http://test.com/foobar')
 
-def test_body_is_none():
+def test_request_uri_https():
+	from webob.response import _request_uri
+	environ = {
+		'wsgi.url_scheme': 'https',
+		'SERVER_NAME': 'test.com',
+		'SERVER_PORT': '443',
+		'SCRIPT_NAME': '/foobar',
+	}
+	eq_(_request_uri(environ), 'https://test.com/foobar')
+	
+def test_body_get_is_none():
     res = Response()
     res._body = None
     res._app_iter = None
     assert_raises(TypeError, Response, app_iter=iter(['a']),
                   body="somebody")
     assert_raises(AttributeError, res.__getattribute__, 'body')
+
+def test_body_get_is_unicode_notverylong():
+    res = Response()
+    res._app_iter = u'foo'
+    res._body = None
+    assert_raises(ValueError, res.__getattribute__, 'body')
+    
+def test_body_get_is_unicode_verylong():
+    res = Response()
+    res._app_iter = u'x' * 51
+    res._body = None
+    assert_raises(ValueError, res.__getattribute__, 'body')
+    
+def test_body_set_not_unicode_or_str():
+    res = Response()
+    assert_raises(TypeError, res.__setattr__, 'body', object())
+    
+def test_body_set_under_body_doesnt_exist():
+    res = Response()
+    del res._body
+    res.body = 'abc'
+    eq_(res._body, 'abc')
+    eq_(res.content_length, 3)
+    eq_(res._app_iter, None)
+    
+def test_body_del():
+    res = Response()
+    res._body = '123'
+    res.content_length = 3
+    res._app_iter = ()
+    del res.body
+    eq_(res._body, None)
+    eq_(res.content_length, None)
+    eq_(res._app_iter, None)
+    
+def test_unicode_body_get_no_charset():
+    res = Response()
+    res.charset = None
+    assert_raises(AttributeError, res.__getattribute__, 'unicode_body')
+
+def test_unicode_body_get_decode():
+    res = Response()
+    res.charset = 'utf-8'
+    res.body = 'La Pe\xc3\xb1a'
+    eq_(res.unicode_body, unicode('La Pe\xc3\xb1a', 'utf-8'))
+    
+def test_unicode_body_set_no_charset():
+    res = Response()
+    res.charset = None
+    assert_raises(AttributeError, res.__setattr__, 'unicode_body', 'abc')
+
+def test_unicode_body_set_not_unicode():
+    res = Response()
+    res.charset = 'utf-8'
+    assert_raises(TypeError, res.__setattr__, 'unicode_body',
+                  'La Pe\xc3\xb1a')
+
+def test_unicode_body_del():
+    res = Response()
+    res._body = '123'
+    res.content_length = 3
+    res._app_iter = ()
+    del res.unicode_body
+    eq_(res._body, None)
+    eq_(res.content_length, None)
+    eq_(res._app_iter, None)
+
+def test_body_file_del():
+    res = Response()
+    res._body = '123'
+    res.content_length = 3
+    res._app_iter = ()
+    del res.body_file
+    eq_(res._body, None)
+    eq_(res.content_length, None)
+    eq_(res._app_iter, None)
+
+def test_write_unicode():
+    res = Response()
+    res.unicode_body = unicode('La Pe\xc3\xb1a', 'utf-8')
+    res.write(u'a')
+    eq_(res.unicode_body, unicode('La Pe\xc3\xb1aa', 'utf-8'))
+
+def test_write_text():
+    res = Response()
+    res.body = 'abc'
+    res.write(u'a')
+    eq_(res.unicode_body, 'abca')
+
+def test_app_iter_get_app_iter_is_None():
+    res = Response()
+    res._app_iter = None
+    res._body = None
+    assert_raises(AttributeError, res.__getattribute__, 'app_iter')
+
+def test_app_iter_del():
+    res = Response()
+    res.content_length = 3
+    res._app_iter = ['123']
+    del res.app_iter
+    eq_(res._app_iter, None)
+    eq_(res._body, None)
+    eq_(res.content_length, None)
+    
     

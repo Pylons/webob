@@ -744,6 +744,21 @@ Content-Disposition: form-data; name="%20%22""
 
 --boundary--'''
 
+def test_content_type_none():
+    r = Request.blank('/', content_type='text/html')
+    assert r.content_type == 'text/html'
+    r.content_type = None
+    
+def test_charset_in_content_type():
+    r = Request({'CONTENT_TYPE':'text/html;charset=ascii'})
+    r.charset = 'shift-jis'
+    assert r.charset == 'shift-jis'
+    
+def test_body_file_seekable():
+    r = Request.blank('/')
+    r.body_file = StringIO('body')
+    assert r.body_file_seekable.read() == 'body'
+
 def test_request_init():
     # port from doctest (docs/reference.txt)
     req = Request.blank('/article?id=1')
