@@ -232,6 +232,11 @@ def test_request_uri_https():
 		'SCRIPT_NAME': '/foobar',
 	}
 	eq_(_request_uri(environ), 'https://test.com/foobar')
+
+def test_app_iter_range_starts_after_iter_end():
+	from webob.response import AppIterRange
+	range = AppIterRange(iter([]), start=1, stop=1)
+	eq_(list(range), [])
 	
 def test_body_get_is_none():
     res = Response()
