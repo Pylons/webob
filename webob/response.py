@@ -1,11 +1,38 @@
-import sys, re, urlparse, zlib, struct
-from datetime import datetime, date, timedelta
+import re
+import urlparse
+import zlib
+import struct
+
+from datetime import datetime
+from datetime import timedelta
 
 from webob.headers import ResponseHeaders
-from webob.cachecontrol import CacheControl, serialize_cache_control
+from webob.cachecontrol import CacheControl
+from webob.cachecontrol import serialize_cache_control
 
-from webob.descriptors import *
-from webob.datetime_utils import *
+from webob.byterange import ContentRange
+
+from webob.descriptors import deprecated_property
+from webob.descriptors import list_header
+from webob.descriptors import converter
+from webob.descriptors import header_getter
+from webob.descriptors import parse_int
+from webob.descriptors import serialize_int
+from webob.descriptors import parse_content_range
+from webob.descriptors import serialize_content_range
+from webob.descriptors import date_header
+from webob.descriptors import parse_etag_response
+from webob.descriptors import serialize_etag_response
+from webob.descriptors import parse_int_safe
+from webob.descriptors import parse_auth
+from webob.descriptors import serialize_auth
+from webob.descriptors import CHARSET_RE
+from webob.descriptors import SCHEME_RE
+
+from webob.datetime_utils import parse_date_delta
+from webob.datetime_utils import serialize_date_delta
+from webob.datetime_utils import timedelta_to_seconds
+
 from webob.cookies import Cookie, Morsel
 from webob.util import status_reasons
 from webob.request import StringIO
@@ -118,7 +145,6 @@ class Response(object):
         must have a ``Content-Length``"""
         headerlist = []
         status = fp.readline().strip()
-        content_length = None
         while 1:
             line = fp.readline().strip()
             if not line:
@@ -802,7 +828,6 @@ class Response(object):
             gzip_f.close()
             f.close()
         else:
-            import zlib
             # Weird feature: http://bugs.python.org/issue5784
             self.body = zlib.decompress(self.body, -15)
             self.content_encoding = None

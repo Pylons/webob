@@ -253,10 +253,34 @@ def test_response_file_body_writelines():
     rbo.writelines(['bar', 'baz'])
     eq_(res.app_iter, ['foo', 'bar', 'baz'])
 
+def test_response_file_body_write_non_str():
+    from webob.response import ResponseBodyFile
+    class FakeResponse:
+        pass
+    res = FakeResponse()
+    rbo = ResponseBodyFile(res)
+    assert_raises(TypeError, rbo.write, object())
+
+def test_response_file_body_write_empty_app_iter():
+    from webob.response import ResponseBodyFile
+    class FakeResponse:
+        pass
+    res = FakeResponse()
+    res._app_iter = res.app_iter = None
+    res.body = 'foo'
+    rbo = ResponseBodyFile(res)
+    rbo.write('baz')
+    eq_(res.app_iter, ['foo', 'baz'])
+
 def test_response_file_body_close_not_implemented():
     from webob.response import ResponseBodyFile
     rbo = ResponseBodyFile(None)
     assert_raises(NotImplementedError, rbo.close)
+
+def test_response_file_body_repr():
+    from webob.response import ResponseBodyFile
+    rbo = ResponseBodyFile('yo')
+    eq_(repr(rbo), "<body_file for 'yo'>")
 
 def test_body_get_is_none():
     res = Response()
@@ -383,3 +407,26 @@ def test_charset_set_no_content_type_header():
     res = Response()
     res.headers.pop('Content-Type', None)
     assert_raises(AttributeError, res.__setattr__, 'charset', 'utf-8')
+
+def test_charset_del_no_content_type_header():
+    res = Response()
+    res.headers.pop('Content-Type', None)
+    eq_(res._charset__del(), None)
+
+def test_content_type_params_get_no_semicolon_in_content_type_header():
+    res = Response()
+    res.headers['Content-Type'] = 'foo'
+    eq_(res.content_type_params, {})
+
+def test_content_type_params_set_value_dict_empty():
+    res = Response()
+    res.headers['Content-Type'] = 'foo;bar'
+    res.content_type_params = None
+    eq_(res.headers['Content-Type'], 'foo')
+
+def test_content_type_params_set_ok_param_quoting():
+    res = Response()
+    res.content_type_params = {'a':''}
+    eq_(res.headers['Content-Type'], 'text/html; a=""')
+    
+    

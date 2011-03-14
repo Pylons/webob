@@ -25,13 +25,13 @@ Coverage
 
 - webob.dec (rafrombrc)
 
-- webob.descriptors
+- webob.descriptors (reedobrien)
 
-- webob.etag
+- webob.etag (shentonfreude)
 
-- webob.multidict
+- webob.multidict (joe)
 
-- webob.request
+- webob.request (tseaver)
 
 - webob.response (caseman/mcdonc)
 
