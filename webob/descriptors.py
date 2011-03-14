@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import warnings
-import re, textwrap
+import re
 from datetime import datetime, date
 
 from webob.byterange import Range, ContentRange
