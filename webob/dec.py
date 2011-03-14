@@ -98,7 +98,7 @@ class wsgify(object):
         if self.RequestClass is not self.__class__.RequestClass:
             args.append('RequestClass=%r' % self.RequestClass)
         if self.args:
-            args.append('args=%r' % self.args)
+            args.append('args=%r' % (self.args,))
         my_name = self.__class__.__name__
         if self.middleware_wraps is not None:
             my_name = '%s.middleware' % my_name
