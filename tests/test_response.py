@@ -247,3 +247,11 @@ def test_body_set_not_unicode_or_str():
     res = Response()
     assert_raises(TypeError, res.__setattr__, 'body', object())
     
+def test_body_set_under_body_doesnt_exist():
+    res = Response()
+    del res._body
+    res.body = 'abc'
+    eq_(res._body, 'abc')
+    eq_(res.content_length, 3)
+    eq_(res._app_iter, None)
+    
