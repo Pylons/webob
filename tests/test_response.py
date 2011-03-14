@@ -213,3 +213,13 @@ def test_set_headerlist():
     eq_(res.headerlist, [('Content-Type', 'text/html; charset=UTF-8')])
     del res.headerlist
     eq_(res.headerlist, [])
+
+
+def test_body_is_none():
+    res = Response()
+    res._body = None
+    res._app_iter = None
+    assert_raises(TypeError, Response, app_iter=iter(['a']),
+                  body="somebody")
+    assert_raises(AttributeError, res.__getattribute__, 'body')
+    
