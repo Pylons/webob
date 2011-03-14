@@ -801,3 +801,34 @@ def test_request_init():
                                            ('Content-Type', 'application/x-www-urlencoded'),
                                            ('Host', 'localhost:80')]
     assert req.environ['CONTENT_TYPE'] == 'application/x-www-urlencoded'
+
+def test_request_query_and_POST_vars():
+    # port from doctest (docs/reference.txt)
+
+    # Query & POST variables
+    req = Request.blank('/test?check=a&check=b&name=Bob')
+    from webob.multidict import TrackableMultiDict
+    GET = TrackableMultiDict([('check', 'a'), ('check', 'b'), ('name', 'Bob')])
+    assert req.str_GET == GET
+    assert req.str_GET['check'] == 'b'
+    assert req.str_GET.getall('check') == ['a', 'b']
+    assert req.str_GET.items() == [('check', 'a'), ('check', 'b'), ('name', 'Bob')]
+
+    from webob.multidict import NoVars
+    assert isinstance(req.str_POST, NoVars)
+    assert req.str_POST.items() == []  # NoVars can be read like a dict, but not written
+    req.method = 'POST'
+    req.body = 'name=Joe&email=joe@example.com'
+    from webob.multidict import MultiDict
+    assert req.str_POST == MultiDict([('name', 'Joe'), ('email', 'joe@example.com')])
+    assert req.str_POST['name'] == 'Joe'
+
+    from webob.multidict import NestedMultiDict
+    assert isinstance(req.str_params, NestedMultiDict)
+    assert req.str_params.items() == [('check', 'a'),
+                                      ('check', 'b'),
+                                      ('name', 'Bob'),
+                                      ('name', 'Joe'),
+                                      ('email', 'joe@example.com')]
+    assert req.str_params['name'] == 'Bob'
+    assert req.str_params.getall('name') == ['Bob', 'Joe']
