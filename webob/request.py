@@ -38,8 +38,8 @@ class BaseRequest(object):
     ## in memory):
     request_body_tempfile_limit = 10*1024
 
-    def __init__(self, environ=None, environ_getter=None, charset=NoDefault, unicode_errors=NoDefault,
-                 decode_param_names=NoDefault, **kw):
+    def __init__(self, environ=None, environ_getter=None, charset=NoDefault,
+                 unicode_errors=NoDefault, decode_param_names=NoDefault, **kw):
         if environ_getter is not None:
             raise ValueError('The environ_getter argument is no longer '
                              'supported')
