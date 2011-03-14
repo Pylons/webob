@@ -286,3 +286,23 @@ def test_unicode_body_get_decode():
     res.body = 'La Pe\xc3\xb1a'
     eq_(res.unicode_body, unicode('La Pe\xc3\xb1a', 'utf-8'))
     
+def test_unicode_body_set_no_charset():
+    res = Response()
+    res.charset = None
+    assert_raises(AttributeError, res.__setattr__, 'unicode_body', 'abc')
+
+def test_unicode_body_set_not_unicode():
+    res = Response()
+    res.charset = 'utf-8'
+    assert_raises(TypeError, res.__setattr__, 'unicode_body',
+                  'La Pe\xc3\xb1a')
+
+def test_unicode_body_del():
+    res = Response()
+    res._body = '123'
+    res.content_length = 3
+    res._app_iter = ()
+    del res.unicode_body
+    eq_(res._body, None)
+    eq_(res.content_length, None)
+    eq_(res._app_iter, None)
