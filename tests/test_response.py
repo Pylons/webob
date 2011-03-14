@@ -677,26 +677,10 @@ def test_body_set_AttributeError_edgecase():
     eq_(res.content_length, 3)
     eq_(res._app_iter, None)
 
-def test_cache_control():
-    # covers webob/response.py:721-734, 761
+def test_cache_control_get():
     res = Response()
     eq_(repr(res.cache_control), "<CacheControl ''>")
     eq_(res.cache_control.max_age, None)
-
-    res.cache_control.properties['max-age'] = None
-    eq_(res.cache_control.max_age, -1)
-
-    res.cache_control.max_age = 10
-    eq_(repr(res.cache_control), "<CacheControl 'max-age=10'>")
-    eq_(res.headers['cache-control'], 'max-age=10')
-
-    assert_raises(AttributeError, setattr, res.cache_control, 'max_stale', 10)
-
-    res.cache_control = {}
-    eq_(repr(res.cache_control), "<CacheControl ''>")
-
-    res.cache_expires = True
-    eq_(repr(res.cache_control), "<CacheControl 'max-age=0, must-revalidate, no-cache, no-store'>")
 
 def test_location():
     # covers webob/response.py:934-938
@@ -730,3 +714,24 @@ def test_request_uri_no_script_name2():
         'PATH_INFO': '/foobar',
     }
     eq_(_request_uri(environ), 'http://test.com/foobar')
+
+def test_cache_control_object_max_age_ten():
+    res = Response()
+    res.cache_control.max_age = 10
+    eq_(repr(res.cache_control), "<CacheControl 'max-age=10'>")
+    eq_(res.headers['cache-control'], 'max-age=10')
+
+def test_cache_control_set_object_error():
+    res = Response()
+    assert_raises(AttributeError, setattr, res.cache_control, 'max_stale', 10)
+
+def test_cache_control_set_asdict():
+    res = Response()
+    res.cache_control = {}
+    eq_(repr(res.cache_control), "<CacheControl ''>")
+
+def test_cache_expires_set():
+    res = Response()
+    res.cache_expires = True
+    eq_(repr(res.cache_control),
+        "<CacheControl 'max-age=0, must-revalidate, no-cache, no-store'>")
