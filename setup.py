@@ -1,7 +1,7 @@
 from setuptools import setup
 import sys, os
 
-version = '1.0.4'
+version = '1.0.5'
 
 setup(
     name='WebOb',

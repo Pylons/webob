@@ -3,6 +3,10 @@ News
 
 .. contents::
 
+1.0.5
+------
+* Restore Python 2.4 compatibility.
+
 1.0.4
 ------
 
