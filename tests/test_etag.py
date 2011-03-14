@@ -192,7 +192,6 @@ class ETagMatcherTests(unittest.TestCase):
 
     def test_parse_commasep(self):
         matcher = self._makeOne(("ETAG1",), ("WEAK",))
-        import pdb; pdb.set_trace()
         et = matcher.parse('ONE, TWO')
         self.assertEqual(et.etags, ['ONE', 'TWO'])
         self.assertEqual(et.weak_etags, [])
