@@ -152,6 +152,28 @@ def test_del_request():
     eq_(res.environ, None)
     eq_(res.request, None)
 
+def test_set_environ_via_request_subterfuge():
+    class FakeRequest:
+        def __init__(self, env):
+            self.environ = env
+    res = Response()
+    res.RequestClass = FakeRequest
+    res.request = {'action': 'dwim'}
+    eq_(res.environ, {'action': 'dwim'})
+    ok_(isinstance(res.request, FakeRequest))
+    eq_(res.request.environ, res.environ)
+
+def test_set_request():
+    res = Response()
+    class FakeRequest:
+        environ = {'foo': 'bar'}
+    res.request = FakeRequest
+    eq_(res.request, FakeRequest)
+    eq_(res.environ, FakeRequest.environ)
+    res.request = None
+    eq_(res.environ, None)
+    eq_(res.request, None)
+
 def test_content_length():
     r0 = Response('x'*10, content_length=10)
 
