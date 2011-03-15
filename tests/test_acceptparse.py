@@ -53,3 +53,11 @@ class TestAccept(TestCase):
         # The "q" value should not be there.
         assert accept._parsed == [('da', 1),
                                   ('en-gb', 0.80000000000000004)]
+
+    def test_init_accept_invalid_q_value(self):
+        from webob.acceptparse import Accept
+        name, value = ('Accept-Language', 'da, en-gb;q=foo')
+        accept = Accept(name, value)
+        # I can't get to cover line 40-41 (webob.acceptparse) as the regex
+        # will prevent from hitting these lines (aconrad)
+        assert accept._parsed == [('da', 1), ('en-gb', 1)]
