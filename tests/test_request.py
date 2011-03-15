@@ -1971,3 +1971,67 @@ class UnseekableInput(object):
 class UnseekableInputWithSeek(UnseekableInput):
     def seek(self, pos, rel=0):
         raise IOError("Invalid seek!")
+
+
+class FakeCGIBodyTests(unittest.TestCase):
+
+    def test_encode_multipart_value_type_options(self):
+        # TODO: cover webob/request.py:1282
+        #       I'm not sure this code is actually reachable
+        pass
+
+    def test_encode_multipart_no_boundary(self):
+        from webob.request import FakeCGIBody
+        body = FakeCGIBody({}, 'multipart/form-data')
+        self.assertRaises(ValueError, body.read)
+
+    def test_repr(self):
+        from webob.request import FakeCGIBody
+        body = FakeCGIBody({'bananas': 'bananas'}, 'multipart/form-data; boundary=foobar')
+        body.read(1)
+        import re
+        self.assertEqual(
+            re.sub(r'\b0x[0-9a-f]+\b', '<whereitsat>', repr(body)),
+            "<FakeCGIBody at <whereitsat> viewing {'bananas': 'ba...nas'} at position 1>",
+        )
+
+    def test_seek_tell(self):
+        from webob.request import FakeCGIBody
+        body = FakeCGIBody({'bananas': 'bananas'}, 'multipart/form-data; boundary=foobar')
+        self.assertEqual(body.tell(), 0)
+        body.seek(1)
+        self.assertEqual(body.tell(), 1)
+        self.assertRaises(IOError, body.seek, 0, 2)
+
+    def test_iter(self):
+        from webob.request import FakeCGIBody
+        body = FakeCGIBody({'bananas': 'bananas'}, 'multipart/form-data; boundary=foobar')
+        self.assertEqual(list(body), [
+            '--foobar\r\n',
+             'Content-Disposition: form-data; name="bananas"\r\n',
+             '\r\n',
+             'bananas\r\n',
+             '--foobar--',
+         ])
+
+    def test_readline(self):
+        from webob.request import FakeCGIBody
+        body = FakeCGIBody({'bananas': 'bananas'}, 'multipart/form-data; boundary=foobar')
+        self.assertEqual(body.readline(), '--foobar\r\n')
+        self.assertEqual(body.readline(), 'Content-Disposition: form-data; name="bananas"\r\n')
+        self.assertEqual(body.readline(), '\r\n')
+        self.assertEqual(body.readline(), 'bananas\r\n')
+        self.assertEqual(body.readline(), '--foobar--')
+        # subsequent calls to readline will return ''
+
+    def test_read_bad_content_type(self):
+        from webob.request import FakeCGIBody
+        body = FakeCGIBody({'bananas': 'bananas'}, 'application/jibberjabber')
+        self.assertRaises(AssertionError, body.read)
+
+    def test_read_urlencoded(self):
+        from webob.request import FakeCGIBody
+        body = FakeCGIBody({'bananas': 'bananas'}, 'application/x-www-form-urlencoded')
+        self.assertEqual(body.read(), 'bananas=bananas')
+
+
