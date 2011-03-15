@@ -959,6 +959,43 @@ class BaseRequestTests(unittest.TestCase):
             else:
                 self.assertEqual(clone.environ[k], v)
 
+    def test_remove_conditional_headers_accept_encoding(self):
+        from webob import Request
+        req = Request.blank('/')
+        req.accept_encoding='gzip,deflate'
+        req.remove_conditional_headers()
+        self.assertEqual(bool(req.accept_encoding), False)
+
+    def test_remove_conditional_headers_if_modified_since(self):
+        from datetime import datetime
+        from webob import Request, UTC
+        req = Request.blank('/')
+        req.if_modified_since = datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
+        req.remove_conditional_headers()
+        self.assertEqual(req.if_modified_since, None)
+
+    def test_remove_conditional_headers_if_none_match(self):
+        from webob import Request
+        req = Request.blank('/')
+        req.if_none_match = 'foo, bar'
+        req.remove_conditional_headers()
+        self.assertEqual(bool(req.if_none_match), False)
+
+    def test_remove_conditional_headers_if_range(self):
+        from webob import Request
+        req = Request.blank('/')
+        req.if_range = 'foo, bar'
+        req.remove_conditional_headers()
+        self.assertEqual(bool(req.if_range), False)
+
+    def test_remove_conditional_headers_range(self):
+        from webob import Request
+        req = Request.blank('/')
+        req.range = 'bytes=0-100'
+        req.remove_conditional_headers()
+        self.assertEqual(req.range, None)
+
+
     # is_body_seekable
     # make_body_seekable
     # copy_body
