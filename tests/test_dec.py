@@ -54,6 +54,18 @@ class DecoratorTests(unittest.TestCase):
                          "wsgify(tests.test_dec.test_app, "
                          "kwargs={'strarg': '%s'})" % resp_str)
 
+    def test_wsgify_raise_httpexception(self):
+        from webob.exc import HTTPBadRequest
+        @wsgify
+        def test_app(req):
+            raise HTTPBadRequest
+        resp = self._testit(test_app, '/a url')
+        self.assert_(resp.body.startswith('400 Bad Request'))
+        self.assertEqual(resp.content_type, 'text/plain')
+        self.assertEqual(resp.charset, 'UTF-8')
+        self.assertEqual('%r' % test_app,
+                         "wsgify(tests.test_dec.test_app)")
+
     def test_wsgify_no___get__(self):
         # use a class instance instead of a fn so we wrap something w/
         # no __get__
