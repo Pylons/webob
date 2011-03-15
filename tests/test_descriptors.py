@@ -194,6 +194,11 @@ def test_parse_list():
     result = parse_list('avalue,avalue2')
     eq_(result, ('avalue', 'avalue2'))
 
+def test_parse_list_none():
+    from webob.descriptors import parse_list
+    result = parse_list(None)
+    eq_(result, None)
+
 def test_parse_list_unicode():
     from webob.descriptors import parse_list
     result = parse_list(u'avalue')
@@ -206,10 +211,15 @@ def test_serilize_list():
     result = serialize_list(('avalue', 'avalue2'))
     eq_(result, 'avalue, avalue2')
 
+def test_serilize_list_string():
+    from webob.descriptors import serialize_list
+    result = serialize_list('avalue')
+    eq_(result, 'avalue')
+
 def test_serilize_list_unicode():
     from webob.descriptors import serialize_list
-    result = serialize_list((u'avalue', u'avalue2'))
-    eq_(result, 'avalue, avalue2')
+    result = serialize_list(u'avalue')
+    eq_(result, u'avalue')
 
 def test_converter_date():
     import datetime
@@ -258,6 +268,14 @@ def test_deprecated_property_get():
                               'DEPRECATED',
                               warning=False)
     assert_raises(DeprecationWarning, dep.__get__, dep)
+
+def test_deprecated_property_get_none():
+    from webob.descriptors import deprecated_property
+    dep = deprecated_property(None,
+                              'deprecated_property',
+                              'DEPRECATED',
+                              warning=False)
+    eq_(dep.__get__(None), dep)
 
 def test_deprecated_property_set():
     from webob.descriptors import deprecated_property
