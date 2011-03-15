@@ -810,31 +810,117 @@ class BaseRequestTests(unittest.TestCase):
         self.assert_('wsgiorg.routing_args' not in environ)
 
     def test_str_cookies_empty_environ(self):
-        from webob import Request
-        req = Request.blank('/')
+        req = self._makeOne({})
         self.assertEqual(req.str_cookies, {})
 
     def test_str_cookies_w_webob_parsed_cookies_matching_source(self):
-        from webob import Request
         environ = {
             'HTTP_COOKIE': 'a=b',
             'webob._parsed_cookies': ('a=b', {'a': 'b'}),
         }
-        req = Request.blank('/', environ)
+        req = self._makeOne(environ)
         self.assertEqual(req.str_cookies, {'a': 'b'})
 
     def test_str_cookies_w_webob_parsed_cookies_mismatched_source(self):
-        from webob import Request
         environ = {
             'HTTP_COOKIE': 'a=b',
             'webob._parsed_cookies': ('a=b;c=d', {'a': 'b', 'c': 'd'}),
         }
-        req = Request.blank('/', environ)
+        req = self._makeOne(environ)
         self.assertEqual(req.str_cookies, {'a': 'b'})
 
-    # is_xhr
+    def test_is_xhr_no_header(self):
+        req = self._makeOne({})
+        self.assert_(not req.is_xhr)
+
+    def test_is_xhr_header_miss(self):
+        environ = {'HTTP_X_REQUESTED_WITH': 'notAnXMLHTTPRequest'}
+        req = self._makeOne(environ)
+        self.assert_(not req.is_xhr)
+
+    def test_is_xhr_header_hit(self):
+        environ = {'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'}
+        req = self._makeOne(environ)
+        self.assert_(req.is_xhr)
+
     # host
+    def test_host_getter_w_HTTP_HOST(self):
+        environ = {'HTTP_HOST': 'example.com:8888'}
+        req = self._makeOne(environ)
+        self.assertEqual(req.host, 'example.com:8888')
+
+    def test_host_getter_wo_HTTP_HOST(self):
+        environ = {'SERVER_NAME': 'example.com',
+                   'SERVER_PORT': '8888'}
+        req = self._makeOne(environ)
+        self.assertEqual(req.host, 'example.com:8888')
+
+    def test_host_setter(self):
+        environ = {}
+        req = self._makeOne(environ)
+        req.host = 'example.com:8888'
+        self.assertEqual(environ['HTTP_HOST'], 'example.com:8888')
+
+    def test_host_deleter_hit(self):
+        environ = {'HTTP_HOST': 'example.com:8888'}
+        req = self._makeOne(environ)
+        del req.host
+        self.assert_('HTTP_HOST' not in environ)
+
+    def test_host_deleter_miss(self):
+        environ = {}
+        req = self._makeOne(environ)
+        del req.host # doesn't raise
+
     # body
+    def test_body_getter(self):
+        INPUT = self._makeStringIO('input')
+        environ = {'wsgi.input': INPUT,
+                   'webob.is_body_seekable': True,
+                   'CONTENT_LENGTH': len('input'),
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.body, 'input')
+        self.assertEqual(req.content_length, len('input'))
+    def test_body_setter_None(self):
+        INPUT = self._makeStringIO('input')
+        environ = {'wsgi.input': INPUT,
+                   'webob.is_body_seekable': True,
+                   'CONTENT_LENGTH': len('input'),
+                  }
+        req = self._makeOne(environ)
+        req.body = None
+        self.assertEqual(req.body, '')
+        self.assertEqual(req.content_length, 0)
+        self.assert_(req.is_body_seekable)
+    def test_body_setter_non_string_raises(self):
+        req = self._makeOne({})
+        def _test():
+            req.body = object()
+        self.assertRaises(TypeError, _test)
+    def test_body_setter_value(self):
+        BEFORE = self._makeStringIO('before')
+        environ = {'wsgi.input': BEFORE,
+                   'webob.is_body_seekable': True,
+                   'CONTENT_LENGTH': len('before'),
+                  }
+        req = self._makeOne(environ)
+        req.body = 'after'
+        self.assertEqual(req.body, 'after')
+        self.assertEqual(req.content_length, len('after'))
+        self.assert_(req.is_body_seekable)
+    def test_body_deleter_None(self):
+        INPUT = self._makeStringIO('input')
+        environ = {'wsgi.input': INPUT,
+                   'webob.is_body_seekable': True,
+                   'CONTENT_LENGTH': len('input'),
+                  }
+        req = self._makeOne(environ)
+        del req.body
+        self.assertEqual(req.body, '')
+        self.assertEqual(req.content_length, 0)
+        self.assert_(req.is_body_seekable)
+
     # str_POST
     # POST
     # str_GET
