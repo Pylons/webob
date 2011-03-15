@@ -101,3 +101,33 @@ class TestExistProp(unittest.TestCase):
         obj.prop = True
         assert obj.prop is True
         assert obj.properties['prop'] is None
+
+    def test_del_value(self):
+        obj = self.make_one()()
+        del obj.prop
+        assert 'prop' in obj.properties
+
+
+class TestValueProp(unittest.TestCase):
+    """
+    Test webob.cachecontrol.exists_property
+    """
+    
+    def setUp(self):
+        pass
+
+    def make_one(self):
+        from webob.cachecontrol import value_property
+
+        class Dummy(object):
+            properties = dict(prop=1)
+            type = 'dummy'
+            prop = value_property('prop', 'dummy')
+            badprop = value_property('badprop', 'big_dummy')
+            
+        return Dummy
+
+    def test_get_on_class(self):
+        from webob.cachecontrol import value_property
+        Dummy = self.make_one()
+        assert isinstance(Dummy.prop, value_property), Dummy.prop
