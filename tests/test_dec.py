@@ -20,10 +20,10 @@ class DecoratorTests(unittest.TestCase):
         self.assertEqual(resp.content_length, 45)
         self.assertEqual(resp.content_type, 'text/html')
         self.assertEqual(resp.charset, 'UTF-8')
-        self.assertEqual(test_app.__repr__(), 'wsgify(tests.test_dec.test_app)')
+        self.assertEqual('%r' % (test_app,), 'wsgify(tests.test_dec.test_app)')
 
     def test_wsgify_empty_repr(self):
-        self.assertEqual(wsgify().__repr__(), 'wsgify()')
+        self.assertEqual('%r' % (wsgify(),), 'wsgify()')
 
     def test_wsgify_args(self):
         resp_str = 'hey hey my my'
@@ -35,7 +35,7 @@ class DecoratorTests(unittest.TestCase):
         self.assertEqual(resp.content_length, 13)
         self.assertEqual(resp.content_type, 'text/html')
         self.assertEqual(resp.charset, 'UTF-8')
-        self.assertEqual(test_app.__repr__(),
+        self.assertEqual('%r' % (test_app,),
                          "wsgify(tests.test_dec.test_app, args=('%s',))" % resp_str)
 
     def test_wsgify_kwargs(self):
@@ -48,7 +48,7 @@ class DecoratorTests(unittest.TestCase):
         self.assertEqual(resp.content_length, 13)
         self.assertEqual(resp.content_type, 'text/html')
         self.assertEqual(resp.charset, 'UTF-8')
-        self.assertEqual(test_app.__repr__(),
+        self.assertEqual('%r' % test_app,
                          "wsgify(tests.test_dec.test_app, "
                          "kwargs={'strarg': '%s'})" % resp_str)
 
@@ -133,7 +133,7 @@ class DecoratorTests(unittest.TestCase):
         self.assertEqual(resp.content_length, 45)
         self.assertEqual(resp.content_type, 'text/html')
         self.assertEqual(resp.charset, 'UTF-8')
-        self.assertEqual(test_app.__repr__(), "wsgify(tests.test_dec.test_app, "
+        self.assertEqual('%r' % (test_app,), "wsgify(tests.test_dec.test_app, "
                          "RequestClass=<class 'tests.test_dec.MyRequest'>)")
 
     def test_middleware(self):
@@ -146,7 +146,7 @@ class DecoratorTests(unittest.TestCase):
         def show_vars(req):
             return resp_str % (sorted(req.urlvars.items()))
         show_vars2 = set_urlvar(show_vars, a=1, b=2)
-        self.assertEqual(show_vars2.__repr__(),
+        self.assertEqual('%r' % (show_vars2,),
                          'wsgify.middleware(tests.test_dec.set_urlvar)'
                          '(wsgify(tests.test_dec.show_vars), a=1, b=2)')
         resp = self._testit(show_vars2, '/path')
