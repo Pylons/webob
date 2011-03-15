@@ -13,9 +13,13 @@ def test_range_for_length():
     range = Range( ((0,99), (100,199) ) )
     assert_equal( range.range_for_length( 'None'), None )
 
-def test_range_content_range():
+def test_range_content_range_length_none():
     range = Range( ((0, 100),) )
     assert_equal( range.content_range( None ), None )
+
+def test_range_content_range_length_ok():
+    range = Range( ((0, 100),) )
+    assert_true( range.content_range( 100 ).__class__, ContentRange )
 
 def test_range_for_length_more_than_one_range():
     # More than one range
@@ -75,6 +79,10 @@ def test_range_str_4():
     # Manually set test values
     range.ranges = ( (0, -100), )
     assert_raises( ValueError, range.__str__ )
+
+def test_range_repr():
+    range = Range( ((0, 99),) )
+    assert_true( range.__repr__(), '<Range bytes 0-98>' )
 
 def test_parse_valid_input():
     range = Range( ((0, 100),) )
@@ -143,6 +151,10 @@ def test_contentrange_str_start_none():
     contentrange.start = None
     contentrange.stop = None
     assert_equal( contentrange.__str__(), 'bytes */100' )
+
+def test_contentrange_iter():
+    contentrange = ContentRange( 0, 99, 100 )
+    assert_true( type(contentrange.__iter__()), iter )
 
 def test_cr_parse_ok():
     contentrange = ContentRange( 0, 99, 100 )
