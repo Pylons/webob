@@ -306,6 +306,89 @@ def test_parse_if_range_date():
     eq_(type(ifr), IfRange)
     eq_(type(ifr.etag), ETagMatcher)
 
-# def test_serialize_if_range():
-#     ...
+def test_serialize_if_range_string():
+    from webob.descriptors import serialize_if_range
+    val = serialize_if_range("avalue")
+    eq_(val, "avalue")
 
+def test_serialize_if_range_unicode():
+    from webob.descriptors import serialize_if_range
+    val = serialize_if_range(u"avalue")
+    eq_(val, u"avalue")
+
+def test_serialize_if_range_datetime():
+    import datetime
+    from webob.descriptors import serialize_if_range
+    UTC = GMT()
+    val = serialize_if_range(datetime.datetime(1994, 11, 15, 8, 12, 31, tzinfo=UTC))
+    eq_(val, "Tue, 15 Nov 1994 08:12:31 GMT")
+
+def test_serialize_if_range_other():
+    from webob.descriptors import serialize_if_range
+    val = serialize_if_range(123456)
+    eq_(val, '123456')
+
+def test_parse_range_none():
+    from webob.descriptors import parse_range
+    val = parse_range(None)
+    eq_(val, None)
+
+def test_parse_range_range():
+    from webob.byterange import Range
+    from webob.descriptors import parse_range
+    val = parse_range("bytes=1-500")
+    eq_(type(val), type(Range.parse("bytes=1-500")))
+    eq_(val.ranges, Range.parse("bytes=1-500").ranges)
+
+def test_serialize_range_none():
+    from webob.descriptors import serialize_range
+    val = serialize_range(None)
+    eq_(val, None)
+
+def test_serialize_range():
+    from webob.descriptors import serialize_range
+    val = serialize_range((1,500))
+    eq_(val, 'bytes=1-499')
+
+def test_serialize_invalid_len():
+    from webob.descriptors import serialize_range
+    assert_raises(ValueError, serialize_range, (1,))
+
+def test_parse_int_none():
+    from webob.descriptors import parse_int
+    val = parse_int(None)
+    eq_(val, None)
+
+def test_parse_int_emptystr():
+    from webob.descriptors import parse_int
+    val = parse_int('')
+    eq_(val, None)
+
+def test_parse_int():
+    from webob.descriptors import parse_int
+    val = parse_int('123')
+    eq_(val, 123)
+
+def test_parse_int_invalid():
+    from webob.descriptors import parse_int
+    assert_raises(ValueError, parse_int, 'abc')
+
+def test_parse_int_safe_none():
+    from webob.descriptors import parse_int_safe
+    eq_(parse_int_safe(None), None)
+
+def test_parse_int_safe_emptystr():
+    from webob.descriptors import parse_int_safe
+    eq_(parse_int_safe(''), None)
+
+def test_parse_int_safe():
+    from webob.descriptors import parse_int_safe
+    eq_(parse_int_safe('123'), 123)
+
+def test_parse_int_safe_invalid():
+    from webob.descriptors import parse_int_safe
+    eq_(parse_int_safe('abc'), None)
+
+def test_serialize_int():
+    from webob.descriptors import serialize_int
+    assert serialize_int is str
