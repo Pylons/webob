@@ -22,6 +22,16 @@ class GMT(tzinfo):
     def dst(self, dt):
         return self.ZERO
 
+
+class MockDescriptor:
+    _val = None
+    def __get__(self, obj, type=None):
+        return self._val
+    def __set__(self, obj, val):
+        self._val = val
+    def __delete__(self, obj):
+        self._val = None
+
 def test_environ_getter_only_key():
     from webob.descriptors import environ_getter
     req = Request.blank('/')
@@ -265,6 +275,69 @@ def test_deprecated_property_delete():
                               warning=False)
     assert_raises(DeprecationWarning, dep.__delete__, dep)
 
+def test_deprecated_property_repr():
+    from webob.descriptors import deprecated_property
+    mock = MockDescriptor()
+    dep = deprecated_property(mock,
+                              'mock_property',
+                              'DEPRECATED')
+    assert dep.__repr__().startswith(
+        "<Deprecated attribute mock_property: "
+        "<tests.test_descriptors.MockDescriptor instance at")
+
+import warnings
+with warnings.catch_warnings(record=True) as w:
+    # Cause all warnings to always be triggered.
+    warnings.simplefilter("always")
+    # Trigger a warning.
+    def test_deprecated_property_warn_get():
+        from webob.descriptors import deprecated_property
+        mock = MockDescriptor()
+        dep = deprecated_property(mock,
+                                  'mock_property',
+                                  'DEPRECATED')
+        dep.__get__(mock)
+    test_deprecated_property_warn_get()
+    # Verify some things
+    assert len(w) == 1
+    assert issubclass(w[-1].category, DeprecationWarning)
+    assert "deprecated" in str(w[-1].message)
+
+with warnings.catch_warnings(record=True) as w:
+    # Cause all warnings to always be triggered.
+    warnings.simplefilter("always")
+    # Trigger a warning.
+    def test_deprecated_property_warn_set():
+        from webob.descriptors import deprecated_property
+        mock = MockDescriptor()
+        dep = deprecated_property(mock,
+                                  'mock_property',
+                                  'DEPRECATED')
+        dep.__set__(mock, 'avalue')
+    test_deprecated_property_warn_set()
+    # Verify some things
+    assert len(w) == 1
+    assert issubclass(w[-1].category, DeprecationWarning)
+    assert "deprecated" in str(w[-1].message)
+
+with warnings.catch_warnings(record=True) as w:
+    # Cause all warnings to always be triggered.
+    warnings.simplefilter("always")
+    # Trigger a warning.
+    def test_deprecated_property_warn_delete():
+        from webob.descriptors import deprecated_property
+        mock = MockDescriptor()
+        dep = deprecated_property(mock,
+                                  'mock_property',
+                                  'DEPRECATED')
+        dep.__delete__(mock)
+    test_deprecated_property_warn_set()
+    # Verify some things
+    assert len(w) == 1
+    assert issubclass(w[-1].category, DeprecationWarning)
+    assert "deprecated" in str(w[-1].message)
+
+
 def test_parse_etag_response():
     from webob.descriptors import parse_etag_response
     etresp = parse_etag_response("etag")
@@ -426,19 +499,81 @@ def test_serialize_content_range():
     eq_(serialize_content_range((0, 500)), 'bytes 0-499/*')
     eq_(serialize_content_range((0, 500, 1234)), 'bytes 0-499/1234')
 
-def test_parse_auth_params():
+def test_parse_auth_params_leading_capital_letter():
     from webob.descriptors import parse_auth_params
     val = parse_auth_params('Basic Realm=WebOb')
     eq_(val, {'ealm': 'WebOb'})
+
+def test_parse_auth_params_trailing_capital_letter():
+    from webob.descriptors import parse_auth_params
     val = parse_auth_params('Basic realM=WebOb')
     eq_(val, {})
+
+def test_parse_auth_params_doublequotes():
+    from webob.descriptors import parse_auth_params
     val = parse_auth_params('Basic realm="Web Object"')
     eq_(val, {'realm': 'Web Object'})
+
+def test_parse_auth_params_multiple_values():
+    from webob.descriptors import parse_auth_params
     val = parse_auth_params("foo='blah &&234', qop=foo, nonce='qwerty1234'")
     eq_(val, {'nonce': "'qwerty1234'", 'foo': "'blah &&234'", 'qop': 'foo'})
+
+def test_parse_auth_params_truncate_on_comma():
+    from webob.descriptors import parse_auth_params
     val = parse_auth_params("Basic realm=WebOb,this_will_truncate")
     eq_(val, {'realm': 'WebOb'})
 
 def test_parse_auth_params_emptystr():
     from webob.descriptors import parse_auth_params
     eq_(parse_auth_params(''), {})
+
+def test_parse_auth_none():
+    from webob.descriptors import parse_auth
+    eq_(parse_auth(None), None)
+
+def test_parse_auth_emptystr():
+    from webob.descriptors import parse_auth
+    assert_raises(ValueError, parse_auth, '')
+
+def test_parse_auth_basic():
+    from webob.descriptors import parse_auth
+    eq_(parse_auth("Basic realm=WebOb"), ('Basic', 'realm=WebOb'))
+
+def test_parse_auth_basic_quoted():
+    from webob.descriptors import parse_auth
+    eq_(parse_auth('Basic realm="Web Ob"'), ('Basic', {'realm': 'Web Ob'}))
+
+def test_parse_auth_basic_quoted_multiple_unknown():
+    from webob.descriptors import parse_auth
+    eq_(parse_auth("foo='blah &&234', qop=foo, nonce='qwerty1234'"),
+        ("foo='blah", "&&234', qop=foo, nonce='qwerty1234'"))
+
+def test_parse_auth_basic_quoted_known_multiple():
+    from webob.descriptors import parse_auth
+    eq_(parse_auth("Basic realm='blah &&234', qop=foo, nonce='qwerty1234'"),
+        ('Basic', "realm='blah &&234', qop=foo, nonce='qwerty1234'"))
+
+def test_serialize_auth_none():
+    from webob.descriptors import serialize_auth
+    eq_(serialize_auth(None), None)
+
+def test_serialize_auth_emptystr():
+    from webob.descriptors import serialize_auth
+    eq_(serialize_auth(''), '')
+
+def test_serialize_auth_basic_quoted():
+    from webob.descriptors import serialize_auth
+    val = serialize_auth(('Basic', 'realm="WebOb"'))
+    eq_(val, 'Basic realm="WebOb"')
+
+def test_serialize_auth_digest_multiple():
+    from webob.descriptors import serialize_auth
+    val = serialize_auth(('Digest', 'realm="WebOb", nonce=abcde12345, qop=foo'))
+    eq_(val, 'Digest realm="WebOb", nonce=abcde12345, qop=foo')
+
+def test_serialize_auth_digest_tuple():
+    from webob.descriptors import serialize_auth
+    val = serialize_auth(('Digest', {'realm':'"WebOb"', 'nonce':'abcde12345', 'qop':'foo'}))
+    eq_(val, 'Digest nonce="abcde12345", realm=""WebOb"", qop="foo"')
+
