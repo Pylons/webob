@@ -52,7 +52,7 @@ class DecoratorTests(unittest.TestCase):
                          "wsgify(tests.test_dec.test_app, "
                          "kwargs={'strarg': '%s'})" % resp_str)
 
-    def test_wsgify_no_get(self):
+    def test_wsgify_no___get__(self):
         # use a class instance instead of a fn so we wrap something w/
         # no __get__
         class TestApp(object):
@@ -74,6 +74,44 @@ class DecoratorTests(unittest.TestCase):
         req = dict()
         self.assertRaises(TypeError, test_app, req, 1, 2)
         self.assertRaises(TypeError, test_app, req, 1, key='word')
+
+    def test_wsgify_none_response(self):
+        @wsgify
+        def test_app(req):
+            return
+        resp = self._testit(test_app, '/a url')
+        self.assertEqual(resp.body, '')
+        self.assertEqual(resp.content_type, 'text/html')
+        self.assertEqual(resp.content_length, 0)
+
+    def test_wsgify_get(self):
+        resp_str = "What'choo talkin' about, Willis?"
+        @wsgify
+        def test_app(req):
+            return Response(resp_str)
+        resp = test_app.get('/url/path')
+        self.assertEqual(resp.body, resp_str)
+
+    def test_wsgify_post(self):
+        post_dict = dict(speaker='Robin',
+                         words='Holy test coverage, Batman!')
+        @wsgify
+        def test_app(req):
+            return Response('%s: %s' % (req.POST['speaker'],
+                                        req.POST['words']))
+        resp = test_app.post('/url/path', post_dict)
+        self.assertEqual(resp.body, '%s: %s' % (post_dict['speaker'],
+                                                post_dict['words']))
+
+    def test_wsgify_request_method(self):
+        resp_str = 'Nice body!'
+        @wsgify
+        def test_app(req):
+            self.assertEqual(req.method, 'PUT')
+            return Response(req.body)
+        resp = test_app.request('/url/path', method='PUT',
+                                body=resp_str)
+        self.assertEqual(resp.body, resp_str)
 
     def test_wsgify_custom_request(self):
         resp_str = 'hey, this is a test: %s'
