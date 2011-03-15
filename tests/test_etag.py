@@ -1,8 +1,68 @@
 import unittest
 ###############################################################################
+# TODO: test etag_property
 
-# TODO:
-# - test etag_property
+
+class etag_propertyTests(unittest.TestCase):
+    def _getTargetClass(self):
+        from webob.etag import etag_property
+        return etag_property
+
+    def _makeOne(self, *args, **kw):
+        return self._getTargetClass()(*args, **kw)
+
+    def _makeDummyRequest(self, **kw):
+        """
+        Return a DummyRequest object with attrs from kwargs.
+        Use like:     dr = _makeDummyRequest(environment={'userid': 'johngalt'})
+        Then you can: uid = dr.environment.get('userid', 'SomeDefault')
+        """
+        class Dummy(object):
+            def __init__(self, **kwargs):
+                self.__dict__.update(**kwargs)
+        d = Dummy(**kw)
+        return d
+
+    def test_fget_missing_key(self):
+        ep = self._makeOne("KEY", "DEFAULT", "RFC_SECTION")
+        req = self._makeDummyRequest(environ={})
+        self.assertEquals(ep.fget(req), "DEFAULT")
+
+    def test_fget_found_key(self):
+        ep = self._makeOne("KEY", "DEFAULT", "RFC_SECTION")
+        req = self._makeDummyRequest(environ={'KEY':'VALUE'})
+        res = ep.fget(req)
+        self.assertEquals(res.etags, ['VALUE'])
+        self.assertEquals(res.weak_etags, [])
+
+    def test_fget_star_key(self):
+        ep = self._makeOne("KEY", "DEFAULT", "RFC_SECTION")
+        req = self._makeDummyRequest(environ={'KEY':'*'})
+        res = ep.fget(req)
+        import webob.etag
+        self.assertEquals(type(res), webob.etag._AnyETag)
+        self.assertEquals(res.__dict__, {})
+
+    def test_fset_None(self):
+        ep = self._makeOne("KEY", "DEFAULT", "RFC_SECTION")
+        req = self._makeDummyRequest(environ={'KEY':'*'})
+        res = ep.fset(req, None)
+        self.assertEquals(res, None)
+
+    def test_fset_not_None(self):
+        ep = self._makeOne("KEY", "DEFAULT", "RFC_SECTION")
+        req = self._makeDummyRequest(environ={'KEY':'OLDVAL'})
+        res = ep.fset(req, "NEWVAL")
+        self.assertEquals(res, None)
+        self.assertEquals(req.environ['KEY'], 'NEWVAL')
+
+    def test_fedl(self):
+        ep = self._makeOne("KEY", "DEFAULT", "RFC_SECTION")
+        req = self._makeDummyRequest(environ={'KEY':'VAL', 'QUAY':'VALYOU'})
+        res = ep.fdel(req)
+        self.assertEquals(res, None)
+        self.assertFalse('KEY' in req.environ)
+        self.assertEquals(req.environ['QUAY'], 'VALYOU')
 
 class AnyETagTests(unittest.TestCase):
     def _getTargetClass(self):
@@ -365,13 +425,33 @@ class IfRangeTests(unittest.TestCase):
         dt = datetime.datetime(2001,11,9, 1,8,47,0, UTC())
         self.assertEquals(res.date, dt)
 
-
 class NoIfRangeTests(unittest.TestCase):
     def _getTargetClass(self):
         from webob.etag import _NoIfRange
-        return _NoIfRange()
+        return _NoIfRange
 
-    def test_str(self):
-        d = self._getTargetClass()
-        self.assertEquals(str(d), '')
-       
+    def _makeOne(self, *args, **kw):
+        return self._getTargetClass()(*args, **kw)
+
+    def test___repr__(self):
+        ir = self._makeOne()
+        self.assertEquals(ir.__repr__(), '<Empty If-Range>')
+
+    def test___str__(self):
+        ir = self._makeOne()
+        self.assertEquals(ir.__str__(), '')
+
+    def test___nonzero__(self):
+        ir = self._makeOne()
+        self.assertEquals(ir.__nonzero__(), False)
+
+    def test_match(self):
+        ir = self._makeOne()
+        self.assertEquals(ir.match(), True)
+
+    def test_match_response(self):
+        ir = self._makeOne()
+        self.assertEquals(ir.match_response("IGNORED"), True)
+
+
+
