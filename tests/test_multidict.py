@@ -251,4 +251,21 @@ class NoVarsTestCase(unittest.TestCase):
 
     def test_getone(self):
         d = self._get_instance()
-        self.assertRaises(KeyError, d.getone, 'a')        
+        self.assertRaises(KeyError, d.getone, 'a')
+
+    def test_mixed(self):
+        d = self._get_instance()
+        self.assertEqual(d.mixed(), {})
+
+    def test_contains(self):
+        d = self._get_instance()
+        self.assertEqual(d.__contains__('a'),  False)
+
+    def test_copy(self):
+        d = self._get_instance()
+        self.assertEqual(d.copy(), d)
+    
+    def test_len(self):
+        d = self._get_instance()
+        self.assertEqual(len(d), 0)
+
