@@ -831,8 +831,28 @@ def test_cache_control_set_unicode():
     res.cache_control = u'abc'
     eq_(repr(res.cache_control), "<CacheControl 'abc'>")
 
+def test_cache_control_set_control_obj_is_not_None():
+    class DummyCacheControl(object):
+        def __init__(self):
+            self.header_value = 1
+            self.properties = {'bleh':1}
+    res = Response()
+    res._cache_control_obj = DummyCacheControl()
+    res.cache_control = {}
+    eq_(res.cache_control.properties, {})
+
+def test_cache_control_del():
+    res = Response()
+    del res.cache_control
+    eq_(repr(res.cache_control), "<CacheControl ''>")
+
 def test_body_file_get():
     res = Response()
     result = res.body_file
     from webob.response import ResponseBodyFile
     eq_(result.__class__, ResponseBodyFile)
+
+def test_repr():
+    res = Response()
+    ok_(repr(res).endswith('200 OK>'))
+    
