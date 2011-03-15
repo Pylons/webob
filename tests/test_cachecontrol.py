@@ -156,8 +156,14 @@ class TestValueProp(unittest.TestCase):
         assert dummy.prop == "dummy", dummy.prop
 
 
+def test_copy_cc():
+    from webob.cachecontrol import CacheControl
+    cc = CacheControl({'header':'%', "msg":'arewerichyet?'}, 'request')
+    cc2 = cc.copy()
+    assert cc.properties is not cc2.properties
+    assert cc.type is cc2.type
 
-# 134-135, 212    
+# 212    
 
 def test_serialize_cache_control():
     from webob.cachecontrol import serialize_cache_control, CacheControl
