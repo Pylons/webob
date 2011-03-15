@@ -105,7 +105,7 @@ class TestExistProp(unittest.TestCase):
     def test_del_value(self):
         obj = self.make_one()()
         del obj.prop
-        assert 'prop' in obj.properties
+        assert not 'prop' in obj.properties
 
 
 class TestValueProp(unittest.TestCase):
@@ -131,3 +131,12 @@ class TestValueProp(unittest.TestCase):
         from webob.cachecontrol import value_property
         Dummy = self.make_one()
         assert isinstance(Dummy.prop, value_property), Dummy.prop
+
+
+def test_serialize_cache_control():
+    from webob.cachecontrol import serialize_cache_control, CacheControl
+    serialize_cache_control(dict())
+    # properties, type
+    serialize_cache_control(CacheControl({}, 'request'))
+
+    serialize_cache_control(CacheControl({'header':'%'}, 'request'))
