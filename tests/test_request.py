@@ -737,6 +737,78 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(environ['wsgiorg.routing_args'], ((), {}))
         self.assert_('paste.urlvars' not in environ)
 
+    def test_urlargs_getter_w_paste_key(self):
+        environ = {'paste.urlvars': {'foo': 'bar'},
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.urlargs, ())
+
+    def test_urlargs_getter_w_wsgiorg_key(self):
+        environ = {'wsgiorg.routing_args': (('a', 'b'), {'foo': 'bar'}),
+                  }
+        req = self._makeOne(environ)
+        self.assertEqual(req.urlargs, ('a', 'b'))
+
+    def test_urlargs_getter_wo_keys(self):
+        environ = {}
+        req = self._makeOne(environ)
+        self.assertEqual(req.urlargs, ())
+        self.assert_('wsgiorg.routing_args' not in environ)
+
+    def test_urlargs_setter_w_paste_key(self):
+        environ = {'paste.urlvars': {'foo': 'bar'},
+                  }
+        req = self._makeOne(environ)
+        req.urlargs = ('a', 'b')
+        self.assertEqual(req.urlargs, ('a', 'b'))
+        self.assertEqual(environ['wsgiorg.routing_args'],
+                         (('a', 'b'), {'foo': 'bar'}))
+        self.assert_('paste.urlvars' not in environ)
+
+    def test_urlargs_setter_w_wsgiorg_key(self):
+        environ = {'wsgiorg.routing_args': ((), {'foo': 'bar'}),
+                  }
+        req = self._makeOne(environ)
+        req.urlargs = ('a', 'b')
+        self.assertEqual(req.urlargs, ('a', 'b'))
+        self.assertEqual(environ['wsgiorg.routing_args'],
+                         (('a', 'b'), {'foo': 'bar'}))
+
+    def test_urlargs_setter_wo_keys(self):
+        environ = {}
+        req = self._makeOne(environ)
+        req.urlargs = ('a', 'b')
+        self.assertEqual(req.urlargs, ('a', 'b'))
+        self.assertEqual(environ['wsgiorg.routing_args'],
+                         (('a', 'b'), {}))
+        self.assert_('paste.urlvars' not in environ)
+
+    def test_urlargs_deleter_w_wsgiorg_key(self):
+        environ = {'wsgiorg.routing_args': (('a', 'b'), {'foo': 'bar'}),
+                  }
+        req = self._makeOne(environ)
+        del req.urlargs
+        self.assertEqual(req.urlargs, ())
+        self.assertEqual(environ['wsgiorg.routing_args'],
+                         ((), {'foo': 'bar'}))
+
+    def test_urlargs_deleter_w_wsgiorg_key_empty(self):
+        environ = {'wsgiorg.routing_args': ((), {}),
+                  }
+        req = self._makeOne(environ)
+        del req.urlargs
+        self.assertEqual(req.urlargs, ())
+        self.assert_('paste.urlvars' not in environ)
+        self.assert_('wsgiorg.routing_args' not in environ)
+
+    def test_urlargs_deleter_wo_keys(self):
+        environ = {}
+        req = self._makeOne(environ)
+        del req.urlargs
+        self.assertEqual(req.urlargs, ())
+        self.assert_('paste.urlvars' not in environ)
+        self.assert_('wsgiorg.routing_args' not in environ)
+
     def test_str_cookies_empty_environ(self):
         from webob import Request
         req = Request.blank('/')
@@ -760,6 +832,21 @@ class BaseRequestTests(unittest.TestCase):
         req = Request.blank('/', environ)
         self.assertEqual(req.str_cookies, {'a': 'b'})
 
+    # is_xhr
+    # host
+    # body
+    # str_POST
+    # POST
+    # str_GET
+    # GET
+    # str_postvars
+    # postvars
+    # str_queryvars
+    # queryvars
+    # is_xhr
+    # str_params
+    # params
+
     def test_str_cookies_wo_webob_parsed_cookies(self):
         from webob import Request
         environ = {
@@ -767,6 +854,9 @@ class BaseRequestTests(unittest.TestCase):
         }
         req = Request.blank('/', environ)
         self.assertEqual(req.str_cookies, {'a': 'b'})
+
+    # cookies
+    # copy
 
     def test_copy_get(self):
         from webob import Request
@@ -782,6 +872,39 @@ class BaseRequestTests(unittest.TestCase):
                 self.failIf(clone.environ[k] is v)
             else:
                 self.assertEqual(clone.environ[k], v)
+
+    # is_body_seekable
+    # make_body_seekable
+    # copy_body
+    # make_tempfile
+    # remove_conditional_headers
+    # accept
+    # accept_charset
+    # accept_encoding
+    # accept_language
+    # authorization
+    # cache_control
+    #if_match
+    #if_none_match
+
+    #date
+    #if_modified_since
+    #if_unmodified_since
+    #if_range
+    #max_forwards
+    #pragma
+    #range
+    #referer
+    #referrer
+    #user_agent
+    #__repr__
+    #as_string
+    #__str__
+    #from_string
+    #from_file
+    #call_application
+    #get_response
+    #blank
 
 
 class RequestTests_functional(unittest.TestCase):
