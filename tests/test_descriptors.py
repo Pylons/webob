@@ -264,3 +264,24 @@ def test_deprecated_property_delete():
                               'DEPRECATED',
                               warning=False)
     assert_raises(DeprecationWarning, dep.__delete__, dep)
+
+def test_parse_etag_response():
+    from webob.descriptors import parse_etag_response
+    etresp = parse_etag_response("etag")
+    eq_(etresp, "etag")
+
+def test_parse_etag_response_quoted():
+    from webob.descriptors import parse_etag_response
+    etresp = parse_etag_response('"etag"')
+    eq_(etresp, "etag")
+
+def test_parse_etag_response_is_none():
+    from webob.descriptors import parse_etag_response
+    etresp = parse_etag_response(None)
+    eq_(etresp, None)
+
+def test_serialize_etag_response():
+    from webob.descriptors import serialize_etag_response
+    etresp = serialize_etag_response("etag")
+    eq_(etresp, '"etag"')
+
