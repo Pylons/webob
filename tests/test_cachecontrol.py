@@ -137,8 +137,27 @@ class TestValueProp(unittest.TestCase):
         assert dummy.prop, dummy.prop 
         #assert isinstance(Dummy.prop, value_property), Dummy.prop
 
+    def test_set_on_instance(self):
+        dummy = self.make_one()()
+        dummy.prop = "new"
+        assert dummy.prop == "new", dummy.prop
+        assert dummy.properties['prop'] == "new", dict(dummy.properties)
 
-# 116, 126-127, 134-135, 212    
+    def test_set_on_instance_w_default(self):
+        dummy = self.make_one()()
+        dummy.prop = "dummy"
+        assert dummy.prop == "dummy", dummy.prop
+        #@@ this probably needs more tests
+
+    def test_del(self):
+        dummy = self.make_one()()
+        dummy.prop = 'Ian Bicking likes to skip'
+        del dummy.prop
+        assert dummy.prop == "dummy", dummy.prop
+
+
+
+# 134-135, 212    
 
 def test_serialize_cache_control():
     from webob.cachecontrol import serialize_cache_control, CacheControl
