@@ -132,6 +132,13 @@ class TestValueProp(unittest.TestCase):
         Dummy = self.make_one()
         assert isinstance(Dummy.prop, value_property), Dummy.prop
 
+    def test_get_on_instance(self):
+        dummy = self.make_one()()
+        assert dummy.prop, dummy.prop 
+        #assert isinstance(Dummy.prop, value_property), Dummy.prop
+
+
+# 116, 126-127, 134-135, 212    
 
 def test_serialize_cache_control():
     from webob.cachecontrol import serialize_cache_control, CacheControl
