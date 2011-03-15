@@ -288,5 +288,25 @@ def test_serialize_etag_response():
 def test_parse_if_range_is_None():
     from webob.descriptors import parse_if_range
     from webob.descriptors import NoIfRange
-    eq_(NoIfRange, parse_if_range())
+    eq_(NoIfRange, parse_if_range(None))
+
+def test_parse_if_range_etag():
+    from webob.descriptors import parse_if_range
+    from webob.descriptors import IfRange
+    from webob.etag import ETagMatcher
+    ifr = parse_if_range('arange')
+    eq_(type(ifr), IfRange)
+    eq_(type(ifr.etag), ETagMatcher)
+
+def test_parse_if_range_date():
+    from webob.descriptors import parse_if_range
+    from webob.descriptors import IfRange
+    from webob.etag import ETagMatcher
+    ifr = parse_if_range("2011-03-15 01:24:43.272409")
+    import pdb; pdb.set_trace()
+    eq_(type(ifr), IfRange)
+    eq_(type(ifr.etag), ETagMatcher)
+
+# def test_serialize_if_range():
+#     ...
 
