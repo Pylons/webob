@@ -342,58 +342,35 @@ def test_deprecated_property_repr():
         "<Deprecated attribute mock_property: "
         "<tests.test_descriptors.MockDescriptor instance at")
 
-import warnings
-with warnings.catch_warnings(record=True) as w:
-    # Cause all warnings to always be triggered.
-    warnings.simplefilter("always")
-    # Trigger a warning.
-    def test_deprecated_property_warn_get():
-        from webob.descriptors import deprecated_property
-        mock = MockDescriptor()
-        dep = deprecated_property(mock,
-                                  'mock_property',
-                                  'DEPRECATED')
-        dep.__get__(mock)
-    test_deprecated_property_warn_get()
-    # Verify some things
-    assert len(w) == 1
-    assert issubclass(w[-1].category, DeprecationWarning)
-    assert "deprecated" in str(w[-1].message)
+def test_deprecated_property_warn_get():
+    from webob.descriptors import deprecated_property
+    import warnings
+    warnings.simplefilter('error')
+    mock = MockDescriptor()
+    dep = deprecated_property(mock,
+                              'mock_property',
+                              'DEPRECATED')
+    assert_raises(DeprecationWarning, dep.__get__, mock)
 
-with warnings.catch_warnings(record=True) as w:
-    # Cause all warnings to always be triggered.
-    warnings.simplefilter("always")
-    # Trigger a warning.
-    def test_deprecated_property_warn_set():
-        from webob.descriptors import deprecated_property
-        mock = MockDescriptor()
-        dep = deprecated_property(mock,
-                                  'mock_property',
-                                  'DEPRECATED')
-        dep.__set__(mock, 'avalue')
-    test_deprecated_property_warn_set()
-    # Verify some things
-    assert len(w) == 1
-    assert issubclass(w[-1].category, DeprecationWarning)
-    assert "deprecated" in str(w[-1].message)
+def test_deprecated_property_warn_set():
+    from webob.descriptors import deprecated_property
+    import warnings
+    warnings.simplefilter("error")
+    mock = MockDescriptor()
+    dep = deprecated_property(mock,
+                              'mock_property',
+                              'DEPRECATED')
+    assert_raises(DeprecationWarning, dep.__set__, mock, 'avalue')
 
-with warnings.catch_warnings(record=True) as w:
-    # Cause all warnings to always be triggered.
-    warnings.simplefilter("always")
-    # Trigger a warning.
-    def test_deprecated_property_warn_delete():
-        from webob.descriptors import deprecated_property
-        mock = MockDescriptor()
-        dep = deprecated_property(mock,
-                                  'mock_property',
-                                  'DEPRECATED')
-        dep.__delete__(mock)
-    test_deprecated_property_warn_set()
-    # Verify some things
-    assert len(w) == 1
-    assert issubclass(w[-1].category, DeprecationWarning)
-    assert "deprecated" in str(w[-1].message)
-
+def test_deprecated_property_warn_delete():
+    from webob.descriptors import deprecated_property
+    import warnings
+    warnings.simplefilter("error")
+    mock = MockDescriptor()
+    dep = deprecated_property(mock,
+                              'mock_property',
+                            'DEPRECATED')
+    assert_raises(DeprecationWarning, dep.__delete__, mock)
 
 def test_parse_etag_response():
     from webob.descriptors import parse_etag_response
