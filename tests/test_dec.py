@@ -1,6 +1,7 @@
 import unittest
 from webob import Request
 from webob import Response
+from webob.dec import _func_name
 from webob.dec import wsgify
 
 class DecoratorTests(unittest.TestCase):
@@ -199,3 +200,30 @@ class DecoratorTests(unittest.TestCase):
         self.assertEqual(resp.charset, 'UTF-8')
         self.assertEqual(resp.content_length, 1)
         self.assertEqual(resp.body, '1')
+
+    def test__func_name(self):
+        def func():
+            pass
+        name = _func_name(func)
+        self.assertEqual(name, 'tests.test_dec.func')
+        name = _func_name('a')
+        self.assertEqual(name, "'a'")
+        class Klass(object):
+            @classmethod
+            def classmeth(cls):
+                pass
+            def meth(self):
+                pass
+        name = _func_name(Klass)
+        self.assertEqual(name, 'tests.test_dec.Klass')
+        k = Klass()
+        kname = _func_name(k)
+        self.assert_(kname.startswith('<tests.test_dec.Klass object at 0x'))
+        name = _func_name(k.meth)
+        self.assert_(name.startswith('tests.test_dec.%s' % kname))
+        self.assert_(name.endswith('>.meth'))
+        name = _func_name(Klass.meth)
+        self.assertEqual(name, 'tests.test_dec.Klass.meth')
+        name = _func_name(Klass.classmeth)
+        self.assertEqual(name, "tests.test_dec.<class "
+                         "'tests.test_dec.Klass'>.classmeth")
