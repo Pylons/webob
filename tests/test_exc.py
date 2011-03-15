@@ -18,7 +18,7 @@ from webob.exc import HTTPPartialContent
 from webob.exc import _HTTPMove
 from webob.exc import HTTPMultipleChoices
 from webob.exc import HTTPMovedPermanently
-from webob.exc import HTTPFound_
+from webob.exc import HTTPFound
 from webob.exc import HTTPSeeOther
 from webob.exc import HTTPNotModified
 from webob.exc import HTTPUseProxy
@@ -36,7 +36,7 @@ from webob.exc import HTTPRequestTimeout
 from webob.exc import HTTPConflict
 from webob.exc import HTTPGone
 from webob.exc import HTTPLengthRequired
-from webob.exc import HTTPreconditionFailed
+from webob.exc import HTTPPreconditionFailed
 from webob.exc import HTTPRequestEntityTooLarge
 from webob.exc import HTTPRequestURITooLong
 from webob.exc import HTTPUnsupportedMediaType
