@@ -142,6 +142,10 @@ class DecoratorTests(unittest.TestCase):
         def set_urlvar(req, app, **vars):
             req.urlvars.update(vars)
             return app(req)
+        from webob.dec import _MiddlewareFactory
+        self.assert_(set_urlvar.__class__ is _MiddlewareFactory)
+        repr = '%r' % (set_urlvar,)
+        self.assert_(repr.startswith('wsgify.middleware(<function set_urlvar at '))
         @wsgify
         def show_vars(req):
             return resp_str % (sorted(req.urlvars.items()))
@@ -166,6 +170,13 @@ class DecoratorTests(unittest.TestCase):
         self.assertEqual('%r' % (unbound,),
                          "wsgify.middleware(wsgify(tests.test_dec.test_app), "
                          "some='thing')")
+        @unbound
+        def middle(req, app, **kw):
+            return app(req)
+        self.assert_(middle.__class__ is wsgify)
+        self.assertEqual('%r' % (middle,),
+                         "wsgify.middleware(tests.test_dec.middle)"
+                         "(wsgify(tests.test_dec.test_app), some='thing')")
 
     def test_unbound_middleware_no_app(self):
         unbound = wsgify.middleware(None, None)
