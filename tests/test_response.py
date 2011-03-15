@@ -670,6 +670,33 @@ def test_delete_cookie():
     eq_(val[2], 'a=')
     assert val[3].startswith('expires')
 
+def test_delete_cookie_with_path():
+    res = Response()
+    res.headers['Set-Cookie'] = 'a=2; Path=/'
+    res.delete_cookie('a', path='/abc')
+    eq_(res.headerlist[-1][0], 'Set-Cookie')
+    val = [ x.strip() for x in res.headerlist[-1][1].split(';')]
+    assert len(val) == 4
+    val.sort()
+    eq_(val[0], 'Max-Age=0')
+    eq_(val[1], 'Path=/abc')
+    eq_(val[2], 'a=')
+    assert val[3].startswith('expires')
+
+def test_delete_cookie_with_domain():
+    res = Response()
+    res.headers['Set-Cookie'] = 'a=2; Path=/'
+    res.delete_cookie('a', path='/abc', domain='example.com')
+    eq_(res.headerlist[-1][0], 'Set-Cookie')
+    val = [ x.strip() for x in res.headerlist[-1][1].split(';')]
+    assert len(val) == 5
+    val.sort()
+    eq_(val[0], 'Domain=example.com')
+    eq_(val[1], 'Max-Age=0')
+    eq_(val[2], 'Path=/abc')
+    eq_(val[3], 'a=')
+    assert val[4].startswith('expires')
+
 def test_unset_cookie_not_existing_and_not_strict():
     res = Response()
     result = res.unset_cookie('a', strict=False)
@@ -681,9 +708,10 @@ def test_unset_cookie_not_existing_and_strict():
     
 def test_unset_cookie_key_in_cookies():
     res = Response()
-    res.headers['Set-Cookie'] = 'a=2; Path=/'
+    res.headers.add('Set-Cookie', 'a=2; Path=/')
+    res.headers.add('Set-Cookie', 'b=3; Path=/')
     res.unset_cookie('a')
-    eq_(res.headers.get('Set-Cookie'), None)
+    eq_(res.headers.getall('Set-Cookie'), ['b=3; Path=/'])
     
 def test_merge_cookies_no_set_cookie():
     res = Response()
