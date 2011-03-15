@@ -430,11 +430,6 @@ class NoIfRangeTests(unittest.TestCase):
     def _makeOne(self, *args, **kw):
         return self._getTargetClass()(*args, **kw)
 
-    def test_nonzero(self):
-        d = self._getTargetClass()
-        self.assertEquals(d.__nonzero__(), False)
-        assert not d
-    
     def test___repr__(self):
         ir = self._makeOne()
         self.assertEquals(ir.__repr__(), '<Empty If-Range>')
