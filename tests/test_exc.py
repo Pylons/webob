@@ -3,6 +3,7 @@ from webob import *
 from webob.dec import wsgify
 from webob.exc import *
 import webob
+from webob.exc import _HTTPMove
 
 from nose.tools import assert_true, assert_false, assert_equal, assert_raises
 
@@ -25,6 +26,18 @@ def test_WSGIHTTPException_headers():
                                      ('Set-Cookie', 'a=2')])
     mixed = exc.headers.mixed()
     assert mixed['set-cookie'] ==  ['a=1', 'a=2']
+
+def test_HTTPMove():
+    def start_response(status, headers, exc_info=None):
+        pass
+    environ = {
+       'wsgi.url_scheme': 'HTTP',
+       'SERVER_NAME': 'localhost',
+       'SERVER_PORT': '80',
+       'REQUEST_METHOD': 'HEAD'
+    }
+    m = _HTTPMove()
+    assert_equal( m( environ, start_response ), [] )
 
 def test_HTTPExceptionMiddleware_ok():
     def app( environ, start_response ):
