@@ -856,3 +856,61 @@ def test_repr():
     res = Response()
     ok_(repr(res).endswith('200 OK>'))
     
+def test_cache_expires_set_timedelta():
+    res = Response()
+    from datetime import timedelta
+    delta = timedelta(seconds=60)
+    res.cache_expires(seconds=delta)
+    eq_(res.cache_control.max_age, 60)
+
+def test_cache_expires_set_int():
+    res = Response()
+    res.cache_expires(seconds=60)
+    eq_(res.cache_control.max_age, 60)
+
+def test_cache_expires_set_None():
+    res = Response()
+    res.cache_expires(seconds=None, a=1)
+    eq_(res.cache_control.a, 1)
+
+def test_cache_expires_set_zero():
+    res = Response()
+    res.cache_expires(seconds=0)
+    eq_(res.cache_control.no_store, True)
+    eq_(res.cache_control.no_cache, '*')
+    eq_(res.cache_control.must_revalidate, True)
+    eq_(res.cache_control.max_age, 0)
+    eq_(res.cache_control.post_check, 0)
+
+def test_encode_content_unknown():
+    res = Response()
+    assert_raises(AssertionError, res.encode_content, 'badencoding')
+    
+def test_encode_content_identity():
+    res = Response()
+    result = res.encode_content('identity')
+    eq_(result, None)
+
+def test_encode_content_gzip_already_gzipped():
+    res = Response()
+    res.content_encoding = 'gzip'
+    result = res.encode_content('gzip')
+    eq_(result, None)
+
+def test_encode_content_gzip_notyet_gzipped():
+    res = Response()
+    res.app_iter = StringIO('foo')
+    result = res.encode_content('gzip')
+    eq_(result, None)
+    eq_(res.content_length, 23)
+    eq_(res.app_iter, ['\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff', '',
+                       'K\xcb\xcf\x07\x00', '!es\x8c\x03\x00\x00\x00'])
+
+def test_encode_content_gzip_notyet_gzipped_lazy():
+    res = Response()
+    res.app_iter = StringIO('foo')
+    result = res.encode_content('gzip', lazy=True)
+    eq_(result, None)
+    eq_(res.content_length, None)
+    eq_(list(res.app_iter), ['\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff', '',
+                             'K\xcb\xcf\x07\x00', '!es\x8c\x03\x00\x00\x00'])
