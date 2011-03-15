@@ -995,6 +995,33 @@ class BaseRequestTests(unittest.TestCase):
 
     # POST
     # str_GET
+    def test_str_GET_reflects_query_string(self):
+        environ = {
+            'QUERY_STRING': 'foo=123',
+        }
+        req = self._makeOne(environ)
+        result = req.str_GET
+        self.assertEqual(result, {'foo': '123'})
+        req.query_string = 'foo=456'
+        result = req.str_GET
+        self.assertEqual(result, {'foo': '456'})
+        req.query_string = ''
+        result = req.str_GET
+        self.assertEqual(result, {})
+
+    def test_str_GET_updates_query_string(self):
+        environ = {
+        }
+        req = self._makeOne(environ)
+        result = req.query_string
+        self.assertEqual(result, '')
+        req.str_GET['foo'] = '123'
+        result = req.query_string
+        self.assertEqual(result, 'foo=123')
+        del req.str_GET['foo']
+        result = req.query_string
+        self.assertEqual(result, '')
+
     # GET
     # str_postvars
     # postvars
@@ -2215,9 +2242,28 @@ class UnseekableInputWithSeek(UnseekableInput):
 class FakeCGIBodyTests(unittest.TestCase):
 
     def test_encode_multipart_value_type_options(self):
-        # TODO: cover webob/request.py:1282
-        #       I'm not sure this code is actually reachable
-        pass
+        from StringIO import StringIO
+        from cgi import FieldStorage
+        from webob.request import BaseRequest, FakeCGIBody
+        from webob.multidict import MultiDict
+        multipart_type = 'multipart/form-data; boundary=foobar'
+        multipart_body = StringIO(
+            '--foobar\r\n'
+            'Content-Disposition: form-data; name="bananas"; filename="bananas.txt"\r\n'
+            'Content-type: text/plain; charset="utf-9"\r\n'
+            '\r\n'
+            "these are the contents of the file 'bananas.txt'\r\n"
+            '\r\n'
+            '--foobar--'
+        )
+        environ = BaseRequest.blank('/').environ
+        environ.update(CONTENT_TYPE=multipart_type)
+        environ.update(REQUEST_METHOD='POST')
+        fs = FieldStorage(multipart_body, environ=environ)
+        vars = MultiDict.from_fieldstorage(fs)
+        self.assertEqual(vars['bananas'].__class__, FieldStorage)
+        body = FakeCGIBody(vars, multipart_type)
+        self.assertEqual(body.read(), multipart_body.getvalue())
 
     def test_encode_multipart_no_boundary(self):
         from webob.request import FakeCGIBody

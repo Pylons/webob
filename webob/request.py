@@ -5,7 +5,7 @@ import tempfile
 import urllib
 import urlparse
 if sys.version >= '2.7':
-    from io import BytesIO as StringIO
+    from io import BytesIO as StringIO # pragma nocover
 else:
     from cStringIO import StringIO # pragma nocover
 
