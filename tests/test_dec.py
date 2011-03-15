@@ -1,6 +1,7 @@
 import unittest
 from webob import Request
 from webob import Response
+from webob.dec import _format_args
 from webob.dec import _func_name
 from webob.dec import wsgify
 
@@ -227,3 +228,25 @@ class DecoratorTests(unittest.TestCase):
         name = _func_name(Klass.classmeth)
         self.assertEqual(name, "tests.test_dec.<class "
                          "'tests.test_dec.Klass'>.classmeth")
+
+    def test__format_args(self):
+        args_rep = _format_args()
+        self.assertEqual(args_rep, '')
+        kw = dict(a=4, b=5, c=6)
+        args_rep = _format_args(args=(1, 2, 3), kw=kw)
+        self.assertEqual(args_rep, '1, 2, 3, a=4, b=5, c=6')
+        args_rep = _format_args(args=(1, 2, 3), kw=kw, leading_comma=True)
+        self.assertEqual(args_rep, ', 1, 2, 3, a=4, b=5, c=6')
+        class Klass(object):
+            a = 1
+            b = 2
+            c = 3
+        names = ['a', 'b', 'c']
+        obj = Klass()
+        self.assertRaises(AssertionError, _format_args, names=names)
+        args_rep = _format_args(obj=obj, names='a')
+        self.assertEqual(args_rep, 'a=1')
+        args_rep = _format_args(obj=obj, names=names)
+        self.assertEqual(args_rep, 'a=1, b=2, c=3')
+        args_rep = _format_args(kw=kw, defaults=dict(a=4, b=5))
+        self.assertEqual(args_rep, 'c=6')
