@@ -114,7 +114,6 @@ def test_HEAD_conditional_response_returns_empty_response():
     from webob.response import EmptyResponse
     req = Request.blank('/')
     req.method = 'HEAD'
-    app_iter = StringIO('foo')
     res = Response(request=req, conditional_response=True)
     class FakeRequest:
         method = 'HEAD'
@@ -128,6 +127,37 @@ def test_HEAD_conditional_response_returns_empty_response():
     res.RequestClass = FakeRequest
     result = res({}, start_response)
     ok_(isinstance(result, EmptyResponse))
+
+def test_HEAD_conditional_response_range_empty_response():
+    from webob.response import EmptyResponse
+    req = Request.blank('/')
+    req.method = 'HEAD'
+    res = Response(request=req, conditional_response=True)
+    res.status_int = 200
+    res.body = 'Are we not men?'
+    res.content_length = len(res.body)
+    class FakeRequest:
+        method = 'HEAD'
+        if_none_match = 'none'
+        if_modified_since = False
+        def __init__(self, env):
+            self.env = env
+            self.range = self # simulate inner api
+            self.if_range = self
+        def content_range(self, length):
+            """range attr"""
+            class Range:
+                start = 4
+                stop = 5
+            return Range
+        def match_response(self, res):
+            """if_range_match attr"""
+            return True
+    def start_response(status, headerlist):
+        pass
+    res.RequestClass = FakeRequest
+    result = res({}, start_response)
+    ok_(isinstance(result, EmptyResponse), result)
 
 def test_del_environ():
     res = Response()
