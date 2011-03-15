@@ -421,4 +421,24 @@ def test_serialize_content_range_invalid():
     from webob.descriptors import serialize_content_range
     assert_raises(ValueError, serialize_content_range, (1,))
 
+def test_serialize_content_range():
+    from webob.descriptors import serialize_content_range
+    eq_(serialize_content_range((0, 500)), 'bytes 0-499/*')
+    eq_(serialize_content_range((0, 500, 1234)), 'bytes 0-499/1234')
 
+def test_parse_auth_params():
+    from webob.descriptors import parse_auth_params
+    val = parse_auth_params('Basic Realm=WebOb')
+    eq_(val, {'ealm': 'WebOb'})
+    val = parse_auth_params('Basic realM=WebOb')
+    eq_(val, {})
+    val = parse_auth_params('Basic realm="Web Object"')
+    eq_(val, {'realm': 'Web Object'})
+    val = parse_auth_params("foo='blah &&234', qop=foo, nonce='qwerty1234'")
+    eq_(val, {'nonce': "'qwerty1234'", 'foo': "'blah &&234'", 'qop': 'foo'})
+    val = parse_auth_params("Basic realm=WebOb,this_will_truncate")
+    eq_(val, {'realm': 'WebOb'})
+
+def test_parse_auth_params_emptystr():
+    from webob.descriptors import parse_auth_params
+    eq_(parse_auth_params(''), {})
