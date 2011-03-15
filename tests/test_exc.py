@@ -48,26 +48,24 @@ def test_HTTPExceptionMiddleware_exception():
     res = m( environ, start_response )
     assert_equal( res, '123' )
 
-# This test almost passes, advice from Chris is needed
-#
-#def test_HTTPExceptionMiddleware_exception_exc_info_none():
-#    class DummySys:
-#        def exc_info(self):
-#            return None
-#    def wsgi_response( environ, start_response):
-#        return '123'
-#    def app( environ, start_response ):
-#        raise HTTPException( None, wsgi_response )
-#    application = app
-#    m = HTTPExceptionMiddleware(application)
-#    environ = {}
-#    start_response = None
-#    try:
-#        from webob import exc
-#        old_sys = exc.sys
-#        webob.exc.sys = DummySys()
-#        import pdb; pdb.set_trace()
-#        res = m( environ, start_response )
-#        assert_equal( res, '123' )
-#    finally:
-#        exc.sys = old_sys
+def test_HTTPExceptionMiddleware_exception_exc_info_none():
+    class DummySys:
+        def exc_info(self):
+            return None
+    def wsgi_response( environ, start_response):
+        return start_response('200 OK', [], exc_info=None)
+    def app( environ, start_response ):
+        raise HTTPException( None, wsgi_response )
+    application = app
+    m = HTTPExceptionMiddleware(application)
+    environ = {}
+    def start_response(status, headers, exc_info):
+        pass
+    try:
+        from webob import exc
+        old_sys = exc.sys
+        webob.exc.sys = DummySys()
+        res = m( environ, start_response )
+        assert_equal( res, None )
+    finally:
+        exc.sys = old_sys
