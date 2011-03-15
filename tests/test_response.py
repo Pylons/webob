@@ -841,8 +841,18 @@ def test_cache_control_set_control_obj_is_not_None():
     res.cache_control = {}
     eq_(res.cache_control.properties, {})
 
+def test_cache_control_del():
+    res = Response()
+    del res.cache_control
+    eq_(repr(res.cache_control), "<CacheControl ''>")
+
 def test_body_file_get():
     res = Response()
     result = res.body_file
     from webob.response import ResponseBodyFile
     eq_(result.__class__, ResponseBodyFile)
+
+def test_repr():
+    res = Response()
+    ok_(repr(res).endswith('200 OK>'))
+    
