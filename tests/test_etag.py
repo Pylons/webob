@@ -427,10 +427,6 @@ class NoIfRangeTests(unittest.TestCase):
         from webob.etag import _NoIfRange
         return _NoIfRange
 
-    def test_str(self):
-        d = self._getTargetClass()
-        self.assertEquals(str(d), '')
-
     def _makeOne(self, *args, **kw):
         return self._getTargetClass()(*args, **kw)
 
@@ -438,7 +434,7 @@ class NoIfRangeTests(unittest.TestCase):
         d = self._getTargetClass()
         self.assertEquals(d.__nonzero__(), False)
         assert not d
-
+    
     def test___repr__(self):
         ir = self._makeOne()
         self.assertEquals(ir.__repr__(), '<Empty If-Range>')
@@ -458,6 +454,3 @@ class NoIfRangeTests(unittest.TestCase):
     def test_match_response(self):
         ir = self._makeOne()
         self.assertEquals(ir.match_response("IGNORED"), True)
-
-
-
