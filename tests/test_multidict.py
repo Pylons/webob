@@ -228,7 +228,7 @@ class NoVarsTestCase(unittest.TestCase):
 
     def _get_instance(self):
         return self.klass()
-
+    
     def test_getitem(self):
         d = self._get_instance()
         self.assertRaises(KeyError, d.__getitem__, 'a')
@@ -236,3 +236,19 @@ class NoVarsTestCase(unittest.TestCase):
     def test_setitem(self):
         d = self._get_instance()
         self.assertRaises(KeyError, d.__setitem__, 'a')
+
+    def test_delitem(self):
+        d = self._get_instance()
+        self.assertRaises(KeyError, d.__delitem__, 'a')
+
+    def test_get(self):
+        d = self._get_instance()
+        self.assertEqual(d.get('a', default = 'b'), 'b')
+
+    def test_getall(self):
+        d = self._get_instance()
+        self.assertEqual(d.getall('a'), [])
+
+    def test_getone(self):
+        d = self._get_instance()
+        self.assertRaises(KeyError, d.getone, 'a')        
