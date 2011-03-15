@@ -45,3 +45,11 @@ class TestAccept(TestCase):
         assert accept._parsed == [('da', 1),
                                   ('en-gb', 0.80000000000000004),
                                   ('en', 0.69999999999999996)]
+
+    def test_init_accept_invalid_value(self):
+        from webob.acceptparse import Accept
+        name, value = ('Accept-Language', 'da, q, en-gb;q=0.8')
+        accept = Accept(name, value)
+        # The "q" value should not be there.
+        assert accept._parsed == [('da', 1),
+                                  ('en-gb', 0.80000000000000004)]
