@@ -914,3 +914,28 @@ def test_encode_content_gzip_notyet_gzipped_lazy():
     eq_(res.content_length, None)
     eq_(list(res.app_iter), ['\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff', '',
                              'K\xcb\xcf\x07\x00', '!es\x8c\x03\x00\x00\x00'])
+
+def test_decode_content_identity():
+    res = Response()
+    res.content_encoding = 'identity'
+    result = res.decode_content()
+    eq_(result, None)
+
+def test_decode_content_weird():
+    res = Response()
+    res.content_encoding = 'weird'
+    assert_raises(ValueError, res.decode_content)
+
+def test_decode_content_gzip():
+    from gzip import GzipFile
+    io = StringIO()
+    gzip_f = GzipFile(filename='', mode='w', fileobj=io)
+    gzip_f.write('abc')
+    gzip_f.close()
+    body = io.getvalue()
+    res = Response()
+    res.content_encoding = 'gzip'
+    res.body = body
+    res.decode_content()
+    eq_(res.body, 'abc')
+    
