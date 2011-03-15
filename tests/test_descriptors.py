@@ -303,7 +303,6 @@ def test_parse_if_range_date():
     from webob.descriptors import IfRange
     from webob.etag import ETagMatcher
     ifr = parse_if_range("2011-03-15 01:24:43.272409")
-    import pdb; pdb.set_trace()
     eq_(type(ifr), IfRange)
     eq_(type(ifr.etag), ETagMatcher)
 
