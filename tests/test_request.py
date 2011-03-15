@@ -1877,7 +1877,7 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(req.environ['SERVER_NAME'], 'localhost')
         self.assertEqual(req.environ['SERVER_PORT'], '80')
         self.assertEqual(req.environ['SERVER_PROTOCOL'], 'HTTP/1.0')
-        self.assert_(isinstance(req.environ['wsgi.errors'], file))
+        self.assert_(hasattr(req.environ['wsgi.errors'], 'write') and hasattr(req.environ['wsgi.errors'], 'flush'))
         self.assert_(hasattr(req.environ['wsgi.input'], 'next'))
         self.assertEqual(req.environ['wsgi.multiprocess'], False)
         self.assertEqual(req.environ['wsgi.multithread'], False)
