@@ -1053,7 +1053,7 @@ class BaseRequestTests(unittest.TestCase):
             if k in ('CONTENT_LENGTH', 'webob.is_body_seekable'):
                 self.assert_(k not in clone.environ)
             elif k == 'wsgi.input':
-                self.failIf(clone.environ[k] is v)
+                self.assert_(clone.environ[k] is not v)
             else:
                 self.assertEqual(clone.environ[k], v)
 
