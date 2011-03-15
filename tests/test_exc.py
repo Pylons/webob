@@ -1,5 +1,6 @@
-import sys
+from webob.request import Request
 from webob.dec import wsgify
+from webob.exc import sys
 from webob.exc import no_escape
 from webob.exc import strip_tags
 from webob.exc import HTTPException 
@@ -7,7 +8,7 @@ from webob.exc import WSGIHTTPException
 from webob.exc import HTTPError
 from webob.exc import HTTPRedirection
 from webob.exc import HTTPRedirection
-from webob.exc import HTTPok
+from webob.exc import HTTPOk
 from webob.exc import HTTPCreated
 from webob.exc import HTTPAccepted
 from webob.exc import HTTPNonAuthoritativeInformation
@@ -129,7 +130,7 @@ def test_HTTPExceptionMiddleware_exception_exc_info_none():
     try:
         from webob import exc
         old_sys = exc.sys
-        webob.exc.sys = DummySys()
+        sys = DummySys()
         res = m( environ, start_response )
         assert_equal( res, None )
     finally:
