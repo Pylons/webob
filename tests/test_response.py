@@ -461,7 +461,11 @@ def test_body_get_is_unicode_verylong():
 def test_body_set_not_unicode_or_str():
     res = Response()
     assert_raises(TypeError, res.__setattr__, 'body', object())
-    
+
+def test_body_set_unicode():
+    res = Response()
+    assert_raises(TypeError, res.__setattr__, 'body', u'abc')
+
 def test_body_set_under_body_doesnt_exist():
     res = Response()
     del res._body
@@ -574,6 +578,11 @@ def test_content_type_params_get_no_semicolon_in_content_type_header():
     res.headers['Content-Type'] = 'foo'
     eq_(res.content_type_params, {})
 
+def test_content_type_params_get_semicolon_in_content_type_header():
+    res = Response()
+    res.headers['Content-Type'] = 'foo;encoding=utf-8'
+    eq_(res.content_type_params, {'encoding':'utf-8'})
+
 def test_content_type_params_set_value_dict_empty():
     res = Response()
     res.headers['Content-Type'] = 'foo;bar'
@@ -647,6 +656,19 @@ def test_set_cookie_value_is_unicode():
     val = unicode('La Pe\xc3\xb1a', 'utf-8')
     res.set_cookie('a', val)
     eq_(res.headerlist[-1], (r'Set-Cookie', 'a="La Pe\\303\\261a"; Path=/'))
+
+def test_delete_cookie():
+    res = Response()
+    res.headers['Set-Cookie'] = 'a=2; Path=/'
+    res.delete_cookie('a')
+    eq_(res.headerlist[-1][0], 'Set-Cookie')
+    val = [ x.strip() for x in res.headerlist[-1][1].split(';')]
+    assert len(val) == 4
+    val.sort()
+    eq_(val[0], 'Max-Age=0')
+    eq_(val[1], 'Path=/')
+    eq_(val[2], 'a=')
+    assert val[3].startswith('expires')
 
 def test_unset_cookie_not_existing_and_not_strict():
     res = Response()
@@ -781,3 +803,8 @@ def test_cache_control_set_unicode():
     res.cache_control = u'abc'
     eq_(repr(res.cache_control), "<CacheControl 'abc'>")
 
+def test_body_file_get():
+    res = Response()
+    result = res.body_file
+    from webob.response import ResponseBodyFile
+    eq_(result.__class__, ResponseBodyFile)
