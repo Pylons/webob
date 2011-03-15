@@ -90,6 +90,9 @@ class MultiDictTestCase(unittest.TestCase):
         d.clear()
         assert not d 
 
+    def test_repr(self):
+        assert repr(self._get_instance())
+
 class UnicodeMultiDictTestCase(MultiDictTestCase):
     klass = multidict.UnicodeMultiDict
     
