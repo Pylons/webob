@@ -1,7 +1,4 @@
 import unittest
-###############################################################################
-# TODO: test etag_property
-
 
 class etag_propertyTests(unittest.TestCase):
     def _getTargetClass(self):
