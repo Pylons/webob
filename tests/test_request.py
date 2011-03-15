@@ -1571,6 +1571,21 @@ class RequestTests_functional(unittest.TestCase):
         self.assertRaises(ValueError,
                           BaseRequest.from_string, _test_req2 + 'xx')
 
+    def test_from_string_extra_data(self):
+        from webob import BaseRequest
+        _test_req_copy = _test_req.replace('Content-Type',
+                            'Content-Length: 337\r\nContent-Type')
+        self.assertRaises(ValueError, BaseRequest.from_string,
+                _test_req_copy+'EXTRA!')
+
+    def test_as_string_skip_body(self):
+        from webob import BaseRequest
+        req = BaseRequest.from_string(_test_req)
+        body = req.as_string(skip_body=True)
+        self.assertEqual(body.count('\r\n\r\n'), 0)
+        self.assertEqual(req.as_string(skip_body=337), req.as_string())
+        body = req.as_string(337-1).split('\r\n\r\n', 1)[1]
+        self.assertEqual(body, '<body skipped (len=337)>')
 
     def test_blank(self):
         # BaseRequest.blank class method
@@ -1919,14 +1934,44 @@ class RequestTests_functional(unittest.TestCase):
         # Not OK, should return 412 Precondition Failed:
         self.assert_(not server_token in req.if_match)
 
-    def test_adhoc_attributes(self):
+        # TODO: webob/request.py:1143
+        # the only known way to reach this line is by experimentation
+
+    def test_adhoc_attrs_set(self):
         from webob import Request
         req = Request.blank('/')
-        req.some_attr = 'blah blah blah'
-        new_req = Request(req.environ)
-        self.assertEqual(new_req.some_attr, 'blah blah blah')
-        self.assertEqual(req.environ['webob.adhoc_attrs'],
-                         {'some_attr': 'blah blah blah'})
+        req.foo = 1
+        self.assertEqual(req.environ['webob.adhoc_attrs'], {'foo': 1})
+
+    def test_adhoc_attrs_set_nonadhoc(self):
+        from webob import Request
+        req = Request.blank('/', environ={'webob.adhoc_attrs':{}})
+        req.request_body_tempfile_limit = 1
+        self.assertEqual(req.environ['webob.adhoc_attrs'], {})
+
+    def test_adhoc_attrs_get(self):
+        from webob import Request
+        req = Request.blank('/', environ={'webob.adhoc_attrs': {'foo': 1}})
+        self.assertEqual(req.foo, 1)
+
+    def test_adhoc_attrs_get_missing(self):
+        from webob import Request
+        req = Request.blank('/')
+        self.assertRaises(AttributeError, getattr, req, 'some_attr')
+
+    def test_adhoc_attrs_del(self):
+        from webob import Request
+        req = Request.blank('/', environ={'webob.adhoc_attrs': {'foo': 1}})
+        del req.foo
+        self.assertEqual(req.environ['webob.adhoc_attrs'], {})
+
+    def test_adhoc_attrs_del_missing(self):
+        from webob import Request
+        req = Request.blank('/')
+        self.assertRaises(AttributeError, delattr, req, 'some_attr')
+
+        # TODO: webob/request.py:1143
+        # the only known way to reach this line is by experimentation
 
     def test_call_WSGI_app(self):
         from webob import Request
