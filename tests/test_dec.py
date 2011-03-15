@@ -112,6 +112,14 @@ class DecoratorTests(unittest.TestCase):
         resp = test_app.request('/url/path', method='PUT',
                                 body=resp_str)
         self.assertEqual(resp.body, resp_str)
+        self.assertEqual(resp.content_length, 10)
+        self.assertEqual(resp.content_type, 'text/html')
+
+    def test_wsgify_undecorated(self):
+        def test_app(req):
+            return Response('whoa')
+        wrapped_test_app = wsgify(test_app)
+        self.assert_(wrapped_test_app.undecorated is test_app)
 
     def test_wsgify_custom_request(self):
         resp_str = 'hey, this is a test: %s'
@@ -146,6 +154,26 @@ class DecoratorTests(unittest.TestCase):
         self.assertEqual(resp.content_type, 'text/html')
         self.assertEqual(resp.charset, 'UTF-8')
         self.assertEqual(resp.content_length, 40)
+
+    def test_unbound_middleware(self):
+        @wsgify
+        def test_app(req):
+            return Response('Say wha!?')
+        unbound = wsgify.middleware(None, test_app, some='thing')
+        from webob.dec import _UnboundMiddleware
+        self.assert_(unbound.__class__ is _UnboundMiddleware)
+        self.assertEqual(unbound.kw, dict(some='thing'))
+        self.assertEqual('%r' % (unbound,),
+                         "wsgify.middleware(wsgify(tests.test_dec.test_app), "
+                         "some='thing')")
+
+    def test_unbound_middleware_no_app(self):
+        unbound = wsgify.middleware(None, None)
+        from webob.dec import _UnboundMiddleware
+        self.assert_(unbound.__class__ is _UnboundMiddleware)
+        self.assertEqual(unbound.kw, dict())
+        self.assertEqual('%r' % (unbound,),
+                         "wsgify.middleware()")
 
     def test_classapp(self):
         class HostMap(dict):
