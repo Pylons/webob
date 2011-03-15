@@ -1,7 +1,4 @@
 import unittest
-###############################################################################
-# TODO: test etag_property
-
 
 class etag_propertyTests(unittest.TestCase):
     def _getTargetClass(self):
@@ -430,8 +427,17 @@ class NoIfRangeTests(unittest.TestCase):
         from webob.etag import _NoIfRange
         return _NoIfRange
 
+    def test_str(self):
+        d = self._getTargetClass()
+        self.assertEquals(str(d), '')
+
     def _makeOne(self, *args, **kw):
         return self._getTargetClass()(*args, **kw)
+
+    def test_nonzero(self):
+        d = self._getTargetClass()
+        self.assertEquals(d.__nonzero__(), False)
+        assert not d
 
     def test___repr__(self):
         ir = self._makeOne()

@@ -35,6 +35,8 @@ Coverage
 
 - webob.response (caseman/mcdonc)
 
+- webob.exc (joe)
+
 Doctest-to-Unit Test Conversion
 -------------------------------
 
