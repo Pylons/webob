@@ -755,13 +755,29 @@ def test_cache_control_set_object_error():
     res = Response()
     assert_raises(AttributeError, setattr, res.cache_control, 'max_stale', 10)
 
-def test_cache_control_set_asdict():
-    res = Response()
-    res.cache_control = {}
-    eq_(repr(res.cache_control), "<CacheControl ''>")
-
 def test_cache_expires_set():
     res = Response()
     res.cache_expires = True
     eq_(repr(res.cache_control),
         "<CacheControl 'max-age=0, must-revalidate, no-cache, no-store'>")
+
+def test_status_int_set():
+    res = Response()
+    res.status_int = 400
+    eq_(res._status, '400 Bad Request')
+
+def test_cache_control_set_dict():
+    res = Response()
+    res.cache_control = {'a':'b'}
+    eq_(repr(res.cache_control), "<CacheControl 'a=b'>")
+    
+def test_cache_control_set_None():
+    res = Response()
+    res.cache_control = None
+    eq_(repr(res.cache_control), "<CacheControl ''>")
+
+def test_cache_control_set_unicode():
+    res = Response()
+    res.cache_control = u'abc'
+    eq_(repr(res.cache_control), "<CacheControl 'abc'>")
+
