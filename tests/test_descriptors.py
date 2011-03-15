@@ -285,3 +285,8 @@ def test_serialize_etag_response():
     etresp = serialize_etag_response("etag")
     eq_(etresp, '"etag"')
 
+def test_parse_if_range_is_None():
+    from webob.descriptors import parse_if_range
+    from webob.descriptors import NoIfRange
+    eq_(NoIfRange, parse_if_range())
+
