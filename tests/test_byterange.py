@@ -1,4 +1,4 @@
-from webob.byterange import Range, ContentRange
+from webob.byterange import Range, ContentRange, _is_content_range_valid
 
 from nose.tools import assert_true, assert_false, assert_equal, assert_raises
 
@@ -168,7 +168,52 @@ def test_cr_parse_no_range():
     contentrange = ContentRange( 0, 99, 100 )
     assert_equal( contentrange.parse( 'bytes 0 99/100' ), None )
 
+def test_cr_parse_range_star():
+    contentrange = ContentRange( 0, 99, 100 )
+    assert_equal( contentrange.parse( 'bytes */100' ).__class__, ContentRange )
+
+def test_cr_parse_parse_problem_1():
+    contentrange = ContentRange( 0, 99, 100 )
+    assert_equal( contentrange.parse( 'bytes A-99/100' ), None )
+
+def test_cr_parse_parse_problem_2():
+    contentrange = ContentRange( 0, 99, 100 )
+    assert_equal( contentrange.parse( 'bytes 0-B/100' ), None )
+
+def test_cr_parse_content_invalid():
+    contentrange = ContentRange( 0, 99, 100 )
+    assert_equal( contentrange.parse( 'bytes 99-0/100' ), None )
+
 def test_contentrange_str_length_start():
     contentrange = ContentRange( 0, 99, 100 )
     assert_equal( contentrange.parse('bytes 0 99/*'), None )
 
+# _is_content_range_valid function
+
+def test_is_content_range_valid_start_none():
+    contentrange = ContentRange( 0, 99, 100 )
+    assert_equal( _is_content_range_valid( None, 99, 90), False )
+
+def test_is_content_range_valid_stop_none():
+    contentrange = ContentRange( 0, 99, 100 )
+    assert_equal( _is_content_range_valid( 99, None, 90), False )
+
+def test_is_content_range_valid_start_stop_none():
+    contentrange = ContentRange( 0, 99, 100 )
+    assert_equal( _is_content_range_valid( None, None, 90), True )
+
+def test_is_content_range_valid_start_none():
+    contentrange = ContentRange( 0, 99, 100 )
+    assert_equal( _is_content_range_valid( None, 99, 90), False )
+
+def test_is_content_range_valid_length_none():
+    contentrange = ContentRange( 0, 99, 100 )
+    assert_equal( _is_content_range_valid( 0, 99, None), True )
+
+def test_is_content_range_valid_stop_greater_than_length_response():
+    contentrange = ContentRange( 0, 99, 100 )
+    assert_equal( _is_content_range_valid( 0, 99, 90, response=True), False )
+
+def test_is_content_range_valid_stop_greater_than_length():
+    contentrange = ContentRange( 0, 99, 100 )
+    assert_equal( _is_content_range_valid( 0, 99, 90), True )
