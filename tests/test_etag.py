@@ -365,3 +365,13 @@ class IfRangeTests(unittest.TestCase):
         dt = datetime.datetime(2001,11,9, 1,8,47,0, UTC())
         self.assertEquals(res.date, dt)
 
+
+class NoIfRangeTests(unittest.TestCase):
+    def _getTargetClass(self):
+        from webob.etag import _NoIfRange
+        return _NoIfRange()
+
+    def test_str(self):
+        d = self._getTargetClass()
+        self.assertEquals(str(d), '')
+       
