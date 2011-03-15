@@ -392,3 +392,33 @@ def test_parse_int_safe_invalid():
 def test_serialize_int():
     from webob.descriptors import serialize_int
     assert serialize_int is str
+
+def test_parse_content_range_none():
+    from webob.descriptors import parse_content_range
+    eq_(parse_content_range(None), None)
+
+def test_parse_content_range_emptystr():
+    from webob.descriptors import parse_content_range
+    eq_(parse_content_range(' '), None)
+
+def test_parse_content_range():
+    from webob.byterange import ContentRange
+    from webob.descriptors import parse_content_range
+    val = parse_content_range("bytes 0-499/1234")
+    eq_(val.length, ContentRange.parse("bytes 0-499/1234").length)
+    eq_(val.start, ContentRange.parse("bytes 0-499/1234").start)
+    eq_(val.stop, ContentRange.parse("bytes 0-499/1234").stop)
+
+def test_serialize_content_range_none():
+    from webob.descriptors import serialize_content_range
+    eq_(serialize_content_range(None), 'None') ### XXX: Seems wrong
+
+def test_serialize_content_range_emptystr():
+    from webob.descriptors import serialize_content_range
+    eq_(serialize_content_range(''), None)
+
+def test_serialize_content_range_invalid():
+    from webob.descriptors import serialize_content_range
+    assert_raises(ValueError, serialize_content_range, (1,))
+
+
