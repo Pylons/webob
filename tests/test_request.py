@@ -921,7 +921,78 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(req.content_length, 0)
         self.assert_(req.is_body_seekable)
 
-    # str_POST
+    def test_str_POST_not_POST_or_PUT(self):
+        from webob.multidict import NoVars
+        environ = {'REQUEST_METHOD': 'GET',
+                  }
+        req = self._makeOne(environ)
+        result = req.str_POST
+        self.assert_(isinstance(result, NoVars))
+        self.assert_(result.reason.startswith('Not a form request'))
+
+    def test_str_POST_existing_cache_hit(self):
+        INPUT = self._makeStringIO('input')
+        environ = {'wsgi.input': INPUT,
+                   'REQUEST_METHOD': 'POST',
+                   'webob._parsed_post_vars': ({'foo': 'bar'}, INPUT),
+                  }
+        req = self._makeOne(environ)
+        result = req.str_POST
+        self.assertEqual(result, {'foo': 'bar'})
+
+    def test_str_PUT_missing_content_type(self):
+        from webob.multidict import NoVars
+        INPUT = self._makeStringIO('input')
+        environ = {'wsgi.input': INPUT,
+                   'REQUEST_METHOD': 'PUT',
+                  }
+        req = self._makeOne(environ)
+        result = req.str_POST
+        self.assert_(isinstance(result, NoVars))
+        self.assert_(result.reason.startswith('Not an HTML form submission'))
+
+    def test_str_PUT_bad_content_type(self):
+        from webob.multidict import NoVars
+        INPUT = self._makeStringIO('input')
+        environ = {'wsgi.input': INPUT,
+                   'REQUEST_METHOD': 'PUT',
+                   'CONTENT_TYPE': 'text/plain',
+                  }
+        req = self._makeOne(environ)
+        result = req.str_POST
+        self.assert_(isinstance(result, NoVars))
+        self.assert_(result.reason.startswith('Not an HTML form submission'))
+
+    def test_str_POST_multipart(self):
+        BODY_TEXT = (
+            '------------------------------deb95b63e42a\n'
+            'Content-Disposition: form-data; name="foo"\n'
+            '\n'
+            'foo\n'
+            '------------------------------deb95b63e42a\n'
+            'Content-Disposition: form-data; name="bar"; filename="bar.txt"\n'
+            'Content-type: application/octet-stream\n'
+            '\n'
+            'these are the contents of the file "bar.txt"\n'
+            '\n'
+            '------------------------------deb95b63e42a--\n')
+        INPUT = self._makeStringIO(BODY_TEXT)
+        environ = {'wsgi.input': INPUT,
+                   'webob.is_body_seekable': True,
+                   'REQUEST_METHOD': 'POST',
+                   'CONTENT_TYPE': 'multipart/form-data; '
+                      'boundary=----------------------------deb95b63e42a',
+                   'CONTENT_LENGTH': len(BODY_TEXT),
+                  }
+        req = self._makeOne(environ)
+        result = req.str_POST
+        self.assertEqual(result['foo'], 'foo')
+        bar = result['bar']
+        self.assertEqual(bar.name, 'bar')
+        self.assertEqual(bar.filename, 'bar.txt')
+        self.assertEqual(bar.file.read(),
+                         'these are the contents of the file "bar.txt"\n')
+
     # POST
     # str_GET
     # GET
