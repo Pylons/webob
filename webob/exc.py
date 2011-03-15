@@ -1062,7 +1062,7 @@ class HTTPExceptionMiddleware(object):
 
 try:
     from paste import httpexceptions
-except ImportError:
+except ImportError:   # pragma: no cover
     # Without Paste we don't need to do this fixup
     pass
 else:

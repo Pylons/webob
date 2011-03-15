@@ -2,6 +2,9 @@ import sys
 from webob import *
 from webob.dec import wsgify
 from webob.exc import *
+import webob
+
+from nose.tools import assert_true, assert_false, assert_equal, assert_raises
 
 @wsgify
 def method_not_allowed_app(req):
@@ -22,3 +25,49 @@ def test_WSGIHTTPException_headers():
                                      ('Set-Cookie', 'a=2')])
     mixed = exc.headers.mixed()
     assert mixed['set-cookie'] ==  ['a=1', 'a=2']
+
+def test_HTTPExceptionMiddleware_ok():
+    def app( environ, start_response ):
+        return '123'
+    application = app
+    m = HTTPExceptionMiddleware(application)
+    environ = {}
+    start_response = None
+    res = m( environ, start_response )
+    assert_equal( res, '123' )
+    
+def test_HTTPExceptionMiddleware_exception():
+    def wsgi_response( environ, start_response):
+        return '123'
+    def app( environ, start_response ):
+        raise HTTPException( None, wsgi_response )
+    application = app
+    m = HTTPExceptionMiddleware(application)
+    environ = {}
+    start_response = None
+    res = m( environ, start_response )
+    assert_equal( res, '123' )
+
+# This test almost passes, advice from Chris is needed
+#
+#def test_HTTPExceptionMiddleware_exception_exc_info_none():
+#    class DummySys:
+#        def exc_info(self):
+#            return None
+#    def wsgi_response( environ, start_response):
+#        return '123'
+#    def app( environ, start_response ):
+#        raise HTTPException( None, wsgi_response )
+#    application = app
+#    m = HTTPExceptionMiddleware(application)
+#    environ = {}
+#    start_response = None
+#    try:
+#        from webob import exc
+#        old_sys = exc.sys
+#        webob.exc.sys = DummySys()
+#        import pdb; pdb.set_trace()
+#        res = m( environ, start_response )
+#        assert_equal( res, '123' )
+#    finally:
+#        exc.sys = old_sys
