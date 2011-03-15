@@ -229,3 +229,38 @@ def test_date_header():
     desc.fdel(resp)
     eq_(desc.fget(resp), None)
 
+def test_deprecated_property_ctor():
+    from webob.descriptors import deprecated_property
+    prop = property()
+    dep = deprecated_property(prop,
+                              'deprecated_property',
+                              "Don't use it",
+                              warning=False)
+    eq_(dep.descriptor, prop)
+    eq_(dep.attr, 'deprecated_property')
+    eq_(dep.message, "Don't use it")
+    assert_raises(DeprecationWarning, dep.warn)
+
+def test_deprecated_property_get():
+    from webob.descriptors import deprecated_property
+    dep = deprecated_property(deprecated_property,
+                              'deprecated_property',
+                              'DEPRECATED',
+                              warning=False)
+    assert_raises(DeprecationWarning, dep.__get__, dep)
+
+def test_deprecated_property_set():
+    from webob.descriptors import deprecated_property
+    dep = deprecated_property(deprecated_property,
+                              'deprecated_property',
+                              'DEPRECATED',
+                              warning=False)
+    assert_raises(DeprecationWarning, dep.__set__, dep, 'avalue')
+
+def test_deprecated_property_delete():
+    from webob.descriptors import deprecated_property
+    dep = deprecated_property(deprecated_property,
+                              'deprecated_property',
+                              'DEPRECATED',
+                              warning=False)
+    assert_raises(DeprecationWarning, dep.__delete__, dep)
