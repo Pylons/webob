@@ -6,6 +6,13 @@ from rfc822 import formatdate
 from webob import datetime_utils
 from nose.tools import ok_, eq_, assert_raises
 
+def test_UTC():
+    """Test missing function in _UTC"""
+    x = datetime_utils.UTC
+    ok_(x.tzname(datetime.now())=='UTC')
+    eq_(x.dst(datetime.now()), timedelta(0))
+    eq_(x.utcoffset(datetime.now()), timedelta(0))
+
 def test_parse_date():
     """Testing datetime_utils.parse_date.
     We need to verify the following scenarios:
@@ -59,6 +66,11 @@ def test_parse_date_delta():
         'should return None')
     ret = datetime_utils.parse_date_delta('Mon, 20 Nov 1995 19:12:08 -0500')
     eq_(ret, datetime(1995, 11, 21, 0, 12, 8, tzinfo=datetime_utils.UTC))
+    WHEN = datetime(2011, 3, 16, 10, 10, 37, tzinfo=datetime_utils.UTC)
+    with _NowRestorer(WHEN):
+        ret = datetime_utils.parse_date_delta(1)
+        eq_(ret, WHEN + timedelta(0, 1))
+
 
 def test_serialize_date_delta():
     """Testing datetime_utils.serialize_date_delta
@@ -66,13 +78,24 @@ def test_serialize_date_delta():
         * if we pass something that's not an int or float, it should delegate
           the task to serialize_date
     """
+    eq_(datetime_utils.serialize_date_delta(1), '1')
+    eq_(datetime_utils.serialize_date_delta(1.5), '1')
     ret = datetime_utils.serialize_date_delta(u'Mon, 20 Nov 1995 19:12:08 GMT')
     assert type(ret) is (str)
     eq_(ret, 'Mon, 20 Nov 1995 19:12:08 GMT')
 
-def test_UTC():
-    """Test missing function in _UTC"""
-    x = datetime_utils.UTC
-    ok_(x.tzname(datetime.now())=='UTC')
 
+class _NowRestorer(object):
 
+    def __init__(self, new_NOW):
+        self._new_NOW = new_NOW
+        self._old_NOW = None
+
+    def __enter__(self):
+        import webob.datetime_utils
+        self._old_NOW = webob.datetime_utils._NOW
+        webob.datetime_utils._NOW = self._new_NOW
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        import webob.datetime_utils
+        webob.datetime_utils._NOW = self._old_NOW
