@@ -149,3 +149,15 @@ class TestAccept(TestCase):
         from webob.acceptparse import Accept
         accept = Accept('Content-Type', 'text/html')
         assert accept.quality('foo/bar') is None
+
+    def test_first_match(self):
+        from webob.acceptparse import Accept
+        accept = Accept('Content-Type', 'text/html, foo/bar')
+        assert accept.first_match(['text/html', 'foo/bar']) == 'text/html'
+        assert accept.first_match(['foo/bar', 'text/html']) == 'foo/bar'
+        assert accept.first_match(['xxx/xxx', 'text/html']) == 'text/html'
+        assert accept.first_match(['xxx/xxx']) == 'xxx/xxx'
+        assert accept.first_match([None, 'text/html']) is None
+        assert accept.first_match(['text/html', None]) == 'text/html'
+        assert accept.first_match(['foo/bar', None]) == 'foo/bar'
+        self.assertRaises(ValueError, accept.first_match, [])
