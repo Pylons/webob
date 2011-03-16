@@ -254,3 +254,15 @@ class TestNilAccept(TestCase):
         assert nilaccept.first_match(['dummy', '']) == 'dummy'
         assert nilaccept.first_match(['', 'dummy']) == ''
 
+    def test_best_match(self):
+        nilaccept = self.NilAccept('Connection-Close')
+        assert nilaccept.best_match(['foo', 'bar']) == 'foo'
+        assert nilaccept.best_match([('foo', 1), ('bar', 0.5)]) == 'foo'
+        assert nilaccept.best_match([('foo', 0.5), ('bar', 1)]) == 'bar'
+        assert nilaccept.best_match([('foo', 0.5), 'bar']) == 'bar'
+        # default_match has no effect on NilAccept class
+        assert nilaccept.best_match([('foo', 0.5), 'bar'],
+                                    default_match=True) == 'bar'
+        assert nilaccept.best_match([('foo', 0.5), 'bar'],
+                                    default_match=False) == 'bar'
+
