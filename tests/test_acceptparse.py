@@ -304,3 +304,10 @@ class TestMIMEAccept(TestCase):
         assert mimeaccept._parsed == []
         mimeaccept = self.MIMEAccept('Content-Type', 'image/*')
         assert mimeaccept._parsed == [('image/*', 1)]
+
+    def test_accept_html(self):
+        mimeaccept = self.MIMEAccept('Content-Type', 'image/jpg')
+        assert not mimeaccept.accept_html()
+        mimeaccept = self.MIMEAccept('Content-Type', 'image/jpg, text/html')
+        assert mimeaccept.accept_html()
+
