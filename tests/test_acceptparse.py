@@ -223,3 +223,12 @@ class TestAccept(TestCase):
         assert accept._match('en-gb', 'en-gb')
         assert not accept._match('en-gb', 'fr-fr')
 
+
+class TestNilAccept(TestCase):
+    def NilAccept(self, *args, **kwargs):
+        from webob.acceptparse import NilAccept
+        return NilAccept(*args, **kwargs)
+
+    def test_init(self):
+        nilaccept = self.NilAccept('Connection-Close')
+        assert nilaccept.header_name == 'Connection-Close'
