@@ -137,3 +137,15 @@ class TestAccept(TestCase):
         from webob.acceptparse import Accept
         accept = Accept('Content-Type', 'text/html')
         assert not 'foo/bar' in accept
+
+    def test_quality(self):
+        from webob.acceptparse import Accept
+        accept = Accept('Content-Type', 'text/html')
+        assert accept.quality('text/html') == 1
+        accept = Accept('Content-Type', 'text/html;q=0.5')
+        assert accept.quality('text/html') == 0.5
+
+    def test_quality_not_found(self):
+        from webob.acceptparse import Accept
+        accept = Accept('Content-Type', 'text/html')
+        assert accept.quality('foo/bar') is None
