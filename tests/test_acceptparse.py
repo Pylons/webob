@@ -311,3 +311,11 @@ class TestMIMEAccept(TestCase):
         mimeaccept = self.MIMEAccept('Content-Type', 'image/jpg, text/html')
         assert mimeaccept.accept_html()
 
+    def test_match(self):
+        mimeaccept = self.MIMEAccept('Content-Type', 'image/jpg')
+        assert mimeaccept._match('image/jpg', 'image/jpg')
+        assert mimeaccept._match('image/*', 'image/jpg')
+        assert mimeaccept._match('*/*', 'image/jpg')
+        assert not mimeaccept._match('text/html', 'image/jpg')
+        self.assertRaises(AssertionError, mimeaccept._match, 'image/jpg', '*/*')
+
