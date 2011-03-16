@@ -214,3 +214,8 @@ class TestNilAccept(TestCase):
         nilaccept = self.NilAccept('Connection-Close')
         assert repr(nilaccept) == ("<NilAccept for Connection-Close: <class "
                                    "'webob.acceptparse.Accept'>>")
+
+    def test_str(self):
+        nilaccept = self.NilAccept('Connection-Close')
+        assert str(nilaccept) == ''
+
