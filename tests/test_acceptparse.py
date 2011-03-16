@@ -235,6 +235,10 @@ class TestNilAccept(TestCase):
         assert isinstance(new_accept, accept.__class__)
         assert new_accept.header_name == 'Connection-Close'
         assert new_accept.header_value == ''
+        new_accept = nilaccept + 'foo'
+        assert isinstance(new_accept, accept.__class__)
+        assert new_accept.header_name == 'Connection-Close'
+        assert new_accept.header_value == 'foo'
 
     def test_radd(self):
         nilaccept = self.NilAccept('Connection-Close')
