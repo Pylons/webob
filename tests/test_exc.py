@@ -69,6 +69,16 @@ def method_not_allowed_app(req):
 def test_noescape_null():
     assert no_escape(None) == ''
 
+def test_noescape_not_basestring():
+    assert no_escape(42) == '42'
+
+def test_noescape_unicode():
+    class DummyUnicodeObject(object):
+        def __unicode__(self):
+            return u'42'
+    duo = DummyUnicodeObject()
+    assert no_escape(duo) == u'42'
+
 def test_exception_with_unicode_data():
     req = Request.blank('/', method=u'POST')
     res = req.get_response(method_not_allowed_app)
