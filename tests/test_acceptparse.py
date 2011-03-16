@@ -248,3 +248,9 @@ class TestNilAccept(TestCase):
         # NilAccept.quality always returns 0
         assert nilaccept.quality('dummy') == 0
 
+    def test_first_match(self):
+        nilaccept = self.NilAccept('Connection-Close')
+        # NilAccept.first_match always returns element 0 of the list
+        assert nilaccept.first_match(['dummy', '']) == 'dummy'
+        assert nilaccept.first_match(['', 'dummy']) == ''
+
