@@ -127,3 +127,13 @@ class TestAccept(TestCase):
         accept = Accept('Content-Type', '')
         accept += 'text/html'
         assert str(accept) == 'text/html'
+
+    def test_contains(self):
+        from webob.acceptparse import Accept
+        accept = Accept('Content-Type', 'text/html')
+        assert 'text/html' in accept
+
+    def test_contains_not(self):
+        from webob.acceptparse import Accept
+        accept = Accept('Content-Type', 'text/html')
+        assert not 'foo/bar' in accept
