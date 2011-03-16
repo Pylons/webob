@@ -206,6 +206,10 @@ class TestNilAccept(TestCase):
         from webob.acceptparse import NilAccept
         return NilAccept(*args, **kwargs)
 
+    def Accept(self, *args, **kwargs):
+        from webob.acceptparse import Accept
+        return Accept(*args, **kwargs)
+
     def test_init(self):
         nilaccept = self.NilAccept('Connection-Close')
         assert nilaccept.header_name == 'Connection-Close'
@@ -222,4 +226,13 @@ class TestNilAccept(TestCase):
     def test_nonzero(self):
         nilaccept = self.NilAccept('Connection-Close')
         assert not nilaccept
+
+    def test_add(self):
+        nilaccept = self.NilAccept('Connection-Close')
+        accept = self.Accept('Content-Type', 'text/html')
+        assert nilaccept + accept is accept
+        new_accept = nilaccept + nilaccept
+        assert isinstance(new_accept, accept.__class__)
+        assert new_accept.header_name == 'Connection-Close'
+        assert new_accept.header_value == ''
 
