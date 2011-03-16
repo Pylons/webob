@@ -55,7 +55,7 @@ from webob.exc import HTTPVersionNotSupported
 from webob.exc import HTTPInsufficientStorage
 from webob.exc import HTTPExceptionMiddleware
 
-from nose.tools import assert_equal
+from nose.tools import assert_equal, assert_raises
 
 @wsgify
 def method_not_allowed_app(req):
@@ -100,6 +100,56 @@ def test_HTTPMove():
        'REQUEST_METHOD': 'HEAD'
     }
     m = _HTTPMove()
+    assert_equal( m( environ, start_response ), [] )
+
+def test_HTTPMove_location_not_none():
+    def start_response(status, headers, exc_info=None):
+        pass
+    environ = {
+       'wsgi.url_scheme': 'HTTP',
+       'SERVER_NAME': 'localhost',
+       'SERVER_PORT': '80',
+       'REQUEST_METHOD': 'HEAD'
+    }
+    m = _HTTPMove(location='http://example.com')
+    assert_equal( m( environ, start_response ), [] )
+
+def test_HTTPMove_add_slash_and_location():
+    def start_response(status, headers, exc_info=None):
+        pass
+    environ = {
+       'wsgi.url_scheme': 'HTTP',
+       'SERVER_NAME': 'localhost',
+       'SERVER_PORT': '80',
+       'REQUEST_METHOD': 'HEAD'
+    }
+    assert_raises( TypeError, _HTTPMove, location='http://example.com', add_slash=True )
+
+def test_HTTPMove_call_add_slash():
+    def start_response(status, headers, exc_info=None):
+        pass
+    environ = {
+       'wsgi.url_scheme': 'HTTP',
+       'SERVER_NAME': 'localhost',
+       'SERVER_PORT': '80',
+       'REQUEST_METHOD': 'HEAD'
+    }
+    m = _HTTPMove()
+    m.add_slash = True
+    assert_equal( m( environ, start_response ), [] )
+
+def test_HTTPMove_call_query_string():
+    def start_response(status, headers, exc_info=None):
+        pass
+    environ = {
+       'wsgi.url_scheme': 'HTTP',
+       'SERVER_NAME': 'localhost',
+       'SERVER_PORT': '80',
+       'REQUEST_METHOD': 'HEAD'
+    }
+    m = _HTTPMove()
+    m.add_slash = True
+    environ[ 'QUERY_STRING' ] = 'querystring'
     assert_equal( m( environ, start_response ), [] )
 
 def test_HTTPExceptionMiddleware_ok():

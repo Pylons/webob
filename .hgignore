@@ -19,3 +19,6 @@ html_coverage/**
 *_fixt.py
 *$py.class
 .tox/
+coverage.xml
+nosetests.xml
+
