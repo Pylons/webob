@@ -61,3 +61,30 @@ class TestAccept(TestCase):
         # I can't get to cover line 40-41 (webob.acceptparse) as the regex
         # will prevent from hitting these lines (aconrad)
         assert accept._parsed == [('da', 1), ('en-gb', 1)]
+
+    def test_accept_repr(self):
+        from webob.acceptparse import Accept
+        name, value = ('Content-Type', 'text/html')
+        accept = Accept(name, value)
+        assert '%r' % accept == '<%s at 0x%x %s: %s>' % ('Accept',
+                                                         abs(id(accept)),
+                                                         name,
+                                                         str(accept))
+
+    def test_accept_str(self):
+        from webob.acceptparse import Accept
+        name, value = ('Content-Type', 'text/html')
+        accept = Accept(name, value)
+        assert str(accept) == value
+
+    def test_accept_str_with_q_not_1(self):
+        from webob.acceptparse import Accept
+        name, value = ('Content-Type', 'text/html;q=0.5')
+        accept = Accept(name, value)
+        assert str(accept) == value
+
+    def test_accept_str_with_q_not_1_multiple(self):
+        from webob.acceptparse import Accept
+        name, value = ('Content-Type', 'text/html;q=0.5, foo/bar')
+        accept = Accept(name, value)
+        assert str(accept) == value
