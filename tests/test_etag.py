@@ -375,7 +375,7 @@ class IfRangeTests(unittest.TestCase):
         self.assertFalse(ir.match("DIFFERENT"))
 
     def test_match_response_no_date(self):
-        class DummyResponse():
+        class DummyResponse(object):
             etag = "ETAG"
             last_modified = None
         ir = self._makeOne(etag="ETAG", date='Fri, 09 Nov 2001 01:08:47 -0000')
@@ -383,7 +383,7 @@ class IfRangeTests(unittest.TestCase):
         self.assertFalse(ir.match_response(response))
 
     def test_match_response_w_date_earlier(self):
-        class DummyResponse():
+        class DummyResponse(object):
             etag = "ETAG"
             last_modified = 'Fri, 09 Nov 2001 01:00:00 -0000'
         ir = self._makeOne(etag="ETAG", date='Fri, 09 Nov 2001 01:08:47 -0000')
@@ -391,7 +391,7 @@ class IfRangeTests(unittest.TestCase):
         self.assertTrue(ir.match_response(response))
 
     def test_match_response_etag(self):
-        class DummyResponse():
+        class DummyResponse(object):
             etag = "ETAG"
             last_modified = None
         ir = self._makeOne(etag="ETAG")
