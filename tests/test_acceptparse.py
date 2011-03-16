@@ -236,3 +236,10 @@ class TestNilAccept(TestCase):
         assert new_accept.header_name == 'Connection-Close'
         assert new_accept.header_value == ''
 
+    def test_contains(self):
+        nilaccept = self.NilAccept('Connection-Close')
+        # NilAccept.__contains__ always returns True
+        assert '' in nilaccept
+        assert 'dummy' in nilaccept
+        assert nilaccept in nilaccept
+
