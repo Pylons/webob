@@ -209,7 +209,7 @@ class HTTPException(Exception):
     exception = property(exception)
 
     # for old style exceptions
-    if not newstyle_exceptions:
+    if not newstyle_exceptions:  #pragma NO COVERAGE
         def __getattr__(self, attr):
             if not attr.startswith('_'):
                 return getattr(self.wsgi_response, attr)
