@@ -202,3 +202,13 @@ class TestAccept(TestCase):
         assert accept.best_matches('foo/bar') == ['foo/bar']
         assert accept.best_matches('text/html') == ['foo/bar', 'text/html']
 
+    def test_accept_match(self):
+        from webob.acceptparse import Accept
+        accept = Accept('Content-Type', 'text/html')
+        #FIXME: Accept._match should be standalone function _match that is
+        # attached as Accept._match during Accept.__init__.
+        assert accept._match('*', 'text/html')
+        assert accept._match('text/html', 'text/html')
+        assert accept._match('TEXT/HTML', 'text/html')
+        assert not accept._match('foo/bar', 'text/html')
+
