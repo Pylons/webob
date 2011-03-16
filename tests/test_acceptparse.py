@@ -271,3 +271,15 @@ class TestNilAccept(TestCase):
         assert nilaccept.best_matches() == []
         assert nilaccept.best_matches('foo') == ['foo']
 
+class TestNoAccept(TestCase):
+    def NoAccept(self, *args, **kwargs):
+        from webob.acceptparse import NoAccept
+        return NoAccept(*args, **kwargs)
+
+    def test_contains(self):
+        noaccept = self.NoAccept('Connection-Close')
+        # NoAccept.__contains__ always returns False
+        assert not '' in noaccept
+        assert not True in noaccept
+        assert not False in noaccept
+        assert not noaccept in noaccept
