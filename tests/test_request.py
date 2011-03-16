@@ -1169,14 +1169,13 @@ class BaseRequestTests(unittest.TestCase):
     #referrer
     #user_agent
     #__repr__
-    #as_string
     #__str__
-    #from_string
     #from_file
     #call_application
     #get_response
     #blank
 
+    #from_string
     def test_from_string_extra_data(self):
         from webob import BaseRequest
         _test_req_copy = _test_req.replace('Content-Type',
@@ -1184,6 +1183,7 @@ class BaseRequestTests(unittest.TestCase):
         self.assertRaises(ValueError, BaseRequest.from_string,
                 _test_req_copy+'EXTRA!')
 
+    #as_string
     def test_as_string_skip_body(self):
         from webob import BaseRequest
         req = BaseRequest.from_string(_test_req)
