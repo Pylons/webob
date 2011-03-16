@@ -212,3 +212,14 @@ class TestAccept(TestCase):
         assert accept._match('TEXT/HTML', 'text/html')
         assert not accept._match('foo/bar', 'text/html')
 
+    def test_accept_match_lang(self):
+        from webob.acceptparse import Accept
+        accept = Accept('Accept-Language', 'da, en-gb;q=0.8, en;q=0.7')
+        #FIXME: Accept._match_lang should be standalone function _match_lang
+        # that is attached as Accept._match during Accept.__init__.
+        assert accept._match('*', 'da')
+        assert accept._match('da', 'DA')
+        assert accept._match('en', 'en-gb')
+        assert accept._match('en-gb', 'en-gb')
+        assert not accept._match('en-gb', 'fr-fr')
+
