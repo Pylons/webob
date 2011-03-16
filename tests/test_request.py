@@ -1169,14 +1169,85 @@ class BaseRequestTests(unittest.TestCase):
     #referrer
     #user_agent
     #__repr__
-    #as_string
     #__str__
-    #from_string
     #from_file
+
     #call_application
+    def test_call_application_calls_application(self):
+        environ = {}
+        req = self._makeOne(environ)
+        def application(environ, start_response):
+            start_response('200 OK', [('content-type', 'text/plain')])
+            return ['...\n']
+        status, headers, output = req.call_application(application)
+        self.assertEqual(status, '200 OK')
+        self.assertEqual(headers, [('content-type', 'text/plain')])
+        self.assertEqual(''.join(output), '...\n')
+
+    def test_call_application_provides_write(self):
+        environ = {}
+        req = self._makeOne(environ)
+        def application(environ, start_response):
+            write = start_response('200 OK', [('content-type', 'text/plain')])
+            write('...\n')
+            return []
+        status, headers, output = req.call_application(application)
+        self.assertEqual(status, '200 OK')
+        self.assertEqual(headers, [('content-type', 'text/plain')])
+        self.assertEqual(''.join(output), '...\n')
+
+    def test_call_application_closes_iterable_when_mixed_with_write_calls(self):
+        environ = {
+            'test._call_application_called_close': False
+        }
+        req = self._makeOne(environ)
+        def application(environ, start_response):
+            write = start_response('200 OK', [('content-type', 'text/plain')])
+            class AppIter(object):
+                def __iter__(self):
+                    yield '...\n'
+                def close(self):
+                    environ['test._call_application_called_close'] = True
+            write('...\n')
+            return AppIter()
+        status, headers, output = req.call_application(application)
+        self.assertEqual(''.join(output), '...\n...\n')
+        self.assertEqual(environ['test._call_application_called_close'], True)
+
+    def test_call_application_raises_exc_info(self):
+        environ = {}
+        req = self._makeOne(environ)
+        def application(environ, start_response):
+            try:
+                raise RuntimeError('OH NOES')
+            except:
+                import sys
+                exc_info = sys.exc_info()
+            start_response('200 OK', [('content-type', 'text/plain')], exc_info)
+            return ['...\n']
+        self.assertRaises(RuntimeError, req.call_application, application)
+
+    def test_call_application_returns_exc_info(self):
+        environ = {}
+        req = self._makeOne(environ)
+        def application(environ, start_response):
+            try:
+                raise RuntimeError('OH NOES')
+            except:
+                import sys
+                exc_info = sys.exc_info()
+            start_response('200 OK', [('content-type', 'text/plain')], exc_info)
+            return ['...\n']
+        status, headers, output, exc_info = req.call_application(application, True)
+        self.assertEqual(status, '200 OK')
+        self.assertEqual(headers, [('content-type', 'text/plain')])
+        self.assertEqual(''.join(output), '...\n')
+        self.assertEqual(exc_info[0], RuntimeError)
+
     #get_response
     #blank
 
+    #from_string
     def test_from_string_extra_data(self):
         from webob import BaseRequest
         _test_req_copy = _test_req.replace('Content-Type',
@@ -1184,6 +1255,7 @@ class BaseRequestTests(unittest.TestCase):
         self.assertRaises(ValueError, BaseRequest.from_string,
                 _test_req_copy+'EXTRA!')
 
+    #as_string
     def test_as_string_skip_body(self):
         from webob import BaseRequest
         req = BaseRequest.from_string(_test_req)
