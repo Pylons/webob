@@ -161,3 +161,22 @@ class TestAccept(TestCase):
         assert accept.first_match(['text/html', None]) == 'text/html'
         assert accept.first_match(['foo/bar', None]) == 'foo/bar'
         self.assertRaises(ValueError, accept.first_match, [])
+
+    def test_best_match(self):
+        from webob.acceptparse import Accept
+        accept = Accept('Content-Type', 'text/html, foo/bar')
+        assert accept.best_match(['text/html', 'foo/bar']) == 'text/html'
+        assert accept.best_match(['foo/bar', 'text/html']) == 'foo/bar'
+        assert accept.best_match([('foo/bar', 0.5),
+                                  'text/html']) == 'text/html'
+        assert accept.best_match([('foo/bar', 0.5),
+                                  ('text/html', 0.4)]) == 'foo/bar'
+        self.assertRaises(ValueError, accept.best_match, ['text/*'])
+
+    def test_best_match_with_one_lower_q(self):
+        from webob.acceptparse import Accept
+        accept = Accept('Content-Type', 'text/html, foo/bar;q=0.5')
+        assert accept.best_match(['text/html', 'foo/bar']) == 'text/html'
+        accept = Accept('Content-Type', 'text/html;q=0.5, foo/bar')
+        assert accept.best_match(['text/html', 'foo/bar']) == 'foo/bar'
+
