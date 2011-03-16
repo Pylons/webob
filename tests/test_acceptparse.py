@@ -243,3 +243,8 @@ class TestNilAccept(TestCase):
         assert 'dummy' in nilaccept
         assert nilaccept in nilaccept
 
+    def test_quality(self):
+        nilaccept = self.NilAccept('Connection-Close')
+        # NilAccept.quality always returns 0
+        assert nilaccept.quality('dummy') == 0
+
