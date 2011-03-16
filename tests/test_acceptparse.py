@@ -331,3 +331,7 @@ class TestMIMEAccept(TestCase):
         assert not mimeaccept._match('text/html', 'image/jpg')
         self.assertRaises(AssertionError, mimeaccept._match, 'image/jpg', '*/*')
 
+
+class TestAcceptProperty(TestCase):
+    def test_accept_property(self):
+        from webob.acceptparse import accept_property
