@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from nose.tools import raises
 from webob import multidict
 
 class MultiDictTestCase(unittest.TestCase):
     klass = multidict.MultiDict
-    _list = [('a', u'\xe9'), ('a', 'e'), ('a', 'f'), ('b', 1)]
-    data = multidict.MultiDict(_list)
     
     def setUp(self):
+        self._list = [('a', u'\xe9'), ('a', 'e'), ('a', 'f'), ('b', 1)]
+        self.data = multidict.MultiDict(self._list)
         self.d = self._get_instance()
 
     def _get_instance(self):
@@ -208,12 +207,7 @@ class TrackableMultiDict(MultiDictTestCase):
     def test_dictextend(self):
         class Other:
             def __getitem__(self, item):
-                if item is 'a':
-                    return 1
-                elif item is 'b':
-                    return 2
-                elif item is 'c':
-                    return 3            
+                return {'a':1, 'b':2, 'c':3}.get(item)
     
             def keys(self):
                 return ['a', 'b', 'c']
