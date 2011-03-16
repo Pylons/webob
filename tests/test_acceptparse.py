@@ -62,10 +62,10 @@ class TestAccept(TestCase):
     def test_accept_repr(self):
         name, value = ('Content-Type', 'text/html')
         accept = self.Accept(name, value)
-        assert '%r' % accept == '<%s at 0x%x %s: %s>' % ('Accept',
-                                                         abs(id(accept)),
-                                                         name,
-                                                         str(accept))
+        assert repr(accept) == '<%s at 0x%x %s: %s>' % ('Accept',
+                                                        abs(id(accept)),
+                                                        name,
+                                                        str(accept))
 
     def test_accept_str(self):
         name, value = ('Content-Type', 'text/html')
@@ -209,3 +209,8 @@ class TestNilAccept(TestCase):
     def test_init(self):
         nilaccept = self.NilAccept('Connection-Close')
         assert nilaccept.header_name == 'Connection-Close'
+
+    def test_repr(self):
+        nilaccept = self.NilAccept('Connection-Close')
+        assert repr(nilaccept) == ("<NilAccept for Connection-Close: <class "
+                                   "'webob.acceptparse.Accept'>>")
