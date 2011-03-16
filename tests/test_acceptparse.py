@@ -290,3 +290,17 @@ class TestMIMEAccept(TestCase):
     def MIMEAccept(self, *args, **kwargs):
         from webob.acceptparse import MIMEAccept
         return MIMEAccept(*args, **kwargs)
+
+    def test_init(self):
+        mimeaccept = self.MIMEAccept('Content-Type', 'image/jpg')
+        assert mimeaccept._parsed == [('image/jpg', 1)]
+        mimeaccept = self.MIMEAccept('Content-Type', 'image/png, image/jpg;q=0.5')
+        assert mimeaccept._parsed == [('image/png', 1), ('image/jpg', 0.5)]
+        mimeaccept = self.MIMEAccept('Content-Type', 'image, image/jpg;q=0.5')
+        assert mimeaccept._parsed == [('image/jpg', 0.5)]
+        mimeaccept = self.MIMEAccept('Content-Type', '*/*')
+        assert mimeaccept._parsed == [('*/*', 1)]
+        mimeaccept = self.MIMEAccept('Content-Type', '*/png')
+        assert mimeaccept._parsed == []
+        mimeaccept = self.MIMEAccept('Content-Type', 'image/*')
+        assert mimeaccept._parsed == [('image/*', 1)]
