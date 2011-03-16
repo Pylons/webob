@@ -956,7 +956,9 @@ class BaseRequest(object):
             r.headers[hname] = hval
         clen = r.content_length
         if r.method in ('PUT', 'POST'):
-            r.body = fp.read(clen if (clen is not None) else -1)
+            if clen is None:
+                clen = -1
+            r.body = fp.read(clen)
         return r
 
     def call_application(self, application, catch_exc_info=False):
