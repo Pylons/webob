@@ -1053,7 +1053,7 @@ class BaseRequestTests(unittest.TestCase):
             if k in ('CONTENT_LENGTH', 'webob.is_body_seekable'):
                 self.assert_(k not in clone.environ)
             elif k == 'wsgi.input':
-                self.failIf(clone.environ[k] is v)
+                self.assert_(clone.environ[k] is not v)
             else:
                 self.assertEqual(clone.environ[k], v)
 
@@ -1104,7 +1104,57 @@ class BaseRequestTests(unittest.TestCase):
     # accept_encoding
     # accept_language
     # authorization
+
     # cache_control
+    def test_cache_control_reflects_environ(self):
+        environ = {
+            'HTTP_CACHE_CONTROL': 'max-age=5',
+        }
+        req = self._makeOne(environ)
+        result = req.cache_control
+        self.assertEqual(result.properties, {'max-age': 5})
+        req.environ.update(HTTP_CACHE_CONTROL='max-age=10')
+        result = req.cache_control
+        self.assertEqual(result.properties, {'max-age': 10})
+        req.environ.update(HTTP_CACHE_CONTROL='')
+        result = req.cache_control
+        self.assertEqual(result.properties, {})
+
+    def test_cache_control_updates_environ(self):
+        environ = {}
+        req = self._makeOne(environ)
+        req.cache_control.max_age = 5
+        result = req.environ['HTTP_CACHE_CONTROL']
+        self.assertEqual(result, 'max-age=5')
+        req.cache_control.max_age = 10
+        result = req.environ['HTTP_CACHE_CONTROL']
+        self.assertEqual(result, 'max-age=10')
+        req.cache_control = None
+        result = req.environ['HTTP_CACHE_CONTROL']
+        self.assertEqual(result, '')
+        del req.cache_control
+        self.assert_('HTTP_CACHE_CONTROL' not in req.environ)
+
+    def test_cache_control_set_dict(self):
+        environ = {}
+        req = self._makeOne(environ)
+        req.cache_control = {'max-age': 5}
+        result = req.cache_control
+        self.assertEqual(result.max_age, 5)
+
+    def test_cache_control_set_object(self):
+        from webob.cachecontrol import CacheControl
+        environ = {}
+        req = self._makeOne(environ)
+        req.cache_control = CacheControl({'max-age': 5}, type='request')
+        result = req.cache_control
+        self.assertEqual(result.max_age, 5)
+
+    def test_cache_control_gets_cached(self):
+        environ = {}
+        req = self._makeOne(environ)
+        self.assert_(req.cache_control is req.cache_control)
+
     #if_match
     #if_none_match
 
@@ -1877,7 +1927,7 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(req.environ['SERVER_NAME'], 'localhost')
         self.assertEqual(req.environ['SERVER_PORT'], '80')
         self.assertEqual(req.environ['SERVER_PROTOCOL'], 'HTTP/1.0')
-        self.assert_(isinstance(req.environ['wsgi.errors'], file))
+        self.assert_(hasattr(req.environ['wsgi.errors'], 'write') and hasattr(req.environ['wsgi.errors'], 'flush'))
         self.assert_(hasattr(req.environ['wsgi.input'], 'next'))
         self.assertEqual(req.environ['wsgi.multiprocess'], False)
         self.assertEqual(req.environ['wsgi.multithread'], False)

@@ -24,7 +24,7 @@ class GMT(tzinfo):
 
 
 class MockDescriptor:
-    _val = None
+    _val = 'avalue'
     def __get__(self, obj, type=None):
         return self._val
     def __set__(self, obj, val):
@@ -73,6 +73,7 @@ def test_environ_getter_default_fset_none():
     from webob.descriptors import environ_getter
     req = Request.blank('/')
     desc = environ_getter('akey', default='the_default')
+    desc.fset(req, 'baz')
     desc.fset(req, None)
     ok_('akey' not in req.environ)
 
@@ -105,42 +106,92 @@ def test_upath_property_fset():
     desc.fset(req, 'avalue')
     eq_(desc.fget(req), 'avalue')
 
-def test_header_getter():
+def test_header_getter_doc():
     from webob.descriptors import header_getter
-    from webob import Response
-    resp = Response('aresp')
     desc = header_getter('AHEADER', '14.3')
     eq_(desc.__doc__, "Gets and sets and deletes the AHEADER header. For "
         "more information on AHEADER see `section 14.3 "
         "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3>`_.")
+
+def test_header_getter_fget():
+    from webob.descriptors import header_getter
+    from webob import Response
+    resp = Response('aresp')
+    desc = header_getter('AHEADER', '14.3')
     eq_(desc.fget(resp), None)
+
+def test_header_getter_fset():
+    from webob.descriptors import header_getter
+    from webob import Response
+    resp = Response('aresp')
+    desc = header_getter('AHEADER', '14.3')
     desc.fset(resp, 'avalue')
     eq_(desc.fget(resp), 'avalue')
+
+def test_header_getter_fset_none():
+    from webob.descriptors import header_getter
+    from webob import Response
+    resp = Response('aresp')
+    desc = header_getter('AHEADER', '14.3')
+    desc.fset(resp, 'avalue')
     desc.fset(resp, None)
     eq_(desc.fget(resp), None)
+
+def test_header_getter_fdel():
+    from webob.descriptors import header_getter
+    from webob import Response
+    resp = Response('aresp')
+    desc = header_getter('AHEADER', '14.3')
     desc.fset(resp, 'avalue2')
-    eq_(desc.fget(resp), 'avalue2')
     desc.fdel(resp)
     eq_(desc.fget(resp), None)
 
 def test_header_getter_unicode():
     from webob.descriptors import header_getter
-    from webob import Response
-    resp = Response('aresp')
     desc = header_getter('AHEADER', '14.3')
     eq_(desc.__doc__, "Gets and sets and deletes the AHEADER header. For "
         "more information on AHEADER see `section 14.3 "
         "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3>`_.")
-    eq_(desc.fget(resp), None)
-    desc.fset(resp, u'avalue')
-    eq_(desc.fget(resp), u'avalue')
-    desc.fset(resp, None)
-    eq_(desc.fget(resp), None)
-    desc.fset(resp, u'avalue2')
-    eq_(desc.fget(resp), u'avalue2')
-    desc.fdel(resp)
+
+def test_header_getter_unicode_fget_none():
+    from webob.descriptors import header_getter
+    from webob import Response
+    resp = Response('aresp')
+    desc = header_getter('AHEADER', '14.3')
     eq_(desc.fget(resp), None)
 
+def test_header_getter_unicode_fget():
+    from webob.descriptors import header_getter
+    from webob import Response
+    resp = Response('aresp')
+    desc = header_getter('AHEADER', '14.3')
+    desc.fset(resp, u'avalue')
+    eq_(desc.fget(resp), u'avalue')
+
+def test_header_getter_unicode_fset_none():
+    from webob.descriptors import header_getter
+    from webob import Response
+    resp = Response('aresp')
+    desc = header_getter('AHEADER', '14.3')
+    desc.fset(resp, None)
+    eq_(desc.fget(resp), None)
+
+def test_header_getter_unicode_fset():
+    from webob.descriptors import header_getter
+    from webob import Response
+    resp = Response('aresp')
+    desc = header_getter('AHEADER', '14.3')
+    desc.fset(resp, u'avalue2')
+    eq_(desc.fget(resp), u'avalue2')
+
+def test_header_getter_unicode_fdel():
+    from webob.descriptors import header_getter
+    from webob import Response
+    resp = Response('aresp')
+    desc = header_getter('AHEADER', '14.3')
+    desc.fset(resp, u'avalue3')
+    desc.fdel(resp)
+    eq_(desc.fget(resp), None)
 
 def test_converter_not_prop():
     from webob.descriptors import converter
@@ -150,7 +201,20 @@ def test_converter_not_prop():
         ('CONTENT_LENGTH', None, '14.13'),
         parse_int_safe, serialize_int, 'int')
 
-def test_converter_with_name():
+def test_converter_with_name_docstring():
+    from webob.descriptors import converter
+    from webob.descriptors import environ_getter
+    from webob.descriptors import parse_int_safe
+    from webob.descriptors import serialize_int
+    desc = converter(
+        environ_getter('CONTENT_LENGTH', '666', '14.13'),
+        parse_int_safe, serialize_int, 'int')
+    eq_(desc.__doc__, "Gets and sets the 'CONTENT_LENGTH' key in the "
+        "environment. For more information on CONTENT_LENGTH see `section 14.13 "
+        "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.13>`_.  "
+        "Converts it using int.")
+
+def test_converter_with_name_fget():
     from webob.descriptors import converter
     from webob.descriptors import environ_getter
     from webob.descriptors import parse_int_safe
@@ -159,15 +223,21 @@ def test_converter_with_name():
     desc = converter(
         environ_getter('CONTENT_LENGTH', '666', '14.13'),
         parse_int_safe, serialize_int, 'int')
-    eq_(desc.__doc__, "Gets and sets the 'CONTENT_LENGTH' key in the "
-        "environment. For more information on CONTENT_LENGTH see `section 14.13 "
-        "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.13>`_.  "
-        "Converts it using int.")
     eq_(desc.fget(req), 666)
+
+def test_converter_with_name_fset():
+    from webob.descriptors import converter
+    from webob.descriptors import environ_getter
+    from webob.descriptors import parse_int_safe
+    from webob.descriptors import serialize_int
+    req = Request.blank('/')
+    desc = converter(
+        environ_getter('CONTENT_LENGTH', '666', '14.13'),
+        parse_int_safe, serialize_int, 'int')
     desc.fset(req, '999')
     eq_(desc.fget(req), 999)
 
-def test_converter_without_name():
+def test_converter_without_name_fget():
     from webob.descriptors import converter
     from webob.descriptors import environ_getter
     from webob.descriptors import parse_int_safe
@@ -177,6 +247,16 @@ def test_converter_without_name():
         environ_getter('CONTENT_LENGTH', '666', '14.13'),
         parse_int_safe, serialize_int)
     eq_(desc.fget(req), 666)
+
+def test_converter_without_name_fset():
+    from webob.descriptors import converter
+    from webob.descriptors import environ_getter
+    from webob.descriptors import parse_int_safe
+    from webob.descriptors import serialize_int
+    req = Request.blank('/')
+    desc = converter(
+        environ_getter('CONTENT_LENGTH', '666', '14.13'),
+        parse_int_safe, serialize_int)
     desc.fset(req, '999')
     eq_(desc.fget(req), 999)
 
@@ -190,13 +270,7 @@ def test_converter_none_for_wrong_type():
         ## XXX: Should this fail  if the type is wrong?
         environ_getter('CONTENT_LENGTH', 'sixsixsix', '14.13'),
         parse_int_safe, serialize_int, 'int')
-    eq_(desc.__doc__, "Gets and sets the 'CONTENT_LENGTH' key in the "
-        "environment. For more information on CONTENT_LENGTH see `section 14.13 "
-        "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.13>`_.  "
-        "Converts it using int.")
     eq_(desc.fget(req), None)
-    desc.fset(req, '999')
-    eq_(desc.fget(req), 999)
 
 def test_converter_delete():
     from webob.descriptors import converter
@@ -208,11 +282,6 @@ def test_converter_delete():
         ## XXX: Should this fail  if the type is wrong?
         environ_getter('CONTENT_LENGTH', '666', '14.13'),
         parse_int_safe, serialize_int, 'int')
-    eq_(desc.__doc__, "Gets and sets the 'CONTENT_LENGTH' key in the "
-        "environment. For more information on CONTENT_LENGTH see `section 14.13 "
-        "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.13>`_.  "
-        "Converts it using int.")
-    eq_(desc.fget(req), 666)
     assert_raises(KeyError, desc.fdel, req)
 
 def test_list_header():
@@ -245,17 +314,17 @@ def test_parse_list_unicode_multiple():
     result = parse_list(u'avalue,avalue2')
     eq_(result, ('avalue', 'avalue2'))
 
-def test_serilize_list():
+def test_serialize_list():
     from webob.descriptors import serialize_list
     result = serialize_list(('avalue', 'avalue2'))
     eq_(result, 'avalue, avalue2')
 
-def test_serilize_list_string():
+def test_serialize_list_string():
     from webob.descriptors import serialize_list
     result = serialize_list('avalue')
     eq_(result, 'avalue')
 
-def test_serilize_list_unicode():
+def test_serialize_list_unicode():
     from webob.descriptors import serialize_list
     result = serialize_list(u'avalue')
     eq_(result, u'avalue')
@@ -270,25 +339,44 @@ def test_converter_date():
         "HTTP_DATE", "Tue, 15 Nov 1994 08:12:31 GMT", "14.8"))
     eq_(desc.fget(req),
         datetime.datetime(1994, 11, 15, 8, 12, 31, tzinfo=UTC))
+
+def test_converter_date_docstring():
+    from webob.descriptors import converter_date
+    from webob.descriptors import environ_getter
+    desc = converter_date(environ_getter(
+        "HTTP_DATE", "Tue, 15 Nov 1994 08:12:31 GMT", "14.8"))
     eq_(desc.__doc__, "Gets and sets the 'HTTP_DATE' key in the environment. "
         "For more information on Date see `section 14.8 "
         "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.8>`_.  "
         "Converts it using HTTP date.")
 
-def test_date_header():
+def test_date_header_fget_none():
+    from webob import Response
+    from webob.descriptors import date_header
+    resp = Response('aresponse')
+    desc = date_header('HTTP_DATE', "14.8")
+    eq_(desc.fget(resp), None)
+
+def test_date_header_fset_fget():
     import datetime
     from webob import Response
     from webob.descriptors import date_header
     resp = Response('aresponse')
     UTC = GMT()
     desc = date_header('HTTP_DATE', "14.8")
-    eq_(desc.fget(resp), None)
     desc.fset(resp, "Tue, 15 Nov 1994 08:12:31 GMT")
     eq_(desc.fget(resp), datetime.datetime(1994, 11, 15, 8, 12, 31, tzinfo=UTC))
+
+def test_date_header_fdel():
+    from webob import Response
+    from webob.descriptors import date_header
+    resp = Response('aresponse')
+    desc = date_header('HTTP_DATE', "14.8")
+    desc.fset(resp, "Tue, 15 Nov 1994 08:12:31 GMT")
     desc.fdel(resp)
     eq_(desc.fget(resp), None)
 
-def test_deprecated_property_ctor():
+def test_deprecated_property_ctor_prop():
     from webob.descriptors import deprecated_property
     prop = property()
     dep = deprecated_property(prop,
@@ -296,8 +384,32 @@ def test_deprecated_property_ctor():
                               "Don't use it",
                               warning=False)
     eq_(dep.descriptor, prop)
+
+def test_deprecated_property_ctor_attr():
+    from webob.descriptors import deprecated_property
+    prop = property()
+    dep = deprecated_property(prop,
+                              'deprecated_property',
+                              "Don't use it",
+                              warning=False)
     eq_(dep.attr, 'deprecated_property')
+
+def test_deprecated_property_ctor_message():
+    from webob.descriptors import deprecated_property
+    prop = property()
+    dep = deprecated_property(prop,
+                              'deprecated_property',
+                              "Don't use it",
+                              warning=False)
     eq_(dep.message, "Don't use it")
+
+def test_deprecated_property_ctor_raises():
+    from webob.descriptors import deprecated_property
+    prop = property()
+    dep = deprecated_property(prop,
+                              'deprecated_property',
+                              "Don't use it",
+                              warning=False)
     assert_raises(DeprecationWarning, dep.warn)
 
 def test_deprecated_property_get():
@@ -333,44 +445,99 @@ def test_deprecated_property_delete():
     assert_raises(DeprecationWarning, dep.__delete__, dep)
 
 def test_deprecated_property_repr():
+    import warnings
     from webob.descriptors import deprecated_property
     mock = MockDescriptor()
-    dep = deprecated_property(mock,
-                              'mock_property',
-                              'DEPRECATED')
-    assert dep.__repr__().startswith(
-        "<Deprecated attribute mock_property: "
-        "<tests.test_descriptors.MockDescriptor instance at")
+    try:
+        warnings.simplefilter('ignore')
+        dep = deprecated_property(mock,
+                                  'mock_property',
+                                  'DEPRECATED')
+        assert dep.__repr__().startswith(
+            "<Deprecated attribute mock_property: "
+            "<tests.test_descriptors.MockDescriptor instance at")
+    finally:
+        warnings.resetwarnings()
 
 def test_deprecated_property_warn_get():
-    from webob.descriptors import deprecated_property
     import warnings
-    warnings.simplefilter('error')
+    from webob.descriptors import deprecated_property
     mock = MockDescriptor()
     dep = deprecated_property(mock,
                               'mock_property',
                               'DEPRECATED')
-    assert_raises(DeprecationWarning, dep.__get__, mock)
+    try:
+        warnings.simplefilter('error')
+        assert_raises(DeprecationWarning, dep.__get__, mock)
+    finally:
+        warnings.resetwarnings()
 
 def test_deprecated_property_warn_set():
-    from webob.descriptors import deprecated_property
     import warnings
-    warnings.simplefilter("error")
+    from webob.descriptors import deprecated_property
     mock = MockDescriptor()
     dep = deprecated_property(mock,
                               'mock_property',
                               'DEPRECATED')
-    assert_raises(DeprecationWarning, dep.__set__, mock, 'avalue')
+    try:
+        warnings.simplefilter('error')
+        assert_raises(DeprecationWarning, dep.__set__, mock, 'avalue')
+    finally:
+        warnings.resetwarnings()
 
 def test_deprecated_property_warn_delete():
-    from webob.descriptors import deprecated_property
     import warnings
-    warnings.simplefilter("error")
+    from webob.descriptors import deprecated_property
     mock = MockDescriptor()
     dep = deprecated_property(mock,
                               'mock_property',
-                            'DEPRECATED')
-    assert_raises(DeprecationWarning, dep.__delete__, mock)
+                              'DEPRECATED')
+    try:
+        warnings.simplefilter('error')
+        assert_raises(DeprecationWarning, dep.__delete__, mock)
+    finally:
+        warnings.resetwarnings()
+
+def test_deprecated_property_warn_get_call():
+    import warnings
+    from webob.descriptors import deprecated_property
+    mock = MockDescriptor()
+    dep = deprecated_property(mock,
+                              'mock_property',
+                              'DEPRECATED')
+    try:
+        warnings.simplefilter('ignore')
+        eq_(dep.__get__(mock), 'avalue')
+    finally:
+        warnings.resetwarnings()
+
+def test_deprecated_property_warn_set_call():
+    import warnings
+    from webob.descriptors import deprecated_property
+    mock = MockDescriptor()
+    dep = deprecated_property(mock,
+                              'mock_property',
+                              'DEPRECATED')
+    try:
+        warnings.simplefilter('ignore')
+        dep.__set__(mock, 'avalue2')
+        eq_(dep.__get__(mock), 'avalue2')
+    finally:
+        warnings.resetwarnings()
+
+def test_deprecated_property_warn_delete_call():
+    import warnings
+    from webob.descriptors import deprecated_property
+    mock = MockDescriptor()
+    dep = deprecated_property(mock,
+                              'mock_property',
+                              'DEPRECATED')
+    try:
+        warnings.simplefilter('ignore')
+        dep.__delete__(mock)
+        eq_(dep.__get__(mock), None)
+    finally:
+        warnings.resetwarnings()
 
 def test_parse_etag_response():
     from webob.descriptors import parse_etag_response
@@ -397,20 +564,16 @@ def test_parse_if_range_is_None():
     from webob.descriptors import NoIfRange
     eq_(NoIfRange, parse_if_range(None))
 
-def test_parse_if_range_etag():
+def test_parse_if_range_date_ifr():
     from webob.descriptors import parse_if_range
     from webob.descriptors import IfRange
-    from webob.etag import ETagMatcher
-    ifr = parse_if_range('arange')
-    eq_(type(ifr), IfRange)
-    eq_(type(ifr.etag), ETagMatcher)
-
-def test_parse_if_range_date():
-    from webob.descriptors import parse_if_range
-    from webob.descriptors import IfRange
-    from webob.etag import ETagMatcher
     ifr = parse_if_range("2011-03-15 01:24:43.272409")
     eq_(type(ifr), IfRange)
+
+def test_parse_if_range_date_etagmatcher():
+    from webob.descriptors import parse_if_range
+    from webob.etag import ETagMatcher
+    ifr = parse_if_range("2011-03-15 01:24:43.272409")
     eq_(type(ifr.etag), ETagMatcher)
 
 def test_serialize_if_range_string():
@@ -440,11 +603,16 @@ def test_parse_range_none():
     val = parse_range(None)
     eq_(val, None)
 
-def test_parse_range_range():
+def test_parse_range_type():
     from webob.byterange import Range
     from webob.descriptors import parse_range
     val = parse_range("bytes=1-500")
     eq_(type(val), type(Range.parse("bytes=1-500")))
+
+def test_parse_range_values():
+    from webob.byterange import Range
+    from webob.descriptors import parse_range
+    val = parse_range("bytes=1-500")
     eq_(val.ranges, Range.parse("bytes=1-500").ranges)
 
 def test_serialize_range_none():
@@ -508,12 +676,22 @@ def test_parse_content_range_emptystr():
     from webob.descriptors import parse_content_range
     eq_(parse_content_range(' '), None)
 
-def test_parse_content_range():
+def test_parse_content_range_length():
     from webob.byterange import ContentRange
     from webob.descriptors import parse_content_range
     val = parse_content_range("bytes 0-499/1234")
     eq_(val.length, ContentRange.parse("bytes 0-499/1234").length)
+
+def test_parse_content_range_start():
+    from webob.byterange import ContentRange
+    from webob.descriptors import parse_content_range
+    val = parse_content_range("bytes 0-499/1234")
     eq_(val.start, ContentRange.parse("bytes 0-499/1234").start)
+
+def test_parse_content_range_stop():
+    from webob.byterange import ContentRange
+    from webob.descriptors import parse_content_range
+    val = parse_content_range("bytes 0-499/1234")
     eq_(val.stop, ContentRange.parse("bytes 0-499/1234").stop)
 
 def test_serialize_content_range_none():
@@ -528,9 +706,12 @@ def test_serialize_content_range_invalid():
     from webob.descriptors import serialize_content_range
     assert_raises(ValueError, serialize_content_range, (1,))
 
-def test_serialize_content_range():
+def test_serialize_content_range_asterisk():
     from webob.descriptors import serialize_content_range
     eq_(serialize_content_range((0, 500)), 'bytes 0-499/*')
+
+def test_serialize_content_range_defined():
+    from webob.descriptors import serialize_content_range
     eq_(serialize_content_range((0, 500, 1234)), 'bytes 0-499/1234')
 
 def test_parse_auth_params_leading_capital_letter():
@@ -610,4 +791,3 @@ def test_serialize_auth_digest_tuple():
     from webob.descriptors import serialize_auth
     val = serialize_auth(('Digest', {'realm':'"WebOb"', 'nonce':'abcde12345', 'qop':'foo'}))
     eq_(val, 'Digest nonce="abcde12345", realm=""WebOb"", qop="foo"')
-
