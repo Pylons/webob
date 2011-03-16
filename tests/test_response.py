@@ -428,6 +428,16 @@ def test_response_file_body_write_empty_app_iter():
     rbo.write('baz')
     eq_(res.app_iter, ['foo', 'baz'])
 
+def test_response_file_body_write_empty_body():
+    from webob.response import ResponseBodyFile
+    class FakeResponse:
+        body = ''
+    res = FakeResponse()
+    res._app_iter = res.app_iter = None
+    rbo = ResponseBodyFile(res)
+    rbo.write('baz')
+    eq_(res.app_iter, ['baz'])
+
 def test_response_file_body_close_not_implemented():
     from webob.response import ResponseBodyFile
     rbo = ResponseBodyFile(None)
