@@ -88,3 +88,42 @@ class TestAccept(TestCase):
         name, value = ('Content-Type', 'text/html;q=0.5, foo/bar')
         accept = Accept(name, value)
         assert str(accept) == value
+
+    def test_accept_add_other_accept(self):
+        from webob.acceptparse import Accept
+        accept = Accept('Content-Type', 'text/html') + \
+                 Accept('Content-Type', 'foo/bar')
+        assert str(accept) == 'text/html, foo/bar'
+        accept += Accept('Content-Type', 'bar/baz;q=0.5')
+        assert str(accept) == 'text/html, foo/bar, bar/baz;q=0.5'
+
+    def test_accept_add_other_list_of_tuples(self):
+        from webob.acceptparse import Accept
+        accept = Accept('Content-Type', 'text/html')
+        accept += [('foo/bar', 1)]
+        assert str(accept) == 'text/html, foo/bar'
+        accept += [('bar/baz', 0.5)]
+        assert str(accept) == 'text/html, foo/bar, bar/baz;q=0.5'
+        accept += ['she/bangs', 'the/house']
+        assert str(accept) == ('text/html, foo/bar, bar/baz;q=0.5, '
+                               'she/bangs, the/house')
+
+    def test_accept_add_other_dict(self):
+        from webob.acceptparse import Accept
+        accept = Accept('Content-Type', 'text/html')
+        accept += {'foo/bar': 1}
+        assert str(accept) == 'text/html, foo/bar'
+        accept += {'bar/baz': 0.5}
+        assert str(accept) == 'text/html, foo/bar, bar/baz;q=0.5'
+
+    def test_accept_add_other_empty_str(self):
+        from webob.acceptparse import Accept
+        accept = Accept('Content-Type', 'text/html')
+        accept += ''
+        assert str(accept) == 'text/html'
+
+    def test_accept_with_no_value_add_other_str(self):
+        from webob.acceptparse import Accept
+        accept = Accept('Content-Type', '')
+        accept += 'text/html'
+        assert str(accept) == 'text/html'
