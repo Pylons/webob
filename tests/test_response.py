@@ -656,7 +656,7 @@ def test_set_cookie_expires_is_not_None_and_max_age_is_None():
     val = [ x.strip() for x in res.headerlist[-1][1].split(';')]
     assert len(val) == 4
     val.sort()
-    eq_(val[0], 'Max-Age=86399')
+    ok_(val[0] in ('Max-Age=86399', 'Max-Age=86400'))
     eq_(val[1], 'Path=/')
     eq_(val[2], 'a=1')
     assert val[3].startswith('expires')
