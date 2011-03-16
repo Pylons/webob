@@ -180,3 +180,25 @@ class TestAccept(TestCase):
         accept = Accept('Content-Type', 'text/html;q=0.5, foo/bar')
         assert accept.best_match(['text/html', 'foo/bar']) == 'foo/bar'
 
+    def test_best_matches(self):
+        from webob.acceptparse import Accept
+        accept = Accept('Content-Type', 'text/html, foo/bar')
+        assert accept.best_matches() == ['text/html', 'foo/bar']
+        accept = Accept('Content-Type', 'text/html, foo/bar;q=0.5')
+        assert accept.best_matches() == ['text/html', 'foo/bar']
+        accept = Accept('Content-Type', 'text/html;q=0.5, foo/bar')
+        assert accept.best_matches() == ['foo/bar', 'text/html']
+
+    def test_best_matches_with_fallback(self):
+        from webob.acceptparse import Accept
+        accept = Accept('Content-Type', 'text/html, foo/bar')
+        assert accept.best_matches('xxx/yyy') == ['text/html',
+                                                  'foo/bar',
+                                                  'xxx/yyy']
+        accept = Accept('Content-Type', 'text/html;q=0.5, foo/bar')
+        assert accept.best_matches('xxx/yyy') == ['foo/bar',
+                                                  'text/html',
+                                                  'xxx/yyy']
+        assert accept.best_matches('foo/bar') == ['foo/bar']
+        assert accept.best_matches('text/html') == ['foo/bar', 'text/html']
+
