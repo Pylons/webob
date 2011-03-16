@@ -266,3 +266,8 @@ class TestNilAccept(TestCase):
         assert nilaccept.best_match([('foo', 0.5), 'bar'],
                                     default_match=False) == 'bar'
 
+    def test_best_matches(self):
+        nilaccept = self.NilAccept('Connection-Close')
+        assert nilaccept.best_matches() == []
+        assert nilaccept.best_matches('foo') == ['foo']
+
