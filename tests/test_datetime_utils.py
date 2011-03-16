@@ -67,9 +67,14 @@ def test_parse_date_delta():
     ret = datetime_utils.parse_date_delta('Mon, 20 Nov 1995 19:12:08 -0500')
     eq_(ret, datetime(1995, 11, 21, 0, 12, 8, tzinfo=datetime_utils.UTC))
     WHEN = datetime(2011, 3, 16, 10, 10, 37, tzinfo=datetime_utils.UTC)
-    with _NowRestorer(WHEN):
+    #with _NowRestorer(WHEN): Dammit, only Python 2.5 w/ __future__
+    nr = _NowRestorer(WHEN)
+    nr.__enter__()
+    try:
         ret = datetime_utils.parse_date_delta(1)
         eq_(ret, WHEN + timedelta(0, 1))
+    finally:
+        nr.__exit__(None, None, None)
 
 
 def test_serialize_date_delta():
