@@ -271,6 +271,7 @@ class TestNilAccept(TestCase):
         assert nilaccept.best_matches() == []
         assert nilaccept.best_matches('foo') == ['foo']
 
+
 class TestNoAccept(TestCase):
     def NoAccept(self, *args, **kwargs):
         from webob.acceptparse import NoAccept
@@ -283,3 +284,9 @@ class TestNoAccept(TestCase):
         assert not True in noaccept
         assert not False in noaccept
         assert not noaccept in noaccept
+
+
+class TestMIMEAccept(TestCase):
+    def MIMEAccept(self, *args, **kwargs):
+        from webob.acceptparse import MIMEAccept
+        return MIMEAccept(*args, **kwargs)
