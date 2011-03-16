@@ -219,3 +219,7 @@ class TestNilAccept(TestCase):
         nilaccept = self.NilAccept('Connection-Close')
         assert str(nilaccept) == ''
 
+    def test_nonzero(self):
+        nilaccept = self.NilAccept('Connection-Close')
+        assert not nilaccept
+
