@@ -187,7 +187,19 @@ def test_WSGIHTTPException_generate_response():
        'HTTP_ACCEPT': 'text/html'
     }
     excep = WSGIHTTPException()
-    assert_equal( excep(environ,start_response), [] )
+    assert_equal( excep(environ,start_response), [
+    '<html>\n'
+    ' <head>\n'
+    '  <title>None None</title>\n'
+    ' </head>\n'
+    ' <body>\n'
+    '  <h1>None None</h1>\n'
+    '  <br /><br />\n'
+    '\n'
+    '\n\n'
+    ' </body>\n'
+    '</html>' ]
+    )
 
 def test_WSGIHTTPException_call_w_body():
     def start_response(status, headers, exc_info=None):
@@ -199,8 +211,8 @@ def test_WSGIHTTPException_call_w_body():
        'REQUEST_METHOD': 'PUT'
     }
     excep = WSGIHTTPException()
-    excep.body = 'body'
-    assert_equal( excep(environ,start_response), [] )
+    excep.body = 'test'
+    assert_equal( excep(environ,start_response), ['test'] )
 
 
 def test_WSGIHTTPException_wsgi_response():
