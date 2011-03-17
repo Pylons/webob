@@ -1,4 +1,4 @@
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 from webob import headers
 from nose.tools import ok_, assert_raises, eq_ as eq
 

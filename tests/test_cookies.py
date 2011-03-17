@@ -1,4 +1,4 @@
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 from datetime import timedelta
 from webob import cookies
 from nose.tools import ok_, assert_raises, eq_
