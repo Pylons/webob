@@ -2439,3 +2439,27 @@ class FakeCGIBodyTests(unittest.TestCase):
         self.assertEqual(body.read(), 'bananas=bananas')
 
 
+class Test_cgi_FieldStorage__repr__patch(unittest.TestCase):
+    def _callFUT(self, fake):
+        from webob.request import _cgi_FieldStorage__repr__patch
+        return _cgi_FieldStorage__repr__patch(fake)
+
+    def test_with_file(self):
+        class Fake(object):
+            name = 'name'
+            file = 'file'
+            filename = 'filename'
+            value = 'value'
+        fake = Fake()
+        result = self._callFUT(fake)
+        self.assertEqual(result, "FieldStorage('name', 'filename')")
+    
+    def test_without_file(self):
+        class Fake(object):
+            name = 'name'
+            file = None
+            filename = 'filename'
+            value = 'value'
+        fake = Fake()
+        result = self._callFUT(fake)
+        self.assertEqual(result, "FieldStorage('name', 'filename', 'value')")
