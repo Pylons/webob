@@ -23,16 +23,16 @@ class TestUpdateDict(unittest.TestCase):
         ud = UpdateDict()
         ud.updated = callback
         return ud
-    
+
     def test_set_delete(self):
         newone = self.make_one(self.callback)
         newone['first'] = 1
         assert len(self.call_queue) == 1
-        assert self.call_queue[-1] == "Called with: {'first': 1}"        
+        assert self.call_queue[-1] == "Called with: {'first': 1}"
 
-        del newone['first'] 
+        del newone['first']
         assert len(self.call_queue) == 2
-        assert self.call_queue[-1] == 'Called with: {}'                
+        assert self.call_queue[-1] == 'Called with: {}'
 
     def test_setdefault(self):
         newone = self.make_one(self.callback)
@@ -49,14 +49,14 @@ class TestUpdateDict(unittest.TestCase):
         newone['first'] = 1
         newone.pop('first')
         assert len(self.call_queue) == 2
-        assert self.call_queue[-1] == 'Called with: {}', self.call_queue[-1]                
+        assert self.call_queue[-1] == 'Called with: {}', self.call_queue[-1]
 
     def test_popitem(self):
         newone = self.make_one(self.callback)
         newone['first'] = 1
         assert newone.popitem() == ('first', 1)
         assert len(self.call_queue) == 2
-        assert self.call_queue[-1] == 'Called with: {}', self.call_queue[-1]                
+        assert self.call_queue[-1] == 'Called with: {}', self.call_queue[-1]
 
     def test_callback_args(self):
         assert True
@@ -67,7 +67,7 @@ class TestExistProp(unittest.TestCase):
     """
     Test webob.cachecontrol.exists_property
     """
-    
+
     def setUp(self):
         pass
 
@@ -79,7 +79,7 @@ class TestExistProp(unittest.TestCase):
             type = 'dummy'
             prop = exists_property('prop', 'dummy')
             badprop = exists_property('badprop', 'big_dummy')
-            
+
         return Dummy
 
     def test_get_on_class(self):
@@ -112,7 +112,7 @@ class TestValueProp(unittest.TestCase):
     """
     Test webob.cachecontrol.exists_property
     """
-    
+
     def setUp(self):
         pass
 
@@ -124,7 +124,7 @@ class TestValueProp(unittest.TestCase):
             type = 'dummy'
             prop = value_property('prop', 'dummy')
             badprop = value_property('badprop', 'big_dummy')
-            
+
         return Dummy
 
     def test_get_on_class(self):
@@ -134,7 +134,7 @@ class TestValueProp(unittest.TestCase):
 
     def test_get_on_instance(self):
         dummy = self.make_one()()
-        assert dummy.prop, dummy.prop 
+        assert dummy.prop, dummy.prop
         #assert isinstance(Dummy.prop, value_property), Dummy.prop
 
     def test_set_on_instance(self):
@@ -163,7 +163,7 @@ def test_copy_cc():
     assert cc.properties is not cc2.properties
     assert cc.type is cc2.type
 
-# 212    
+# 212
 
 def test_serialize_cache_control():
     from webob.cachecontrol import serialize_cache_control, CacheControl
