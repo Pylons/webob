@@ -159,6 +159,58 @@ def test_HEAD_conditional_response_range_empty_response():
     result = res({}, start_response)
     ok_(isinstance(result, EmptyResponse), result)
 
+def test_conditional_response_if_none_match_false():
+    req = Request.blank('/', if_none_match='foo')
+    resp = Response(app_iter=['foo\n'],
+            conditional_response=True, etag='foo')
+    resp = req.get_response(resp)
+    eq_(resp.status_int, 304)
+
+def test_conditional_response_if_none_match_true():
+    req = Request.blank('/', if_none_match='foo')
+    resp = Response(app_iter=['foo\n'],
+            conditional_response=True, etag='bar')
+    resp = req.get_response(resp)
+    eq_(resp.status_int, 200)
+
+def test_conditional_response_if_modified_since_false():
+    from datetime import datetime, timedelta
+    req = Request.blank('/', if_modified_since=datetime(2011, 3, 17, 13, 0, 0))
+    resp = Response(app_iter=['foo\n'], conditional_response=True,
+            last_modified=req.if_modified_since-timedelta(seconds=1))
+    resp = req.get_response(resp)
+    eq_(resp.status_int, 304)
+
+def test_conditional_response_if_modified_since_true():
+    from datetime import datetime, timedelta
+    req = Request.blank('/', if_modified_since=datetime(2011, 3, 17, 13, 0, 0))
+    resp = Response(app_iter=['foo\n'], conditional_response=True,
+            last_modified=req.if_modified_since+timedelta(seconds=1))
+    resp = req.get_response(resp)
+    eq_(resp.status_int, 200)
+
+def test_conditional_response_range_not_satisfiable_response():
+    req = Request.blank('/', range='bytes=100-200')
+    resp = Response(app_iter=['foo\n'], content_length=4,
+            conditional_response=True)
+    resp = req.get_response(resp)
+    eq_(resp.status_int, 416)
+    eq_(resp.content_range.start, None)
+    eq_(resp.content_range.stop, None)
+    eq_(resp.content_range.length, 4)
+    eq_(resp.body, 'Requested range not satisfiable: bytes=100-200')
+
+def test_HEAD_conditional_response_range_not_satisfiable_response():
+    req = Request.blank('/', method='HEAD', range='bytes=100-200')
+    resp = Response(app_iter=['foo\n'], content_length=4,
+            conditional_response=True)
+    resp = req.get_response(resp)
+    eq_(resp.status_int, 416)
+    eq_(resp.content_range.start, None)
+    eq_(resp.content_range.stop, None)
+    eq_(resp.content_range.length, 4)
+    eq_(resp.body, '')
+
 def test_del_environ():
     res = Response()
     res.environ = {'yo': 'mama'}
