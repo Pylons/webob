@@ -11,7 +11,7 @@ class UpdateDict(dict):
 
     #@@ should these really be module globals?
     updated = None
-    updated_args = None 
+    updated_args = None
 
     def _updated(self):
         """
@@ -23,35 +23,35 @@ class UpdateDict(dict):
             if args is None:
                 args = (self,)
             updated(*args)
-            
+
     def __setitem__(self, key, item):
         dict.__setitem__(self, key, item)
         self._updated()
-        
+
     def __delitem__(self, key):
         dict.__delitem__(self, key)
         self._updated()
-        
+
     def clear(self):
         dict.clear(self)
         self._updated()
-        
+
     def update(self, *args, **kw):
         dict.update(self, *args, **kw)
         self._updated()
-        
+
     def setdefault(self, key, failobj=None):
         val = dict.setdefault(self, key, failobj)
         if val is failobj:
             self._updated()
         return val
-        
+
     def pop(self, default=None):
         v = dict.pop(self, default)
         if v is not default:
             self._updated()
         return v
-    
+
     def popitem(self):
         v = dict.popitem(self)
         self._updated()
@@ -76,19 +76,19 @@ class exists_property(object):
         if obj is None:
             return self
         return self.prop in obj.properties
-    
+
     def __set__(self, obj, value):
         if (self.type is not None
             and self.type != obj.type):
             raise AttributeError(
                 "The property %s only applies to %s Cache-Control" % (self.prop, self.type))
-        
+
         if value:
             obj.properties[self.prop] = None
         else:
             if self.prop in obj.properties:
                 del obj.properties[self.prop]
-                
+
     def __delete__(self, obj):
         self.__set__(obj, False)
 
@@ -104,7 +104,7 @@ class value_property(object):
         self.default = default
         self.none = none
         self.type = type
-        
+
     def __get__(self, obj, type=None):
         if obj is None:
             return self
@@ -116,7 +116,7 @@ class value_property(object):
                 return value
         else:
             return self.default
-        
+
     def __set__(self, obj, value):
         if (self.type is not None
             and self.type != obj.type):
@@ -129,7 +129,7 @@ class value_property(object):
             obj.properties[self.prop] = None # Empty value, but present
         else:
             obj.properties[self.prop] = value
-            
+
     def __delete__(self, obj):
         if self.prop in obj.properties:
             del obj.properties[self.prop]
@@ -160,7 +160,7 @@ class CacheControl(object):
         ``updates_to``, if that is given.
         """
         if updates_to:
-            props = cls.update_dict() 
+            props = cls.update_dict()
             props.updated = updates_to
         else:
             props = {}
