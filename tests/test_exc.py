@@ -176,6 +176,33 @@ def test_WSGIHTTPException_html_body_w_comment():
         '</html>'
        )
 
+def test_WSGIHTTPException_generate_response():
+    def start_response(status, headers, exc_info=None):
+        pass
+    environ = {
+       'wsgi.url_scheme': 'HTTP',
+       'SERVER_NAME': 'localhost',
+       'SERVER_PORT': '80',
+       'REQUEST_METHOD': 'PUT',
+       'HTTP_ACCEPT': 'text/html'
+    }
+    excep = WSGIHTTPException()
+    assert_equal( excep(environ,start_response), [] )
+
+def test_WSGIHTTPException_call_w_body():
+    def start_response(status, headers, exc_info=None):
+        pass
+    environ = {
+       'wsgi.url_scheme': 'HTTP',
+       'SERVER_NAME': 'localhost',
+       'SERVER_PORT': '80',
+       'REQUEST_METHOD': 'PUT'
+    }
+    excep = WSGIHTTPException()
+    excep.body = 'body'
+    assert_equal( excep(environ,start_response), [] )
+
+
 def test_WSGIHTTPException_wsgi_response():
     def start_response(status, headers, exc_info=None):
         pass
