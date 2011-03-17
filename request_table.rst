@@ -13,7 +13,7 @@ WEBOB NAME                         write  read  WERKZEUG NAME                   
 Read-Write Properties                           Read-Write Properties
 +++++++++++++++++++++                           +++++++++++++++++++++
 
-content_type                                    content_type CommonRequestDescriptorMixin
+content_type                                    content_type                       CommonRequestDescriptorMixin
 charset                                         charset "utf-8"
 headers                                         headers cached_property
 urlvars
@@ -25,9 +25,9 @@ decode_param_names F
 request_body_tempfile_limit 10*1024             max_content_length None            Not sure if these are the same
                                                 is_behind_proxy F
                                                 max_form_memory_size None
-                                                parameter_storage_class ImmutableMultiDict
-                                                list_storage_class ImmutableList
-                                                dict_storage_class ImmutableTypeConversionDict
+                                                parameter_storage_class            ImmutableMultiDict
+                                                list_storage_class                 ImmutableList
+                                                dict_storage_class                 ImmutableTypeConversionDict
 environ                                         environ
                                                 populate_request T
                                                 shallow F
@@ -42,7 +42,7 @@ method                                          method
 http_version
 script_name                                     script_root cached_property
 path_info                                       ???path cached_property
-content_length                                  content_type CommonRequestDescriptorMixin
+content_length                                  content_type                       CommonRequestDescriptorMixin
 remote_user                                     remote_user
 remote_addr                                     remote_addr
 query_string                                    query_string
@@ -53,14 +53,14 @@ upath_info
 is_body_seekable
 authorization                                   authorization cached_property
 pragma                                          pragma cached_property
-date                                            date CommonRequestDescriptorMixin
-max_forwards                                    max_forwards CommonRequestDescriptorMixin
+date                                            date                               CommonRequestDescriptorMixin
+max_forwards                                    max_forwards                       CommonRequestDescriptorMixin
 range
 if_range
-referer/referrer                                referrer CommonRequestDescriptorMixin
+referer/referrer                                referrer                           CommonRequestDescriptorMixin
 user_agent                                      user_agent cached_property
                                                 input_stream
-                                                mimetype CommonRequestDescriptorMixin
+                                                mimetype                           CommonRequestDescriptorMixin
 
 
 Read-Only Properties
@@ -70,7 +70,7 @@ host_url                                        host_url cached_property
 application_url                                 base_url cached_property        Not sure if same
 path_url                                        ???path cached_property
 path                                            ???path cached_property
-path_qs                                         ???path cached_property see above
+path_qs                                         ???path cached_property
 url                                             url cached_property
 is_xhr                                          is_xhr
 str_POST
@@ -83,10 +83,10 @@ str_cookies
 cookies                                         cookies cached_property
                                                 url_charset
                                                 stream cached_property
-                                                args cached_property
+                                                args cached_property            Maybe maps to params
                                                 data cached_property
                                                 form cached_property
-                                                values cached_property
+                                                values cached_property          Maybe maps to params
                                                 files  cached_property
                                                 url_root cached_property
                                                 access_route cached_property
