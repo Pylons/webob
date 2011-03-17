@@ -5,6 +5,7 @@
 b=WebBob
 z=Werkzeug
 x=both
+ =neither
 
 WEBOB NAME                         write  read  WERKZEUG NAME                      NOTES
 =================================  =====  ====  =================================  ===========================================
@@ -22,25 +23,46 @@ headers                              b      b
 body                                 b      b   
 unicode_body                         x      x   data 
 body_file                                   b                                      File-like obj returned is writeable
-app_iter                             b      x   iter_encoded()                     wz: encodes each element as consumed
-allow                                b      b
-vary              
-content_length
-content_encoding
-content_language
-content_location
-content_md5
-content_disposition
-accept_ranges
-content_range
-date
-expires
-last_modified
-etag
-location
-pragma
-age
-retry_after
-server
-www_authenticate
-
+app_iter                             b      x   get_app_iter()
+                                            z   iter_encoded()
+allow                                b      x   allow
+vary                                 b      x   vary
+content_type                         x      x   content_type
+content_type_params                  x      x   mime_type_params
+                                     z      z   mime_type                          content_type str wo parameters
+content_length                       x      x   content_length
+content_encoding                     x      x   content_encoding
+content_language                     b      x   content_language
+content_location                     x      x   content_location
+content_md5                          x      x   content_md5
+content_disposition                  b      b
+accept_ranges                        b      b
+content_range                        b      b
+date                                 x      x   date
+expires                              x      x   expires
+last_modified                        x      x   last_modified
+cache_control                        b      z   cache_control
+cache_expires (dwim)                 b      b
+conditional_response (bool)          b      x   make_conditional()
+etag                                 b      x   add_etag()
+etag                                 b      x   get_etag()
+etag                                 b      x   set_etag()
+                                            z   freeze()
+location                             x      x   location
+pragma                               b      b
+age                                  x      x   age
+retry_after                          x      x   retry_after
+server                               b      b
+www_authenticate                     b      z   www_authenticate
+                                     x      x   date
+retry_after                          x      x   retry_after
+set_cookie()                                    set_cookie()
+delete_cookie()                                 delete_cookie()
+unset_cookie()
+                                            z   is_streamed
+                                            z   is_sequence
+body_file                                   x   stream
+                                                close()
+                                                get_wsgi_headers()
+                                                get_wsgi_response()
+__call__()                                      __call__()
