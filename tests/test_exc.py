@@ -176,6 +176,18 @@ def test_WSGIHTTPException_html_body_w_comment():
         '</html>'
        )
 
+def test_WSGIHTTPException_wsgi_response():
+    def start_response(status, headers, exc_info=None):
+        pass
+    environ = {
+       'wsgi.url_scheme': 'HTTP',
+       'SERVER_NAME': 'localhost',
+       'SERVER_PORT': '80',
+       'REQUEST_METHOD': 'HEAD'
+    }
+    excep = WSGIHTTPException()
+    assert_equal( excep.wsgi_response(environ,start_response), [] )
+
 def test_WSGIHTTPException_exception_newstyle():
     def start_response(status, headers, exc_info=None):
         pass
