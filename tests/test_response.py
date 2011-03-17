@@ -862,6 +862,24 @@ def test_body_file_get():
     from webob.response import ResponseBodyFile
     eq_(result.__class__, ResponseBodyFile)
 
+def test_body_file_write_no_charset():
+    from webob.response import ResponseBodyFile
+    class FakeReponse:
+        charset = None
+    rbo = ResponseBodyFile(FakeReponse())
+    assert_raises(TypeError, rbo.write, u'foo')
+
+def test_body_file_write_unicode_encodes():
+    from webob.response import ResponseBodyFile
+    class FakeReponse:
+        charset = 'utf-8'
+        _app_iter = app_iter = []
+    s = unicode('La Pe\xc3\xb1a', 'utf-8')
+    res = FakeReponse()
+    rbo = ResponseBodyFile(res)
+    rbo.write(s)
+    eq_(res.app_iter, ['La Pe\xc3\xb1a'])
+
 def test_repr():
     res = Response()
     ok_(repr(res).endswith('200 OK>'))
