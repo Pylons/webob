@@ -343,7 +343,39 @@ class TestMIMEAccept(TestCase):
 
 
 class TestAcceptProperty(TestCase):
-    def test_accept_property(self):
+    def test_accept_property_fget(self):
+        from webob.acceptparse import accept_property
+        from webob import Request
+        desc = accept_property('Accept-Charset', '14.2')
+        req = Request.blank('/', environ={'envkey': 'envval'})
+        desc.fset(req, 'val')
+        self.assertEqual(desc.fget(req).header_value, 'val')
+
+    def test_accept_property_fget_nil(self):
+        from webob.acceptparse import NilAccept
+        from webob.acceptparse import accept_property
+        from webob import Request
+        desc = accept_property('Accept-Charset', '14.2')
+        req = Request.blank('/')
+        self.assertEqual(type(desc.fget(req)), NilAccept)
+
+    def test_accept_property_fset(self):
+        from webob.acceptparse import accept_property
+        from webob import Request
+        desc = accept_property('Accept-Charset', '14.2')
+        req = Request.blank('/', environ={'envkey': 'envval'})
+        desc.fset(req, 'baz')
+        self.assertEqual(desc.fget(req).header_value, 'baz')
+
+    def test_accept_property_fset_acceptclass(self):
+        from webob.acceptparse import accept_property
+        from webob import Request
+        desc = accept_property('Accept-Charset', '14.2')
+        req = Request.blank('/', environ={'envkey': 'envval'})
+        desc.fset(req, ['utf-8', 'latin-11'])
+        self.assertEqual(desc.fget(req).header_value, 'utf-8, latin-11, iso-8859-1')
+
+    def test_accept_property_fdel(self):
         from webob.acceptparse import NilAccept
         from webob.acceptparse import accept_property
         from webob import Request
@@ -353,5 +385,3 @@ class TestAcceptProperty(TestCase):
         assert desc.fget(req).header_value == 'val'
         desc.fdel(req)
         self.assertEqual(type(desc.fget(req)), NilAccept)
-
-
