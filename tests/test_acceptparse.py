@@ -1,5 +1,9 @@
 from unittest import TestCase
 
+class Test_parse_accept_badq(TestCase):
+    from webob.acceptparse import parse_accept
+    assert parse_accept("value1; q=0.1.2") == [('value1', 1)]
+
 
 class TestAccept(TestCase):
     def Accept(self, *args, **kwargs):
@@ -248,6 +252,12 @@ class TestNilAccept(TestCase):
         # How to test ``if isinstance(item, self.MasterClass): return item``
         # under NilAccept.__radd__ ??
 
+    def test_radd_masterclass(self):
+        # Is this "reaching into" __radd__ legit?
+        nilaccept = self.NilAccept('Connection-Close')
+        accept = self.Accept('Content-Type', 'text/html')
+        assert nilaccept.__radd__(accept) is accept
+
     def test_contains(self):
         nilaccept = self.NilAccept('Connection-Close')
         # NilAccept.__contains__ always returns True
@@ -334,4 +344,14 @@ class TestMIMEAccept(TestCase):
 
 class TestAcceptProperty(TestCase):
     def test_accept_property(self):
+        from webob.acceptparse import NilAccept
         from webob.acceptparse import accept_property
+        from webob import Request
+        desc = accept_property('Accept-Charset', '14.2')
+        req = Request.blank('/', environ={'envkey': 'envval'})
+        desc.fset(req, 'val')
+        assert desc.fget(req).header_value == 'val'
+        desc.fdel(req)
+        self.assertEqual(type(desc.fget(req)), NilAccept)
+
+
