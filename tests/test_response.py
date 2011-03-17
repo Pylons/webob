@@ -949,3 +949,10 @@ def test_decode_content_gzip():
     res.decode_content()
     eq_(res.body, 'abc')
     
+def test__abs_headerlist_location_with_scheme():
+    res = Response()
+    res.content_encoding = 'gzip'
+    res.headerlist = [('Location', 'http:')]
+    result = res._abs_headerlist({})
+    eq_(result, [('Location', 'http:')])
+    
