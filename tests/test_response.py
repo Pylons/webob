@@ -315,6 +315,13 @@ def test_app_iter_range():
         eq_(list(res.content_range), [2,5,6])
         eq_(res.body, '234', 'body=%r; app_iter=%r' % (res.body, app_iter))
 
+def test_app_iter_range_inner_method():
+    class FakeAppIter:
+        def app_iter_range(self, start, stop):
+            return 'you win', start, stop
+    res = Response(app_iter=FakeAppIter())
+    eq_(res.app_iter_range(30, 40), ('you win', 30, 40))
+
 def test_content_type_in_headerlist():
     # Couldn't manage to clone Response in order to modify class
     # attributes safely. Shouldn't classes be fresh imported for every
