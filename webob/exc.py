@@ -1065,7 +1065,7 @@ try:
 except ImportError:   # pragma: no cover
     # Without Paste we don't need to do this fixup
     pass
-else:
+else: # pragma: no cover
     for name in dir(httpexceptions):
         obj = globals().get(name)
         if (obj and isinstance(obj, type) and issubclass(obj, HTTPException)
