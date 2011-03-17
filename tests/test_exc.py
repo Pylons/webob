@@ -54,6 +54,7 @@ from webob.exc import HTTPGatewayTimeout
 from webob.exc import HTTPVersionNotSupported
 from webob.exc import HTTPInsufficientStorage
 from webob.exc import HTTPExceptionMiddleware
+from webob import exc
 
 from nose.tools import eq_, ok_, assert_equal, assert_raises
 
@@ -175,6 +176,31 @@ def test_WSGIHTTPException_html_body_w_comment():
         '</html>'
        )
 
+def test_WSGIHTTPException_exception_newstyle():
+    def start_response(status, headers, exc_info=None):
+        pass
+    environ = {
+       'wsgi.url_scheme': 'HTTP',
+       'SERVER_NAME': 'localhost',
+       'SERVER_PORT': '80',
+       'REQUEST_METHOD': 'HEAD'
+    }
+    excep = WSGIHTTPException()
+    exc.newstyle_exceptions = True
+    assert_equal( excep.exception(environ,start_response), [] )
+
+def test_WSGIHTTPException_exception_no_newstyle():
+    def start_response(status, headers, exc_info=None):
+        pass
+    environ = {
+       'wsgi.url_scheme': 'HTTP',
+       'SERVER_NAME': 'localhost',
+       'SERVER_PORT': '80',
+       'REQUEST_METHOD': 'HEAD'
+    }
+    excep = WSGIHTTPException()
+    exc.newstyle_exceptions = False
+    assert_equal( excep.exception(environ,start_response), [] )
 
 def test_HTTPMove():
     def start_response(status, headers, exc_info=None):
