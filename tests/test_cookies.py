@@ -26,6 +26,11 @@ def test_cookie():
     eq_(c.serialize(),
         'CP=null*, PHPSESSID=0a539d42abc001cdc762809248d4beed, a="42,", '
         'dismiss-top=6')
+    # secure
+    c = cookies.Cookie()
+    c['foo'] = 'bar'
+    c['foo'].secure = True
+    eq_(c.serialize(), 'foo=bar; secure')
     # reserved keys ($xx)
     c = cookies.Cookie('dismiss-top=6; CP=null*; $version=42; a=42')
     assert '$version' not in c

@@ -55,7 +55,7 @@ from webob.exc import HTTPVersionNotSupported
 from webob.exc import HTTPInsufficientStorage
 from webob.exc import HTTPExceptionMiddleware
 
-from nose.tools import assert_equal
+from nose.tools import eq_, ok_, assert_equal, assert_raises
 
 @wsgify
 def method_not_allowed_app(req):
@@ -67,7 +67,50 @@ def method_not_allowed_app(req):
     return 'hello!'
 
 def test_noescape_null():
-    assert no_escape(None) == ''
+    assert_equal(no_escape(None), '')
+
+def test_noescape_not_basestring():
+    assert_equal(no_escape(42), '42')
+
+def test_noescape_unicode():
+    class DummyUnicodeObject(object):
+        def __unicode__(self):
+            return u'42'
+    duo = DummyUnicodeObject()
+    assert_equal(no_escape(duo), u'42')
+
+def test_strip_tags_empty():
+    assert_equal(strip_tags(''), '')
+
+def test_strip_tags_newline_to_space():
+    assert_equal(strip_tags('a\nb'), 'a b')
+
+def test_strip_tags_zaps_carriage_return():
+    assert_equal(strip_tags('a\rb'), 'ab')
+
+def test_strip_tags_br_to_newline():
+    assert_equal(strip_tags('a<br/>b'), 'a\nb')
+
+def test_strip_tags_zaps_comments():
+    assert_equal(strip_tags('a<!--b-->'), 'ab')
+
+def test_strip_tags_zaps_tags():
+    assert_equal(strip_tags('foo<bar>baz</bar>'), 'foobaz')
+
+def test_HTTPException():
+    _called = []
+    _result = object()
+    def _response(environ, start_response):
+        _called.append((environ, start_response))
+        return _result
+    environ = {}
+    start_response = object()
+    exc = HTTPException('testing', _response)
+    ok_(exc.wsgi_response is _response)
+    ok_(exc.exception is exc)
+    result = exc(environ, start_response)
+    ok_(result is result)
+    assert_equal(_called, [(environ, start_response)])
 
 def test_exception_with_unicode_data():
     req = Request.blank('/', method=u'POST')
@@ -80,6 +123,59 @@ def test_WSGIHTTPException_headers():
     mixed = exc.headers.mixed()
     assert mixed['set-cookie'] ==  ['a=1', 'a=2']
 
+def test_WSGIHTTPException_w_body_template():
+    from string import Template
+    TEMPLATE = '$foo: $bar'
+    exc = WSGIHTTPException(body_template = TEMPLATE)
+    assert_equal(exc.body_template, TEMPLATE)
+    ok_(isinstance(exc.body_template_obj, Template))
+    eq_(exc.body_template_obj.substitute({'foo': 'FOO', 'bar': 'BAR'}),
+        'FOO: BAR')
+
+def test_WSGIHTTPException_w_empty_body():
+    class EmptyOnly(WSGIHTTPException):
+        empty_body = True
+    exc = EmptyOnly(content_type='text/plain', content_length=234)
+    ok_('content_type' not in exc.__dict__)
+    ok_('content_length' not in exc.__dict__)
+
+def test_WSGIHTTPException___str__():
+    exc1 = WSGIHTTPException(detail='Detail')
+    eq_(str(exc1), 'Detail')
+    class Explain(WSGIHTTPException):
+        explanation = 'Explanation'
+    eq_(str(Explain()), 'Explanation')
+
+def test_WSGIHTTPException_plain_body_no_comment():
+    class Explain(WSGIHTTPException):
+        code = '999'
+        title = 'Testing'
+        explanation = 'Explanation'
+    exc = Explain(detail='Detail')
+    eq_(exc.plain_body({}),
+        '999 Testing\n\nExplanation\n\n Detail  ')
+
+def test_WSGIHTTPException_html_body_w_comment():
+    class Explain(WSGIHTTPException):
+        code = '999'
+        title = 'Testing'
+        explanation = 'Explanation'
+    exc = Explain(detail='Detail', comment='Comment')
+    eq_(exc.html_body({}),
+        '<html>\n'
+        ' <head>\n'
+        '  <title>999 Testing</title>\n'
+        ' </head>\n'
+        ' <body>\n'
+        '  <h1>999 Testing</h1>\n'
+        '  Explanation<br /><br />\n'
+        'Detail\n'
+        '<!-- Comment -->\n\n'
+        ' </body>\n'
+        '</html>'
+       )
+
+
 def test_HTTPMove():
     def start_response(status, headers, exc_info=None):
         pass
@@ -90,6 +186,56 @@ def test_HTTPMove():
        'REQUEST_METHOD': 'HEAD'
     }
     m = _HTTPMove()
+    assert_equal( m( environ, start_response ), [] )
+
+def test_HTTPMove_location_not_none():
+    def start_response(status, headers, exc_info=None):
+        pass
+    environ = {
+       'wsgi.url_scheme': 'HTTP',
+       'SERVER_NAME': 'localhost',
+       'SERVER_PORT': '80',
+       'REQUEST_METHOD': 'HEAD'
+    }
+    m = _HTTPMove(location='http://example.com')
+    assert_equal( m( environ, start_response ), [] )
+
+def test_HTTPMove_add_slash_and_location():
+    def start_response(status, headers, exc_info=None):
+        pass
+    environ = {
+       'wsgi.url_scheme': 'HTTP',
+       'SERVER_NAME': 'localhost',
+       'SERVER_PORT': '80',
+       'REQUEST_METHOD': 'HEAD'
+    }
+    assert_raises( TypeError, _HTTPMove, location='http://example.com', add_slash=True )
+
+def test_HTTPMove_call_add_slash():
+    def start_response(status, headers, exc_info=None):
+        pass
+    environ = {
+       'wsgi.url_scheme': 'HTTP',
+       'SERVER_NAME': 'localhost',
+       'SERVER_PORT': '80',
+       'REQUEST_METHOD': 'HEAD'
+    }
+    m = _HTTPMove()
+    m.add_slash = True
+    assert_equal( m( environ, start_response ), [] )
+
+def test_HTTPMove_call_query_string():
+    def start_response(status, headers, exc_info=None):
+        pass
+    environ = {
+       'wsgi.url_scheme': 'HTTP',
+       'SERVER_NAME': 'localhost',
+       'SERVER_PORT': '80',
+       'REQUEST_METHOD': 'HEAD'
+    }
+    m = _HTTPMove()
+    m.add_slash = True
+    environ[ 'QUERY_STRING' ] = 'querystring'
     assert_equal( m( environ, start_response ), [] )
 
 def test_HTTPExceptionMiddleware_ok():

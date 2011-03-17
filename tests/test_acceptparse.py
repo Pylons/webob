@@ -235,6 +235,18 @@ class TestNilAccept(TestCase):
         assert isinstance(new_accept, accept.__class__)
         assert new_accept.header_name == 'Connection-Close'
         assert new_accept.header_value == ''
+        new_accept = nilaccept + 'foo'
+        assert isinstance(new_accept, accept.__class__)
+        assert new_accept.header_name == 'Connection-Close'
+        assert new_accept.header_value == 'foo'
+
+    def test_radd(self):
+        nilaccept = self.NilAccept('Connection-Close')
+        accept = self.Accept('Content-Type', 'text/html')
+        assert isinstance('foo' + nilaccept, accept.__class__)
+        assert ('foo' + nilaccept).header_value == 'foo'
+        # How to test ``if isinstance(item, self.MasterClass): return item``
+        # under NilAccept.__radd__ ??
 
     def test_contains(self):
         nilaccept = self.NilAccept('Connection-Close')
@@ -319,3 +331,7 @@ class TestMIMEAccept(TestCase):
         assert not mimeaccept._match('text/html', 'image/jpg')
         self.assertRaises(AssertionError, mimeaccept._match, 'image/jpg', '*/*')
 
+
+class TestAcceptProperty(TestCase):
+    def test_accept_property(self):
+        from webob.acceptparse import accept_property

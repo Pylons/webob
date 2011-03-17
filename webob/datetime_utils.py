@@ -10,6 +10,12 @@ __all__ = [
     'parse_date_delta', 'serialize_date_delta',
 ]
 
+_NOW = None     # hook point for unit tests
+def _now():
+    if _NOW is not None:
+        return _NOW
+    return datetime.now()
+
 class _UTC(tzinfo):
     def dst(self, dt):
         return timedelta(0)
@@ -63,7 +69,7 @@ def serialize_date(dt):
     if isinstance(dt, str):
         return dt
     if isinstance(dt, timedelta):
-        dt = datetime.now() + dt
+        dt = _now() + dt
     if isinstance(dt, (datetime, date)):
         dt = dt.timetuple()
     if isinstance(dt, (tuple, time.struct_time)):
@@ -86,7 +92,7 @@ def parse_date_delta(value):
     except ValueError:
         return parse_date(value)
     else:
-        return datetime.now() + timedelta(seconds=value)
+        return _now() + timedelta(seconds=value)
 
 
 def serialize_date_delta(value):
