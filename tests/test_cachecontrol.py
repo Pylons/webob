@@ -24,6 +24,19 @@ class TestUpdateDict(unittest.TestCase):
         ud.updated = callback
         return ud
 
+    def test_clear(self):
+        newone = self.make_one(self.callback)
+        newone['first'] = 1
+        assert len(newone) == 1
+        newone.clear()
+        assert len(newone) == 0
+
+    def test_update(self):
+        newone = self.make_one(self.callback)
+        d = {'one' : 1 }
+        newone.update(d)
+        assert newone == d
+
     def test_set_delete(self):
         newone = self.make_one(self.callback)
         newone['first'] = 1
@@ -143,6 +156,28 @@ class TestValueProp(unittest.TestCase):
         assert dummy.prop == "new", dummy.prop
         assert dummy.properties['prop'] == "new", dict(dummy.properties)
 
+    def test_set_on_instance_bad_attribute(self):
+        dummy = self.make_one()()
+        dummy.prop = "new"
+        assert dummy.prop == "new", dummy.prop
+        assert dummy.properties['prop'] == "new", dict(dummy.properties)
+
+    def test_set_wrong_type(self):
+        from webob.cachecontrol import value_property
+        class Dummy(object):
+            properties = dict(prop=1, type='fail')
+            type = 'dummy'
+            prop = value_property('prop', 'dummy', type='failingtype')
+        dummy = Dummy()
+        def assign():
+            dummy.prop = 'foo'
+        self.assertRaises(AttributeError, assign)
+
+    def test_set_type_true(self):
+        dummy = self.make_one()()
+        dummy.prop = True
+        self.assertEquals(dummy.prop, None)
+
     def test_set_on_instance_w_default(self):
         dummy = self.make_one()()
         dummy.prop = "dummy"
@@ -172,3 +207,31 @@ def test_serialize_cache_control():
     serialize_cache_control(CacheControl({}, 'request'))
 
     serialize_cache_control(CacheControl({'header':'%'}, 'request'))
+
+
+class TestCacheControl(unittest.TestCase):
+    def make_one(self, props, typ):
+        from webob.cachecontrol import CacheControl
+        return CacheControl(props, typ)
+
+    def test_ctor(self):
+        cc = self.make_one({'a':1}, 'typ')
+        self.assertEquals(cc.properties, {'a':1})
+        self.assertEquals(cc.type, 'typ')
+
+    def test_parse(self):
+        from webob.cachecontrol import CacheControl
+        cc = CacheControl.parse("public, max-age=315360000")
+        self.assertEquals(type(cc), CacheControl)
+        self.assertEquals(cc.max_age, 315360000)
+        self.assertEquals(cc.public, True)
+
+    # def test_parse_updates_to(self):
+    #     from webob.cachecontrol import CacheControl
+    #     def foo(arg): return { 'a' : 1 }
+    #     cc = CacheControl.parse("public, max-age=315360000", updates_to=foo)
+    #     self.assertEquals(type(cc), CacheControl)
+    #     self.assertEquals(cc.max_age, 315360000)
+    #     import pdb; pdb.set_trace()
+
+
