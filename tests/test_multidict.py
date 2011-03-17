@@ -94,7 +94,7 @@ class MultiDictTestCase(unittest.TestCase):
 
     def test_too_many_args(self):
         from webob.multidict import MultiDict
-        self.assertRaises(TypeError, MultiDict(1,2))
+        self.assertRaises(TypeError, MultiDict, 1, 2)
 
     def test_no_args(self):
         from webob.multidict import MultiDict
