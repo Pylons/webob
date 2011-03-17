@@ -12,7 +12,7 @@ def test_UTC():
     ok_(x.tzname(datetime.now())=='UTC')
     eq_(x.dst(datetime.now()), timedelta(0))
     eq_(x.utcoffset(datetime.now()), timedelta(0))
-    eq_(repr(x) == 'UTC')
+    eq_(repr(x), 'UTC')
 
 def test_parse_date():
     """Testing datetime_utils.parse_date.
