@@ -137,3 +137,9 @@ from_file
 blank
                                                 from_values
                                                 application
+
+Notes
+-----
+
+ <mitsuhiko> mcdonc: script_root and path in werkzeug are not quite script_name and path_info in webob
+[17:51] <mitsuhiko> the behavior regarding slashes is different for easier url joining
