@@ -1644,27 +1644,6 @@ class RequestTests_functional(unittest.TestCase):
                 super(NewRequest, self).__init__(environ, **kw)
         self.assertRaises(DeprecationWarning, NewRequest, {'a':1})
 
-    def test_adhocity_getattr_class_attrs_not_shadowed(self):
-        # This gives coverage, but the test case is contrived to say the least
-        from webob.request import AdhocAttrMixin
-        class FakeyFakerson(object):
-            pass
-        class Meta(type):
-            fake_out = False
-            def __getattr__(cls, attr):
-                if attr == 'foo' and Meta.fake_out:
-                    return 'yeah'
-                return cls.__getattribute__(cls, attr)
-        class FakeRequest(AdhocAttrMixin):
-            __metaclass__ = Meta
-            environ = None
-        req = FakeRequest()
-        req.environ = {'webob.adhoc_attrs': {'foo': 'spam'}}
-        self.assertEqual(req.foo, 'spam')
-        getattr(FakeRequest, 'bizbaz', None)
-        Meta.fake_out = True
-        self.assertRaises(AttributeError, getattr, req, 'foo')
-
     def test_unexpected_kw(self):
         # Passed an attr in kw that does not exist in the class, should
         # raise an error

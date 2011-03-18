@@ -1130,8 +1130,6 @@ def environ_add_POST(env, data):
 
 class AdhocAttrMixin(object):
     def __setattr__(self, attr, value, DEFAULT=object()):
-        ## FIXME: I don't know why I need this guard (though experimentation
-        ## says I do)
         if (getattr(self.__class__, attr, DEFAULT) is not DEFAULT or
                     attr.startswith('_')):
             object.__setattr__(self, attr, value)
@@ -1139,18 +1137,12 @@ class AdhocAttrMixin(object):
             self.environ.setdefault('webob.adhoc_attrs', {})[attr] = value
 
     def __getattr__(self, attr, DEFAULT=object()):
-        ## FIXME: I don't know why I need this guard (though experimentation
-        ## says I do)
-        if getattr(self.__class__, attr, DEFAULT) is not DEFAULT:
-            return object.__getattribute__(self, attr)
         try:
             return self.environ['webob.adhoc_attrs'][attr]
         except KeyError:
             raise AttributeError(attr)
 
     def __delattr__(self, attr, DEFAULT=object()):
-        ## FIXME: I don't know why I need this guard (though experimentation
-        ## says I do)
         if getattr(self.__class__, attr, DEFAULT) is not DEFAULT:
             return object.__delattr__(self, attr)
         try:
