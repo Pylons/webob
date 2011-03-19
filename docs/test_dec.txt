@@ -1,6 +1,6 @@
 A test of the decorator module::
 
-    >>> from dtopt import ELLIPSIS
+    >>> from doctest import ELLIPSIS
     >>> from webob.dec import wsgify
     >>> from webob import Response, Request
     >>> from webob import exc

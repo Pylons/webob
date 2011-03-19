@@ -19,7 +19,7 @@ WebOb
 
 .. comment:
 
-    >>> from dtopt import ELLIPSIS
+    >>> from doctest import ELLIPSIS
 
 
 Status & License
