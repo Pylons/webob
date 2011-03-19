@@ -3,9 +3,7 @@
 import unittest
 from webob import multidict
 
-class MultiDictTestCase(unittest.TestCase):
-    klass = multidict.MultiDict
-
+class BaseDictTests(object):
     def setUp(self):
         self._list = [('a', u'\xe9'), ('a', 'e'), ('a', 'f'), ('b', 1)]
         self.data = multidict.MultiDict(self._list)
@@ -18,7 +16,12 @@ class MultiDictTestCase(unittest.TestCase):
         self.assertEqual(len(self.d), 4)
 
     def test_getone(self):
-        assert self.d.getone('b') == 1
+        self.assertEqual(self.d.getone('b'),  1)
+
+    def test_getone_missing(self):
+        self.assertRaises(KeyError, self.d.getone, 'z')
+
+    def test_getone_multiple_raises(self):
         self.assertRaises(KeyError, self.d.getone, 'a')
 
     def test_getall(self):
@@ -50,6 +53,17 @@ class MultiDictTestCase(unittest.TestCase):
         d['a'] = 1
         self.assertEqual(d.pop('a'), 1)
         self.assertEqual(d.pop('x', 1), 1)
+
+    def test_pop_wrong_args(self):
+        d = self._get_instance()
+        self.assertRaises(TypeError, d.pop, 'a', 1, 1)
+
+    def test_pop_missing(self):
+        d = self._get_instance()
+        self.assertRaises(KeyError, d.pop, 'z')
+
+    def test_popitem(self):
+        d = self._get_instance()
         self.assertEqual(d.popitem(), ('b', 1))
 
     def test_update(self):
@@ -117,14 +131,36 @@ class MultiDictTestCase(unittest.TestCase):
         d = MultiDict()
         self.assertEqual(d.view_list([1,2])._items, [1,2])
 
-    def test_from_fieldstorage(self):
+    def test_from_fieldstorage_with_filename(self):
         from webob.multidict import MultiDict
-        from cgi import FieldStorage
         d = MultiDict()
-        self.assertEqual(d.from_fieldstorage(FieldStorage()), MultiDict([]))
-        # Don't know yet how to test with fields (.filename, .name, .value)
+        fs = DummyFieldStorage('a', '1', 'file')
+        self.assertEqual(d.from_fieldstorage(fs), MultiDict({'a':fs.list[0]}))
 
-class UnicodeMultiDictTestCase(MultiDictTestCase):
+    def test_from_fieldstorage_without_filename(self):
+        from webob.multidict import MultiDict
+        d = MultiDict()
+        fs = DummyFieldStorage('a', '1')
+        self.assertEqual(d.from_fieldstorage(fs), MultiDict({'a':'1'}))
+
+class MultiDictTestCase(BaseDictTests, unittest.TestCase):
+    klass = multidict.MultiDict
+
+    def test_update_behavior_warning(self):
+        import warnings
+        class Foo(dict):
+            def __len__(self):
+                return 0
+        foo = Foo()
+        foo['a'] = 1
+        d = self._get_instance()
+        try:
+            warnings.simplefilter('error')
+            self.assertRaises(UserWarning, d.update, foo)
+        finally:
+            warnings.resetwarnings()
+
+class UnicodeMultiDictTestCase(BaseDictTests, unittest.TestCase):
     klass = multidict.UnicodeMultiDict
 
     def test_decode_key(self):
@@ -150,12 +186,22 @@ class UnicodeMultiDictTestCase(MultiDictTestCase):
     def test_encode_key(self):
         d = self._get_instance()
         value = unicode('a')
+        d.decode_keys = True
+        self.assertEquals(d._encode_key(value),'a')
+
+    def test_encode_value(self):
+        d = self._get_instance()
+        value = unicode('a')
         self.assertEquals(d._encode_value(value),'a')
 
-class NestedMultiDictTestCase(MultiDictTestCase):
+class NestedMultiDictTestCase(BaseDictTests, unittest.TestCase):
     klass = multidict.NestedMultiDict
 
     def test_getitem(self):
+        d = self.klass({'a':1})
+        self.assertEqual(d['a'], 1)
+
+    def test_getitem_raises(self):
         d = self._get_instance()
         self.assertRaises(KeyError, d.__getitem__, 'z')
 
@@ -188,6 +234,14 @@ class NestedMultiDictTestCase(MultiDictTestCase):
         self.assertRaises(KeyError, d.pop, 'a')
         self.assertRaises(KeyError, d.pop, 'a', 1)
 
+    def test_popitem(self):
+        d = self._get_instance()
+        self.assertRaises(KeyError, d.popitem, 'a')
+
+    def test_pop_wrong_args(self):
+        d = self._get_instance()
+        self.assertRaises(KeyError, d.pop, 'a', 1, 1)
+
     def test_clear(self):
         d = self._get_instance()
         self.assertRaises(KeyError, d.clear)
@@ -199,7 +253,7 @@ class NestedMultiDictTestCase(MultiDictTestCase):
         self.assertEqual(d.__nonzero__(), False)
         assert not d
 
-class TrackableMultiDict(MultiDictTestCase):
+class TrackableMultiDict(BaseDictTests, unittest.TestCase):
     klass = multidict.TrackableMultiDict
 
     def _get_instance(self):
@@ -219,9 +273,9 @@ class TrackableMultiDict(MultiDictTestCase):
 
     def test_nullextend(self):
         d = self._get_instance()
-        assert d.extend() == None
+        self.assertEqual(d.extend(), None)
         d.extend(test = 'a')
-        assert d['test'] == 'a'
+        self.assertEqual(d['test'], 'a')
 
     def test_listextend(self):
         class Other:
@@ -234,7 +288,7 @@ class TrackableMultiDict(MultiDictTestCase):
 
         _list = [u'\xe9', u'e', r'f', 1]
         for v in _list:
-            assert v in d._items
+            self.failUnless(v in d._items)
 
     def test_dictextend(self):
         class Other:
@@ -250,7 +304,20 @@ class TrackableMultiDict(MultiDictTestCase):
 
         _list = [('a', 1), ('b', 2), ('c', 3)]
         for v in _list:
-            assert v in d._items
+            self.failUnless(v in d._items)
+
+    def test_otherextend(self):
+        class Other(object):
+            def __iter__(self):
+                return iter([('a', 1)])
+
+        other = Other()
+        d = self._get_instance()
+        d.extend(other)
+
+        _list = [('a', 1)]
+        for v in _list:
+            self.failUnless(v in d._items)
 
 class NoVarsTestCase(unittest.TestCase):
     klass = multidict.NoVars
@@ -301,3 +368,22 @@ class NoVarsTestCase(unittest.TestCase):
     def test_repr(self):
         d = self._get_instance()
         self.assertEqual(repr(d), '<NoVars: N/A>')
+
+    def test_keys(self):
+        d = self._get_instance()
+        self.assertEqual(d.keys(), [])
+
+    def test_iterkeys(self):
+        d = self._get_instance()
+        self.assertEqual(list(d.iterkeys()), [])
+
+class DummyField(object):
+    def __init__(self, name, value, filename=None):
+        self.name = name
+        self.value = value
+        self.filename = filename
+        
+class DummyFieldStorage(object):
+    def __init__(self, name, value, filename=None):
+        self.list = [DummyField(name, value, filename)]
+
