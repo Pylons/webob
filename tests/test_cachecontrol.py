@@ -200,14 +200,30 @@ def test_copy_cc():
 
 # 212
 
-def test_serialize_cache_control():
+def test_serialize_cache_control_emptydict():
+    from webob.cachecontrol import serialize_cache_control
+    result = serialize_cache_control(dict())
+    assert result == ''
+
+def test_serialize_cache_control_cache_control_object():
     from webob.cachecontrol import serialize_cache_control, CacheControl
-    serialize_cache_control(dict())
-    # properties, type
-    serialize_cache_control(CacheControl({}, 'request'))
+    result = serialize_cache_control(CacheControl({}, 'request'))
+    assert result == ''
 
-    serialize_cache_control(CacheControl({'header':'%'}, 'request'))
+def test_serialize_cache_control_object_with_headers():
+    from webob.cachecontrol import serialize_cache_control, CacheControl
+    result = serialize_cache_control(CacheControl({'header':'a'}, 'request'))
+    assert result == 'header=a'
 
+def test_serialize_cache_control_value_is_None():
+    from webob.cachecontrol import serialize_cache_control, CacheControl
+    result = serialize_cache_control(CacheControl({'header':None}, 'request'))
+    assert result == 'header'
+
+def test_serialize_cache_control_value_needs_quote():
+    from webob.cachecontrol import serialize_cache_control, CacheControl
+    result = serialize_cache_control(CacheControl({'header':'""'}, 'request'))
+    assert result == 'header=""""'
 
 class TestCacheControl(unittest.TestCase):
     def make_one(self, props, typ):
@@ -226,12 +242,25 @@ class TestCacheControl(unittest.TestCase):
         self.assertEquals(cc.max_age, 315360000)
         self.assertEquals(cc.public, True)
 
-    # def test_parse_updates_to(self):
-    #     from webob.cachecontrol import CacheControl
-    #     def foo(arg): return { 'a' : 1 }
-    #     cc = CacheControl.parse("public, max-age=315360000", updates_to=foo)
-    #     self.assertEquals(type(cc), CacheControl)
-    #     self.assertEquals(cc.max_age, 315360000)
-    #     import pdb; pdb.set_trace()
+    def test_parse_updates_to(self):
+        from webob.cachecontrol import CacheControl
+        def foo(arg): return { 'a' : 1 }
+        cc = CacheControl.parse("public, max-age=315360000", updates_to=foo)
+        self.assertEquals(type(cc), CacheControl)
+        self.assertEquals(cc.max_age, 315360000)
 
+    def test_parse_valueerror_int(self):
+        from webob.cachecontrol import CacheControl
+        def foo(arg): return { 'a' : 1 }
+        cc = CacheControl.parse("public, max-age=abc")
+        self.assertEquals(type(cc), CacheControl)
+        self.assertEquals(cc.max_age, 'abc')
+
+    def test_repr(self):
+        cc = self.make_one({'a':'1'}, 'typ')
+        result = repr(cc)
+        self.assertEqual(result, "<CacheControl 'a=1'>")
+        
+        
+        
 
