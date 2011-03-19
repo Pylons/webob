@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import datetime
 import calendar
-from datetime import *
 from rfc822 import formatdate
 from webob import datetime_utils
 from nose.tools import ok_, eq_, assert_raises
@@ -9,9 +9,9 @@ from nose.tools import ok_, eq_, assert_raises
 def test_UTC():
     """Test missing function in _UTC"""
     x = datetime_utils.UTC
-    ok_(x.tzname(datetime.now())=='UTC')
-    eq_(x.dst(datetime.now()), timedelta(0))
-    eq_(x.utcoffset(datetime.now()), timedelta(0))
+    ok_(x.tzname(datetime.datetime.now())=='UTC')
+    eq_(x.dst(datetime.datetime.now()), datetime.timedelta(0))
+    eq_(x.utcoffset(datetime.datetime.now()), datetime.timedelta(0))
     eq_(repr(x), 'UTC')
 
 def test_parse_date():
@@ -38,9 +38,11 @@ def test_parse_date():
         "to parse_date. We should get None but instead we got %s" %\
         ret)
     ret = datetime_utils.parse_date('Mon, 20 Nov 1995 19:12:08 -0500')
-    eq_(ret, datetime(1995, 11, 21, 0, 12, 8, tzinfo=datetime_utils.UTC))
+    eq_(ret, datetime.datetime(
+        1995, 11, 21, 0, 12, 8, tzinfo=datetime_utils.UTC))
     ret = datetime_utils.parse_date('Mon, 20 Nov 1995 19:12:08')
-    eq_(ret, datetime(1995, 11, 20, 19, 12, 8, tzinfo=datetime_utils.UTC))
+    eq_(ret,
+        datetime.datetime(1995, 11, 20, 19, 12, 8, tzinfo=datetime_utils.UTC))
 
 def test_serialize_date():
     """Testing datetime_utils.serialize_date
@@ -52,8 +54,10 @@ def test_serialize_date():
     ret = datetime_utils.serialize_date(u'Mon, 20 Nov 1995 19:12:08 GMT')
     assert type(ret) is (str)
     eq_(ret, 'Mon, 20 Nov 1995 19:12:08 GMT')
-    dt = formatdate(calendar.timegm((datetime.now()+timedelta(1)).timetuple()))
-    eq_(dt, datetime_utils.serialize_date(timedelta(1)))
+    dt = formatdate(
+        calendar.timegm(
+            (datetime.datetime.now()+datetime.timedelta(1)).timetuple()))
+    eq_(dt, datetime_utils.serialize_date(datetime.timedelta(1)))
     assert_raises(ValueError, datetime_utils.serialize_date, None)
 
 def test_parse_date_delta():
@@ -66,14 +70,15 @@ def test_parse_date_delta():
     ok_(datetime_utils.parse_date_delta(None) is None, 'Passing none value, '
         'should return None')
     ret = datetime_utils.parse_date_delta('Mon, 20 Nov 1995 19:12:08 -0500')
-    eq_(ret, datetime(1995, 11, 21, 0, 12, 8, tzinfo=datetime_utils.UTC))
-    WHEN = datetime(2011, 3, 16, 10, 10, 37, tzinfo=datetime_utils.UTC)
+    eq_(ret, datetime.datetime(
+        1995, 11, 21, 0, 12, 8, tzinfo=datetime_utils.UTC))
+    WHEN = datetime.datetime(2011, 3, 16, 10, 10, 37, tzinfo=datetime_utils.UTC)
     #with _NowRestorer(WHEN): Dammit, only Python 2.5 w/ __future__
     nr = _NowRestorer(WHEN)
     nr.__enter__()
     try:
         ret = datetime_utils.parse_date_delta(1)
-        eq_(ret, WHEN + timedelta(0, 1))
+        eq_(ret, WHEN + datetime.timedelta(0, 1))
     finally:
         nr.__exit__(None, None, None)
 
@@ -89,6 +94,11 @@ def test_serialize_date_delta():
     ret = datetime_utils.serialize_date_delta(u'Mon, 20 Nov 1995 19:12:08 GMT')
     assert type(ret) is (str)
     eq_(ret, 'Mon, 20 Nov 1995 19:12:08 GMT')
+
+def test_timedelta_to_seconds():
+    val = datetime.timedelta(86400)
+    result = datetime_utils.timedelta_to_seconds(val)
+    eq_(result, 7464960000)
 
 
 class _NowRestorer(object):
