@@ -15,82 +15,83 @@ class MultiDictTestCase(unittest.TestCase):
         return self.klass(self.data.copy())
 
     def test_len(self):
-        assert len(self.d) == 4
+        self.assertEqual(len(self.d), 4)
 
     def test_getone(self):
         assert self.d.getone('b') == 1
         self.assertRaises(KeyError, self.d.getone, 'a')
 
     def test_getall(self):
-        assert self.d.getall('b') == [1]
+        self.assertEqual(self.d.getall('b'), [1])
 
     def test_dict_of_lists(self):
-        assert self.d.dict_of_lists() == {'a': [u'\xe9', u'e', u'f'], 'b': [1]}, self.d.dict_of_lists()
+        self.assertEqual(
+            self.d.dict_of_lists(),
+            {'a': [u'\xe9', u'e', u'f'], 'b': [1]})
 
     def test_dict_api(self):
-        assert 'a' in self.d.mixed()
-        assert 'a' in self.d.keys()
-        assert 'a' in self.d.iterkeys()
-        assert ('b', 1) in self.d.items()
-        assert ('b', 1) in self.d.iteritems()
-        assert 1 in self.d.values()
-        assert 1 in self.d.itervalues()
-        assert len(self.d) == 4
+        self.failUnless('a' in self.d.mixed())
+        self.failUnless('a' in self.d.keys())
+        self.failUnless('a' in self.d.iterkeys())
+        self.failUnless(('b', 1) in self.d.items())
+        self.failUnless(('b', 1) in self.d.iteritems())
+        self.failUnless(1 in self.d.values())
+        self.failUnless(1 in self.d.itervalues())
+        self.assertEqual(len(self.d), 4)
 
     def test_set_del_item(self):
         d = self._get_instance()
-        assert 'a' in d
+        self.failUnless('a' in d)
         del d['a']
-        assert 'a' not in d
-        d['a'] = 1
+        self.failUnless(not 'a' in d)
 
     def test_pop(self):
         d = self._get_instance()
         d['a'] = 1
-        assert d.pop('a') == 1
-        assert d.pop('x', 1) == 1
-        assert d.popitem() == ('b', 1)
+        self.assertEqual(d.pop('a'), 1)
+        self.assertEqual(d.pop('x', 1), 1)
+        self.assertEqual(d.popitem(), ('b', 1))
 
     def test_update(self):
         d = self._get_instance()
         d.update(e=1)
-        assert 'e' in d
+        self.failUnless('e' in d)
         d.update(dict(x=1))
-        assert 'x' in d
+        self.failUnless('x' in d)
         d.update([('y', 1)])
-        assert 'y' in d
+        self.failUnless('y' in d)
 
     def test_setdefault(self):
         d = self._get_instance()
         d.setdefault('a', 1)
-        assert d['a'] != 1
+        self.assertNotEqual(d['a'], 1)
         d.setdefault('e', 1)
-        assert 'e' in d
+        self.failUnless('e' in d)
 
     def test_add(self):
         d = self._get_instance()
         d.add('b', 3)
-        assert d.getall('b') == [1, 3]
+        self.assertEqual(d.getall('b'), [1, 3])
 
     def test_copy(self):
         assert self.d.copy() is not self.d
         if hasattr(self.d, 'multi'):
-            assert self.d.copy().multi is not self.d.multi
-            assert self.d.copy() is not self.d.multi
+            self.failIf(self.d.copy().multi is self.d.multi)
+            self.failIf(self.d.copy() is self.d.multi)
 
     def test_clear(self):
         d = self._get_instance()
         d.clear()
-        assert len(d) == 0
+        self.assertEqual(len(d), 0)
 
     def test_nonzero(self):
         d = self._get_instance()
-        assert d
+        self.failUnless(d)
         d.clear()
-        assert not d
+        self.failIf(d)
 
     def test_repr(self):
-        assert repr(self._get_instance())
+        self.failUnless(repr(self._get_instance()))
 
     def test_too_many_args(self):
         from webob.multidict import MultiDict
@@ -99,12 +100,12 @@ class MultiDictTestCase(unittest.TestCase):
     def test_no_args(self):
         from webob.multidict import MultiDict
         md = MultiDict()
-        assert md._items == []
+        self.assertEqual(md._items, [])
 
     def test_kwargs(self):
         from webob.multidict import MultiDict
         md = MultiDict(kw1='val1')
-        assert md._items == [('kw1','val1')]
+        self.assertEqual(md._items, [('kw1','val1')])
 
     def test_view_list_not_list(self):
         from webob.multidict import MultiDict
@@ -114,13 +115,13 @@ class MultiDictTestCase(unittest.TestCase):
     def test_view_list(self):
         from webob.multidict import MultiDict
         d = MultiDict()
-        assert d.view_list([1,2])._items == [1,2]
+        self.assertEqual(d.view_list([1,2])._items, [1,2])
 
     def test_from_fieldstorage(self):
         from webob.multidict import MultiDict
         from cgi import FieldStorage
         d = MultiDict()
-        assert d.from_fieldstorage(FieldStorage()) == MultiDict([])
+        self.assertEqual(d.from_fieldstorage(FieldStorage()), MultiDict([]))
         # Don't know yet how to test with fields (.filename, .name, .value)
 
 class UnicodeMultiDictTestCase(MultiDictTestCase):
