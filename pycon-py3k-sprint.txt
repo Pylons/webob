@@ -14,6 +14,14 @@ In doing so, we added roughly 700-800 unit tests, and disused existing
 doctests as coverage (they are still runnable, but don't get run during
 ``setup.py test``).
 
+We never did get around to actually doing any porting to Python 3.  Adding
+comprehensive test coverage proved to be enough work to fill the sprint days.
+
+The bitbucket fork on which this work was done is at
+https://bitbucket.org/chrism/webob-py3k.  I've made a tag in that repository
+named "sprint-coverage" which represents a reasonable place to pull from for
+integration into mainline.
+
 Testing Normally
 ----------------
 
