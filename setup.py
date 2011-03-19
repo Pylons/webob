@@ -44,5 +44,4 @@ See also: `changelog <http://pythonpaste.org/webob/news>`_,
     zip_safe=True,
     test_suite='nose.collector',
     tests_require=['nose', 'WebTest'],
-    use_2to3=True,
 )
