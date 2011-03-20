@@ -33,20 +33,20 @@ class BaseDictTests(object):
             {'a': [u'\xe9', u'e', u'f'], 'b': [1]})
 
     def test_dict_api(self):
-        self.failUnless('a' in self.d.mixed())
-        self.failUnless('a' in self.d.keys())
-        self.failUnless('a' in self.d.iterkeys())
-        self.failUnless(('b', 1) in self.d.items())
-        self.failUnless(('b', 1) in self.d.iteritems())
-        self.failUnless(1 in self.d.values())
-        self.failUnless(1 in self.d.itervalues())
+        self.assertTrue('a' in self.d.mixed())
+        self.assertTrue('a' in self.d.keys())
+        self.assertTrue('a' in self.d.iterkeys())
+        self.assertTrue(('b', 1) in self.d.items())
+        self.assertTrue(('b', 1) in self.d.iteritems())
+        self.assertTrue(1 in self.d.values())
+        self.assertTrue(1 in self.d.itervalues())
         self.assertEqual(len(self.d), 4)
 
     def test_set_del_item(self):
         d = self._get_instance()
-        self.failUnless('a' in d)
+        self.assertTrue('a' in d)
         del d['a']
-        self.failUnless(not 'a' in d)
+        self.assertTrue(not 'a' in d)
 
     def test_pop(self):
         d = self._get_instance()
@@ -69,18 +69,18 @@ class BaseDictTests(object):
     def test_update(self):
         d = self._get_instance()
         d.update(e=1)
-        self.failUnless('e' in d)
+        self.assertTrue('e' in d)
         d.update(dict(x=1))
-        self.failUnless('x' in d)
+        self.assertTrue('x' in d)
         d.update([('y', 1)])
-        self.failUnless('y' in d)
+        self.assertTrue('y' in d)
 
     def test_setdefault(self):
         d = self._get_instance()
         d.setdefault('a', 1)
         self.assertNotEqual(d['a'], 1)
         d.setdefault('e', 1)
-        self.failUnless('e' in d)
+        self.assertTrue('e' in d)
 
     def test_add(self):
         d = self._get_instance()
@@ -90,8 +90,8 @@ class BaseDictTests(object):
     def test_copy(self):
         assert self.d.copy() is not self.d
         if hasattr(self.d, 'multi'):
-            self.failIf(self.d.copy().multi is self.d.multi)
-            self.failIf(self.d.copy() is self.d.multi)
+            self.assertFalse(self.d.copy().multi is self.d.multi)
+            self.assertFalse(self.d.copy() is self.d.multi)
 
     def test_clear(self):
         d = self._get_instance()
@@ -100,12 +100,12 @@ class BaseDictTests(object):
 
     def test_nonzero(self):
         d = self._get_instance()
-        self.failUnless(d)
+        self.assertTrue(d)
         d.clear()
-        self.failIf(d)
+        self.assertFalse(d)
 
     def test_repr(self):
-        self.failUnless(repr(self._get_instance()))
+        self.assertTrue(repr(self._get_instance()))
 
     def test_too_many_args(self):
         from webob.multidict import MultiDict
@@ -288,7 +288,7 @@ class TrackableMultiDict(BaseDictTests, unittest.TestCase):
 
         _list = [u'\xe9', u'e', r'f', 1]
         for v in _list:
-            self.failUnless(v in d._items)
+            self.assertTrue(v in d._items)
 
     def test_dictextend(self):
         class Other:
@@ -304,7 +304,7 @@ class TrackableMultiDict(BaseDictTests, unittest.TestCase):
 
         _list = [('a', 1), ('b', 2), ('c', 3)]
         for v in _list:
-            self.failUnless(v in d._items)
+            self.assertTrue(v in d._items)
 
     def test_otherextend(self):
         class Other(object):
@@ -317,7 +317,7 @@ class TrackableMultiDict(BaseDictTests, unittest.TestCase):
 
         _list = [('a', 1)]
         for v in _list:
-            self.failUnless(v in d._items)
+            self.assertTrue(v in d._items)
 
 class NoVarsTestCase(unittest.TestCase):
     klass = multidict.NoVars

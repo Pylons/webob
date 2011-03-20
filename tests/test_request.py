@@ -1792,7 +1792,7 @@ class RequestTests_functional(unittest.TestCase):
             def read(self, n=-1):
                 return self.txt[0:n]
         limit = BaseRequest.request_body_tempfile_limit
-        len_strl = limit / len(string.letters) + 1
+        len_strl = limit // len(string.letters) + 1
         r = Request({'a':1}, body_file=DummyIO(string.letters * len_strl))
         self.assertEqual(len(r.body), len(string.letters*len_strl)-1)
         self.assertRaises(TypeError,
@@ -2035,7 +2035,8 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(req.environ['SERVER_NAME'], 'localhost')
         self.assertEqual(req.environ['SERVER_PORT'], '80')
         self.assertEqual(req.environ['SERVER_PROTOCOL'], 'HTTP/1.0')
-        self.assert_(hasattr(req.environ['wsgi.errors'], 'write') and hasattr(req.environ['wsgi.errors'], 'flush'))
+        self.assert_(hasattr(req.environ['wsgi.errors'], 'write') and
+                     hasattr(req.environ['wsgi.errors'], 'flush'))
         self.assert_(hasattr(req.environ['wsgi.input'], 'next'))
         self.assertEqual(req.environ['wsgi.multiprocess'], False)
         self.assertEqual(req.environ['wsgi.multithread'], False)
