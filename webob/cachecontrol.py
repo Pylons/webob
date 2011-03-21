@@ -3,7 +3,6 @@ Represents the Cache-Control header
 """
 import re
 
-import re
 
 class UpdateDict(dict):
     """
@@ -143,6 +142,8 @@ class CacheControl(object):
     only apply to requests or responses).
     """
 
+    update_dict = UpdateDict
+
     def __init__(self, properties, type):
         self.properties = properties
         self.type = type
@@ -156,7 +157,7 @@ class CacheControl(object):
         ``updates_to``, if that is given.
         """
         if updates_to:
-            props = UpdateDict()
+            props = cls.update_dict()
             props.updated = updates_to
         else:
             props = {}

@@ -1,4 +1,4 @@
-import sys, re, urlparse, zlib, struct
+import re, urlparse, zlib, struct
 from datetime import datetime, date, timedelta
 
 from webob.headers import ResponseHeaders
