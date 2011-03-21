@@ -506,7 +506,7 @@ class BaseRequest(object):
         if self.is_body_seekable:
             self.body_file.seek(0)
         fs_environ = env.copy()
-        # FieldStorage assumes a default CONTENT_LENGTH of -1, but a
+        # FieldStorage assumes a missing CONTENT_LENGTH, but a
         # default of 0 is better:
         fs_environ.setdefault('CONTENT_LENGTH', '0')
         fs_environ['QUERY_STRING'] = ''
@@ -692,7 +692,7 @@ class BaseRequest(object):
             if not did_copy:
                 self.body = self.body_file_raw.read(length)
         else:
-            self.body = self.body_file_raw.read(-1)
+            self.body = self.body_file_raw.read()
             self._copy_body_tempfile()
 
     def _copy_body_tempfile(self):
@@ -926,8 +926,9 @@ class BaseRequest(object):
         if r.method in ('PUT', 'POST'):
             clen = r.content_length
             if clen is None:
-                clen = -1
-            r.body = fp.read(clen)
+                r.body = fp.read()
+            else:
+                r.body = fp.read(clen)
         return r
 
     def call_application(self, application, catch_exc_info=False):
@@ -1164,7 +1165,7 @@ class FakeCGIBody(object):
 
     def read(self, size=-1):
         body = self._get_body()
-        if size == -1:
+        if size < 0:
             v = body[self.position:]
             self.position = len(body)
             return v
