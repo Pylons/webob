@@ -1,5 +1,4 @@
 from setuptools import setup
-import sys, os
 
 version = '1.0.5'
 
@@ -44,6 +43,5 @@ See also: `changelog <http://pythonpaste.org/webob/news>`_,
     packages=['webob'],
     zip_safe=True,
     test_suite='nose.collector',
-    tests_require=['Tempita', 'WSGIProxy', 'WebTest', 'dtopt', 'nose',
-                   'coverage', 'repoze.profile'],
+    tests_require=['nose', 'WebTest'],
 )

@@ -1,7 +1,7 @@
 This demonstrates how the Response object works, and tests it at the
 same time.
 
-    >>> from dtopt import ELLIPSIS
+    >>> from doctest import ELLIPSIS
     >>> from webob import Response, UTC
     >>> from datetime import datetime
     >>> res = Response('Test', status='200 OK')

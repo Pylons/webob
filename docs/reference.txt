@@ -5,7 +5,7 @@ WebOb Reference
 
 .. comment:
 
-    >>> from dtopt import ELLIPSIS
+    >>> from doctest import ELLIPSIS
 
 Introduction
 ============

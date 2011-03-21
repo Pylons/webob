@@ -1,8 +1,13 @@
 import sys
+import zlib
 if sys.version >= '2.7':
     from io import BytesIO as StringIO
 else:
     from cStringIO import StringIO
+try:
+    from hashlib import md5
+except ImportError:
+    from md5 import md5
 
 from nose.tools import eq_, ok_, assert_raises
 
@@ -105,6 +110,209 @@ def test_HEAD_closes():
     eq_(res.body, '')
     ok_(app_iter.closed)
 
+def test_HEAD_conditional_response_returns_empty_response():
+    from webob.response import EmptyResponse
+    req = Request.blank('/')
+    req.method = 'HEAD'
+    res = Response(request=req, conditional_response=True)
+    class FakeRequest:
+        method = 'HEAD'
+        if_none_match = 'none'
+        if_modified_since = False
+        range = False
+        def __init__(self, env):
+            self.env = env
+    def start_response(status, headerlist):
+        pass
+    res.RequestClass = FakeRequest
+    result = res({}, start_response)
+    ok_(isinstance(result, EmptyResponse))
+
+def test_HEAD_conditional_response_range_empty_response():
+    from webob.response import EmptyResponse
+    req = Request.blank('/')
+    req.method = 'HEAD'
+    res = Response(request=req, conditional_response=True)
+    res.status_int = 200
+    res.body = 'Are we not men?'
+    res.content_length = len(res.body)
+    class FakeRequest:
+        method = 'HEAD'
+        if_none_match = 'none'
+        if_modified_since = False
+        def __init__(self, env):
+            self.env = env
+            self.range = self # simulate inner api
+            self.if_range = self
+        def content_range(self, length):
+            """range attr"""
+            class Range:
+                start = 4
+                stop = 5
+            return Range
+        def match_response(self, res):
+            """if_range_match attr"""
+            return True
+    def start_response(status, headerlist):
+        pass
+    res.RequestClass = FakeRequest
+    result = res({}, start_response)
+    ok_(isinstance(result, EmptyResponse), result)
+
+def test_conditional_response_if_none_match_false():
+    req = Request.blank('/', if_none_match='foo')
+    resp = Response(app_iter=['foo\n'],
+            conditional_response=True, etag='foo')
+    resp = req.get_response(resp)
+    eq_(resp.status_int, 304)
+
+def test_conditional_response_if_none_match_true():
+    req = Request.blank('/', if_none_match='foo')
+    resp = Response(app_iter=['foo\n'],
+            conditional_response=True, etag='bar')
+    resp = req.get_response(resp)
+    eq_(resp.status_int, 200)
+
+def test_conditional_response_if_modified_since_false():
+    from datetime import datetime, timedelta
+    req = Request.blank('/', if_modified_since=datetime(2011, 3, 17, 13, 0, 0))
+    resp = Response(app_iter=['foo\n'], conditional_response=True,
+            last_modified=req.if_modified_since-timedelta(seconds=1))
+    resp = req.get_response(resp)
+    eq_(resp.status_int, 304)
+
+def test_conditional_response_if_modified_since_true():
+    from datetime import datetime, timedelta
+    req = Request.blank('/', if_modified_since=datetime(2011, 3, 17, 13, 0, 0))
+    resp = Response(app_iter=['foo\n'], conditional_response=True,
+            last_modified=req.if_modified_since+timedelta(seconds=1))
+    resp = req.get_response(resp)
+    eq_(resp.status_int, 200)
+
+def test_conditional_response_range_not_satisfiable_response():
+    req = Request.blank('/', range='bytes=100-200')
+    resp = Response(app_iter=['foo\n'], content_length=4,
+            conditional_response=True)
+    resp = req.get_response(resp)
+    eq_(resp.status_int, 416)
+    eq_(resp.content_range.start, None)
+    eq_(resp.content_range.stop, None)
+    eq_(resp.content_range.length, 4)
+    eq_(resp.body, 'Requested range not satisfiable: bytes=100-200')
+
+def test_HEAD_conditional_response_range_not_satisfiable_response():
+    req = Request.blank('/', method='HEAD', range='bytes=100-200')
+    resp = Response(app_iter=['foo\n'], content_length=4,
+            conditional_response=True)
+    resp = req.get_response(resp)
+    eq_(resp.status_int, 416)
+    eq_(resp.content_range.start, None)
+    eq_(resp.content_range.stop, None)
+    eq_(resp.content_range.length, 4)
+    eq_(resp.body, '')
+
+def test_del_environ():
+    res = Response()
+    res.environ = {'yo': 'mama'}
+    eq_(res.environ, {'yo': 'mama'})
+    del res.environ
+    eq_(res.environ, None)
+    eq_(res.request, None)
+
+def test_set_request_environ():
+    res = Response()
+    class FakeRequest:
+        environ = {'jo': 'mama'}
+    res.request = FakeRequest
+    eq_(res.environ, {'jo': 'mama'})
+    eq_(res.request, FakeRequest)
+    res.environ = None
+    eq_(res.environ, None)
+    eq_(res.request, None)
+
+def test_del_request():
+    res = Response()
+    class FakeRequest:
+        environ = {}
+    res.request = FakeRequest
+    del res.request
+    eq_(res.environ, None)
+    eq_(res.request, None)
+
+def test_set_environ_via_request_subterfuge():
+    class FakeRequest:
+        def __init__(self, env):
+            self.environ = env
+    res = Response()
+    res.RequestClass = FakeRequest
+    res.request = {'action': 'dwim'}
+    eq_(res.environ, {'action': 'dwim'})
+    ok_(isinstance(res.request, FakeRequest))
+    eq_(res.request.environ, res.environ)
+
+def test_set_request():
+    res = Response()
+    class FakeRequest:
+        environ = {'foo': 'bar'}
+    res.request = FakeRequest
+    eq_(res.request, FakeRequest)
+    eq_(res.environ, FakeRequest.environ)
+    res.request = None
+    eq_(res.environ, None)
+    eq_(res.request, None)
+
+def test_md5_etag():
+    res = Response()
+    res.body = """\
+In A.D. 2101 
+War was beginning. 
+Captain: What happen ? 
+Mechanic: Somebody set up us the bomb. 
+Operator: We get signal. 
+Captain: What ! 
+Operator: Main screen turn on. 
+Captain: It's You !! 
+Cats: How are you gentlemen !! 
+Cats: All your base are belong to us. 
+Cats: You are on the way to destruction. 
+Captain: What you say !! 
+Cats: You have no chance to survive make your time. 
+Cats: HA HA HA HA .... 
+Captain: Take off every 'zig' !! 
+Captain: You know what you doing. 
+Captain: Move 'zig'. 
+Captain: For great justice."""
+    res.md5_etag()
+    ok_(res.etag)
+    ok_('\n' not in res.etag)
+    eq_(res.etag, 
+        md5(res.body).digest().encode('base64').replace('\n', '').strip('='))
+    eq_(res.content_md5, None)
+
+def test_md5_etag_set_content_md5():
+    res = Response()
+    b = 'The quick brown fox jumps over the lazy dog'
+    res.md5_etag(b, set_content_md5=True)
+    ok_(res.content_md5,
+        md5(b).digest().encode('base64').replace('\n', '').strip('='))
+
+def test_decode_content_defaults_to_identity():
+    res = Response()
+    res.body = 'There be dragons'
+    res.decode_content()
+    eq_(res.body, 'There be dragons')
+
+def test_decode_content_with_deflate():
+    res = Response()
+    b = 'Hey Hey Hey'
+    # Simulate inflate by chopping the headers off
+    # the gzip encoded data
+    res.body = zlib.compress(b)[2:-4]
+    res.content_encoding = 'deflate'
+    res.decode_content()
+    eq_(res.body, b)
+    eq_(res.content_encoding, None)
+
 def test_content_length():
     r0 = Response('x'*10, content_length=10)
 
@@ -158,6 +366,13 @@ def test_app_iter_range():
         res = req.get_response(r)
         eq_(list(res.content_range), [2,5,6])
         eq_(res.body, '234', 'body=%r; app_iter=%r' % (res.body, app_iter))
+
+def test_app_iter_range_inner_method():
+    class FakeAppIter:
+        def app_iter_range(self, start, stop):
+            return 'you win', start, stop
+    res = Response(app_iter=FakeAppIter())
+    eq_(res.app_iter_range(30, 40), ('you win', 30, 40))
 
 def test_content_type_in_headerlist():
     # Couldn't manage to clone Response in order to modify class
@@ -213,3 +428,608 @@ def test_set_headerlist():
     eq_(res.headerlist, [('Content-Type', 'text/html; charset=UTF-8')])
     del res.headerlist
     eq_(res.headerlist, [])
+
+def test_request_uri_no_script_name():
+    from webob.response import _request_uri
+    environ = {
+        'wsgi.url_scheme': 'http',
+        'HTTP_HOST': 'test.com',
+        'SCRIPT_NAME': '/foobar',
+    }
+    eq_(_request_uri(environ), 'http://test.com/foobar')
+
+def test_request_uri_https():
+    from webob.response import _request_uri
+    environ = {
+        'wsgi.url_scheme': 'https',
+        'SERVER_NAME': 'test.com',
+        'SERVER_PORT': '443',
+        'SCRIPT_NAME': '/foobar',
+    }
+    eq_(_request_uri(environ), 'https://test.com/foobar')
+
+def test_app_iter_range_starts_after_iter_end():
+    from webob.response import AppIterRange
+    range = AppIterRange(iter([]), start=1, stop=1)
+    eq_(list(range), [])
+
+def test_response_file_body_flush_is_no_op():
+    from webob.response import ResponseBodyFile
+    rbo = ResponseBodyFile(None)
+    rbo.flush()
+
+def test_response_file_body_writelines():
+    from webob.response import ResponseBodyFile
+    class FakeResponse:
+        pass
+    res = FakeResponse()
+    res._app_iter = res.app_iter = ['foo']
+    rbo = ResponseBodyFile(res)
+    rbo.writelines(['bar', 'baz'])
+    eq_(res.app_iter, ['foo', 'bar', 'baz'])
+
+def test_response_file_body_write_non_str():
+    from webob.response import ResponseBodyFile
+    class FakeResponse:
+        pass
+    res = FakeResponse()
+    rbo = ResponseBodyFile(res)
+    assert_raises(TypeError, rbo.write, object())
+
+def test_response_file_body_write_empty_app_iter():
+    from webob.response import ResponseBodyFile
+    class FakeResponse:
+        pass
+    res = FakeResponse()
+    res._app_iter = res.app_iter = None
+    res.body = 'foo'
+    rbo = ResponseBodyFile(res)
+    rbo.write('baz')
+    eq_(res.app_iter, ['foo', 'baz'])
+
+def test_response_file_body_write_empty_body():
+    from webob.response import ResponseBodyFile
+    class FakeResponse:
+        body = ''
+    res = FakeResponse()
+    res._app_iter = res.app_iter = None
+    rbo = ResponseBodyFile(res)
+    rbo.write('baz')
+    eq_(res.app_iter, ['baz'])
+
+def test_response_file_body_close_not_implemented():
+    from webob.response import ResponseBodyFile
+    rbo = ResponseBodyFile(None)
+    assert_raises(NotImplementedError, rbo.close)
+
+def test_response_file_body_repr():
+    from webob.response import ResponseBodyFile
+    rbo = ResponseBodyFile('yo')
+    eq_(repr(rbo), "<body_file for 'yo'>")
+
+def test_body_get_is_none():
+    res = Response()
+    res._body = None
+    res._app_iter = None
+    assert_raises(TypeError, Response, app_iter=iter(['a']),
+                  body="somebody")
+    assert_raises(AttributeError, res.__getattribute__, 'body')
+
+def test_body_get_is_unicode_notverylong():
+    res = Response()
+    res._app_iter = u'foo'
+    res._body = None
+    assert_raises(ValueError, res.__getattribute__, 'body')
+    
+def test_body_get_is_unicode_verylong():
+    res = Response()
+    res._app_iter = u'x' * 51
+    res._body = None
+    assert_raises(ValueError, res.__getattribute__, 'body')
+    
+def test_body_set_not_unicode_or_str():
+    res = Response()
+    assert_raises(TypeError, res.__setattr__, 'body', object())
+
+def test_body_set_unicode():
+    res = Response()
+    assert_raises(TypeError, res.__setattr__, 'body', u'abc')
+
+def test_body_set_under_body_doesnt_exist():
+    res = Response()
+    del res._body
+    res.body = 'abc'
+    eq_(res._body, 'abc')
+    eq_(res.content_length, 3)
+    eq_(res._app_iter, None)
+    
+def test_body_del():
+    res = Response()
+    res._body = '123'
+    res.content_length = 3
+    res._app_iter = ()
+    del res.body
+    eq_(res._body, None)
+    eq_(res.content_length, None)
+    eq_(res._app_iter, None)
+    
+def test_unicode_body_get_no_charset():
+    res = Response()
+    res.charset = None
+    assert_raises(AttributeError, res.__getattribute__, 'unicode_body')
+
+def test_unicode_body_get_decode():
+    res = Response()
+    res.charset = 'utf-8'
+    res.body = 'La Pe\xc3\xb1a'
+    eq_(res.unicode_body, unicode('La Pe\xc3\xb1a', 'utf-8'))
+    
+def test_unicode_body_set_no_charset():
+    res = Response()
+    res.charset = None
+    assert_raises(AttributeError, res.__setattr__, 'unicode_body', 'abc')
+
+def test_unicode_body_set_not_unicode():
+    res = Response()
+    res.charset = 'utf-8'
+    assert_raises(TypeError, res.__setattr__, 'unicode_body',
+                  'La Pe\xc3\xb1a')
+
+def test_unicode_body_del():
+    res = Response()
+    res._body = '123'
+    res.content_length = 3
+    res._app_iter = ()
+    del res.unicode_body
+    eq_(res._body, None)
+    eq_(res.content_length, None)
+    eq_(res._app_iter, None)
+
+def test_body_file_del():
+    res = Response()
+    res._body = '123'
+    res.content_length = 3
+    res._app_iter = ()
+    del res.body_file
+    eq_(res._body, None)
+    eq_(res.content_length, None)
+    eq_(res._app_iter, None)
+
+def test_write_unicode():
+    res = Response()
+    res.unicode_body = unicode('La Pe\xc3\xb1a', 'utf-8')
+    res.write(u'a')
+    eq_(res.unicode_body, unicode('La Pe\xc3\xb1aa', 'utf-8'))
+
+def test_write_text():
+    res = Response()
+    res.body = 'abc'
+    res.write(u'a')
+    eq_(res.unicode_body, 'abca')
+
+def test_app_iter_get_app_iter_is_None():
+    res = Response()
+    res._app_iter = None
+    res._body = None
+    assert_raises(AttributeError, res.__getattribute__, 'app_iter')
+
+def test_app_iter_del():
+    res = Response()
+    res.content_length = 3
+    res._app_iter = ['123']
+    del res.app_iter
+    eq_(res._app_iter, None)
+    eq_(res._body, None)
+    eq_(res.content_length, None)
+    
+    
+def test_charset_set_charset_is_None():
+    res = Response()
+    res.charset = 'utf-8'
+    res._app_iter = ['123']
+    del res.app_iter
+    eq_(res._app_iter, None)
+    eq_(res._body, None)
+    eq_(res.content_length, None)
+    
+def test_charset_set_no_content_type_header():
+    res = Response()
+    res.headers.pop('Content-Type', None)
+    assert_raises(AttributeError, res.__setattr__, 'charset', 'utf-8')
+
+def test_charset_del_no_content_type_header():
+    res = Response()
+    res.headers.pop('Content-Type', None)
+    eq_(res._charset__del(), None)
+
+def test_content_type_params_get_no_semicolon_in_content_type_header():
+    res = Response()
+    res.headers['Content-Type'] = 'foo'
+    eq_(res.content_type_params, {})
+
+def test_content_type_params_get_semicolon_in_content_type_header():
+    res = Response()
+    res.headers['Content-Type'] = 'foo;encoding=utf-8'
+    eq_(res.content_type_params, {'encoding':'utf-8'})
+
+def test_content_type_params_set_value_dict_empty():
+    res = Response()
+    res.headers['Content-Type'] = 'foo;bar'
+    res.content_type_params = None
+    eq_(res.headers['Content-Type'], 'foo')
+
+def test_content_type_params_set_ok_param_quoting():
+    res = Response()
+    res.content_type_params = {'a':''}
+    eq_(res.headers['Content-Type'], 'text/html; a=""')
+    
+def test_set_cookie_overwrite():
+    res = Response()
+    res.set_cookie('a', '1')
+    res.set_cookie('a', '2', overwrite=True)
+    eq_(res.headerlist[-1], ('Set-Cookie', 'a=2; Path=/'))
+    
+def test_set_cookie_value_is_None():
+    res = Response()
+    res.set_cookie('a', None)
+    eq_(res.headerlist[-1][0], 'Set-Cookie')
+    val = [ x.strip() for x in res.headerlist[-1][1].split(';')]
+    assert len(val) == 4
+    val.sort()
+    eq_(val[0], 'Max-Age=0')
+    eq_(val[1], 'Path=/')
+    eq_(val[2], 'a=')
+    assert val[3].startswith('expires')
+
+def test_set_cookie_expires_is_None_and_max_age_is_int():
+    res = Response()
+    res.set_cookie('a', '1', max_age=100)
+    eq_(res.headerlist[-1][0], 'Set-Cookie')
+    val = [ x.strip() for x in res.headerlist[-1][1].split(';')]
+    assert len(val) == 4
+    val.sort()
+    eq_(val[0], 'Max-Age=100')
+    eq_(val[1], 'Path=/')
+    eq_(val[2], 'a=1')
+    assert val[3].startswith('expires')
+
+def test_set_cookie_expires_is_None_and_max_age_is_timedelta():
+    from datetime import timedelta
+    res = Response()
+    res.set_cookie('a', '1', max_age=timedelta(seconds=100))
+    eq_(res.headerlist[-1][0], 'Set-Cookie')
+    val = [ x.strip() for x in res.headerlist[-1][1].split(';')]
+    assert len(val) == 4
+    val.sort()
+    eq_(val[0], 'Max-Age=100')
+    eq_(val[1], 'Path=/')
+    eq_(val[2], 'a=1')
+    assert val[3].startswith('expires')
+
+def test_set_cookie_expires_is_not_None_and_max_age_is_None():
+    import datetime
+    res = Response()
+    then = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+    res.set_cookie('a', '1', expires=then)
+    eq_(res.headerlist[-1][0], 'Set-Cookie')
+    val = [ x.strip() for x in res.headerlist[-1][1].split(';')]
+    assert len(val) == 4
+    val.sort()
+    ok_(val[0] in ('Max-Age=86399', 'Max-Age=86400'))
+    eq_(val[1], 'Path=/')
+    eq_(val[2], 'a=1')
+    assert val[3].startswith('expires')
+
+def test_set_cookie_value_is_unicode():
+    res = Response()
+    val = unicode('La Pe\xc3\xb1a', 'utf-8')
+    res.set_cookie('a', val)
+    eq_(res.headerlist[-1], (r'Set-Cookie', 'a="La Pe\\303\\261a"; Path=/'))
+
+def test_delete_cookie():
+    res = Response()
+    res.headers['Set-Cookie'] = 'a=2; Path=/'
+    res.delete_cookie('a')
+    eq_(res.headerlist[-1][0], 'Set-Cookie')
+    val = [ x.strip() for x in res.headerlist[-1][1].split(';')]
+    assert len(val) == 4
+    val.sort()
+    eq_(val[0], 'Max-Age=0')
+    eq_(val[1], 'Path=/')
+    eq_(val[2], 'a=')
+    assert val[3].startswith('expires')
+
+def test_delete_cookie_with_path():
+    res = Response()
+    res.headers['Set-Cookie'] = 'a=2; Path=/'
+    res.delete_cookie('a', path='/abc')
+    eq_(res.headerlist[-1][0], 'Set-Cookie')
+    val = [ x.strip() for x in res.headerlist[-1][1].split(';')]
+    assert len(val) == 4
+    val.sort()
+    eq_(val[0], 'Max-Age=0')
+    eq_(val[1], 'Path=/abc')
+    eq_(val[2], 'a=')
+    assert val[3].startswith('expires')
+
+def test_delete_cookie_with_domain():
+    res = Response()
+    res.headers['Set-Cookie'] = 'a=2; Path=/'
+    res.delete_cookie('a', path='/abc', domain='example.com')
+    eq_(res.headerlist[-1][0], 'Set-Cookie')
+    val = [ x.strip() for x in res.headerlist[-1][1].split(';')]
+    assert len(val) == 5
+    val.sort()
+    eq_(val[0], 'Domain=example.com')
+    eq_(val[1], 'Max-Age=0')
+    eq_(val[2], 'Path=/abc')
+    eq_(val[3], 'a=')
+    assert val[4].startswith('expires')
+
+def test_unset_cookie_not_existing_and_not_strict():
+    res = Response()
+    result = res.unset_cookie('a', strict=False)
+    assert result is None
+
+def test_unset_cookie_not_existing_and_strict():
+    res = Response()
+    assert_raises(KeyError, res.unset_cookie, 'a')
+    
+def test_unset_cookie_key_in_cookies():
+    res = Response()
+    res.headers.add('Set-Cookie', 'a=2; Path=/')
+    res.headers.add('Set-Cookie', 'b=3; Path=/')
+    res.unset_cookie('a')
+    eq_(res.headers.getall('Set-Cookie'), ['b=3; Path=/'])
+    
+def test_merge_cookies_no_set_cookie():
+    res = Response()
+    result = res.merge_cookies('abc')
+    eq_(result, 'abc')
+    
+def test_merge_cookies_resp_is_Response():
+    inner_res = Response()
+    res = Response()
+    res.set_cookie('a', '1')
+    result = res.merge_cookies(inner_res)
+    eq_(result.headers.getall('Set-Cookie'), ['a=1; Path=/'])
+    
+def test_merge_cookies_resp_is_wsgi_callable():
+    L = []
+    def dummy_wsgi_callable(environ, start_response):
+        L.append((environ, start_response))
+        return 'abc'
+    res = Response()
+    res.set_cookie('a', '1')
+    wsgiapp = res.merge_cookies(dummy_wsgi_callable)
+    environ = {}
+    def dummy_start_response(status, headers, exc_info=None):
+        eq_(headers, [('Set-Cookie', 'a=1; Path=/')])
+    result = wsgiapp(environ, dummy_start_response)
+    assert result == 'abc'
+    assert len(L) == 1
+    L[0][1]('200 OK', []) # invoke dummy_start_response assertion
+    
+def test_body_get_body_is_None_len_app_iter_is_zero():
+    res = Response()
+    res._app_iter = StringIO()
+    res._body = None
+    result = res.body
+    eq_(result, '')
+
+def test_body_set_AttributeError_edgecase():
+    res = Response()
+    del res._app_iter
+    del res._body
+    res.body = 'abc'
+    eq_(res._body, 'abc')
+    eq_(res.content_length, 3)
+    eq_(res._app_iter, None)
+
+def test_cache_control_get():
+    res = Response()
+    eq_(repr(res.cache_control), "<CacheControl ''>")
+    eq_(res.cache_control.max_age, None)
+
+def test_location():
+    # covers webob/response.py:934-938
+    res = Response()
+    res.location = '/test.html'
+    eq_(res.location, '/test.html')
+    req = Request.blank('/')
+    eq_(req.get_response(res).location, 'http://localhost/test.html')
+    res.location = '/test2.html'
+    eq_(req.get_response(res).location, 'http://localhost/test2.html')
+
+def test_request_uri_http():
+    # covers webob/response.py:1152
+    from webob.response import _request_uri
+    environ = {
+        'wsgi.url_scheme': 'http',
+        'SERVER_NAME': 'test.com',
+        'SERVER_PORT': '80',
+        'SCRIPT_NAME': '/foobar',
+    }
+    eq_(_request_uri(environ), 'http://test.com/foobar')
+
+def test_request_uri_no_script_name2():
+    # covers webob/response.py:1160
+    # There is a test_request_uri_no_script_name in test_response.py, but it
+    # sets SCRIPT_NAME.
+    from webob.response import _request_uri
+    environ = {
+        'wsgi.url_scheme': 'http',
+        'HTTP_HOST': 'test.com',
+        'PATH_INFO': '/foobar',
+    }
+    eq_(_request_uri(environ), 'http://test.com/foobar')
+
+def test_cache_control_object_max_age_ten():
+    res = Response()
+    res.cache_control.max_age = 10
+    eq_(repr(res.cache_control), "<CacheControl 'max-age=10'>")
+    eq_(res.headers['cache-control'], 'max-age=10')
+
+def test_cache_control_set_object_error():
+    res = Response()
+    assert_raises(AttributeError, setattr, res.cache_control, 'max_stale', 10)
+
+def test_cache_expires_set():
+    res = Response()
+    res.cache_expires = True
+    eq_(repr(res.cache_control),
+        "<CacheControl 'max-age=0, must-revalidate, no-cache, no-store'>")
+
+def test_status_int_set():
+    res = Response()
+    res.status_int = 400
+    eq_(res._status, '400 Bad Request')
+
+def test_cache_control_set_dict():
+    res = Response()
+    res.cache_control = {'a':'b'}
+    eq_(repr(res.cache_control), "<CacheControl 'a=b'>")
+    
+def test_cache_control_set_None():
+    res = Response()
+    res.cache_control = None
+    eq_(repr(res.cache_control), "<CacheControl ''>")
+
+def test_cache_control_set_unicode():
+    res = Response()
+    res.cache_control = u'abc'
+    eq_(repr(res.cache_control), "<CacheControl 'abc'>")
+
+def test_cache_control_set_control_obj_is_not_None():
+    class DummyCacheControl(object):
+        def __init__(self):
+            self.header_value = 1
+            self.properties = {'bleh':1}
+    res = Response()
+    res._cache_control_obj = DummyCacheControl()
+    res.cache_control = {}
+    eq_(res.cache_control.properties, {})
+
+def test_cache_control_del():
+    res = Response()
+    del res.cache_control
+    eq_(repr(res.cache_control), "<CacheControl ''>")
+
+def test_body_file_get():
+    res = Response()
+    result = res.body_file
+    from webob.response import ResponseBodyFile
+    eq_(result.__class__, ResponseBodyFile)
+
+def test_body_file_write_no_charset():
+    from webob.response import ResponseBodyFile
+    class FakeReponse:
+        charset = None
+    rbo = ResponseBodyFile(FakeReponse())
+    assert_raises(TypeError, rbo.write, u'foo')
+
+def test_body_file_write_unicode_encodes():
+    from webob.response import ResponseBodyFile
+    class FakeReponse:
+        charset = 'utf-8'
+        _app_iter = app_iter = []
+    s = unicode('La Pe\xc3\xb1a', 'utf-8')
+    res = FakeReponse()
+    rbo = ResponseBodyFile(res)
+    rbo.write(s)
+    eq_(res.app_iter, ['La Pe\xc3\xb1a'])
+
+def test_repr():
+    res = Response()
+    ok_(repr(res).endswith('200 OK>'))
+    
+def test_cache_expires_set_timedelta():
+    res = Response()
+    from datetime import timedelta
+    delta = timedelta(seconds=60)
+    res.cache_expires(seconds=delta)
+    eq_(res.cache_control.max_age, 60)
+
+def test_cache_expires_set_int():
+    res = Response()
+    res.cache_expires(seconds=60)
+    eq_(res.cache_control.max_age, 60)
+
+def test_cache_expires_set_None():
+    res = Response()
+    res.cache_expires(seconds=None, a=1)
+    eq_(res.cache_control.a, 1)
+
+def test_cache_expires_set_zero():
+    res = Response()
+    res.cache_expires(seconds=0)
+    eq_(res.cache_control.no_store, True)
+    eq_(res.cache_control.no_cache, '*')
+    eq_(res.cache_control.must_revalidate, True)
+    eq_(res.cache_control.max_age, 0)
+    eq_(res.cache_control.post_check, 0)
+
+def test_encode_content_unknown():
+    res = Response()
+    assert_raises(AssertionError, res.encode_content, 'badencoding')
+    
+def test_encode_content_identity():
+    res = Response()
+    result = res.encode_content('identity')
+    eq_(result, None)
+
+def test_encode_content_gzip_already_gzipped():
+    res = Response()
+    res.content_encoding = 'gzip'
+    result = res.encode_content('gzip')
+    eq_(result, None)
+
+def test_encode_content_gzip_notyet_gzipped():
+    res = Response()
+    res.app_iter = StringIO('foo')
+    result = res.encode_content('gzip')
+    eq_(result, None)
+    eq_(res.content_length, 23)
+    eq_(res.app_iter, ['\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff', '',
+                       'K\xcb\xcf\x07\x00', '!es\x8c\x03\x00\x00\x00'])
+
+def test_encode_content_gzip_notyet_gzipped_lazy():
+    res = Response()
+    res.app_iter = StringIO('foo')
+    result = res.encode_content('gzip', lazy=True)
+    eq_(result, None)
+    eq_(res.content_length, None)
+    eq_(list(res.app_iter), ['\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff', '',
+                             'K\xcb\xcf\x07\x00', '!es\x8c\x03\x00\x00\x00'])
+
+def test_decode_content_identity():
+    res = Response()
+    res.content_encoding = 'identity'
+    result = res.decode_content()
+    eq_(result, None)
+
+def test_decode_content_weird():
+    res = Response()
+    res.content_encoding = 'weird'
+    assert_raises(ValueError, res.decode_content)
+
+def test_decode_content_gzip():
+    from gzip import GzipFile
+    io = StringIO()
+    gzip_f = GzipFile(filename='', mode='w', fileobj=io)
+    gzip_f.write('abc')
+    gzip_f.close()
+    body = io.getvalue()
+    res = Response()
+    res.content_encoding = 'gzip'
+    res.body = body
+    res.decode_content()
+    eq_(res.body, 'abc')
+    
+def test__abs_headerlist_location_with_scheme():
+    res = Response()
+    res.content_encoding = 'gzip'
+    res.headerlist = [('Location', 'http:')]
+    result = res._abs_headerlist({})
+    eq_(result, [('Location', 'http:')])
+    

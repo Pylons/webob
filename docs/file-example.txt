@@ -10,7 +10,7 @@ to a high-quality file serving application.
    >>> import webob, os
    >>> base_dir = os.path.dirname(os.path.dirname(webob.__file__))
    >>> doc_dir = os.path.join(base_dir, 'docs')
-   >>> from dtopt import ELLIPSIS
+   >>> from doctest import ELLIPSIS
 
 First we'll setup a really simple shim around our application, which
 we can use as we improve our application:
