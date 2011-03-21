@@ -7,7 +7,6 @@ import cgi, copy, sys, warnings, urllib
 from UserDict import DictMixin
 
 
-
 __all__ = ['MultiDict', 'UnicodeMultiDict', 'NestedMultiDict', 'NoVars',
            'TrackableMultiDict']
 
@@ -186,8 +185,8 @@ class MultiDict(DictMixin):
         if args:
             lst = args[0]
             if len(lst) != len(dict(lst)):
-                # this does not catch the cases where we overwrite existing keys,
-                # but those would produce too many warning
+                # this does not catch the cases where we overwrite existing
+                # keys, but those would produce too many warning
                 msg = ("Behavior of MultiDict.update() has changed "
                     "and overwrites duplicate keys. Consider using .extend()"
                 )
@@ -326,7 +325,7 @@ class UnicodeMultiDict(DictMixin):
         """
         Return a list of all values matching the key (may be an empty list)
         """
-        return [self._decode_value(v) for v in self.multi.getall(self._encode_key(key))]
+        return map(self._decode_value, self.multi.getall(self._encode_key(key)))
 
     def getone(self, key):
         """
@@ -378,7 +377,9 @@ class UnicodeMultiDict(DictMixin):
         return UnicodeMultiDict(self.multi.copy(), self.encoding, self.errors)
 
     def setdefault(self, key, default=None):
-        return self._decode_value(self.multi.setdefault(self._encode_key(key), self._encode_value(default)))
+        return self._decode_value(
+            self.multi.setdefault(self._encode_key(key),
+                                  self._encode_value(default)))
 
     def pop(self, key, *args):
         return self._decode_value(self.multi.pop(self._encode_key(key), *args))

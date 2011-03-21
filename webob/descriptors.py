@@ -1,5 +1,5 @@
 import warnings
-import re, textwrap
+import re
 from datetime import datetime, date
 
 from webob.byterange import Range, ContentRange
@@ -76,9 +76,10 @@ def header_getter(header, rfc_section):
 
 def converter(prop, parse, serialize, convert_name=None):
     assert isinstance(prop, property)
-    convert_name = convert_name or "%r and %r" % (parse, serialize)
+    convert_name = convert_name or "%r and %r" % (parse.__name__,
+                                                  serialize.__name__)
     doc = prop.__doc__ or ''
-    doc += "  Converts it as a %s." % convert_name
+    doc += "  Converts it using %s." % convert_name
     hget, hset = prop.fget, prop.fset
     def fget(r):
         return parse(hget(r))

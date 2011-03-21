@@ -36,9 +36,8 @@ class Cookie(dict):
     __str__ = serialize
 
     def __repr__(self):
-        return '<%s: [%s]>' % (self.__class__.__name__, ', '.join(map(repr, self.values())))
-
-
+        return '<%s: [%s]>' % (self.__class__.__name__,
+                               ', '.join(map(repr, self.values())))
 
 
 def cookie_property(key, serialize=lambda v: v):
@@ -113,7 +112,8 @@ class Morsel(dict):
     __str__ = serialize
 
     def __repr__(self):
-        return '<%s: %s=%s>' % (self.__class__.__name__, self.name, repr(self.value))
+        return '<%s: %s=%s>' % (self.__class__.__name__,
+                                self.name, repr(self.value))
 
 _c_renames = {
     "expires" : "expires",
@@ -135,7 +135,8 @@ _c_keys.update(['secure', 'httponly'])
 
 _re_quoted = r'"(?:[^\"]|\.)*"'  # any doublequoted string
 _legal_special_chars = "~!@#$%^&*()_+=-`.?|:/(){}<>'"
-_re_legal_char  = r"[\w\d%s]" % ''.join(map(r'\%s'.__mod__, _legal_special_chars))
+_re_legal_char  = r"[\w\d%s]" % ''.join(map(r'\%s'.__mod__,
+                                            _legal_special_chars))
 _re_expires_val = r"\w{3},\s[\w\d-]{9,11}\s[\d:]{8}\sGMT"
 _rx_cookie = re.compile(
     # key
@@ -169,7 +170,8 @@ _trans_noop = ''.join(chr(x) for x in xrange(256))
 
 # these chars can be in cookie value w/o causing it to be quoted
 _no_escape_special_chars = "!#$%&'*+-.^_`|~/"
-_no_escape_chars = string.ascii_letters + string.digits + _no_escape_special_chars
+_no_escape_chars = string.ascii_letters + string.digits + \
+                   _no_escape_special_chars
 # these chars never need to be quoted
 _escape_noop_chars = _no_escape_chars+':, '
 # this is a map used to escape the values
@@ -181,7 +183,8 @@ _escape_char = _escape_map.__getitem__
 
 
 weekdays = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
-months = (None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
+months = (None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
+          'Oct', 'Nov', 'Dec')
 
 
 def needs_quoting(v):
