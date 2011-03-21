@@ -620,10 +620,7 @@ class BaseRequest(object):
         if source:
             cookies = Cookie(source)
             for name in cookies:
-                value = cookies[name].value
-                if value is None:
-                    continue
-                vars[name] = value
+                vars[name] = cookies[name].value
         env['webob._parsed_cookies'] = (vars, source)
         return vars
 
