@@ -1,26 +1,53 @@
-import sys, tempfile, warnings
-import urllib, urlparse, cgi
+import cgi
+import re
+import sys
+import tempfile
+import urllib
+import urlparse
 if sys.version >= '2.7':
-    from io import BytesIO as StringIO
+    from io import BytesIO as StringIO # pragma nocover
 else:
-    from cStringIO import StringIO
+    from cStringIO import StringIO # pragma nocover
 
-from webob.headers import EnvironHeaders
-from webob.acceptparse import accept_property, Accept, MIMEAccept, NilAccept, MIMENilAccept, NoAccept
-from webob.multidict import TrackableMultiDict, MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
-from webob.cachecontrol import CacheControl, serialize_cache_control
-from webob.etag import etag_property, AnyETag, NoETag
-
-from webob.descriptors import *
-from webob.datetime_utils import *
+from webob.acceptparse import MIMEAccept
+from webob.acceptparse import MIMENilAccept
+from webob.acceptparse import NoAccept
+from webob.acceptparse import accept_property
+from webob.cachecontrol import CacheControl
+from webob.cachecontrol import serialize_cache_control
 from webob.cookies import Cookie
+from webob.descriptors import CHARSET_RE
+from webob.descriptors import SCHEME_RE
+from webob.descriptors import converter
+from webob.descriptors import converter_date
+from webob.descriptors import deprecated_property
+from webob.descriptors import environ_getter
+from webob.descriptors import parse_auth
+from webob.descriptors import parse_if_range
+from webob.descriptors import parse_int
+from webob.descriptors import parse_int_safe
+from webob.descriptors import parse_range
+from webob.descriptors import serialize_auth
+from webob.descriptors import serialize_if_range
+from webob.descriptors import serialize_int
+from webob.descriptors import serialize_range
+from webob.descriptors import upath_property
+from webob.etag import AnyETag
+from webob.etag import NoETag
+from webob.etag import etag_property
+from webob.headers import EnvironHeaders
+from webob.multidict import MultiDict
+from webob.multidict import NestedMultiDict
+from webob.multidict import NoVars
+from webob.multidict import TrackableMultiDict
+from webob.multidict import UnicodeMultiDict
 
 __all__ = ['BaseRequest', 'Request']
 
 if sys.version >= '2.6':
     parse_qsl = urlparse.parse_qsl
 else:
-    parse_qsl = cgi.parse_qsl
+    parse_qsl = cgi.parse_qsl # pragma nocover
 
 class _NoDefault:
     def __repr__(self):
@@ -38,8 +65,8 @@ class BaseRequest(object):
     ## in memory):
     request_body_tempfile_limit = 10*1024
 
-    def __init__(self, environ=None, environ_getter=None, charset=NoDefault, unicode_errors=NoDefault,
-                 decode_param_names=NoDefault, **kw):
+    def __init__(self, environ=None, environ_getter=None, charset=NoDefault,
+                 unicode_errors=NoDefault, decode_param_names=NoDefault, **kw):
         if environ_getter is not None:
             raise ValueError('The environ_getter argument is no longer '
                              'supported')
@@ -53,7 +80,8 @@ class BaseRequest(object):
         if (isinstance(getattr(cls, 'charset', None), str)
             or hasattr(cls, 'default_charset')
         ):
-            raise DeprecationWarning("The class attr [default_]charset is deprecated")
+            raise DeprecationWarning(
+                    "The class attr [default_]charset is deprecated")
         if unicode_errors is not NoDefault:
             d['unicode_errors'] = unicode_errors
         if decode_param_names is not NoDefault:
@@ -62,7 +90,8 @@ class BaseRequest(object):
             my_class = self.__class__
             for name, value in kw.iteritems():
                 if not hasattr(my_class, name):
-                    raise TypeError("Unexpected keyword: %s=%r" % (name, value))
+                    raise TypeError(
+                        "Unexpected keyword: %s=%r" % (name, value))
                 setattr(self, name, value)
 
 
@@ -83,14 +112,17 @@ class BaseRequest(object):
             self.is_body_seekable = False
     def _body_file__del(self):
         self.body = ''
-    body_file = property(_body_file__get, _body_file__set, _body_file__del, doc=_body_file__get.__doc__)
+    body_file = property(_body_file__get,
+                         _body_file__set,
+                         _body_file__del,
+                         doc=_body_file__get.__doc__)
     body_file_raw = environ_getter('wsgi.input')
     @property
     def body_file_seekable(self):
         """
             Get the body of the request (wsgi.input) as a seekable file-like
-            object. Middleware and routing applications should use this attribute
-            over .body_file.
+            object. Middleware and routing applications should use this
+            attribute over .body_file.
 
             If you access this value, CONTENT_LENGTH will also be updated.
         """
@@ -142,7 +174,9 @@ class BaseRequest(object):
         if 'CONTENT_TYPE' in self.environ:
             del self.environ['CONTENT_TYPE']
 
-    content_type = property(_content_type__get, _content_type__set, _content_type__del,
+    content_type = property(_content_type__get,
+                            _content_type__set,
+                            _content_type__del,
                             _content_type__get.__doc__)
 
     _charset_cache = (None, None)
@@ -180,7 +214,8 @@ class BaseRequest(object):
         content_type = self.environ.get('CONTENT_TYPE', '')
         charset_match = CHARSET_RE.search(self.environ.get('CONTENT_TYPE', ''))
         if charset_match:
-            content_type = content_type[:charset_match.start(1)] + charset + content_type[charset_match.end(1):]
+            content_type = (content_type[:charset_match.start(1)] +
+                            charset + content_type[charset_match.end(1):])
         # comma to separate params? there's nothing like that in RFCs AFAICT
         #elif ';' in content_type:
         #    content_type += ', charset="%s"' % charset
@@ -188,7 +223,8 @@ class BaseRequest(object):
             content_type += '; charset="%s"' % charset
         self.environ['CONTENT_TYPE'] = content_type
     def _charset__del(self):
-        new_content_type = CHARSET_RE.sub('', self.environ.get('CONTENT_TYPE', ''))
+        new_content_type = CHARSET_RE.sub('',
+                                          self.environ.get('CONTENT_TYPE', ''))
         new_content_type = new_content_type.rstrip().rstrip(';').rstrip(',')
         self.environ['CONTENT_TYPE'] = new_content_type
 
@@ -360,7 +396,8 @@ class BaseRequest(object):
     def _urlvars__set(self, value):
         environ = self.environ
         if 'wsgiorg.routing_args' in environ:
-            environ['wsgiorg.routing_args'] = (environ['wsgiorg.routing_args'][0], value)
+            environ['wsgiorg.routing_args'] = (
+                    environ['wsgiorg.routing_args'][0], value)
             if 'paste.urlvars' in environ:
                 del environ['paste.urlvars']
         elif 'paste.urlvars' in environ:
@@ -375,9 +412,13 @@ class BaseRequest(object):
             if not self.environ['wsgiorg.routing_args'][0]:
                 del self.environ['wsgiorg.routing_args']
             else:
-                self.environ['wsgiorg.routing_args'] = (self.environ['wsgiorg.routing_args'][0], {})
+                self.environ['wsgiorg.routing_args'] = (
+                        self.environ['wsgiorg.routing_args'][0], {})
 
-    urlvars = property(_urlvars__get, _urlvars__set, _urlvars__del, doc=_urlvars__get.__doc__)
+    urlvars = property(_urlvars__get,
+                       _urlvars__set,
+                       _urlvars__del,
+                       doc=_urlvars__get.__doc__)
 
     def _urlargs__get(self):
         """
@@ -410,19 +451,24 @@ class BaseRequest(object):
             if not self.environ['wsgiorg.routing_args'][1]:
                 del self.environ['wsgiorg.routing_args']
             else:
-                self.environ['wsgiorg.routing_args'] = ((), self.environ['wsgiorg.routing_args'][1])
+                self.environ['wsgiorg.routing_args'] = (
+                        (), self.environ['wsgiorg.routing_args'][1])
 
-    urlargs = property(_urlargs__get, _urlargs__set, _urlargs__del, _urlargs__get.__doc__)
+    urlargs = property(_urlargs__get,
+                       _urlargs__set,
+                       _urlargs__del,
+                       _urlargs__get.__doc__)
 
     @property
     def is_xhr(self):
-        """Returns a boolean if X-Requested-With is present and ``XMLHttpRequest``
+        """Is X-Requested-With header present and equal to ``XMLHttpRequest``?
 
         Note: this isn't set by every XMLHttpRequest request, it is
         only set if you are using a Javascript library that sets it
         (or you set the header yourself manually).  Currently
         Prototype and jQuery are known to set this header."""
-        return self.environ.get('HTTP_X_REQUESTED_WITH', '') == 'XMLHttpRequest'
+        return self.environ.get('HTTP_X_REQUESTED_WITH', ''
+                               ) == 'XMLHttpRequest'
 
     def _host__get(self):
         """Host name provided in HTTP_HOST, with fall-back to SERVER_NAME"""
@@ -449,7 +495,8 @@ class BaseRequest(object):
         if value is None:
             value = ''
         if not isinstance(value, str):
-            raise TypeError("You can only set Request.body to a str (not %r)" % type(value))
+            raise TypeError("You can only set Request.body to a str (not %r)"
+                                % type(value))
         self.content_length = len(value)
         self.body_file_raw = StringIO(value)
         self.is_body_seekable = True
@@ -478,7 +525,8 @@ class BaseRequest(object):
         content_type = self.content_type
         if ((self.method == 'PUT' and not content_type)
             or content_type not in
-                ('', 'application/x-www-form-urlencoded', 'multipart/form-data')
+                ('', 'application/x-www-form-urlencoded',
+                 'multipart/form-data')
         ):
             # Not an HTML form submission
             return NoVars('Not an HTML form submission (Content-Type: %s)'
@@ -530,9 +578,10 @@ class BaseRequest(object):
         if not source:
             vars = TrackableMultiDict(__tracker=self._update_get, __name='GET')
         else:
-            vars = TrackableMultiDict(parse_qsl(
-                source, keep_blank_values=True,
-                strict_parsing=False), __tracker=self._update_get, __name='GET')
+            vars = TrackableMultiDict(parse_qsl(source,
+                                                keep_blank_values=True,
+                                                strict_parsing=False),
+                                      __tracker=self._update_get, __name='GET')
         env['webob._parsed_query_vars'] = (vars, source)
         return vars
 
@@ -555,9 +604,11 @@ class BaseRequest(object):
         return vars
 
 
-    str_postvars = deprecated_property(str_POST, 'str_postvars', 'use str_POST instead')
+    str_postvars = deprecated_property(str_POST, 'str_postvars',
+                                       'use str_POST instead')
     postvars = deprecated_property(POST, 'postvars', 'use POST instead')
-    str_queryvars = deprecated_property(str_GET, 'str_queryvars', 'use str_GET instead')
+    str_queryvars = deprecated_property(str_GET, 'str_queryvars',
+                                        'use str_GET instead')
     queryvars = deprecated_property(GET, 'queryvars', 'use GET instead')
 
 
@@ -597,10 +648,7 @@ class BaseRequest(object):
         if source:
             cookies = Cookie(source)
             for name in cookies:
-                value = cookies[name].value
-                if value is None:
-                    continue
-                vars[name] = value
+                vars[name] = cookies[name].value
         env['webob._parsed_cookies'] = (vars, source)
         return vars
 
@@ -631,8 +679,8 @@ class BaseRequest(object):
     def copy_get(self):
         """
         Copies the request and environment object, but turning this request
-        into a GET along the way.  If this was a POST request (or any other verb)
-        then it becomes GET, and the request body is thrown away.
+        into a GET along the way.  If this was a POST request (or any other
+        verb) then it becomes GET, and the request body is thrown away.
         """
         env = self.environ.copy()
         return self.__class__(env, method='GET', content_type=None, body='')
@@ -642,10 +690,12 @@ class BaseRequest(object):
     def make_body_seekable(self):
         """
         This forces ``environ['wsgi.input']`` to be seekable.
-        That means that, the content is copied into a StringIO or temporary file
-        and flagged as seekable, so that it will not be unnecessarily copied again.
-        After calling this method the .body_file is always seeked to the start of file
-        and .content_length is not None.
+        That means that, the content is copied into a StringIO or temporary
+        file and flagged as seekable, so that it will not be unnecessarily
+        copied again.
+
+        After calling this method the .body_file is always seeked to the
+        start of file and .content_length is not None.
 
         The choice to copy to StringIO is made from
         ``self.request_body_tempfile_limit``
@@ -701,8 +751,11 @@ class BaseRequest(object):
         return tempfile.TemporaryFile()
 
 
-    def remove_conditional_headers(self, remove_encoding=True, remove_range=True,
-                                        remove_match=True, remove_modified=True):
+    def remove_conditional_headers(self,
+                                   remove_encoding=True,
+                                   remove_range=True,
+                                   remove_match=True,
+                                   remove_modified=True):
         """
         Remove headers that make the request conditional.
 
@@ -727,9 +780,11 @@ class BaseRequest(object):
                 del self.environ[key]
 
 
-    accept = accept_property('Accept', '14.1', MIMEAccept, MIMENilAccept, 'MIME Accept')
+    accept = accept_property('Accept', '14.1',
+                             MIMEAccept, MIMENilAccept, 'MIME Accept')
     accept_charset = accept_property('Accept-Charset', '14.2')
-    accept_encoding = accept_property('Accept-Encoding', '14.3', NilClass=NoAccept)
+    accept_encoding = accept_property('Accept-Encoding', '14.3',
+                                      NilClass=NoAccept)
     accept_language = accept_property('Accept-Language', '14.4')
 
     authorization = converter(
@@ -748,7 +803,9 @@ class BaseRequest(object):
         cache_header, cache_obj = env.get('webob._cache_control', (None, None))
         if cache_obj is not None and cache_header == value:
             return cache_obj
-        cache_obj = CacheControl.parse(value, updates_to=self._update_cache_control, type='request')
+        cache_obj = CacheControl.parse(value,
+                                       updates_to=self._update_cache_control,
+                                       type='request')
         env['webob._cache_control'] = (value, cache_obj)
         return cache_obj
 
@@ -775,15 +832,20 @@ class BaseRequest(object):
     def _update_cache_control(self, prop_dict):
         self.environ['HTTP_CACHE_CONTROL'] = serialize_cache_control(prop_dict)
 
-    cache_control = property(_cache_control__get, _cache_control__set, _cache_control__del, doc=_cache_control__get.__doc__)
+    cache_control = property(_cache_control__get,
+                             _cache_control__set,
+                             _cache_control__del,
+                             doc=_cache_control__get.__doc__)
 
 
     if_match = etag_property('HTTP_IF_MATCH', AnyETag, '14.24')
     if_none_match = etag_property('HTTP_IF_NONE_MATCH', NoETag, '14.26')
 
     date = converter_date(environ_getter('HTTP_DATE', None, '14.8'))
-    if_modified_since = converter_date(environ_getter('HTTP_IF_MODIFIED_SINCE', None, '14.25'))
-    if_unmodified_since = converter_date(environ_getter('HTTP_IF_UNMODIFIED_SINCE', None, '14.28'))
+    if_modified_since = converter_date(
+                    environ_getter('HTTP_IF_MODIFIED_SINCE', None, '14.25'))
+    if_unmodified_since = converter_date(
+                    environ_getter('HTTP_IF_UNMODIFIED_SINCE', None, '14.28'))
     if_range = converter(
         environ_getter('HTTP_IF_RANGE', None, '14.27'),
         parse_if_range, serialize_if_range, 'IfRange object')
@@ -873,7 +935,8 @@ class BaseRequest(object):
         not read every valid HTTP request properly."""
         start_line = fp.readline()
         try:
-            method, resource, http_version = start_line.rstrip('\r\n').split(None, 2)
+            method, resource, http_version = start_line.rstrip('\r\n'
+                                                              ).split(None, 2)
         except ValueError:
             raise ValueError('Bad HTTP request line: %r' % start_line)
         r = cls(environ_from_url(resource),
@@ -957,7 +1020,8 @@ class BaseRequest(object):
             request=self)
 
     @classmethod
-    def blank(cls, path, environ=None, base_url=None, headers=None, POST=None, **kw):
+    def blank(cls, path, environ=None, base_url=None,
+              headers=None, POST=None, **kw):
         """
         Create a blank request environ (and Request wrapper) with the
         given path (path should be urlencoded), and any keys from
@@ -1066,23 +1130,19 @@ def environ_add_POST(env, data):
 
 class AdhocAttrMixin(object):
     def __setattr__(self, attr, value, DEFAULT=object()):
-        ## FIXME: I don't know why I need this guard (though experimentation says I do)
-        if getattr(self.__class__, attr, DEFAULT) is not DEFAULT or attr.startswith('_'):
+        if (getattr(self.__class__, attr, DEFAULT) is not DEFAULT or
+                    attr.startswith('_')):
             object.__setattr__(self, attr, value)
         else:
             self.environ.setdefault('webob.adhoc_attrs', {})[attr] = value
 
     def __getattr__(self, attr, DEFAULT=object()):
-        ## FIXME: I don't know why I need this guard (though experimentation says I do)
-        if getattr(self.__class__, attr, DEFAULT) is not DEFAULT:
-            return object.__getattribute__(self, attr)
         try:
             return self.environ['webob.adhoc_attrs'][attr]
         except KeyError:
             raise AttributeError(attr)
 
     def __delattr__(self, attr, DEFAULT=object()):
-        ## FIXME: I don't know why I need this guard (though experimentation says I do)
         if getattr(self.__class__, attr, DEFAULT) is not DEFAULT:
             return object.__delattr__(self, attr)
         try:
@@ -1146,7 +1206,8 @@ class FakeCGIBody(object):
 
     def _get_body(self):
         if self._body is None:
-            if self.content_type.lower().startswith('application/x-www-form-urlencoded'):
+            if self.content_type.lower().startswith(
+                                    'application/x-www-form-urlencoded'):
                 self._body = urllib.urlencode(self.vars.items())
             elif self.content_type.lower().startswith('multipart/form-data'):
                 self._body = _encode_multipart(self.vars, self.content_type)
@@ -1196,7 +1257,8 @@ def _encode_multipart(vars, content_type):
     """Encode a multipart request body into a string"""
     boundary_match = re.search(r'boundary=([^ ]+)', content_type, re.I)
     if not boundary_match:
-        raise ValueError('Content-type: %r does not contain boundary' % content_type)
+        raise ValueError('Content-type: %r does not contain boundary'
+                            % content_type)
     boundary = boundary_match.group(1).strip('"')
     lines = []
     for name, value in vars.iteritems():
@@ -1212,7 +1274,8 @@ def _encode_multipart(vars, content_type):
             ct = 'Content-type: %s' % value.type
             if value.type_options:
                 ct += ''.join(['; %s="%s"' % (ct_name, ct_value)
-                               for ct_name, ct_value in sorted(value.type_options.items())])
+                               for ct_name, ct_value in sorted(
+                                                value.type_options.items())])
             lines.append(ct)
         lines.append('')
         if hasattr(value, 'value'):

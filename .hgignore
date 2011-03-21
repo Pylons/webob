@@ -4,6 +4,7 @@ WebOb.egg-info
 *.pyc
 *.pyo
 *.swp
+*~
 TEST*
 testenv
 docs/_build/*
@@ -16,4 +17,8 @@ Session.vim
 html_coverage/**
 *,cover
 *_fixt.py
+*$py.class
+.tox/
+coverage.xml
+nosetests.xml
 

@@ -209,7 +209,7 @@ class HTTPException(Exception):
     exception = property(exception)
 
     # for old style exceptions
-    if not newstyle_exceptions:
+    if not newstyle_exceptions:  #pragma NO COVERAGE
         def __getattr__(self, attr):
             if not attr.startswith('_'):
                 return getattr(self.wsgi_response, attr)
@@ -1062,10 +1062,10 @@ class HTTPExceptionMiddleware(object):
 
 try:
     from paste import httpexceptions
-except ImportError:
+except ImportError:   # pragma: no cover
     # Without Paste we don't need to do this fixup
     pass
-else:
+else: # pragma: no cover
     for name in dir(httpexceptions):
         obj = globals().get(name)
         if (obj and isinstance(obj, type) and issubclass(obj, HTTPException)

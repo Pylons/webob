@@ -16,7 +16,7 @@ should have.
     ...     from io import BytesIO as InputType
     ... else:
     ...     from cStringIO import InputType
-    >>> from dtopt import ELLIPSIS, NORMALIZE_WHITESPACE
+    >>> from doctest import ELLIPSIS, NORMALIZE_WHITESPACE
     >>> from webob import Request, UTC
     >>> req = Request.blank('/')
     >>> req # doctest: +ELLIPSIS

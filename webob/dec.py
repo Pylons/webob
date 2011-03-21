@@ -67,7 +67,7 @@ class wsgify(object):
     * A string, which will be written to ``req.response`` and then that
       response will be used.
     * Raise an exception from :mod:`webob.exc`
-    
+
     Also see :func:`wsgify.middleware` for a way to make middleware.
 
     You can also subclass this decorator; the most useful things to do
@@ -75,7 +75,7 @@ class wsgify(object):
     `call_func` (e.g., to add ``req.urlvars`` as keyword arguments to
     the function).
     """
-    
+
     RequestClass = webob.Request
 
     def __init__(self, func=None, RequestClass=None,
@@ -98,7 +98,7 @@ class wsgify(object):
         if self.RequestClass is not self.__class__.RequestClass:
             args.append('RequestClass=%r' % self.RequestClass)
         if self.args:
-            args.append('args=%r' % self.args)
+            args.append('args=%r' % (self.args,))
         my_name = self.__class__.__name__
         if self.middleware_wraps is not None:
             my_name = '%s.middleware' % my_name
@@ -275,7 +275,7 @@ class _UnboundMiddleware(object):
     middleware function; the intermediate object when you do
     something like ``@wsgify.middleware(RequestClass=Foo)``
     """
-    
+
     def __init__(self, wrapper_class, app, kw):
         self.wrapper_class = wrapper_class
         self.app = app
@@ -297,7 +297,7 @@ class _MiddlewareFactory(object):
     """A middleware that has not yet been bound to an application or
     configured.
     """
-    
+
     def __init__(self, wrapper_class, middleware, kw):
         self.wrapper_class = wrapper_class
         self.middleware = middleware

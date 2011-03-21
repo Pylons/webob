@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import webob
-from repoze.profile.profiler import AccumulatingProfileMiddleware
 
 def make_middleware(app):
+    from repoze.profile.profiler import AccumulatingProfileMiddleware
     return AccumulatingProfileMiddleware(
         app,
         log_filename='/tmp/profile.log',
@@ -11,7 +11,6 @@ def make_middleware(app):
         path='/__profile__')
 
 def simple_app(environ, start_response):
-    req = webob.Request(environ)
     resp = webob.Response('Hello world!')
     return resp(environ, start_response)
 
