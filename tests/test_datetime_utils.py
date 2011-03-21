@@ -102,16 +102,15 @@ def test_timedelta_to_seconds():
 
 
 class _NowRestorer(object):
-
-    def __init__(self, new_NOW):
-        self._new_NOW = new_NOW
-        self._old_NOW = None
+    def __init__(self, new_now):
+        self._new_now = new_now
+        self._old_now = None
 
     def __enter__(self):
         import webob.datetime_utils
-        self._old_NOW = webob.datetime_utils._NOW
-        webob.datetime_utils._NOW = self._new_NOW
+        self._old_now = webob.datetime_utils._now
+        webob.datetime_utils._now = lambda: self._new_now
 
     def __exit__(self, exc_type, exc_value, traceback):
         import webob.datetime_utils
-        webob.datetime_utils._NOW = self._old_NOW
+        webob.datetime_utils._now = self._old_now
