@@ -3,7 +3,6 @@ Represents the Cache-Control header
 """
 import re
 
-
 class UpdateDict(dict):
     """
     Dict that has a callback on all updates
@@ -41,11 +40,14 @@ class UpdateDict(dict):
         dict.update(self, *args, **kw)
         self._updated()
 
-    def setdefault(self, key, failobj=None):
-        dict.setdefault(self, key, failobj)
-        self._updated()
-    def pop(self):
-        v = dict.pop(self)
+    def setdefault(self, key, value=None):
+        val = dict.setdefault(self, key, value)
+        if val is value:
+            self._updated()
+        return val
+
+    def pop(self, *args):
+        v = dict.pop(self, *args)
         self._updated()
         return v
 
