@@ -18,9 +18,11 @@ You may install the `in-development version of WebOb
 <http://bitbucket.org/ianb/webob/get/tip.gz#egg=WebOb-dev>`_ with
 ``pip install WebOb==dev`` (or ``easy_install WebOb==dev``).
 
-See also: `changelog <http://pythonpaste.org/webob/news>`_,
-`mailing list <http://bit.ly/paste-users>`_,
-`bug tracker <https://bitbucket.org/ianb/webob/issues>`_.
+* `Bug tracker <https://bitbucket.org/ianb/webob/issues>`_
+* `Browse source code <https://bitbucket.org/ianb/webob/src>`_
+* `Mailing list <http://bit.ly/paste-users>`_
+* `Release news <http://pythonpaste.org/webob/news>`_
+* `Detailed changelog <http://pythonpaste.org/webob/changesets>`_
 """,
     classifiers=[
         "Development Status :: 6 - Mature",
