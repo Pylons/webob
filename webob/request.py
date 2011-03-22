@@ -83,6 +83,7 @@ class BaseRequest(object):
             self.content_length = None
             self.body_file_raw = value
             self.is_body_seekable = False
+            self.is_body_readable = True
     def _body_file__del(self):
         self.body = ''
     body_file = property(_body_file__get,
@@ -657,7 +658,18 @@ class BaseRequest(object):
         env = self.environ.copy()
         return self.__class__(env, method='GET', content_type=None, body='')
 
+    # webob.is_body_seekalbe marks input streams that are seekable
+    # this way we can have seekable input without testing the .seek() method
     is_body_seekable = environ_getter('webob.is_body_seekable', False)
+
+    # webob.is_body_readable is a flag that tells us
+    # that we can read the input stream even though
+    # CONTENT_LENGTH is missing. this allows FakeCGIBody
+    # to work and can be used by servers to support
+    # chunked encoding in requests.
+    # for background see https://bitbucket.org/ianb/webob/issue/6
+    is_body_readable = environ_getter('webob.is_body_readable', False)
+
 
     def make_body_seekable(self):
         """
@@ -691,9 +703,11 @@ class BaseRequest(object):
             did_copy = self._copy_body_tempfile()
             if not did_copy:
                 self.body = self.body_file_raw.read(length)
-        else:
+        elif self.is_body_readable:
             self.body = self.body_file_raw.read()
             self._copy_body_tempfile()
+        else:
+            self.body = ''
 
     def _copy_body_tempfile(self):
         """
