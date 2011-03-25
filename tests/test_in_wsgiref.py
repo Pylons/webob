@@ -48,7 +48,7 @@ def _test_request(op):
     finally:
         server.socket.close()
         worker.join(1)
-        if worker.is_alive():
+        if worker.isAlive():
             log.debug('worker is hanged')
 
 if sys.version >= '2.5':
