@@ -23,10 +23,20 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(req.environ, environ)
 
     def test_body_file_getter(self):
-        INPUT = self._makeStringIO('input')
-        environ = {'wsgi.input': INPUT}
+        body = 'input'
+        INPUT = self._makeStringIO(body)
+        environ = {'wsgi.input': INPUT, 'CONTENT_LENGTH': len(body)}
         req = BaseRequest(environ)
         self.assert_(req.body_file is INPUT)
+
+    def test_body_file_getter_unredable(self):
+        body = 'input'
+        INPUT = self._makeStringIO(body)
+        environ = {'wsgi.input': INPUT}
+        req = BaseRequest(environ)
+        assert req.body_file_raw is INPUT
+        assert req.body_file is not INPUT
+        assert req.body_file.read() == ''
 
     def test_body_file_setter_w_string(self):
         BEFORE = self._makeStringIO('before')

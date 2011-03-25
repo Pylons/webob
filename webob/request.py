@@ -73,7 +73,10 @@ class BaseRequest(object):
             Setting this property resets the content_length and seekable flag
             (unlike setting req.body_file_raw).
         """
+        if self.content_length is None and not self.is_body_readable:
+            return StringIO('')
         return self.body_file_raw
+
     def _body_file__set(self, value):
         if isinstance(value, str):
             # FIXME: change to DeprecationWarning in 1.1, raise exc in 1.2

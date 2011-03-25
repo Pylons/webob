@@ -6,7 +6,7 @@ Daniel Holth <dholth@fastmail.fm>
 """
 
 from webob import Request, Response
-from wsgiref.simple_server import make_server
+from wsgiref.simple_server import make_server, WSGIRequestHandler
 from threading import Thread
 
 import random
@@ -15,40 +15,48 @@ import logging
 
 log = logging.getLogger(__name__)
 
-def serve(server):
-    server.timeout = 1
-    server.handle_request()
+class NoLogHanlder(WSGIRequestHandler):
+    def log_request(self, *args):
+        pass
 
-def Application(fut):
-    def application(environ, start_response):
-        r = Request(environ)
-        fut(r)
-        log.debug('copied request')
-        return Response(content_type="text/plain", body="Success!")(environ, start_response)
-    return application
+def _make_test_app(test_op):
+    def app(env, sr):
+        req = Request(env)
+        log.debug('starting test operation: %s', test_op)
+        test_op(req)
+        log.debug('done')
+        r = Response("ok")
+        return r(env, sr)
+    return app
 
-def do_request(fut):
-    """Make a request to a wsgiref.simple_server and attempt to call
-    fut(request) in the application. Succeed if the operation does not
-    time out."""
-
-    app = Application(fut)
-
-    TRIES=3 # in case the random port is in use.
-    for i in range(TRIES):
+def _make_test_server(app):
+    maxport = ((1<<16)-1)
+    # we'll make 3 attempts to find a free port
+    for i in range(3, 0, -1):
         try:
-            port = random.randint(((1<<16)-1)/2, (1<<16)-1)            
-            server = make_server('localhost', port, app)
+            port = random.randint(maxport/2, maxport)
+            server = make_server('localhost', port, app,
+                handler_class=NoLogHanlder
+            )
+            server.timeout = 5
+            return server
         except:
-            if i == (TRIES-1):
+            if i == 1:
                 raise
 
-    worker = Thread(target=serve, args=(server,))
-    worker.daemon = True
+def _test_request(op):
+    """Make a request to a wsgiref.simple_server and attempt to call
+    op(req) in the application. Succeed if the operation does not
+    time out."""
+    app = _make_test_app(op)
+    server = _make_test_server(app)
+    worker = Thread(target=server.handle_request)
+    worker.setDaemon(True)
     worker.start()
-
+    url = "http://localhost:%d/" % server.server_port
     try:
-        assert urllib2.urlopen("http://localhost:%d/" % port, timeout=2).read() == "Success!"
+        resp = urllib2.urlopen(url, timeout=1)
+        assert resp.read() == "ok"
     finally:
         server.socket.close()
         worker.join(1)
@@ -56,12 +64,13 @@ def do_request(fut):
             log.debug('worker is hanged')
 
 def test_in_wsgiref():
-    def body_file_read(self):
-        return self.body_file.read()
-    def body_file_read_0(self):
-        return self.body_file.read(0)
-    def make_body_seekable(self):
-        return self.make_body_seekable()
-    for fut in [Request.copy, body_file_read, body_file_read_0, make_body_seekable]:
-        yield (do_request, fut)
+    yield (_test_request, lambda req: req.copy())
+    yield (_test_request, lambda req: req.body_file.read())
+    yield (_test_request, lambda req: req.body_file.read(0))
+    yield (_test_request, lambda req: req.make_body_seekable())
+
+
+if __name__ == '__main__':
+    for t,a in test_in_wsgiref():
+        t(a)
 
