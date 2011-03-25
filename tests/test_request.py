@@ -1,5 +1,5 @@
-import unittest
-from webob import Request, BaseRequest
+import unittest, warnings
+from webob import Request, BaseRequest, UTC
 
 _marker = object()
 
@@ -35,9 +35,18 @@ class BaseRequestTests(unittest.TestCase):
                    'CONTENT_LENGTH': len('before'),
                   }
         req = BaseRequest(environ)
+        warnings.simplefilter('ignore', PendingDeprecationWarning)
         req.body_file = AFTER
-        self.assertEqual(req.body_file.getvalue(), AFTER)
+        warnings.resetwarnings()
         self.assertEqual(req.content_length, len(AFTER))
+        self.assertEqual(req.body_file.read(), AFTER)
+        del req.body_file
+        self.assertEqual(req.content_length, 0)
+        assert req.is_body_seekable
+        req.body_file.seek(0)
+        self.assertEqual(req.body_file.read(), '')
+
+
 
     def test_body_file_setter_non_string(self):
         BEFORE = self._makeStringIO('before')
@@ -1013,7 +1022,6 @@ class BaseRequestTests(unittest.TestCase):
     # params
 
     def test_str_cookies_wo_webob_parsed_cookies(self):
-        from webob import Request
         environ = {
             'HTTP_COOKIE': 'a=b',
         }
@@ -1024,7 +1032,6 @@ class BaseRequestTests(unittest.TestCase):
     # copy
 
     def test_copy_get(self):
-        from webob import Request
         environ = {
             'HTTP_COOKIE': 'a=b',
         }
@@ -1039,7 +1046,6 @@ class BaseRequestTests(unittest.TestCase):
                 self.assertEqual(clone.environ[k], v)
 
     def test_remove_conditional_headers_accept_encoding(self):
-        from webob import Request
         req = Request.blank('/')
         req.accept_encoding='gzip,deflate'
         req.remove_conditional_headers()
@@ -1047,28 +1053,24 @@ class BaseRequestTests(unittest.TestCase):
 
     def test_remove_conditional_headers_if_modified_since(self):
         from datetime import datetime
-        from webob import Request, UTC
         req = Request.blank('/')
         req.if_modified_since = datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
         req.remove_conditional_headers()
         self.assertEqual(req.if_modified_since, None)
 
     def test_remove_conditional_headers_if_none_match(self):
-        from webob import Request
         req = Request.blank('/')
         req.if_none_match = 'foo, bar'
         req.remove_conditional_headers()
         self.assertEqual(bool(req.if_none_match), False)
 
     def test_remove_conditional_headers_if_range(self):
-        from webob import Request
         req = Request.blank('/')
         req.if_range = 'foo, bar'
         req.remove_conditional_headers()
         self.assertEqual(bool(req.if_range), False)
 
     def test_remove_conditional_headers_range(self):
-        from webob import Request
         req = Request.blank('/')
         req.range = 'bytes=0-100'
         req.remove_conditional_headers()
@@ -1247,35 +1249,29 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(body, '<body skipped (len=337)>')
 
     def test_adhoc_attrs_set(self):
-        from webob import Request
         req = Request.blank('/')
         req.foo = 1
         self.assertEqual(req.environ['webob.adhoc_attrs'], {'foo': 1})
 
     def test_adhoc_attrs_set_nonadhoc(self):
-        from webob import Request
         req = Request.blank('/', environ={'webob.adhoc_attrs':{}})
         req.request_body_tempfile_limit = 1
         self.assertEqual(req.environ['webob.adhoc_attrs'], {})
 
     def test_adhoc_attrs_get(self):
-        from webob import Request
         req = Request.blank('/', environ={'webob.adhoc_attrs': {'foo': 1}})
         self.assertEqual(req.foo, 1)
 
     def test_adhoc_attrs_get_missing(self):
-        from webob import Request
         req = Request.blank('/')
         self.assertRaises(AttributeError, getattr, req, 'some_attr')
 
     def test_adhoc_attrs_del(self):
-        from webob import Request
         req = Request.blank('/', environ={'webob.adhoc_attrs': {'foo': 1}})
         del req.foo
         self.assertEqual(req.environ['webob.adhoc_attrs'], {})
 
     def test_adhoc_attrs_del_missing(self):
-        from webob import Request
         req = Request.blank('/')
         self.assertRaises(AttributeError, delattr, req, 'some_attr')
 
@@ -1324,7 +1320,6 @@ class RequestTests_functional(unittest.TestCase):
         self.assert_("accepttypes is: application/xml" in res)
 
     def test_accept_best_match(self):
-        from webob import Request
         self.assert_(not Request.blank('/').accept)
         self.assert_(not Request.blank('/', headers={'Accept': ''}).accept)
         req = Request.blank('/', headers={'Accept':'text/plain'})
@@ -1347,7 +1342,6 @@ class RequestTests_functional(unittest.TestCase):
 
     def test_from_mimeparse(self):
         # http://mimeparse.googlecode.com/svn/trunk/mimeparse.py
-        from webob import Request
         supported = ['application/xbel+xml', 'application/xml']
         tests = [('application/xbel+xml', 'application/xbel+xml'),
                 ('application/xbel+xml; q=1', 'application/xbel+xml'),
@@ -1410,7 +1404,6 @@ class RequestTests_functional(unittest.TestCase):
             )
 
     def test_bad_cookie(self):
-        from webob import Request
         req = Request.blank('/')
         req.headers['Cookie'] = '070-it-:><?0'
         self.assertEqual(req.cookies, {})
@@ -1432,20 +1425,17 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(req.cookies, {'blub': 'Blah'})
 
     def test_cookie_quoting(self):
-        from webob import Request
         req = Request.blank('/')
         req.headers['Cookie'] = 'foo="?foo"; Path=/'
         self.assertEqual(req.cookies, {'foo': '?foo'})
 
     def test_path_quoting(self):
-        from webob import Request
         path = '/:@&+$,/bar'
         req = Request.blank(path)
         self.assertEqual(req.path, path)
         self.assert_(req.url.endswith(path))
 
     def test_params(self):
-        from webob import Request
         req = Request.blank('/?a=1&b=2')
         req.method = 'POST'
         req.body = 'b=3'
@@ -1464,7 +1454,6 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(req.GET[u'\u1000'], 'x')
 
     def test_copy_body(self):
-        from webob import Request
         req = Request.blank('/', method='POST', body='some text',
                             request_body_tempfile_limit=1)
         old_body_file = req.body_file_raw
@@ -1484,7 +1473,6 @@ class RequestTests_functional(unittest.TestCase):
 
     def test_broken_seek(self):
         # copy() should work even when the input has a broken seek method
-        from webob import Request
         req = Request.blank('/', method='POST',
                 body_file=UnseekableInputWithSeek('0123456789'),
                 content_length=10)
@@ -1508,21 +1496,18 @@ class RequestTests_functional(unittest.TestCase):
     def test_broken_clen_header(self):
         # if the UA sends "content_length: ..' header (the name is wrong)
         # it should not break the req.headers.items()
-        from webob import Request
         req = Request.blank('/')
         req.environ['HTTP_CONTENT_LENGTH'] = '0'
         req.headers.items()
 
     def test_nonstr_keys(self):
         # non-string env keys shouldn't break req.headers
-        from webob import Request
         req = Request.blank('/')
         req.environ[1] = 1
         req.headers.items()
 
 
     def test_authorization(self):
-        from webob import Request
         req = Request.blank('/')
         req.authorization = 'Digest uri="/?a=b"'
         self.assertEqual(req.authorization, ('Digest', {'uri': '/?a=b'}))
@@ -1542,7 +1527,6 @@ class RequestTests_functional(unittest.TestCase):
 
 
     def test_from_file(self):
-        from webob import Request
         req = Request.blank('http://example.com:8000/test.html?params')
         self.equal_req(req)
 
@@ -1552,13 +1536,11 @@ class RequestTests_functional(unittest.TestCase):
         self.equal_req(req)
 
     def test_req_kw_none_val(self):
-        from webob import Request
         request = Request({}, content_length=None)
         self.assert_('content-length' not in request.headers)
         self.assert_('content-type' not in request.headers)
 
     def test_env_keys(self):
-        from webob import Request
         req = Request.blank('/')
         # SCRIPT_NAME can be missing
         del req.environ['SCRIPT_NAME']
@@ -1572,17 +1554,14 @@ class RequestTests_functional(unittest.TestCase):
 
     def test_request_noenviron_param(self):
         # Environ is a a mandatory not null param in Request.
-        from webob import Request
         self.assertRaises(TypeError, Request, environ=None)
 
     def test_unicode_errors(self):
         # Passing unicode_errors != NoDefault should assign value to
         # dictionary['unicode_errors'], else not
-        from webob.request import NoDefault
-        from webob import Request
         r = Request({'a':1}, unicode_errors='strict')
         self.assert_('unicode_errors' in r.__dict__)
-        r = Request({'a':1}, unicode_errors=NoDefault)
+        r = Request({'a':1})
         self.assert_('unicode_errors' not in r.__dict__)
 
     def test_charset_deprecation(self):
@@ -1617,31 +1596,17 @@ class RequestTests_functional(unittest.TestCase):
         # Passed an attr in kw that does not exist in the class, should
         # raise an error
         # Passed an attr in kw that does exist in the class, should be ok
-        from webob import Request
         self.assertRaises(TypeError,
                           Request, {'a':1}, this_does_not_exist=1)
         r = Request({'a':1}, **{'charset':'utf-8', 'server_name':'127.0.0.1'})
         self.assertEqual(getattr(r, 'charset', None), 'utf-8')
         self.assertEqual(getattr(r, 'server_name', None), '127.0.0.1')
 
-    def test_body_file_setter(self):
-        # If body_file is passed and it's instance of str, we define
-        # environ['wsgi.input'] and content_length. Plus, while deleting the
-        # attribute, we should get '' and 0 respectively
-        from webob import Request
-        r = Request({'a':1}, **{'body_file':'hello world'})
-        self.assertEqual(r.environ['wsgi.input'].getvalue(), 'hello world')
-        self.assertEqual(int(r.environ['CONTENT_LENGTH']), len('hello world'))
-        del r.body_file
-        self.assertEqual(r.environ['wsgi.input'].getvalue(), '')
-        self.assertEqual(int(r.environ['CONTENT_LENGTH']), 0)
-
     def test_conttype_set_del(self):
         # Deleting content_type attr from a request should update the
         # environ dict
         # Assigning content_type should replace first option of the environ
         # dict
-        from webob import Request
         r = Request({'a':1}, **{'content_type':'text/html'})
         self.assert_('CONTENT_TYPE' in r.environ)
         self.assert_(hasattr(r, 'content_type'))
@@ -1658,7 +1623,6 @@ class RequestTests_functional(unittest.TestCase):
     def test_headers2(self):
         # Setting headers in init and later with a property, should update
         # the info
-        from webob import Request
         headers = {'Host': 'www.example.com',
                 'Accept-Language': 'en-us,en;q=0.5',
                 'Accept-Encoding': 'gzip,deflate',
@@ -1676,7 +1640,6 @@ class RequestTests_functional(unittest.TestCase):
     def test_host_url(self):
         # Request has a read only property host_url that combines several
         # keys to create a host_url
-        from webob import Request
         a = Request({'wsgi.url_scheme':'http'}, **{'host':'www.example.com'})
         self.assertEqual(a.host_url, 'http://www.example.com')
         a = Request({'wsgi.url_scheme':'http'}, **{'server_name':'localhost',
@@ -1689,7 +1652,6 @@ class RequestTests_functional(unittest.TestCase):
     def test_path_info_p(self):
         # Peek path_info to see what's coming
         # Pop path_info until there's nothing remaining
-        from webob import Request
         a = Request({'a':1}, **{'path_info':'/foo/bar','script_name':''})
         self.assertEqual(a.path_info_peek(), 'foo')
         self.assertEqual(a.path_info_pop(), 'foo')
@@ -1700,7 +1662,6 @@ class RequestTests_functional(unittest.TestCase):
 
     def test_urlvars_property(self):
         # Testing urlvars setter/getter/deleter
-        from webob import Request
         a = Request({'wsgiorg.routing_args':((),{'x':'y'}),
                     'paste.urlvars':{'test':'value'}})
         a.urlvars = {'hello':'world'}
@@ -1718,7 +1679,6 @@ class RequestTests_functional(unittest.TestCase):
 
     def test_urlargs_property(self):
         # Testing urlargs setter/getter/deleter
-        from webob import Request
         a = Request({'paste.urlvars':{'test':'value'}})
         self.assertEqual(a.urlargs, ())
         a.urlargs = {'hello':'world'}
@@ -1733,7 +1693,6 @@ class RequestTests_functional(unittest.TestCase):
 
     def test_host_property(self):
         # Testing host setter/getter/deleter
-        from webob import Request
         a = Request({'wsgi.url_scheme':'http'}, server_name='localhost',
                                                 server_port=5000)
         self.assertEqual(a.host, "localhost:5000")
@@ -1752,8 +1711,6 @@ class RequestTests_functional(unittest.TestCase):
         #self.assertEqual(a.body, '')
         # I need to implement a not seekable stringio like object.
         import string
-        from webob import Request
-        from webob import BaseRequest
         from cStringIO import StringIO
         class DummyIO(object):
             def __init__(self, txt):
@@ -1924,7 +1881,6 @@ class RequestTests_functional(unittest.TestCase):
     def test_post_does_not_reparse(self):
         # test that there's no repetitive parsing is happening on every
         # req.POST access
-        from webob import Request
         req = Request.blank('/',
             content_type='multipart/form-data; boundary=boundary',
             POST=_cgi_escaping_body
@@ -1940,7 +1896,6 @@ class RequestTests_functional(unittest.TestCase):
 
 
     def test_middleware_body(self):
-        from webob import Request
         def app(env, sr):
             sr('200 OK', [])
             return [env['wsgi.input'].read()]
@@ -1958,13 +1913,11 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(resp.headers['x-data'], 'abc')
 
     def test_body_file_noseek(self):
-        from webob import Request
         req = Request.blank('/', method='PUT', body='abc')
         lst = [req.body_file.read(1) for i in range(3)]
         self.assertEqual(lst, ['a','b','c'])
 
     def test_cgi_escaping_fix(self):
-        from webob import Request
         req = Request.blank('/',
             content_type='multipart/form-data; boundary=boundary',
             POST=_cgi_escaping_body
@@ -1974,27 +1927,23 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(req.POST.keys(), ['%20%22"'])
 
     def test_content_type_none(self):
-        from webob import Request
         r = Request.blank('/', content_type='text/html')
         self.assertEqual(r.content_type, 'text/html')
         r.content_type = None
 
     def test_charset_in_content_type(self):
-        from webob import Request
         r = Request({'CONTENT_TYPE':'text/html;charset=ascii'})
         r.charset = 'shift-jis'
         self.assertEqual(r.charset, 'shift-jis')
 
     def test_body_file_seekable(self):
         from cStringIO import StringIO
-        from webob import Request
         r = Request.blank('/')
         r.body_file = StringIO('body')
         self.assertEqual(r.body_file_seekable.read(), 'body')
 
     def test_request_init(self):
         # port from doctest (docs/reference.txt)
-        from webob import Request
         req = Request.blank('/article?id=1')
         self.assertEqual(req.environ['HTTP_HOST'], 'localhost:80')
         self.assertEqual(req.environ['PATH_INFO'], '/article')
@@ -2062,7 +2011,6 @@ class RequestTests_functional(unittest.TestCase):
         # port from doctest (docs/reference.txt)
 
         # Query & POST variables
-        from webob import Request
         from webob.multidict import MultiDict
         from webob.multidict import NestedMultiDict
         from webob.multidict import NoVars
@@ -2099,7 +2047,6 @@ class RequestTests_functional(unittest.TestCase):
 
     def test_request_put(self):
         from datetime import datetime
-        from webob import Request
         from webob import Response
         from webob import UTC
         from webob.acceptparse import MIMEAccept
@@ -2198,7 +2145,6 @@ class RequestTests_functional(unittest.TestCase):
         self.assert_(not server_token in req.if_match)
 
     def test_call_WSGI_app(self):
-        from webob import Request
         req = Request.blank('/')
         def wsgi_app(environ, start_response):
             start_response('200 OK', [('Content-type', 'text/plain')])
@@ -2217,7 +2163,6 @@ class RequestTests_functional(unittest.TestCase):
 
     def equal_req(self, req):
         from cStringIO import StringIO
-        from webob import Request
         input = StringIO(str(req))
         req2 = Request.from_file(input)
         self.assertEqual(req.url, req2.url)
@@ -2234,7 +2179,6 @@ class RequestTests_functional(unittest.TestCase):
 
 
 def simpleapp(environ, start_response):
-    from webob import Request
     status = '200 OK'
     response_headers = [('Content-type','text/plain')]
     start_response(status, response_headers)

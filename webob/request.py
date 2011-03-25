@@ -63,6 +63,9 @@ class BaseRequest(object):
                         "Unexpected keyword: %s=%r" % (name, value))
                 setattr(self, name, value)
 
+    # this is necessary for correct warnings depth for both
+    # BaseRequest and Request (due to AdhocAttrMixin.__setattr__)
+    _setattr_stacklevel = 2
 
     def _body_file__get(self):
         """
@@ -73,13 +76,18 @@ class BaseRequest(object):
         return self.body_file_raw
     def _body_file__set(self, value):
         if isinstance(value, str):
-            # FIXME: This should issue a warning
+            # FIXME: change to DeprecationWarning in 1.1, raise exc in 1.2
+            warnings.warn(
+                "Please use req.body = 'str' or req.body_file = fileobj",
+                PendingDeprecationWarning,
+                stacklevel=self._setattr_stacklevel,
+            )
             self.body = value
-        else:
-            self.content_length = None
-            self.body_file_raw = value
-            self.is_body_seekable = False
-            self.is_body_readable = True
+            return
+        self.content_length = None
+        self.body_file_raw = value
+        self.is_body_seekable = False
+        self.is_body_readable = True
     def _body_file__del(self):
         self.body = ''
     body_file = property(_body_file__get,
@@ -1109,6 +1117,8 @@ def environ_add_POST(env, data):
 
 
 class AdhocAttrMixin(object):
+    _setattr_stacklevel = 3
+
     def __setattr__(self, attr, value, DEFAULT=object()):
         if (getattr(self.__class__, attr, DEFAULT) is not DEFAULT or
                     attr.startswith('_')):
