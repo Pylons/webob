@@ -1,23 +1,7 @@
-"""
-Test actual request/response cycle in the presence of Request.copy()
-and other methods that can potentially hang.
-
-Daniel Holth <dholth@fastmail.fm>
-"""
-
 from webob import Request, Response
-from wsgiref.simple_server import make_server, WSGIRequestHandler
-from threading import Thread
-
-import random
-import urllib2
-import logging
+import sys, logging, threading, random, urllib2
 
 log = logging.getLogger(__name__)
-
-class NoLogHanlder(WSGIRequestHandler):
-    def log_request(self, *args):
-        pass
 
 def _make_test_app(test_op):
     def app(env, sr):
@@ -30,6 +14,10 @@ def _make_test_app(test_op):
     return app
 
 def _make_test_server(app):
+    from wsgiref.simple_server import make_server, WSGIRequestHandler
+    class NoLogHanlder(WSGIRequestHandler):
+        def log_request(self, *args):
+            pass
     maxport = ((1<<16)-1)
     # we'll make 3 attempts to find a free port
     for i in range(3, 0, -1):
@@ -50,12 +38,12 @@ def _test_request(op):
     time out."""
     app = _make_test_app(op)
     server = _make_test_server(app)
-    worker = Thread(target=server.handle_request)
+    worker = threading.Thread(target=server.handle_request)
     worker.setDaemon(True)
     worker.start()
     url = "http://localhost:%d/" % server.server_port
     try:
-        resp = urllib2.urlopen(url, timeout=1)
+        resp = urllib2.urlopen(url, timeout=3)
         assert resp.read() == "ok"
     finally:
         server.socket.close()
@@ -63,14 +51,19 @@ def _test_request(op):
         if worker.is_alive():
             log.debug('worker is hanged')
 
-def test_in_wsgiref():
-    yield (_test_request, lambda req: req.copy())
-    yield (_test_request, lambda req: req.body_file.read())
-    yield (_test_request, lambda req: req.body_file.read(0))
-    yield (_test_request, lambda req: req.make_body_seekable())
+if sys.version >= '2.5':
+    def test_in_wsgiref():
+        """
+            Test actual request/response cycle in the presence of Request.copy()
+            and other methods that can potentially hang.
+        """
+        yield (_test_request, lambda req: req.copy())
+        yield (_test_request, lambda req: req.body_file.read())
+        yield (_test_request, lambda req: req.body_file.read(0))
+        yield (_test_request, lambda req: req.make_body_seekable())
 
 
-if __name__ == '__main__':
-    for t,a in test_in_wsgiref():
-        t(a)
+    if __name__ == '__main__':
+        for t,a in test_in_wsgiref():
+            t(a)
 
