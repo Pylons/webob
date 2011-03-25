@@ -51,7 +51,7 @@ def _test_request(op):
         if worker.isAlive():
             log.debug('worker is hanged')
 
-if sys.version >= '2.5':
+if sys.version >= '2.6':
     def test_in_wsgiref():
         """
             Test actual request/response cycle in the presence of Request.copy()
