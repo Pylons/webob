@@ -38,11 +38,8 @@ class BaseRequest(object):
     ## in memory):
     request_body_tempfile_limit = 10*1024
 
-    def __init__(self, environ=None, environ_getter=None, charset=NoDefault,
+    def __init__(self, environ, charset=NoDefault,
                  unicode_errors=NoDefault, decode_param_names=NoDefault, **kw):
-        if environ_getter is not None:
-            raise ValueError('The environ_getter argument is no longer '
-                             'supported')
         if environ is None:
             raise TypeError("You must provide an environ arg")
         d = self.__dict__
@@ -60,9 +57,8 @@ class BaseRequest(object):
         if decode_param_names is not NoDefault:
             d['decode_param_names'] = decode_param_names
         if kw:
-            my_class = self.__class__
             for name, value in kw.iteritems():
-                if not hasattr(my_class, name):
+                if not hasattr(cls, name):
                     raise TypeError(
                         "Unexpected keyword: %s=%r" % (name, value))
                 setattr(self, name, value)

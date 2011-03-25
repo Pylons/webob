@@ -1,25 +1,9 @@
 import unittest
+from webob import Request, BaseRequest
 
 _marker = object()
 
 class BaseRequestTests(unittest.TestCase):
-
-    def _getTargetClass(self):
-        from webob import BaseRequest
-        return BaseRequest
-
-    def _makeOne(self, environ, environ_getter=None, charset=_marker,
-                 unicode_errors=_marker, decode_param_names=_marker, **kw):
-        from webob.request import NoDefault
-        if charset is _marker:
-            charset = NoDefault
-        if unicode_errors is _marker:
-            unicode_errors = NoDefault
-        if decode_param_names is _marker:
-            decode_param_names = NoDefault
-        return self._getTargetClass()(environ, environ_getter, charset,
-                                      unicode_errors, decode_param_names, **kw)
-
     def _makeStringIO(self, text):
         try:
             from io import BytesIO
@@ -28,23 +12,20 @@ class BaseRequestTests(unittest.TestCase):
         return BytesIO(text)
 
     def test_ctor_environ_getter_raises_WTF(self):
-        # This API should be changed.
-        self.assertRaises(ValueError,
-                          self._makeOne, {}, environ_getter=object())
+        self.assertRaises(TypeError, Request, {}, environ_getter=object())
 
     def test_ctor_wo_environ_raises_WTF(self):
-        # This API should be changed.
-        self.assertRaises(TypeError, self._makeOne, None)
+        self.assertRaises(TypeError, Request, None)
 
     def test_ctor_w_environ(self):
         environ = {}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.environ, environ)
 
     def test_body_file_getter(self):
         INPUT = self._makeStringIO('input')
         environ = {'wsgi.input': INPUT}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assert_(req.body_file is INPUT)
 
     def test_body_file_setter_w_string(self):
@@ -53,7 +34,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'wsgi.input': BEFORE,
                    'CONTENT_LENGTH': len('before'),
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.body_file = AFTER
         self.assertEqual(req.body_file.getvalue(), AFTER)
         self.assertEqual(req.content_length, len(AFTER))
@@ -64,7 +45,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'wsgi.input': BEFORE,
                    'CONTENT_LENGTH': len('before'),
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.body_file = AFTER
         self.assert_(req.body_file is AFTER)
         self.assertEqual(req.content_length, None)
@@ -74,7 +55,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'wsgi.input': INPUT,
                    'CONTENT_LENGTH': len('before'),
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         del req.body_file
         self.assertEqual(req.body_file.getvalue(), '')
         self.assertEqual(req.content_length, 0)
@@ -84,7 +65,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'wsgi.input': INPUT,
                    'CONTENT_LENGTH': len('input'),
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assert_(req.body_file_raw is INPUT)
 
     def test_body_file_seekable_input_not_seekable(self):
@@ -94,7 +75,7 @@ class BaseRequestTests(unittest.TestCase):
                    'webob.is_body_seekable': False,
                    'CONTENT_LENGTH': len('input'),
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         seekable = req.body_file_seekable
         self.assert_(seekable is not INPUT)
         self.assertEqual(seekable.getvalue(), 'nput')
@@ -106,120 +87,120 @@ class BaseRequestTests(unittest.TestCase):
                    'webob.is_body_seekable': True,
                    'CONTENT_LENGTH': len('input'),
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         seekable = req.body_file_seekable
         self.assert_(seekable is INPUT)
 
     def test_scheme(self):
         environ = {'wsgi.url_scheme': 'something:',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.scheme, 'something:')
 
     def test_method(self):
         environ = {'REQUEST_METHOD': 'OPTIONS',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.method, 'OPTIONS')
 
     def test_http_version(self):
         environ = {'SERVER_PROTOCOL': '1.1',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.http_version, '1.1')
 
     def test_script_name(self):
         environ = {'SCRIPT_NAME': '/script',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.script_name, '/script')
 
     def test_path_info(self):
         environ = {'PATH_INFO': '/path/info',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.path_info, '/path/info')
 
     def test_content_length_getter(self):
         environ = {'CONTENT_LENGTH': '1234',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.content_length, 1234)
 
     def test_content_length_setter_w_str(self):
         environ = {'CONTENT_LENGTH': '1234',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.content_length = '3456'
         self.assertEqual(req.content_length, 3456)
 
     def test_remote_user(self):
         environ = {'REMOTE_USER': 'phred',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.remote_user, 'phred')
 
     def test_remote_addr(self):
         environ = {'REMOTE_ADDR': '1.2.3.4',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.remote_addr, '1.2.3.4')
 
     def test_query_string(self):
         environ = {'QUERY_STRING': 'foo=bar&baz=bam',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.query_string, 'foo=bar&baz=bam')
 
     def test_server_name(self):
         environ = {'SERVER_NAME': 'somehost.tld',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.server_name, 'somehost.tld')
 
     def test_server_port_getter(self):
         environ = {'SERVER_PORT': '6666',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.server_port, 6666)
 
     def test_server_port_setter_with_string(self):
         environ = {'SERVER_PORT': '6666',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.server_port = '6667'
         self.assertEqual(req.server_port, 6667)
 
     def test_uscript_name(self):
         environ = {'SCRIPT_NAME': '/script',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assert_(isinstance(req.uscript_name, unicode))
         self.assertEqual(req.uscript_name, '/script')
 
     def test_upath_info(self):
         environ = {'PATH_INFO': '/path/info',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assert_(isinstance(req.upath_info, unicode))
         self.assertEqual(req.upath_info, '/path/info')
 
     def test_content_type_getter_no_parameters(self):
         environ = {'CONTENT_TYPE': 'application/xml+foobar',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.content_type, 'application/xml+foobar')
 
     def test_content_type_getter_w_parameters(self):
         environ = {'CONTENT_TYPE': 'application/xml+foobar;charset="utf8"',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.content_type, 'application/xml+foobar')
 
     def test_content_type_setter_w_None(self):
         environ = {'CONTENT_TYPE': 'application/xml+foobar;charset="utf8"',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.content_type = None
         self.assertEqual(req.content_type, '')
         self.assert_('CONTENT_TYPE' not in environ)
@@ -227,7 +208,7 @@ class BaseRequestTests(unittest.TestCase):
     def test_content_type_setter_existing_paramter_no_new_paramter(self):
         environ = {'CONTENT_TYPE': 'application/xml+foobar;charset="utf8"',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.content_type = 'text/xml'
         self.assertEqual(req.content_type, 'text/xml')
         self.assertEqual(environ['CONTENT_TYPE'], 'text/xml;charset="utf8"')
@@ -235,14 +216,14 @@ class BaseRequestTests(unittest.TestCase):
     def test_content_type_deleter_clears_environ_value(self):
         environ = {'CONTENT_TYPE': 'application/xml+foobar;charset="utf8"',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         del req.content_type
         self.assertEqual(req.content_type, '')
         self.assert_('CONTENT_TYPE' not in environ)
 
     def test_content_type_deleter_no_environ_value(self):
         environ = {}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         del req.content_type
         self.assertEqual(req.content_type, '')
         self.assert_('CONTENT_TYPE' not in environ)
@@ -251,7 +232,7 @@ class BaseRequestTests(unittest.TestCase):
         CT = 'application/xml+foobar'
         environ = {'CONTENT_TYPE': CT,
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req._charset_cache = (CT, 'cp1252')
         self.assertEqual(req.charset, 'cp1252')
 
@@ -259,7 +240,7 @@ class BaseRequestTests(unittest.TestCase):
         CT = 'application/xml+foobar;charset="utf8"'
         environ = {'CONTENT_TYPE': CT,
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.charset, 'utf8')
         self.assertEqual(req._charset_cache, (CT, 'utf8'))
 
@@ -267,7 +248,7 @@ class BaseRequestTests(unittest.TestCase):
         CT = 'application/xml+foobar'
         environ = {'CONTENT_TYPE': CT,
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.charset, 'UTF-8')
         self.assertEqual(req._charset_cache, (CT, 'UTF-8'))
 
@@ -275,7 +256,7 @@ class BaseRequestTests(unittest.TestCase):
         CT = 'application/xml+foobar;charset="utf8"'
         environ = {'CONTENT_TYPE': CT,
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.charset = None
         self.assertEqual(environ['CONTENT_TYPE'], 'application/xml+foobar')
         self.assertEqual(req.charset, 'UTF-8')
@@ -284,7 +265,7 @@ class BaseRequestTests(unittest.TestCase):
         CT = 'application/xml+foobar;charset="utf8"'
         environ = {'CONTENT_TYPE': CT,
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.charset = ''
         self.assertEqual(environ['CONTENT_TYPE'], 'application/xml+foobar')
         self.assertEqual(req.charset, 'UTF-8')
@@ -293,7 +274,7 @@ class BaseRequestTests(unittest.TestCase):
         CT = 'application/xml+foobar;charset="utf8"'
         environ = {'CONTENT_TYPE': CT,
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.charset = 'cp1252'
         self.assertEqual(environ['CONTENT_TYPE'],
                          #'application/xml+foobar; charset="cp1252"') WTF?
@@ -305,7 +286,7 @@ class BaseRequestTests(unittest.TestCase):
         CT = 'application/xml+foobar'
         environ = {'CONTENT_TYPE': CT,
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.charset = 'cp1252'
         self.assertEqual(environ['CONTENT_TYPE'],
                          'application/xml+foobar; charset="cp1252"',
@@ -317,7 +298,7 @@ class BaseRequestTests(unittest.TestCase):
         CT = 'application/xml+foobar;charset="utf8"'
         environ = {'CONTENT_TYPE': CT,
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         del req.charset
         self.assertEqual(environ['CONTENT_TYPE'], 'application/xml+foobar')
         self.assertEqual(req.charset, 'UTF-8')
@@ -327,7 +308,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'CONTENT_TYPE': CONTENT_TYPE,
                    'CONTENT_LENGTH': '123',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         headers = req.headers
         self.assertEqual(headers,
                         {'Content-Type': CONTENT_TYPE,
@@ -339,7 +320,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'CONTENT_TYPE': CONTENT_TYPE,
                    'CONTENT_LENGTH': '123',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req._headers = {'Foo': 'Bar'}
         self.assertEqual(req.headers,
                         {'Foo': 'Bar'})
@@ -349,7 +330,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'CONTENT_TYPE': CONTENT_TYPE,
                    'CONTENT_LENGTH': '123',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req._headers = {'Foo': 'Bar'}
         req.headers = {'Qux': 'Spam'}
         self.assertEqual(req.headers,
@@ -360,7 +341,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'CONTENT_TYPE': CONTENT_TYPE,
                    'CONTENT_LENGTH': '123',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         def _test():
             del req.headers
         self.assertRaises(AttributeError, _test)
@@ -369,42 +350,42 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'wsgi.url_scheme': 'http',
                    'HTTP_HOST': 'example.com',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.host_url, 'http://example.com')
 
     def test_host_url_w_http_host_and_standard_port(self):
         environ = {'wsgi.url_scheme': 'http',
                    'HTTP_HOST': 'example.com:80',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.host_url, 'http://example.com')
 
     def test_host_url_w_http_host_and_oddball_port(self):
         environ = {'wsgi.url_scheme': 'http',
                    'HTTP_HOST': 'example.com:8888',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.host_url, 'http://example.com:8888')
 
     def test_host_url_w_http_host_https_and_no_port(self):
         environ = {'wsgi.url_scheme': 'https',
                    'HTTP_HOST': 'example.com',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.host_url, 'https://example.com')
 
     def test_host_url_w_http_host_https_and_standard_port(self):
         environ = {'wsgi.url_scheme': 'https',
                    'HTTP_HOST': 'example.com:443',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.host_url, 'https://example.com')
 
     def test_host_url_w_http_host_https_and_oddball_port(self):
         environ = {'wsgi.url_scheme': 'https',
                    'HTTP_HOST': 'example.com:4333',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.host_url, 'https://example.com:4333')
 
     def test_host_url_wo_http_host(self):
@@ -412,7 +393,7 @@ class BaseRequestTests(unittest.TestCase):
                    'SERVER_NAME': 'example.com',
                    'SERVER_PORT': '4333',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.host_url, 'https://example.com:4333')
 
     def test_application_url(self):
@@ -421,7 +402,7 @@ class BaseRequestTests(unittest.TestCase):
                    'SERVER_PORT': '80',
                    'SCRIPT_NAME': '/script',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.application_url, 'http://example.com/script')
 
     def test_path_url(self):
@@ -431,7 +412,7 @@ class BaseRequestTests(unittest.TestCase):
                    'SCRIPT_NAME': '/script',
                    'PATH_INFO': '/path/info',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.path_url, 'http://example.com/script/path/info')
 
     def test_path(self):
@@ -441,7 +422,7 @@ class BaseRequestTests(unittest.TestCase):
                    'SCRIPT_NAME': '/script',
                    'PATH_INFO': '/path/info',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.path, '/script/path/info')
 
     def test_path_qs_no_qs(self):
@@ -451,7 +432,7 @@ class BaseRequestTests(unittest.TestCase):
                    'SCRIPT_NAME': '/script',
                    'PATH_INFO': '/path/info',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.path_qs, '/script/path/info')
 
     def test_path_qs_w_qs(self):
@@ -462,7 +443,7 @@ class BaseRequestTests(unittest.TestCase):
                    'PATH_INFO': '/path/info',
                    'QUERY_STRING': 'foo=bar&baz=bam'
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.path_qs, '/script/path/info?foo=bar&baz=bam')
 
     def test_url_no_qs(self):
@@ -472,7 +453,7 @@ class BaseRequestTests(unittest.TestCase):
                    'SCRIPT_NAME': '/script',
                    'PATH_INFO': '/path/info',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.url, 'http://example.com/script/path/info')
 
     def test_url_w_qs(self):
@@ -483,7 +464,7 @@ class BaseRequestTests(unittest.TestCase):
                    'PATH_INFO': '/path/info',
                    'QUERY_STRING': 'foo=bar&baz=bam'
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.url,
                          'http://example.com/script/path/info?foo=bar&baz=bam')
 
@@ -495,7 +476,7 @@ class BaseRequestTests(unittest.TestCase):
                    'PATH_INFO': '/path/info',
                    'QUERY_STRING': 'foo=bar&baz=bam'
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.relative_url('other/page', True),
                          'http://example.com/script/other/page')
 
@@ -507,7 +488,7 @@ class BaseRequestTests(unittest.TestCase):
                    'PATH_INFO': '/path/info',
                    'QUERY_STRING': 'foo=bar&baz=bam'
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.relative_url('/other/page', True),
                          'http://example.com/other/page')
 
@@ -519,7 +500,7 @@ class BaseRequestTests(unittest.TestCase):
                    'PATH_INFO': '/path/info',
                    'QUERY_STRING': 'foo=bar&baz=bam'
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.relative_url('/other/page', False),
                          'http://example.com/other/page')
 
@@ -531,7 +512,7 @@ class BaseRequestTests(unittest.TestCase):
                    'PATH_INFO': '/path/info',
                    'QUERY_STRING': 'foo=bar&baz=bam'
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.relative_url('other/page', False),
                          'http://example.com/script/path/other/page')
 
@@ -542,7 +523,7 @@ class BaseRequestTests(unittest.TestCase):
                    'SCRIPT_NAME': '/script',
                    'PATH_INFO': '',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         popped = req.path_info_pop()
         self.assertEqual(popped, None)
         self.assertEqual(environ['SCRIPT_NAME'], '/script')
@@ -554,7 +535,7 @@ class BaseRequestTests(unittest.TestCase):
                    'SCRIPT_NAME': '/script',
                    'PATH_INFO': '/',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         popped = req.path_info_pop()
         self.assertEqual(popped, '')
         self.assertEqual(environ['SCRIPT_NAME'], '/script/')
@@ -567,7 +548,7 @@ class BaseRequestTests(unittest.TestCase):
                    'SCRIPT_NAME': '/script',
                    'PATH_INFO': '/path/info',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         popped = req.path_info_pop()
         self.assertEqual(popped, 'path')
         self.assertEqual(environ['SCRIPT_NAME'], '/script/path')
@@ -582,7 +563,7 @@ class BaseRequestTests(unittest.TestCase):
                    'SCRIPT_NAME': '/script',
                    'PATH_INFO': '/path/info',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         popped = req.path_info_pop(PATTERN)
         self.assertEqual(popped, None)
         self.assertEqual(environ['SCRIPT_NAME'], '/script')
@@ -597,7 +578,7 @@ class BaseRequestTests(unittest.TestCase):
                    'SCRIPT_NAME': '/script',
                    'PATH_INFO': '/path/info',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         popped = req.path_info_pop(PATTERN)
         self.assertEqual(popped, 'path')
         self.assertEqual(environ['SCRIPT_NAME'], '/script/path')
@@ -610,7 +591,7 @@ class BaseRequestTests(unittest.TestCase):
                    'SCRIPT_NAME': '/script',
                    'PATH_INFO': '//path/info',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         popped = req.path_info_pop()
         self.assertEqual(popped, 'path')
         self.assertEqual(environ['SCRIPT_NAME'], '/script//path')
@@ -623,7 +604,7 @@ class BaseRequestTests(unittest.TestCase):
                    'SCRIPT_NAME': '/script',
                    'PATH_INFO': '',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         peeked = req.path_info_peek()
         self.assertEqual(peeked, None)
         self.assertEqual(environ['SCRIPT_NAME'], '/script')
@@ -636,7 +617,7 @@ class BaseRequestTests(unittest.TestCase):
                    'SCRIPT_NAME': '/script',
                    'PATH_INFO': '/',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         peeked = req.path_info_peek()
         self.assertEqual(peeked, '')
         self.assertEqual(environ['SCRIPT_NAME'], '/script')
@@ -649,7 +630,7 @@ class BaseRequestTests(unittest.TestCase):
                    'SCRIPT_NAME': '/script',
                    'PATH_INFO': '/path',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         peeked = req.path_info_peek()
         self.assertEqual(peeked, 'path')
         self.assertEqual(environ['SCRIPT_NAME'], '/script')
@@ -658,25 +639,25 @@ class BaseRequestTests(unittest.TestCase):
     def test_urlvars_getter_w_paste_key(self):
         environ = {'paste.urlvars': {'foo': 'bar'},
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.urlvars, {'foo': 'bar'})
 
     def test_urlvars_getter_w_wsgiorg_key(self):
         environ = {'wsgiorg.routing_args': ((), {'foo': 'bar'}),
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.urlvars, {'foo': 'bar'})
 
     def test_urlvars_getter_wo_keys(self):
         environ = {}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.urlvars, {})
         self.assertEqual(environ['wsgiorg.routing_args'], ((), {}))
 
     def test_urlvars_setter_w_paste_key(self):
         environ = {'paste.urlvars': {'foo': 'bar'},
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.urlvars = {'baz': 'bam'}
         self.assertEqual(req.urlvars, {'baz': 'bam'})
         self.assertEqual(environ['paste.urlvars'], {'baz': 'bam'})
@@ -686,7 +667,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'wsgiorg.routing_args': ((), {'foo': 'bar'}),
                    'paste.urlvars': {'qux': 'spam'},
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.urlvars = {'baz': 'bam'}
         self.assertEqual(req.urlvars, {'baz': 'bam'})
         self.assertEqual(environ['wsgiorg.routing_args'], ((), {'baz': 'bam'}))
@@ -694,7 +675,7 @@ class BaseRequestTests(unittest.TestCase):
 
     def test_urlvars_setter_wo_keys(self):
         environ = {}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.urlvars = {'baz': 'bam'}
         self.assertEqual(req.urlvars, {'baz': 'bam'})
         self.assertEqual(environ['wsgiorg.routing_args'], ((), {'baz': 'bam'}))
@@ -703,7 +684,7 @@ class BaseRequestTests(unittest.TestCase):
     def test_urlvars_deleter_w_paste_key(self):
         environ = {'paste.urlvars': {'foo': 'bar'},
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         del req.urlvars
         self.assertEqual(req.urlvars, {})
         self.assert_('paste.urlvars' not in environ)
@@ -713,7 +694,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'wsgiorg.routing_args': (('a', 'b'), {'foo': 'bar'}),
                    'paste.urlvars': {'qux': 'spam'},
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         del req.urlvars
         self.assertEqual(req.urlvars, {})
         self.assertEqual(environ['wsgiorg.routing_args'], (('a', 'b'), {}))
@@ -723,7 +704,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'wsgiorg.routing_args': ((), {'foo': 'bar'}),
                    'paste.urlvars': {'qux': 'spam'},
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         del req.urlvars
         self.assertEqual(req.urlvars, {})
         self.assertEqual(environ['wsgiorg.routing_args'], ((), {}))
@@ -731,7 +712,7 @@ class BaseRequestTests(unittest.TestCase):
 
     def test_urlvars_deleter_wo_keys(self):
         environ = {}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         del req.urlvars
         self.assertEqual(req.urlvars, {})
         self.assertEqual(environ['wsgiorg.routing_args'], ((), {}))
@@ -740,25 +721,25 @@ class BaseRequestTests(unittest.TestCase):
     def test_urlargs_getter_w_paste_key(self):
         environ = {'paste.urlvars': {'foo': 'bar'},
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.urlargs, ())
 
     def test_urlargs_getter_w_wsgiorg_key(self):
         environ = {'wsgiorg.routing_args': (('a', 'b'), {'foo': 'bar'}),
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.urlargs, ('a', 'b'))
 
     def test_urlargs_getter_wo_keys(self):
         environ = {}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.urlargs, ())
         self.assert_('wsgiorg.routing_args' not in environ)
 
     def test_urlargs_setter_w_paste_key(self):
         environ = {'paste.urlvars': {'foo': 'bar'},
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.urlargs = ('a', 'b')
         self.assertEqual(req.urlargs, ('a', 'b'))
         self.assertEqual(environ['wsgiorg.routing_args'],
@@ -768,7 +749,7 @@ class BaseRequestTests(unittest.TestCase):
     def test_urlargs_setter_w_wsgiorg_key(self):
         environ = {'wsgiorg.routing_args': ((), {'foo': 'bar'}),
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.urlargs = ('a', 'b')
         self.assertEqual(req.urlargs, ('a', 'b'))
         self.assertEqual(environ['wsgiorg.routing_args'],
@@ -776,7 +757,7 @@ class BaseRequestTests(unittest.TestCase):
 
     def test_urlargs_setter_wo_keys(self):
         environ = {}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.urlargs = ('a', 'b')
         self.assertEqual(req.urlargs, ('a', 'b'))
         self.assertEqual(environ['wsgiorg.routing_args'],
@@ -786,7 +767,7 @@ class BaseRequestTests(unittest.TestCase):
     def test_urlargs_deleter_w_wsgiorg_key(self):
         environ = {'wsgiorg.routing_args': (('a', 'b'), {'foo': 'bar'}),
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         del req.urlargs
         self.assertEqual(req.urlargs, ())
         self.assertEqual(environ['wsgiorg.routing_args'],
@@ -795,7 +776,7 @@ class BaseRequestTests(unittest.TestCase):
     def test_urlargs_deleter_w_wsgiorg_key_empty(self):
         environ = {'wsgiorg.routing_args': ((), {}),
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         del req.urlargs
         self.assertEqual(req.urlargs, ())
         self.assert_('paste.urlvars' not in environ)
@@ -803,14 +784,14 @@ class BaseRequestTests(unittest.TestCase):
 
     def test_urlargs_deleter_wo_keys(self):
         environ = {}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         del req.urlargs
         self.assertEqual(req.urlargs, ())
         self.assert_('paste.urlvars' not in environ)
         self.assert_('wsgiorg.routing_args' not in environ)
 
     def test_str_cookies_empty_environ(self):
-        req = self._makeOne({})
+        req = BaseRequest({})
         self.assertEqual(req.str_cookies, {})
 
     def test_str_cookies_w_webob_parsed_cookies_matching_source(self):
@@ -818,7 +799,7 @@ class BaseRequestTests(unittest.TestCase):
             'HTTP_COOKIE': 'a=b',
             'webob._parsed_cookies': ('a=b', {'a': 'b'}),
         }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.str_cookies, {'a': 'b'})
 
     def test_str_cookies_w_webob_parsed_cookies_mismatched_source(self):
@@ -826,50 +807,50 @@ class BaseRequestTests(unittest.TestCase):
             'HTTP_COOKIE': 'a=b',
             'webob._parsed_cookies': ('a=b;c=d', {'a': 'b', 'c': 'd'}),
         }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.str_cookies, {'a': 'b'})
 
     def test_is_xhr_no_header(self):
-        req = self._makeOne({})
+        req = BaseRequest({})
         self.assert_(not req.is_xhr)
 
     def test_is_xhr_header_miss(self):
         environ = {'HTTP_X_REQUESTED_WITH': 'notAnXMLHTTPRequest'}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assert_(not req.is_xhr)
 
     def test_is_xhr_header_hit(self):
         environ = {'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assert_(req.is_xhr)
 
     # host
     def test_host_getter_w_HTTP_HOST(self):
         environ = {'HTTP_HOST': 'example.com:8888'}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.host, 'example.com:8888')
 
     def test_host_getter_wo_HTTP_HOST(self):
         environ = {'SERVER_NAME': 'example.com',
                    'SERVER_PORT': '8888'}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.host, 'example.com:8888')
 
     def test_host_setter(self):
         environ = {}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.host = 'example.com:8888'
         self.assertEqual(environ['HTTP_HOST'], 'example.com:8888')
 
     def test_host_deleter_hit(self):
         environ = {'HTTP_HOST': 'example.com:8888'}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         del req.host
         self.assert_('HTTP_HOST' not in environ)
 
     def test_host_deleter_miss(self):
         environ = {}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         del req.host # doesn't raise
 
     # body
@@ -879,7 +860,7 @@ class BaseRequestTests(unittest.TestCase):
                    'webob.is_body_seekable': True,
                    'CONTENT_LENGTH': len('input'),
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assertEqual(req.body, 'input')
         self.assertEqual(req.content_length, len('input'))
     def test_body_setter_None(self):
@@ -888,13 +869,13 @@ class BaseRequestTests(unittest.TestCase):
                    'webob.is_body_seekable': True,
                    'CONTENT_LENGTH': len('input'),
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.body = None
         self.assertEqual(req.body, '')
         self.assertEqual(req.content_length, 0)
         self.assert_(req.is_body_seekable)
     def test_body_setter_non_string_raises(self):
-        req = self._makeOne({})
+        req = BaseRequest({})
         def _test():
             req.body = object()
         self.assertRaises(TypeError, _test)
@@ -904,7 +885,7 @@ class BaseRequestTests(unittest.TestCase):
                    'webob.is_body_seekable': True,
                    'CONTENT_LENGTH': len('before'),
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.body = 'after'
         self.assertEqual(req.body, 'after')
         self.assertEqual(req.content_length, len('after'))
@@ -915,7 +896,7 @@ class BaseRequestTests(unittest.TestCase):
                    'webob.is_body_seekable': True,
                    'CONTENT_LENGTH': len('input'),
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         del req.body
         self.assertEqual(req.body, '')
         self.assertEqual(req.content_length, 0)
@@ -925,7 +906,7 @@ class BaseRequestTests(unittest.TestCase):
         from webob.multidict import NoVars
         environ = {'REQUEST_METHOD': 'GET',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         result = req.str_POST
         self.assert_(isinstance(result, NoVars))
         self.assert_(result.reason.startswith('Not a form request'))
@@ -936,7 +917,7 @@ class BaseRequestTests(unittest.TestCase):
                    'REQUEST_METHOD': 'POST',
                    'webob._parsed_post_vars': ({'foo': 'bar'}, INPUT),
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         result = req.str_POST
         self.assertEqual(result, {'foo': 'bar'})
 
@@ -946,7 +927,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'wsgi.input': INPUT,
                    'REQUEST_METHOD': 'PUT',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         result = req.str_POST
         self.assert_(isinstance(result, NoVars))
         self.assert_(result.reason.startswith('Not an HTML form submission'))
@@ -958,7 +939,7 @@ class BaseRequestTests(unittest.TestCase):
                    'REQUEST_METHOD': 'PUT',
                    'CONTENT_TYPE': 'text/plain',
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         result = req.str_POST
         self.assert_(isinstance(result, NoVars))
         self.assert_(result.reason.startswith('Not an HTML form submission'))
@@ -984,7 +965,7 @@ class BaseRequestTests(unittest.TestCase):
                       'boundary=----------------------------deb95b63e42a',
                    'CONTENT_LENGTH': len(BODY_TEXT),
                   }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         result = req.str_POST
         self.assertEqual(result['foo'], 'foo')
         bar = result['bar']
@@ -999,7 +980,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {
             'QUERY_STRING': 'foo=123',
         }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         result = req.str_GET
         self.assertEqual(result, {'foo': '123'})
         req.query_string = 'foo=456'
@@ -1012,7 +993,7 @@ class BaseRequestTests(unittest.TestCase):
     def test_str_GET_updates_query_string(self):
         environ = {
         }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         result = req.query_string
         self.assertEqual(result, '')
         req.str_GET['foo'] = '123'
@@ -1110,7 +1091,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {
             'HTTP_CACHE_CONTROL': 'max-age=5',
         }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         result = req.cache_control
         self.assertEqual(result.properties, {'max-age': 5})
         req.environ.update(HTTP_CACHE_CONTROL='max-age=10')
@@ -1122,7 +1103,7 @@ class BaseRequestTests(unittest.TestCase):
 
     def test_cache_control_updates_environ(self):
         environ = {}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.cache_control.max_age = 5
         result = req.environ['HTTP_CACHE_CONTROL']
         self.assertEqual(result, 'max-age=5')
@@ -1137,7 +1118,7 @@ class BaseRequestTests(unittest.TestCase):
 
     def test_cache_control_set_dict(self):
         environ = {}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.cache_control = {'max-age': 5}
         result = req.cache_control
         self.assertEqual(result.max_age, 5)
@@ -1145,14 +1126,14 @@ class BaseRequestTests(unittest.TestCase):
     def test_cache_control_set_object(self):
         from webob.cachecontrol import CacheControl
         environ = {}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         req.cache_control = CacheControl({'max-age': 5}, type='request')
         result = req.cache_control
         self.assertEqual(result.max_age, 5)
 
     def test_cache_control_gets_cached(self):
         environ = {}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         self.assert_(req.cache_control is req.cache_control)
 
     #if_match
@@ -1175,7 +1156,7 @@ class BaseRequestTests(unittest.TestCase):
     #call_application
     def test_call_application_calls_application(self):
         environ = {}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         def application(environ, start_response):
             start_response('200 OK', [('content-type', 'text/plain')])
             return ['...\n']
@@ -1186,7 +1167,7 @@ class BaseRequestTests(unittest.TestCase):
 
     def test_call_application_provides_write(self):
         environ = {}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         def application(environ, start_response):
             write = start_response('200 OK', [('content-type', 'text/plain')])
             write('...\n')
@@ -1200,7 +1181,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {
             'test._call_application_called_close': False
         }
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         def application(environ, start_response):
             write = start_response('200 OK', [('content-type', 'text/plain')])
             class AppIter(object):
@@ -1216,7 +1197,7 @@ class BaseRequestTests(unittest.TestCase):
 
     def test_call_application_raises_exc_info(self):
         environ = {}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         def application(environ, start_response):
             try:
                 raise RuntimeError('OH NOES')
@@ -1229,7 +1210,7 @@ class BaseRequestTests(unittest.TestCase):
 
     def test_call_application_returns_exc_info(self):
         environ = {}
-        req = self._makeOne(environ)
+        req = BaseRequest(environ)
         def application(environ, start_response):
             try:
                 raise RuntimeError('OH NOES')
@@ -1593,18 +1574,6 @@ class RequestTests_functional(unittest.TestCase):
         # Environ is a a mandatory not null param in Request.
         from webob import Request
         self.assertRaises(TypeError, Request, environ=None)
-
-    def test_environ_getter(self):
-        # Parameter environ_getter in Request is no longer valid and
-        # should raise an error in case it's used
-        from webob import Request
-        class env(object):
-            def __init__(self, env):
-                self.env = env
-            def env_getter(self):
-                return self.env
-        self.assertRaises(ValueError,
-                          Request, environ_getter=env({'a':1}).env_getter)
 
     def test_unicode_errors(self):
         # Passing unicode_errors != NoDefault should assign value to
@@ -2009,13 +1978,13 @@ class RequestTests_functional(unittest.TestCase):
         r = Request.blank('/', content_type='text/html')
         self.assertEqual(r.content_type, 'text/html')
         r.content_type = None
-        
+
     def test_charset_in_content_type(self):
         from webob import Request
         r = Request({'CONTENT_TYPE':'text/html;charset=ascii'})
         r.charset = 'shift-jis'
         self.assertEqual(r.charset, 'shift-jis')
-        
+
     def test_body_file_seekable(self):
         from cStringIO import StringIO
         from webob import Request
@@ -2454,7 +2423,7 @@ class Test_cgi_FieldStorage__repr__patch(unittest.TestCase):
         fake = Fake()
         result = self._callFUT(fake)
         self.assertEqual(result, "FieldStorage('name', 'filename')")
-    
+
     def test_without_file(self):
         class Fake(object):
             name = 'name'
