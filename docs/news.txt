@@ -3,6 +3,34 @@ News
 
 .. contents::
 
+1.0.6
+------
+
+* Use ``environ['wsgi.input'].read()`` instead of ``.read(-1)`` because the former
+  is explicitly mentioned in PEP-3333 and CherryPy server does not support the latter.
+
+* Add new ``environ['webob.is_body_readable']`` flag which specifies if the
+  input stream is readable even if the ``CONTENT_LENGTH`` is not set.
+  WebOb now only ever reads the input stream if the content-length is known
+  or this flag is set.
+
+* The two changes above fix a hangup with CherryPy and wsgiref servers
+  (`see ticket for details <https://bitbucket.org/ianb/webob/issue/6>`_).
+
+* ``req.body_file`` is now safer to read directly. For ``GET`` and other similar requests
+  it returns an empty ``StringIO`` or ``BytesIO`` object even if the server passed in
+  something else.
+
+* Setting ``req.body_file`` to a string now produces a PendingDeprecationWarning.
+  It will produce DeprecationWarning in 1.1 and raise an error in 1.2. Either
+  set ``req.body_file`` to a file-like object or set ``req.body`` to a string value.
+
+* Fix ``.pop()`` and ``.setdefault(..)`` methods of ``req/resp.cache_control``
+
+* Thanks to the participants of `Pyramid sprint at the PyCon US 2011
+  <https://bitbucket.org/ianb/webob/changeset/7b7dc3ec6159>`_ WebOb now has
+  100% test coverage.
+
 1.0.5
 ------
 * Restore Python 2.4 compatibility.
