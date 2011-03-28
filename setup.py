@@ -22,7 +22,7 @@ You may install the `in-development version of WebOb
 * `Browse source code <https://bitbucket.org/ianb/webob/src>`_
 * `Mailing list <http://bit.ly/paste-users>`_
 * `Release news <http://pythonpaste.org/webob/news>`_
-* `Detailed changelog <http://pythonpaste.org/webob/changesets>`_
+* `Detailed changelog <https://bitbucket.org/ianb/webob/changesets>`_
 """,
     classifiers=[
         "Development Status :: 6 - Mature",
