@@ -62,6 +62,7 @@ class Accept(object):
                 self._parsed.append(('iso-8859-1', 1))
         elif header_name == 'Accept-Language':
             self._match = self._match_lang
+        self._parsed_nonzero = [(m,q) for (m,q) in self._parsed if q]
 
 
     def __repr__(self):
@@ -72,10 +73,10 @@ class Accept(object):
 
     def __str__(self):
         result = []
-        for match, quality in self._parsed:
+        for mask, quality in self._parsed:
             if quality != 1:
-                match = '%s;q=%0.1f' % (match, quality)
-            result.append(match)
+                mask = '%s;q=%0.1f' % (mask, quality)
+            result.append(mask)
         return ', '.join(result)
 
     # FIXME: should subtraction be allowed?
@@ -113,7 +114,7 @@ class Accept(object):
         Returns true if the given object is listed in the accepted
         types.
         """
-        for mask, quality in self._parsed:
+        for mask, quality in self._parsed_nonzero:
             if self._match(mask, offer):
                 return True
 
@@ -130,17 +131,17 @@ class Accept(object):
 
     def first_match(self, offers):
         """
-        Returns the first match in the sequences of matches that is
-        allowed.  Ignores quality.  Returns the first item if nothing
-        else matches; or if you include None at the end of the match
-        list then that will be returned.
+        Returns the first allowed offered type. Ignores quality.
+        Returns the first offered type if nothing else matches; or if you include None
+        at the end of the match list then that will be returned.
         """
+        # FIXME: this method is a bad idea and should be deprecated
         if not offers:
             raise ValueError("You must pass in a non-empty list")
         for offer in offers:
             if offer is None:
                 return None
-            for mask, quality in self._parsed:
+            for mask, quality in self._parsed_nonzero:
                 if self._match(mask, offer):
                     return offer
         return offers[0]
@@ -153,7 +154,7 @@ class Accept(object):
         ``(match, server_quality)`` items in the sequence.  If you
         have these tuples then the client quality is multiplied by the
         server_quality to get a total.  If two matches have equal
-        weight, then the one that shows up first in the `matches` list
+        weight, then the one that shows up first in the `offers` list
         will be returned.
 
         But among matches with the same quality the match to a more specific
@@ -165,13 +166,11 @@ class Accept(object):
         best_offer = default_match
         matched_by = '*/*'
         for offer in offers:
-            if '*' in offer:
-                raise ValueError("The application should offer specific types, got %r" % offer)
             if isinstance(offer, (tuple, list)):
                 offer, server_quality = offer
             else:
                 server_quality = 1
-            for mask, quality in self._parsed:
+            for mask, quality in self._parsed_nonzero:
                 possible_quality = server_quality * quality
                 if possible_quality < best_quality:
                     continue
@@ -201,8 +200,9 @@ class Accept(object):
                 items.append(fallback)
         return items
 
-    def _match(self, mask, item):
-        return mask == '*' or item.lower() == mask.lower()
+    def _match(self, mask, offer):
+        _check_offer(offer)
+        return mask == '*' or offer.lower() == mask.lower()
 
     def _match_lang(self, mask, item):
         return (mask == '*'
@@ -246,27 +246,28 @@ class NilAccept(object):
             return item + self.MasterClass(self.header_name, '')
 
     def __contains__(self, item):
+        _check_offer(item)
         return True
 
-    def quality(self, match, default_quality=1):
+    def quality(self, offer, default_quality=1):
         return 0
 
-    def first_match(self, matches):
-        return matches[0]
+    def first_match(self, offers):
+        return offers[0]
 
-    def best_match(self, matches, default_match=None):
+    def best_match(self, offers, default_match=None):
         best_quality = -1
         best_match = default_match
-        for match_item in matches:
-            if isinstance(match_item, (list, tuple)):
-                match, quality = match_item
+        for offer in offers:
+            _check_offer(offer)
+            if isinstance(offer, (list, tuple)):
+                offer, quality = offer
             else:
-                match = match_item
                 quality = 1
             if quality > best_quality:
-                best_match = match
+                best_offer = offer
                 best_quality = quality
-        return best_match
+        return best_offer
 
     def best_matches(self, fallback=None):
         if fallback:
@@ -309,22 +310,28 @@ class MIMEAccept(Accept):
 
     accepts_html = property(accept_html) # note the plural
 
-    def _match(self, mask, item):
-        # checks if item is covered by the mask
-        assert '*' not in item, "item must be a specific type"
+    def _match(self, mask, offer):
+        """
+            Check if the offer is covered by the mask
+        """
+        _check_offer(offer)
         if '*' not in mask:
-            return item == mask
+            return offer == mask
         elif mask == '*/*':
             return True
         else:
             assert mask.endswith('/*')
             mask_major = mask[:-2]
-            item_major = item.split('/', 1)[0]
-            return item_major == mask_major
+            offer_major = offer.split('/', 1)[0]
+            return offer_major == mask_major
 
 
 class MIMENilAccept(NilAccept):
     MasterClass = MIMEAccept
+
+def _check_offer(offer):
+    if '*' in offer:
+        raise ValueError("The application should offer specific types, got %r" % offer)
 
 
 
@@ -349,3 +356,4 @@ def accept_property(header, rfc_section,
     def fdel(req):
         del req.environ[key]
     return property(fget, fset, fdel, doc)
+

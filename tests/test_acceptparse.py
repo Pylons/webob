@@ -71,6 +71,12 @@ def test_accept_str():
     accept = Accept(name, value)
     assert str(accept) == value
 
+def test_zero_quality():
+    assert Accept('Accept-Encoding', 'bar, *;q=0').best_match(['foo']) is None
+    assert 'foo' not in Accept('Accept-Encoding', '*;q=0')
+    assert Accept('Accept-Encoding', 'foo, *;q=0').first_match(['bar', 'foo']) == 'foo'
+
+
 def test_accept_str_with_q_not_1():
     name, value = ('Content-Type', 'text/html;q=0.5')
     accept = Accept(name, value)
