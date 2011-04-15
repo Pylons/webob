@@ -208,8 +208,12 @@ class MultiDict(DictMixin):
             self.update(kwargs)
 
     def __repr__(self):
-        items = ', '.join(['(%r, %r)' % v for v in self.iteritems()])
-        return '%s([%s])' % (self.__class__.__name__, items)
+        items = []
+        for k, v in self.iteritems():
+            if 'password' in k or 'passwd' in k or 'pwd' in k:
+                v = '******'
+            items.append('(%r, %r)' % (k, v))
+        return '%s([%s])' % (self.__class__.__name__, ', '.join(items))
 
     def __len__(self):
         return len(self._items)
@@ -389,8 +393,12 @@ class UnicodeMultiDict(DictMixin):
         return (self._decode_key(k), self._decode_value(v))
 
     def __repr__(self):
-        items = ', '.join(['(%r, %r)' % v for v in self.items()])
-        return '%s([%s])' % (self.__class__.__name__, items)
+        items = []
+        for k, v in self.items():
+            if 'password' in k or 'passwd' in k or 'pwd' in k:
+                v = '******'
+            items.append('(%r, %r)' % (k, v))
+        return '%s([%s])' % (self.__class__.__name__, ', '.join(items))
 
     def __len__(self):
         return self.multi.__len__()
@@ -462,8 +470,12 @@ class TrackableMultiDict(MultiDict):
         MultiDict.update(self, *args, **kwargs)
         self.tracker(self)
     def __repr__(self):
-        items = ', '.join(['(%r, %r)' % v for v in self.iteritems()])
-        return '%s([%s])' % (self.name or self.__class__.__name__, items)
+        items = []
+        for k, v in self.iteritems():
+            if 'password' in k or 'passwd' in k or 'pwd' in k:
+                v = '******'
+            items.append('(%r, %r)' % (k, v))
+        return '%s([%s])' % (self.name or self.__class__.__name__, ', '.join(items))
     def copy(self):
         # Copies shouldn't be tracked
         return MultiDict(self)
