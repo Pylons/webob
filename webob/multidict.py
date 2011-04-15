@@ -208,11 +208,7 @@ class MultiDict(DictMixin):
             self.update(kwargs)
 
     def __repr__(self):
-        items = []
-        for k, v in self.iteritems():
-            if 'password' in k or 'passwd' in k or 'pwd' in k:
-                v = '******'
-            items.append('(%r, %r)' % (k, v))
+        items = map('(%r, %r)'.__mod__, _hide_passwd(self.iteritems()))
         return '%s([%s])' % (self.__class__.__name__, ', '.join(items))
 
     def __len__(self):
@@ -393,11 +389,7 @@ class UnicodeMultiDict(DictMixin):
         return (self._decode_key(k), self._decode_value(v))
 
     def __repr__(self):
-        items = []
-        for k, v in self.items():
-            if 'password' in k or 'passwd' in k or 'pwd' in k:
-                v = '******'
-            items.append('(%r, %r)' % (k, v))
+        items = map('(%r, %r)'.__mod__, _hide_passwd(self.iteritems()))
         return '%s([%s])' % (self.__class__.__name__, ', '.join(items))
 
     def __len__(self):
@@ -470,11 +462,7 @@ class TrackableMultiDict(MultiDict):
         MultiDict.update(self, *args, **kwargs)
         self.tracker(self)
     def __repr__(self):
-        items = []
-        for k, v in self.iteritems():
-            if 'password' in k or 'passwd' in k or 'pwd' in k:
-                v = '******'
-            items.append('(%r, %r)' % (k, v))
+        items = map('(%r, %r)'.__mod__, _hide_passwd(self.iteritems()))
         return '%s([%s])' % (self.name or self.__class__.__name__, ', '.join(items))
     def copy(self):
         # Copies shouldn't be tracked
@@ -632,3 +620,15 @@ class NoVars(object):
     iteritems = iterkeys
     values = keys
     itervalues = iterkeys
+
+
+
+def _hide_passwd(items):
+    for k, v in items:
+        if ('password' in k
+            or 'passwd' in k
+            or 'pwd' in k
+        ):
+            yield k, '******'
+        else:
+            yield k, v
