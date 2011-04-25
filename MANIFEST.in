@@ -1,2 +1,2 @@
-prune docs
-prune tests
+recursive-include tests *
+recursive-include docs *
