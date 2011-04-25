@@ -3,6 +3,14 @@ News
 
 .. contents::
 
+1.0.7
+------
+
+* Fix ``Accept`` header matching for items with zero-quality
+  (`see ticket for details <https://bitbucket.org/ianb/webob/issue/10>`_ )
+
+* Hide password values in ``MultiDict.__repr__``
+
 1.0.6
 ------
 
