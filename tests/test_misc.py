@@ -130,7 +130,8 @@ def test_multidict_init():
 
 
 def test_multidict_cgi():
-    fs = cgi.FieldStorage()
+    env = {'QUERY_STRING': ''}
+    fs = cgi.FieldStorage(environ=env)
     fs.filename = '\xc3\xb8'
     plain = MultiDict(key='\xc3\xb8', fs=fs)
     ua = UnicodeMultiDict(multi=plain, encoding='utf-8')

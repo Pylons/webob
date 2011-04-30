@@ -187,7 +187,8 @@ class UnicodeMultiDictTestCase(BaseDictTests, unittest.TestCase):
         d = self._get_instance()
         d.decode_keys = True
 
-        fs = cgi.FieldStorage()
+        env = {'QUERY_STRING': ''}
+        fs = cgi.FieldStorage(environ=env)
         fs.name = 'a'
         self.assertEqual(d._decode_value(fs).name, 'a')
 
