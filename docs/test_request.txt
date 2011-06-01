@@ -335,6 +335,11 @@ A quick test of caching the request body:
     >>> req = Request.blank('/')
     >>> req.content_length = length
     >>> req.body_file = data
+    Traceback (most recent call last):
+    ...
+    ValueError: GET requests cannot have body
+    >>> req.method = 'PUT'
+    >>> req.body_file = data
     >>> req.body_file_raw
     <...IO... object at ...>
     >>> len(req.body)

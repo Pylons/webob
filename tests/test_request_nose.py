@@ -2,10 +2,16 @@ from webob import Request
 
 
 def test_request_read_no_content_length():
-    req, input = _make_read_tracked_request('abc')
+    req, input = _make_read_tracked_request('abc', 'FOO')
     assert req.content_length is None
     assert req.body == ''
     assert not input.was_read
+
+def test_request_read_no_content_length_POST():
+    req, input = _make_read_tracked_request('abc', 'POST')
+    assert req.content_length is None
+    assert req.body == 'abc'
+    assert input.was_read
 
 def test_request_read_no_flag_but_content_length_is_present():
     req, input = _make_read_tracked_request('abc')
@@ -31,10 +37,10 @@ def test_request_read_after_setting_body_file():
     assert input.was_read
 
 
-def _make_read_tracked_request(data=''):
+def _make_read_tracked_request(data='', method='PUT'):
     input = ReadTracker(data)
     env = {
-        'HTTP_METHOD': 'PUT',
+        'REQUEST_METHOD': method,
         'wsgi.input': input,
     }
     return Request(env), input

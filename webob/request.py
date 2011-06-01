@@ -29,6 +29,9 @@ NoDefault = _NoDefault()
 
 PATH_SAFE = '/:@&+$,'
 
+http_method_has_body = dict.fromkeys(('GET', 'HEAD', 'DELETE', 'TRACE'), False)
+http_method_has_body.update(dict.fromkeys(('POST', 'PUT'), True))
+
 class BaseRequest(object):
     ## Options:
     unicode_errors = 'strict'
@@ -38,10 +41,12 @@ class BaseRequest(object):
     ## in memory):
     request_body_tempfile_limit = 10*1024
 
-    def __init__(self, environ, charset=NoDefault,
-                 unicode_errors=NoDefault, decode_param_names=NoDefault, **kw):
-        if environ is None:
-            raise TypeError("You must provide an environ arg")
+    def __init__(self, environ,
+        charset=NoDefault, unicode_errors=NoDefault, decode_param_names=NoDefault,
+        **kw
+    ):
+        if type(environ) is not dict:
+            raise TypeError("WSGI environ must be a dict")
         d = self.__dict__
         d['environ'] = environ
         if charset is not NoDefault:
@@ -57,6 +62,10 @@ class BaseRequest(object):
         if decode_param_names is not NoDefault:
             d['decode_param_names'] = decode_param_names
         if kw:
+            if 'method' in kw:
+                # set method first, because .body setters
+                # depend on it for checks
+                self.method = kw.pop('method')
             for name, value in kw.iteritems():
                 if not hasattr(cls, name):
                     raise TypeError(
@@ -73,7 +82,7 @@ class BaseRequest(object):
             Setting this property resets the content_length and seekable flag
             (unlike setting req.body_file_raw).
         """
-        if self.content_length is None and not self.is_body_readable:
+        if not self.is_body_readable:
             return StringIO('')
         return self.body_file_raw
 
@@ -87,6 +96,8 @@ class BaseRequest(object):
             )
             self.body = value
             return
+        if not http_method_has_body.get(self.method, True):
+            raise ValueError("%s requests cannot have body" % self.method)
         self.content_length = None
         self.body_file_raw = value
         self.is_body_seekable = False
@@ -477,6 +488,12 @@ class BaseRequest(object):
         if not isinstance(value, str):
             raise TypeError("You can only set Request.body to a str (not %r)"
                                 % type(value))
+        if not http_method_has_body.get(self.method, True):
+            if not value:
+                self.content_length = None
+                self.body_file_raw = StringIO('')
+                return
+            raise ValueError("%s requests cannot have body" % self.method)
         self.content_length = len(value)
         self.body_file_raw = StringIO(value)
         self.is_body_seekable = True
@@ -669,13 +686,36 @@ class BaseRequest(object):
     # this way we can have seekable input without testing the .seek() method
     is_body_seekable = environ_getter('webob.is_body_seekable', False)
 
-    # webob.is_body_readable is a flag that tells us
-    # that we can read the input stream even though
-    # CONTENT_LENGTH is missing. this allows FakeCGIBody
-    # to work and can be used by servers to support
-    # chunked encoding in requests.
-    # for background see https://bitbucket.org/ianb/webob/issue/6
-    is_body_readable = environ_getter('webob.is_body_readable', False)
+    #is_body_readable = environ_getter('webob.is_body_readable', False)
+
+    def _is_body_readable__get(self):
+        """
+            webob.is_body_readable is a flag that tells us
+            that we can read the input stream even though
+            CONTENT_LENGTH is missing. This allows FakeCGIBody
+            to work and can be used by servers to support
+            chunked encoding in requests.
+            For background see https://bitbucket.org/ianb/webob/issue/6
+        """
+        if self.method in http_method_has_body:
+            # known HTTP method
+            return http_method_has_body[self.method]
+        elif self.content_length is not None:
+            # unknown HTTP method, but the Content-Length
+            # header is present
+            return True
+        else:
+            # last resort -- rely on the special flag
+            return self.environ.get('webob.is_body_readable', False)
+
+    def _is_body_readable__set(self, flag):
+        #@@ WARN
+        self.environ['webob.is_body_readable'] = bool(flag)
+
+    is_body_readable = property(_is_body_readable__get, _is_body_readable__set,
+        doc=_is_body_readable__get.__doc__
+    )
+
 
 
     def make_body_seekable(self):

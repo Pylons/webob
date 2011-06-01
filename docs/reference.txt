@@ -95,6 +95,11 @@ file-like object.  You can read the entire body with
     >>> req.body
     ''
     >>> req.body = 'test'
+    Traceback (most recent call last):
+    ...
+    ValueError: GET requests cannot have body
+    >>> req.method = 'PUT'
+    >>> req.body = 'test'
     >>> hasattr(req.body_file, 'read')
     True
     >>> req.body
@@ -109,7 +114,7 @@ request object:
 .. code-block:: python
 
     >>> req.method
-    'GET'
+    'PUT'
     >>> req.scheme
     'http'
     >>> req.script_name  # The base of the URL

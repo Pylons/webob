@@ -25,14 +25,17 @@ class BaseRequestTests(unittest.TestCase):
     def test_body_file_getter(self):
         body = 'input'
         INPUT = self._makeStringIO(body)
-        environ = {'wsgi.input': INPUT, 'CONTENT_LENGTH': len(body)}
+        environ = {'wsgi.input': INPUT,
+            'CONTENT_LENGTH': len(body),
+            'REQUEST_METHOD': 'POST',
+        }
         req = BaseRequest(environ)
         self.assert_(req.body_file is INPUT)
 
-    def test_body_file_getter_unredable(self):
+    def test_body_file_getter_unreadable(self):
         body = 'input'
         INPUT = self._makeStringIO(body)
-        environ = {'wsgi.input': INPUT}
+        environ = {'wsgi.input': INPUT, 'REQUEST_METHOD': 'FOO'}
         req = BaseRequest(environ)
         assert req.body_file_raw is INPUT
         assert req.body_file is not INPUT
@@ -43,6 +46,7 @@ class BaseRequestTests(unittest.TestCase):
         AFTER = str('AFTER')
         environ = {'wsgi.input': BEFORE,
                    'CONTENT_LENGTH': len('before'),
+                   'REQUEST_METHOD': 'POST',
                   }
         req = BaseRequest(environ)
         warnings.simplefilter('ignore', PendingDeprecationWarning)
@@ -63,6 +67,7 @@ class BaseRequestTests(unittest.TestCase):
         AFTER =  self._makeStringIO('after')
         environ = {'wsgi.input': BEFORE,
                    'CONTENT_LENGTH': len('before'),
+                   'REQUEST_METHOD': 'POST'
                   }
         req = BaseRequest(environ)
         req.body_file = AFTER
@@ -73,6 +78,7 @@ class BaseRequestTests(unittest.TestCase):
         INPUT = self._makeStringIO('before')
         environ = {'wsgi.input': INPUT,
                    'CONTENT_LENGTH': len('before'),
+                   'REQUEST_METHOD': 'POST',
                   }
         req = BaseRequest(environ)
         del req.body_file
@@ -83,6 +89,7 @@ class BaseRequestTests(unittest.TestCase):
         INPUT = self._makeStringIO('input')
         environ = {'wsgi.input': INPUT,
                    'CONTENT_LENGTH': len('input'),
+                   'REQUEST_METHOD': 'POST',
                   }
         req = BaseRequest(environ)
         self.assert_(req.body_file_raw is INPUT)
@@ -93,6 +100,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'wsgi.input': INPUT,
                    'webob.is_body_seekable': False,
                    'CONTENT_LENGTH': len('input'),
+                   'REQUEST_METHOD': 'POST',
                   }
         req = BaseRequest(environ)
         seekable = req.body_file_seekable
@@ -105,6 +113,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'wsgi.input': INPUT,
                    'webob.is_body_seekable': True,
                    'CONTENT_LENGTH': len('input'),
+                   'REQUEST_METHOD': 'POST',
                   }
         req = BaseRequest(environ)
         seekable = req.body_file_seekable
@@ -878,6 +887,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'wsgi.input': INPUT,
                    'webob.is_body_seekable': True,
                    'CONTENT_LENGTH': len('input'),
+                   'REQUEST_METHOD': 'POST'
                   }
         req = BaseRequest(environ)
         self.assertEqual(req.body, 'input')
@@ -887,6 +897,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'wsgi.input': INPUT,
                    'webob.is_body_seekable': True,
                    'CONTENT_LENGTH': len('input'),
+                   'REQUEST_METHOD': 'POST'
                   }
         req = BaseRequest(environ)
         req.body = None
@@ -903,6 +914,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'wsgi.input': BEFORE,
                    'webob.is_body_seekable': True,
                    'CONTENT_LENGTH': len('before'),
+                   'REQUEST_METHOD': 'POST'
                   }
         req = BaseRequest(environ)
         req.body = 'after'
@@ -914,6 +926,7 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'wsgi.input': INPUT,
                    'webob.is_body_seekable': True,
                    'CONTENT_LENGTH': len('input'),
+                   'REQUEST_METHOD': 'POST',
                   }
         req = BaseRequest(environ)
         del req.body
@@ -1495,7 +1508,7 @@ class RequestTests_functional(unittest.TestCase):
 
     def test_set_body(self):
         from webob import BaseRequest
-        req = BaseRequest.blank('/', body='foo')
+        req = BaseRequest.blank('/', method='PUT', body='foo')
         self.assert_(req.is_body_seekable)
         self.assertEqual(req.body, 'foo')
         self.assertEqual(req.content_length, 3)
@@ -1729,17 +1742,17 @@ class RequestTests_functional(unittest.TestCase):
                 return self.txt[0:n]
         limit = BaseRequest.request_body_tempfile_limit
         len_strl = limit // len(string.letters) + 1
-        r = Request({'a':1}, body_file=DummyIO(string.letters * len_strl))
+        r = Request({'a':1, 'REQUEST_METHOD': 'POST'}, body_file=DummyIO(string.letters * len_strl))
         self.assertEqual(len(r.body), len(string.letters*len_strl)-1)
         self.assertRaises(TypeError,
                           setattr, r, 'body', unicode('hello world'))
         r.body = None
         self.assertEqual(r.body, '')
-        r = Request({'a':1}, body_file=DummyIO(string.letters))
+        r = Request({'a':1}, method='PUT', body_file=DummyIO(string.letters))
         self.assert_(not hasattr(r.body_file_raw, 'seek'))
         r.make_body_seekable()
         self.assert_(hasattr(r.body_file_raw, 'seek'))
-        r = Request({'a':1}, body_file=StringIO(string.letters))
+        r = Request({'a':1}, method='PUT', body_file=StringIO(string.letters))
         self.assert_(hasattr(r.body_file_raw, 'seek'))
         r.make_body_seekable()
         self.assert_(hasattr(r.body_file_raw, 'seek'))
@@ -1948,7 +1961,7 @@ class RequestTests_functional(unittest.TestCase):
 
     def test_body_file_seekable(self):
         from cStringIO import StringIO
-        r = Request.blank('/')
+        r = Request.blank('/', method='POST')
         r.body_file = StringIO('body')
         self.assertEqual(r.body_file_seekable.read(), 'body')
 
@@ -1975,12 +1988,13 @@ class RequestTests_functional(unittest.TestCase):
         # Test body
         self.assert_(hasattr(req.body_file, 'read'))
         self.assertEqual(req.body, '')
+        req.method = 'PUT'
         req.body = 'test'
         self.assert_(hasattr(req.body_file, 'read'))
         self.assertEqual(req.body, 'test')
 
         # Test method & URL
-        self.assertEqual(req.method, 'GET')
+        self.assertEqual(req.method, 'PUT')
         self.assertEqual(req.scheme, 'http')
         self.assertEqual(req.script_name, '') # The base of the URL
         req.script_name = '/blog'  # make it more interesting
