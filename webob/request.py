@@ -478,6 +478,8 @@ class BaseRequest(object):
         """
         Return the content of the request body.
         """
+        if not self.is_body_readable:
+            return ''
         self.make_body_seekable() # we need this to have content_length
         r = self.body_file.read(self.content_length)
         self.body_file.seek(0)
@@ -745,16 +747,19 @@ class BaseRequest(object):
         This copies the body in-place, either into a StringIO object
         or a temporary file.
         """
-        length = self.content_length
-        if length is not None:
-            did_copy = self._copy_body_tempfile()
-            if not did_copy:
-                self.body = self.body_file_raw.read(length)
-        elif self.is_body_readable:
+        if not self.is_body_readable:
+            # there's no body to copy
+            self.body = ''
+        elif self.content_length is None:
+            # chunked body or FakeCGIBody
             self.body = self.body_file_raw.read()
             self._copy_body_tempfile()
         else:
-            self.body = ''
+            # try to read body into tempfile
+            did_copy = self._copy_body_tempfile()
+            if not did_copy:
+                # it wasn't necessary, so just read it into memory
+                self.body = self.body_file_raw.read(self.content_length)
 
     def _copy_body_tempfile(self):
         """
