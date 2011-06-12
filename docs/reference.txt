@@ -840,11 +840,11 @@ methods.  Most importantly:
     >>> res.set_cookie('key', 'value', max_age=360, path='/',
     ...                domain='example.org', secure=True)
     >>> res.headers['Set-Cookie']
-    'key=value; Domain=example.org; expires="... GMT"; Max-Age=360; Path=/; secure'
+    'key=value; Domain=example.org; Max-Age=360; Path=/; expires=... GMT; secure'
     >>> # To delete a cookie previously set in the client:
     >>> res.delete_cookie('bad_cookie')
     >>> res.headers['Set-Cookie']
-    'bad_cookie=; expires="... GMT"; Max-Age=0; Path=/'
+    'bad_cookie=; Max-Age=0; Path=/; expires=... GMT'
 
 The only other real method of note (note that this does *not* delete
 the cookie from clients, only from the response object):

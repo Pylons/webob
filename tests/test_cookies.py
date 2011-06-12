@@ -29,7 +29,7 @@ def test_cookie_complex_serialize():
     c = cookies.Cookie('dismiss-top=6; CP=null*, '\
                        'PHPSESSID=0a539d42abc001cdc762809248d4beed, a="42,"')
     eq_(c.serialize(),
-        'CP=null*, PHPSESSID=0a539d42abc001cdc762809248d4beed, a="42,", '
+        'CP=null*; PHPSESSID=0a539d42abc001cdc762809248d4beed; a="42\\054"; '
         'dismiss-top=6')
 
 def test_cookie_load_multiple():
@@ -94,20 +94,35 @@ def test_morsel_serialize_with_expires():
     morsel = cookies.Morsel('bleh', 'blah')
     morsel.expires = 'Tue, 04-Jan-2011 13:43:50 GMT'
     result = morsel.serialize()
-    eq_(result, 'bleh=blah; expires="Tue, 04-Jan-2011 13:43:50 GMT"')
-    
+    eq_(result, 'bleh=blah; expires=Tue, 04-Jan-2011 13:43:50 GMT')
+
 def test_serialize_max_age_timedelta():
     import datetime
     val = datetime.timedelta(86400)
     result = cookies.serialize_max_age(val)
     eq_(result, '7464960000')
-    
+
 def test_serialize_max_age_int():
     val = 86400
     result = cookies.serialize_max_age(val)
     eq_(result, '86400')
-    
+
 def test_serialize_max_age_str():
     val = '86400'
     result = cookies.serialize_max_age(val)
     eq_(result, '86400')
+
+def test_escape_comma():
+    c = cookies.Cookie()
+    c['x'] = '";,"'
+    eq_(c.serialize(True), r'x="\"\073\054\""')
+
+def test_parse_qmark_in_val():
+    v = r'x="\"\073\054\""; expires=Sun, 12-Jun-2011 23:16:01 GMT'
+    c = cookies.Cookie(v)
+    eq_(c['x'].value, r'";,"')
+
+def test_parse_expires_no_quoting():
+    v = r'x="\"\073\054\""; expires=Sun, 12-Jun-2011 23:16:01 GMT'
+    c = cookies.Cookie(v)
+    eq_(c['x'].expires, 'Sun, 12-Jun-2011 23:16:01 GMT')

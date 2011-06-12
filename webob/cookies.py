@@ -28,7 +28,7 @@ class Cookie(dict):
         dict.__setitem__(self, key, Morsel(key, val))
 
     def serialize(self, full=True):
-        return ', '.join(m.serialize(full) for m in self.values())
+        return '; '.join(m.serialize(full) for m in self.values())
 
     def values(self):
         return [m for _,m in sorted(self.items())]
@@ -103,6 +103,9 @@ class Morsel(dict):
                 if v:
                     assert isinstance(v, str), v
                     add("%s=%s" % (_c_renames[k], _quote(v)))
+            expires = self['expires']
+            if expires:
+                add("expires=%s" % expires)
             if self.secure:
                 add('secure')
             if self.httponly:
@@ -116,7 +119,6 @@ class Morsel(dict):
                                 self.name, repr(self.value))
 
 _c_renames = {
-    "expires" : "expires",
     "path" : "Path",
     "comment" : "Comment",
     "domain" : "Domain",
@@ -124,7 +126,7 @@ _c_renames = {
 }
 _c_valkeys = sorted(_c_renames)
 _c_keys = set(_c_renames)
-_c_keys.update(['secure', 'httponly'])
+_c_keys.update(['expires', 'secure', 'httponly'])
 
 
 
@@ -133,7 +135,7 @@ _c_keys.update(['secure', 'httponly'])
 # parsing
 #
 
-_re_quoted = r'"(?:[^\"]|\.)*"'  # any doublequoted string
+_re_quoted = r'"(?:\\"|.)*?"' # any doublequoted string
 _legal_special_chars = "~!@#$%^&*()_+=-`.?|:/(){}<>'"
 _re_legal_char  = r"[\w\d%s]" % ''.join(map(r'\%s'.__mod__,
                                             _legal_special_chars))
@@ -144,7 +146,7 @@ _rx_cookie = re.compile(
     # =
     + r"\s*=\s*"
     # val
-    + r"(%s|%s*|%s)" % (_re_quoted, _re_legal_char, _re_expires_val)
+    + r"(%s|%s|%s*)" % (_re_quoted, _re_expires_val, _re_legal_char)
 )
 
 _rx_unquote = re.compile(r'\\([0-3][0-7][0-7]|.)')
@@ -173,7 +175,7 @@ _no_escape_special_chars = "!#$%&'*+-.^_`|~/"
 _no_escape_chars = string.ascii_letters + string.digits + \
                    _no_escape_special_chars
 # these chars never need to be quoted
-_escape_noop_chars = _no_escape_chars+':, '
+_escape_noop_chars = _no_escape_chars+': '
 # this is a map used to escape the values
 _escape_map = dict((chr(i), '\\%03o' % i) for i in xrange(256))
 _escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
