@@ -3,11 +3,26 @@ News
 
 .. contents::
 
+1.0.8
+------
+
+* Enhance the req.is_body_readable to always guess GET, HEAD, DELETE and TRACE
+  as unreadable and PUT and POST as readable
+  (`issue 12 <https://bitbucket.org/ianb/webob/issue/12>`_)
+
+* Deny setting req.body or req.body_file to non-empty values for GET, HEAD and
+  other bodiless requests
+
+* Fix running nosetests with arguments on UNIX systems
+  (`issue 11 <https://bitbucket.org/ianb/webob/issue/11>`_)
+
+
+
 1.0.7
 ------
 
 * Fix ``Accept`` header matching for items with zero-quality
-  (`see ticket for details <https://bitbucket.org/ianb/webob/issue/10>`_ )
+  (`issue 10 <https://bitbucket.org/ianb/webob/issue/10>`_)
 
 * Hide password values in ``MultiDict.__repr__``
 
@@ -23,7 +38,7 @@ News
   or this flag is set.
 
 * The two changes above fix a hangup with CherryPy and wsgiref servers
-  (`see ticket for details <https://bitbucket.org/ianb/webob/issue/6>`_).
+  (`issue 6 <https://bitbucket.org/ianb/webob/issue/6>`_)
 
 * ``req.body_file`` is now safer to read directly. For ``GET`` and other similar requests
   it returns an empty ``StringIO`` or ``BytesIO`` object even if the server passed in
@@ -52,8 +67,7 @@ News
   Now it is fixed properly.
 
 * Make sure that req.url and related properties do not unnecessarily escape some chars
-  (``:@&+$``) in the URI path. See also `related ticket
-  <https://bitbucket.org/ianb/webob/issue/5>`_.
+  (``:@&+$``) in the URI path (`issue 5 <https://bitbucket.org/ianb/webob/issue/5>`_)
 
 * Revert some changes from 1.0.3 that have broken backwards compatibility for some apps.
   Getting ``req.body_file`` does not make input stream seekable, but there's a new property
