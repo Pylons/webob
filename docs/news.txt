@@ -6,6 +6,14 @@ News
 1.0.8
 ------
 
+* Escape commas in cookie values (see also:
+  `stdlib Cookie bug <http://bugs.python.org/issue9824>`_)
+
+* Change cookie serialization to more closely match how cookies usually
+  are serialized (unquoted expires, semicolon separators even between morsels)
+
+* Fix some rare cases in cookie parsing
+
 * Enhance the req.is_body_readable to always guess GET, HEAD, DELETE and TRACE
   as unreadable and PUT and POST as readable
   (`issue 12 <https://bitbucket.org/ianb/webob/issue/12>`_)
