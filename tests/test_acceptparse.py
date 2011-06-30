@@ -187,24 +187,19 @@ def test_best_matches_with_fallback():
     assert accept.best_matches('text/html') == ['foo/bar', 'text/html']
 
 def test_accept_match():
-    accept = Accept('Content-Type', 'text/html')
-    #FIXME: Accept._match should be standalone function _match that is
-    # attached as Accept._match during Accept.__init__.
-    assert accept._match('*', 'text/html')
-    assert accept._match('text/html', 'text/html')
-    assert accept._match('TEXT/HTML', 'text/html')
-    assert not accept._match('foo/bar', 'text/html')
+    for mask in ['*', 'text/html', 'TEXT/HTML']:
+        assert 'text/html' in Accept('Content-Type', mask)
+    assert 'text/html' not in Accept('Content-Type', 'foo/bar')
 
 def test_accept_match_lang():
-    accept = Accept('Accept-Language', 'da, en-gb;q=0.8, en;q=0.7')
-    #FIXME: Accept._match_lang should be standalone function _match_lang
-    # that is attached as Accept._match during Accept.__init__.
-    assert accept._match('*', 'da')
-    assert accept._match('da', 'DA')
-    assert accept._match('en', 'en-gb')
-    assert accept._match('en-gb', 'en-gb')
-    assert not accept._match('en-gb', 'fr-fr')
-
+    for mask, lang in [
+        ('*', 'da'),
+        ('da', 'DA'),
+        ('en', 'en-gb'),
+        ('en-gb', 'en-gb'),
+    ]:
+        assert lang in Accept('Accept-Language', mask)
+    assert 'fr-fr' not in Accept('Accept-Language', 'en-gb')
 
 # NilAccept tests
 
