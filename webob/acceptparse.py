@@ -9,13 +9,12 @@ Where the ``q`` parameter is optional.  In theory other parameters
 exists, but this ignores them.
 """
 
-import re
+import re, warnings
 from webob.util import rfc_reference
 from webob.headers import _trans_name as header_to_key
 
 part_re = re.compile(
     r',\s*([^\s;,\n]+)(?:[^,]*?;\s*q=([0-9.]*))?')
-
 
 
 
@@ -41,6 +40,16 @@ def parse_accept(value):
                 quality = 1
         result.append((name, quality))
     return result
+
+def _warn_first_match():
+    # TODO: change to DeprecationWarning in version 1.1
+    # TODO: raise exc in in version 1.2
+    # TODO: remove .first_match in version 1.3
+    warnings.warn(
+        "Use best_match instead",
+        PendingDeprecationWarning,
+        stacklevel=3,
+    )
 
 class Accept(object):
     """
@@ -131,11 +140,12 @@ class Accept(object):
 
     def first_match(self, offers):
         """
+        DEPRECATED
         Returns the first allowed offered type. Ignores quality.
         Returns the first offered type if nothing else matches; or if you include None
         at the end of the match list then that will be returned.
         """
-        # FIXME: this method is a bad idea and should be deprecated
+        _warn_first_match()
         if not offers:
             raise ValueError("You must pass in a non-empty list")
         for offer in offers:
@@ -253,6 +263,7 @@ class NilAccept(object):
         return 0
 
     def first_match(self, offers):
+        _warn_first_match()
         return offers[0]
 
     def best_match(self, offers, default_match=None):
@@ -356,4 +367,6 @@ def accept_property(header, rfc_section,
     def fdel(req):
         del req.environ[key]
     return property(fget, fset, fdel, doc)
+
+
 
