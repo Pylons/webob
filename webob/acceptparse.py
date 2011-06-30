@@ -88,7 +88,6 @@ class Accept(object):
             result.append(mask)
         return ', '.join(result)
 
-    # FIXME: should subtraction be allowed?
     def __add__(self, other, reversed=False):
         if isinstance(other, Accept):
             other = other.header_value
@@ -132,11 +131,11 @@ class Accept(object):
         Return the quality of the given offer.  Returns None if there
         is no match (not 0).
         """
-        # FIXME: this does not return best quality, just quality of the first match
-        for mask, quality in self._parsed:
+        bestq = 0
+        for mask, q in self._parsed:
             if self._match(mask, offer):
-                return quality * modifier
-        return None
+                bestq = max(bestq, q * modifier)
+        return bestq or None
 
     def first_match(self, offers):
         """
