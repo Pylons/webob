@@ -294,7 +294,7 @@ To do that we'll write a `decorator <http://www.ddj.com/web-development/18440607
 
 **line 5**: We create a request.
 
-**line 6**: Here we catch any ``webob.exc.HTTPException`` exceptions.  This is so you can do ``raise webob.exc.HTTPNotFound()`` in your function (or on Python 2.4, ``raise webob.exc.HTTPNotFound().exception``).  These exceptions are themselves WSGI applications.
+**line 6**: Here we catch any ``webob.exc.HTTPException`` exceptions.  This is so you can do ``raise webob.exc.HTTPNotFound()`` in your function.  These exceptions are themselves WSGI applications.
 
 **line 7**: We call the function with the request object, any any variables in ``req.urlvars``.  And we get back a response.
 

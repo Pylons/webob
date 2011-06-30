@@ -286,16 +286,13 @@ typical example is:
     # or:
     response = HTTPMovedPermanently(location=new_url)
 
-These are not exceptions unless you are using Python 2.5+, because
-they are new-style classes which are not allowed as exceptions until
-Python 2.5.  To get an exception object use ``response.exception``.
 You can use this like:
 
 .. code-block:: python
 
     try:
         ... stuff ...
-        raise HTTPNotFound('No such resource').exception
+        raise HTTPNotFound('No such resource')
     except HTTPException, e:
         return e(environ, start_response)
 

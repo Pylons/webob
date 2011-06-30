@@ -159,7 +159,7 @@ All this together makes:
                 except AttributeError:
                     # If the method wasn't found there must be
                     # something wrong with the request:
-                    raise exc.HTTPBadRequest('No such action %r' % action).exception
+                    raise exc.HTTPBadRequest('No such action %r' % action)
                 resp = meth(req, page)
             except exc.HTTPException, e:
                 # The exception object itself is a WSGI application/response:
@@ -195,7 +195,7 @@ Here's the method to figure out the filename:
             if path.endswith('/'):
                 path += 'index'
             if not path.startswith(self.storage_dir):
-                raise exc.HTTPBadRequest("Bad path").exception
+                raise exc.HTTPBadRequest("Bad path")
             path += '.html'
             return Page(path)
 
@@ -206,16 +206,7 @@ never really be sure.  By using ``os.path.normpath`` we eliminate
 these, and then we make absolutely sure that the resulting path is
 under our ``self.storage_dir`` with ``if not
 path.startswith(self.storage_dir): raise exc.HTTPBadRequest("Bad
-path").exception``.
-
-.. note::
-
-    ``exc.HTTPBadRequest("Bad path")`` is a ``webob.Response`` object.
-    This is a new-style class, so you can't raise it in Python 2.4 or
-    under (only old-style classes work).  The attribute ``.exception``
-    can actually be raised.  The exception object is *also* a WSGI
-    application, though it doesn't have attributes like
-    ``.content_type``, etc.
+path")``.
 
 Here's the actual domain object:
 
@@ -239,7 +230,7 @@ Here's the actual domain object:
             content = self.full_content
             match = re.search(r'<title>(.*?)</title>', content, re.I|re.S)
             return match.group(1)
-    
+
         @property
         def full_content(self):
             f = open(self.filename, 'rb')
@@ -247,7 +238,7 @@ Here's the actual domain object:
                 return f.read()
             finally:
                 f.close()
-    
+
         @property
         def content(self):
             if not self.exists:
@@ -272,7 +263,7 @@ Here's the actual domain object:
             f = open(self.filename, 'wb')
             f.write(new_content)
             f.close()
-            
+
 Basically it provides a ``.title`` attribute, a ``.content``
 attribute, the ``.mtime`` (last modified time), and the page can exist
 or not (giving appropriate guesses for title and content when the page
@@ -460,7 +451,7 @@ The edit screen will be implemented in the method
     <form action="{{req.path_url}}" method="POST">
      <input type="hidden" name="mtime" value="{{page.mtime}}">
      Title: <input type="text" name="title" style="width: 70%" value="{{page.title}}"><br>
-     Content: <input type="submit" value="Save"> 
+     Content: <input type="submit" value="Save">
      <a href="{{req.path_url}}">Cancel</a>
        <br>
      <textarea name="content" style="width: 100%; height: 75%" rows="40">{{page.content}}</textarea>
@@ -481,7 +472,7 @@ The edit screen will be implemented in the method
                 page=page, req=req)
             return Response(text)
 
-As you can see, all the action here is in the template.  
+As you can see, all the action here is in the template.
 
 In ``<form action="{{req.path_url}}" method="POST">`` we submit to
 ``req.path_url``; that's everything *but* ``?action=edit``.  So we are
@@ -644,7 +635,7 @@ And then in ``action_view_GET``:
 
 ``req.cookies`` is just a dictionary, and we also delete the cookie if
 it is present (so the message doesn't keep getting set).  The
-conditional response stuff only applies when there isn't any 
+conditional response stuff only applies when there isn't any
 message, as messages are private.  Another alternative would be to
 display the message with Javascript, like::
 
@@ -659,7 +650,7 @@ display the message with Javascript, like::
         }
         return null;
     }
-    
+
     function createCookie(name, value, days) {
         if (days) {
             var date = new Date();

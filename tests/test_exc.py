@@ -61,10 +61,7 @@ from nose.tools import eq_, ok_, assert_equal, assert_raises
 @wsgify
 def method_not_allowed_app(req):
     if req.method != 'GET':
-        if sys.version_info > (2,5):
-            raise HTTPMethodNotAllowed()
-        else:
-            raise HTTPMethodNotAllowed().exception
+        raise HTTPMethodNotAllowed()
     return 'hello!'
 
 def test_noescape_null():
