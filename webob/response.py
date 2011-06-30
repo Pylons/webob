@@ -425,8 +425,8 @@ class Response(object):
     #
 
     allow = list_header('Allow', '14.7')
-    ## FIXME: I realize response.vary += 'something' won't work.  It should.
-    ## Maybe for all listy headers.
+    # TODO: (maybe) support response.vary += 'something'
+    # TODO: same thing for all listy headers
     vary = list_header('Vary', '14.44')
 
     content_length = converter(
@@ -464,7 +464,7 @@ class Response(object):
 
     server = header_getter('Server', '14.38')
 
-    # FIXME: the standard allows this to be a list of challenges
+    # TODO: the standard allows this to be a list of challenges
     www_authenticate = converter(
         header_getter('WWW-Authenticate', '14.47'),
         parse_auth, serialize_auth,
@@ -966,7 +966,7 @@ class Response(object):
             and self.content_length is not None
         ):
             content_range = req.range.content_range(self.content_length)
-            # FIXME: we should support If-Range
+            # TODO: add support for If-Range
             if content_range is None:
                 iter_close(self.app_iter)
                 body = "Requested range not satisfiable: %s" % req.range

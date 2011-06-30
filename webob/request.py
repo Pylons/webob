@@ -1292,13 +1292,12 @@ def _encode_multipart(vars, content_type):
     lines = []
     for name, value in vars.iteritems():
         lines.append('--%s' % boundary)
-        ## FIXME: encode the name like this?
         assert name is not None, 'Value associated with no name: %r' % value
         disp = 'Content-Disposition: form-data; name="%s"' % name
         if getattr(value, 'filename', None):
             disp += '; filename="%s"' % value.filename
         lines.append(disp)
-        ## FIXME: should handle value.disposition_options
+        # TODO: should handle value.disposition_options
         if getattr(value, 'type', None):
             ct = 'Content-type: %s' % value.type
             if value.type_options:

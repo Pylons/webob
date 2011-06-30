@@ -439,8 +439,6 @@ class HTTPPartialContent(HTTPOk):
     code = 206
     title = 'Partial Content'
 
-## FIXME: add 207 Multi-Status (but it's complicated)
-
 ############################################################
 ## 3xx redirection
 ############################################################
@@ -557,7 +555,7 @@ class HTTPNotModified(HTTPRedirection):
 
     code: 304, title: Not Modified
     """
-    # FIXME: this should include a date or etag header
+    # TODO: this should include a date or etag header
     code = 304
     title = 'Not Modified'
     empty_body = True
