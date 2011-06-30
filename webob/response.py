@@ -209,6 +209,7 @@ class Response(object):
     status_int = property(_status_int__get, _status_int__set,
                           doc=_status_int__get.__doc__)
 
+    # TODO: remove in version 1.2
     status_code = deprecated_property(
         status_int, 'status_code', 'use .status or .status_int instead',
         warning=False)

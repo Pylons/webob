@@ -602,13 +602,13 @@ class BaseRequest(object):
                                 decode_keys=self.decode_param_names)
         return vars
 
-
+    # TODO: remove in version 1.2
     str_postvars = deprecated_property(str_POST, 'str_postvars',
-                                       'use str_POST instead')
-    postvars = deprecated_property(POST, 'postvars', 'use POST instead')
+                                       'use str_POST instead', warning=False)
+    postvars = deprecated_property(POST, 'postvars', 'use POST instead', warning=False)
     str_queryvars = deprecated_property(str_GET, 'str_queryvars',
-                                        'use str_GET instead')
-    queryvars = deprecated_property(GET, 'queryvars', 'use GET instead')
+                                        'use str_GET instead', warning=False)
+    queryvars = deprecated_property(GET, 'queryvars', 'use GET instead', warning=False)
 
 
     @property
