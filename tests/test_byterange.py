@@ -6,8 +6,15 @@ from nose.tools import assert_true, assert_false, assert_equal, assert_raises
 
 def test_satisfiable():
     range = Range( ((0,99),) )
-    assert_true( range.satisfiable(100) )
-    assert_false( range.satisfiable(99) )
+    assert_true(range.satisfiable(100))
+    assert_true(range.satisfiable(99))
+
+def test_not_satisfiable():
+    range = Range.parse('bytes=-100')
+    assert_false(range.satisfiable(50))
+    range = Range.parse('bytes=100-')
+    assert_false(range.satisfiable(50))
+
 
 def test_range_for_length():
     range = Range( ((0,99), (100,199) ) )
