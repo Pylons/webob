@@ -1298,12 +1298,7 @@ class BaseRequestTests(unittest.TestCase):
         req = Request.blank('/')
         self.assertRaises(AttributeError, delattr, req, 'some_attr')
 
-    # TODO: webob/request.py:1143
-    # the only known way to reach this line is by experimentation
-
-
 class RequestTests_functional(unittest.TestCase):
-
     def test_gets(self):
         from webtest import TestApp
         app = TestApp(simpleapp)
@@ -2336,14 +2331,6 @@ class FakeCGIBodyTests(unittest.TestCase):
             re.sub(r'\b0x[0-9a-f]+\b', '<whereitsat>', repr(body)),
             "<FakeCGIBody at <whereitsat> viewing {'bananas': 'ba...nas'} at position 1>",
         )
-
-    def test_seek_tell(self):
-        from webob.request import FakeCGIBody
-        body = FakeCGIBody({'bananas': 'bananas'}, 'multipart/form-data; boundary=foobar')
-        self.assertEqual(body.tell(), 0)
-        body.seek(1)
-        self.assertEqual(body.tell(), 1)
-        self.assertRaises(IOError, body.seek, 0, 2)
 
     def test_iter(self):
         from webob.request import FakeCGIBody

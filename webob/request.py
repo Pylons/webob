@@ -88,7 +88,8 @@ class BaseRequest(object):
 
     def _body_file__set(self, value):
         if isinstance(value, str):
-            # FIXME: change to DeprecationWarning in 1.1, raise exc in 1.2
+            # TODO: change to DeprecationWarning in version 1.1
+            # TODO: raise exc in version 1.2
             warnings.warn(
                 "Please use req.body = 'str' or req.body_file = fileobj",
                 PendingDeprecationWarning,
@@ -1218,15 +1219,6 @@ class FakeCGIBody(object):
         self.content_type = content_type
         self._body = None
         self.position = 0
-
-    def seek(self, pos, rel=0):
-        ## FIXME: this isn't strictly necessary, but it's important
-        ## when modifying POST parameters.  I wish there was a better
-        ## way to do this.
-        if rel != 0:
-            raise IOError
-        self._body = None
-        self.position = pos
 
     def tell(self):
         return self.position
