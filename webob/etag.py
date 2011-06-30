@@ -142,10 +142,9 @@ class ETagMatcher(object):
     parse = classmethod(parse)
 
     def __str__(self):
-        # FIXME: should I quote these?
-        items = list(self.etags)
+        items = map('"%s"'.__mod__, self.etags)
         for weak in self.weak_etags:
-            items.append('W/%s' % weak)
+            items.append('W/"%s"' % weak)
         return ', '.join(items)
 
 class IfRange(object):

@@ -284,7 +284,7 @@ etag match::
     >>> req = Request.blank('/')
     >>> req.if_range = 'asdf'
     >>> req.if_range
-    <IfRange etag=asdf, date=*>
+    <IfRange etag="asdf", date=*>
     >>> from webob import Response
     >>> res = Response()
     >>> res.etag = 'asdf'
