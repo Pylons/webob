@@ -171,14 +171,14 @@ class deprecated_property(object):
 ########################
 
 
-# FIXME: weak entity tags are not supported, would need special class
 def parse_etag_response(value):
     """
+    Parse a response ETag. Weak ETags are dropped.
     See:
         * http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.19
         * http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.11
     """
-    if value is not None:
+    if value and not value.startswith('W/'):
         unquote_match = QUOTES_RE.match(value)
         if unquote_match is not None:
             value = unquote_match.group(1)

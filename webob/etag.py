@@ -77,7 +77,6 @@ class _NoETag(object):
 NoETag = _NoETag()
 
 class ETagMatcher(object):
-
     """
     Represents an ETag request.  Supports containment to see if an
     ETag matches.  You can also use
@@ -93,6 +92,7 @@ class ETagMatcher(object):
     def __contains__(self, other):
         return other in self.etags or other in self.weak_etags
 
+    # TODO: deprecate weak_match
     def weak_match(self, other):
         if other.lower().startswith('w/'):
             other = other[2:]
@@ -102,6 +102,7 @@ class ETagMatcher(object):
         return '<ETag %s>' % (
             ' or '.join(self.etags))
 
+    @classmethod
     def parse(cls, value):
         """
         Parse this from a header value
@@ -139,7 +140,6 @@ class ETagMatcher(object):
                     results.append(etag)
             value = rest
         return cls(results, weak_results)
-    parse = classmethod(parse)
 
     def __str__(self):
         items = map('"%s"'.__mod__, self.etags)
