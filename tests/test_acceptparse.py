@@ -245,9 +245,7 @@ def test_nil_radd_masterclass():
 
 def test_nil_contains():
     nilaccept = NilAccept('Connection-Close')
-    # NilAccept.__contains__ always returns True
-    assert '' in nilaccept
-    assert 'dummy' in nilaccept
+    assert 'anything' in nilaccept
 
 def test_nil_first_match():
     nilaccept = NilAccept('Connection-Close')
@@ -270,9 +268,7 @@ def test_nil_best_match():
 
 # NoAccept tests
 def test_noaccept_contains():
-    noaccept = NoAccept('Connection-Close')
-    # NoAccept.__contains__ always returns False
-    assert 'text/plain' not in noaccept
+    assert 'text/plain' not in NoAccept('Connection-Close')
 
 
 # MIMEAccept tests

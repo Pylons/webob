@@ -78,41 +78,17 @@ class AnyETagTests(unittest.TestCase):
         etag = self._makeOne()
         self.assertEqual(etag.__nonzero__(), False)
 
-    def test___contains__None(self):
-        etag = self._makeOne()
-        self.assertEqual(etag.__contains__(None), True)
-
-    def test___contains__empty_list(self):
-        etag = self._makeOne()
-        self.assertEqual(etag.__contains__([]), True)
-
-    def test___contains__empty_string(self):
-        etag = self._makeOne()
-        self.assertEqual(etag.__contains__(''), True)
-
     def test___contains__something(self):
         etag = self._makeOne()
-        self.assertEqual(etag.__contains__('something'), True)
-
-    def test_weak_match_None(self):
-        etag = self._makeOne()
-        self.assertEqual(etag.weak_match(None), True)
-
-    def test_weak_match_empty_list(self):
-        etag = self._makeOne()
-        self.assertEqual(etag.weak_match([]), True)
-
-    def test_weak_match_empty_string(self):
-        etag = self._makeOne()
-        self.assertEqual(etag.weak_match(''), True)
+        self.assertEqual('anything' in etag, True)
 
     def test_weak_match_something(self):
         etag = self._makeOne()
-        self.assertEqual(etag.weak_match('something'), True)
+        self.assertEqual(etag.weak_match('anything'), True)
 
     def test___str__(self):
         etag = self._makeOne()
-        self.assertEqual(etag.__str__(), '*')
+        self.assertEqual(str(etag), '*')
 
 class NoETagTests(unittest.TestCase):
     def _getTargetClass(self):
@@ -130,41 +106,21 @@ class NoETagTests(unittest.TestCase):
         etag = self._makeOne()
         self.assertEqual(etag.__nonzero__(), False)
 
-    def test___contains__None(self):
-        etag = self._makeOne()
-        self.assertEqual(etag.__contains__(None), False)
-
-    def test___contains__empty_list(self):
-        etag = self._makeOne()
-        self.assertEqual(etag.__contains__([]), False)
-
-    def test___contains__empty_string(self):
-        etag = self._makeOne()
-        self.assertEqual(etag.__contains__(''), False)
-
     def test___contains__something(self):
         etag = self._makeOne()
-        self.assertEqual(etag.__contains__('something'), False)
+        assert 'anything' not in etag
 
     def test_weak_match_None(self):
         etag = self._makeOne()
         self.assertEqual(etag.weak_match(None), False)
 
-    def test_weak_match_empty_list(self):
-        etag = self._makeOne()
-        self.assertEqual(etag.weak_match([]), False)
-
-    def test_weak_match_empty_string(self):
-        etag = self._makeOne()
-        self.assertEqual(etag.weak_match(''), False)
-
     def test_weak_match_something(self):
         etag = self._makeOne()
-        self.assertEqual(etag.weak_match('something'), False)
+        assert not etag.weak_match('anything')
 
     def test___str__(self):
         etag = self._makeOne()
-        self.assertEqual(etag.__str__(), '')
+        self.assertEqual(str(etag), '')
 
 class ETagMatcherTests(unittest.TestCase):
     def _getTargetClass(self):
@@ -335,15 +291,15 @@ class IfRangeTests(unittest.TestCase):
 
     def test___str__(self):
         ir = self._makeOne()
-        self.assertEqual(ir.__str__(), '')
+        self.assertEqual(str(ir), '')
 
     def test___str__etag(self):
         ir = self._makeOne(etag='ETAG', date='Fri, 09 Nov 2001 01:08:47 -0000')
-        self.assertEqual(ir.__str__(), 'ETAG')
+        self.assertEqual(str(ir), 'ETAG')
 
     def test___str__date(self):
         ir = self._makeOne(date='Fri, 09 Nov 2001 01:08:47 -0000')
-        self.assertEqual(ir.__str__(), 'Fri, 09 Nov 2001 01:08:47 -0000')
+        self.assertEqual(str(ir), 'Fri, 09 Nov 2001 01:08:47 -0000')
 
     def test_match(self):
         ir = self._makeOne()
@@ -428,7 +384,7 @@ class NoIfRangeTests(unittest.TestCase):
 
     def test___str__(self):
         ir = self._makeOne()
-        self.assertEquals(ir.__str__(), '')
+        self.assertEquals(str(ir), '')
 
     def test___nonzero__(self):
         ir = self._makeOne()
