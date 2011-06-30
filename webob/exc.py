@@ -315,13 +315,13 @@ ${body}''')
         return resp(environ, start_response)
 
     def __call__(self, environ, start_response):
-        # FIXME: ensure HEAD and GET response headers are identical
+        if self.body or self.empty_body:
+            app_iter = Response.__call__(self, environ, start_response)
+        else:
+            app_iter = self.generate_response(environ, start_response)
         if environ['REQUEST_METHOD'] == 'HEAD':
-            start_response(self.status, self.headerlist)
-            return []
-        if not self.body and not self.empty_body:
-            return self.generate_response(environ, start_response)
-        return Response.__call__(self, environ, start_response)
+            app_iter = []
+        return app_iter
 
     @property
     def wsgi_response(self):
