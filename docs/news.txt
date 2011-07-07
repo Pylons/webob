@@ -3,6 +3,31 @@ News
 
 .. contents::
 
+1.1beta1
+---------
+
+* We have acquired the webob.org domain, docs are now hosted at `docs.webob.org
+  <http://docs.webob.org/>`_
+
+* Make ``accept.quality(..)`` return best quality match, not first match.
+
+* Fix ``Range.satisfiable(..)`` edge cases.
+
+* Make sure ``WSGIHTTPException`` instances return the same headers for ``HEAD``
+  and ``GET`` requests.
+
+* Drop Python 2.4 support
+
+* Deprecate ``HTTPException.exception`` (warning on use).
+
+* Deprecate ``accept.first_match(..)`` (warning on use).
+  Use ``.best_match(..)`` instead.
+
+* Complete deprecation of ``req.[str_]{post|query}vars`` properties
+  (exception on use).
+
+* Remove ``FakeCGIBody.seek`` hack (no longer necessary).
+
 1.0.8
 ------
 
