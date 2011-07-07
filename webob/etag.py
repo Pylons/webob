@@ -11,7 +11,8 @@ __all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'NoIfRange', 'etag_pro
 
 
 def etag_property(key, default, rfc_section):
-    doc = "Gets and sets the %r key in the environment." % key
+    header = key[5:].title().replace('_', '-')
+    doc = "Gets and sets the ``%s`` header." % header
     doc += rfc_reference(key, rfc_section)
     doc += "  Converts it as a Etag."
     def fget(req):

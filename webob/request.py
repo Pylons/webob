@@ -553,7 +553,7 @@ class BaseRequest(object):
     @property
     def POST(self):
         """
-        Like ``.str_POST``, but may decode values and keys
+        Like ``.str_POST``, but decodes values and keys
         """
         vars = self.str_POST
         vars = UnicodeMultiDict(vars, encoding=self.charset,
@@ -595,7 +595,7 @@ class BaseRequest(object):
     @property
     def GET(self):
         """
-        Like ``.str_GET``, but may decode values and keys
+        Like ``.str_GET``, but decodes values and keys
         """
         vars = self.str_GET
         vars = UnicodeMultiDict(vars, encoding=self.charset,
@@ -624,7 +624,7 @@ class BaseRequest(object):
     @property
     def params(self):
         """
-        Like ``.str_params``, but may decode values and keys
+        Like ``.str_params``, but decodes values and keys
         """
         params = self.str_params
         params = UnicodeMultiDict(params, encoding=self.charset,
@@ -655,7 +655,7 @@ class BaseRequest(object):
     @property
     def cookies(self):
         """
-        Like ``.str_cookies``, but may decode values and keys
+        Like ``.str_cookies``, but decodes values and keys
         """
         vars = self.str_cookies
         vars = UnicodeMultiDict(vars, encoding=self.charset,
@@ -819,7 +819,7 @@ class BaseRequest(object):
                 del self.environ[key]
 
 
-    accept = accept_property('Accept', '14.1', MIMEAccept, MIMENilAccept, 'MIME Accept')
+    accept = accept_property('Accept', '14.1', MIMEAccept, MIMENilAccept)
     accept_charset = accept_property('Accept-Charset', '14.2')
     accept_encoding = accept_property('Accept-Encoding', '14.3', NilClass=NoAccept)
     accept_language = accept_property('Accept-Language', '14.4')
@@ -832,7 +832,7 @@ class BaseRequest(object):
 
     def _cache_control__get(self):
         """
-        Get/set/modify the Cache-Control header (section `14.9
+        Get/set/modify the Cache-Control header (`HTTP spec section 14.9
         <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9>`_)
         """
         env = self.environ

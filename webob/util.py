@@ -3,9 +3,9 @@ def rfc_reference(header, section):
         return ''
     major_section = section.split('.')[0]
     link = 'http://www.w3.org/Protocols/rfc2616/rfc2616-sec%s.html#sec%s' % (major_section, section)
-    if header.startswith('HTTP_'):
-        header = header[5:].title().replace('_', '-')
-    return " For more information on %s see `section %s <%s>`_." % (header, section, link)
+    #if header.startswith('HTTP_'):
+    #    header = header[5:].title().replace('_', '-')
+    return "(`HTTP spec section %s <%s>`_)" % (section, link)
 
 status_reasons = {
     # Status Codes

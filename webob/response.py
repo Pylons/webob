@@ -695,7 +695,7 @@ class Response(object):
 
     def _cache_control__get(self):
         """
-        Get/set/modify the Cache-Control header (section `14.9
+        Get/set/modify the Cache-Control header (`HTTP spec section 14.9
         <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9>`_)
         """
         value = self.headers.get('cache-control', '')

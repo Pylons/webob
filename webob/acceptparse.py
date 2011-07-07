@@ -346,12 +346,14 @@ def _check_offer(offer):
 
 
 def accept_property(header, rfc_section,
-    AcceptClass=Accept, NilClass=NilAccept, convert_name='accept header'
+    AcceptClass=Accept, NilClass=NilAccept
 ):
     key = header_to_key(header)
-    doc = "Gets and sets the %r key in the environment." % key
-    doc += rfc_reference(key, rfc_section)
-    doc += "  Converts it as a %s." % convert_name
+    doc = "Gets and sets and deletes the ``%s`` header %s." % (
+        header,
+        rfc_reference(header, rfc_section)
+    )
+    #doc += "  Converts it as a %s." % convert_name
     def fget(req):
         value = req.environ.get(key)
         if not value:

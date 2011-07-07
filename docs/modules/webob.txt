@@ -1,46 +1,58 @@
 :mod:`webob` -- Request/Response objects
 ========================================
 
-.. automodule:: webob
-
 Request
 -------
 
-.. autoclass:: Request
-
-.. automodule:: webob.acceptparse
-.. autoclass:: Accept
-.. autoclass:: MIMEAccept
-
-.. automodule:: webob.byterange
-.. autoclass:: Range
-
-.. automodule:: webob.cachecontrol
-.. autoclass:: CacheControl
-
-.. automodule:: webob.headers
-.. autoclass:: EnvironHeaders
-
-.. automodule:: webob.etag
-.. autoclass:: ETagMatcher
-.. autoclass:: IfRange
-
+.. autoclass:: webob.request.BaseRequest
+   :members:
 
 Response
 --------
 
-.. autoclass:: webob.Response
+.. autoclass:: webob.response.Response
+   :members:
+.. autoclass:: webob.response.AppIterRange
+   :members:
 
-.. autoclass:: webob.byterange.ContentRange
 
+Headers
+-------
+
+Accept-*
+~~~~~~~~
+
+.. automodule:: webob.acceptparse
+.. autoclass:: Accept
+   :members:
+.. autoclass:: MIMEAccept
+   :members:
+
+Cache-Control
+~~~~~~~~~~~~~
 .. autoclass:: webob.cachecontrol.CacheControl
+   :members:
 
-.. automodule:: webob.headers
-.. autoclass:: ResponseHeaders
+Range and related headers
+~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autoclass:: webob.byterange.Range
+   :members:
+.. autoclass:: webob.byterange.ContentRange
+   :members:
+.. autoclass:: webob.etag.IfRange
+   :members:
+
+ETag
+~~~~
+.. autoclass:: webob.etag.ETagMatcher
+   :members:
 
 
-Misc Functions
---------------
+
+
+
+Misc Functions and Internals
+----------------------------
 
 .. autofunction:: webob.html_escape
 
@@ -54,22 +66,30 @@ Misc Functions
    .. autoclass:: webob.month
    .. autoclass:: webob.year
 
-.. autoclass:: webob.response.AppIterRange
+.. autoclass:: webob.headers.ResponseHeaders
+   :members:
+.. autoclass:: webob.headers.EnvironHeaders
+   :members:
 
 .. automodule:: webob.multidict
 .. autoclass:: MultiDict
+   :members:
 .. autoclass:: UnicodeMultiDict
+   :members:
 .. autoclass:: NestedMultiDict
+   :members:
 .. autoclass:: NoVars
+   :members:
 
-.. automodule:: webob.cachecontrol
 .. autoclass:: webob.cachecontrol.UpdateDict
+   :members:
 
 
-Descriptors
------------
+.. comment:
+   Descriptors
+   -----------
 
-.. autoclass:: webob.descriptors.environ_getter
-.. autoclass:: webob.descriptors.header_getter
-.. autoclass:: webob.descriptors.converter
-.. autoclass:: webob.descriptors.deprecated_property
+   .. autoclass:: webob.descriptors.environ_getter
+   .. autoclass:: webob.descriptors.header_getter
+   .. autoclass:: webob.descriptors.converter
+   .. autoclass:: webob.descriptors.deprecated_property

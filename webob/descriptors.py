@@ -6,6 +6,7 @@ from webob.byterange import Range, ContentRange
 from webob.etag import IfRange, NoIfRange
 from webob.datetime_utils import parse_date, serialize_date
 from webob.util import rfc_reference
+from webob.headers import _trans_key
 
 
 CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
@@ -16,8 +17,14 @@ SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
 _not_given = object()
 
 def environ_getter(key, default=_not_given, rfc_section=None):
-    doc = "Gets and sets the %r key in the environment." % key
-    doc += rfc_reference(key, rfc_section)
+    if rfc_section:
+        header = _trans_key(key)
+        doc = "Gets and sets the ``%s`` header %s." % (
+            header,
+            rfc_reference(header, rfc_section)
+        )
+    else:
+        doc = "Gets and sets the ``%s`` key in the environment." % key
     if default is _not_given:
         def fget(req):
             return req.environ[key]
@@ -47,8 +54,10 @@ def upath_property(key):
 
 
 def header_getter(header, rfc_section):
-    doc = "Gets and sets and deletes the %s header." % header
-    doc += rfc_reference(header, rfc_section)
+    doc = "Gets and sets and deletes the ``%s`` header %s." % (
+        header,
+        rfc_reference(header, rfc_section)
+    )
     key = header.lower()
 
     def fget(r):
@@ -76,7 +85,7 @@ def header_getter(header, rfc_section):
 
 def converter(prop, parse, serialize, convert_name=None):
     assert isinstance(prop, property)
-    convert_name = convert_name or "%r and %r" % (parse.__name__,
+    convert_name = convert_name or "``%s`` and ``%s``" % (parse.__name__,
                                                   serialize.__name__)
     doc = prop.__doc__ or ''
     doc += "  Converts it using %s." % convert_name
