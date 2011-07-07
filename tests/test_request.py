@@ -1619,34 +1619,6 @@ class RequestTests_functional(unittest.TestCase):
         r = Request({'a':1})
         self.assert_('unicode_errors' not in r.__dict__)
 
-    def test_charset_deprecation(self):
-        # Any class that inherits from BaseRequest cannot define a
-        # default_charset attribute.
-        # Any class that inherits from BaseRequest cannot define a
-        # charset attr that is instance of str
-        from webob import BaseRequest
-        from webob.request import AdhocAttrMixin
-        class NewRequest(BaseRequest):
-            default_charset = 'utf-8'
-            def __init__(self, environ, **kw):
-                super(NewRequest, self).__init__(environ, **kw)
-        self.assertRaises(DeprecationWarning, NewRequest, {'a':1})
-        class NewRequest(BaseRequest):
-            charset = 'utf-8'
-            def __init__(self, environ, **kw):
-                super(NewRequest, self).__init__(environ, **kw)
-        self.assertRaises(DeprecationWarning, NewRequest, {'a':1})
-        class NewRequest(AdhocAttrMixin, BaseRequest):
-            default_charset = 'utf-8'
-            def __init__(self, environ, **kw):
-                super(NewRequest, self).__init__(environ, **kw)
-        self.assertRaises(DeprecationWarning, NewRequest, {'a':1})
-        class NewRequest(AdhocAttrMixin, BaseRequest):
-            charset = 'utf-8'
-            def __init__(self, environ, **kw):
-                super(NewRequest, self).__init__(environ, **kw)
-        self.assertRaises(DeprecationWarning, NewRequest, {'a':1})
-
     def test_unexpected_kw(self):
         # Passed an attr in kw that does not exist in the class, should
         # raise an error

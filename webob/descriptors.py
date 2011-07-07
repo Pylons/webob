@@ -1,4 +1,3 @@
-import warnings
 import re
 from datetime import datetime, date
 
@@ -127,42 +126,28 @@ class deprecated_property(object):
     """
     Wraps a descriptor, with a deprecation warning or error
     """
-    def __init__(self, descriptor, attr, message, warning=True):
-        self.descriptor = descriptor
+    def __init__(self, attr, message):
         self.attr = attr
         self.message = message
-        self.warning = warning
 
     def __get__(self, obj, type=None):
         if obj is None:
             return self
         self.warn()
-        return self.descriptor.__get__(obj, type)
 
     def __set__(self, obj, value):
         self.warn()
-        self.descriptor.__set__(obj, value)
 
     def __delete__(self, obj):
         self.warn()
-        self.descriptor.__delete__(obj)
 
     def __repr__(self):
-        return '<Deprecated attribute %s: %r>' % (
-            self.attr,
-            self.descriptor)
+        return '<Deprecated attribute %s>' % self.attr
 
     def warn(self):
-        if not self.warning:
-            raise DeprecationWarning(
-                'The attribute %s is deprecated: %s' % (self.attr, self.message))
-        else:
-            warnings.warn(
-                'The attribute %s is deprecated: %s' % (self.attr, self.message),
-                DeprecationWarning,
-                stacklevel=3)
-
-
+        raise DeprecationWarning('The attribute %s is deprecated: %s'
+            % (self.attr, self.message)
+        )
 
 
 

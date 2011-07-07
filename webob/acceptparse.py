@@ -9,8 +9,8 @@ Where the ``q`` parameter is optional.  In theory other parameters
 exists, but this ignores them.
 """
 
-import re, warnings
-from webob.util import header_docstring
+import re
+from webob.util import header_docstring, warn_deprecation
 from webob.headers import _trans_name as header_to_key
 
 part_re = re.compile(
@@ -42,14 +42,8 @@ def parse_accept(value):
     return result
 
 def _warn_first_match():
-    # TODO: change to DeprecationWarning in version 1.1
-    # TODO: raise exc in in version 1.2
     # TODO: remove .first_match in version 1.3
-    warnings.warn(
-        "Use best_match instead",
-        PendingDeprecationWarning,
-        stacklevel=3,
-    )
+    warn_deprecation("Use best_match instead", '1.2', 3)
 
 class Accept(object):
     """

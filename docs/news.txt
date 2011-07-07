@@ -9,7 +9,7 @@ News
 * We have acquired the webob.org domain, docs are now hosted at `docs.webob.org
   <http://docs.webob.org/>`_
 
-* Make ``accept.quality(..)`` return best quality match, not first match.
+* Make ``accept.quality(..)`` return best match quality, not first match quality.
 
 * Fix ``Range.satisfiable(..)`` edge cases.
 

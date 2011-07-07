@@ -165,7 +165,7 @@ import sys
 import types
 from string import Template
 from webob import Response, Request, html_escape
-from webob.descriptors import deprecated_property
+from webob.util import warn_deprecation
 
 tag_re = re.compile(r'<.*?>', re.S)
 br_re = re.compile(r'<br.*?>', re.I|re.S)
@@ -197,12 +197,11 @@ class HTTPException(Exception):
     def __call__(self, environ, start_response):
         return self.wsgi_response(environ, start_response)
 
-    # TODO: add warning=False in version 1.1
-    # TODO: remove in version 1.2
+    # TODO: remove in version 1.3
     @property
     def exception(self):
+        warn_deprecation("Raise HTTP exceptions directly", '1.2', 2)
         return self
-    exception = deprecated_property(exception, 'exception', "Raise HTTP exceptions directly")
 
 class WSGIHTTPException(Response, HTTPException):
 

@@ -1,4 +1,4 @@
-import sys, tempfile, warnings
+import sys, tempfile
 import urllib, urlparse, cgi
 if sys.version >= '2.7':
     from io import BytesIO as StringIO # pragma nocover
@@ -14,6 +14,7 @@ from webob.etag import etag_property, AnyETag, NoETag
 from webob.descriptors import *
 from webob.datetime_utils import *
 from webob.cookies import Cookie
+from webob.util import warn_deprecation
 
 __all__ = ['BaseRequest', 'Request']
 
@@ -51,17 +52,12 @@ class BaseRequest(object):
         d['environ'] = environ
         if charset is not NoDefault:
             self.charset = charset
-        cls = self.__class__
-        if (isinstance(getattr(cls, 'charset', None), str)
-            or hasattr(cls, 'default_charset')
-        ):
-            raise DeprecationWarning(
-                    "The class attr [default_]charset is deprecated")
         if unicode_errors is not NoDefault:
             d['unicode_errors'] = unicode_errors
         if decode_param_names is not NoDefault:
             d['decode_param_names'] = decode_param_names
         if kw:
+            cls = self.__class__
             if 'method' in kw:
                 # set method first, because .body setters
                 # depend on it for checks
@@ -88,12 +84,10 @@ class BaseRequest(object):
 
     def _body_file__set(self, value):
         if isinstance(value, str):
-            # TODO: change to DeprecationWarning in version 1.1
-            # TODO: raise exc in version 1.2
-            warnings.warn(
+            warn_deprecation(
                 "Please use req.body = 'str' or req.body_file = fileobj",
-                PendingDeprecationWarning,
-                stacklevel=self._setattr_stacklevel,
+                '1.2',
+                self._setattr_stacklevel
             )
             self.body = value
             return
@@ -604,12 +598,10 @@ class BaseRequest(object):
         return vars
 
     # TODO: remove in version 1.2
-    str_postvars = deprecated_property(str_POST, 'str_postvars',
-                                       'use str_POST instead', warning=False)
-    postvars = deprecated_property(POST, 'postvars', 'use POST instead', warning=False)
-    str_queryvars = deprecated_property(str_GET, 'str_queryvars',
-                                        'use str_GET instead', warning=False)
-    queryvars = deprecated_property(GET, 'queryvars', 'use GET instead', warning=False)
+    str_postvars = deprecated_property('str_postvars', 'use str_POST instead')
+    postvars = deprecated_property('postvars', 'use POST instead')
+    str_queryvars = deprecated_property('str_queryvars', 'use str_GET instead')
+    queryvars = deprecated_property('queryvars', 'use GET instead')
 
 
     @property
