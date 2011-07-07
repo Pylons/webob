@@ -5,9 +5,7 @@ from datetime import datetime, date
 from webob.byterange import Range, ContentRange
 from webob.etag import IfRange, NoIfRange
 from webob.datetime_utils import parse_date, serialize_date
-from webob.util import rfc_reference
-from webob.headers import _trans_key
-
+from webob.util import header_docstring
 
 CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
 QUOTES_RE = re.compile('"(.*)"')
@@ -18,11 +16,7 @@ _not_given = object()
 
 def environ_getter(key, default=_not_given, rfc_section=None):
     if rfc_section:
-        header = _trans_key(key)
-        doc = "Gets and sets the ``%s`` header %s." % (
-            header,
-            rfc_reference(header, rfc_section)
-        )
+        doc = header_docstring(key, rfc_section)
     else:
         doc = "Gets and sets the ``%s`` key in the environment." % key
     if default is _not_given:
@@ -54,10 +48,7 @@ def upath_property(key):
 
 
 def header_getter(header, rfc_section):
-    doc = "Gets and sets and deletes the ``%s`` header %s." % (
-        header,
-        rfc_reference(header, rfc_section)
-    )
+    doc = header_docstring(header, rfc_section)
     key = header.lower()
 
     def fget(r):

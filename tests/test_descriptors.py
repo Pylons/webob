@@ -110,9 +110,9 @@ def test_upath_property_fset():
 
 def test_header_getter_doc():
     from webob.descriptors import header_getter
-    desc = header_getter('AHEADER', '14.3')
+    desc = header_getter('X-Header', '14.3')
     assert 'http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3' in desc.__doc__
-    assert '``AHEADER`` header' in desc.__doc__
+    assert '``X-Header`` header' in desc.__doc__
 
 def test_header_getter_fget():
     from webob.descriptors import header_getter

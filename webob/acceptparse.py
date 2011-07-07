@@ -10,7 +10,7 @@ exists, but this ignores them.
 """
 
 import re, warnings
-from webob.util import rfc_reference
+from webob.util import header_docstring
 from webob.headers import _trans_name as header_to_key
 
 part_re = re.compile(
@@ -349,10 +349,7 @@ def accept_property(header, rfc_section,
     AcceptClass=Accept, NilClass=NilAccept
 ):
     key = header_to_key(header)
-    doc = "Gets and sets and deletes the ``%s`` header %s." % (
-        header,
-        rfc_reference(header, rfc_section)
-    )
+    doc = header_docstring(header, rfc_section)
     #doc += "  Converts it as a %s." % convert_name
     def fget(req):
         value = req.environ.get(key)

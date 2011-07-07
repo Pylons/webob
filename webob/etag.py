@@ -5,15 +5,13 @@ Also If-Range parsing
 """
 
 from webob.datetime_utils import *
-from webob.util import rfc_reference
+from webob.util import header_docstring
 
 __all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'NoIfRange', 'etag_property']
 
 
 def etag_property(key, default, rfc_section):
-    header = key[5:].title().replace('_', '-')
-    doc = "Gets and sets the ``%s`` header." % header
-    doc += rfc_reference(key, rfc_section)
+    doc = header_docstring(key, rfc_section)
     doc += "  Converts it as a Etag."
     def fget(req):
         value = req.environ.get(key)
