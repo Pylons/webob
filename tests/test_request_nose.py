@@ -1,5 +1,7 @@
 from webob import Request
 
+def test_request_no_method():
+    assert Request({}).method == 'GET'
 
 def test_request_read_no_content_length():
     req, input = _make_read_tracked_request('abc', 'FOO')
