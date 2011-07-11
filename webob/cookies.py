@@ -23,9 +23,8 @@ class Cookie(dict):
                 ckey = key
 
     def __setitem__(self, key, val):
-        if needs_quoting(key):
-            return
-        dict.__setitem__(self, key, Morsel(key, val))
+        if _valid_cookie_name(key):
+            dict.__setitem__(self, key, Morsel(key, val))
 
     def serialize(self, full=True):
         return '; '.join(m.serialize(full) for m in self.values())
@@ -71,7 +70,7 @@ class Morsel(dict):
     __slots__ = ('name', 'value')
     def __init__(self, name, value):
         assert name.lower() not in _c_keys
-        assert not needs_quoting(name)
+        assert _valid_cookie_name(name)
         assert isinstance(value, str)
         self.name = name
         # we can encode the unicode value as UTF-8 here,
@@ -117,6 +116,13 @@ class Morsel(dict):
     def __repr__(self):
         return '<%s: %s=%s>' % (self.__class__.__name__,
                                 self.name, repr(self.value))
+
+def _valid_cookie_name(key):
+    try:
+        key = key.encode('ascii')
+    except UnicodeError:
+        return False
+    return not needs_quoting(key)
 
 _c_renames = {
     "path" : "Path",
@@ -168,7 +174,7 @@ def _unquote(v):
 # serializing
 #
 
-_trans_noop = ''.join(chr(x) for x in xrange(256))
+_notrans = ' '*256
 
 # these chars can be in cookie value w/o causing it to be quoted
 _no_escape_special_chars = "!#$%&'*+-.^_`|~/"
@@ -178,9 +184,9 @@ _no_escape_chars = string.ascii_letters + string.digits + \
 _escape_noop_chars = _no_escape_chars+': '
 # this is a map used to escape the values
 _escape_map = dict((chr(i), '\\%03o' % i) for i in xrange(256))
-_escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
-_escape_map['"'] = '\\"'
-_escape_map['\\'] = '\\\\'
+_escape_map.update(zip(_escape_noop_chars, _escape_noop_chars.decode('ascii')))
+_escape_map['"'] = u'\\"'
+_escape_map['\\'] = u'\\\\'
 _escape_char = _escape_map.__getitem__
 
 
@@ -190,9 +196,10 @@ months = (None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
 
 
 def needs_quoting(v):
-    return v.translate(_trans_noop, _no_escape_chars)
+    return v.translate(_notrans, _no_escape_chars)
 
 def _quote(v):
+    #assert isinstance(v, str)
     if needs_quoting(v):
-        return '"' + ''.join(map(_escape_char, v)) + '"'
+        return u'"' + u''.join(map(_escape_char, v)) + u'"'
     return v
