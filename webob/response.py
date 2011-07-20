@@ -1017,7 +1017,7 @@ def filter_headers(hlist, remove_headers=('content-length', 'content-type')):
     return [h for h in hlist if (h[0].lower() not in remove_headers)]
 
 
-def iter_file(file, block_size=1<<14):
+def iter_file(file, block_size=1<<18): # 256Kb
     while True:
         data = file.read(block_size)
         if not data:
