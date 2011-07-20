@@ -201,5 +201,5 @@ def needs_quoting(v):
 def _quote(v):
     #assert isinstance(v, str)
     if needs_quoting(v):
-        return u'"' + u''.join(map(_escape_char, v)) + u'"'
+        return '"' + ''.join(map(_escape_char, v)) + '"'
     return v

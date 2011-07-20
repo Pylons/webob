@@ -371,10 +371,13 @@ class Response(object):
         """
         return ResponseBodyFile(self)
 
+    def _body_file__set(self, file):
+        self.app_iter = iter_file(file)
+
     def _body_file__del(self):
         del self.body
 
-    body_file = property(_body_file__get, fdel=_body_file__del,
+    body_file = property(_body_file__get, _body_file__set, _body_file__del,
                          doc=_body_file__get.__doc__)
 
     def write(self, text):
@@ -1014,6 +1017,13 @@ def filter_headers(hlist, remove_headers=('content-length', 'content-type')):
     return [h for h in hlist if (h[0].lower() not in remove_headers)]
 
 
+def iter_file(file, block_size=1<<14):
+    while True:
+        data = file.read(block_size)
+        if not data:
+            break
+        yield data
+
 class ResponseBodyFile(object):
     mode = 'wb'
     closed = False
@@ -1180,3 +1190,4 @@ def gzip_app_iter(app_iter):
         yield compress.compress(item)
     yield compress.flush()
     yield struct.pack("<2L", crc, size & 0xffffffffL)
+
