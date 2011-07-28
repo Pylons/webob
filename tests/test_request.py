@@ -74,16 +74,6 @@ class BaseRequestTests(unittest.TestCase):
         self.assert_(req.body_file is AFTER)
         self.assertEqual(req.content_length, None)
 
-    def test_body_file_setter_non_string_get(self):
-        BEFORE = self._makeStringIO('before')
-        AFTER =  self._makeStringIO('after')
-        environ = {'wsgi.input': BEFORE,
-                   'CONTENT_LENGTH': len('before'),
-                   'REQUEST_METHOD': 'GET'
-                  }
-        req = BaseRequest(environ)
-        self.assertRaises(ValueError, req.__setattr__, 'body_file', AFTER)
-
     def test_body_file_deleter(self):
         INPUT = self._makeStringIO('before')
         environ = {'wsgi.input': INPUT,
@@ -931,15 +921,6 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(req.body, 'after')
         self.assertEqual(req.content_length, len('after'))
         self.assert_(req.is_body_seekable)
-    def test_body_setter_GET(self):
-        BEFORE = self._makeStringIO('before')
-        environ = {'wsgi.input': BEFORE,
-                   'webob.is_body_seekable': True,
-                   'CONTENT_LENGTH': len('before'),
-                   'REQUEST_METHOD': 'GET'
-                  }
-        req = BaseRequest(environ)
-        self.assertRaises(ValueError, req.__setattr__, 'body', 'after')
     def test_body_deleter_None(self):
         INPUT = self._makeStringIO('input')
         environ = {'wsgi.input': INPUT,
@@ -1125,12 +1106,12 @@ class BaseRequestTests(unittest.TestCase):
     def test_is_body_readable_GET(self):
         req = Request.blank('/', environ={'REQUEST_METHOD':'GET'})
         self.assertFalse(req.is_body_readable)
-        
+
     def test_is_body_readable_unknown_method_and_content_length(self):
         req = Request.blank('/', environ={'REQUEST_METHOD':'WTF'})
         req.content_length = 10
         self.assertTrue(req.is_body_readable)
-        
+
     def test_is_body_readable_special_flag(self):
         req = Request.blank('/', environ={'REQUEST_METHOD':'WTF',
                                           'webob.is_body_readable': True})

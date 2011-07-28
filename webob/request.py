@@ -30,8 +30,8 @@ NoDefault = _NoDefault()
 
 PATH_SAFE = '/:@&+$,'
 
-http_method_has_body = dict.fromkeys(('GET', 'HEAD', 'DELETE', 'TRACE'), False)
-http_method_has_body.update(dict.fromkeys(('POST', 'PUT'), True))
+http_method_probably_has_body = dict.fromkeys(('GET', 'HEAD', 'DELETE', 'TRACE'), False)
+http_method_probably_has_body.update(dict.fromkeys(('POST', 'PUT'), True))
 
 class BaseRequest(object):
     ## Options:
@@ -91,8 +91,6 @@ class BaseRequest(object):
             )
             self.body = value
             return
-        if not http_method_has_body.get(self.method, True):
-            raise ValueError("%s requests cannot have body" % self.method)
         self.content_length = None
         self.body_file_raw = value
         self.is_body_seekable = False
@@ -485,12 +483,11 @@ class BaseRequest(object):
         if not isinstance(value, str):
             raise TypeError("You can only set Request.body to a str (not %r)"
                                 % type(value))
-        if not http_method_has_body.get(self.method, True):
+        if not http_method_probably_has_body.get(self.method, True):
             if not value:
                 self.content_length = None
                 self.body_file_raw = StringIO('')
                 return
-            raise ValueError("%s requests cannot have body" % self.method)
         self.content_length = len(value)
         self.body_file_raw = StringIO(value)
         self.is_body_seekable = True
@@ -692,9 +689,9 @@ class BaseRequest(object):
             chunked encoding in requests.
             For background see https://bitbucket.org/ianb/webob/issue/6
         """
-        if self.method in http_method_has_body:
+        if self.method in http_method_probably_has_body:
             # known HTTP method
-            return http_method_has_body[self.method]
+            return http_method_probably_has_body[self.method]
         elif self.content_length is not None:
             # unknown HTTP method, but the Content-Length
             # header is present
