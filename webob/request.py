@@ -689,9 +689,9 @@ class BaseRequest(object):
             chunked encoding in requests.
             For background see https://bitbucket.org/ianb/webob/issue/6
         """
-        if self.method in http_method_probably_has_body:
-            # known HTTP method
-            return http_method_probably_has_body[self.method]
+        if http_method_probably_has_body.get(self.method):
+            # known HTTP method with body
+            return True
         elif self.content_length is not None:
             # unknown HTTP method, but the Content-Length
             # header is present
