@@ -1,4 +1,4 @@
-import sys, tempfile
+import sys, os, tempfile
 import urllib, urlparse, cgi
 if sys.version >= '2.7':
     from io import BytesIO as StringIO # pragma nocover
@@ -1156,11 +1156,11 @@ def environ_add_POST(env, data, content_type=None):
         data = data.items()
         has_files = filter(lambda _: isinstance(_[1], (tuple, list)), data)
     if content_type is None:
-        content_type = has_files and 'multipart/form-data; boundary=boundary' or 'application/x-www-form-urlencoded'
-    if content_type.lower().startswith('multipart/form-data'):
+        content_type = 'multipart/form-data' if has_files else 'application/x-www-form-urlencoded'
+    if content_type.startswith('multipart/form-data'):
         if not isinstance(data, str):
-            data = _encode_multipart(data, content_type)
-    elif content_type.lower().startswith('application/x-www-form-urlencoded'):
+            content_type, data = _encode_multipart(data, content_type)
+    elif content_type.startswith('application/x-www-form-urlencoded'):
         if has_files:
             raise ValueError('Submiting files is not allowed for'
                              ' content type `%s`' % content_type)
@@ -1174,6 +1174,7 @@ def environ_add_POST(env, data, content_type=None):
     env['webob.is_body_seekable'] = True
     env['CONTENT_LENGTH'] = str(len(data))
     env['CONTENT_TYPE'] = content_type
+
 
 
 class AdhocAttrMixin(object):
@@ -1226,6 +1227,10 @@ cgi.FieldStorage.__repr__ = _cgi_FieldStorage__repr__patch
 
 class FakeCGIBody(object):
     def __init__(self, vars, content_type):
+        if content_type.startswith('multipart/form-data'):
+            if not _get_multipart_boundary(content_type):
+                raise ValueError('Content-type: %r does not contain boundary'
+                            % content_type)
         self.vars = vars
         self.content_type = content_type
         self._body = None
@@ -1247,10 +1252,10 @@ class FakeCGIBody(object):
 
     def _get_body(self):
         if self._body is None:
-            if self.content_type.lower().startswith('application/x-www-form-urlencoded'):
+            if self.content_type.startswith('application/x-www-form-urlencoded'):
                 self._body = urllib.urlencode(self.vars.items())
-            elif self.content_type.lower().startswith('multipart/form-data'):
-                self._body = _encode_multipart(self.vars.iteritems(), self.content_type)
+            elif self.content_type.startswith('multipart/form-data'):
+                self._body = _encode_multipart(self.vars.iteritems(), self.content_type)[1]
             else:
                 assert 0, ('Bad content type: %r' % self.content_type)
         return self._body
@@ -1293,13 +1298,18 @@ class FakeCGIBody(object):
             abs(id(self)), inner)
 
 
+def _get_multipart_boundary(ctype):
+    m = re.search(r'boundary=([^ ]+)', ctype, re.I)
+    if m:
+        return m.group(1).strip('"')
+
+
 def _encode_multipart(vars, content_type):
     """Encode a multipart request body into a string"""
-    boundary_match = re.search(r'boundary=([^ ]+)', content_type, re.I)
-    if not boundary_match:
-        raise ValueError('Content-type: %r does not contain boundary'
-                            % content_type)
-    boundary = boundary_match.group(1).strip('"')
+    boundary = _get_multipart_boundary(content_type)
+    if not boundary:
+        boundary = os.urandom(10).encode('hex')
+        content_type += '; boundary=%s' % boundary
     lines = []
     for name, value in vars:
         lines.append('--%s' % boundary)
@@ -1329,4 +1339,4 @@ def _encode_multipart(vars, content_type):
         else:
             lines.append(value)
     lines.append('--%s--' % boundary)
-    return '\r\n'.join(lines)
+    return content_type, '\r\n'.join(lines)

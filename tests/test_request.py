@@ -1321,7 +1321,7 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(request.content_length, 16)
 
     def test_blank__post_multipart(self):
-        request = Request.blank('/', POST={'first':'1', 'second':'2'}, 
+        request = Request.blank('/', POST={'first':'1', 'second':'2'},
                                      content_type='multipart/form-data; boundary=boundary')
         self.assertEqual(request.method, 'POST')
         self.assertEqual(request.content_type, 'multipart/form-data')
@@ -1337,12 +1337,15 @@ class BaseRequestTests(unittest.TestCase):
     def test_blank__post_files(self):
         import cgi
         from StringIO import StringIO
-        request = Request.blank('/', POST={'first':('filename1', StringIO('1')), 
+        from webob.request import _get_multipart_boundary
+        request = Request.blank('/', POST={'first':('filename1', StringIO('1')),
                                            'second':('filename2', '2'),
                                            'third': '3'})
         self.assertEqual(request.method, 'POST')
         self.assertEqual(request.content_type, 'multipart/form-data')
-        self.assertEqual(request.body, '--boundary\r\n'
+        boundary = _get_multipart_boundary(request.headers['content-type'])
+        body_norm = request.body.replace(boundary, 'boundary')
+        self.assertEqual(body_norm, '--boundary\r\n'
                                        'Content-Disposition: form-data; name="second"; filename="filename2"\r\n\r\n'
                                        '2\r\n'
                                        '--boundary\r\n'
@@ -1352,7 +1355,7 @@ class BaseRequestTests(unittest.TestCase):
                                        'Content-Disposition: form-data; name="first"; filename="filename1"\r\n\r\n'
                                        '1\r\n'
                                        '--boundary--')
-        self.assertEqual(request.content_length, 246)
+        self.assertEqual(request.content_length, 294)
         self.assertTrue(isinstance(request.POST['first'], cgi.FieldStorage))
         self.assertTrue(isinstance(request.POST['second'], cgi.FieldStorage))
         self.assertEqual(request.POST['first'].value, '1')
@@ -2401,8 +2404,7 @@ class FakeCGIBodyTests(unittest.TestCase):
 
     def test_encode_multipart_no_boundary(self):
         from webob.request import FakeCGIBody
-        body = FakeCGIBody({}, 'multipart/form-data')
-        self.assertRaises(ValueError, body.read)
+        self.assertRaises(ValueError, FakeCGIBody, {}, 'multipart/form-data')
 
     def test_repr(self):
         from webob.request import FakeCGIBody
