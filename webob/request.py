@@ -1075,7 +1075,6 @@ class BaseRequest(object):
         ``decode_param_names``).
         """
         env = environ_from_url(path)
-        environ_add_POST(env, POST)
         if base_url:
             scheme, netloc, path, query, fragment = urlparse.urlsplit(base_url)
             if query or fragment:
@@ -1101,6 +1100,12 @@ class BaseRequest(object):
                 env['SCRIPT_NAME'] = urllib.unquote(path)
         if environ:
             env.update(environ)
+        content_type = kw.get('content_type', env.get('CONTENT_TYPE'))
+        if headers and 'Content-Type' in headers:
+            content_type = headers['Content-Type']
+        if content_type is not None:
+            kw['content_type'] = content_type
+        environ_add_POST(env, POST, content_type)
         obj = cls(env, **kw)
         if headers is not None:
             obj.headers.update(headers)
@@ -1150,18 +1155,35 @@ def environ_from_url(path):
     }
     return env
 
-def environ_add_POST(env, data):
+
+def environ_add_POST(env, data, content_type=None):
     if data is None:
         return
-    env['REQUEST_METHOD'] = 'POST'
+    if env['REQUEST_METHOD'] not in ('POST', 'PUT'):
+        env['REQUEST_METHOD'] = 'POST'
+    has_files = False
     if hasattr(data, 'items'):
         data = data.items()
-    if not isinstance(data, str):
-        data = urllib.urlencode(data)
+        has_files = filter(lambda _: isinstance(_[1], (tuple, list)), data)
+    if content_type is None:
+        content_type = has_files and 'multipart/form-data; boundary=boundary' or 'application/x-www-form-urlencoded'
+    if content_type.lower().startswith('multipart/form-data'):
+        if not isinstance(data, str):
+            data = _encode_multipart(data, content_type)
+    elif content_type.lower().startswith('application/x-www-form-urlencoded'):
+        if has_files:
+            raise ValueError('Submiting files is not allowed for'
+                             ' content type `%s`' % content_type)
+        if not isinstance(data, str):
+            data = urllib.urlencode(data)
+    else:
+        if not isinstance(data, str):
+            raise ValueError('Please provide `POST` data as string'
+                             ' for content type `%s`' % content_type)
     env['wsgi.input'] = StringIO(data)
     env['webob.is_body_seekable'] = True
     env['CONTENT_LENGTH'] = str(len(data))
-    env['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
+    env['CONTENT_TYPE'] = content_type
 
 
 class AdhocAttrMixin(object):
@@ -1247,7 +1269,7 @@ class FakeCGIBody(object):
             if self.content_type.lower().startswith('application/x-www-form-urlencoded'):
                 self._body = urllib.urlencode(self.vars.items())
             elif self.content_type.lower().startswith('multipart/form-data'):
-                self._body = _encode_multipart(self.vars, self.content_type)
+                self._body = _encode_multipart(self.vars.iteritems(), self.content_type)
             else:
                 assert 0, ('Bad content type: %r' % self.content_type)
         return self._body
@@ -1298,13 +1320,20 @@ def _encode_multipart(vars, content_type):
                             % content_type)
     boundary = boundary_match.group(1).strip('"')
     lines = []
-    for name, value in vars.iteritems():
+    for name, value in vars:
         lines.append('--%s' % boundary)
         ## FIXME: encode the name like this?
         assert name is not None, 'Value associated with no name: %r' % value
         disp = 'Content-Disposition: form-data; name="%s"' % name
+        filename = None
         if getattr(value, 'filename', None):
-            disp += '; filename="%s"' % value.filename
+            filename = value.filename
+        elif isinstance(value, (list, tuple)):
+            filename, value = value
+            if hasattr(value, 'read'):
+                value = value.read()
+        if filename is not None:
+            disp += '; filename="%s"' % filename
         lines.append(disp)
         ## FIXME: should handle value.disposition_options
         if getattr(value, 'type', None):

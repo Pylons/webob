@@ -1251,7 +1251,99 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(exc_info[0], RuntimeError)
 
     #get_response
-    #blank
+    def test_blank__method_subtitution(self):
+        request = BaseRequest.blank('/', environ={'REQUEST_METHOD': 'PUT'})
+        self.assertEqual(request.method, 'PUT')
+
+        request = BaseRequest.blank('/', environ={'REQUEST_METHOD': 'PUT'}, POST={})
+        self.assertEqual(request.method, 'PUT')
+
+        request = BaseRequest.blank('/', environ={'REQUEST_METHOD': 'HEAD'}, POST={})
+        self.assertEqual(request.method, 'POST')
+
+    def test_blank__ctype_in_env(self):
+        request = BaseRequest.blank('/', environ={'CONTENT_TYPE': 'application/json'})
+        self.assertEqual(request.content_type, 'application/json')
+        self.assertEqual(request.method, 'GET')
+
+        request = BaseRequest.blank('/', environ={'CONTENT_TYPE': 'application/json'},
+                                         POST='')
+        self.assertEqual(request.content_type, 'application/json')
+        self.assertEqual(request.method, 'POST')
+
+    def test_blank__ctype_in_headers(self):
+        request = BaseRequest.blank('/', headers={'Content-type': 'application/json'})
+        self.assertEqual(request.content_type, 'application/json')
+        self.assertEqual(request.method, 'GET')
+
+        request = BaseRequest.blank('/', headers={'Content-Type': 'application/json'},
+                                         POST='')
+        self.assertEqual(request.content_type, 'application/json')
+        self.assertEqual(request.method, 'POST')
+
+    def test_blank__ctype_as_kw(self):
+        request = BaseRequest.blank('/', content_type='application/json')
+        self.assertEqual(request.content_type, 'application/json')
+        self.assertEqual(request.method, 'GET')
+
+        request = BaseRequest.blank('/', content_type='application/json',
+                                         POST='')
+        self.assertEqual(request.content_type, 'application/json')
+        self.assertEqual(request.method, 'POST')
+
+    def test_blank__str_post_data_for_unsupported_ctype(self):
+        self.assertRaises(ValueError, BaseRequest.blank, '/', content_type='application/json',
+                                                              POST={})
+
+    def test_blank__post_urlencoded(self):
+        request = Request.blank('/', POST={'first':1, 'second':2})
+        self.assertEqual(request.method, 'POST')
+        self.assertEqual(request.content_type, 'application/x-www-form-urlencoded')
+        self.assertEqual(request.body, 'second=2&first=1')
+        self.assertEqual(request.content_length, 16)
+
+    def test_blank__post_multipart(self):
+        request = Request.blank('/', POST={'first':'1', 'second':'2'}, 
+                                     content_type='multipart/form-data; boundary=boundary')
+        self.assertEqual(request.method, 'POST')
+        self.assertEqual(request.content_type, 'multipart/form-data')
+        self.assertEqual(request.body, '--boundary\r\n'
+                                       'Content-Disposition: form-data; name="second"\r\n\r\n'
+                                       '2\r\n'
+                                       '--boundary\r\n'
+                                       'Content-Disposition: form-data; name="first"\r\n\r\n'
+                                       '1\r\n'
+                                       '--boundary--')
+        self.assertEqual(request.content_length, 139)
+
+    def test_blank__post_files(self):
+        import cgi
+        from StringIO import StringIO
+        request = Request.blank('/', POST={'first':('filename1', StringIO('1')), 
+                                           'second':('filename2', '2'),
+                                           'third': '3'})
+        self.assertEqual(request.method, 'POST')
+        self.assertEqual(request.content_type, 'multipart/form-data')
+        self.assertEqual(request.body, '--boundary\r\n'
+                                       'Content-Disposition: form-data; name="second"; filename="filename2"\r\n\r\n'
+                                       '2\r\n'
+                                       '--boundary\r\n'
+                                       'Content-Disposition: form-data; name="third"\r\n\r\n'
+                                       '3\r\n'
+                                       '--boundary\r\n'
+                                       'Content-Disposition: form-data; name="first"; filename="filename1"\r\n\r\n'
+                                       '1\r\n'
+                                       '--boundary--')
+        self.assertEqual(request.content_length, 246)
+        self.assertTrue(isinstance(request.POST['first'], cgi.FieldStorage))
+        self.assertTrue(isinstance(request.POST['second'], cgi.FieldStorage))
+        self.assertEqual(request.POST['first'].value, '1')
+        self.assertEqual(request.POST['second'].value, '2')
+        self.assertEqual(request.POST['third'], '3')
+
+    def test_blank__post_file_w_wrong_ctype(self):
+        self.assertRaises(ValueError, Request.blank, '/', POST={'first':('filename1', '1')},
+                                                          content_type='application/x-www-form-urlencoded')
 
     #from_string
     def test_from_string_extra_data(self):
