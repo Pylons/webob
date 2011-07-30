@@ -36,7 +36,7 @@ http_method_probably_has_body.update(dict.fromkeys(('POST', 'PUT'), True))
 class BaseRequest(object):
     ## Options:
     unicode_errors = 'strict'
-    decode_param_names = False
+    decode_param_names = True # TODO: deprecate
     ## The limit after which request bodies should be stored on disk
     ## if they are read in (under this, and the request body is stored
     ## in memory):
@@ -55,7 +55,10 @@ class BaseRequest(object):
         if unicode_errors is not NoDefault:
             d['unicode_errors'] = unicode_errors
         if decode_param_names is not NoDefault:
+            warn_decode_deprecation()
             d['decode_param_names'] = decode_param_names
+        elif not self.decode_param_names:
+            warn_decode_deprecation()
         if kw:
             cls = self.__class__
             if 'method' in kw:
@@ -1365,4 +1368,11 @@ def warn_str_deprecation():
         "use the unicode versions instead",
         '1.2',
         3
+    )
+
+def warn_decode_deprecation()
+    warn_deprecation(
+        "decode_param_names is deprecated and will not be supported "
+        "starting with WebOb 1.2",
+        '1.2'
     )

@@ -25,7 +25,7 @@ class Response(object):
     """
 
     default_content_type = 'text/html'
-    default_charset = 'UTF-8'
+    default_charset = 'UTF-8' # TODO: deprecate
     unicode_errors = 'strict'
     default_conditional_response = False
 

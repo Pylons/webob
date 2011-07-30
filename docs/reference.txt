@@ -274,7 +274,7 @@ all the variables:
 
     >>> req.charset = 'utf8'
     >>> req.GET
-    UnicodeMultiDict([('check', u'a'), ('check', u'b'), ('name', u'Bob')])
+    UnicodeMultiDict([(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob')])
 
 If you always want ``str`` values, you can use ``req.str_GET``
 and ``str_POST``.
@@ -289,7 +289,7 @@ they will be decoded into Unicode strings if you set the charset.
 
     >>> req.headers['Cookie'] = 'test=value'
     >>> req.cookies
-    UnicodeMultiDict([('test', u'value')])
+    UnicodeMultiDict([(u'test', u'value')])
     >>> req.charset = None
     >>> req.str_cookies
     {'test': 'value'}
