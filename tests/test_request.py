@@ -1321,16 +1321,16 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(request.content_length, 16)
 
     def test_blank__post_multipart(self):
-        request = Request.blank('/', POST={'first':'1', 'second':'2'},
+        request = Request.blank('/', POST=sorted({'first':'1', 'second':'2'}.items()),
                                      content_type='multipart/form-data; boundary=boundary')
         self.assertEqual(request.method, 'POST')
         self.assertEqual(request.content_type, 'multipart/form-data')
         self.assertEqual(request.body, '--boundary\r\n'
-                                       'Content-Disposition: form-data; name="second"\r\n\r\n'
-                                       '2\r\n'
-                                       '--boundary\r\n'
                                        'Content-Disposition: form-data; name="first"\r\n\r\n'
                                        '1\r\n'
+                                       '--boundary\r\n'
+                                       'Content-Disposition: form-data; name="second"\r\n\r\n'
+                                       '2\r\n'
                                        '--boundary--')
         self.assertEqual(request.content_length, 139)
 
