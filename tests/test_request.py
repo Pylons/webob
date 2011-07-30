@@ -1317,11 +1317,11 @@ class BaseRequestTests(unittest.TestCase):
         request = Request.blank('/', POST={'first':1, 'second':2})
         self.assertEqual(request.method, 'POST')
         self.assertEqual(request.content_type, 'application/x-www-form-urlencoded')
-        self.assertEqual(request.body, 'second=2&first=1')
+        self.assertEqual(request.body, 'first=1&second=2')
         self.assertEqual(request.content_length, 16)
 
     def test_blank__post_multipart(self):
-        request = Request.blank('/', POST=sorted({'first':'1', 'second':'2'}.items()),
+        request = Request.blank('/', POST={'first':'1', 'second':'2'},
                                      content_type='multipart/form-data; boundary=boundary')
         self.assertEqual(request.method, 'POST')
         self.assertEqual(request.content_type, 'multipart/form-data')
@@ -1346,14 +1346,14 @@ class BaseRequestTests(unittest.TestCase):
         boundary = _get_multipart_boundary(request.headers['content-type'])
         body_norm = request.body.replace(boundary, 'boundary')
         self.assertEqual(body_norm, '--boundary\r\n'
+                                       'Content-Disposition: form-data; name="first"; filename="filename1"\r\n\r\n'
+                                       '1\r\n'
+                                       '--boundary\r\n'
                                        'Content-Disposition: form-data; name="second"; filename="filename2"\r\n\r\n'
                                        '2\r\n'
                                        '--boundary\r\n'
                                        'Content-Disposition: form-data; name="third"\r\n\r\n'
                                        '3\r\n'
-                                       '--boundary\r\n'
-                                       'Content-Disposition: form-data; name="first"; filename="filename1"\r\n\r\n'
-                                       '1\r\n'
                                        '--boundary--')
         self.assertEqual(request.content_length, 294)
         self.assertTrue(isinstance(request.POST['first'], cgi.FieldStorage))

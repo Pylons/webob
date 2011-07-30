@@ -1154,6 +1154,7 @@ def environ_add_POST(env, data, content_type=None):
     has_files = False
     if hasattr(data, 'items'):
         data = data.items()
+        data.sort()
         has_files = filter(lambda _: isinstance(_[1], (tuple, list)), data)
     if content_type is None:
         content_type = 'multipart/form-data' if has_files else 'application/x-www-form-urlencoded'
