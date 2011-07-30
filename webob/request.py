@@ -506,6 +506,12 @@ class BaseRequest(object):
         Form requests are typically POST requests, however PUT requests
         with an appropriate Content-Type are also supported.
         """
+        warn_str_deprecation()
+        return self._str_POST
+
+
+    @property
+    def _str_POST(self):
         env = self.environ
         if self.method not in ('POST', 'PUT'):
             return NoVars('Not a form request')
@@ -546,7 +552,7 @@ class BaseRequest(object):
         """
         Like ``.str_POST``, but decodes values and keys
         """
-        vars = self.str_POST
+        vars = self._str_POST
         vars = UnicodeMultiDict(vars, encoding=self.charset,
                                 errors=self.unicode_errors,
                                 decode_keys=self.decode_param_names)
@@ -560,6 +566,11 @@ class BaseRequest(object):
         Return a MultiDict containing all the variables from the
         QUERY_STRING.
         """
+        warn_str_deprecation()
+        return self._str_GET
+
+    @property
+    def _str_GET(self):
         env = self.environ
         source = env.get('QUERY_STRING', '')
         if 'webob._parsed_query_vars' in env:
@@ -588,7 +599,7 @@ class BaseRequest(object):
         """
         Like ``.str_GET``, but decodes values and keys
         """
-        vars = self.str_GET
+        vars = self._str_GET
         vars = UnicodeMultiDict(vars, encoding=self.charset,
                                 errors=self.unicode_errors,
                                 decode_keys=self.decode_param_names)
@@ -607,7 +618,8 @@ class BaseRequest(object):
         A dictionary-like object containing both the parameters from
         the query string and request body.
         """
-        return NestedMultiDict(self.str_GET, self.str_POST)
+        warn_str_deprecation()
+        return NestedMultiDict(self._str_GET, self._str_POST)
 
 
     @property
@@ -615,7 +627,7 @@ class BaseRequest(object):
         """
         Like ``.str_params``, but decodes values and keys
         """
-        params = self.str_params
+        params = NestedMultiDict(self._str_GET, self._str_POST)
         params = UnicodeMultiDict(params, encoding=self.charset,
                                   errors=self.unicode_errors,
                                   decode_keys=self.decode_param_names)
@@ -627,6 +639,11 @@ class BaseRequest(object):
         """
         Return a *plain* dictionary of cookies as found in the request.
         """
+        warn_str_deprecation()
+        return self._str_cookies
+
+    @property
+    def _str_cookies(self):
         env = self.environ
         source = env.get('HTTP_COOKIE', '')
         if 'webob._parsed_cookies' in env:
@@ -646,7 +663,7 @@ class BaseRequest(object):
         """
         Like ``.str_cookies``, but decodes values and keys
         """
-        vars = self.str_cookies
+        vars = self._str_cookies
         vars = UnicodeMultiDict(vars, encoding=self.charset,
                                 errors=self.unicode_errors,
                                 decode_keys=self.decode_param_names)
@@ -1341,3 +1358,10 @@ def _encode_multipart(vars, content_type):
             lines.append(value)
     lines.append('--%s--' % boundary)
     return content_type, '\r\n'.join(lines)
+
+def warn_str_deprecation():
+    warn_deprecation(
+        "str_* will be depreacted in WebOb 1.2, use the unicode versions",
+        '1.2',
+        3
+    )
