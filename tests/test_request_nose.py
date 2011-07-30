@@ -1,5 +1,7 @@
 from webob import Request
 
+def test_request_no_method():
+    assert Request({}).method == 'GET'
 
 def test_request_read_no_content_length():
     req, input = _make_read_tracked_request('abc', 'FOO')
@@ -35,6 +37,13 @@ def test_request_read_after_setting_body_file():
     assert req.content_length == 3
     assert req.is_body_seekable
     assert input.was_read
+
+def test_request_delete_with_body():
+    req = Request.blank('/', method='DELETE')
+    assert not req.is_body_readable
+    req.body = 'abc'
+    assert req.is_body_readable
+    assert req.body_file.read() == 'abc'
 
 
 def _make_read_tracked_request(data='', method='PUT'):

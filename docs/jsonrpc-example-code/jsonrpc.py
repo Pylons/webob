@@ -27,7 +27,7 @@ class JsonRpcApp(object):
         if not req.method == 'POST':
             raise exc.HTTPMethodNotAllowed(
                 "Only POST allowed",
-                allowed='POST').exception
+                allowed='POST')
         try:
             json = loads(req.body)
         except ValueError, e:
@@ -41,7 +41,7 @@ class JsonRpcApp(object):
                 "JSON body missing parameter: %s" % e)
         if method.startswith('_'):
             raise exc.HTTPForbidden(
-                "Bad method name %s: must not start with _" % method).exception
+                "Bad method name %s: must not start with _" % method)
         if not isinstance(params, list):
             raise ValueError(
                 "Bad params %r: must be a list" % params)
@@ -89,7 +89,7 @@ class ServerProxy(object):
         if name.startswith('_'):
             raise AttributeError(name)
         return _Method(self, name)
-    
+
     def __repr__(self):
         return '<%s for %s>' % (
             self.__class__.__name__, self._url)
@@ -188,6 +188,6 @@ def main(args=None):
     print 'Serving on http://%s:%s' % (options.host, options.port)
     server.serve_forever()
     # Try python jsonrpc.py 'jsonrpc:DemoObject()'
-                                    
+
 if __name__ == '__main__':
     main()

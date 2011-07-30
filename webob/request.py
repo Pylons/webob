@@ -1,4 +1,4 @@
-import sys, tempfile, warnings
+import sys, tempfile
 import urllib, urlparse, cgi
 if sys.version >= '2.7':
     from io import BytesIO as StringIO # pragma nocover
@@ -14,6 +14,7 @@ from webob.etag import etag_property, AnyETag, NoETag
 from webob.descriptors import *
 from webob.datetime_utils import *
 from webob.cookies import Cookie
+from webob.util import warn_deprecation
 
 __all__ = ['BaseRequest', 'Request']
 
@@ -29,8 +30,8 @@ NoDefault = _NoDefault()
 
 PATH_SAFE = '/:@&+$,'
 
-http_method_has_body = dict.fromkeys(('GET', 'HEAD', 'DELETE', 'TRACE'), False)
-http_method_has_body.update(dict.fromkeys(('POST', 'PUT'), True))
+http_method_probably_has_body = dict.fromkeys(('GET', 'HEAD', 'DELETE', 'TRACE'), False)
+http_method_probably_has_body.update(dict.fromkeys(('POST', 'PUT'), True))
 
 class BaseRequest(object):
     ## Options:
@@ -51,17 +52,12 @@ class BaseRequest(object):
         d['environ'] = environ
         if charset is not NoDefault:
             self.charset = charset
-        cls = self.__class__
-        if (isinstance(getattr(cls, 'charset', None), str)
-            or hasattr(cls, 'default_charset')
-        ):
-            raise DeprecationWarning(
-                    "The class attr [default_]charset is deprecated")
         if unicode_errors is not NoDefault:
             d['unicode_errors'] = unicode_errors
         if decode_param_names is not NoDefault:
             d['decode_param_names'] = decode_param_names
         if kw:
+            cls = self.__class__
             if 'method' in kw:
                 # set method first, because .body setters
                 # depend on it for checks
@@ -88,16 +84,13 @@ class BaseRequest(object):
 
     def _body_file__set(self, value):
         if isinstance(value, str):
-            # FIXME: change to DeprecationWarning in 1.1, raise exc in 1.2
-            warnings.warn(
+            warn_deprecation(
                 "Please use req.body = 'str' or req.body_file = fileobj",
-                PendingDeprecationWarning,
-                stacklevel=self._setattr_stacklevel,
+                '1.2',
+                self._setattr_stacklevel
             )
             self.body = value
             return
-        if not http_method_has_body.get(self.method, True):
-            raise ValueError("%s requests cannot have body" % self.method)
         self.content_length = None
         self.body_file_raw = value
         self.is_body_seekable = False
@@ -123,7 +116,7 @@ class BaseRequest(object):
         return self.body_file_raw
 
     scheme = environ_getter('wsgi.url_scheme')
-    method = environ_getter('REQUEST_METHOD')
+    method = environ_getter('REQUEST_METHOD', 'GET')
     http_version = environ_getter('SERVER_PROTOCOL')
     script_name = environ_getter('SCRIPT_NAME', '')
     path_info = environ_getter('PATH_INFO')
@@ -490,12 +483,11 @@ class BaseRequest(object):
         if not isinstance(value, str):
             raise TypeError("You can only set Request.body to a str (not %r)"
                                 % type(value))
-        if not http_method_has_body.get(self.method, True):
+        if not http_method_probably_has_body.get(self.method, True):
             if not value:
                 self.content_length = None
                 self.body_file_raw = StringIO('')
                 return
-            raise ValueError("%s requests cannot have body" % self.method)
         self.content_length = len(value)
         self.body_file_raw = StringIO(value)
         self.is_body_seekable = True
@@ -552,7 +544,7 @@ class BaseRequest(object):
     @property
     def POST(self):
         """
-        Like ``.str_POST``, but may decode values and keys
+        Like ``.str_POST``, but decodes values and keys
         """
         vars = self.str_POST
         vars = UnicodeMultiDict(vars, encoding=self.charset,
@@ -594,7 +586,7 @@ class BaseRequest(object):
     @property
     def GET(self):
         """
-        Like ``.str_GET``, but may decode values and keys
+        Like ``.str_GET``, but decodes values and keys
         """
         vars = self.str_GET
         vars = UnicodeMultiDict(vars, encoding=self.charset,
@@ -602,13 +594,11 @@ class BaseRequest(object):
                                 decode_keys=self.decode_param_names)
         return vars
 
-
-    str_postvars = deprecated_property(str_POST, 'str_postvars',
-                                       'use str_POST instead')
-    postvars = deprecated_property(POST, 'postvars', 'use POST instead')
-    str_queryvars = deprecated_property(str_GET, 'str_queryvars',
-                                        'use str_GET instead')
-    queryvars = deprecated_property(GET, 'queryvars', 'use GET instead')
+    # TODO: remove in version 1.2
+    str_postvars = deprecated_property('str_postvars', 'use str_POST instead')
+    postvars = deprecated_property('postvars', 'use POST instead')
+    str_queryvars = deprecated_property('str_queryvars', 'use str_GET instead')
+    queryvars = deprecated_property('queryvars', 'use GET instead')
 
 
     @property
@@ -623,7 +613,7 @@ class BaseRequest(object):
     @property
     def params(self):
         """
-        Like ``.str_params``, but may decode values and keys
+        Like ``.str_params``, but decodes values and keys
         """
         params = self.str_params
         params = UnicodeMultiDict(params, encoding=self.charset,
@@ -654,7 +644,7 @@ class BaseRequest(object):
     @property
     def cookies(self):
         """
-        Like ``.str_cookies``, but may decode values and keys
+        Like ``.str_cookies``, but decodes values and keys
         """
         vars = self.str_cookies
         vars = UnicodeMultiDict(vars, encoding=self.charset,
@@ -699,9 +689,9 @@ class BaseRequest(object):
             chunked encoding in requests.
             For background see https://bitbucket.org/ianb/webob/issue/6
         """
-        if self.method in http_method_has_body:
-            # known HTTP method
-            return http_method_has_body[self.method]
+        if http_method_probably_has_body.get(self.method):
+            # known HTTP method with body
+            return True
         elif self.content_length is not None:
             # unknown HTTP method, but the Content-Length
             # header is present
@@ -818,7 +808,7 @@ class BaseRequest(object):
                 del self.environ[key]
 
 
-    accept = accept_property('Accept', '14.1', MIMEAccept, MIMENilAccept, 'MIME Accept')
+    accept = accept_property('Accept', '14.1', MIMEAccept, MIMENilAccept)
     accept_charset = accept_property('Accept-Charset', '14.2')
     accept_encoding = accept_property('Accept-Encoding', '14.3', NilClass=NoAccept)
     accept_language = accept_property('Accept-Language', '14.4')
@@ -831,7 +821,7 @@ class BaseRequest(object):
 
     def _cache_control__get(self):
         """
-        Get/set/modify the Cache-Control header (section `14.9
+        Get/set/modify the Cache-Control header (`HTTP spec section 14.9
         <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9>`_)
         """
         env = self.environ
@@ -1241,15 +1231,6 @@ class FakeCGIBody(object):
         self._body = None
         self.position = 0
 
-    def seek(self, pos, rel=0):
-        ## FIXME: this isn't strictly necessary, but it's important
-        ## when modifying POST parameters.  I wish there was a better
-        ## way to do this.
-        if rel != 0:
-            raise IOError
-        self._body = None
-        self.position = pos
-
     def tell(self):
         return self.position
 
@@ -1322,7 +1303,6 @@ def _encode_multipart(vars, content_type):
     lines = []
     for name, value in vars:
         lines.append('--%s' % boundary)
-        ## FIXME: encode the name like this?
         assert name is not None, 'Value associated with no name: %r' % value
         disp = 'Content-Disposition: form-data; name="%s"' % name
         filename = None
@@ -1335,7 +1315,7 @@ def _encode_multipart(vars, content_type):
         if filename is not None:
             disp += '; filename="%s"' % filename
         lines.append(disp)
-        ## FIXME: should handle value.disposition_options
+        # TODO: should handle value.disposition_options
         if getattr(value, 'type', None):
             ct = 'Content-type: %s' % value.type
             if value.type_options:

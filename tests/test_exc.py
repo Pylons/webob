@@ -3,7 +3,7 @@ from webob.dec import wsgify
 from webob.exc import sys
 from webob.exc import no_escape
 from webob.exc import strip_tags
-from webob.exc import HTTPException 
+from webob.exc import HTTPException
 from webob.exc import WSGIHTTPException
 from webob.exc import HTTPError
 from webob.exc import HTTPRedirection
@@ -61,10 +61,7 @@ from nose.tools import eq_, ok_, assert_equal, assert_raises
 @wsgify
 def method_not_allowed_app(req):
     if req.method != 'GET':
-        if sys.version_info > (2,5):
-            raise HTTPMethodNotAllowed()
-        else:
-            raise HTTPMethodNotAllowed().exception
+        raise HTTPMethodNotAllowed()
     return 'hello!'
 
 def test_noescape_null():
@@ -238,7 +235,7 @@ def test_WSGIHTTPException_exception_newstyle():
     }
     excep = WSGIHTTPException()
     exc.newstyle_exceptions = True
-    assert_equal( excep.exception(environ,start_response), [] )
+    assert_equal( excep(environ,start_response), [] )
 
 def test_WSGIHTTPException_exception_no_newstyle():
     def start_response(status, headers, exc_info=None):
@@ -251,7 +248,7 @@ def test_WSGIHTTPException_exception_no_newstyle():
     }
     excep = WSGIHTTPException()
     exc.newstyle_exceptions = False
-    assert_equal( excep.exception(environ,start_response), [] )
+    assert_equal( excep(environ,start_response), [] )
 
 def test_HTTPMove():
     def start_response(status, headers, exc_info=None):
@@ -324,7 +321,7 @@ def test_HTTPExceptionMiddleware_ok():
     start_response = None
     res = m( environ, start_response )
     assert_equal( res, '123' )
-    
+
 def test_HTTPExceptionMiddleware_exception():
     def wsgi_response( environ, start_response):
         return '123'

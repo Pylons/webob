@@ -38,7 +38,7 @@ EDIT_TEMPLATE = HTMLTemplate("""\
 <form action="{{req.path_url}}" method="POST">
  <input type="hidden" name="mtime" value="{{page.mtime}}">
  Title: <input type="text" name="title" style="width: 70%" value="{{page.title}}"><br>
- Content: <input type="submit" value="Save"> 
+ Content: <input type="submit" value="Save">
  <a href="{{req.path_url}}">Cancel</a>
    <br>
  <textarea name="content" style="width: 100%; height: 75%" rows="40">{{page.content}}</textarea>
@@ -65,7 +65,7 @@ class WikiApp(object):
             try:
                 meth = getattr(self, 'action_%s_%s' % (action, req.method))
             except AttributeError:
-                raise exc.HTTPBadRequest('No such action %r' % action).exception
+                raise exc.HTTPBadRequest('No such action %r' % action)
             resp = meth(req, page)
         except exc.HTTPException, e:
             resp = e
@@ -80,7 +80,7 @@ class WikiApp(object):
         if path.endswith('/'):
             path += 'index'
         if not path.startswith(self.storage_dir):
-            raise exc.HTTPBadRequest("Bad path").exception
+            raise exc.HTTPBadRequest("Bad path")
         path += '.html'
         return Page(path)
 
@@ -138,7 +138,7 @@ class Page(object):
         content = self.full_content
         match = re.search(r'<title>(.*?)</title>', content, re.I|re.S)
         return match.group(1)
-    
+
     @property
     def full_content(self):
         f = open(self.filename, 'rb')
@@ -146,7 +146,7 @@ class Page(object):
             return f.read()
         finally:
             f.close()
-    
+
     @property
     def content(self):
         if not self.exists:

@@ -158,6 +158,8 @@ class wsgify(object):
                 resp = req.response.merge_cookies(resp)
             return resp(environ, start_response)
         else:
+            if self.middleware_wraps:
+                args = (self.middleware_wraps,) + args
             return self.func(req, *args, **kw)
 
     def get(self, url, **kw):
@@ -355,4 +357,3 @@ def _format_args(args=(), kw=None, leading_comma=False, obj=None, names=None, de
     if result and leading_comma:
         result = ', ' + result
     return result
-

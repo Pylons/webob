@@ -1099,6 +1099,24 @@ class BaseRequestTests(unittest.TestCase):
         req.remove_conditional_headers()
         self.assertEqual(req.range, None)
 
+    def test_is_body_readable_POST(self):
+        req = Request.blank('/', environ={'REQUEST_METHOD':'POST'})
+        self.assertTrue(req.is_body_readable)
+
+    def test_is_body_readable_GET(self):
+        req = Request.blank('/', environ={'REQUEST_METHOD':'GET'})
+        self.assertFalse(req.is_body_readable)
+
+    def test_is_body_readable_unknown_method_and_content_length(self):
+        req = Request.blank('/', environ={'REQUEST_METHOD':'WTF'})
+        req.content_length = 10
+        self.assertTrue(req.is_body_readable)
+
+    def test_is_body_readable_special_flag(self):
+        req = Request.blank('/', environ={'REQUEST_METHOD':'WTF',
+                                          'webob.is_body_readable': True})
+        self.assertTrue(req.is_body_readable)
+
 
     # is_body_seekable
     # make_body_seekable
@@ -1390,12 +1408,7 @@ class BaseRequestTests(unittest.TestCase):
         req = Request.blank('/')
         self.assertRaises(AttributeError, delattr, req, 'some_attr')
 
-    # TODO: webob/request.py:1143
-    # the only known way to reach this line is by experimentation
-
-
 class RequestTests_functional(unittest.TestCase):
-
     def test_gets(self):
         from webtest import TestApp
         app = TestApp(simpleapp)
@@ -1678,34 +1691,6 @@ class RequestTests_functional(unittest.TestCase):
         self.assert_('unicode_errors' in r.__dict__)
         r = Request({'a':1})
         self.assert_('unicode_errors' not in r.__dict__)
-
-    def test_charset_deprecation(self):
-        # Any class that inherits from BaseRequest cannot define a
-        # default_charset attribute.
-        # Any class that inherits from BaseRequest cannot define a
-        # charset attr that is instance of str
-        from webob import BaseRequest
-        from webob.request import AdhocAttrMixin
-        class NewRequest(BaseRequest):
-            default_charset = 'utf-8'
-            def __init__(self, environ, **kw):
-                super(NewRequest, self).__init__(environ, **kw)
-        self.assertRaises(DeprecationWarning, NewRequest, {'a':1})
-        class NewRequest(BaseRequest):
-            charset = 'utf-8'
-            def __init__(self, environ, **kw):
-                super(NewRequest, self).__init__(environ, **kw)
-        self.assertRaises(DeprecationWarning, NewRequest, {'a':1})
-        class NewRequest(AdhocAttrMixin, BaseRequest):
-            default_charset = 'utf-8'
-            def __init__(self, environ, **kw):
-                super(NewRequest, self).__init__(environ, **kw)
-        self.assertRaises(DeprecationWarning, NewRequest, {'a':1})
-        class NewRequest(AdhocAttrMixin, BaseRequest):
-            charset = 'utf-8'
-            def __init__(self, environ, **kw):
-                super(NewRequest, self).__init__(environ, **kw)
-        self.assertRaises(DeprecationWarning, NewRequest, {'a':1})
 
     def test_unexpected_kw(self):
         # Passed an attr in kw that does not exist in the class, should
@@ -2429,14 +2414,6 @@ class FakeCGIBodyTests(unittest.TestCase):
             "<FakeCGIBody at <whereitsat> viewing {'bananas': 'ba...nas'} at position 1>",
         )
 
-    def test_seek_tell(self):
-        from webob.request import FakeCGIBody
-        body = FakeCGIBody({'bananas': 'bananas'}, 'multipart/form-data; boundary=foobar')
-        self.assertEqual(body.tell(), 0)
-        body.seek(1)
-        self.assertEqual(body.tell(), 1)
-        self.assertRaises(IOError, body.seek, 0, 2)
-
     def test_iter(self):
         from webob.request import FakeCGIBody
         body = FakeCGIBody({'bananas': 'bananas'}, 'multipart/form-data; boundary=foobar')
@@ -2468,6 +2445,12 @@ class FakeCGIBodyTests(unittest.TestCase):
         body = FakeCGIBody({'bananas': 'bananas'}, 'application/x-www-form-urlencoded')
         self.assertEqual(body.read(), 'bananas=bananas')
 
+    def test_tell(self):
+        from webob.request import FakeCGIBody
+        body = FakeCGIBody({'bananas': 'bananas'},
+                           'application/x-www-form-urlencoded')
+        body.position = 1
+        self.assertEqual(body.tell(), 1)
 
 class Test_cgi_FieldStorage__repr__patch(unittest.TestCase):
     def _callFUT(self, fake):

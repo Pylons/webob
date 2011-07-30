@@ -58,9 +58,6 @@ class DecoratorTests(unittest.TestCase):
         from webob.exc import HTTPBadRequest
         @wsgify
         def test_app(req):
-            import sys
-            if sys.version_info < (2,5):
-                raise HTTPBadRequest(None).exception
             raise HTTPBadRequest
         resp = self._testit(test_app, '/a url')
         self.assert_(resp.body.startswith('400 Bad Request'))

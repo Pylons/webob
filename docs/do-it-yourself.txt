@@ -6,7 +6,7 @@ Another Do-It-Yourself Framework
 Introduction and Audience
 -------------------------
 
-It's been over two years since I wrote the `first version of this tutorial <http://pythonpaste.org/do-it-yourself-framework.html>`_.  I decided to give it another run with some of the tools that have come about since then (particularly `WebOb <http://pythonpaste.org/webob/>`_).
+It's been over two years since I wrote the `first version of this tutorial <http://pythonpaste.org/do-it-yourself-framework.html>`_.  I decided to give it another run with some of the tools that have come about since then (particularly `WebOb <http://webob.org/>`_).
 
 Sometimes Python is accused of having too many web frameworks.  And it's true, there are a lot.  That said, I think writing a framework is a useful exercise.  It doesn't let you skip over too much without understanding it.  It removes the magic.  So even if you go on to use another existing framework (which I'd probably advise you do), you'll be able to understand it better if you've written something like it on your own.
 
@@ -294,7 +294,7 @@ To do that we'll write a `decorator <http://www.ddj.com/web-development/18440607
 
 **line 5**: We create a request.
 
-**line 6**: Here we catch any ``webob.exc.HTTPException`` exceptions.  This is so you can do ``raise webob.exc.HTTPNotFound()`` in your function (or on Python 2.4, ``raise webob.exc.HTTPNotFound().exception``).  These exceptions are themselves WSGI applications.
+**line 6**: Here we catch any ``webob.exc.HTTPException`` exceptions.  This is so you can do ``raise webob.exc.HTTPNotFound()`` in your function.  These exceptions are themselves WSGI applications.
 
 **line 7**: We call the function with the request object, any any variables in ``req.urlvars``.  And we get back a response.
 

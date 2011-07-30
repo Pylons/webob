@@ -17,12 +17,7 @@ class Range(object):
             Returns true if this range can be satisfied by the resource
             with the given byte length.
         """
-        for begin, end in self.ranges:
-            # FIXME: bytes=-100 request on a one-byte entity is not satifiable
-            # neither is bytes=100- (spec seems to be unclear on this)
-            if end is not None and end >= length:
-                return False
-        return True
+        return self.range_for_length(length) is not None
 
     def range_for_length(self, length):
         """

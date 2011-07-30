@@ -36,7 +36,7 @@ class MockDescriptor:
 def test_environ_getter_docstring():
     from webob.descriptors import environ_getter
     desc = environ_getter('akey')
-    eq_(desc.__doc__, "Gets and sets the 'akey' key in the environment.")
+    eq_(desc.__doc__, "Gets and sets the ``akey`` key in the environment.")
 
 def test_environ_getter_nodefault_keyerror():
     from webob.descriptors import environ_getter
@@ -88,10 +88,12 @@ def test_environ_getter_default_fdel():
 
 def test_environ_getter_rfc_section():
     from webob.descriptors import environ_getter
-    desc = environ_getter('akey', rfc_section='14.3')
-    eq_(desc.__doc__, "Gets and sets the 'akey' key in the environment. For "
-        "more information on akey see `section 14.3 "
-        "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3>`_.")
+    desc = environ_getter('HTTP_X_AKEY', rfc_section='14.3')
+    eq_(desc.__doc__, "Gets and sets the ``X-Akey`` header "
+        "(`HTTP spec section 14.3 "
+        "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3>`_)."
+    )
+
 
 def test_upath_property_fget():
     from webob.descriptors import upath_property
@@ -108,10 +110,9 @@ def test_upath_property_fset():
 
 def test_header_getter_doc():
     from webob.descriptors import header_getter
-    desc = header_getter('AHEADER', '14.3')
-    eq_(desc.__doc__, "Gets and sets and deletes the AHEADER header. For "
-        "more information on AHEADER see `section 14.3 "
-        "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3>`_.")
+    desc = header_getter('X-Header', '14.3')
+    assert 'http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3' in desc.__doc__
+    assert '``X-Header`` header' in desc.__doc__
 
 def test_header_getter_fget():
     from webob.descriptors import header_getter
@@ -145,13 +146,6 @@ def test_header_getter_fdel():
     desc.fset(resp, 'avalue2')
     desc.fdel(resp)
     eq_(desc.fget(resp), None)
-
-def test_header_getter_unicode():
-    from webob.descriptors import header_getter
-    desc = header_getter('AHEADER', '14.3')
-    eq_(desc.__doc__, "Gets and sets and deletes the AHEADER header. For "
-        "more information on AHEADER see `section 14.3 "
-        "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3>`_.")
 
 def test_header_getter_unicode_fget_none():
     from webob.descriptors import header_getter
@@ -209,10 +203,9 @@ def test_converter_with_name_docstring():
     desc = converter(
         environ_getter('CONTENT_LENGTH', '666', '14.13'),
         parse_int_safe, serialize_int, 'int')
-    eq_(desc.__doc__, "Gets and sets the 'CONTENT_LENGTH' key in the "
-        "environment. For more information on CONTENT_LENGTH see `section 14.13 "
-        "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.13>`_.  "
-        "Converts it using int.")
+
+    assert 'http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.13' in desc.__doc__
+    assert '``Content-Length`` header' in desc.__doc__
 
 def test_converter_with_name_fget():
     from webob.descriptors import converter
@@ -345,10 +338,9 @@ def test_converter_date_docstring():
     from webob.descriptors import environ_getter
     desc = converter_date(environ_getter(
         "HTTP_DATE", "Tue, 15 Nov 1994 08:12:31 GMT", "14.8"))
-    eq_(desc.__doc__, "Gets and sets the 'HTTP_DATE' key in the environment. "
-        "For more information on Date see `section 14.8 "
-        "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.8>`_.  "
-        "Converts it using HTTP date.")
+    assert 'http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.8' in desc.__doc__
+    assert '``Date`` header' in desc.__doc__
+
 
 def test_date_header_fget_none():
     from webob import Response
@@ -376,168 +368,12 @@ def test_date_header_fdel():
     desc.fdel(resp)
     eq_(desc.fget(resp), None)
 
-def test_deprecated_property_ctor_prop():
-    from webob.descriptors import deprecated_property
-    prop = property()
-    dep = deprecated_property(prop,
-                              'deprecated_property',
-                              "Don't use it",
-                              warning=False)
-    eq_(dep.descriptor, prop)
-
-def test_deprecated_property_ctor_attr():
-    from webob.descriptors import deprecated_property
-    prop = property()
-    dep = deprecated_property(prop,
-                              'deprecated_property',
-                              "Don't use it",
-                              warning=False)
-    eq_(dep.attr, 'deprecated_property')
-
-def test_deprecated_property_ctor_message():
-    from webob.descriptors import deprecated_property
-    prop = property()
-    dep = deprecated_property(prop,
-                              'deprecated_property',
-                              "Don't use it",
-                              warning=False)
-    eq_(dep.message, "Don't use it")
-
-def test_deprecated_property_ctor_raises():
-    from webob.descriptors import deprecated_property
-    prop = property()
-    dep = deprecated_property(prop,
-                              'deprecated_property',
-                              "Don't use it",
-                              warning=False)
-    assert_raises(DeprecationWarning, dep.warn)
-
-def test_deprecated_property_get():
-    from webob.descriptors import deprecated_property
-    dep = deprecated_property(deprecated_property,
-                              'deprecated_property',
-                              'DEPRECATED',
-                              warning=False)
-    assert_raises(DeprecationWarning, dep.__get__, dep)
-
-def test_deprecated_property_get_none():
-    from webob.descriptors import deprecated_property
-    dep = deprecated_property(None,
-                              'deprecated_property',
-                              'DEPRECATED',
-                              warning=False)
-    eq_(dep.__get__(None), dep)
-
-def test_deprecated_property_set():
-    from webob.descriptors import deprecated_property
-    dep = deprecated_property(deprecated_property,
-                              'deprecated_property',
-                              'DEPRECATED',
-                              warning=False)
-    assert_raises(DeprecationWarning, dep.__set__, dep, 'avalue')
-
-def test_deprecated_property_delete():
-    from webob.descriptors import deprecated_property
-    dep = deprecated_property(deprecated_property,
-                              'deprecated_property',
-                              'DEPRECATED',
-                              warning=False)
-    assert_raises(DeprecationWarning, dep.__delete__, dep)
-
-def test_deprecated_property_repr():
-    import warnings
-    from webob.descriptors import deprecated_property
-    mock = MockDescriptor()
-    try:
-        warnings.simplefilter('ignore')
-        dep = deprecated_property(mock,
-                                  'mock_property',
-                                  'DEPRECATED')
-        assert dep.__repr__().startswith(
-            "<Deprecated attribute mock_property: "
-            "<tests.test_descriptors.MockDescriptor instance at")
-    finally:
-        warnings.resetwarnings()
-
-def test_deprecated_property_warn_get():
-    import warnings
-    from webob.descriptors import deprecated_property
-    mock = MockDescriptor()
-    dep = deprecated_property(mock,
-                              'mock_property',
-                              'DEPRECATED')
-    try:
-        warnings.simplefilter('error')
-        assert_raises(DeprecationWarning, dep.__get__, mock)
-    finally:
-        warnings.resetwarnings()
-
-def test_deprecated_property_warn_set():
-    import warnings
-    from webob.descriptors import deprecated_property
-    mock = MockDescriptor()
-    dep = deprecated_property(mock,
-                              'mock_property',
-                              'DEPRECATED')
-    try:
-        warnings.simplefilter('error')
-        assert_raises(DeprecationWarning, dep.__set__, mock, 'avalue')
-    finally:
-        warnings.resetwarnings()
-
-def test_deprecated_property_warn_delete():
-    import warnings
-    from webob.descriptors import deprecated_property
-    mock = MockDescriptor()
-    dep = deprecated_property(mock,
-                              'mock_property',
-                              'DEPRECATED')
-    try:
-        warnings.simplefilter('error')
-        assert_raises(DeprecationWarning, dep.__delete__, mock)
-    finally:
-        warnings.resetwarnings()
-
-def test_deprecated_property_warn_get_call():
-    import warnings
-    from webob.descriptors import deprecated_property
-    mock = MockDescriptor()
-    dep = deprecated_property(mock,
-                              'mock_property',
-                              'DEPRECATED')
-    try:
-        warnings.simplefilter('ignore')
-        eq_(dep.__get__(mock), 'avalue')
-    finally:
-        warnings.resetwarnings()
-
-def test_deprecated_property_warn_set_call():
-    import warnings
-    from webob.descriptors import deprecated_property
-    mock = MockDescriptor()
-    dep = deprecated_property(mock,
-                              'mock_property',
-                              'DEPRECATED')
-    try:
-        warnings.simplefilter('ignore')
-        dep.__set__(mock, 'avalue2')
-        eq_(dep.__get__(mock), 'avalue2')
-    finally:
-        warnings.resetwarnings()
-
-def test_deprecated_property_warn_delete_call():
-    import warnings
-    from webob.descriptors import deprecated_property
-    mock = MockDescriptor()
-    dep = deprecated_property(mock,
-                              'mock_property',
-                              'DEPRECATED')
-    try:
-        warnings.simplefilter('ignore')
-        dep.__delete__(mock)
-        eq_(dep.__get__(mock), None)
-    finally:
-        warnings.resetwarnings()
+def test_deprecated_property():
+    req = Request.blank('/')
+    assert_raises(DeprecationWarning, getattr, req, 'postvars')
+    assert_raises(DeprecationWarning, setattr, req, 'postvars', {})
+    assert_raises(DeprecationWarning, delattr, req, 'postvars')
+    eq_(Request.postvars.__repr__(), "<Deprecated attribute postvars>")
 
 def test_parse_etag_response():
     from webob.descriptors import parse_etag_response

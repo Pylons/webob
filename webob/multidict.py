@@ -304,7 +304,6 @@ class UnicodeMultiDict(DictMixin):
         return value
 
     def _encode_value(self, value):
-        # FIXME: should this do the FieldStorage stuff too?
         if isinstance(value, unicode):
             value = value.encode(self.encoding, self.errors)
         return value

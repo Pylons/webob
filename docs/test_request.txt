@@ -220,18 +220,20 @@ containment tests, and some useful methods.  Note that parameters on
 mime types are not supported.
 
     >>> req = Request.blank('/')
-    >>> req.environ['HTTP_ACCEPT'] = "text/*;q=0.3, text/html;q=0.7, text/html;level=1, text/html;level=2;q=0.4, */*;q=0.5"
+    >>> req.environ['HTTP_ACCEPT'] = "text/*;q=0.3, text/html;q=0.7, text/html;level=1, text/html;level=2;q=0.4, */*;q=0.1"
     >>> req.accept # doctest: +ELLIPSIS
-    <MIMEAccept at ... Accept: text/*;q=0.3, text/html;q=0.7, text/html, text/html;q=0.4, */*;q=0.5>
+    <MIMEAccept at ... Accept: text/*;q=0.3, text/html;q=0.7, text/html, text/html;q=0.4, */*;q=0.1>
     >>> for item, quality in req.accept._parsed:
     ...     print '%s: %0.1f' % (item, quality)
     text/*: 0.3
     text/html: 0.7
     text/html: 1.0
     text/html: 0.4
-    */*: 0.5
-    >>> '%0.1f' % req.accept.quality('text/html')
+    */*: 0.1
+    >>> '%0.1f' % req.accept.quality('text/plain')
     '0.3'
+    >>> '%0.1f' % req.accept.quality('text/html')
+    '1.0'
     >>> req.accept.first_match(['text/plain', 'text/html', 'image/png'])
     'text/plain'
     >>> 'image/png' in req.accept
@@ -282,7 +284,7 @@ etag match::
     >>> req = Request.blank('/')
     >>> req.if_range = 'asdf'
     >>> req.if_range
-    <IfRange etag=asdf, date=*>
+    <IfRange etag="asdf", date=*>
     >>> from webob import Response
     >>> res = Response()
     >>> res.etag = 'asdf'
@@ -334,10 +336,6 @@ A quick test of caching the request body:
     >>> data = StringIO('x'*length)
     >>> req = Request.blank('/')
     >>> req.content_length = length
-    >>> req.body_file = data
-    Traceback (most recent call last):
-    ...
-    ValueError: GET requests cannot have body
     >>> req.method = 'PUT'
     >>> req.body_file = data
     >>> req.body_file_raw

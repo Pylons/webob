@@ -5,14 +5,13 @@ Also If-Range parsing
 """
 
 from webob.datetime_utils import *
-from webob.util import rfc_reference
+from webob.util import header_docstring
 
 __all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'NoIfRange', 'etag_property']
 
 
 def etag_property(key, default, rfc_section):
-    doc = "Gets and sets the %r key in the environment." % key
-    doc += rfc_reference(key, rfc_section)
+    doc = header_docstring(key, rfc_section)
     doc += "  Converts it as a Etag."
     def fget(req):
         value = req.environ.get(key)
@@ -77,7 +76,6 @@ class _NoETag(object):
 NoETag = _NoETag()
 
 class ETagMatcher(object):
-
     """
     Represents an ETag request.  Supports containment to see if an
     ETag matches.  You can also use
@@ -93,6 +91,7 @@ class ETagMatcher(object):
     def __contains__(self, other):
         return other in self.etags or other in self.weak_etags
 
+    # TODO: deprecate weak_match
     def weak_match(self, other):
         if other.lower().startswith('w/'):
             other = other[2:]
@@ -102,6 +101,7 @@ class ETagMatcher(object):
         return '<ETag %s>' % (
             ' or '.join(self.etags))
 
+    @classmethod
     def parse(cls, value):
         """
         Parse this from a header value
@@ -139,13 +139,11 @@ class ETagMatcher(object):
                     results.append(etag)
             value = rest
         return cls(results, weak_results)
-    parse = classmethod(parse)
 
     def __str__(self):
-        # FIXME: should I quote these?
-        items = list(self.etags)
+        items = map('"%s"'.__mod__, self.etags)
         for weak in self.weak_etags:
-            items.append('W/%s' % weak)
+            items.append('W/"%s"' % weak)
         return ', '.join(items)
 
 class IfRange(object):

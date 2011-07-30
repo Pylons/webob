@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = '1.0.8'
+version = '1.1beta1'
 
 setup(
     name='WebOb',
@@ -18,11 +18,11 @@ You may install the `in-development version of WebOb
 <http://bitbucket.org/ianb/webob/get/tip.gz#egg=WebOb-dev>`_ with
 ``pip install WebOb==dev`` (or ``easy_install WebOb==dev``).
 
-* `WebOb reference <http://pythonpaste.org/webob/reference.html>`_
+* `WebOb reference <http://docs.webob.org/en/latest/reference.html>`_
 * `Bug tracker <https://bitbucket.org/ianb/webob/issues>`_
 * `Browse source code <https://bitbucket.org/ianb/webob/src>`_
 * `Mailing list <http://bit.ly/paste-users>`_
-* `Release news <http://pythonpaste.org/webob/news>`_
+* `Release news <http://docs.webob.org/en/latest/news.html>`_
 * `Detailed changelog <https://bitbucket.org/ianb/webob/changesets>`_
 """,
     classifiers=[
@@ -31,7 +31,7 @@ You may install the `in-development version of WebOb
         "License :: OSI Approved :: MIT License",
         "Topic :: Internet :: WWW/HTTP :: WSGI",
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
-        "Programming Language :: Python :: 2.4",
+        "Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware",
         "Programming Language :: Python :: 2.5",
         "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
@@ -41,7 +41,7 @@ You may install the `in-development version of WebOb
     author_email='ianb@colorstudy.com',
     maintainer='Sergey Schetinin',
     maintainer_email='sergey@maluke.com',
-    url='http://pythonpaste.org/webob/',
+    url='http://webob.org/',
     license='MIT',
     packages=['webob'],
     zip_safe=True,

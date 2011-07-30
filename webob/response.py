@@ -209,9 +209,8 @@ class Response(object):
     status_int = property(_status_int__get, _status_int__set,
                           doc=_status_int__get.__doc__)
 
-    status_code = deprecated_property(
-        status_int, 'status_code', 'use .status or .status_int instead',
-        warning=False)
+    # TODO: remove in version 1.2
+    status_code = deprecated_property('status_code', 'use .status or .status_int instead')
 
 
     #
@@ -372,10 +371,13 @@ class Response(object):
         """
         return ResponseBodyFile(self)
 
+    def _body_file__set(self, file):
+        self.app_iter = iter_file(file)
+
     def _body_file__del(self):
         del self.body
 
-    body_file = property(_body_file__get, fdel=_body_file__del,
+    body_file = property(_body_file__get, _body_file__set, _body_file__del,
                          doc=_body_file__get.__doc__)
 
     def write(self, text):
@@ -424,8 +426,8 @@ class Response(object):
     #
 
     allow = list_header('Allow', '14.7')
-    ## FIXME: I realize response.vary += 'something' won't work.  It should.
-    ## Maybe for all listy headers.
+    # TODO: (maybe) support response.vary += 'something'
+    # TODO: same thing for all listy headers
     vary = list_header('Vary', '14.44')
 
     content_length = converter(
@@ -463,7 +465,7 @@ class Response(object):
 
     server = header_getter('Server', '14.38')
 
-    # FIXME: the standard allows this to be a list of challenges
+    # TODO: the standard allows this to be a list of challenges
     www_authenticate = converter(
         header_getter('WWW-Authenticate', '14.47'),
         parse_auth, serialize_auth,
@@ -694,7 +696,7 @@ class Response(object):
 
     def _cache_control__get(self):
         """
-        Get/set/modify the Cache-Control header (section `14.9
+        Get/set/modify the Cache-Control header (`HTTP spec section 14.9
         <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9>`_)
         """
         value = self.headers.get('cache-control', '')
@@ -965,7 +967,7 @@ class Response(object):
             and self.content_length is not None
         ):
             content_range = req.range.content_range(self.content_length)
-            # FIXME: we should support If-Range
+            # TODO: add support for If-Range
             if content_range is None:
                 iter_close(self.app_iter)
                 body = "Requested range not satisfiable: %s" % req.range
@@ -1014,6 +1016,13 @@ class Response(object):
 def filter_headers(hlist, remove_headers=('content-length', 'content-type')):
     return [h for h in hlist if (h[0].lower() not in remove_headers)]
 
+
+def iter_file(file, block_size=1<<18): # 256Kb
+    while True:
+        data = file.read(block_size)
+        if not data:
+            break
+        yield data
 
 class ResponseBodyFile(object):
     mode = 'wb'
@@ -1181,3 +1190,4 @@ def gzip_app_iter(app_iter):
         yield compress.compress(item)
     yield compress.flush()
     yield struct.pack("<2L", crc, size & 0xffffffffL)
+

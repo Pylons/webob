@@ -220,8 +220,8 @@ class NestedMultiDictTestCase(BaseDictTests, unittest.TestCase):
 
     def test_contains(self):
         d = self._get_instance()
-        self.assertEquals(d.__contains__('a'), True)
-        self.assertEquals(d.__contains__('z'), False)
+        assert 'a' in d
+        assert 'z' not in d
 
     def test_add(self):
         d = self._get_instance()
@@ -376,7 +376,7 @@ class NoVarsTestCase(unittest.TestCase):
 
     def test_contains(self):
         d = self._get_instance()
-        self.assertEqual(d.__contains__('a'),  False)
+        assert 'a' not in d
 
     def test_copy(self):
         d = self._get_instance()
@@ -403,7 +403,7 @@ class DummyField(object):
         self.name = name
         self.value = value
         self.filename = filename
-        
+
 class DummyFieldStorage(object):
     def __init__(self, name, value, filename=None):
         self.list = [DummyField(name, value, filename)]

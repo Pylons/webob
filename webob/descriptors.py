@@ -1,12 +1,10 @@
-import warnings
 import re
 from datetime import datetime, date
 
 from webob.byterange import Range, ContentRange
 from webob.etag import IfRange, NoIfRange
 from webob.datetime_utils import parse_date, serialize_date
-from webob.util import rfc_reference
-
+from webob.util import header_docstring
 
 CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
 QUOTES_RE = re.compile('"(.*)"')
@@ -16,8 +14,10 @@ SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
 _not_given = object()
 
 def environ_getter(key, default=_not_given, rfc_section=None):
-    doc = "Gets and sets the %r key in the environment." % key
-    doc += rfc_reference(key, rfc_section)
+    if rfc_section:
+        doc = header_docstring(key, rfc_section)
+    else:
+        doc = "Gets and sets the ``%s`` key in the environment." % key
     if default is _not_given:
         def fget(req):
             return req.environ[key]
@@ -47,8 +47,7 @@ def upath_property(key):
 
 
 def header_getter(header, rfc_section):
-    doc = "Gets and sets and deletes the %s header." % header
-    doc += rfc_reference(header, rfc_section)
+    doc = header_docstring(header, rfc_section)
     key = header.lower()
 
     def fget(r):
@@ -76,7 +75,7 @@ def header_getter(header, rfc_section):
 
 def converter(prop, parse, serialize, convert_name=None):
     assert isinstance(prop, property)
-    convert_name = convert_name or "%r and %r" % (parse.__name__,
+    convert_name = convert_name or "``%s`` and ``%s``" % (parse.__name__,
                                                   serialize.__name__)
     doc = prop.__doc__ or ''
     doc += "  Converts it using %s." % convert_name
@@ -127,42 +126,28 @@ class deprecated_property(object):
     """
     Wraps a descriptor, with a deprecation warning or error
     """
-    def __init__(self, descriptor, attr, message, warning=True):
-        self.descriptor = descriptor
+    def __init__(self, attr, message):
         self.attr = attr
         self.message = message
-        self.warning = warning
 
     def __get__(self, obj, type=None):
         if obj is None:
             return self
         self.warn()
-        return self.descriptor.__get__(obj, type)
 
     def __set__(self, obj, value):
         self.warn()
-        self.descriptor.__set__(obj, value)
 
     def __delete__(self, obj):
         self.warn()
-        self.descriptor.__delete__(obj)
 
     def __repr__(self):
-        return '<Deprecated attribute %s: %r>' % (
-            self.attr,
-            self.descriptor)
+        return '<Deprecated attribute %s>' % self.attr
 
     def warn(self):
-        if not self.warning:
-            raise DeprecationWarning(
-                'The attribute %s is deprecated: %s' % (self.attr, self.message))
-        else:
-            warnings.warn(
-                'The attribute %s is deprecated: %s' % (self.attr, self.message),
-                DeprecationWarning,
-                stacklevel=3)
-
-
+        raise DeprecationWarning('The attribute %s is deprecated: %s'
+            % (self.attr, self.message)
+        )
 
 
 
@@ -171,14 +156,14 @@ class deprecated_property(object):
 ########################
 
 
-# FIXME: weak entity tags are not supported, would need special class
 def parse_etag_response(value):
     """
+    Parse a response ETag. Weak ETags are dropped.
     See:
         * http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.19
         * http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.11
     """
-    if value is not None:
+    if value and not value.startswith('W/'):
         unquote_match = QUOTES_RE.match(value)
         if unquote_match is not None:
             value = unquote_match.group(1)

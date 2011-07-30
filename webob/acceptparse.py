@@ -10,12 +10,11 @@ exists, but this ignores them.
 """
 
 import re
-from webob.util import rfc_reference
+from webob.util import header_docstring, warn_deprecation
 from webob.headers import _trans_name as header_to_key
 
 part_re = re.compile(
     r',\s*([^\s;,\n]+)(?:[^,]*?;\s*q=([0-9.]*))?')
-
 
 
 
@@ -41,6 +40,10 @@ def parse_accept(value):
                 quality = 1
         result.append((name, quality))
     return result
+
+def _warn_first_match():
+    # TODO: remove .first_match in version 1.3
+    warn_deprecation("Use best_match instead", '1.2', 3)
 
 class Accept(object):
     """
@@ -79,7 +82,6 @@ class Accept(object):
             result.append(mask)
         return ', '.join(result)
 
-    # FIXME: should subtraction be allowed?
     def __add__(self, other, reversed=False):
         if isinstance(other, Accept):
             other = other.header_value
@@ -123,19 +125,20 @@ class Accept(object):
         Return the quality of the given offer.  Returns None if there
         is no match (not 0).
         """
-        # FIXME: this does not return best quality, just quality of the first match
-        for mask, quality in self._parsed:
+        bestq = 0
+        for mask, q in self._parsed:
             if self._match(mask, offer):
-                return quality * modifier
-        return None
+                bestq = max(bestq, q * modifier)
+        return bestq or None
 
     def first_match(self, offers):
         """
+        DEPRECATED
         Returns the first allowed offered type. Ignores quality.
         Returns the first offered type if nothing else matches; or if you include None
         at the end of the match list then that will be returned.
         """
-        # FIXME: this method is a bad idea and should be deprecated
+        _warn_first_match()
         if not offers:
             raise ValueError("You must pass in a non-empty list")
         for offer in offers:
@@ -253,6 +256,7 @@ class NilAccept(object):
         return 0
 
     def first_match(self, offers):
+        _warn_first_match()
         return offers[0]
 
     def best_match(self, offers, default_match=None):
@@ -336,12 +340,11 @@ def _check_offer(offer):
 
 
 def accept_property(header, rfc_section,
-    AcceptClass=Accept, NilClass=NilAccept, convert_name='accept header'
+    AcceptClass=Accept, NilClass=NilAccept
 ):
     key = header_to_key(header)
-    doc = "Gets and sets the %r key in the environment." % key
-    doc += rfc_reference(key, rfc_section)
-    doc += "  Converts it as a %s." % convert_name
+    doc = header_docstring(header, rfc_section)
+    #doc += "  Converts it as a %s." % convert_name
     def fget(req):
         value = req.environ.get(key)
         if not value:
@@ -356,4 +359,6 @@ def accept_property(header, rfc_section,
     def fdel(req):
         del req.environ[key]
     return property(fget, fset, fdel, doc)
+
+
 

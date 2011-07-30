@@ -1,11 +1,48 @@
-def rfc_reference(header, section):
-    if not section:
+import cgi, warnings
+from webob.headers import _trans_key
+
+def html_escape(s):
+    """HTML-escape a string or object
+
+    This converts any non-string objects passed into it to strings
+    (actually, using ``unicode()``).  All values returned are
+    non-unicode strings (using ``&#num;`` entities for all non-ASCII
+    characters).
+
+    None is treated specially, and returns the empty string.
+    """
+    if s is None:
         return ''
-    major_section = section.split('.')[0]
-    link = 'http://www.w3.org/Protocols/rfc2616/rfc2616-sec%s.html#sec%s' % (major_section, section)
-    if header.startswith('HTTP_'):
-        header = header[5:].title().replace('_', '-')
-    return " For more information on %s see `section %s <%s>`_." % (header, section, link)
+    if hasattr(s, '__html__'):
+        return s.__html__()
+    if not isinstance(s, basestring):
+        if hasattr(s, '__unicode__'):
+            s = unicode(s)
+        else:
+            s = str(s)
+    s = cgi.escape(s, True)
+    if isinstance(s, unicode):
+        s = s.encode('ascii', 'xmlcharrefreplace')
+    return s
+
+def header_docstring(header, rfc_section):
+    if header.isupper():
+        header = _trans_key(header)
+    major_section = rfc_section.split('.')[0]
+    link = 'http://www.w3.org/Protocols/rfc2616/rfc2616-sec%s.html#sec%s' % (major_section, rfc_section)
+    return "Gets and sets the ``%s`` header (`HTTP spec section %s <%s>`_)." \
+        % (header, rfc_section, link)
+
+def warn_deprecation(text, version, stacklevel):
+    # version specifies when to start raising exceptions instead of warnings
+    # we support 1.2 only for now
+    if version != '1.2':
+        warnings.warn("Unknown warn_deprecation version arg: %r" % version,
+            RuntimeWarning,
+            stacklevel=1
+        )
+    cls = DeprecationWarning
+    warnings.warn(text, cls, stacklevel=stacklevel+1)
 
 status_reasons = {
     # Status Codes

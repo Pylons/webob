@@ -105,7 +105,7 @@ left out to start with):
             sys.exit(2)
         app = make_app(args[0])
         server = simple_server.make_server(
-            options.host, int(options.port), 
+            options.host, int(options.port),
             app)
         print 'Serving on http://%s:%s' % (options.host, options.port)
         server.serve_forever()
@@ -228,7 +228,7 @@ wrong.  For instance, it has to be a POST method:
     if not req.method == 'POST':
         raise exc.HTTPMethodNotAllowed(
             "Only POST allowed",
-            allowed='POST').exception
+            allowed='POST')
 
 And maybe the request body doesn't contain valid JSON:
 
@@ -253,16 +253,13 @@ And maybe all the keys aren't in the dictionary:
 
 And maybe it's trying to acces a private method (a method that starts
 with ``_``) -- that's not just a bad request, we'll call that case
-``403 Forbidden``.  Note that when we raise an exception in Python 2.4
-we have to raise its ``.exception`` attribute, which contains the
-"real" exception object (as opposed to the ``web.Response`` based
-object): (In Python 2.5+ this isn't an issue)
+``403 Forbidden``.
 
 .. code-block:: python
 
     if method.startswith('_'):
         raise exc.HTTPForbidden(
-            "Bad method name %s: must not start with _" % method).exception
+            "Bad method name %s: must not start with _" % method)
 
 And maybe ``json['params']`` isn't a list:
 
@@ -303,7 +300,7 @@ raises some exception.
             body=dumps(dict(result=None,
                             error=error_value,
                             id=id)))
-        
+
 That's a complete server.
 
 The Complete Code
@@ -342,7 +339,7 @@ code:
             if not req.method == 'POST':
                 raise exc.HTTPMethodNotAllowed(
                     "Only POST allowed",
-                    allowed='POST').exception
+                    allowed='POST')
             try:
                 json = loads(req.body)
             except ValueError, e:
@@ -356,7 +353,7 @@ code:
                     "JSON body missing parameter: %s" % e)
             if method.startswith('_'):
                 raise exc.HTTPForbidden(
-                    "Bad method name %s: must not start with _" % method).exception
+                    "Bad method name %s: must not start with _" % method)
             if not isinstance(params, list):
                 raise ValueError(
                     "Bad params %r: must be a list" % params)

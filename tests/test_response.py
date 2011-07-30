@@ -264,28 +264,28 @@ def test_set_request():
 def test_md5_etag():
     res = Response()
     res.body = """\
-In A.D. 2101 
-War was beginning. 
-Captain: What happen ? 
-Mechanic: Somebody set up us the bomb. 
-Operator: We get signal. 
-Captain: What ! 
-Operator: Main screen turn on. 
-Captain: It's You !! 
-Cats: How are you gentlemen !! 
-Cats: All your base are belong to us. 
-Cats: You are on the way to destruction. 
-Captain: What you say !! 
-Cats: You have no chance to survive make your time. 
-Cats: HA HA HA HA .... 
-Captain: Take off every 'zig' !! 
-Captain: You know what you doing. 
-Captain: Move 'zig'. 
+In A.D. 2101
+War was beginning.
+Captain: What happen ?
+Mechanic: Somebody set up us the bomb.
+Operator: We get signal.
+Captain: What !
+Operator: Main screen turn on.
+Captain: It's You !!
+Cats: How are you gentlemen !!
+Cats: All your base are belong to us.
+Cats: You are on the way to destruction.
+Captain: What you say !!
+Cats: You have no chance to survive make your time.
+Cats: HA HA HA HA ....
+Captain: Take off every 'zig' !!
+Captain: You know what you doing.
+Captain: Move 'zig'.
 Captain: For great justice."""
     res.md5_etag()
     ok_(res.etag)
     ok_('\n' not in res.etag)
-    eq_(res.etag, 
+    eq_(res.etag,
         md5(res.body).digest().encode('base64').replace('\n', '').strip('='))
     eq_(res.content_md5, None)
 
@@ -520,13 +520,13 @@ def test_body_get_is_unicode_notverylong():
     res._app_iter = u'foo'
     res._body = None
     assert_raises(ValueError, res.__getattribute__, 'body')
-    
+
 def test_body_get_is_unicode_verylong():
     res = Response()
     res._app_iter = u'x' * 51
     res._body = None
     assert_raises(ValueError, res.__getattribute__, 'body')
-    
+
 def test_body_set_not_unicode_or_str():
     res = Response()
     assert_raises(TypeError, res.__setattr__, 'body', object())
@@ -542,7 +542,7 @@ def test_body_set_under_body_doesnt_exist():
     eq_(res._body, 'abc')
     eq_(res.content_length, 3)
     eq_(res._app_iter, None)
-    
+
 def test_body_del():
     res = Response()
     res._body = '123'
@@ -552,7 +552,7 @@ def test_body_del():
     eq_(res._body, None)
     eq_(res.content_length, None)
     eq_(res._app_iter, None)
-    
+
 def test_unicode_body_get_no_charset():
     res = Response()
     res.charset = None
@@ -563,7 +563,7 @@ def test_unicode_body_get_decode():
     res.charset = 'utf-8'
     res.body = 'La Pe\xc3\xb1a'
     eq_(res.unicode_body, unicode('La Pe\xc3\xb1a', 'utf-8'))
-    
+
 def test_unicode_body_set_no_charset():
     res = Response()
     res.charset = None
@@ -621,8 +621,8 @@ def test_app_iter_del():
     eq_(res._app_iter, None)
     eq_(res._body, None)
     eq_(res.content_length, None)
-    
-    
+
+
 def test_charset_set_charset_is_None():
     res = Response()
     res.charset = 'utf-8'
@@ -631,7 +631,7 @@ def test_charset_set_charset_is_None():
     eq_(res._app_iter, None)
     eq_(res._body, None)
     eq_(res.content_length, None)
-    
+
 def test_charset_set_no_content_type_header():
     res = Response()
     res.headers.pop('Content-Type', None)
@@ -662,13 +662,13 @@ def test_content_type_params_set_ok_param_quoting():
     res = Response()
     res.content_type_params = {'a':''}
     eq_(res.headers['Content-Type'], 'text/html; a=""')
-    
+
 def test_set_cookie_overwrite():
     res = Response()
     res.set_cookie('a', '1')
     res.set_cookie('a', '2', overwrite=True)
     eq_(res.headerlist[-1], ('Set-Cookie', 'a=2; Path=/'))
-    
+
 def test_set_cookie_value_is_None():
     res = Response()
     res.set_cookie('a', None)
@@ -774,26 +774,26 @@ def test_unset_cookie_not_existing_and_not_strict():
 def test_unset_cookie_not_existing_and_strict():
     res = Response()
     assert_raises(KeyError, res.unset_cookie, 'a')
-    
+
 def test_unset_cookie_key_in_cookies():
     res = Response()
     res.headers.add('Set-Cookie', 'a=2; Path=/')
     res.headers.add('Set-Cookie', 'b=3; Path=/')
     res.unset_cookie('a')
     eq_(res.headers.getall('Set-Cookie'), ['b=3; Path=/'])
-    
+
 def test_merge_cookies_no_set_cookie():
     res = Response()
     result = res.merge_cookies('abc')
     eq_(result, 'abc')
-    
+
 def test_merge_cookies_resp_is_Response():
     inner_res = Response()
     res = Response()
     res.set_cookie('a', '1')
     result = res.merge_cookies(inner_res)
     eq_(result.headers.getall('Set-Cookie'), ['a=1; Path=/'])
-    
+
 def test_merge_cookies_resp_is_wsgi_callable():
     L = []
     def dummy_wsgi_callable(environ, start_response):
@@ -809,7 +809,7 @@ def test_merge_cookies_resp_is_wsgi_callable():
     assert result == 'abc'
     assert len(L) == 1
     L[0][1]('200 OK', []) # invoke dummy_start_response assertion
-    
+
 def test_body_get_body_is_None_len_app_iter_is_zero():
     res = Response()
     res._app_iter = StringIO()
@@ -889,7 +889,7 @@ def test_cache_control_set_dict():
     res = Response()
     res.cache_control = {'a':'b'}
     eq_(repr(res.cache_control), "<CacheControl 'a=b'>")
-    
+
 def test_cache_control_set_None():
     res = Response()
     res.cache_control = None
@@ -942,7 +942,7 @@ def test_body_file_write_unicode_encodes():
 def test_repr():
     res = Response()
     ok_(repr(res).endswith('200 OK>'))
-    
+
 def test_cache_expires_set_timedelta():
     res = Response()
     from datetime import timedelta
@@ -972,7 +972,7 @@ def test_cache_expires_set_zero():
 def test_encode_content_unknown():
     res = Response()
     assert_raises(AssertionError, res.encode_content, 'badencoding')
-    
+
 def test_encode_content_identity():
     res = Response()
     result = res.encode_content('identity')
@@ -1025,11 +1025,16 @@ def test_decode_content_gzip():
     res.body = body
     res.decode_content()
     eq_(res.body, 'abc')
-    
+
 def test__abs_headerlist_location_with_scheme():
     res = Response()
     res.content_encoding = 'gzip'
     res.headerlist = [('Location', 'http:')]
     result = res._abs_headerlist({})
     eq_(result, [('Location', 'http:')])
-    
+
+def test_response_set_body_file():
+    for data in ['abc', 'abcdef'*1024]:
+        file = StringIO(data)
+        r = Response(body_file=file)
+        assert r.body == data

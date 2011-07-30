@@ -6,8 +6,15 @@ from nose.tools import assert_true, assert_false, assert_equal, assert_raises
 
 def test_satisfiable():
     range = Range( ((0,99),) )
-    assert_true( range.satisfiable(100) )
-    assert_false( range.satisfiable(99) )
+    assert_true(range.satisfiable(100))
+    assert_true(range.satisfiable(99))
+
+def test_not_satisfiable():
+    range = Range.parse('bytes=-100')
+    assert_false(range.satisfiable(50))
+    range = Range.parse('bytes=100-')
+    assert_false(range.satisfiable(50))
+
 
 def test_range_for_length():
     range = Range( ((0,99), (100,199) ) )
@@ -50,13 +57,13 @@ def test_range_str_end_none():
     range = Range( ((0, 100), ) )
     # Manually set test values
     range.ranges = ( (0, None), )
-    assert_equal( range.__str__(), 'bytes=0-' )
+    assert_equal( str(range), 'bytes=0-' )
 
 def test_range_str_end_none_negative_start():
     range = Range( ((0, 100), ) )
     # Manually set test values
     range.ranges = ( (-5, None), )
-    assert_equal( range.__str__(), 'bytes=-5' )
+    assert_equal( str(range), 'bytes=-5' )
 
 def test_range_str_1():
     # Single range
@@ -144,13 +151,13 @@ def test_contentrange_repr():
 def test_contentrange_str_length_none():
     contentrange = ContentRange( 0, 99, 100 )
     contentrange.length = None
-    assert_equal( contentrange.__str__(), 'bytes 0-98/*' )
+    assert_equal( str(contentrange), 'bytes 0-98/*' )
 
 def test_contentrange_str_start_none():
     contentrange = ContentRange( 0, 99, 100 )
     contentrange.start = None
     contentrange.stop = None
-    assert_equal( contentrange.__str__(), 'bytes */100' )
+    assert_equal( str(contentrange), 'bytes */100' )
 
 def test_contentrange_iter():
     contentrange = ContentRange( 0, 99, 100 )

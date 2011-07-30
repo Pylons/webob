@@ -3,8 +3,41 @@ News
 
 .. contents::
 
+1.1beta1
+---------
+
+* We have acquired the webob.org domain, docs are now hosted at `docs.webob.org
+  <http://docs.webob.org/>`_
+
+* Make ``accept.quality(..)`` return best match quality, not first match quality.
+
+* Fix ``Range.satisfiable(..)`` edge cases.
+
+* Make sure ``WSGIHTTPException`` instances return the same headers for ``HEAD``
+  and ``GET`` requests.
+
+* Drop Python 2.4 support
+
+* Deprecate ``HTTPException.exception`` (warning on use).
+
+* Deprecate ``accept.first_match(..)`` (warning on use).
+  Use ``.best_match(..)`` instead.
+
+* Complete deprecation of ``req.[str_]{post|query}vars`` properties
+  (exception on use).
+
+* Remove ``FakeCGIBody.seek`` hack (no longer necessary).
+
 1.0.8
 ------
+
+* Escape commas in cookie values (see also:
+  `stdlib Cookie bug <http://bugs.python.org/issue9824>`_)
+
+* Change cookie serialization to more closely match how cookies usually
+  are serialized (unquoted expires, semicolon separators even between morsels)
+
+* Fix some rare cases in cookie parsing
 
 * Enhance the req.is_body_readable to always guess GET, HEAD, DELETE and TRACE
   as unreadable and PUT and POST as readable
