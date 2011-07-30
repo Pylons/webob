@@ -1361,7 +1361,8 @@ def _encode_multipart(vars, content_type):
 
 def warn_str_deprecation():
     warn_deprecation(
-        "str_* will be depreacted in WebOb 1.2, use the unicode versions",
+        "req.str_* attrs are depreacted and will be disabled in WebOb 1.2, "
+        "use the unicode versions instead",
         '1.2',
         3
     )
