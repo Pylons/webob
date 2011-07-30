@@ -1370,9 +1370,10 @@ def warn_str_deprecation():
         3
     )
 
-def warn_decode_deprecation()
+def warn_decode_deprecation():
     warn_deprecation(
         "decode_param_names is deprecated and will not be supported "
         "starting with WebOb 1.2",
-        '1.2'
+        '1.2',
+        3
     )
