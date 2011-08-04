@@ -1,4 +1,5 @@
 from webob import Request
+from nose.tools import eq_ as eq
 
 def test_request_no_method():
     assert Request({}).method == 'GET'
@@ -67,3 +68,30 @@ class ReadTracker(object):
         assert size == len(self.data)
         self.was_read = True
         return self.data
+
+
+def test_request_wrong_clen():
+    tlen = 1<<20
+    req = Request.blank('/', POST='x'*tlen)
+    eq(req.content_length, tlen)
+    req.body_file = _Helper_test_request_wrong_clen(req.body_file)
+    eq(req.content_length, None)
+    req.content_length = tlen + 100
+    eq(req.content_length, tlen+100)
+    # this raises AssertionError if the body reading
+    # trusts content_length too much
+    req.copy_body()
+    eq(req.content_length, tlen)
+
+class _Helper_test_request_wrong_clen(object):
+    def __init__(self, f):
+        self.f = f
+        self.file_ended = False
+
+    def read(self, *args):
+        r = self.f.read(*args)
+        if not r:
+            if self.file_ended:
+                raise AssertionError("Reading should stop after first empty string")
+            self.file_ended = True
+        return r

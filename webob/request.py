@@ -777,13 +777,17 @@ class BaseRequest(object):
         """
         tempfile_limit = self.request_body_tempfile_limit
         length = self.content_length
-        assert isinstance(length, int)
+        assert isinstance(length, (int, long)), `length`
         if not tempfile_limit or length <= tempfile_limit:
             return False
         fileobj = self.make_tempfile()
         input = self.body_file_raw
-        while length:
+        while length >= 0:
             data = input.read(min(length, 65536))
+            if not data:
+                # content_length was wrong, let's correct it
+                self.content_length -= length
+                break
             fileobj.write(data)
             length -= len(data)
         fileobj.seek(0)
