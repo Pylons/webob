@@ -1,17 +1,29 @@
+from __future__ import with_statement
 from webob import Request, Response
 import sys, logging, threading, random, urllib2
+from contextlib import contextmanager
 
 log = logging.getLogger(__name__)
 
-def _make_test_app(test_op):
-    def app(env, sr):
-        req = Request(env)
-        log.debug('starting test operation: %s', test_op)
-        test_op(req)
-        log.debug('done')
-        r = Response("ok")
-        return r(env, sr)
-    return app
+@contextmanager
+def serve(app):
+    server = _make_test_server(app)
+    try:
+        #worker = threading.Thread(target=server.handle_request)
+        worker = threading.Thread(target=server.serve_forever)
+        worker.setDaemon(True)
+        worker.start()
+        url = "http://localhost:%d" % server.server_port
+        log.debug("server started on %s", url)
+        yield url
+    finally:
+        log.debug("shutting server down")
+        server.shutdown()
+        worker.join(1)
+        if worker.isAlive():
+            log.warning('worker is hanged')
+        else:
+            log.debug("server stopped")
 
 def _make_test_server(app):
     from wsgiref.simple_server import make_server, WSGIRequestHandler
@@ -32,38 +44,35 @@ def _make_test_server(app):
             if i == 1:
                 raise
 
-def _test_request(op):
-    """Make a request to a wsgiref.simple_server and attempt to call
-    op(req) in the application. Succeed if the operation does not
-    time out."""
-    app = _make_test_app(op)
-    server = _make_test_server(app)
-    worker = threading.Thread(target=server.handle_request)
-    worker.setDaemon(True)
-    worker.start()
-    url = "http://localhost:%d/" % server.server_port
-    try:
-        resp = urllib2.urlopen(url, timeout=3)
-        assert resp.read() == "ok"
-    finally:
-        server.socket.close()
-        worker.join(1)
-        if worker.isAlive():
-            log.debug('worker is hanged')
 
 if sys.version >= '2.6':
+    _test_ops = {
+        '/copy': lambda req: req.copy(),
+        '/read-all': lambda req: req.body_file.read(),
+        '/read-0': lambda req: req.body_file.read(0),
+        '/make-seekable': lambda req: req.make_body_seekable()
+    }
+
+    def _test_app(env, sr):
+        req = Request(env)
+        log.debug('starting test operation: %s', req.path_info)
+        test_op = _test_ops[req.path_info]
+        test_op(req)
+        log.debug('done')
+        r = Response("ok")
+        return r(env, sr)
+
     def test_in_wsgiref():
         """
             Test actual request/response cycle in the presence of Request.copy()
             and other methods that can potentially hang.
         """
-        yield (_test_request, lambda req: req.copy())
-        yield (_test_request, lambda req: req.body_file.read())
-        yield (_test_request, lambda req: req.body_file.read(0))
-        yield (_test_request, lambda req: req.make_body_seekable())
+        with serve(_test_app) as url:
+            for key in _test_ops:
+                resp = urllib2.urlopen(url+key, timeout=3)
+                assert resp.read() == "ok"
 
 
     if __name__ == '__main__':
-        for t,a in test_in_wsgiref():
-            t(a)
+        test_in_wsgiref()
 
