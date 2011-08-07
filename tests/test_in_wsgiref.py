@@ -2,7 +2,7 @@ from __future__ import with_statement
 from webob import Request, Response
 import sys, logging, threading, random, urllib2, socket, cgi
 from contextlib import contextmanager
-from nose.tools import assert_raises
+from nose.tools import assert_raises, eq_ as eq
 from Queue import Queue, Empty
 
 log = logging.getLogger(__name__)
@@ -65,14 +65,22 @@ def _test_app_req_interrupt(env, sr):
     sr('200 OK', [])
     return []
 
-def _req_req_cgi(req):
-    env = req.environ
-    #env = env.copy()
-    #env.setdefault('CONTENT_LENGTH', '0')
+def _req_int_cgi(req):
+    assert req.body_file.read(0) == ''
+    #req.environ.setdefault('CONTENT_LENGTH', '0')
     d = cgi.FieldStorage(
         fp=req.body_file,
-        environ=env,
+        environ=req.environ,
     )
+
+def _req_int_readline(req):
+    try:
+        eq(req.body_file.readline(), 'a=b\n')
+    except IOError:
+        # too early to detect disconnect
+        raise AssertionError
+    req.body_file.readline()
+
 
 _test_ops_req_interrupt = {
     '/copy': lambda req: req.copy(),
@@ -80,8 +88,9 @@ _test_ops_req_interrupt = {
     '/read-post': lambda req: req.POST,
     '/read-all': lambda req: req.body_file.read(),
     '/read-too-much': lambda req: req.body_file.read(1<<30),
+    '/readline': _req_int_readline,
     '/readlines': lambda req: req.body_file.readlines(),
-    '/read-cgi': _req_req_cgi,
+    '/read-cgi': _req_int_cgi,
     '/make-seekable': lambda req: req.make_body_seekable()
 }
 
@@ -101,7 +110,7 @@ _interrupted_req = (
     "content-length: 100000\r\n"
     "\r\n"
 )
-_interrupted_req += 'z='+'x'*10000
+_interrupted_req += 'a=b\nz='+'x'*10000
 
 
 

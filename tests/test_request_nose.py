@@ -39,6 +39,11 @@ def test_request_read_after_setting_body_file():
     assert req.is_body_seekable
     assert input.was_read
 
+def test_request_readlines():
+    req = Request.blank('/', POST='a\n'*3)
+    req.is_body_seekable = False
+    eq(req.body_file.readlines(), ['a\n'] * 3)
+
 def test_request_delete_with_body():
     req = Request.blank('/', method='DELETE')
     assert not req.is_body_readable
@@ -70,17 +75,21 @@ class ReadTracker(object):
         return self.data
 
 
-def test_request_wrong_clen():
+def test_request_wrong_clen(is_seekable=False):
     tlen = 1<<20
     req = Request.blank('/', POST='x'*tlen)
     eq(req.content_length, tlen)
     req.body_file = _Helper_test_request_wrong_clen(req.body_file)
     eq(req.content_length, None)
     req.content_length = tlen + 100
+    req.is_body_seekable = is_seekable
     eq(req.content_length, tlen+100)
     # this raises AssertionError if the body reading
     # trusts content_length too much
     assert_raises(IOError, req.copy_body)
+
+def test_request_wrong_clen_seekable():
+    test_request_wrong_clen(is_seekable=True)
 
 class _Helper_test_request_wrong_clen(object):
     def __init__(self, f):
