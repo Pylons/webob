@@ -5,6 +5,43 @@ from contextlib import contextmanager
 
 log = logging.getLogger(__name__)
 
+__test__ = (sys.version >= '2.6') # skip these tests on py2.5
+
+
+
+
+def test_request_reading():
+    """
+        Test actual request/response cycle in the presence of Request.copy()
+        and other methods that can potentially hang.
+    """
+    with serve(_test_app) as server:
+        for key in _test_ops:
+            resp = urllib2.urlopen(server.url+key, timeout=3)
+            assert resp.read() == "ok"
+
+def _test_app(env, sr):
+    req = Request(env)
+    log.debug('starting test operation: %s', req.path_info)
+    test_op = _test_ops[req.path_info]
+    test_op(req)
+    log.debug('done')
+    r = Response("ok")
+    return r(env, sr)
+
+_test_ops = {
+    '/copy': lambda req: req.copy(),
+    '/read-all': lambda req: req.body_file.read(),
+    '/read-0': lambda req: req.body_file.read(0),
+    '/make-seekable': lambda req: req.make_body_seekable()
+}
+
+
+
+
+
+
+
 @contextmanager
 def serve(app):
     server = _make_test_server(app)
@@ -13,9 +50,9 @@ def serve(app):
         worker = threading.Thread(target=server.serve_forever)
         worker.setDaemon(True)
         worker.start()
-        url = "http://localhost:%d" % server.server_port
-        log.debug("server started on %s", url)
-        yield url
+        server.url = "http://localhost:%d" % server.server_port
+        log.debug("server started on %s", server.url)
+        yield server
     finally:
         log.debug("shutting server down")
         server.shutdown()
@@ -45,34 +82,7 @@ def _make_test_server(app):
                 raise
 
 
-if sys.version >= '2.6':
-    _test_ops = {
-        '/copy': lambda req: req.copy(),
-        '/read-all': lambda req: req.body_file.read(),
-        '/read-0': lambda req: req.body_file.read(0),
-        '/make-seekable': lambda req: req.make_body_seekable()
-    }
 
-    def _test_app(env, sr):
-        req = Request(env)
-        log.debug('starting test operation: %s', req.path_info)
-        test_op = _test_ops[req.path_info]
-        test_op(req)
-        log.debug('done')
-        r = Response("ok")
-        return r(env, sr)
-
-    def test_in_wsgiref():
-        """
-            Test actual request/response cycle in the presence of Request.copy()
-            and other methods that can potentially hang.
-        """
-        with serve(_test_app) as url:
-            for key in _test_ops:
-                resp = urllib2.urlopen(url+key, timeout=3)
-                assert resp.read() == "ok"
-
-
-    if __name__ == '__main__':
-        test_in_wsgiref()
+if __name__ == '__main__':
+    test_in_wsgiref()
 
