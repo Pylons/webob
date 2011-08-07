@@ -1,3 +1,4 @@
+import webob
 from webob import Request
 from nose.tools import eq_ as eq, assert_raises
 
@@ -90,6 +91,9 @@ def test_request_wrong_clen(is_seekable=False):
 
 def test_request_wrong_clen_seekable():
     test_request_wrong_clen(is_seekable=True)
+
+def test_webob_version():
+    assert isinstance(webob.__version__, str)
 
 class _Helper_test_request_wrong_clen(object):
     def __init__(self, f):
