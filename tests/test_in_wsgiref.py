@@ -1,7 +1,9 @@
 from __future__ import with_statement
 from webob import Request, Response
-import sys, logging, threading, random, urllib2
+import sys, logging, threading, random, urllib2, socket, cgi
 from contextlib import contextmanager
+from nose.tools import assert_raises
+from Queue import Queue, Empty
 
 log = logging.getLogger(__name__)
 
@@ -15,21 +17,21 @@ def test_request_reading():
         Test actual request/response cycle in the presence of Request.copy()
         and other methods that can potentially hang.
     """
-    with serve(_test_app) as server:
-        for key in _test_ops:
+    with serve(_test_app_req_reading) as server:
+        for key in _test_ops_req_read:
             resp = urllib2.urlopen(server.url+key, timeout=3)
             assert resp.read() == "ok"
 
-def _test_app(env, sr):
+def _test_app_req_reading(env, sr):
     req = Request(env)
     log.debug('starting test operation: %s', req.path_info)
-    test_op = _test_ops[req.path_info]
+    test_op = _test_ops_req_read[req.path_info]
     test_op(req)
     log.debug('done')
     r = Response("ok")
     return r(env, sr)
 
-_test_ops = {
+_test_ops_req_read = {
     '/copy': lambda req: req.copy(),
     '/read-all': lambda req: req.body_file.read(),
     '/read-0': lambda req: req.body_file.read(0),
@@ -39,6 +41,67 @@ _test_ops = {
 
 
 
+# TODO: remove server logging for interrupted requests
+# TODO: test interrupted body directly
+
+def test_interrupted_request():
+    with serve(_test_app_req_interrupt) as server:
+        for path in _test_ops_req_interrupt:
+            _send_interrupted_req(server, path)
+            try:
+                assert _global_res.get(timeout=1)
+            except Empty:
+                raise AssertionError("Error during test %s", path)
+
+_global_res = Queue()
+
+def _test_app_req_interrupt(env, sr):
+    req = Request(env)
+    assert req.content_length == 100000
+    op = _test_ops_req_interrupt[req.path_info]
+    log.info("Running test: %s", req.path_info)
+    assert_raises(IOError, op, req)
+    _global_res.put(True)
+    sr('200 OK', [])
+    return []
+
+def _req_req_cgi(req):
+    env = req.environ
+    #env = env.copy()
+    #env.setdefault('CONTENT_LENGTH', '0')
+    d = cgi.FieldStorage(
+        fp=req.body_file,
+        environ=env,
+    )
+
+_test_ops_req_interrupt = {
+    '/copy': lambda req: req.copy(),
+    '/read-body': lambda req: req.body,
+    '/read-post': lambda req: req.POST,
+    '/read-all': lambda req: req.body_file.read(),
+    '/read-too-much': lambda req: req.body_file.read(1<<30),
+    '/readlines': lambda req: req.body_file.readlines(),
+    '/read-cgi': _req_req_cgi,
+    '/make-seekable': lambda req: req.make_body_seekable()
+}
+
+
+def _send_interrupted_req(server, path='/'):
+    sock = socket.socket()
+    sock.connect(('localhost', server.server_port))
+    f = sock.makefile('wb')
+    f.write(_interrupted_req % path)
+    f.flush()
+    f.close()
+    sock.close()
+
+_interrupted_req = (
+    "POST %s HTTP/1.0\r\n"
+    "content-type: application/x-www-form-urlencoded\r\n"
+    "content-length: 100000\r\n"
+    "\r\n"
+)
+_interrupted_req += 'z='+'x'*10000
 
 
 
@@ -84,5 +147,6 @@ def _make_test_server(app):
 
 
 if __name__ == '__main__':
-    test_in_wsgiref()
+    #test_request_reading()
+    test_interrupted_request()
 

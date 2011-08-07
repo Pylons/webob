@@ -83,7 +83,22 @@ class BaseRequest(object):
         """
         if not self.is_body_readable:
             return StringIO('')
-        return self.body_file_raw
+        r = self.body_file_raw
+        clen = self.content_length
+        if not self.is_body_seekable and clen is not None:
+            # we need to wrap input in LimitedLengthFile
+            # but we have to cache the instance as well
+            # otherwise this would stop working
+            # (.remaining counter would reset between calls):
+            #   req.body_file.read(100)
+            #   req.body_file.read(100)
+            env = self.environ
+            wrapped, raw = env.get('webob._body_file', (0,0))
+            if raw is not r:
+                wrapped = LimitedLengthFile(r, clen)
+                env['webob._body_file'] = wrapped, r
+            r = wrapped
+        return r
 
     def _body_file__set(self, value):
         if isinstance(value, str):
@@ -538,7 +553,7 @@ class BaseRequest(object):
         # default of 0 is better:
         fs_environ.setdefault('CONTENT_LENGTH', '0')
         fs_environ['QUERY_STRING'] = ''
-        fs = cgi.FieldStorage(fp=self.body_file_raw,
+        fs = cgi.FieldStorage(fp=self.body_file,
                               environ=fs_environ,
                               keep_blank_values=True)
         vars = MultiDict.from_fieldstorage(fs)
@@ -694,7 +709,7 @@ class BaseRequest(object):
         env = self.environ.copy()
         return self.__class__(env, method='GET', content_type=None, body='')
 
-    # webob.is_body_seekalbe marks input streams that are seekable
+    # webob.is_body_seekable marks input streams that are seekable
     # this way we can have seekable input without testing the .seek() method
     is_body_seekable = environ_getter('webob.is_body_seekable', False)
 
@@ -769,27 +784,31 @@ class BaseRequest(object):
             did_copy = self._copy_body_tempfile()
             if not did_copy:
                 # it wasn't necessary, so just read it into memory
-                self.body = self.body_file_raw.read(self.content_length)
+                self.body = self.body_file.read(self.content_length)
 
     def _copy_body_tempfile(self):
         """
             Copy wsgi.input to tempfile if necessary. Returns True if it did.
         """
         tempfile_limit = self.request_body_tempfile_limit
-        length = self.content_length
-        assert isinstance(length, (int, long)), `length`
-        if not tempfile_limit or length <= tempfile_limit:
+        todo = self.content_length
+        assert isinstance(todo, (int, long)), `todo`
+        if not tempfile_limit or todo <= tempfile_limit:
             return False
         fileobj = self.make_tempfile()
-        input = self.body_file_raw
-        while length >= 0:
-            data = input.read(min(length, 65536))
+        input = self.body_file
+        while todo > 0:
+            data = input.read(min(todo, 65536))
             if not data:
-                # content_length was wrong, let's correct it
-                self.content_length -= length
-                break
+                # Normally this should not happen, because LimitedLengthFile should
+                # have raised an exception by now.
+                # It can happen if the is_body_seekable flag is incorrect.
+                raise DisconnectionError(
+                    "Client disconnected (%s more bytes were expected)"
+                    % todo
+                )
             fileobj.write(data)
-            length -= len(data)
+            todo -= len(data)
         fileobj.seek(0)
         self.body_file_raw = fileobj
         self.is_body_seekable = True
@@ -1235,6 +1254,72 @@ class Request(AdhocAttrMixin, BaseRequest):
 #########################
 ## Helper classes and monkeypatching
 #########################
+
+class DisconnectionError(IOError):
+    pass
+
+class LimitedLengthFile(object):
+    def __init__(self, file, maxlen):
+        self.file = file
+        self.maxlen = maxlen
+        self.remaining = maxlen
+
+    def __repr__(self):
+        return '<%s(%r, maxlen=%s)>' % (
+            self.__class__.__name__,
+            self.file,
+            self.maxlen
+        )
+
+    def read(self, sz=-1):
+        if sz is None or sz < 0:
+            sz = self.remaining
+        else:
+            sz = min(sz, self.remaining)
+        if not sz:
+            return ''
+        r = self.file.read(sz)
+        self.remaining -= len(r)
+        if len(r) < sz:
+            self._check_disconnect()
+        return r
+
+    def readline(self, hint=None):
+        hint = self._normhint(hint)
+        r = self.file.readline(hint)
+        self.remaining -= len(r)
+        if not r:
+            self._check_disconnect()
+        return r
+
+    def readlines(self, hint=None):
+        hint = self._normhint(hint)
+        r = self.file.readlines(hint)
+        total_len = sum(len(l) for l in r)
+        self.remaining -= total_len
+        if total_len < hint:
+            self._check_disconnect()
+        return r
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        r = self.readline()
+        if not r:
+            raise StopIteration
+        return r
+
+    def _normhint(self, hint):
+        return min(hint, self.remaining) if hint else self.remaining
+
+    def _check_disconnect(self):
+        if self.remaining:
+            raise DisconnectionError(
+                "The client disconnected while sending the POST/PUT body "
+                + "(%d more bytes were expected)" % self.remaining
+            )
+
 
 
 def _cgi_FieldStorage__repr__patch(self):

@@ -1,5 +1,5 @@
 from webob import Request
-from nose.tools import eq_ as eq
+from nose.tools import eq_ as eq, assert_raises
 
 def test_request_no_method():
     assert Request({}).method == 'GET'
@@ -80,8 +80,7 @@ def test_request_wrong_clen():
     eq(req.content_length, tlen+100)
     # this raises AssertionError if the body reading
     # trusts content_length too much
-    req.copy_body()
-    eq(req.content_length, tlen)
+    assert_raises(IOError, req.copy_body)
 
 class _Helper_test_request_wrong_clen(object):
     def __init__(self, f):

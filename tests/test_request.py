@@ -30,7 +30,28 @@ class BaseRequestTests(unittest.TestCase):
             'REQUEST_METHOD': 'POST',
         }
         req = BaseRequest(environ)
+        self.assert_(req.body_file is not INPUT)
+
+    def test_body_file_getter_seekable(self):
+        body = 'input'
+        INPUT = self._makeStringIO(body)
+        environ = {'wsgi.input': INPUT,
+            'CONTENT_LENGTH': len(body),
+            'REQUEST_METHOD': 'POST',
+            'webob.is_body_seekable': True,
+        }
+        req = BaseRequest(environ)
         self.assert_(req.body_file is INPUT)
+
+    def test_body_file_getter_cache(self):
+        body = 'input'
+        INPUT = self._makeStringIO(body)
+        environ = {'wsgi.input': INPUT,
+            'CONTENT_LENGTH': len(body),
+            'REQUEST_METHOD': 'POST',
+        }
+        req = BaseRequest(environ)
+        self.assert_(req.body_file is req.body_file)
 
     def test_body_file_getter_unreadable(self):
         body = 'input'
@@ -99,7 +120,7 @@ class BaseRequestTests(unittest.TestCase):
         INPUT.seek(1, 0) # consume
         environ = {'wsgi.input': INPUT,
                    'webob.is_body_seekable': False,
-                   'CONTENT_LENGTH': len('input'),
+                   'CONTENT_LENGTH': len('input')-1,
                    'REQUEST_METHOD': 'POST',
                   }
         req = BaseRequest(environ)
@@ -112,7 +133,7 @@ class BaseRequestTests(unittest.TestCase):
         INPUT.seek(1, 0) # consume
         environ = {'wsgi.input': INPUT,
                    'webob.is_body_seekable': True,
-                   'CONTENT_LENGTH': len('input'),
+                   'CONTENT_LENGTH': len('input')-1,
                    'REQUEST_METHOD': 'POST',
                   }
         req = BaseRequest(environ)
