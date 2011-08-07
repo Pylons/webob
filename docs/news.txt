@@ -3,7 +3,39 @@ News
 
 .. contents::
 
-1.1beta1
+1.1b2
+---------
+
+* Add detection for browser / user-agent disconnects. If the client disconnected
+  before sending the entire request body (POST / PUT), ``req.POST``, ``req.body``
+  and other related properties and methods will raise an exception.
+  Previously this caused the application get a truncated request with no indication that it
+  is incomplete.
+
+* Make ``Response.body_file`` settable. This is now valid:
+  ``Response(body_file=open('foo.bin'), content_type=...)``
+
+* Revert the restriction on req.body not being settable for GET and some
+  other requests. Such requests actually can have a body according to HTTP BIS
+  (see also `commit message <https://bitbucket.org/ianb/webob/changeset/b3ef34c57936>`_)
+
+* Add support for file upload testing via ``Request.blank(POST=..)``. Patch contributed by
+  Tim Perevezentsev. See also:
+  `ticket <https://bitbucket.org/ianb/webob/issue/15>`_,
+  `changeset <https://bitbucket.org/ianb/webob/changeset/4ba9ab0c3f99>`_.
+
+* Deprecate ``req.str_GET``, ``str_POST``, ``str_params`` and ``str_cookies`` (warning).
+
+
+* Deprecate ``req.decode_param_names`` (warning).
+
+* Change ``req.decode_param_names`` default to ``True``. This means that ``.POST``, ``.GET``,
+  ``.params`` and ``.cookies`` keys are now unicode. This is necessary for WebOb behave
+  as close as possible on Python 2 and Python 3.
+
+
+
+1.1b1
 ---------
 
 * We have acquired the webob.org domain, docs are now hosted at `docs.webob.org
