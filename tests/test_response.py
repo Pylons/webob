@@ -554,11 +554,12 @@ def test_text_get_no_charset():
 def test_unicode_body():
     res = Response()
     res.charset = 'utf-8'
-    res.body = 'La Pe\xc3\xb1a'
-    eq_(res.unicode_body, unicode('La Pe\xc3\xb1a', 'utf-8'))
-    res.charset = 'UTF-16'
-    res.ubody = u'abc'
-    eq_(res.body, '\xff\xfea\x00b\x00c\x00')
+    bbody = 'La Pe\xc3\xb1a' # binary string
+    ubody = unicode(bbody, 'utf-8') # unicode string
+    res.body = bbody
+    eq_(res.unicode_body, ubody)
+    res.ubody = ubody
+    eq_(res.body, bbody)
     del res.ubody
     eq_(res.body, '')
 
