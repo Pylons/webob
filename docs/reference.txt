@@ -596,13 +596,13 @@ You can set any of these attributes, e.g.:
     >>> res.body = u"test"
     Traceback (most recent call last):
         ...
-    TypeError: You cannot set Response.body to a unicode object (use Response.unicode_body)
-    >>> res.unicode_body = u"test"
+    TypeError: You cannot set Response.body to a unicode object (use Response.text)
+    >>> res.text = u"test"
     Traceback (most recent call last):
         ...
-    AttributeError: You cannot access Response.unicode_body unless charset is set
+    AttributeError: You cannot access Response.text unless charset is set
     >>> res.charset = 'utf8'
-    >>> res.unicode_body = u"test"
+    >>> res.text = u"test"
     >>> res.body
     'test'
 

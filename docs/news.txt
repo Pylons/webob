@@ -30,7 +30,7 @@ News
 * Deprecate ``req.decode_param_names`` (warning).
 
 * Change ``req.decode_param_names`` default to ``True``. This means that ``.POST``, ``.GET``,
-  ``.params`` and ``.cookies`` keys are now unicode. This is necessary for WebOb behave
+  ``.params`` and ``.cookies`` keys are now unicode. This is necessary for WebOb to behave
   as close as possible on Python 2 and Python 3.
 
 

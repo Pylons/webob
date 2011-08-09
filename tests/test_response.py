@@ -536,54 +536,54 @@ def test_body_set_unicode():
     assert_raises(TypeError, res.__setattr__, 'body', u'abc')
 
 def test_body_set_under_body_doesnt_exist():
-    res = Response()
-    del res._body
-    res.body = 'abc'
-    eq_(res._body, 'abc')
+    res = Response('abc')
+    eq_(res.body, 'abc')
     eq_(res.content_length, 3)
-    eq_(res._app_iter, None)
 
 def test_body_del():
-    res = Response()
-    res._body = '123'
-    res.content_length = 3
-    res._app_iter = ()
+    res = Response('123')
     del res.body
-    eq_(res._body, None)
-    eq_(res.content_length, None)
-    eq_(res._app_iter, None)
+    eq_(res.body, '')
+    eq_(res.content_length, 0)
 
-def test_unicode_body_get_no_charset():
+def test_text_get_no_charset():
     res = Response()
     res.charset = None
-    assert_raises(AttributeError, res.__getattribute__, 'unicode_body')
+    assert_raises(AttributeError, res.__getattribute__, 'text')
 
-def test_unicode_body_get_decode():
+def test_unicode_body():
     res = Response()
     res.charset = 'utf-8'
     res.body = 'La Pe\xc3\xb1a'
     eq_(res.unicode_body, unicode('La Pe\xc3\xb1a', 'utf-8'))
+    res.charset = 'UTF-16'
+    res.ubody = u'abc'
+    eq_(res.body, '\xff\xfea\x00b\x00c\x00')
+    del res.ubody
+    eq_(res.body, '')
 
-def test_unicode_body_set_no_charset():
-    res = Response()
-    res.charset = None
-    assert_raises(AttributeError, res.__setattr__, 'unicode_body', 'abc')
-
-def test_unicode_body_set_not_unicode():
+def test_text_get_decode():
     res = Response()
     res.charset = 'utf-8'
-    assert_raises(TypeError, res.__setattr__, 'unicode_body',
+    res.body = 'La Pe\xc3\xb1a'
+    eq_(res.text, unicode('La Pe\xc3\xb1a', 'utf-8'))
+
+def test_text_set_no_charset():
+    res = Response()
+    res.charset = None
+    assert_raises(AttributeError, res.__setattr__, 'text', 'abc')
+
+def test_text_set_not_unicode():
+    res = Response()
+    res.charset = 'utf-8'
+    assert_raises(TypeError, res.__setattr__, 'text',
                   'La Pe\xc3\xb1a')
 
-def test_unicode_body_del():
-    res = Response()
-    res._body = '123'
-    res.content_length = 3
-    res._app_iter = ()
-    del res.unicode_body
-    eq_(res._body, None)
-    eq_(res.content_length, None)
-    eq_(res._app_iter, None)
+def test_text_del():
+    res = Response('123')
+    del res.text
+    eq_(res.body, '')
+    eq_(res.content_length, 0)
 
 def test_body_file_del():
     res = Response()
@@ -591,21 +591,20 @@ def test_body_file_del():
     res.content_length = 3
     res._app_iter = ()
     del res.body_file
-    eq_(res._body, None)
-    eq_(res.content_length, None)
-    eq_(res._app_iter, None)
+    eq_(res.body, '')
+    eq_(res.content_length, 0)
 
 def test_write_unicode():
     res = Response()
-    res.unicode_body = unicode('La Pe\xc3\xb1a', 'utf-8')
+    res.text = unicode('La Pe\xc3\xb1a', 'utf-8')
     res.write(u'a')
-    eq_(res.unicode_body, unicode('La Pe\xc3\xb1aa', 'utf-8'))
+    eq_(res.text, unicode('La Pe\xc3\xb1aa', 'utf-8'))
 
 def test_write_text():
     res = Response()
     res.body = 'abc'
     res.write(u'a')
-    eq_(res.unicode_body, 'abca')
+    eq_(res.text, 'abca')
 
 def test_app_iter_get_app_iter_is_None():
     res = Response()

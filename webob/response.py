@@ -7,7 +7,7 @@ from webob.cachecontrol import CacheControl, serialize_cache_control
 from webob.descriptors import *
 from webob.datetime_utils import *
 from webob.cookies import Cookie, Morsel
-from webob.util import status_reasons
+from webob.util import status_reasons, warn_deprecation
 from webob.request import StringIO
 
 __all__ = ['Response']
@@ -296,15 +296,13 @@ class Response(object):
                 )
         return self._body
 
-    def _body__set(self, value):
-        if isinstance(value, unicode):
-            raise TypeError(
-                "You cannot set Response.body to a unicode object (use "
-                "Response.unicode_body)")
+    def _body__set(self, value=''):
         if not isinstance(value, str):
-            raise TypeError(
-                "You can only set the body to a str (not %s)"
-                % type(value))
+            if isinstance(value, unicode):
+                msg = "You cannot set Response.body to a unicode object (use Response.text)"
+            else:
+                msg = "You can only set the body to a str (not %s)" % type(value)
+            raise TypeError(msg)
         try:
             if self._body or self._app_iter:
                 self.content_md5 = None
@@ -316,48 +314,58 @@ class Response(object):
         self.content_length = len(value)
         self._app_iter = None
 
-    def _body__del(self):
-        self._body = None
-        self.content_length = None
-        self._app_iter = None
+#     def _body__del(self):
+#         self.body = ''
+#         #self.content_length = None
 
-    body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
+    body = property(_body__get, _body__set, _body__set)
 
 
     #
-    # unicode_body
+    # text, unicode_body, ubody
     #
 
-    def _unicode_body__get(self):
+    def _text__get(self):
         """
         Get/set the unicode value of the body (using the charset of the
         Content-Type)
         """
         if not self.charset:
             raise AttributeError(
-                "You cannot access Response.unicode_body unless charset is set")
+                "You cannot access Response.text unless charset is set")
         body = self.body
         return body.decode(self.charset, self.unicode_errors)
 
-    def _unicode_body__set(self, value):
+    def _text__set(self, value):
         if not self.charset:
             raise AttributeError(
-                "You cannot access Response.unicode_body unless charset is set")
+                "You cannot access Response.text unless charset is set")
         if not isinstance(value, unicode):
             raise TypeError(
-                "You can only set Response.unicode_body to a unicode string "
+                "You can only set Response.text to a unicode string "
                 "(not %s)" % type(value))
         self.body = value.encode(self.charset)
 
-    def _unicode_body__del(self):
+    def _text__del(self):
         del self.body
 
-    unicode_body = property(_unicode_body__get, _unicode_body__set,
-                            _unicode_body__del, doc=_unicode_body__get.__doc__)
-    ubody = property(_unicode_body__get, _unicode_body__set,
-                     _unicode_body__del, doc="Alias for unicode_body")
+    text = property(_text__get, _text__set, _text__del, doc=_text__get.__doc__)
 
+    def _ubody__get(self):
+        """
+            Alias for text
+        """
+        _warn_ubody()
+        return self.text
 
+    def _ubody__set(self, val=None):
+        _warn_ubody()
+        if val is None:
+            del self.body
+        else:
+            self.text = val
+
+    unicode_body = ubody = property(_ubody__get, _ubody__set, _ubody__set)
 
     #
     # body_file, write(text)
@@ -382,7 +390,7 @@ class Response(object):
 
     def write(self, text):
         if isinstance(text, unicode):
-            self.unicode_body += text
+            self.text += text
         else:
             self.body += text
 
@@ -1191,3 +1199,5 @@ def gzip_app_iter(app_iter):
     yield compress.flush()
     yield struct.pack("<2L", crc, size & 0xffffffffL)
 
+def _warn_ubody():
+    warn_deprecation(".unicode_body is deprecated in favour of Response.text", '1.3', 3)
