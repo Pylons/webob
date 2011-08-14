@@ -1,7 +1,7 @@
 import time
 import calendar
 from datetime import datetime, date, timedelta, tzinfo
-from rfc822 import parsedate_tz, mktime_tz, formatdate
+from email.utils import parsedate_tz, mktime_tz, formatdate
 
 __all__ = [
     'UTC', 'timedelta_to_seconds',
@@ -73,7 +73,7 @@ def serialize_date(dt):
     if not isinstance(dt, (float, int, long)):
         raise ValueError(
             "You must pass in a datetime, date, time tuple, or integer object, not %r" % dt)
-    return formatdate(dt)
+    return formatdate(dt, usegmt=True)
 
 
 

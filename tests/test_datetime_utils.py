@@ -2,7 +2,7 @@
 
 import datetime
 import calendar
-from rfc822 import formatdate
+from email.utils import formatdate
 from webob import datetime_utils
 from nose.tools import ok_, eq_, assert_raises
 
@@ -56,7 +56,7 @@ def test_serialize_date():
     eq_(ret, 'Mon, 20 Nov 1995 19:12:08 GMT')
     dt = formatdate(
         calendar.timegm(
-            (datetime.datetime.now()+datetime.timedelta(1)).timetuple()))
+            (datetime.datetime.now()+datetime.timedelta(1)).timetuple()), usegmt=True)
     eq_(dt, datetime_utils.serialize_date(datetime.timedelta(1)))
     assert_raises(ValueError, datetime_utils.serialize_date, None)
 
