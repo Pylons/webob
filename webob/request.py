@@ -58,7 +58,7 @@ class BaseRequest(object):
             warn_decode_deprecation()
             d['decode_param_names'] = decode_param_names
         elif not self.decode_param_names:
-            warn_decode_deprecation() # TODO: coverage
+            warn_decode_deprecation()
         if kw:
             cls = self.__class__
             if 'method' in kw:
@@ -1264,7 +1264,6 @@ class LimitedLengthFile(object):
         self.maxlen = maxlen
         self.remaining = maxlen
 
-    # TODO: coverage
     def __repr__(self):
         return '<%s(%r, maxlen=%s)>' % (
             self.__class__.__name__,

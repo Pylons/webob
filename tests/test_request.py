@@ -81,8 +81,6 @@ class BaseRequestTests(unittest.TestCase):
         req.body_file.seek(0)
         self.assertEqual(req.body_file.read(), '')
 
-
-
     def test_body_file_setter_non_string(self):
         BEFORE = self._makeStringIO('before')
         AFTER =  self._makeStringIO('after')

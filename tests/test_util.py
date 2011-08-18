@@ -11,7 +11,7 @@ class Test_warn_deprecation(unittest.TestCase):
         import warnings
         warnings.warn = self.oldwarn
         del self.warnings
-        
+
     def _callFUT(self, text, version, stacklevel):
         from webob.util import warn_deprecation
         return warn_deprecation(text, version, stacklevel)
@@ -31,7 +31,7 @@ class Test_warn_deprecation(unittest.TestCase):
         self.assertEqual(deprecation_warning['text'], 'text')
         self.assertEqual(deprecation_warning['type'], DeprecationWarning)
         self.assertEqual(deprecation_warning['stacklevel'], 2)
-        
+
     def test_is_1_2(self):
         self._callFUT('text', '1.2', 1)
         self.assertEqual(len(self.warnings), 1)
@@ -39,5 +39,11 @@ class Test_warn_deprecation(unittest.TestCase):
         self.assertEqual(deprecation_warning['text'], 'text')
         self.assertEqual(deprecation_warning['type'], DeprecationWarning)
         self.assertEqual(deprecation_warning['stacklevel'], 2)
-        
-    
+
+
+    def test_decode_param_names(self):
+        env = Request.blank('?a=b').environ
+        req = Request(env, decode_param_names=False)
+        self.assertEqual(len(self.warnings), 1)
+        deprecation_warning = self.warnings[0]
+        self.assertEqual(deprecation_warning['type'], DeprecationWarning)

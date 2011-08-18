@@ -159,7 +159,7 @@ class wsgify(object):
             return resp(environ, start_response)
         else:
             if self.middleware_wraps:
-                args = (self.middleware_wraps,) + args # TODO: coverage
+                args = (self.middleware_wraps,) + args
             return self.func(req, *args, **kw)
 
     def get(self, url, **kw):

@@ -262,3 +262,11 @@ class DecoratorTests(unittest.TestCase):
         self.assertEqual(args_rep, 'a=1, b=2, c=3')
         args_rep = _format_args(kw=kw, defaults=dict(a=4, b=5))
         self.assertEqual(args_rep, 'c=6')
+
+    def test_middleware_direct_call(self):
+        @wsgify.middleware
+        def mw(req, app):
+            return 'foo'
+
+        app = mw(Response())
+        self.assertEqual(app(Request.blank('/')), 'foo')

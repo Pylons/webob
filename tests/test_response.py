@@ -590,6 +590,10 @@ def test_write_unicode():
     res.write(u'a')
     eq_(res.text, unicode('La Pe\xc3\xb1aa', 'utf-8'))
 
+def test_write_unicode_no_charset():
+    res = Response(charset=None)
+    assert_raises(TypeError, res.write, u'a')
+
 def test_write_text():
     res = Response()
     res.body = 'abc'
