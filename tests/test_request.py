@@ -3,6 +3,8 @@ from webob import Request, BaseRequest, UTC
 
 _marker = object()
 
+warnings.showwarning = lambda *args, **kw: None
+
 class BaseRequestTests(unittest.TestCase):
     def _makeStringIO(self, text):
         try:

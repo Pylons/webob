@@ -190,7 +190,7 @@ class MultiDict(DictMixin):
                 msg = ("Behavior of MultiDict.update() has changed "
                     "and overwrites duplicate keys. Consider using .extend()"
                 )
-                warnings.warn(msg, stacklevel=2)
+                warnings.warn(msg, UserWarning, stacklevel=2)
         DictMixin.update(self, *args, **kw)
 
     def extend(self, other=None, **kwargs):

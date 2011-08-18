@@ -1,4 +1,5 @@
 import unittest
+from webob import Request, Response
 
 class Test_warn_deprecation(unittest.TestCase):
     def setUp(self):
@@ -50,10 +51,27 @@ class Test_warn_deprecation(unittest.TestCase):
         self.assertEqual(deprecation_warning['type'], DeprecationWarning)
 
     def test_decode_param_names_attr(self):
-        from webob import Request
         class BadRequest(Request):
             decode_param_names = False
         req = BadRequest.blank('?a=b')
         self.assertEqual(len(self.warnings), 1)
         deprecation_warning = self.warnings[0]
         self.assertEqual(deprecation_warning['type'], DeprecationWarning)
+
+    def test_multidict_update_warning(self):
+        # test warning when duplicate keys are passed
+        r = Response()
+        r.headers.update([
+            ('Set-Cookie', 'a=b'),
+            ('Set-Cookie', 'x=y'),
+        ])
+        self.assertEqual(len(self.warnings), 1)
+        deprecation_warning = self.warnings[0]
+        self.assertEqual(deprecation_warning['type'], UserWarning)
+        assert 'Consider using .extend()' in deprecation_warning['text']
+
+    def test_multidict_update_warning_unnecessary(self):
+        # no warning on normal operation
+        r = Response()
+        r.headers.update([('Set-Cookie', 'a=b')])
+        self.assertEqual(len(self.warnings), 0)
