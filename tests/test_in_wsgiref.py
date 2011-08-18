@@ -3,12 +3,12 @@ from webob import Request, Response
 import sys, logging, threading, random, urllib2, socket, cgi
 from contextlib import contextmanager
 from nose.tools import assert_raises, eq_ as eq
+from wsgiref.simple_server import make_server, WSGIRequestHandler, WSGIServer, ServerHandler
 from Queue import Queue, Empty
 
 log = logging.getLogger(__name__)
 
 __test__ = (sys.version >= '2.6') # skip these tests on py2.5
-
 
 
 
@@ -113,7 +113,6 @@ _interrupted_req = (
 _interrupted_req += 'a=b\nz='+'x'*10000
 
 
-
 @contextmanager
 def serve(app):
     server = _make_test_server(app)
@@ -134,18 +133,26 @@ def serve(app):
         else:
             log.debug("server stopped")
 
+
+class QuietHanlder(WSGIRequestHandler):
+    def log_request(self, *args):
+        pass
+
+ServerHandler.handle_error = lambda: None
+
+class QuietServer(WSGIServer):
+    def handle_error(self, req, addr):
+        pass
+
 def _make_test_server(app):
-    from wsgiref.simple_server import make_server, WSGIRequestHandler
-    class NoLogHanlder(WSGIRequestHandler):
-        def log_request(self, *args):
-            pass
     maxport = ((1<<16)-1)
     # we'll make 3 attempts to find a free port
     for i in range(3, 0, -1):
         try:
             port = random.randint(maxport/2, maxport)
             server = make_server('localhost', port, app,
-                handler_class=NoLogHanlder
+                server_class=QuietServer,
+                handler_class=QuietHanlder
             )
             server.timeout = 5
             return server
