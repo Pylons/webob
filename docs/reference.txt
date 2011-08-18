@@ -652,14 +652,14 @@ app_iter in-place (turning the app_iter into a list if necessary):
     >>> f.write(u'test')
     Traceback (most recent call last):
       . . .
-    TypeError: You can only write unicode to Response.body_file if charset has been set
+    TypeError: You can only write unicode to Response if charset has been set
     >>> f.encoding
     >>> res.charset = 'utf8'
     >>> f.encoding
     'utf8'
     >>> f.write(u'test')
     >>> res.app_iter
-    ['hey', 'test']
+    ['', 'hey', 'test']
     >>> res.body
     'heytest'
 

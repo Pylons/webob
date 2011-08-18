@@ -101,6 +101,15 @@ def test_response_copy():
     eq_(r.body, 'a')
     eq_(r2.body, 'a')
 
+def test_response_copy_content_md5():
+    res = Response()
+    res.md5_etag(set_content_md5=True)
+    assert res.content_md5
+    res2 = res.copy()
+    assert res.content_md5
+    assert res2.content_md5
+    eq_(res.content_md5, res2.content_md5)
+
 def test_HEAD_closes():
     req = Request.blank('/')
     req.method = 'HEAD'
@@ -453,79 +462,60 @@ def test_app_iter_range_starts_after_iter_end():
     range = AppIterRange(iter([]), start=1, stop=1)
     eq_(list(range), [])
 
-def test_response_file_body_flush_is_no_op():
-    from webob.response import ResponseBodyFile
-    rbo = ResponseBodyFile(None)
-    rbo.flush()
+def test_resp_write_app_iter_non_list():
+    res = Response(app_iter=('a','b'))
+    eq_(res.content_length, None)
+    res.write('c')
+    eq_(res.body, 'abc')
+    eq_(res.content_length, 3)
 
 def test_response_file_body_writelines():
     from webob.response import ResponseBodyFile
-    class FakeResponse:
-        pass
-    res = FakeResponse()
-    res._app_iter = res.app_iter = ['foo']
+    res = Response(app_iter=['foo'])
     rbo = ResponseBodyFile(res)
     rbo.writelines(['bar', 'baz'])
     eq_(res.app_iter, ['foo', 'bar', 'baz'])
+    rbo.flush() # noop
+    eq_(res.app_iter, ['foo', 'bar', 'baz'])
 
-def test_response_file_body_write_non_str():
-    from webob.response import ResponseBodyFile
-    class FakeResponse:
-        pass
-    res = FakeResponse()
-    rbo = ResponseBodyFile(res)
-    assert_raises(TypeError, rbo.write, object())
+def test_response_write_non_str():
+    res = Response()
+    assert_raises(TypeError, res.write, object())
 
 def test_response_file_body_write_empty_app_iter():
     from webob.response import ResponseBodyFile
-    class FakeResponse:
-        pass
-    res = FakeResponse()
-    res._app_iter = res.app_iter = None
-    res.body = 'foo'
-    rbo = ResponseBodyFile(res)
-    rbo.write('baz')
+    res = Response('foo')
+    res.write('baz')
     eq_(res.app_iter, ['foo', 'baz'])
 
 def test_response_file_body_write_empty_body():
-    from webob.response import ResponseBodyFile
-    class FakeResponse:
-        body = ''
-    res = FakeResponse()
-    res._app_iter = res.app_iter = None
-    rbo = ResponseBodyFile(res)
-    rbo.write('baz')
-    eq_(res.app_iter, ['baz'])
+    res = Response('')
+    res.write('baz')
+    eq_(res.app_iter, ['', 'baz'])
 
 def test_response_file_body_close_not_implemented():
-    from webob.response import ResponseBodyFile
-    rbo = ResponseBodyFile(None)
+    rbo = Response().body_file
     assert_raises(NotImplementedError, rbo.close)
 
 def test_response_file_body_repr():
-    from webob.response import ResponseBodyFile
-    rbo = ResponseBodyFile('yo')
+    rbo = Response().body_file
+    rbo.response = 'yo'
     eq_(repr(rbo), "<body_file for 'yo'>")
 
 def test_body_get_is_none():
     res = Response()
-    res._body = None
     res._app_iter = None
     assert_raises(TypeError, Response, app_iter=iter(['a']),
                   body="somebody")
     assert_raises(AttributeError, res.__getattribute__, 'body')
 
 def test_body_get_is_unicode_notverylong():
-    res = Response()
-    res._app_iter = u'foo'
-    res._body = None
-    assert_raises(ValueError, res.__getattribute__, 'body')
+    res = Response(app_iter=(u'foo',))
+    assert_raises(TypeError, res.__getattribute__, 'body')
 
-def test_body_get_is_unicode_verylong():
-    res = Response()
-    res._app_iter = u'x' * 51
-    res._body = None
-    assert_raises(ValueError, res.__getattribute__, 'body')
+def test_body_get_is_unicode():
+    res = Response(app_iter=(['x'] * 51 + [u'x']))
+    assert_raises(TypeError, res.__getattribute__, 'body')
 
 def test_body_set_not_unicode_or_str():
     res = Response()
@@ -547,8 +537,7 @@ def test_body_del():
     eq_(res.content_length, 0)
 
 def test_text_get_no_charset():
-    res = Response()
-    res.charset = None
+    res = Response(charset=None)
     assert_raises(AttributeError, res.__getattribute__, 'text')
 
 def test_unicode_body():
@@ -588,9 +577,9 @@ def test_text_del():
 
 def test_body_file_del():
     res = Response()
-    res._body = '123'
-    res.content_length = 3
-    res._app_iter = ()
+    res.body = '123'
+    eq_(res.content_length, 3)
+    eq_(res.app_iter, ['123'])
     del res.body_file
     eq_(res.body, '')
     eq_(res.content_length, 0)
@@ -607,29 +596,13 @@ def test_write_text():
     res.write(u'a')
     eq_(res.text, 'abca')
 
-def test_app_iter_get_app_iter_is_None():
-    res = Response()
-    res._app_iter = None
-    res._body = None
-    assert_raises(AttributeError, res.__getattribute__, 'app_iter')
-
 def test_app_iter_del():
-    res = Response()
-    res.content_length = 3
-    res._app_iter = ['123']
+    res = Response(
+        content_length=3,
+        app_iter=['123'],
+    )
     del res.app_iter
-    eq_(res._app_iter, None)
-    eq_(res._body, None)
-    eq_(res.content_length, None)
-
-
-def test_charset_set_charset_is_None():
-    res = Response()
-    res.charset = 'utf-8'
-    res._app_iter = ['123']
-    del res.app_iter
-    eq_(res._app_iter, None)
-    eq_(res._body, None)
+    eq_(res.body, '')
     eq_(res.content_length, None)
 
 def test_charset_set_no_content_type_header():
@@ -817,15 +790,6 @@ def test_body_get_body_is_None_len_app_iter_is_zero():
     result = res.body
     eq_(result, '')
 
-def test_body_set_AttributeError_edgecase():
-    res = Response()
-    del res._app_iter
-    del res._body
-    res.body = 'abc'
-    eq_(res._body, 'abc')
-    eq_(res.content_length, 3)
-    eq_(res._app_iter, None)
-
 def test_cache_control_get():
     res = Response()
     eq_(repr(res.cache_control), "<CacheControl ''>")
@@ -922,22 +886,15 @@ def test_body_file_get():
     eq_(result.__class__, ResponseBodyFile)
 
 def test_body_file_write_no_charset():
-    from webob.response import ResponseBodyFile
-    class FakeReponse:
-        charset = None
-    rbo = ResponseBodyFile(FakeReponse())
-    assert_raises(TypeError, rbo.write, u'foo')
+    res = Response
+    assert_raises(TypeError, res.write, u'foo')
 
 def test_body_file_write_unicode_encodes():
     from webob.response import ResponseBodyFile
-    class FakeReponse:
-        charset = 'utf-8'
-        _app_iter = app_iter = []
     s = unicode('La Pe\xc3\xb1a', 'utf-8')
-    res = FakeReponse()
-    rbo = ResponseBodyFile(res)
-    rbo.write(s)
-    eq_(res.app_iter, ['La Pe\xc3\xb1a'])
+    res = Response()
+    res.write(s)
+    eq_(res.app_iter, ['', 'La Pe\xc3\xb1a'])
 
 def test_repr():
     res = Response()
@@ -1038,3 +995,4 @@ def test_response_set_body_file():
         file = StringIO(data)
         r = Response(body_file=file)
         assert r.body == data
+

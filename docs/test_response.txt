@@ -17,7 +17,7 @@ the body:
     >>> res.body = 'Another'
     >>> res.write(' test')
     >>> res.app_iter
-    ['Another test']
+    ['Another', ' test']
     >>> res.content_length
     12
     >>> res.headers['content-length']
@@ -417,7 +417,6 @@ Copying Responses should copy their internal structures
     >>> print r
     200 OK
     Content-Type: text/html; charset=UTF-8
-    Content-Length: 3
     <BLANKLINE>
     foo
     >>> print r2
