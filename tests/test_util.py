@@ -42,6 +42,7 @@ class Test_warn_deprecation(unittest.TestCase):
 
 
     def test_decode_param_names(self):
+        from webob import Request
         env = Request.blank('?a=b').environ
         req = Request(env, decode_param_names=False)
         self.assertEqual(len(self.warnings), 1)
