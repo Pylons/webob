@@ -41,10 +41,19 @@ class Test_warn_deprecation(unittest.TestCase):
         self.assertEqual(deprecation_warning['stacklevel'], 2)
 
 
-    def test_decode_param_names(self):
+    def test_decode_param_names_arg(self):
         from webob import Request
         env = Request.blank('?a=b').environ
         req = Request(env, decode_param_names=False)
+        self.assertEqual(len(self.warnings), 1)
+        deprecation_warning = self.warnings[0]
+        self.assertEqual(deprecation_warning['type'], DeprecationWarning)
+
+    def test_decode_param_names_attr(self):
+        from webob import Request
+        class BadRequest(Request):
+            decode_param_names = False
+        req = BadRequest.blank('?a=b')
         self.assertEqual(len(self.warnings), 1)
         deprecation_warning = self.warnings[0]
         self.assertEqual(deprecation_warning['type'], DeprecationWarning)
