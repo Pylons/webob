@@ -3,6 +3,24 @@ News
 
 .. contents::
 
+1.1rc1
+---------
+
+* Deprecate ``Response.ubody`` / ``.unicode_body`` in favor of new ``.text`` attribute
+  (the old names will be removed in 1.3 or even later).
+
+* Make ``Response.write`` much more efficient (`issue 18
+  <https://bitbucket.org/ianb/webob/issue/18>`_)
+
+* Make sure copying responses does not reset Content-Length or Content-MD5 of the
+  original (and that of future copies).
+
+* Change ``del res.body`` semantics so that it doesn't make the response invalid,
+  but only removes the response body.
+
+* Remove ``Response._body`` so the ``_app_iter`` is the only representation.
+
+
 1.1b2
 ---------
 
@@ -34,7 +52,6 @@ News
   as close as possible on Python 2 and Python 3.
 
 
-
 1.1b1
 ---------
 
@@ -60,6 +77,7 @@ News
 
 * Remove ``FakeCGIBody.seek`` hack (no longer necessary).
 
+
 1.0.8
 ------
 
@@ -80,7 +98,6 @@ News
 
 * Fix running nosetests with arguments on UNIX systems
   (`issue 11 <https://bitbucket.org/ianb/webob/issue/11>`_)
-
 
 
 1.0.7
