@@ -12,7 +12,7 @@ __all__ = [
 BaseRequest.ResponseClass = Response
 Response.RequestClass = Request
 
-__version__ = '1.1b2'
+__version__ = '1.1rc1'
 
 
 
