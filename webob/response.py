@@ -343,21 +343,27 @@ class Response(object):
 
     text = property(_text__get, _text__set, _text__del, doc=_text__get.__doc__)
 
-    def _ubody__get(self):
-        """
-            Alias for text
-        """
-        _warn_ubody()
-        return self.text
 
-    def _ubody__set(self, val=None):
-        _warn_ubody()
-        if val is None:
-            del self.body
-        else:
-            self.text = val
+#     def _ubody__get(self):
+#         """
+#             Alias for text
+#         """
+#         _warn_ubody()
+#         return self.text
 
-    unicode_body = ubody = property(_ubody__get, _ubody__set, _ubody__set)
+#     def _ubody__set(self, val=None):
+#         _warn_ubody()
+#         if val is None:
+#             del self.body
+#         else:
+#             self.text = val
+
+#     unicode_body = ubody = property(_ubody__get, _ubody__set, _ubody__set)
+
+    unicode_body = ubody = property(
+        _text__get, _text__set, _text__del,
+        "Deprecated alias for .text"
+    )
 
     #
     # body_file, write(text)
