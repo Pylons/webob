@@ -1407,15 +1407,18 @@ def _get_multipart_boundary(ctype):
 
 def _encode_multipart(vars, content_type):
     """Encode a multipart request body into a string"""
+    f = StringIO()
+    w = f.write
+    CRLF = '\r\n'
     boundary = _get_multipart_boundary(content_type)
     if not boundary:
         boundary = os.urandom(10).encode('hex')
         content_type += '; boundary=%s' % boundary
-    lines = []
     for name, value in vars:
-        lines.append('--%s' % boundary)
+        w('--%s' % boundary)
+        w(CRLF)
         assert name is not None, 'Value associated with no name: %r' % value
-        disp = 'Content-Disposition: form-data; name="%s"' % name
+        w('Content-Disposition: form-data; name="%s"' % name)
         filename = None
         if getattr(value, 'filename', None):
             filename = value.filename
@@ -1424,23 +1427,23 @@ def _encode_multipart(vars, content_type):
             if hasattr(value, 'read'):
                 value = value.read()
         if filename is not None:
-            disp += '; filename="%s"' % filename
-        lines.append(disp)
+            w('; filename="%s"' % filename)
+        w(CRLF)
         # TODO: should handle value.disposition_options
         if getattr(value, 'type', None):
-            ct = 'Content-type: %s' % value.type
+            w('Content-type: %s' % value.type)
             if value.type_options:
-                ct += ''.join(['; %s="%s"' % (ct_name, ct_value)
-                               for ct_name, ct_value in sorted(
-                                                value.type_options.items())])
-            lines.append(ct)
-        lines.append('')
+                for ct_name, ct_value in sorted(value.type_options.items()):
+                    w('; %s="%s"' % (ct_name, ct_value))
+            w(CRLF)
+        w(CRLF)
         if hasattr(value, 'value'):
-            lines.append(value.value)
+            w(value.value)
         else:
-            lines.append(value)
-    lines.append('--%s--' % boundary)
-    return content_type, '\r\n'.join(lines)
+            w(value)
+        w(CRLF)
+    w('--%s--' % boundary)
+    return content_type, f.getvalue()
 
 def warn_str_deprecation():
     warn_deprecation(
