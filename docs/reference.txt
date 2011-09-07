@@ -345,7 +345,7 @@ example means that ``text/html`` is okay, but
 
     >>> req.accept = 'text/html;q=0.5, application/xhtml+xml;q=1'
     >>> req.accept
-    <MIMEAccept at ... Accept: text/html;q=0.5, application/xhtml+xml>
+    <MIMEAccept('text/html;q=0.5, application/xhtml+xml')>
     >>> 'text/html' in req.accept
     True
 

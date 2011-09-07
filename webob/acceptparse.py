@@ -18,28 +18,6 @@ part_re = re.compile(
 
 
 
-def parse_accept(value):
-    """
-    Parses an ``Accept-*`` style header.
-
-    A list of ``[(value, quality), ...]`` is returned.  ``quality``
-    will be 1 if it was not given.
-    """
-    result = []
-    for match in part_re.finditer(','+value):
-        name = match.group(1)
-        if name == 'q':
-            continue
-        quality = match.group(2) or ''
-        if not quality:
-            quality = 1
-        else:
-            try:
-                quality = max(min(float(quality), 1), 0)
-            except ValueError:
-                quality = 1
-        result.append((name, quality))
-    return result
 
 def _warn_first_match():
     # TODO: remove .first_match in version 1.3
@@ -53,26 +31,36 @@ class Accept(object):
     ``accept_obj + 'accept_thing'`` to get a new object
     """
 
-    def __init__(self, header_name, header_value):
-        self.header_name = header_name
+    def __init__(self, header_value):
         self.header_value = header_value
-        self._parsed = parse_accept(header_value)
-        if header_name == 'Accept-Charset':
-            for k, v in self._parsed:
-                if k == '*' or k == 'iso-8859-1':
-                    break
-            else:
-                self._parsed.append(('iso-8859-1', 1))
-        elif header_name == 'Accept-Language':
-            self._match = self._match_lang
+        self._parsed = list(self.parse(header_value))
         self._parsed_nonzero = [(m,q) for (m,q) in self._parsed if q]
+
+    @staticmethod
+    def parse(value):
+        """
+        Parse ``Accept-*`` style header.
+
+        Return iterator of ``(value, quality)`` pairs.
+        ``quality`` defaults to 1.
+        """
+        for match in part_re.finditer(','+value):
+            name = match.group(1)
+            if name == 'q':
+                continue
+            quality = match.group(2) or ''
+            if quality:
+                try:
+                    quality = max(min(float(quality), 1), 0)
+                    yield (name, quality)
+                    continue
+                except ValueError:
+                    pass
+            yield (name, 1)
 
 
     def __repr__(self):
-        return '<%s at 0x%x %s: %s>' % (
-            self.__class__.__name__,
-            abs(id(self)),
-            self.header_name, str(self))
+        return '<%s(%r)>' % (self.__class__.__name__, str(self))
 
     def __str__(self):
         result = []
@@ -106,7 +94,7 @@ class Accept(object):
             new_value = other
         else:
             new_value = my_value + ', ' + other
-        return self.__class__(self.header_name, new_value)
+        return self.__class__(new_value)
 
     def __radd__(self, other):
         return self.__add__(other, True)
@@ -207,12 +195,6 @@ class Accept(object):
         _check_offer(offer)
         return mask == '*' or offer.lower() == mask.lower()
 
-    def _match_lang(self, mask, item):
-        return (mask == '*'
-            or item.lower() == mask.lower()
-            or item.lower().split('-')[0] == mask.lower()
-        )
-
 
 
 class NilAccept(object):
@@ -223,12 +205,8 @@ class NilAccept(object):
 
     MasterClass = Accept
 
-    def __init__(self, header_name):
-        self.header_name = header_name
-
     def __repr__(self):
-        return '<%s for %s: %s>' % (
-            self.__class__.__name__, self.header_name, self.MasterClass)
+        return '<%s: %s>' % (self.__class__.__name__, self.MasterClass)
 
     def __str__(self):
         return ''
@@ -240,13 +218,13 @@ class NilAccept(object):
         if isinstance(item, self.MasterClass):
             return item
         else:
-            return self.MasterClass(self.header_name, '') + item
+            return self.MasterClass('') + item
 
     def __radd__(self, item):
         if isinstance(item, self.MasterClass):
             return item
         else:
-            return item + self.MasterClass(self.header_name, '')
+            return item + self.MasterClass('')
 
     def __contains__(self, item):
         _check_offer(item)
@@ -283,6 +261,24 @@ class NoAccept(NilAccept):
     def __contains__(self, item):
         return False
 
+class AcceptCharset(Accept):
+    @staticmethod
+    def parse(value):
+        latin1_found = False
+        for m, q in Accept.parse(value):
+            if m == '*' or m == 'iso-8859-1':
+                latin1_found = True
+            yield m, q
+        if not latin1_found:
+            yield ('iso-8859-1', 1)
+
+class AcceptLanguage(Accept):
+    def _match(self, mask, item):
+        return (mask == '*'
+            or item.lower() == mask.lower()
+            or item.lower().split('-')[0] == mask.lower()
+        )
+
 
 class MIMEAccept(Accept):
     """
@@ -290,19 +286,16 @@ class MIMEAccept(Accept):
 
         This class knows about mime wildcards, like ``image/*``
     """
-    def __init__(self, header_name, header_value):
-        Accept.__init__(self, header_name, header_value)
-        parsed = []
-        for mask, q in self._parsed:
+    @staticmethod
+    def parse(value):
+        for mask, q in Accept.parse(value):
             try:
                 mask_major, mask_minor = mask.split('/')
             except ValueError:
                 continue
             if mask_major == '*' and mask_minor != '*':
                 continue
-            parsed.append((mask, q))
-        self._parsed = parsed
-        self._parsed_nonzero = [(m,q) for (m,q) in self._parsed if q]
+            yield (mask, q)
 
     def accept_html(self):
         """
@@ -349,12 +342,12 @@ def accept_property(header, rfc_section,
     def fget(req):
         value = req.environ.get(key)
         if not value:
-            return NilClass(header)
-        return AcceptClass(header, value)
+            return NilClass()
+        return AcceptClass(value)
     def fset(req, val):
         if val:
             if isinstance(val, (list, tuple, dict)):
-                val = AcceptClass(header, '') + val
+                val = AcceptClass('') + val
             val = str(val)
         req.environ[key] = val or None
     def fdel(req):

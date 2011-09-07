@@ -215,7 +215,7 @@ mime types are not supported.
     >>> req = Request.blank('/')
     >>> req.environ['HTTP_ACCEPT'] = "text/*;q=0.3, text/html;q=0.7, text/html;level=1, text/html;level=2;q=0.4, */*;q=0.1"
     >>> req.accept # doctest: +ELLIPSIS
-    <MIMEAccept at ... Accept: text/*;q=0.3, text/html;q=0.7, text/html, text/html;q=0.4, */*;q=0.1>
+    <MIMEAccept('text/*;q=0.3, text/html;q=0.7, text/html, text/html;q=0.4, */*;q=0.1')>
     >>> for item, quality in req.accept._parsed:
     ...     print '%s: %0.1f' % (item, quality)
     text/*: 0.3
@@ -233,7 +233,7 @@ mime types are not supported.
     True
     >>> req.environ['HTTP_ACCEPT'] = "text/html, application/xml; q=0.7, text/*; q=0.5, */*; q=0.1"
     >>> req.accept # doctest: +ELLIPSIS
-    <MIMEAccept at ... Accept: text/html, application/xml;q=0.7, text/*;q=0.5, */*;q=0.1>
+    <MIMEAccept('text/html, application/xml;q=0.7, text/*;q=0.5, */*;q=0.1')>
     >>> req.accept.best_match(['text/plain', 'application/xml'])
     'application/xml'
     >>> req.accept.first_match(['application/xml', 'text/html'])

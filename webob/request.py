@@ -6,7 +6,7 @@ else:
     from cStringIO import StringIO # pragma nocover
 
 from webob.headers import EnvironHeaders
-from webob.acceptparse import accept_property, Accept, MIMEAccept, NilAccept, MIMENilAccept, NoAccept
+from webob.acceptparse import accept_property, Accept, MIMEAccept, AcceptCharset, NilAccept, MIMENilAccept, NoAccept, AcceptLanguage
 from webob.multidict import TrackableMultiDict, MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
 from webob.cachecontrol import CacheControl, serialize_cache_control
 from webob.etag import etag_property, AnyETag, NoETag
@@ -852,9 +852,9 @@ class BaseRequest(object):
 
 
     accept = accept_property('Accept', '14.1', MIMEAccept, MIMENilAccept)
-    accept_charset = accept_property('Accept-Charset', '14.2')
+    accept_charset = accept_property('Accept-Charset', '14.2', AcceptCharset)
     accept_encoding = accept_property('Accept-Encoding', '14.3', NilClass=NoAccept)
-    accept_language = accept_property('Accept-Language', '14.4')
+    accept_language = accept_property('Accept-Language', '14.4', AcceptLanguage)
 
     authorization = converter(
         environ_getter('HTTP_AUTHORIZATION', None, '14.8'),
