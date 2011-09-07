@@ -301,6 +301,9 @@ def test_match():
     assert not mimeaccept._match('text/html', 'image/jpg')
     assert_raises(ValueError, mimeaccept._match, 'image/jpg', '*/*')
 
+def test_accept_json():
+    mimeaccept = MIMEAccept('Accept', 'text/html, *; q=.2, */*; q=.2')
+    assert mimeaccept.best_match(['application/json']) == 'application/json'
 
 # property tests
 
