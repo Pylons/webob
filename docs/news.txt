@@ -3,6 +3,10 @@ News
 
 .. contents::
 
+1.1
+---------
+* Remove deprecation warnings for ``unicode_body`` and ``ubody``.
+
 1.1rc1
 ---------
 
