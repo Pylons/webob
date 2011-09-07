@@ -302,6 +302,7 @@ class MIMEAccept(Accept):
                 continue
             parsed.append((mask, q))
         self._parsed = parsed
+        self._parsed_nonzero = [(m,q) for (m,q) in self._parsed if q]
 
     def accept_html(self):
         """
