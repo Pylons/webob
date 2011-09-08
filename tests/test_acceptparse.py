@@ -174,9 +174,17 @@ def test_accept_match_lang():
         ('da', 'DA'),
         ('en', 'en-gb'),
         ('en-gb', 'en-gb'),
+        ('en-gb', 'en'),
+        ('en-gb', 'en_GB'),
     ]:
         assert lang in AcceptLanguage(mask)
-    assert 'fr-fr' not in AcceptLanguage('en-gb')
+    for mask, lang in [
+        ('en-gb', 'en-us'),
+        ('en-gb', 'fr-fr'),
+        ('en-gb', 'fr'),
+        ('en', 'fr-fr'),
+    ]:
+        assert lang not in AcceptLanguage(mask)
 
 # NilAccept tests
 

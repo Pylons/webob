@@ -274,9 +274,12 @@ class AcceptCharset(Accept):
 
 class AcceptLanguage(Accept):
     def _match(self, mask, item):
+        item = item.replace('_', '-').lower()
+        mask = mask.lower()
         return (mask == '*'
-            or item.lower() == mask.lower()
-            or item.lower().split('-')[0] == mask.lower()
+            or item == mask
+            or item.split('-')[0] == mask
+            or item == mask.split('-')[0]
         )
 
 
