@@ -369,11 +369,14 @@ def test_date_header_fdel():
     eq_(desc.fget(resp), None)
 
 def test_deprecated_property():
-    req = Request.blank('/')
-    assert_raises(DeprecationWarning, getattr, req, 'postvars')
-    assert_raises(DeprecationWarning, setattr, req, 'postvars', {})
-    assert_raises(DeprecationWarning, delattr, req, 'postvars')
-    eq_(Request.postvars.__repr__(), "<Deprecated attribute postvars>")
+    from webob.descriptors import deprecated_property
+    class Foo(object):
+        foo = deprecated_property('foo', 'deprecated')
+    foo = Foo()
+    assert_raises(DeprecationWarning, getattr, foo, 'foo')
+    assert_raises(DeprecationWarning, setattr, foo, 'foo', {})
+    assert_raises(DeprecationWarning, delattr, foo, 'foo')
+    eq_(Foo.foo.__repr__(), "<Deprecated attribute foo>")
 
 def test_parse_etag_response():
     from webob.descriptors import parse_etag_response
