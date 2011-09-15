@@ -322,9 +322,11 @@ class Response(object):
     def _body__set(self, value=''):
         if not isinstance(value, str):
             if isinstance(value, unicode):
-                msg = "You cannot set Response.body to a unicode object (use Response.text)"
+                msg = ("You cannot set Response.body to a unicode object "
+                       "(use Response.text)")
             else:
-                msg = "You can only set the body to a str (not %s)" % type(value)
+                msg = ("You can only set the body to a str (not %s)" %
+                       type(value))
             raise TypeError(msg)
         if self._app_iter is not None:
             self.content_md5 = None
