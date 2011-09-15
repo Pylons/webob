@@ -1,14 +1,38 @@
-import re, urlparse, zlib, struct
-from datetime import datetime, date, timedelta
+import re
+import urlparse
+import zlib
+import struct
 
+from datetime import datetime
+from datetime import timedelta
+
+from webob.byterange import ContentRange
+from webob.cachecontrol import CacheControl
+from webob.cachecontrol import serialize_cache_control
+from webob.cookies import Cookie
+from webob.cookies import Morsel
+from webob.datetime_utils import parse_date_delta
+from webob.datetime_utils import serialize_date_delta
+from webob.datetime_utils import timedelta_to_seconds
+from webob.descriptors import CHARSET_RE
+from webob.descriptors import SCHEME_RE
+from webob.descriptors import converter
+from webob.descriptors import date_header
+from webob.descriptors import deprecated_property
+from webob.descriptors import header_getter
+from webob.descriptors import list_header
+from webob.descriptors import parse_auth
+from webob.descriptors import parse_content_range
+from webob.descriptors import parse_etag_response
+from webob.descriptors import parse_int
+from webob.descriptors import parse_int_safe
+from webob.descriptors import serialize_auth
+from webob.descriptors import serialize_content_range
+from webob.descriptors import serialize_etag_response
+from webob.descriptors import serialize_int
 from webob.headers import ResponseHeaders
-from webob.cachecontrol import CacheControl, serialize_cache_control
-
-from webob.descriptors import *
-from webob.datetime_utils import *
-from webob.cookies import Cookie, Morsel
-from webob.util import status_reasons, warn_deprecation
 from webob.request import StringIO
+from webob.util import status_reasons
 
 __all__ = ['Response']
 
@@ -86,7 +110,8 @@ class Response(object):
             if isinstance(body, unicode):
                 if charset is None:
                     raise TypeError(
-                        "You cannot set the body to a unicode value without a charset")
+                        "You cannot set the body to a unicode value without a "
+                        "charset")
                 body = body.encode(charset)
             app_iter = [body]
             if headerlist is None:
@@ -343,27 +368,8 @@ class Response(object):
 
     text = property(_text__get, _text__set, _text__del, doc=_text__get.__doc__)
 
-
-#     def _ubody__get(self):
-#         """
-#             Alias for text
-#         """
-#         _warn_ubody()
-#         return self.text
-
-#     def _ubody__set(self, val=None):
-#         _warn_ubody()
-#         if val is None:
-#             del self.body
-#         else:
-#             self.text = val
-
-#     unicode_body = ubody = property(_ubody__get, _ubody__set, _ubody__set)
-
-    unicode_body = ubody = property(
-        _text__get, _text__set, _text__del,
-        "Deprecated alias for .text"
-    )
+    unicode_body = ubody = property(_text__get, _text__set, _text__del,
+        "Deprecated alias for .text")
 
     #
     # body_file, write(text)
@@ -392,7 +398,8 @@ class Response(object):
                 msg = "You can only write str to a Response.body_file, not %s"
                 raise TypeError(msg % type(text))
             if not self.charset:
-                msg = "You can only write unicode to Response if charset has been set"
+                msg = ("You can only write unicode to Response if charset has "
+                       "been set")
                 raise TypeError(msg)
             text = text.encode(self.charset)
         app_iter = self._app_iter
@@ -577,8 +584,8 @@ class Response(object):
         """
         A dictionary of all the parameters in the content type.
 
-        (This is not a view, set to change, modifications of the dict would not be
-        applied otherwise)
+        (This is not a view, set to change, modifications of the dict would not
+        be applied otherwise)
         """
         params = self.headers.get('Content-Type', '')
         if ';' not in params:
@@ -990,21 +997,25 @@ class Response(object):
                 body = "Requested range not satisfiable: %s" % req.range
                 headerlist = [
                     ('Content-Length', str(len(body))),
-                    ('Content-Range', str(ContentRange(None, None, self.content_length))),
+                    ('Content-Range', str(ContentRange(None, None,
+                                                       self.content_length))),
                     ('Content-Type', 'text/plain'),
                 ] + filter_headers(headerlist)
-                start_response('416 Requested Range Not Satisfiable', headerlist)
+                start_response('416 Requested Range Not Satisfiable',
+                               headerlist)
                 if req.method == 'HEAD':
                     return ()
                 return [body]
             else:
-                app_iter = self.app_iter_range(content_range.start, content_range.stop)
+                app_iter = self.app_iter_range(content_range.start,
+                                               content_range.stop)
                 if app_iter is not None:
                     # the following should be guaranteed by
                     # Range.range_for_length(length)
                     assert content_range.start is not None
                     headerlist = [
-                        ('Content-Length', str(content_range.stop - content_range.start)),
+                        ('Content-Length',
+                         str(content_range.stop - content_range.start)),
                         ('Content-Range', str(content_range)),
                     ] + filter_headers(headerlist, ('content-length',))
                     start_response('206 Partial Content', headerlist)
@@ -1185,9 +1196,6 @@ def gzip_app_iter(app_iter):
         yield compress.compress(item)
     yield compress.flush()
     yield struct.pack("<2L", crc, size & 0xffffffffL)
-
-def _warn_ubody():
-    warn_deprecation(".unicode_body is deprecated in favour of Response.text", '1.3', 3)
 
 def _error_unicode_in_app_iter(app_iter, body):
     app_iter_repr = repr(app_iter)
