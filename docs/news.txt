@@ -3,9 +3,33 @@ News
 
 .. contents::
 
+1.1.1
+---------
+
+* Fix disconnect detection being incorrect in some cases (`issue 21
+  <https://bitbucket.org/ianb/webob/issue/21>`_)
+
+* Fix exception when calling ``.accept.best_match(..)`` on a header containing
+  '*' (instead of '*/*')
+
+* Split ``Accept`` class into appropriate subclasses (``AcceptCharset``,
+  ``AcceptLanguage``)
+
+* Improve language matching code so that ``'en' in AcceptLanguage('en-gb')``
+  (the app can now offer a generic 'en' and it will match any of the
+  accepted dialects) and ``'en_GB' in AcceptLanguage('en-gb')`` (normalization
+  of the dash/underscode in language names).
+
+* Deprecate ``req.etag.weak_match(..)``
+
+* Deprecate ``Response.request`` and ``Response.environ`` attrs.
+
+
 1.1
 ---------
+
 * Remove deprecation warnings for ``unicode_body`` and ``ubody``.
+
 
 1.1rc1
 ---------
