@@ -10,7 +10,7 @@ News
   <https://bitbucket.org/ianb/webob/issue/21>`_)
 
 * Fix exception when calling ``.accept.best_match(..)`` on a header containing
-  '*' (instead of '*/*')
+  ``'*'`` (instead of ``'*/*'``)
 
 * Split ``Accept`` class into appropriate subclasses (``AcceptCharset``,
   ``AcceptLanguage``)
