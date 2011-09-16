@@ -3,8 +3,6 @@ import os
 import re
 import sys
 import tempfile
-import urllib
-import urlparse
 
 if sys.version >= '2.7':
     from io import BytesIO as StringIO # pragma nocover
@@ -19,6 +17,12 @@ from webob.acceptparse import NoAccept
 from webob.acceptparse import accept_property
 from webob.cachecontrol import CacheControl
 from webob.cachecontrol import serialize_cache_control
+from webob.compat import reraise
+from webob.compat import urlparse
+from webob.compat import integer_types
+from webob.compat import url_unquote
+from webob.compat import url_encode
+from webob.compat import url_quote
 from webob.cookies import Cookie
 from webob.descriptors import CHARSET_RE
 from webob.descriptors import SCHEME_RE
@@ -51,7 +55,7 @@ __all__ = ['BaseRequest', 'Request']
 if sys.version >= '2.6':
     parse_qsl = urlparse.parse_qsl
 else:
-    parse_qsl = cgi.parse_qsl # pragma nocover
+    parse_qsl = cgi.parse_qsl # pragma: no cover
 
 class _NoDefault:
     def __repr__(self):
@@ -312,7 +316,7 @@ class BaseRequest(object):
         """
         The URL including SCRIPT_NAME (no PATH_INFO or query string)
         """
-        return self.host_url + urllib.quote(
+        return self.host_url + url_quote(
             self.environ.get('SCRIPT_NAME', ''), PATH_SAFE)
 
     @property
@@ -320,7 +324,7 @@ class BaseRequest(object):
         """
         The URL including SCRIPT_NAME and PATH_INFO, but not QUERY_STRING
         """
-        return self.application_url + urllib.quote(
+        return self.application_url + url_quote(
             self.environ.get('PATH_INFO', ''), PATH_SAFE)
 
     @property
@@ -328,8 +332,8 @@ class BaseRequest(object):
         """
         The path of the request, without host or query string
         """
-        return (urllib.quote(self.script_name, PATH_SAFE) +
-                urllib.quote(self.path_info, PATH_SAFE))
+        return (url_quote(self.script_name, PATH_SAFE) +
+                url_quote(self.path_info, PATH_SAFE))
 
     @property
     def path_qs(self):
@@ -585,7 +589,7 @@ class BaseRequest(object):
 
     def _update_get(self, vars, key=None, value=None):
         env = self.environ
-        qs = urllib.urlencode(vars.items())
+        qs = url_encode(vars.items())
         env['QUERY_STRING'] = qs
         env['webob._parsed_query_vars'] = (vars, qs)
 
@@ -747,7 +751,7 @@ class BaseRequest(object):
         """
         tempfile_limit = self.request_body_tempfile_limit
         todo = self.content_length
-        assert isinstance(todo, (int, long)), `todo`
+        assert isinstance(todo, integer_types), todo
         if not tempfile_limit or todo <= tempfile_limit:
             return False
         fileobj = self.make_tempfile()
@@ -1006,7 +1010,7 @@ class BaseRequest(object):
         output = []
         def start_response(status, headers, exc_info=None):
             if exc_info is not None and not catch_exc_info:
-                raise exc_info[0], exc_info[1], exc_info[2]
+                reraise(exc_info[0], exc_info[1], exc_info[2])
             captured[:] = [status, headers, exc_info]
             return output.append
         app_iter = application(self.environ, start_response)
@@ -1086,7 +1090,7 @@ class BaseRequest(object):
                 env['SERVER_NAME'] = host
                 env['HTTP_HOST'] = netloc
             if path:
-                env['SCRIPT_NAME'] = urllib.unquote(path)
+                env['SCRIPT_NAME'] = url_unquote(path)
         if environ:
             env.update(environ)
         content_type = kw.get('content_type', env.get('CONTENT_TYPE'))
@@ -1120,9 +1124,9 @@ def environ_from_url(path):
         netloc = 'localhost:80'
     if path and '?' in path:
         path_info, query_string = path.split('?', 1)
-        path_info = urllib.unquote(path_info)
+        path_info = url_unquote(path_info)
     else:
-        path_info = urllib.unquote(path)
+        path_info = url_unquote(path)
         query_string = ''
     env = {
         'REQUEST_METHOD': 'GET',
@@ -1168,7 +1172,7 @@ def environ_add_POST(env, data, content_type=None):
             raise ValueError('Submiting files is not allowed for'
                              ' content type `%s`' % content_type)
         if not isinstance(data, str):
-            data = urllib.urlencode(data)
+            data = url_encode(data)
     else:
         if not isinstance(data, str):
             raise ValueError('Please provide `POST` data as string'
@@ -1314,7 +1318,7 @@ class FakeCGIBody(object):
         if self._body is None:
             ct = self.content_type
             if ct.startswith('application/x-www-form-urlencoded'):
-                self._body = urllib.urlencode(self.vars.items())
+                self._body = url_encode(self.vars.items())
             elif ct.startswith('multipart/form-data'):
                 self._body = _encode_multipart(
                     self.vars.iteritems(), self.content_type)[1]

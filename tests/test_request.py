@@ -1,5 +1,8 @@
 import unittest, warnings
-from webob import Request, BaseRequest, UTC
+from webob import Request
+from webob import BaseRequest
+from webob import UTC
+from webob.compat import u
 
 _marker = object()
 
@@ -1353,9 +1356,9 @@ class BaseRequestTests(unittest.TestCase):
 
     def test_blank__post_files(self):
         import cgi
-        from StringIO import StringIO
+        io = self._makeStringIO('1')
         from webob.request import _get_multipart_boundary
-        request = Request.blank('/', POST={'first':('filename1', StringIO('1')),
+        request = Request.blank('/', POST={'first':('filename1', io),
                                            'second':('filename2', '2'),
                                            'third': '3'})
         self.assertEqual(request.method, 'POST')
@@ -1429,6 +1432,13 @@ class BaseRequestTests(unittest.TestCase):
         self.assertRaises(AttributeError, delattr, req, 'some_attr')
 
 class RequestTests_functional(unittest.TestCase):
+    def _makeStringIO(self, text):
+        try:
+            from io import BytesIO
+        except ImportError: # Python < 2.6
+            from StringIO import StringIO as BytesIO
+        return BytesIO(text)
+
     def test_gets(self):
         from webtest import TestApp
         app = TestApp(simpleapp)
@@ -1564,10 +1574,10 @@ class RequestTests_functional(unittest.TestCase):
         req.headers['Cookie'] = ('dismiss-top=6; CP=null*; '
             'PHPSESSID=0a539d42abc001cdc762809248d4beed; a=42')
         self.assertEqual(req.cookies, {
-            'CP':           u'null*',
-            'PHPSESSID':    u'0a539d42abc001cdc762809248d4beed',
-            'a':            u'42',
-            'dismiss-top':  u'6'
+            'CP':           u('null*'),
+            'PHPSESSID':    u('0a539d42abc001cdc762809248d4beed'),
+            'a':            u('42'),
+            'dismiss-top':  u('6')
         })
         req.headers['Cookie'] = 'fo234{=bar blub=Blah'
         self.assertEqual(req.cookies, {'blub': 'Blah'})
@@ -1596,8 +1606,8 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(new_params.items(), [('a', '1'), ('b', '4')])
         # The key name is \u1000:
         req = Request.blank('/?%E1%80%80=x', charset='UTF-8')
-        self.assert_(u'\u1000' in req.GET.keys())
-        self.assertEqual(req.GET[u'\u1000'], 'x')
+        self.assert_(u('\u1000') in req.GET.keys())
+        self.assertEqual(req.GET[u('\u1000')], 'x')
 
     def test_copy_body(self):
         req = Request.blank('/', method='POST', body='some text',
@@ -1691,7 +1701,7 @@ class RequestTests_functional(unittest.TestCase):
         # SCRIPT_NAME can be missing
         del req.environ['SCRIPT_NAME']
         self.assertEqual(req.script_name, '')
-        self.assertEqual(req.uscript_name, u'')
+        self.assertEqual(req.uscript_name, u(''))
 
     def test_repr_nodefault(self):
         from webob.request import NoDefault
@@ -1829,7 +1839,7 @@ class RequestTests_functional(unittest.TestCase):
         #self.assertEqual(a.body, '')
         # I need to implement a not seekable stringio like object.
         import string
-        from cStringIO import StringIO
+        from StringIO import StringIO
         class DummyIO(object):
             def __init__(self, txt):
                 self.txt = txt
@@ -1861,11 +1871,12 @@ class RequestTests_functional(unittest.TestCase):
     def test_from_garbage_file(self):
         # If we pass a file with garbage to from_file method it should
         # raise an error plus missing bits in from_file method
-        from cStringIO import StringIO
+        io = self._makeStringIO('hello world')
+
         from webob import BaseRequest
         self.assertRaises(ValueError,
-                          BaseRequest.from_file, StringIO('hello world'))
-        val_file = StringIO(
+                          BaseRequest.from_file, io)
+        val_file = self._makeStringIO(
             "GET /webob/ HTTP/1.1\n"
             "Host: pythonpaste.org\n"
             "User-Agent: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.13)"
@@ -1884,7 +1895,7 @@ class RequestTests_functional(unittest.TestCase):
         req = BaseRequest.from_file(val_file)
         self.assert_(isinstance(req, BaseRequest))
         self.assert_(not repr(req).endswith('(invalid WSGI environ)>'))
-        val_file = StringIO(
+        val_file = self._makeStringIO(
             "GET /webob/ HTTP/1.1\n"
             "Host pythonpaste.org\n"
         )
@@ -2055,9 +2066,8 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(r.charset, 'shift-jis')
 
     def test_body_file_seekable(self):
-        from cStringIO import StringIO
         r = Request.blank('/', method='POST')
-        r.body_file = StringIO('body')
+        r.body_file = self._makeStringIO('body')
         self.assertEqual(r.body_file_seekable.read(), 'body')
 
     def test_request_init(self):
@@ -2190,13 +2200,14 @@ class RequestTests_functional(unittest.TestCase):
                                  ('var2', 'value2'),
                                  ('rep', '1'),
                                  ('rep', '2')]))
-        self.assertEqual(req.GET.items(),
-                         [('check', u'a'), ('check', u'b'), ('name', u'Bob')])
+        self.assertEqual(
+            req.GET.items(),
+            [('check', u('a')), ('check', u('b')), ('name', u('Bob'))])
 
         # Cookies
         req.headers['Cookie'] = 'test=value'
         self.assert_(isinstance(req.cookies, UnicodeMultiDict))
-        self.assertEqual(req.cookies.items(), [('test', u'value')])
+        self.assertEqual(req.cookies.items(), [('test', u('value'))])
         req.charset = None
         self.assertEqual(req.cookies, {'test': 'value'})
 
@@ -2278,8 +2289,7 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(res.body, 'Hi!')
 
     def equal_req(self, req):
-        from cStringIO import StringIO
-        input = StringIO(str(req))
+        input = self._makeStringIO(str(req))
         req2 = Request.from_file(input)
         self.assertEqual(req.url, req2.url)
         headers1 = dict(req.headers)

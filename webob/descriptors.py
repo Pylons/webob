@@ -5,6 +5,8 @@ from webob.byterange import Range, ContentRange
 from webob.etag import IfRange, NoIfRange
 from webob.datetime_utils import parse_date, serialize_date
 from webob.util import header_docstring
+from webob.compat import text_type
+from webob.compat import binary_type
 
 CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
 QUOTES_RE = re.compile('"(.*)"')
@@ -58,7 +60,7 @@ def header_getter(header, rfc_section):
     def fset(r, value):
         fdel(r)
         if value is not None:
-            if isinstance(value, unicode):
+            if isinstance(value, text_type):
                 value = value.encode('ISO-8859-1') # standard encoding for headers
             r._headerlist.append((header, value))
 
@@ -100,12 +102,12 @@ def parse_list(value):
     return tuple(filter(None, [v.strip() for v in value.split(',')]))
 
 def serialize_list(value):
-    if isinstance(value, unicode):
-        return str(value)
-    elif isinstance(value, str):
+    if isinstance(value, text_type):
+        return binary_type(value)
+    elif isinstance(value, binary_type):
         return value
     else:
-        return ', '.join(map(str, value))
+        return ', '.join(map(binary_type, value))
 
 
 
@@ -182,8 +184,8 @@ def parse_if_range(value):
 def serialize_if_range(value):
     if isinstance(value, (datetime, date)):
         return serialize_date(value)
-    if not isinstance(value, str):
-        value = str(value)
+    if not isinstance(value, binary_type):
+        value = binary_type(value)
     return value or None
 
 def parse_range(value):
@@ -201,7 +203,7 @@ def serialize_range(value):
         value = Range([value])
     if value is None:
         return None
-    value = str(value)
+    value = binary_type(value)
     return value or None
 
 def parse_int(value):
@@ -217,7 +219,7 @@ def parse_int_safe(value):
     except ValueError:
         return None
 
-serialize_int = str
+serialize_int = binary_type
 
 def parse_content_range(value):
     if not value or not value.strip():
@@ -237,7 +239,7 @@ def serialize_content_range(value):
         else:
             begin, end, length = value
         value = ContentRange(begin, end, length)
-    value = str(value).strip()
+    value = binary_type(value).strip()
     if not value:
         return None
     return value
@@ -274,6 +276,6 @@ def serialize_auth(val):
         authtype, params = val
         if isinstance(params, dict):
             params = ', '.join(map('%s="%s"'.__mod__, params.items()))
-        assert isinstance(params, str)
+        assert isinstance(params, binary_type)
         return '%s %s' % (authtype, params)
     return val

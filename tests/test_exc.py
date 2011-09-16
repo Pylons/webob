@@ -1,60 +1,13 @@
 from webob.request import Request
 from webob.dec import wsgify
-from webob.exc import sys
 from webob.exc import no_escape
 from webob.exc import strip_tags
 from webob.exc import HTTPException
 from webob.exc import WSGIHTTPException
-from webob.exc import HTTPError
-from webob.exc import HTTPRedirection
-from webob.exc import HTTPRedirection
-from webob.exc import HTTPOk
-from webob.exc import HTTPCreated
-from webob.exc import HTTPAccepted
-from webob.exc import HTTPNonAuthoritativeInformation
-from webob.exc import HTTPNoContent
-from webob.exc import HTTPResetContent
-from webob.exc import HTTPPartialContent
 from webob.exc import _HTTPMove
-from webob.exc import HTTPMultipleChoices
-from webob.exc import HTTPMovedPermanently
-from webob.exc import HTTPFound
-from webob.exc import HTTPSeeOther
-from webob.exc import HTTPNotModified
-from webob.exc import HTTPUseProxy
-from webob.exc import HTTPTemporaryRedirect
-from webob.exc import HTTPClientError
-from webob.exc import HTTPBadRequest
-from webob.exc import HTTPUnauthorized
-from webob.exc import HTTPPaymentRequired
-from webob.exc import HTTPForbidden
-from webob.exc import HTTPNotFound
 from webob.exc import HTTPMethodNotAllowed
-from webob.exc import HTTPNotAcceptable
-from webob.exc import HTTPProxyAuthenticationRequired
-from webob.exc import HTTPRequestTimeout
-from webob.exc import HTTPConflict
-from webob.exc import HTTPGone
-from webob.exc import HTTPLengthRequired
-from webob.exc import HTTPPreconditionFailed
-from webob.exc import HTTPRequestEntityTooLarge
-from webob.exc import HTTPRequestURITooLong
-from webob.exc import HTTPUnsupportedMediaType
-from webob.exc import HTTPRequestRangeNotSatisfiable
-from webob.exc import HTTPExpectationFailed
-from webob.exc import HTTPUnprocessableEntity
-from webob.exc import HTTPLocked
-from webob.exc import HTTPFailedDependency
-from webob.exc import HTTPServerError
-from webob.exc import HTTPInternalServerError
-from webob.exc import HTTPNotImplemented
-from webob.exc import HTTPBadGateway
-from webob.exc import HTTPServiceUnavailable
-from webob.exc import HTTPGatewayTimeout
-from webob.exc import HTTPVersionNotSupported
-from webob.exc import HTTPInsufficientStorage
 from webob.exc import HTTPExceptionMiddleware
-from webob import exc
+from webob.compat import u
 
 from nose.tools import eq_, ok_, assert_equal, assert_raises
 
@@ -73,9 +26,9 @@ def test_noescape_not_basestring():
 def test_noescape_unicode():
     class DummyUnicodeObject(object):
         def __unicode__(self):
-            return u'42'
+            return u('42')
     duo = DummyUnicodeObject()
-    assert_equal(no_escape(duo), u'42')
+    assert_equal(no_escape(duo), u('42'))
 
 def test_strip_tags_empty():
     assert_equal(strip_tags(''), '')
@@ -111,7 +64,7 @@ def test_HTTPException():
     assert_equal(_called, [(environ, start_response)])
 
 def test_exception_with_unicode_data():
-    req = Request.blank('/', method=u'POST')
+    req = Request.blank('/', method=u('POST'))
     res = req.get_response(method_not_allowed_app)
     assert res.status_int == 405
 
@@ -234,6 +187,7 @@ def test_WSGIHTTPException_exception_newstyle():
        'REQUEST_METHOD': 'HEAD'
     }
     excep = WSGIHTTPException()
+    from webob import exc
     exc.newstyle_exceptions = True
     assert_equal( excep(environ,start_response), [] )
 
@@ -247,6 +201,7 @@ def test_WSGIHTTPException_exception_no_newstyle():
        'REQUEST_METHOD': 'HEAD'
     }
     excep = WSGIHTTPException()
+    from webob import exc
     exc.newstyle_exceptions = False
     assert_equal( excep(environ,start_response), [] )
 

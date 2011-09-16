@@ -3,9 +3,13 @@
 """
 Gives a multi-value dictionary object (MultiDict) plus several wrappers
 """
-import cgi, copy, sys, warnings, urllib
-from UserDict import DictMixin
+import cgi
+import copy
+import sys
+import warnings
 
+from webob.compat import DictMixin
+from webob.compat import text_type
 
 __all__ = ['MultiDict', 'UnicodeMultiDict', 'NestedMultiDict', 'NoVars',
            'TrackableMultiDict']
@@ -166,8 +170,8 @@ class MultiDict(DictMixin):
 
     def pop(self, key, *args):
         if len(args) > 1:
-            raise TypeError, "pop expected at most 2 arguments, got "\
-                              + repr(1 + len(args))
+            raise TypeError("pop expected at most 2 arguments, got %s"
+                             % repr(1 + len(args)))
         for i in range(len(self._items)):
             if self._items[i][0] == key:
                 v = self._items[i][1]
@@ -275,7 +279,7 @@ class UnicodeMultiDict(DictMixin):
         return key
 
     def _encode_key(self, key):
-        if self.decode_keys and isinstance(key, unicode):
+        if self.decode_keys and isinstance(key, text_type):
             return key.encode(self.encoding, self.errors)
         return key
 
@@ -290,13 +294,13 @@ class UnicodeMultiDict(DictMixin):
             # decode FieldStorage's field name and filename
             value = copy.copy(value)
             if self.decode_keys:
-                if not isinstance(value.name, unicode):
+                if not isinstance(value.name, text_type):
                     value.name = value.name.decode(self.encoding, self.errors)
             if value.filename:
-                if not isinstance(value.filename, unicode):
+                if not isinstance(value.filename, text_type):
                     value.filename = value.filename.decode(self.encoding,
                                                            self.errors)
-        elif not isinstance(value, unicode):
+        elif not isinstance(value, text_type):
             try:
                 value = value.decode(self.encoding, self.errors)
             except AttributeError:
@@ -304,7 +308,7 @@ class UnicodeMultiDict(DictMixin):
         return value
 
     def _encode_value(self, value):
-        if isinstance(value, unicode):
+        if isinstance(value, text_type):
             value = value.encode(self.encoding, self.errors)
         return value
 

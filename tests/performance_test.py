@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import webob
+from webob.compat import print_
 
 def make_middleware(app):
     from repoze.profile.profiler import AccumulatingProfileMiddleware
@@ -32,7 +33,7 @@ if __name__ == '__main__':
         subprocess.call(['ab', '-n', '1000', 'http://localhost:8080/'])
         if arg == 'open':
             webbrowser.open('http://localhost:8080/__profile__')
-        print 'Hit ^C to end'
+        print_('Hit ^C to end')
         try:
             while 1:
                 raw_input()

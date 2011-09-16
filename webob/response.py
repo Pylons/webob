@@ -1,5 +1,4 @@
 import re
-import urlparse
 import zlib
 import struct
 
@@ -11,6 +10,11 @@ from webob.cachecontrol import CacheControl
 from webob.cachecontrol import serialize_cache_control
 from webob.cookies import Cookie
 from webob.cookies import Morsel
+from webob.compat import b
+from webob.compat import urlparse
+from webob.compat import text_type
+from webob.compat import binary_type
+from webob.compat import url_quote
 from webob.datetime_utils import parse_date_delta
 from webob.datetime_utils import serialize_date_delta
 from webob.datetime_utils import timedelta_to_seconds
@@ -107,10 +111,10 @@ class Response(object):
         else:
             self.conditional_response = bool(conditional_response)
         if app_iter is None:
-            if isinstance(body, unicode):
+            if isinstance(body, text_type):
                 if charset is None:
                     raise TypeError(
-                        "You cannot set the body to a unicode value without a "
+                        "You cannot set the body to a text value without a "
                         "charset")
                 body = body.encode(charset)
             app_iter = [body]
@@ -119,7 +123,7 @@ class Response(object):
             else:
                 self.headers['Content-Length'] = str(len(body))
         self._app_iter = app_iter
-        for name, value in kw.iteritems():
+        for name, value in kw.items():
             if not hasattr(self.__class__, name):
                 # Not a basic attribute
                 raise TypeError(
@@ -203,7 +207,7 @@ class Response(object):
         return self._status
 
     def _status__set(self, value):
-        if isinstance(value, unicode):
+        if isinstance(value, text_type):
             # Status messages have to be ASCII safe, so this is OK:
             value = str(value)
         if isinstance(value, int):
@@ -299,7 +303,7 @@ class Response(object):
             body = ''.join(app_iter)
         finally:
             iter_close(app_iter)
-        if isinstance(body, unicode):
+        if isinstance(body, text_type):
             raise _error_unicode_in_app_iter(app_iter, body)
         self._app_iter = [body]
         if (self._environ is not None and
@@ -321,8 +325,8 @@ class Response(object):
 
     def _body__set(self, value=''):
         if not isinstance(value, str):
-            if isinstance(value, unicode):
-                msg = ("You cannot set Response.body to a unicode object "
+            if isinstance(value, text_type):
+                msg = ("You cannot set Response.body to a text object "
                        "(use Response.text)")
             else:
                 msg = ("You can only set the body to a str (not %s)" %
@@ -346,7 +350,7 @@ class Response(object):
 
     def _text__get(self):
         """
-        Get/set the unicode value of the body (using the charset of the
+        Get/set the text value of the body (using the charset of the
         Content-Type)
         """
         if not self.charset:
@@ -359,7 +363,7 @@ class Response(object):
         if not self.charset:
             raise AttributeError(
                 "You cannot access Response.text unless charset is set")
-        if not isinstance(value, unicode):
+        if not isinstance(value, text_type):
             raise TypeError(
                 "You can only set Response.text to a unicode string "
                 "(not %s)" % type(value))
@@ -395,12 +399,12 @@ class Response(object):
                          doc=_body_file__get.__doc__)
 
     def write(self, text):
-        if not isinstance(text, str):
-            if not isinstance(text, unicode):
+        if not isinstance(text, binary_type):
+            if not isinstance(text, text_type):
                 msg = "You can only write str to a Response.body_file, not %s"
                 raise TypeError(msg % type(text))
             if not self.charset:
-                msg = ("You can only write unicode to Response if charset has "
+                msg = ("You can only write text to Response if charset has "
                        "been set")
                 raise TypeError(msg)
             text = text.encode(self.charset)
@@ -648,7 +652,7 @@ class Response(object):
         elif max_age is None and expires is not None:
             max_age = expires - datetime.utcnow()
 
-        if isinstance(value, unicode):
+        if isinstance(value, text_type):
             value = value.encode('utf8')
         m = Morsel(key, value)
         m.path = path
@@ -743,7 +747,7 @@ class Response(object):
             value = ""
         if isinstance(value, dict):
             value = CacheControl(value, 'response')
-        if isinstance(value, unicode):
+        if isinstance(value, text_type):
             value = str(value)
         if isinstance(value, str):
             if self._cache_control_obj is None:
@@ -1160,7 +1164,6 @@ def _request_uri(environ):
 
     Return the full request URI"""
     url = environ['wsgi.url_scheme']+'://'
-    from urllib import quote
 
     if environ.get('HTTP_HOST'):
         url += environ['HTTP_HOST']
@@ -1171,9 +1174,8 @@ def _request_uri(environ):
     elif url.endswith(':443') and environ['wsgi.url_scheme'] == 'https':
         url = url[:-4]
 
-    url += quote(environ.get('SCRIPT_NAME') or '/')
-    from urllib import quote
-    path_info = quote(environ.get('PATH_INFO',''))
+    url += url_quote(environ.get('SCRIPT_NAME') or '/')
+    path_info = url_quote(environ.get('PATH_INFO',''))
     if not environ.get('SCRIPT_NAME'):
         url += path_info[1:]
     else:
@@ -1187,17 +1189,17 @@ def iter_close(iter):
 
 def gzip_app_iter(app_iter):
     size = 0
-    crc = zlib.crc32("") & 0xffffffffL
+    crc = zlib.crc32(b("")) & 0xffffffff
     compress = zlib.compressobj(9, zlib.DEFLATED, -zlib.MAX_WBITS,
                                 zlib.DEF_MEM_LEVEL, 0)
 
     yield _gzip_header
     for item in app_iter:
         size += len(item)
-        crc = zlib.crc32(item, crc) & 0xffffffffL
+        crc = zlib.crc32(item, crc) & 0xffffffff
         yield compress.compress(item)
     yield compress.flush()
-    yield struct.pack("<2L", crc, size & 0xffffffffL)
+    yield struct.pack("<2L", crc, size & 0xffffffff)
 
 def _error_unicode_in_app_iter(app_iter, body):
     app_iter_repr = repr(app_iter)
@@ -1205,5 +1207,5 @@ def _error_unicode_in_app_iter(app_iter, body):
         app_iter_repr = (
             app_iter_repr[:30] + '...' + app_iter_repr[-10:])
     raise TypeError(
-        'An item of the app_iter (%s) was unicode, causing a '
-        'unicode body: %r' % (app_iter_repr, body))
+        'An item of the app_iter (%s) was text, causing a '
+        'text body: %r' % (app_iter_repr, body))

@@ -21,4 +21,4 @@ html_coverage/**
 .tox/
 coverage.xml
 nosetests.xml
-
+env32/

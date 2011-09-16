@@ -1,7 +1,16 @@
 import time
 import calendar
-from datetime import datetime, date, timedelta, tzinfo
-from email.utils import parsedate_tz, mktime_tz, formatdate
+from datetime import datetime
+from datetime import date
+from datetime import timedelta
+from datetime import tzinfo
+from email.utils import parsedate_tz
+from email.utils import mktime_tz
+from email.utils import formatdate
+
+from webob.compat import text_type
+from webob.compat import binary_type
+from webob.compat import integer_types
 
 __all__ = [
     'UTC', 'timedelta_to_seconds',
@@ -60,9 +69,9 @@ def parse_date(value):
     return datetime.fromtimestamp(t, UTC)
 
 def serialize_date(dt):
-    if isinstance(dt, unicode):
+    if isinstance(dt, text_type):
         dt = dt.encode('ascii')
-    if isinstance(dt, str):
+    if isinstance(dt, binary_type):
         return dt
     if isinstance(dt, timedelta):
         dt = _now() + dt
@@ -70,7 +79,7 @@ def serialize_date(dt):
         dt = dt.timetuple()
     if isinstance(dt, (tuple, time.struct_time)):
         dt = calendar.timegm(dt)
-    if not isinstance(dt, (float, int, long)):
+    if not (isinstance(dt, float) or isinstance(dt, integer_types)):
         raise ValueError(
             "You must pass in a datetime, date, time tuple, or integer object, not %r" % dt)
     return formatdate(dt, usegmt=True)

@@ -1,6 +1,7 @@
 from __future__ import with_statement
 from webob import Request, Response
-import sys, logging, threading, random, urllib2, socket, cgi
+import sys, logging, threading, random, socket, cgi
+from webob.compat import url_open
 from contextlib import contextmanager
 from nose.tools import assert_raises, eq_ as eq
 from wsgiref.simple_server import make_server, WSGIRequestHandler, WSGIServer, ServerHandler
@@ -19,7 +20,7 @@ def test_request_reading():
     """
     with serve(_test_app_req_reading) as server:
         for key in _test_ops_req_read:
-            resp = urllib2.urlopen(server.url+key, timeout=3)
+            resp = url_open(server.url+key, timeout=3)
             assert resp.read() == "ok"
 
 def _test_app_req_reading(env, sr):

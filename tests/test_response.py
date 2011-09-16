@@ -11,7 +11,12 @@ except ImportError:
 
 from nose.tools import eq_, ok_, assert_raises
 
-from webob import BaseRequest, Request, Response
+from webob import BaseRequest
+from webob import Request
+from webob import Response
+from webob.compat import u
+from webob.compat import b
+from webob.compat import text_type
 
 def simple_app(environ, start_response):
     start_response('200 OK', [
@@ -48,14 +53,14 @@ def test_response():
     res.decode_content()
     assert res.content_encoding is None
     assert res.body == 'a body'
-    res.set_cookie('x', u'foo') # test unicode value
+    res.set_cookie('x', u('foo')) # test unicode value
     assert_raises(TypeError, Response, app_iter=iter(['a']),
                   body="somebody")
     del req.environ
     eq_(Response(request=req)._environ, req)
     eq_(Response(request=req)._request, None)
     assert_raises(TypeError, Response, charset=None,
-                  body=u"unicode body")
+                  body=u("unicode body"))
     assert_raises(TypeError, Response, wrong_key='dummy')
 
 def test_content_type():
@@ -73,7 +78,7 @@ def test_content_type():
 
 def test_cookies():
     res = Response()
-    res.set_cookie('x', u'\N{BLACK SQUARE}') # test unicode value
+    res.set_cookie('x', u('\N{BLACK SQUARE}')) # test unicode value
     eq_(res.headers.getall('set-cookie'), ['x="\\342\\226\\240"; Path=/']) # uft8 encoded
     r2 = res.merge_cookies(simple_app)
     r2 = BaseRequest.blank('/').get_response(r2)
@@ -423,7 +428,7 @@ def test_file_bad_header():
 
 def test_set_status():
     res = Response()
-    res.status = u"OK 200"
+    res.status = u("OK 200")
     eq_(res.status, "OK 200")
     assert_raises(TypeError, setattr, res, 'status', float(200))
 
@@ -510,11 +515,11 @@ def test_body_get_is_none():
     assert_raises(AttributeError, res.__getattribute__, 'body')
 
 def test_body_get_is_unicode_notverylong():
-    res = Response(app_iter=(u'foo',))
+    res = Response(app_iter=(u('foo'),))
     assert_raises(TypeError, res.__getattribute__, 'body')
 
 def test_body_get_is_unicode():
-    res = Response(app_iter=(['x'] * 51 + [u'x']))
+    res = Response(app_iter=(['x'] * 51 + [u('x')]))
     assert_raises(TypeError, res.__getattribute__, 'body')
 
 def test_body_set_not_unicode_or_str():
@@ -523,7 +528,7 @@ def test_body_set_not_unicode_or_str():
 
 def test_body_set_unicode():
     res = Response()
-    assert_raises(TypeError, res.__setattr__, 'body', u'abc')
+    assert_raises(TypeError, res.__setattr__, 'body', u('abc'))
 
 def test_body_set_under_body_doesnt_exist():
     res = Response('abc')
@@ -543,8 +548,8 @@ def test_text_get_no_charset():
 def test_unicode_body():
     res = Response()
     res.charset = 'utf-8'
-    bbody = 'La Pe\xc3\xb1a' # binary string
-    ubody = unicode(bbody, 'utf-8') # unicode string
+    bbody = b('La Pe\xc3\xb1a') # binary string
+    ubody = text_type(bbody, 'utf-8') # unicode string
     res.body = bbody
     eq_(res.unicode_body, ubody)
     res.ubody = ubody
@@ -556,7 +561,7 @@ def test_text_get_decode():
     res = Response()
     res.charset = 'utf-8'
     res.body = 'La Pe\xc3\xb1a'
-    eq_(res.text, unicode('La Pe\xc3\xb1a', 'utf-8'))
+    eq_(res.text, text_type(b('La Pe\xc3\xb1a'), 'utf-8'))
 
 def test_text_set_no_charset():
     res = Response()
@@ -586,18 +591,18 @@ def test_body_file_del():
 
 def test_write_unicode():
     res = Response()
-    res.text = unicode('La Pe\xc3\xb1a', 'utf-8')
-    res.write(u'a')
-    eq_(res.text, unicode('La Pe\xc3\xb1aa', 'utf-8'))
+    res.text = text_type(b('La Pe\xc3\xb1a'), 'utf-8')
+    res.write(u('a'))
+    eq_(res.text, text_type(b('La Pe\xc3\xb1aa'), 'utf-8'))
 
 def test_write_unicode_no_charset():
     res = Response(charset=None)
-    assert_raises(TypeError, res.write, u'a')
+    assert_raises(TypeError, res.write, u('a'))
 
 def test_write_text():
     res = Response()
     res.body = 'abc'
-    res.write(u'a')
+    res.write(u('a'))
     eq_(res.text, 'abca')
 
 def test_app_iter_del():
@@ -699,7 +704,7 @@ def test_set_cookie_expires_is_not_None_and_max_age_is_None():
 
 def test_set_cookie_value_is_unicode():
     res = Response()
-    val = unicode('La Pe\xc3\xb1a', 'utf-8')
+    val = text_type(b('La Pe\xc3\xb1a'), 'utf-8')
     res.set_cookie('a', val)
     eq_(res.headerlist[-1], (r'Set-Cookie', 'a="La Pe\\303\\261a"; Path=/'))
 
@@ -865,7 +870,7 @@ def test_cache_control_set_None():
 
 def test_cache_control_set_unicode():
     res = Response()
-    res.cache_control = u'abc'
+    res.cache_control = u('abc')
     eq_(repr(res.cache_control), "<CacheControl 'abc'>")
 
 def test_cache_control_set_control_obj_is_not_None():
@@ -891,11 +896,10 @@ def test_body_file_get():
 
 def test_body_file_write_no_charset():
     res = Response
-    assert_raises(TypeError, res.write, u'foo')
+    assert_raises(TypeError, res.write, u('foo'))
 
 def test_body_file_write_unicode_encodes():
-    from webob.response import ResponseBodyFile
-    s = unicode('La Pe\xc3\xb1a', 'utf-8')
+    s = text_type(b('La Pe\xc3\xb1a'), 'utf-8')
     res = Response()
     res.write(s)
     eq_(res.app_iter, ['', 'La Pe\xc3\xb1a'])

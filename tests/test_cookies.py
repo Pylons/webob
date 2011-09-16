@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from datetime import timedelta
 from webob import cookies
+from webob.compat import u
 from nose.tools import eq_
 
 def test_cookie_empty():
@@ -71,19 +72,19 @@ def test_serialize_cookie_date():
     eq_(cdate_delta, cdate_int)
 
 def test_ch_unquote():
-    eq_(cookies._unquote(u'"hello world'), u'"hello world')
-    eq_(cookies._unquote(u'hello world'), u'hello world')
-    for unq, q in [
-        ('hello world', '"hello world"'),
-        # quotation mark is escaped w/ backslash
-        ('"', r'"\""'),
-        # misc byte escaped as octal
-        ('\xff', r'"\377"'),
-        # combination
-        ('a"\xff', r'"a\"\377"'),
-    ]:
-        eq_(cookies._unquote(q), unq)
-        eq_(cookies._quote(unq), q)
+    eq_(cookies._unquote(u('"hello world')), u('"hello world'))
+    eq_(cookies._unquote(u('hello world')), u('hello world'))
+    eq_(cookies._unquote('"hello world"'), 'hello world')
+    eq_(cookies._quote('hello world'), '"hello world"')
+    # quotation mark is escaped w/ backslash
+    eq_(cookies._unquote(r'"\""'), '"')
+    eq_(cookies._quote('"'), r'"\""')
+    # misc byte escaped as octal
+    eq_(cookies._unquote(r'"\377"'), '\xff')
+    eq_(cookies._quote('\xff'), r'"\377"')
+    # combination
+    eq_(cookies._unquote(r'"a\"\377"'), 'a"\xff')
+    eq_(cookies._quote('a"\xff'), r'"a\"\377"')
 
 def test_cookie_setitem_needs_quoting():
     c = cookies.Cookie()

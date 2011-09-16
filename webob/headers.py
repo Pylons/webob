@@ -1,5 +1,6 @@
 from webob.multidict import MultiDict
-from UserDict import DictMixin
+from webob.compat import DictMixin
+from webob.compat import string_types
 
 __all__ = ['ResponseHeaders', 'EnvironHeaders']
 
@@ -74,8 +75,8 @@ class ResponseHeaders(MultiDict):
 
     def pop(self, key, *args):
         if len(args) > 1:
-            raise TypeError, "pop expected at most 2 arguments, got "\
-                              + repr(1 + len(args))
+            raise TypeError("pop expected at most 2 arguments, got %s"
+                              % repr(1 + len(args)))
         key = key.lower()
         for i in range(len(self._items)):
             if self._items[i][0].lower() == key:
@@ -102,7 +103,7 @@ key2header = {
 header2key = dict([(v.upper(),k) for (k,v) in key2header.items()])
 
 def _trans_key(key):
-    if not isinstance(key, basestring):
+    if not isinstance(key, string_types):
         return None
     elif key in key2header:
         return key2header[key]
