@@ -1288,7 +1288,7 @@ class LimitedLengthFile(object):
         hint = self._normhint(hint)
         r = self.file.readline(hint)
         self.remaining -= len(r)
-        if not r or not r.endswith('\n'):
+        if not r:
             self._check_disconnect()
         return r
 
