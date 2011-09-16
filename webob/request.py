@@ -19,10 +19,13 @@ from webob.cachecontrol import CacheControl
 from webob.cachecontrol import serialize_cache_control
 from webob.compat import reraise
 from webob.compat import urlparse
+from webob.compat import parse_qsl_text
 from webob.compat import integer_types
+from webob.compat import binary_type
 from webob.compat import url_unquote
 from webob.compat import url_encode
 from webob.compat import url_quote
+from webob.compat import multidict_from_bodyfile
 from webob.compat import b
 from webob.compat import iteritems_
 from webob.cookies import Cookie
@@ -47,17 +50,11 @@ from webob.etag import etag_property
 from webob.headers import EnvironHeaders
 from webob.multidict import  NestedMultiDict
 from webob.multidict import  NoVars
-from webob.multidict import MultiDict
 from webob.multidict import TrackableMultiDict
 from webob.multidict import UnicodeMultiDict
 from webob.util import warn_deprecation
 
 __all__ = ['BaseRequest', 'Request']
-
-if sys.version >= '2.6':
-    parse_qsl = urlparse.parse_qsl
-else:
-    parse_qsl = cgi.parse_qsl # pragma: no cover
 
 class _NoDefault:
     def __repr__(self):
@@ -70,6 +67,8 @@ http_method_probably_has_body = dict.fromkeys(
     ('GET', 'HEAD', 'DELETE', 'TRACE'), False)
 http_method_probably_has_body.update(
     dict.fromkeys(('POST', 'PUT'), True))
+
+_empty_byte = b('')
 
 class BaseRequest(object):
     ## Options:
@@ -116,7 +115,7 @@ class BaseRequest(object):
             (unlike setting req.body_file_raw).
         """
         if not self.is_body_readable:
-            return StringIO('')
+            return StringIO(b(''))
         r = self.body_file_raw
         clen = self.content_length
         if not self.is_body_seekable and clen is not None:
@@ -135,9 +134,9 @@ class BaseRequest(object):
         return r
 
     def _body_file__set(self, value):
-        if isinstance(value, str):
+        if isinstance(value, binary_type):
             warn_deprecation(
-                "Please use req.body = 'str' or req.body_file = fileobj",
+                "Please use req.body = 'bytes' or req.body_file = fileobj",
                 '1.2',
                 self._setattr_stacklevel
             )
@@ -148,7 +147,7 @@ class BaseRequest(object):
         self.is_body_seekable = False
         self.is_body_readable = True
     def _body_file__del(self):
-        self.body = ''
+        self.body = _empty_byte
     body_file = property(_body_file__get,
                          _body_file__set,
                          _body_file__del,
@@ -525,27 +524,27 @@ class BaseRequest(object):
         Return the content of the request body.
         """
         if not self.is_body_readable:
-            return ''
+            return _empty_byte
         self.make_body_seekable() # we need this to have content_length
         r = self.body_file.read(self.content_length)
         self.body_file.seek(0)
         return r
     def _body__set(self, value):
         if value is None:
-            value = ''
-        if not isinstance(value, str):
-            raise TypeError("You can only set Request.body to a str (not %r)"
+            value = _empty_byte
+        if not isinstance(value, binary_type):
+            raise TypeError("You can only set Request.body to bytes (not %r)"
                                 % type(value))
         if not http_method_probably_has_body.get(self.method, True):
             if not value:
                 self.content_length = None
-                self.body_file_raw = StringIO('')
+                self.body_file_raw = StringIO(_empty_byte)
                 return
         self.content_length = len(value)
         self.body_file_raw = StringIO(value)
         self.is_body_seekable = True
     def _body__del(self):
-        self.body = ''
+        self.body = _empty_byte
     body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
 
 
@@ -577,24 +576,25 @@ class BaseRequest(object):
         # default of 0 is better:
         fs_environ.setdefault('CONTENT_LENGTH', '0')
         fs_environ['QUERY_STRING'] = ''
-        fs = cgi.FieldStorage(fp=self.body_file,
-                              environ=fs_environ,
-                              keep_blank_values=True)
-        vars = MultiDict.from_fieldstorage(fs)
+        vars = multidict_from_bodyfile(
+            fp=self.body_file,
+            environ=fs_environ,
+            keep_blank_values=True,
+            encoding=self.charset,
+            errors=self.unicode_errors,
+            )
+                              
         #ctype = self.content_type or 'application/x-www-form-urlencoded'
         ctype = env.get('CONTENT_TYPE', 'application/x-www-form-urlencoded')
         self.body_file = FakeCGIBody(vars, ctype)
-        vars = UnicodeMultiDict(vars, encoding=self.charset,
-                                errors=self.unicode_errors, decode_keys=True)
         env['webob._parsed_post_vars'] = (vars, self.body_file_raw)
         return vars
 
     def _update_get(self, vars, key=None, value=None):
         env = self.environ
-        qs = url_encode(vars.items())
+        qs = url_encode(list(vars.items())) # XXX needs charset encoding on py2
         env['QUERY_STRING'] = qs
         env['webob._parsed_query_vars'] = (vars, qs)
-
 
     @property
     def GET(self):
@@ -608,14 +608,23 @@ class BaseRequest(object):
             if qs == source:
                 return vars
         if not source:
-            vars = TrackableMultiDict(__tracker=self._update_get, __name='GET')
+            vars = TrackableMultiDict(
+                __tracker=self._update_get,
+                __name='GET'
+                )
         else:
-            vars = TrackableMultiDict(parse_qsl(source,
-                                                keep_blank_values=True,
-                                                strict_parsing=False),
-                                      __tracker=self._update_get, __name='GET')
-        vars = UnicodeMultiDict(vars, encoding=self.charset,
-                                errors=self.unicode_errors, decode_keys=True)
+            decoded = parse_qsl_text(
+                source,
+                keep_blank_values=True,
+                strict_parsing=False,
+                encoding=self.charset,
+                errors=self.unicode_errors
+                )
+            vars = TrackableMultiDict(
+                decoded,
+                __tracker=self._update_get,
+                __name='GET'
+                )
         env['webob._parsed_query_vars'] = (vars, source)
         return vars
 
@@ -668,7 +677,8 @@ class BaseRequest(object):
         verb) then it becomes GET, and the request body is thrown away.
         """
         env = self.environ.copy()
-        return self.__class__(env, method='GET', content_type=None, body='')
+        return self.__class__(env, method='GET', content_type=None,
+                              body=_empty_byte)
 
     # webob.is_body_seekable marks input streams that are seekable
     # this way we can have seekable input without testing the .seek() method
@@ -735,7 +745,7 @@ class BaseRequest(object):
         """
         if not self.is_body_readable:
             # there's no body to copy
-            self.body = ''
+            self.body = _empty_byte
         elif self.content_length is None:
             # chunked body or FakeCGIBody
             self.body = self.body_file_raw.read()
@@ -918,7 +928,7 @@ class BaseRequest(object):
         host = self.host_url
         assert url.startswith(host)
         url = url[len(host):]
-        parts = ['%s %s %s' % (self.method, url, self.http_version)]
+        parts = [b('%s %s %s' % (self.method, url, self.http_version))]
         #self.headers.setdefault('Host', self.host)
 
         # acquire body before we handle headers so that
@@ -933,11 +943,14 @@ class BaseRequest(object):
             if not skip_body:
                 body = self.body
 
-        parts += map('%s: %s'.__mod__, sorted(self.headers.items()))
+        for k, v in sorted(self.headers.items()):
+            header = b('%s: %s'  % (k, v))
+            parts.append(header)
+
         if body:
-            parts.extend( ['',body] )
+            parts.extend( [_empty_byte, body] )
         # HTTP clearly specifies CRLF
-        return '\r\n'.join(parts)
+        return b('\r\n').join(parts)
 
     __str__ = as_string
 
@@ -964,24 +977,37 @@ class BaseRequest(object):
 
         This reads the request as represented by ``str(req)``; it may
         not read every valid HTTP request properly."""
+        encoding = getattr(fp, 'encoding', None)
         start_line = fp.readline()
+        if encoding is None:
+            crlf = b('\r\n')
+            colon = b(':')
+        else:
+            crlf = '\r\n'
+            colon = ':'
         try:
-            method, resource, http_version = start_line.rstrip(
-                '\r\n').split(None, 2)
+            header = start_line.rstrip(crlf)
+            method, resource, http_version = header.split(None, 2)
+            if encoding is None:
+                method = method.decode('utf-8')
+                resource = resource.decode('utf-8')
+                http_version = http_version.decode('utf-8')
         except ValueError:
             raise ValueError('Bad HTTP request line: %r' % start_line)
         r = cls(environ_from_url(resource),
-            http_version=http_version,
-            method=method.upper()
-        )
+                http_version=http_version,
+                method=method.upper()
+                )
         del r.environ['HTTP_HOST']
         while 1:
             line = fp.readline()
             if not line.strip():
                 # end of headers
                 break
-            hname, hval = line.split(':', 1)
-            hval = hval.strip()
+            hname, hval = line.split(colon, 1)
+            if not encoding:
+                hname = hname.decode('utf-8')
+                hval = hval.decode('utf-8').strip()
             if hname in r.headers:
                 hval = r.headers[hname] + ', ' + hval
             r.headers[hname] = hval
@@ -1141,7 +1167,7 @@ def environ_from_url(path):
         'SERVER_PROTOCOL': 'HTTP/1.0',
         'wsgi.version': (1, 0),
         'wsgi.url_scheme': scheme,
-        'wsgi.input': StringIO(b('')),
+        'wsgi.input': StringIO(_empty_byte),
         'wsgi.errors': sys.stderr,
         'wsgi.multithread': False,
         'wsgi.multiprocess': False,
@@ -1178,7 +1204,7 @@ def environ_add_POST(env, data, content_type=None):
         if not isinstance(data, str):
             raise ValueError('Please provide `POST` data as string'
                              ' for content type `%s`' % content_type)
-    env['wsgi.input'] = StringIO(data)
+    env['wsgi.input'] = StringIO(b(data))
     env['webob.is_body_seekable'] = True
     env['CONTENT_LENGTH'] = str(len(data))
     env['CONTENT_TYPE'] = content_type
@@ -1241,7 +1267,7 @@ class LimitedLengthFile(object):
         else:
             sz = min(sz, self.remaining)
         if not sz:
-            return ''
+            return _empty_byte
         r = self.file.read(sz)
         self.remaining -= len(r)
         if len(r) < sz:
@@ -1252,7 +1278,7 @@ class LimitedLengthFile(object):
         hint = self._normhint(hint)
         r = self.file.readline(hint)
         self.remaining -= len(r)
-        if not r or not r.endswith('\n'):
+        if not r or not r.endswith(b('\n')):
             self._check_disconnect()
         return r
 

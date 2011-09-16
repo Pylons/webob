@@ -2,6 +2,8 @@
 
 import sys
 import types
+import cgi
+import os
 
 # True if we are running on Python 3.
 PY3 = sys.version_info[0] == 3
@@ -161,9 +163,14 @@ if PY3: # pragma: no cover
         # On Python 3, convert an environment variable to a WSGI
         # "bytes-as-unicode" string
         return u.encode(enc, esc).decode('iso-8859-1')
+    def wsgi_to_unicode(u):
+        # Convert a "bytes-as-unicode" string to Unicode
+        return u.encode('iso-8859-1', esc).decode(enc)
 else:
     def unicode_to_wsgi(u):
         return u.encode('iso-8859-1')
+    def wsgi_to_unicode(s):
+        return s.decode('iso-8859-1')
 
 try: # pragma: no cover
     from hashlib import md5
@@ -176,3 +183,66 @@ except NameError:
     def next(v):
         return v.next()
     
+if PY3: # pragma: no cover
+    def parse_qsl_text(qs, keep_blank_values=False, strict_parsing=False,
+                       encoding='utf-8', errors='replace'):
+        source = wsgi_to_unicode(qs)
+        decoded = urlparse.parse_qsl(
+            source,
+            keep_blank_values=keep_blank_values,
+            strict_parsing=strict_parsing,
+            encoding=encoding,
+            errors=errors,
+            )
+        return decoded
+else:
+    def parse_qsl_text(qs, keep_blank_values=False, strict_parsing=False,
+                       encoding='utf-8', errors='replace'):
+        decoded = [
+            (x.decode(encoding, errors), y.decode(encoding, errors))
+             for (x, y) in urlparse.parse_qsl(
+                 qs,
+                 keep_blank_values=keep_blank_values,
+                 strict_parsing=strict_parsing)
+            ]
+        return decoded
+                
+if PY3: # pragma: no cover
+    def multidict_from_bodyfile(fp=None, environ=os.environ,
+                                keep_blank_values=False, encoding='utf-8',
+                                errors='replace'):
+        fs = cgi.FieldStorage(
+            fp=fp,
+            environ=environ,
+            keep_blank_values=keep_blank_values,
+            encoding=encoding,
+            errors=errors)
+        from webob.multidict import MultiDict
+        obj = MultiDict()
+        # fs.list can be None when there's nothing to parse
+        for field in fs.list or ():
+            if field.filename:
+                obj.add(field.name, field)
+            else:
+                obj.add(field.name, field.value)
+        return obj
+else:
+    def multidict_from_bodyfile(fp=None, environ=os.environ,
+                                keep_blank_values=False, encoding='utf-8',
+                                errors='replace'):
+        fs = cgi.FieldStorage(
+            fp=fp,
+            environ=environ,
+            keep_blank_values=keep_blank_values
+            )
+        from webob.multidict import MultiDict
+        obj = MultiDict()
+        # fs.list can be None when there's nothing to parse
+        for field in fs.list or ():
+            if field.filename:
+                obj.add(field.name.decode(encoding, errors), field)
+            else:
+                obj.add(field.name.decode(encoding, errors),
+                        field.value.decode(encoding, errors))
+        return obj
+        

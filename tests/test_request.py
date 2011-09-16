@@ -3,6 +3,7 @@ from webob import Request
 from webob import BaseRequest
 from webob import UTC
 from webob.compat import u
+from webob.compat import b
 
 _marker = object()
 
@@ -28,7 +29,7 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(req.environ, environ)
 
     def test_body_file_getter(self):
-        body = 'input'
+        body = b('input')
         INPUT = self._makeStringIO(body)
         environ = {'wsgi.input': INPUT,
             'CONTENT_LENGTH': len(body),
@@ -38,7 +39,7 @@ class BaseRequestTests(unittest.TestCase):
         self.assert_(req.body_file is not INPUT)
 
     def test_body_file_getter_seekable(self):
-        body = 'input'
+        body = b('input')
         INPUT = self._makeStringIO(body)
         environ = {'wsgi.input': INPUT,
             'CONTENT_LENGTH': len(body),
@@ -49,7 +50,7 @@ class BaseRequestTests(unittest.TestCase):
         self.assert_(req.body_file is INPUT)
 
     def test_body_file_getter_cache(self):
-        body = 'input'
+        body = b('input')
         INPUT = self._makeStringIO(body)
         environ = {'wsgi.input': INPUT,
             'CONTENT_LENGTH': len(body),
@@ -59,21 +60,23 @@ class BaseRequestTests(unittest.TestCase):
         self.assert_(req.body_file is req.body_file)
 
     def test_body_file_getter_unreadable(self):
-        body = 'input'
+        body = b('input')
         INPUT = self._makeStringIO(body)
         environ = {'wsgi.input': INPUT, 'REQUEST_METHOD': 'FOO'}
         req = BaseRequest(environ)
         assert req.body_file_raw is INPUT
         assert req.body_file is not INPUT
-        assert req.body_file.read() == ''
+        assert req.body_file.read() == b('')
 
     def test_body_file_setter_w_string(self):
-        BEFORE = self._makeStringIO('before')
-        AFTER = str('AFTER')
-        environ = {'wsgi.input': BEFORE,
-                   'CONTENT_LENGTH': len('before'),
-                   'REQUEST_METHOD': 'POST',
-                  }
+        data = b('before')
+        BEFORE = self._makeStringIO(data)
+        AFTER = b('AFTER')
+        environ = {
+            'wsgi.input': BEFORE,
+            'CONTENT_LENGTH': str(len(data)),
+            'REQUEST_METHOD': 'POST',
+            }
         req = BaseRequest(environ)
         warnings.simplefilter('ignore', PendingDeprecationWarning)
         req.body_file = AFTER
@@ -84,11 +87,11 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(req.content_length, 0)
         assert req.is_body_seekable
         req.body_file.seek(0)
-        self.assertEqual(req.body_file.read(), '')
+        self.assertEqual(req.body_file.read(), b(''))
 
     def test_body_file_setter_non_string(self):
-        BEFORE = self._makeStringIO('before')
-        AFTER =  self._makeStringIO('after')
+        BEFORE = self._makeStringIO(b('before'))
+        AFTER =  self._makeStringIO(b('after'))
         environ = {'wsgi.input': BEFORE,
                    'CONTENT_LENGTH': len('before'),
                    'REQUEST_METHOD': 'POST'
@@ -99,18 +102,19 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(req.content_length, None)
 
     def test_body_file_deleter(self):
-        INPUT = self._makeStringIO('before')
+        data = b('before')
+        INPUT = self._makeStringIO(data)
         environ = {'wsgi.input': INPUT,
-                   'CONTENT_LENGTH': len('before'),
+                   'CONTENT_LENGTH': len(data),
                    'REQUEST_METHOD': 'POST',
                   }
         req = BaseRequest(environ)
         del req.body_file
-        self.assertEqual(req.body_file.getvalue(), '')
+        self.assertEqual(req.body_file.getvalue(), b(''))
         self.assertEqual(req.content_length, 0)
 
     def test_body_file_raw(self):
-        INPUT = self._makeStringIO('input')
+        INPUT = self._makeStringIO(b('input'))
         environ = {'wsgi.input': INPUT,
                    'CONTENT_LENGTH': len('input'),
                    'REQUEST_METHOD': 'POST',
@@ -119,20 +123,21 @@ class BaseRequestTests(unittest.TestCase):
         self.assert_(req.body_file_raw is INPUT)
 
     def test_body_file_seekable_input_not_seekable(self):
-        INPUT = self._makeStringIO('input')
+        data = b('input')
+        INPUT = self._makeStringIO(data)
         INPUT.seek(1, 0) # consume
         environ = {'wsgi.input': INPUT,
                    'webob.is_body_seekable': False,
-                   'CONTENT_LENGTH': len('input')-1,
+                   'CONTENT_LENGTH': len(data)-1,
                    'REQUEST_METHOD': 'POST',
                   }
         req = BaseRequest(environ)
         seekable = req.body_file_seekable
         self.assert_(seekable is not INPUT)
-        self.assertEqual(seekable.getvalue(), 'nput')
+        self.assertEqual(seekable.getvalue(), b('nput'))
 
     def test_body_file_seekable_input_is_seekable(self):
-        INPUT = self._makeStringIO('input')
+        INPUT = self._makeStringIO(b('input'))
         INPUT.seek(1, 0) # consume
         environ = {'wsgi.input': INPUT,
                    'webob.is_body_seekable': True,
@@ -907,25 +912,25 @@ class BaseRequestTests(unittest.TestCase):
 
     # body
     def test_body_getter(self):
-        INPUT = self._makeStringIO('input')
+        INPUT = self._makeStringIO(b('input'))
         environ = {'wsgi.input': INPUT,
                    'webob.is_body_seekable': True,
                    'CONTENT_LENGTH': len('input'),
                    'REQUEST_METHOD': 'POST'
                   }
         req = BaseRequest(environ)
-        self.assertEqual(req.body, 'input')
-        self.assertEqual(req.content_length, len('input'))
+        self.assertEqual(req.body, b('input'))
+        self.assertEqual(req.content_length, len(b('input')))
     def test_body_setter_None(self):
-        INPUT = self._makeStringIO('input')
+        INPUT = self._makeStringIO(b('input'))
         environ = {'wsgi.input': INPUT,
                    'webob.is_body_seekable': True,
-                   'CONTENT_LENGTH': len('input'),
+                   'CONTENT_LENGTH': len(b('input')),
                    'REQUEST_METHOD': 'POST'
                   }
         req = BaseRequest(environ)
         req.body = None
-        self.assertEqual(req.body, '')
+        self.assertEqual(req.body, b(''))
         self.assertEqual(req.content_length, 0)
         self.assert_(req.is_body_seekable)
     def test_body_setter_non_string_raises(self):
@@ -934,27 +939,28 @@ class BaseRequestTests(unittest.TestCase):
             req.body = object()
         self.assertRaises(TypeError, _test)
     def test_body_setter_value(self):
-        BEFORE = self._makeStringIO('before')
+        BEFORE = self._makeStringIO(b('before'))
         environ = {'wsgi.input': BEFORE,
                    'webob.is_body_seekable': True,
                    'CONTENT_LENGTH': len('before'),
                    'REQUEST_METHOD': 'POST'
                   }
         req = BaseRequest(environ)
-        req.body = 'after'
-        self.assertEqual(req.body, 'after')
-        self.assertEqual(req.content_length, len('after'))
+        req.body = b('after')
+        self.assertEqual(req.body, b('after'))
+        self.assertEqual(req.content_length, len(b('after')))
         self.assert_(req.is_body_seekable)
     def test_body_deleter_None(self):
-        INPUT = self._makeStringIO('input')
+        data = b('input')
+        INPUT = self._makeStringIO(data)
         environ = {'wsgi.input': INPUT,
                    'webob.is_body_seekable': True,
-                   'CONTENT_LENGTH': len('input'),
+                   'CONTENT_LENGTH': len(data),
                    'REQUEST_METHOD': 'POST',
                   }
         req = BaseRequest(environ)
         del req.body
-        self.assertEqual(req.body, '')
+        self.assertEqual(req.body, b(''))
         self.assertEqual(req.content_length, 0)
         self.assert_(req.is_body_seekable)
 
@@ -969,7 +975,7 @@ class BaseRequestTests(unittest.TestCase):
         self.assert_(result.reason.startswith('Not a form request'))
 
     def test_POST_existing_cache_hit(self):
-        INPUT = self._makeStringIO('input')
+        INPUT = self._makeStringIO(b('input'))
         environ = {'wsgi.input': INPUT,
                    'REQUEST_METHOD': 'POST',
                    'webob._parsed_post_vars': ({'foo': 'bar'}, INPUT),
@@ -980,7 +986,7 @@ class BaseRequestTests(unittest.TestCase):
 
     def test_PUT_missing_content_type(self):
         from webob.multidict import NoVars
-        INPUT = self._makeStringIO('input')
+        INPUT = self._makeStringIO(b('input'))
         environ = {'wsgi.input': INPUT,
                    'REQUEST_METHOD': 'PUT',
                   }
@@ -991,7 +997,7 @@ class BaseRequestTests(unittest.TestCase):
 
     def test_PUT_bad_content_type(self):
         from webob.multidict import NoVars
-        INPUT = self._makeStringIO('input')
+        INPUT = self._makeStringIO(b('input'))
         environ = {'wsgi.input': INPUT,
                    'REQUEST_METHOD': 'PUT',
                    'CONTENT_TYPE': 'text/plain',
@@ -1002,7 +1008,7 @@ class BaseRequestTests(unittest.TestCase):
         self.assert_(result.reason.startswith('Not an HTML form submission'))
 
     def test_POST_multipart(self):
-        BODY_TEXT = (
+        BODY_TEXT = b(
             '------------------------------deb95b63e42a\n'
             'Content-Disposition: form-data; name="foo"\n'
             '\n'
@@ -1029,7 +1035,7 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(bar.name, 'bar')
         self.assertEqual(bar.filename, 'bar.txt')
         self.assertEqual(bar.file.read(),
-                         'these are the contents of the file "bar.txt"\n')
+                         b('these are the contents of the file "bar.txt"\n'))
 
     # GET
     def test_GET_reflects_query_string(self):
@@ -1356,7 +1362,7 @@ class BaseRequestTests(unittest.TestCase):
 
     def test_blank__post_files(self):
         import cgi
-        io = self._makeStringIO('1')
+        io = self._makeStringIO(b('1'))
         from webob.request import _get_multipart_boundary
         request = Request.blank('/', POST={'first':('filename1', io),
                                            'second':('filename2', '2'),
@@ -1389,10 +1395,10 @@ class BaseRequestTests(unittest.TestCase):
     #from_string
     def test_from_string_extra_data(self):
         from webob import BaseRequest
-        _test_req_copy = _test_req.replace('Content-Type',
-                            'Content-Length: 337\r\nContent-Type')
+        _test_req_copy = _test_req.replace(b('Content-Type'),
+                            b('Content-Length: 337\r\nContent-Type'))
         self.assertRaises(ValueError, BaseRequest.from_string,
-                _test_req_copy+'EXTRA!')
+                _test_req_copy+b('EXTRA!'))
 
     #as_string
     def test_as_string_skip_body(self):
@@ -1444,11 +1450,11 @@ class RequestTests_functional(unittest.TestCase):
         app = TestApp(simpleapp)
         res = app.get('/')
         self.assert_('Hello' in res)
-        self.assert_("get is UnicodeMultiDict([])" in res)
+        self.assert_("MultiDict([])" in res)
         self.assert_("post is <NoVars: Not a form request>" in res)
 
         res = app.get('/?name=george')
-        res.mustcontain("get is UnicodeMultiDict([(u'name', u'george')])")
+        res.mustcontain("MultiDict([(u'name', u'george')])")
         res.mustcontain("Val is u'george'")
 
     def test_language_parsing(self):
@@ -1478,7 +1484,8 @@ class RequestTests_functional(unittest.TestCase):
         self.assert_("accepttypes is: application/xml" in res)
 
     def test_accept_best_match(self):
-        self.assert_(not Request.blank('/').accept)
+        accept = Request.blank('/').accept
+        self.assert_(not accept)
         self.assert_(not Request.blank('/', headers={'Accept': ''}).accept)
         req = Request.blank('/', headers={'Accept':'text/plain'})
         self.assert_(req.accept)
@@ -1596,32 +1603,32 @@ class RequestTests_functional(unittest.TestCase):
     def test_params(self):
         req = Request.blank('/?a=1&b=2')
         req.method = 'POST'
-        req.body = 'b=3'
-        self.assertEqual(req.params.items(),
+        req.body = b('b=3')
+        self.assertEqual(list(req.params.items()),
                          [('a', '1'), ('b', '2'), ('b', '3')])
         new_params = req.params.copy()
-        self.assertEqual(new_params.items(),
+        self.assertEqual(list(new_params.items()),
                          [('a', '1'), ('b', '2'), ('b', '3')])
         new_params['b'] = '4'
-        self.assertEqual(new_params.items(), [('a', '1'), ('b', '4')])
+        self.assertEqual(list(new_params.items()), [('a', '1'), ('b', '4')])
         # The key name is \u1000:
         req = Request.blank('/?%E1%80%80=x', charset='UTF-8')
-        self.assert_(u('\u1000') in req.GET.keys())
+        self.assert_(u('\u1000') in list(req.GET.keys()))
         self.assertEqual(req.GET[u('\u1000')], 'x')
 
     def test_copy_body(self):
-        req = Request.blank('/', method='POST', body='some text',
+        req = Request.blank('/', method='POST', body=b('some text'),
                             request_body_tempfile_limit=1)
         old_body_file = req.body_file_raw
         req.copy_body()
         self.assert_(req.body_file_raw is not old_body_file)
         req = Request.blank('/', method='POST',
-                body_file=UnseekableInput('0123456789'), content_length=10)
+                body_file=UnseekableInput(b('0123456789')), content_length=10)
         self.assert_(not hasattr(req.body_file_raw, 'seek'))
         old_body_file = req.body_file_raw
         req.make_body_seekable()
         self.assert_(req.body_file_raw is not old_body_file)
-        self.assertEqual(req.body, '0123456789')
+        self.assertEqual(req.body, b('0123456789'))
         old_body_file = req.body_file
         req.make_body_seekable()
         self.assert_(req.body_file_raw is old_body_file)
@@ -1630,23 +1637,23 @@ class RequestTests_functional(unittest.TestCase):
     def test_broken_seek(self):
         # copy() should work even when the input has a broken seek method
         req = Request.blank('/', method='POST',
-                body_file=UnseekableInputWithSeek('0123456789'),
+                body_file=UnseekableInputWithSeek(b('0123456789')),
                 content_length=10)
         self.assert_(hasattr(req.body_file_raw, 'seek'))
         self.assertRaises(IOError, req.body_file_raw.seek, 0)
         old_body_file = req.body_file
         req2 = req.copy()
         self.assert_(req2.body_file_raw is req2.body_file is not old_body_file)
-        self.assertEqual(req2.body, '0123456789')
+        self.assertEqual(req2.body, b('0123456789'))
 
     def test_set_body(self):
         from webob import BaseRequest
-        req = BaseRequest.blank('/', method='PUT', body='foo')
+        req = BaseRequest.blank('/', method='PUT', body=b('foo'))
         self.assert_(req.is_body_seekable)
-        self.assertEqual(req.body, 'foo')
+        self.assertEqual(req.body, b('foo'))
         self.assertEqual(req.content_length, 3)
         del req.body
-        self.assertEqual(req.body, '')
+        self.assertEqual(req.body, b(''))
         self.assertEqual(req.content_length, 0)
 
     def test_broken_clen_header(self):
@@ -1763,7 +1770,7 @@ class RequestTests_functional(unittest.TestCase):
             self.assert_(i in r.headers and
                 'HTTP_'+i.upper().replace('-', '_') in r.environ)
         r.headers = {'Server':'Apache'}
-        self.assertEqual(r.environ.keys(), ['a',  'HTTP_SERVER'])
+        self.assertEqual(list(r.environ.keys()), ['a',  'HTTP_SERVER'])
 
     def test_host_url(self):
         # Request has a read only property host_url that combines several
@@ -1871,12 +1878,12 @@ class RequestTests_functional(unittest.TestCase):
     def test_from_garbage_file(self):
         # If we pass a file with garbage to from_file method it should
         # raise an error plus missing bits in from_file method
-        io = self._makeStringIO('hello world')
+        io = self._makeStringIO(b('hello world'))
 
         from webob import BaseRequest
         self.assertRaises(ValueError,
                           BaseRequest.from_file, io)
-        val_file = self._makeStringIO(
+        val_file = self._makeStringIO(b(
             "GET /webob/ HTTP/1.1\n"
             "Host: pythonpaste.org\n"
             "User-Agent: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.13)"
@@ -1891,14 +1898,14 @@ class RequestTests_functional(unittest.TestCase):
             "Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\n"
             "Keep-Alive: 115\n"
             "Connection: keep-alive\n"
-        )
+        ))
         req = BaseRequest.from_file(val_file)
         self.assert_(isinstance(req, BaseRequest))
         self.assert_(not repr(req).endswith('(invalid WSGI environ)>'))
-        val_file = self._makeStringIO(
+        val_file = self._makeStringIO(b(
             "GET /webob/ HTTP/1.1\n"
             "Host pythonpaste.org\n"
-        )
+        ))
         self.assertRaises(ValueError, BaseRequest.from_file, val_file)
 
     def test_from_string(self):
@@ -1914,8 +1921,8 @@ class RequestTests_functional(unittest.TestCase):
         self.assert_(',' not in req.host)
         self.assert_(req.content_length is not None)
         self.assertEqual(req.content_length, 337)
-        self.assert_('foo' in req.body)
-        bar_contents = "these are the contents of the file 'bar.txt'\r\n"
+        self.assert_(b('foo') in req.body)
+        bar_contents = b("these are the contents of the file 'bar.txt'\r\n")
         self.assert_(bar_contents in req.body)
         self.assertEqual(req.params['foo'], 'foo')
         bar = req.params['bar']
@@ -1925,8 +1932,8 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(bar.file.read(), bar_contents)
         # out should equal contents, except for the Content-Length header,
         # so insert that.
-        _test_req_copy = _test_req.replace('Content-Type',
-                            'Content-Length: 337\r\nContent-Type')
+        _test_req_copy = _test_req.replace(b('Content-Type'),
+                            b('Content-Length: 337\r\nContent-Type'))
         self.assertEqual(str(req), _test_req_copy)
 
         req2 = BaseRequest.from_string(_test_req2)
@@ -2036,24 +2043,24 @@ class RequestTests_functional(unittest.TestCase):
             resp.headers['x-data'] = data
             return resp(env, sr)
 
-        req = Request.blank('/', method='PUT', body='abc')
+        req = Request.blank('/', method='PUT', body=b('abc'))
         resp = req.get_response(mw)
-        self.assertEqual(resp.body, 'abc')
-        self.assertEqual(resp.headers['x-data'], 'abc')
+        self.assertEqual(resp.body, b('abc'))
+        self.assertEqual(resp.headers['x-data'], b('abc'))
 
     def test_body_file_noseek(self):
-        req = Request.blank('/', method='PUT', body='abc')
+        req = Request.blank('/', method='PUT', body=b('abc'))
         lst = [req.body_file.read(1) for i in range(3)]
-        self.assertEqual(lst, ['a','b','c'])
+        self.assertEqual(lst, [b('a'), b('b'), b('c')])
 
     def test_cgi_escaping_fix(self):
         req = Request.blank('/',
             content_type='multipart/form-data; boundary=boundary',
             POST=_cgi_escaping_body
         )
-        self.assertEqual(req.POST.keys(), ['%20%22"'])
+        self.assertEqual(list(req.POST.keys()), ['%20%22"'])
         req.body_file.read()
-        self.assertEqual(req.POST.keys(), ['%20%22"'])
+        self.assertEqual(list(req.POST.keys()), ['%20%22"'])
 
     def test_content_type_none(self):
         r = Request.blank('/', content_type='text/html')
@@ -2067,8 +2074,8 @@ class RequestTests_functional(unittest.TestCase):
 
     def test_body_file_seekable(self):
         r = Request.blank('/', method='POST')
-        r.body_file = self._makeStringIO('body')
-        self.assertEqual(r.body_file_seekable.read(), 'body')
+        r.body_file = self._makeStringIO(b('body'))
+        self.assertEqual(r.body_file_seekable.read(), b('body'))
 
     def test_request_init(self):
         # port from doctest (docs/reference.txt)
@@ -2083,7 +2090,8 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(req.environ['SERVER_PROTOCOL'], 'HTTP/1.0')
         self.assert_(hasattr(req.environ['wsgi.errors'], 'write') and
                      hasattr(req.environ['wsgi.errors'], 'flush'))
-        self.assert_(hasattr(req.environ['wsgi.input'], 'next'))
+        self.assert_(hasattr(req.environ['wsgi.input'], 'next') or
+                     hasattr(req.environ['wsgi.input'], '__next__'))
         self.assertEqual(req.environ['wsgi.multiprocess'], False)
         self.assertEqual(req.environ['wsgi.multithread'], False)
         self.assertEqual(req.environ['wsgi.run_once'], False)
@@ -2092,11 +2100,11 @@ class RequestTests_functional(unittest.TestCase):
 
         # Test body
         self.assert_(hasattr(req.body_file, 'read'))
-        self.assertEqual(req.body, '')
+        self.assertEqual(req.body, b(''))
         req.method = 'PUT'
-        req.body = 'test'
+        req.body = b('test')
         self.assert_(hasattr(req.body_file, 'read'))
-        self.assertEqual(req.body, 'test')
+        self.assertEqual(req.body, b('test'))
 
         # Test method & URL
         self.assertEqual(req.method, 'PUT')
@@ -2151,21 +2159,21 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(req.GET, GET)
         self.assertEqual(req.GET['check'], 'b')
         self.assertEqual(req.GET.getall('check'), ['a', 'b'])
-        self.assertEqual(req.GET.items(),
+        self.assertEqual(list(req.GET.items()),
                          [('check', 'a'), ('check', 'b'), ('name', 'Bob')])
 
         self.assert_(isinstance(req.POST, NoVars))
         # NoVars can be read like a dict, but not written
-        self.assertEqual(req.POST.items(), [])
+        self.assertEqual(list(req.POST.items()), [])
         req.method = 'POST'
-        req.body = 'name=Joe&email=joe@example.com'
+        req.body = b('name=Joe&email=joe@example.com')
         self.assertEqual(req.POST,
                          MultiDict([('name', 'Joe'),
                                     ('email', 'joe@example.com')]))
         self.assertEqual(req.POST['name'], 'Joe')
 
         self.assert_(isinstance(req.params, NestedMultiDict))
-        self.assertEqual(req.params.items(),
+        self.assertEqual(list(req.params.items()),
                          [('check', 'a'),
                           ('check', 'b'),
                           ('name', 'Bob'),
@@ -2187,7 +2195,7 @@ class RequestTests_functional(unittest.TestCase):
         from webob.multidict import UnicodeMultiDict
         req = Request.blank('/test?check=a&check=b&name=Bob')
         req.method = 'PUT'
-        req.body = 'var1=value1&var2=value2&rep=1&rep=2'
+        req.body = b('var1=value1&var2=value2&rep=1&rep=2')
         req.environ['CONTENT_LENGTH'] = str(len(req.body))
         req.environ['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
         req.charset = 'utf8'
@@ -2201,7 +2209,7 @@ class RequestTests_functional(unittest.TestCase):
                                  ('rep', '1'),
                                  ('rep', '2')]))
         self.assertEqual(
-            req.GET.items(),
+            list(req.GET.items()),
             [('check', u('a')), ('check', u('b')), ('name', u('Bob'))])
 
         # Cookies
@@ -2275,9 +2283,10 @@ class RequestTests_functional(unittest.TestCase):
         req = Request.blank('/')
         def wsgi_app(environ, start_response):
             start_response('200 OK', [('Content-type', 'text/plain')])
-            return ['Hi!']
+            return [b'Hi!']
         self.assertEqual(req.call_application(wsgi_app),
-                         ('200 OK', [('Content-type', 'text/plain')], ['Hi!']))
+                         ('200 OK', [('Content-type', 'text/plain')],
+                          [b('Hi!')]))
 
         res = req.get_response(wsgi_app)
         from webob.response import Response
@@ -2285,11 +2294,12 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(res.status, '200 OK')
         from webob.headers import ResponseHeaders
         self.assert_(isinstance(res.headers, ResponseHeaders))
-        self.assertEqual(res.headers.items(), [('Content-type', 'text/plain')])
-        self.assertEqual(res.body, 'Hi!')
+        self.assertEqual(list(res.headers.items()),
+                         [('Content-type', 'text/plain')])
+        self.assertEqual(res.body, b('Hi!'))
 
     def equal_req(self, req):
-        input = self._makeStringIO(str(req))
+        input = self._makeStringIO(str(req).encode('utf-8'))
         req2 = Request.from_file(input)
         self.assertEqual(req.url, req2.url)
         headers1 = dict(req.headers)
@@ -2346,9 +2356,9 @@ Content-Disposition: form-data; name="%20%22""
 --boundary--'''
 
 def _norm_req(s):
-    return '\r\n'.join(s.strip().replace('\r','').split('\n'))
+    return b('\r\n').join(s.strip().replace(b('\r'), b('')).split((b('\n'))))
 
-_test_req = """
+_test_req = b("""
 POST /webob/ HTTP/1.0
 Accept: */*
 Cache-Control: max-age=0
@@ -2367,16 +2377,16 @@ Content-type: application/octet-stream
 these are the contents of the file 'bar.txt'
 
 ------------------------------deb95b63e42a--
-"""
+""")
 
-_test_req2 = """
+_test_req2 = b("""
 POST / HTTP/1.0
 Content-Length: 0
 
-"""
+""")
 
 _test_req = _norm_req(_test_req)
-_test_req2 = _norm_req(_test_req2) + '\r\n'
+_test_req2 = _norm_req(_test_req2) + b('\r\n')
 
 class UnseekableInput(object):
     def __init__(self, data):
@@ -2400,13 +2410,19 @@ class UnseekableInputWithSeek(UnseekableInput):
 
 class FakeCGIBodyTests(unittest.TestCase):
 
+    def _makeStringIO(self, text):
+        try:
+            from io import BytesIO
+        except ImportError: # Python < 2.6
+            from StringIO import StringIO as BytesIO
+        return BytesIO(text)
+
     def test_encode_multipart_value_type_options(self):
-        from StringIO import StringIO
         from cgi import FieldStorage
         from webob.request import BaseRequest, FakeCGIBody
         from webob.multidict import MultiDict
         multipart_type = 'multipart/form-data; boundary=foobar'
-        multipart_body = StringIO(
+        multipart_body = self._makeStringIO(b(
             '--foobar\r\n'
             'Content-Disposition: form-data; name="bananas"; filename="bananas.txt"\r\n'
             'Content-type: text/plain; charset="utf-9"\r\n'
@@ -2414,7 +2430,7 @@ class FakeCGIBodyTests(unittest.TestCase):
             "these are the contents of the file 'bananas.txt'\r\n"
             '\r\n'
             '--foobar--'
-        )
+        ))
         environ = BaseRequest.blank('/').environ
         environ.update(CONTENT_TYPE=multipart_type)
         environ.update(REQUEST_METHOD='POST')

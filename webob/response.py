@@ -145,10 +145,10 @@ class Response(object):
         This reads the response as represented by ``str(resp)``; it
         may not read every valid HTTP response properly.  Responses
         must have a ``Content-Length``"""
+        encoding = getattr(fp, 'encoding', None)
         headerlist = []
         status = fp.readline().strip()
-        binary_mode = isinstance(status, binary_type)
-        if binary_mode:
+        if encoding is None:
             _colon = b(':')
         else:
             _colon = ':'
@@ -162,7 +162,7 @@ class Response(object):
             except ValueError:
                 raise ValueError('Bad header line: %r' % line)
             value = value.strip()
-            if binary_mode:
+            if encoding is None:
                 header_name = header_name.decode('utf-8')
                 value = value.decode('utf-8')
             headerlist.append((header_name, value))
@@ -172,7 +172,7 @@ class Response(object):
             app_iter=(),
         )
         body = fp.read(r.content_length or 0)
-        if binary_mode:
+        if encoding is None:
             r.body = body
         else:
             r.text = body

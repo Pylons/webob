@@ -4,10 +4,12 @@ Does parsing of ETag-related headers: If-None-Matches, If-Matches
 Also If-Range parsing
 """
 
-from webob.datetime_utils import *
+from webob.datetime_utils import serialize_date
+from webob.datetime_utils import parse_date
 from webob.util import header_docstring
 
-__all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'NoIfRange', 'etag_property']
+__all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'NoIfRange',
+           'etag_property']
 
 
 def etag_property(key, default, rfc_section):
@@ -42,6 +44,8 @@ class _AnyETag(object):
     def __nonzero__(self):
         return False
 
+    __bool__ = __nonzero__ # python 3
+
     def __contains__(self, other):
         return True
 
@@ -63,6 +67,8 @@ class _NoETag(object):
 
     def __nonzero__(self):
         return False
+
+    __bool__ = __nonzero__ # python 3
 
     def __contains__(self, other):
         return False
@@ -225,6 +231,8 @@ class _NoIfRange(object):
 
     def __nonzero__(self):
         return False
+
+    __bool__ = __nonzero__ # python 3
 
     def match(self, etag=None, last_modified=None):
         return True

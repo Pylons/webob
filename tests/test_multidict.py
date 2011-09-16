@@ -3,6 +3,7 @@
 import unittest
 from webob import multidict
 from webob.compat import u
+from webob.compat import b
 
 class BaseDictTests(object):
     def setUp(self):
@@ -30,7 +31,7 @@ class BaseDictTests(object):
         self.assertRaises(KeyError, self.d.getone, 'a')
 
     def test_getall(self):
-        self.assertEqual(self.d.getall('b'), [1])
+        self.assertEqual(list(self.d.getall('b')), [1])
 
     def test_dict_of_lists(self):
         self.assertEqual(
@@ -90,7 +91,7 @@ class BaseDictTests(object):
     def test_add(self):
         d = self._get_instance()
         d.add('b', 3)
-        self.assertEqual(d.getall('b'), [1, 3])
+        self.assertEqual(list(d.getall('b')), [1, 3])
 
     def test_copy(self):
         assert self.d.copy() is not self.d
@@ -180,7 +181,7 @@ class UnicodeMultiDictTestCase(BaseDictTests, unittest.TestCase):
             pass
 
         key = Key()
-        self.assertEquals(key, d._decode_key(key))
+        self.assertEqual(key, d._decode_key(key))
 
     def test_decode_value(self):
         import cgi
@@ -197,12 +198,12 @@ class UnicodeMultiDictTestCase(BaseDictTests, unittest.TestCase):
         d = self._get_instance()
         value = u('a')
         d.decode_keys = True
-        self.assertEquals(d._encode_key(value),'a')
+        self.assertEqual(d._encode_key(value), b('a'))
 
     def test_encode_value(self):
         d = self._get_instance()
         value = u('a')
-        self.assertEquals(d._encode_value(value),'a')
+        self.assertEqual(d._encode_value(value), b('a'))
 
     def test_repr_with_password(self):
         d = self._get_instance(password='pwd')
@@ -287,7 +288,7 @@ class TrackableMultiDict(BaseDictTests, unittest.TestCase):
         d = self._get_instance()
         d._items = None
         d.__init__(Arg())
-        self.assertEquals(self.d._items, self._list)
+        self.assertEqual(self.d._items, self._list)
 
     def test_nullextend(self):
         d = self._get_instance()
@@ -393,7 +394,7 @@ class NoVarsTestCase(unittest.TestCase):
 
     def test_keys(self):
         d = self._get_instance()
-        self.assertEqual(d.keys(), [])
+        self.assertEqual(list(d.keys()), [])
 
     def test_iterkeys(self):
         d = self._get_instance()

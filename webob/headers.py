@@ -147,3 +147,10 @@ class EnvironHeaders(DictMixin):
 
     def __contains__(self, hname):
         return _trans_name(hname) in self.environ
+
+    def __len__(self):
+        return len(list(self.keys()))
+
+    def __iter__(self):
+        for k in self.keys():
+            yield k

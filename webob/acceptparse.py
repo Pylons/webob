@@ -214,6 +214,8 @@ class NilAccept(object):
     def __nonzero__(self):
         return False
 
+    __bool__ = __nonzero__ # python 3
+
     def __add__(self, item):
         if isinstance(item, self.MasterClass):
             return item

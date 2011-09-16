@@ -1,9 +1,13 @@
 import re
-from datetime import datetime, date
+from datetime import datetime
+from datetime import date
 
-from webob.byterange import Range, ContentRange
-from webob.etag import IfRange, NoIfRange
-from webob.datetime_utils import parse_date, serialize_date
+from webob.byterange import Range
+from webob.byterange import ContentRange
+from webob.etag import IfRange
+from webob.etag import NoIfRange
+from webob.datetime_utils import parse_date
+from webob.datetime_utils import serialize_date
 from webob.util import header_docstring
 from webob.compat import text_type
 from webob.compat import binary_type
