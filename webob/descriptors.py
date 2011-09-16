@@ -7,6 +7,7 @@ from webob.datetime_utils import parse_date, serialize_date
 from webob.util import header_docstring
 from webob.compat import text_type
 from webob.compat import binary_type
+from webob.compat import unicode_to_wsgi
 
 CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
 QUOTES_RE = re.compile('"(.*)"')
@@ -61,7 +62,7 @@ def header_getter(header, rfc_section):
         fdel(r)
         if value is not None:
             if isinstance(value, text_type):
-                value = value.encode('ISO-8859-1') # standard encoding for headers
+                value = unicode_to_wsgi(value)
             r._headerlist.append((header, value))
 
     def fdel(r):
@@ -201,7 +202,7 @@ def serialize_range(value):
         value = Range([value])
     if value is None:
         return None
-    value = binary_type(value)
+    value = str(value)
     return value or None
 
 def parse_int(value):

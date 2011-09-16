@@ -154,5 +154,25 @@ else:
         return d.iteritems()
     def itervalues_(d):
         return d.itervalues()
-    
+
+if PY3: # pragma: no cover
+    enc, esc = sys.getfilesystemencoding(), 'surrogateescape'
+    def unicode_to_wsgi(u):
+        # On Python 3, convert an environment variable to a WSGI
+        # "bytes-as-unicode" string
+        return u.encode(enc, esc).decode('iso-8859-1')
+else:
+    def unicode_to_wsgi(u):
+        return u.encode('iso-8859-1')
+
+try: # pragma: no cover
+    from hashlib import md5
+except ImportError: # pragma: no cover
+    from md5 import md5
+
+try:
+    next = next
+except NameError:
+    def next(v):
+        return v.next()
     

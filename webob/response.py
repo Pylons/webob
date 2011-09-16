@@ -1,6 +1,7 @@
 import re
 import zlib
 import struct
+from base64 import b64encode
 
 from datetime import datetime
 from datetime import timedelta
@@ -15,6 +16,8 @@ from webob.compat import urlparse
 from webob.compat import text_type
 from webob.compat import binary_type
 from webob.compat import url_quote
+from webob.compat import md5
+from webob.compat import next
 from webob.datetime_utils import parse_date_delta
 from webob.datetime_utils import serialize_date_delta
 from webob.datetime_utils import timedelta_to_seconds
@@ -43,9 +46,9 @@ __all__ = ['Response']
 _PARAM_RE = re.compile(r'([a-z0-9]+)=(?:"([^"]*)"|([a-z0-9_.-]*))', re.I)
 _OK_PARAM_RE = re.compile(r'^[a-z0-9_.-]+$', re.I)
 
-_gzip_header = '\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff'
+_gzip_header = b('\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff')
 
-
+_empty_bytes = b('')
 
 class Response(object):
     """
@@ -66,7 +69,7 @@ class Response(object):
                  **kw):
         if app_iter is None:
             if body is None:
-                body = ''
+                body = b('')
         elif body is not None:
             raise TypeError(
                 "You may only give one of the body and app_iter arguments")
@@ -144,22 +147,35 @@ class Response(object):
         must have a ``Content-Length``"""
         headerlist = []
         status = fp.readline().strip()
+        binary_mode = isinstance(status, binary_type)
+        if binary_mode:
+            _colon = b(':')
+        else:
+            _colon = ':'
         while 1:
             line = fp.readline().strip()
             if not line:
                 # end of headers
                 break
             try:
-                header_name, value = line.split(':', 1)
+                header_name, value = line.split(_colon, 1)
             except ValueError:
                 raise ValueError('Bad header line: %r' % line)
-            headerlist.append((header_name, value.strip()))
+            value = value.strip()
+            if binary_mode:
+                header_name = header_name.decode('utf-8')
+                value = value.decode('utf-8')
+            headerlist.append((header_name, value))
         r = cls(
             status=status,
             headerlist=headerlist,
             app_iter=(),
         )
-        r.body = fp.read(r.content_length or 0)
+        body = fp.read(r.content_length or 0)
+        if binary_mode:
+            r.body = body
+        else:
+            r.text = body
         return r
 
     def copy(self):
@@ -192,7 +208,7 @@ class Response(object):
             self.body
         parts += map('%s: %s'.__mod__, self.headerlist)
         if not skip_body and self.body:
-            parts += ['', self.body]
+            parts += ['', self.text]
         return '\n'.join(parts)
 
 
@@ -207,7 +223,7 @@ class Response(object):
         return self._status
 
     def _status__set(self, value):
-        if isinstance(value, text_type):
+        if isinstance(value, (binary_type, text_type)):
             # Status messages have to be ASCII safe, so this is OK:
             value = str(value)
         if isinstance(value, int):
@@ -300,7 +316,7 @@ class Response(object):
         if app_iter is None:
             raise AttributeError("No body has been set")
         try:
-            body = ''.join(app_iter)
+            body = _empty_bytes.join(app_iter)
         finally:
             iter_close(app_iter)
         if isinstance(body, text_type):
@@ -323,13 +339,13 @@ class Response(object):
             )
         return body
 
-    def _body__set(self, value=''):
-        if not isinstance(value, str):
+    def _body__set(self, value=_empty_bytes):
+        if not isinstance(value, binary_type):
             if isinstance(value, text_type):
                 msg = ("You cannot set Response.body to a text object "
                        "(use Response.text)")
             else:
-                msg = ("You can only set the body to a str (not %s)" %
+                msg = ("You can only set the body to a binary type (not %s)" %
                        type(value))
             raise TypeError(msg)
         if self._app_iter is not None:
@@ -870,11 +886,9 @@ class Response(object):
         """
         if body is None:
             body = self.body
-        try: # pragma: no cover
-            from hashlib import md5
-        except ImportError: # pragma: no cover
-            from md5 import md5
-        md5_digest = md5(body).digest().encode('base64').replace('\n', '')
+        md5_digest = md5(body).digest()
+        md5_digest = str(b64encode(md5_digest))
+        md5_digest = md5_digest.replace('\n', '')
         self.etag = md5_digest.strip('=')
         if set_content_md5:
             self.content_md5 = md5_digest
@@ -1108,7 +1122,7 @@ class AppIterRange(object):
             if self._pos < start:
                 continue
             elif self._pos == start:
-                return ''
+                return b('')
             else:
                 chunk = chunk[start-self._pos:]
                 if stop is not None and self._pos > stop:
@@ -1127,13 +1141,15 @@ class AppIterRange(object):
         if stop is not None and self._pos >= stop:
             raise StopIteration
 
-        chunk = self.app_iter.next()
+        chunk = next(self.app_iter)
         self._pos += len(chunk)
 
         if stop is None or self._pos <= stop:
             return chunk
         else:
             return chunk[:stop-self._pos]
+
+    __next__ = next # py3
 
     def close(self):
         iter_close(self.app_iter)
@@ -1158,6 +1174,8 @@ class EmptyResponse(object):
 
     def next(self):
         raise StopIteration()
+
+    __next__ = next # py3
 
 def _request_uri(environ):
     """Like wsgiref.url.request_uri, except eliminates :80 ports

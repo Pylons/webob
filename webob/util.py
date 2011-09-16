@@ -111,3 +111,4 @@ status_reasons = {
     507: 'Insufficient Storage',
     510: 'Not Extended',
 }
+

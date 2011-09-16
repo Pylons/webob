@@ -35,8 +35,8 @@ def test_response():
     res.status = 404
     assert res.status == '404 Not Found'
     assert res.status_int == 404
-    res.body = 'Not OK'
-    assert ''.join(res.app_iter) == 'Not OK'
+    res.body = b('Not OK')
+    assert b('').join(res.app_iter) == b('Not OK')
     res.charset = 'iso8859-1'
     assert res.headers['content-type'] == 'text/html; charset=iso8859-1'
     res.content_type = 'text/xml'
@@ -118,10 +118,10 @@ def test_response_copy_content_md5():
 def test_HEAD_closes():
     req = Request.blank('/')
     req.method = 'HEAD'
-    app_iter = StringIO('foo')
+    app_iter = StringIO(b('foo'))
     res = req.get_response(Response(app_iter=app_iter))
     eq_(res.status_int, 200)
-    eq_(res.body, '')
+    eq_(res.body, b(''))
     ok_(app_iter.closed)
 
 def test_HEAD_conditional_response_returns_empty_response():
@@ -148,7 +148,7 @@ def test_HEAD_conditional_response_range_empty_response():
     req.method = 'HEAD'
     res = Response(request=req, conditional_response=True)
     res.status_int = 200
-    res.body = 'Are we not men?'
+    res.body = b('Are we not men?')
     res.content_length = len(res.body)
     class FakeRequest:
         method = 'HEAD'
@@ -223,7 +223,7 @@ def test_HEAD_conditional_response_range_not_satisfiable_response():
     eq_(resp.content_range.start, None)
     eq_(resp.content_range.stop, None)
     eq_(resp.content_range.length, 4)
-    eq_(resp.body, '')
+    eq_(resp.body, b(''))
 
 def test_del_environ():
     res = Response()
@@ -277,7 +277,7 @@ def test_set_request():
 
 def test_md5_etag():
     res = Response()
-    res.body = """\
+    res.body = b("""\
 In A.D. 2101
 War was beginning.
 Captain: What happen ?
@@ -295,36 +295,34 @@ Cats: HA HA HA HA ....
 Captain: Take off every 'zig' !!
 Captain: You know what you doing.
 Captain: Move 'zig'.
-Captain: For great justice."""
+Captain: For great justice.""")
     res.md5_etag()
     ok_(res.etag)
     ok_('\n' not in res.etag)
-    eq_(res.etag,
-        md5(res.body).digest().encode('base64').replace('\n', '').strip('='))
+    md5_ok(res.etag, res.body)
     eq_(res.content_md5, None)
 
 def test_md5_etag_set_content_md5():
     res = Response()
-    b = 'The quick brown fox jumps over the lazy dog'
-    res.md5_etag(b, set_content_md5=True)
-    ok_(res.content_md5,
-        md5(b).digest().encode('base64').replace('\n', '').strip('='))
+    body = b('The quick brown fox jumps over the lazy dog')
+    res.md5_etag(body, set_content_md5=True)
+    md5_ok(res.content_md5, body)
 
 def test_decode_content_defaults_to_identity():
     res = Response()
-    res.body = 'There be dragons'
+    res.body = b('There be dragons')
     res.decode_content()
-    eq_(res.body, 'There be dragons')
+    eq_(res.body, b('There be dragons'))
 
 def test_decode_content_with_deflate():
     res = Response()
-    b = 'Hey Hey Hey'
+    body = b('Hey Hey Hey')
     # Simulate inflate by chopping the headers off
     # the gzip encoded data
-    res.body = zlib.compress(b)[2:-4]
+    res.body = zlib.compress(body)[2:-4]
     res.content_encoding = 'deflate'
     res.decode_content()
-    eq_(res.body, b)
+    eq_(res.body, body)
     eq_(res.content_encoding, None)
 
 def test_content_length():
@@ -333,21 +331,22 @@ def test_content_length():
     req_head = Request.blank('/', method='HEAD')
     r1 = req_head.get_response(r0)
     eq_(r1.status_int, 200)
-    eq_(r1.body, '')
+    eq_(r1.body, b(''))
     eq_(r1.content_length, 10)
 
     req_get = Request.blank('/')
     r2 = req_get.get_response(r0)
     eq_(r2.status_int, 200)
-    eq_(r2.body, 'x'*10)
+    eq_(r2.body, b('x'*10))
     eq_(r2.content_length, 10)
 
-    r3 = Response(app_iter=['x']*10)
+    r3 = Response(app_iter=[b('x')]*10)
     eq_(r3.content_length, None)
-    eq_(r3.body, 'x'*10)
+    eq_(r3.body, b('x'*10))
     eq_(r3.content_length, 10)
 
-    r4 = Response(app_iter=['x']*10, content_length=20) # wrong content_length
+    r4 = Response(app_iter=[b('x')]*10,
+                  content_length=20) # wrong content_length
     eq_(r4.content_length, 20)
     assert_raises(AssertionError, lambda: r4.body)
 
@@ -355,22 +354,22 @@ def test_content_length():
     r0.conditional_response = True
     r5 = req_range.get_response(r0)
     eq_(r5.status_int, 206)
-    eq_(r5.body, 'xxxxx')
+    eq_(r5.body, b('xxxxx'))
     eq_(r5.content_length, 5)
 
 def test_app_iter_range():
     req = Request.blank('/', range=(2,5))
     for app_iter in [
-        ['012345'],
-        ['0', '12345'],
-        ['0', '1234', '5'],
-        ['01', '2345'],
-        ['01', '234', '5'],
-        ['012', '34', '5'],
-        ['012', '3', '4', '5'],
-        ['012', '3', '45'],
-        ['0', '12', '34', '5'],
-        ['0', '12', '345'],
+        [b('012345')],
+        [b('0'), b('12345')],
+        [b('0'), b('1234'), b('5')],
+        [b('01'), b('2345')],
+        [b('01'), b('234'), b('5')],
+        [b('012'), b('34'), b('5')],
+        [b('012'), b('3'), b('4'), b('5')],
+        [b('012'), b('3'), b('45')],
+        [b('0'), b('12'), b('34'), b('5')],
+        [b('0'), b('12'), b('345')],
     ]:
         r = Response(
             app_iter=app_iter,
@@ -379,7 +378,7 @@ def test_app_iter_range():
         )
         res = req.get_response(r)
         eq_(list(res.content_range), [2,5,6])
-        eq_(res.body, '234', 'body=%r; app_iter=%r' % (res.body, app_iter))
+        eq_(res.body, b('234'), (res.body, app_iter))
 
 def test_app_iter_range_inner_method():
     class FakeAppIter:
@@ -405,12 +404,12 @@ def test_content_type_in_headerlist():
 def test_from_file():
     res = Response('test')
     equal_resp(res)
-    res = Response(app_iter=iter(['test ', 'body']),
+    res = Response(app_iter=iter([b('test '), b('body')]),
                     content_type='text/plain')
     equal_resp(res)
 
 def equal_resp(res):
-    input_ = StringIO(str(res))
+    input_ = StringIO(b(str(res)))
     res2 = Response.from_file(input_)
     eq_(res.body, res2.body)
     eq_(res.headers, res2.headers)
@@ -418,12 +417,13 @@ def equal_resp(res):
 def test_from_file_w_leading_space_in_header():
     # Make sure the removal of code dealing with leading spaces is safe
     res1 = Response()
-    file_w_space = StringIO('200 OK\n\tContent-Type: text/html; charset=UTF-8')
+    file_w_space = StringIO(
+        b('200 OK\n\tContent-Type: text/html; charset=UTF-8'))
     res2 = Response.from_file(file_w_space)
     eq_(res1.headers, res2.headers)
 
 def test_file_bad_header():
-    file_w_bh = StringIO('200 OK\nBad Header')
+    file_w_bh = StringIO(b('200 OK\nBad Header'))
     assert_raises(ValueError, Response.from_file, file_w_bh)
 
 def test_set_status():
@@ -468,35 +468,34 @@ def test_app_iter_range_starts_after_iter_end():
     eq_(list(range), [])
 
 def test_resp_write_app_iter_non_list():
-    res = Response(app_iter=('a','b'))
+    res = Response(app_iter=(b('a'), b('b')))
     eq_(res.content_length, None)
-    res.write('c')
-    eq_(res.body, 'abc')
+    res.write(b('c'))
+    eq_(res.body, b('abc'))
     eq_(res.content_length, 3)
 
 def test_response_file_body_writelines():
     from webob.response import ResponseBodyFile
-    res = Response(app_iter=['foo'])
+    res = Response(app_iter=[b('foo')])
     rbo = ResponseBodyFile(res)
     rbo.writelines(['bar', 'baz'])
-    eq_(res.app_iter, ['foo', 'bar', 'baz'])
+    eq_(res.app_iter, [b('foo'), b('bar'), b('baz')])
     rbo.flush() # noop
-    eq_(res.app_iter, ['foo', 'bar', 'baz'])
+    eq_(res.app_iter, [b('foo'), b('bar'), b('baz')])
 
 def test_response_write_non_str():
     res = Response()
     assert_raises(TypeError, res.write, object())
 
 def test_response_file_body_write_empty_app_iter():
-    from webob.response import ResponseBodyFile
     res = Response('foo')
     res.write('baz')
-    eq_(res.app_iter, ['foo', 'baz'])
+    eq_(res.app_iter, [b('foo'), b('baz')])
 
 def test_response_file_body_write_empty_body():
     res = Response('')
     res.write('baz')
-    eq_(res.app_iter, ['', 'baz'])
+    eq_(res.app_iter, [b(''), b('baz')])
 
 def test_response_file_body_close_not_implemented():
     rbo = Response().body_file
@@ -532,13 +531,13 @@ def test_body_set_unicode():
 
 def test_body_set_under_body_doesnt_exist():
     res = Response('abc')
-    eq_(res.body, 'abc')
+    eq_(res.body, b('abc'))
     eq_(res.content_length, 3)
 
 def test_body_del():
     res = Response('123')
     del res.body
-    eq_(res.body, '')
+    eq_(res.body, b(''))
     eq_(res.content_length, 0)
 
 def test_text_get_no_charset():
@@ -555,12 +554,12 @@ def test_unicode_body():
     res.ubody = ubody
     eq_(res.body, bbody)
     del res.ubody
-    eq_(res.body, '')
+    eq_(res.body, b(''))
 
 def test_text_get_decode():
     res = Response()
     res.charset = 'utf-8'
-    res.body = 'La Pe\xc3\xb1a'
+    res.body = b('La Pe\xc3\xb1a')
     eq_(res.text, text_type(b('La Pe\xc3\xb1a'), 'utf-8'))
 
 def test_text_set_no_charset():
@@ -572,21 +571,21 @@ def test_text_set_not_unicode():
     res = Response()
     res.charset = 'utf-8'
     assert_raises(TypeError, res.__setattr__, 'text',
-                  'La Pe\xc3\xb1a')
+                  b('La Pe\xc3\xb1a'))
 
 def test_text_del():
     res = Response('123')
     del res.text
-    eq_(res.body, '')
+    eq_(res.body, b(''))
     eq_(res.content_length, 0)
 
 def test_body_file_del():
     res = Response()
-    res.body = '123'
+    res.body = b('123')
     eq_(res.content_length, 3)
-    eq_(res.app_iter, ['123'])
+    eq_(res.app_iter, [b('123')])
     del res.body_file
-    eq_(res.body, '')
+    eq_(res.body, b(''))
     eq_(res.content_length, 0)
 
 def test_write_unicode():
@@ -601,7 +600,7 @@ def test_write_unicode_no_charset():
 
 def test_write_text():
     res = Response()
-    res.body = 'abc'
+    res.body = b('abc')
     res.write(u('a'))
     eq_(res.text, 'abca')
 
@@ -611,7 +610,7 @@ def test_app_iter_del():
         app_iter=['123'],
     )
     del res.app_iter
-    eq_(res.body, '')
+    eq_(res.body, b(''))
     eq_(res.content_length, None)
 
 def test_charset_set_no_content_type_header():
@@ -797,7 +796,7 @@ def test_body_get_body_is_None_len_app_iter_is_zero():
     res._app_iter = StringIO()
     res._body = None
     result = res.body
-    eq_(result, '')
+    eq_(result, b(''))
 
 def test_cache_control_get():
     res = Response()
@@ -805,7 +804,6 @@ def test_cache_control_get():
     eq_(res.cache_control.max_age, None)
 
 def test_location():
-    # covers webob/response.py:934-938
     res = Response()
     res.location = '/test.html'
     eq_(res.location, '/test.html')
@@ -902,7 +900,7 @@ def test_body_file_write_unicode_encodes():
     s = text_type(b('La Pe\xc3\xb1a'), 'utf-8')
     res = Response()
     res.write(s)
-    eq_(res.app_iter, ['', 'La Pe\xc3\xb1a'])
+    eq_(res.app_iter, [b(''), b('La Pe\xc3\xb1a')])
 
 def test_repr():
     res = Response()
@@ -951,21 +949,29 @@ def test_encode_content_gzip_already_gzipped():
 
 def test_encode_content_gzip_notyet_gzipped():
     res = Response()
-    res.app_iter = StringIO('foo')
+    res.app_iter = StringIO(b('foo'))
     result = res.encode_content('gzip')
     eq_(result, None)
     eq_(res.content_length, 23)
-    eq_(res.app_iter, ['\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff', '',
-                       'K\xcb\xcf\x07\x00', '!es\x8c\x03\x00\x00\x00'])
+    eq_(res.app_iter, [
+        b('\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff'),
+        b(''),
+        b('K\xcb\xcf\x07\x00'),
+        b('!es\x8c\x03\x00\x00\x00')
+        ])
 
 def test_encode_content_gzip_notyet_gzipped_lazy():
     res = Response()
-    res.app_iter = StringIO('foo')
+    res.app_iter = StringIO(b('foo'))
     result = res.encode_content('gzip', lazy=True)
     eq_(result, None)
     eq_(res.content_length, None)
-    eq_(list(res.app_iter), ['\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff', '',
-                             'K\xcb\xcf\x07\x00', '!es\x8c\x03\x00\x00\x00'])
+    eq_(list(res.app_iter), [
+        b('\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff'),
+        b(''),
+        b('K\xcb\xcf\x07\x00'),
+        b('!es\x8c\x03\x00\x00\x00')
+        ])
 
 def test_decode_content_identity():
     res = Response()
@@ -982,14 +988,14 @@ def test_decode_content_gzip():
     from gzip import GzipFile
     io = StringIO()
     gzip_f = GzipFile(filename='', mode='w', fileobj=io)
-    gzip_f.write('abc')
+    gzip_f.write(b('abc'))
     gzip_f.close()
     body = io.getvalue()
     res = Response()
     res.content_encoding = 'gzip'
     res.body = body
     res.decode_content()
-    eq_(res.body, 'abc')
+    eq_(res.body, b('abc'))
 
 def test__abs_headerlist_location_with_scheme():
     res = Response()
@@ -999,8 +1005,17 @@ def test__abs_headerlist_location_with_scheme():
     eq_(result, [('Location', 'http:')])
 
 def test_response_set_body_file():
-    for data in ['abc', 'abcdef'*1024]:
+    for data in [b('abc'), b('abcdef'*1024)]:
         file = StringIO(data)
         r = Response(body_file=file)
         assert r.body == data
 
+def md5_ok(expected, body):
+    from base64 import b64encode
+    md5_digest = md5(body).digest()
+    md5_digest = str(b64encode(md5_digest))
+    md5_digest = md5_digest.replace('\n', '')
+    result = md5_digest.strip('=')
+    eq_(expected, result)
+    
+    
