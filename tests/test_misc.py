@@ -77,8 +77,8 @@ def test_multidict():
 
     d['b'] = 4
     eq(d.getall('b'), [4])
-    eq(d.keys(), ['a', 'a', 'b'])
-    eq(d.items(), [('a', 1), ('a', 2), ('b', 4)])
+    eq(list(d.keys()), ['a', 'a', 'b'])
+    eq(list(d.items()), [('a', 1), ('a', 2), ('b', 4)])
     eq(d.mixed(), {'a': [1, 2], 'b': 4})
 
     # test getone
@@ -135,7 +135,7 @@ def test_multidict_cgi():
     fs.filename = '\xc3\xb8'
     plain = MultiDict(key='\xc3\xb8', fs=fs)
     ua = UnicodeMultiDict(multi=plain, encoding='utf-8')
-    eq(ua.getall('key'), [u('\xf8')])
+    eq(list(ua.getall('key')), [u('\xf8')])
     eq(repr(ua.getall('fs')), "[FieldStorage(None, u'\\xf8', [])]")
     ub = UnicodeMultiDict(multi=ua, encoding='utf-8')
     eq(ub.getall('key'), [u('\xf8')])

@@ -160,11 +160,14 @@ References:
 """
 
 import re
-import urlparse
 import sys
 import types
 from string import Template
-from webob import Response, Request, html_escape
+from webob import Response
+from webob import Request
+from webob import html_escape
+from webob.compat import urlparse
+from webob.compat import class_types
 from webob.util import warn_deprecation
 
 tag_re = re.compile(r'<.*?>', re.S)
@@ -1048,8 +1051,9 @@ else: # pragma: no cover
 
 __all__ = ['HTTPExceptionMiddleware', 'status_map']
 status_map={}
-for name, value in globals().items():
-    if (isinstance(value, (type, types.ClassType)) and issubclass(value, HTTPException)
+for name, value in list(globals().items()):
+    if (isinstance(value, (type, class_types)) and
+        issubclass(value, HTTPException)
         and not name.startswith('_')):
         __all__.append(name)
         if getattr(value, 'code', None):

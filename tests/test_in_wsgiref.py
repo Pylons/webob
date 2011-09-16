@@ -5,7 +5,10 @@ from webob.compat import url_open
 from contextlib import contextmanager
 from nose.tools import assert_raises, eq_ as eq
 from wsgiref.simple_server import make_server, WSGIRequestHandler, WSGIServer, ServerHandler
-from Queue import Queue, Empty
+try:
+    from queue import Queue, Empty
+except ImportError:
+    from Queue import Queue, Empty
 
 log = logging.getLogger(__name__)
 

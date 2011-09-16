@@ -9,7 +9,7 @@ instantiated request).
 import sys
 import webob
 import webob.exc
-from types import ClassType
+from webob.compat import class_types
 
 __all__ = ['wsgify']
 
@@ -128,8 +128,8 @@ class wsgify(object):
         if func is None:
             if args or kw:
                 raise TypeError(
-                    "Unbound %s can only be called with the function it will wrap"
-                    % self.__class__.__name__)
+                    "Unbound %s can only be called with the function it "
+                    "will wrap" % self.__class__.__name__)
             func = req
             return self.clone(func)
         if isinstance(req, dict):
@@ -259,13 +259,15 @@ class wsgify(object):
 
             wrapped = all_caps(app)
 
-        Note that you must call ``req.get_response(app)`` to get a WebOb response
-        object.  If you are not modifying the output, you can just return the app.
+        Note that you must call ``req.get_response(app)`` to get a WebOb
+        response object.  If you are not modifying the output, you can just
+        return the app.
 
         As you can see, this method doesn't actually create an application, but
         creates "middleware" that can be bound to an application, along with
         "configuration" (that is, any other keyword arguments you pass when
         binding the application).
+
         """
         if middle_func is None:
             return _UnboundMiddleware(cls, app, kw)
@@ -316,7 +318,7 @@ class _MiddlewareFactory(object):
 
 def _func_name(func):
     """Returns the string name of a function, or method, as best it can"""
-    if isinstance(func, (type, ClassType)):
+    if isinstance(func, class_types):
         name = func.__name__
         if func.__module__ not in ('__main__', '__builtin__'):
             name = '%s.%s' % (func.__module__, name)
@@ -337,7 +339,8 @@ def _func_name(func):
             name = '%s.%s' % (module, name)
     return name
 
-def _format_args(args=(), kw=None, leading_comma=False, obj=None, names=None, defaults=None):
+def _format_args(args=(), kw=None, leading_comma=False, obj=None, names=None,
+                 defaults=None):
     if kw is None:
         kw = {}
     all = [repr(arg) for arg in args]
