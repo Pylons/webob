@@ -1,7 +1,7 @@
-import cgi, sys
-from cStringIO import StringIO
-from webob import html_escape, Response
-from webob.multidict import *
+import cgi
+from webob import html_escape
+from webob.multidict import MultiDict
+from webob.multidict import UnicodeMultiDict
 from nose.tools import eq_ as eq, assert_raises
 from webob.compat import u
 

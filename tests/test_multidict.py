@@ -195,13 +195,13 @@ class UnicodeMultiDictTestCase(BaseDictTests, unittest.TestCase):
 
     def test_encode_key(self):
         d = self._get_instance()
-        value = unicode('a')
+        value = u('a')
         d.decode_keys = True
         self.assertEquals(d._encode_key(value),'a')
 
     def test_encode_value(self):
         d = self._get_instance()
-        value = unicode('a')
+        value = u('a')
         self.assertEquals(d._encode_value(value),'a')
 
     def test_repr_with_password(self):

@@ -102,12 +102,10 @@ def parse_list(value):
     return tuple(filter(None, [v.strip() for v in value.split(',')]))
 
 def serialize_list(value):
-    if isinstance(value, text_type):
-        return binary_type(value)
-    elif isinstance(value, binary_type):
-        return value
+    if isinstance(value, (text_type, binary_type)):
+        return str(value)
     else:
-        return ', '.join(map(binary_type, value))
+        return ', '.join(map(str, value))
 
 
 
@@ -184,8 +182,8 @@ def parse_if_range(value):
 def serialize_if_range(value):
     if isinstance(value, (datetime, date)):
         return serialize_date(value)
-    if not isinstance(value, binary_type):
-        value = binary_type(value)
+    if not isinstance(value, text_type):
+        value = text_type(value).encode('utf-8')
     return value or None
 
 def parse_range(value):
@@ -219,7 +217,7 @@ def parse_int_safe(value):
     except ValueError:
         return None
 
-serialize_int = binary_type
+serialize_int = str
 
 def parse_content_range(value):
     if not value or not value.strip():

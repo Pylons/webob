@@ -1024,13 +1024,13 @@ class HTTPExceptionMiddleware(object):
     def __call__(self, environ, start_response):
         try:
             return self.application(environ, start_response)
-        except HTTPException, exc:
+        except HTTPException:
             parent_exc_info = sys.exc_info()
             def repl_start_response(status, headers, exc_info=None):
                 if exc_info is None:
                     exc_info = parent_exc_info
                 return start_response(status, headers, exc_info)
-            return exc(environ, repl_start_response)
+            return parent_exc_info[1](environ, repl_start_response)
 
 try:
     from paste import httpexceptions

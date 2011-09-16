@@ -23,6 +23,8 @@ from webob.compat import integer_types
 from webob.compat import url_unquote
 from webob.compat import url_encode
 from webob.compat import url_quote
+from webob.compat import b
+from webob.compat import iteritems_
 from webob.cookies import Cookie
 from webob.descriptors import CHARSET_RE
 from webob.descriptors import SCHEME_RE
@@ -97,7 +99,7 @@ class BaseRequest(object):
                 # set method first, because .body setters
                 # depend on it for checks
                 self.method = kw.pop('method')
-            for name, value in kw.iteritems():
+            for name, value in iteritems_(kw):
                 if not hasattr(cls, name):
                     raise TypeError(
                         "Unexpected keyword: %s=%r" % (name, value))
@@ -1139,7 +1141,7 @@ def environ_from_url(path):
         'SERVER_PROTOCOL': 'HTTP/1.0',
         'wsgi.version': (1, 0),
         'wsgi.url_scheme': scheme,
-        'wsgi.input': StringIO(''),
+        'wsgi.input': StringIO(b('')),
         'wsgi.errors': sys.stderr,
         'wsgi.multithread': False,
         'wsgi.multiprocess': False,
@@ -1156,8 +1158,7 @@ def environ_add_POST(env, data, content_type=None):
         env['REQUEST_METHOD'] = 'POST'
     has_files = False
     if hasattr(data, 'items'):
-        data = data.items()
-        data.sort()
+        data = sorted(data.items())
         has_files = filter(lambda _: isinstance(_[1], (tuple, list)), data)
     if content_type is None:
         if has_files:
@@ -1321,7 +1322,7 @@ class FakeCGIBody(object):
                 self._body = url_encode(self.vars.items())
             elif ct.startswith('multipart/form-data'):
                 self._body = _encode_multipart(
-                    self.vars.iteritems(), self.content_type)[1]
+                    iteritems_(self.vars), self.content_type)[1]
             else:
                 assert 0, ('Bad content type: %r' % self.content_type)
         return self._body

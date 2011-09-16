@@ -423,8 +423,8 @@ def test_serialize_if_range_string():
 
 def test_serialize_if_range_unicode():
     from webob.descriptors import serialize_if_range
-    val = serialize_if_range(u"avalue")
-    eq_(val, u"avalue")
+    val = serialize_if_range(u("avalue"))
+    eq_(val, u("avalue"))
 
 def test_serialize_if_range_datetime():
     import datetime

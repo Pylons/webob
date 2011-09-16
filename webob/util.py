@@ -1,5 +1,8 @@
 import cgi, warnings
 from webob.headers import _trans_key
+from webob.compat import u
+from webob.compat import string_types
+from webob.compat import text_type
 
 def html_escape(s):
     """HTML-escape a string or object
@@ -15,13 +18,13 @@ def html_escape(s):
         return ''
     if hasattr(s, '__html__'):
         return s.__html__()
-    if not isinstance(s, basestring):
+    if not isinstance(s, string_types):
         if hasattr(s, '__unicode__'):
-            s = unicode(s)
+            s = s.__unicode__()
         else:
             s = str(s)
     s = cgi.escape(s, True)
-    if isinstance(s, unicode):
+    if isinstance(s, text_type):
         s = s.encode('ascii', 'xmlcharrefreplace')
     return s
 

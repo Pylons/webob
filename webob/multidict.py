@@ -10,6 +10,9 @@ import warnings
 
 from webob.compat import DictMixin
 from webob.compat import text_type
+from webob.compat import iteritems_
+from webob.compat import itervalues_
+from webob.compat import PY3
 
 __all__ = ['MultiDict', 'UnicodeMultiDict', 'NestedMultiDict', 'NoVars',
            'TrackableMultiDict']
@@ -23,7 +26,8 @@ class MultiDict(DictMixin):
 
     def __init__(self, *args, **kw):
         if len(args) > 1:
-            raise TypeError("MultiDict can only be called with one positional argument")
+            raise TypeError("MultiDict can only be called with one positional "
+                            "argument")
         if args:
             if hasattr(args[0], 'iteritems'):
                 items = list(args[0].iteritems())
@@ -35,7 +39,7 @@ class MultiDict(DictMixin):
         else:
             self._items = []
         if kw:
-            self._items.extend(kw.iteritems())
+            self._items.extend(kw.items())
 
     @classmethod
     def view_list(cls, lst):
@@ -115,7 +119,7 @@ class MultiDict(DictMixin):
         """
         result = {}
         multi = {}
-        for key, value in self.iteritems():
+        for key, value in self.items():
             if key in result:
                 # We do this to not clobber any lists that are
                 # *actual* values in this dictionary:
@@ -133,7 +137,7 @@ class MultiDict(DictMixin):
         Returns a dictionary where each key is associated with a list of values.
         """
         r = {}
-        for key, val in self.iteritems():
+        for key, val in self.items():
             r.setdefault(key, []).append(val)
         return r
 
@@ -212,7 +216,7 @@ class MultiDict(DictMixin):
             self.update(kwargs)
 
     def __repr__(self):
-        items = map('(%r, %r)'.__mod__, _hide_passwd(self.iteritems()))
+        items = map('(%r, %r)'.__mod__, _hide_passwd(self.items()))
         return '%s([%s])' % (self.__class__.__name__, ', '.join(items))
 
     def __len__(self):
@@ -222,27 +226,35 @@ class MultiDict(DictMixin):
     ## All the iteration:
     ##
 
-    def keys(self):
-        return [k for k, v in self._items]
-
     def iterkeys(self):
         for k, v in self._items:
             yield k
+    if PY3:
+        keys = iterkeys
+    else:
+        def keys(self):
+            return [k for k, v in self._items]
 
     __iter__ = iterkeys
-
-    def items(self):
-        return self._items[:]
 
     def iteritems(self):
         return iter(self._items)
 
-    def values(self):
-        return [v for k, v in self._items]
+    if PY3:
+        items = iteritems
+    else:
+        def items(self):
+            return self._items[:]
 
     def itervalues(self):
         for k, v in self._items:
             yield v
+
+    if PY3:
+        values = itervalues
+    else:
+        def values(self):
+            return [v for k, v in self._items]
 
 class UnicodeMultiDict(DictMixin):
     """
@@ -346,7 +358,7 @@ class UnicodeMultiDict(DictMixin):
         request.
         """
         unicode_mixed = {}
-        for key, value in self.multi.mixed().iteritems():
+        for key, value in self.multi.mixed().items():
             if isinstance(value, list):
                 value = [self._decode_value(value) for value in value]
             else:
@@ -360,7 +372,7 @@ class UnicodeMultiDict(DictMixin):
         list of values.
         """
         unicode_dict = {}
-        for key, value in self.multi.dict_of_lists().iteritems():
+        for key, value in self.multi.dict_of_lists().items():
             value = [self._decode_value(value) for value in value]
             unicode_dict[self._decode_key(key)] = value
         return unicode_dict
@@ -392,7 +404,7 @@ class UnicodeMultiDict(DictMixin):
         return (self._decode_key(k), self._decode_value(v))
 
     def __repr__(self):
-        items = map('(%r, %r)'.__mod__, _hide_passwd(self.iteritems()))
+        items = map('(%r, %r)'.__mod__, _hide_passwd(self.items()))
         return '%s([%s])' % (self.__class__.__name__, ', '.join(items))
 
     def __len__(self):
@@ -402,29 +414,37 @@ class UnicodeMultiDict(DictMixin):
     ## All the iteration:
     ##
 
-    def keys(self):
-        return [self._decode_key(k) for k in self.multi.iterkeys()]
-
     def iterkeys(self):
-        for k in self.multi.iterkeys():
+        for k in self.multi:
             yield self._decode_key(k)
+
+    if PY3:
+        keys = iterkeys
+    else:
+        def keys(self):
+            return [self._decode_key(k) for k in self.multi]
 
     __iter__ = iterkeys
 
-    def items(self):
-        return [(self._decode_key(k), self._decode_value(v))
-                for k, v in self.multi.iteritems()]
-
     def iteritems(self):
-        for k, v in self.multi.iteritems():
+        for k, v in iteritems_(self.multi):
             yield (self._decode_key(k), self._decode_value(v))
 
-    def values(self):
-        return [self._decode_value(v) for v in self.multi.itervalues()]
+    if PY3:
+        items = iteritems
+    else:
+        def items(self):
+            return [(self._decode_key(k), self._decode_value(v))
+                    for k, v in iteritems_(self.multi)]
 
     def itervalues(self):
-        for v in self.multi.itervalues():
+        for v in itervalues_(self.multi):
             yield self._decode_value(v)
+    if PY3:
+        values = itervalues
+    else:
+        def values(self):
+            return [self._decode_value(v) for v in itervalues_(self.multi)]
 
 _dummy = object()
 
@@ -465,8 +485,9 @@ class TrackableMultiDict(MultiDict):
         MultiDict.update(self, *args, **kwargs)
         self.tracker(self)
     def __repr__(self):
-        items = map('(%r, %r)'.__mod__, _hide_passwd(self.iteritems()))
-        return '%s([%s])' % (self.name or self.__class__.__name__, ', '.join(items))
+        items = map('(%r, %r)'.__mod__, _hide_passwd(self.items()))
+        return '%s([%s])' % (self.name or self.__class__.__name__,
+                             ', '.join(items))
     def copy(self):
         # Copies shouldn't be tracked
         return MultiDict(self)
@@ -531,24 +552,25 @@ class NestedMultiDict(MultiDict):
                 return True
         return False
 
-    def items(self):
-        return list(self.iteritems())
-
     def iteritems(self):
         for d in self.dicts:
-            for item in d.iteritems():
+            for item in iteritems_(d):
                 yield item
-
-    def values(self):
-        return list(self.itervalues())
+    if PY3:
+        items = iteritems
+    else:
+        def items(self):
+            return list(self.iteritems())
 
     def itervalues(self):
         for d in self.dicts:
-            for value in d.itervalues():
+            for value in itervalues_(d):
                 yield value
-
-    def keys(self):
-        return list(self.iterkeys())
+    if PY3:
+        values = itervalues
+    else:
+        def values(self):
+            return list(self.itervalues())
 
     def __iter__(self):
         for d in self.dicts:
@@ -556,6 +578,12 @@ class NestedMultiDict(MultiDict):
                 yield key
 
     iterkeys = __iter__
+
+    if PY3:
+        keys = iterkeys
+    else:
+        def keys(self):
+            return list(self.iterkeys())
 
 class NoVars(object):
     """
@@ -614,16 +642,22 @@ class NoVars(object):
     def __cmp__(self, other):
         return cmp({}, other)
 
-    def keys(self):
-        return []
     def iterkeys(self):
         return iter([])
-    __iter__ = iterkeys
-    items = keys
-    iteritems = iterkeys
-    values = keys
-    itervalues = iterkeys
 
+    if PY3:
+        keys = iterkeys
+        items = iterkeys
+        values = iterkeys
+    else:
+        def keys(self):
+            return []
+        items = keys
+        values = keys
+        itervalues = iterkeys
+        iteritems = iterkeys
+    
+    __iter__ = iterkeys
 
 
 def _hide_passwd(items):

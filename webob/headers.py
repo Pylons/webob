@@ -1,6 +1,7 @@
 from webob.multidict import MultiDict
 from webob.compat import DictMixin
 from webob.compat import string_types
+from webob.compat import iteritems_
 
 __all__ = ['ResponseHeaders', 'EnvironHeaders']
 
@@ -26,14 +27,14 @@ class ResponseHeaders(MultiDict):
 
     def mixed(self):
         r = self.dict_of_lists()
-        for key, val in r.iteritems():
+        for key, val in iteritems_(r):
             if len(val) == 1:
                 r[key] = val[0]
         return r
 
     def dict_of_lists(self):
         r = {}
-        for key, val in self.iteritems():
+        for key, val in iteritems_(self):
             r.setdefault(key.lower(), []).append(val)
         return r
 

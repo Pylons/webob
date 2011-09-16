@@ -143,3 +143,16 @@ else:
                 write(sep)
             write(arg)
         write(end)
+
+if PY3: # pragma: no cover
+    def iteritems_(d):
+        return d.items()
+    def itervalues_(d):
+        return d.values()
+else:
+    def iteritems_(d):
+        return d.iteritems()
+    def itervalues_(d):
+        return d.itervalues()
+    
+    
