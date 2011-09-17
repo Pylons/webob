@@ -16,7 +16,7 @@ Code
 
 The finished code for this is available in
 `docs/comment-example-code/example.py
-<http://bitbucket.org/ianb/webob/src/tip/docs/comment-example-code/example.py>`_
+<https://github.com/Pylons/webob/blob/master/docs/comment-example-code/example.py>`_
 -- you can run that file as a script to try it out.
 
 Instantiating Middleware
@@ -32,7 +32,7 @@ all in a single directory.
 .. code-block:: python
 
     import os
-    
+
     class Commenter(object):
         def __init__(self, app, storage_dir):
             self.app = app
@@ -237,7 +237,7 @@ also updates ``Content-Length``.  Then we define:
             text.append('<h2><a name="comment-area"></a>Comments (%s):</h2>' % len(comments))
             for comment in comments:
                 text.append('<h3><a href="%s">%s</a> at %s:</h3>' % (
-                    html_escape(comment['homepage']), html_escape(comment['name']), 
+                    html_escape(comment['homepage']), html_escape(comment['name']),
                     time.strftime('%c', comment['time'])))
                 # Susceptible to XSS attacks!:
                 text.append(comment['comments'])
@@ -245,7 +245,7 @@ also updates ``Content-Length``.  Then we define:
 
 We put in a header (with an anchor we'll use later), and a section for
 each comment.  Note that ``html_escape`` is the same as ``cgi.escape``
-and just turns ``&`` into ``&amp;``, etc.  
+and just turns ``&`` into ``&amp;``, etc.
 
 Because we put in some text without quoting it is susceptible to a
 `Cross-Site Scripting

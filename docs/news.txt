@@ -3,6 +3,20 @@ News
 
 .. contents::
 
+master
+---------
+
+* Switched VCS from Mercurial to Git
+
+* Moved development to `GitHub <https://github.com/Pylons/webob>`_
+
+* Added full history from PyCon 2011 sprint to the repository
+
+* Do not set ``resp.request`` in ``req.get_response(app)``
+
+* Warn when passing ``request`` to ``Response(..)``
+
+
 1.1.1
 ---------
 

@@ -15,15 +15,15 @@ header parsing and accessors for other standard parts of the
 environment.
 
 You may install the `in-development version of WebOb
-<http://bitbucket.org/ianb/webob/get/tip.gz#egg=WebOb-dev>`_ with
+<https://github.com/Pylons/webob/zipball/master#egg=WebOb-dev>`_ with
 ``pip install WebOb==dev`` (or ``easy_install WebOb==dev``).
 
 * `WebOb reference <http://docs.webob.org/en/latest/reference.html>`_
-* `Bug tracker <https://bitbucket.org/ianb/webob/issues>`_
-* `Browse source code <https://bitbucket.org/ianb/webob/src>`_
+* `Bug tracker <https://github.com/Pylons/webob/issues>`_
+* `Browse source code <https://github.com/Pylons/webob>`_
 * `Mailing list <http://bit.ly/paste-users>`_
 * `Release news <http://docs.webob.org/en/latest/news.html>`_
-* `Detailed changelog <https://bitbucket.org/ianb/webob/changesets>`_
+* `Detailed changelog <https://github.com/Pylons/webob/commits/master>`_
 """,
     classifiers=[
         "Development Status :: 6 - Mature",
