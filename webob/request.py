@@ -493,7 +493,7 @@ class BaseRequest(object):
             return ''
         self.make_body_seekable() # we need this to have content_length
         r = self.body_file.read(self.content_length)
-        self.body_file.seek(0)
+        self.body_file_raw.seek(0)
         return r
     def _body__set(self, value):
         if value is None:
@@ -547,7 +547,7 @@ class BaseRequest(object):
             return NoVars('Not an HTML form submission (Content-Type: %s)'
                           % content_type)
         if self.is_body_seekable:
-            self.body_file.seek(0)
+            self.body_file_raw.seek(0)
         fs_environ = env.copy()
         # FieldStorage assumes a missing CONTENT_LENGTH, but a
         # default of 0 is better:
@@ -736,7 +736,6 @@ class BaseRequest(object):
             return self.environ.get('webob.is_body_readable', False)
 
     def _is_body_readable__set(self, flag):
-        #@@ WARN
         self.environ['webob.is_body_readable'] = bool(flag)
 
     is_body_readable = property(_is_body_readable__get, _is_body_readable__set,
