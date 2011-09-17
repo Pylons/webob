@@ -52,6 +52,7 @@ class Response(object):
             self._headerlist = headerlist
         self._headers = None
         if request is not None:
+            _warn_req()
             if hasattr(request, 'environ'):
                 self._environ = request.environ
                 self._request = request

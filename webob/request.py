@@ -1084,8 +1084,10 @@ class BaseRequest(object):
             status, headers, app_iter = self.call_application(
                 application, catch_exc_info=False)
         return self.ResponseClass(
-            status=status, headerlist=list(headers), app_iter=app_iter,
-            request=self)
+            status=status,
+            headerlist=list(headers),
+            app_iter=app_iter
+        )
 
     @classmethod
     def blank(cls, path, environ=None, base_url=None,
