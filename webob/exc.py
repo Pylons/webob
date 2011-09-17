@@ -161,8 +161,8 @@ References:
 
 import re
 import sys
-import types
 from string import Template
+
 from webob import Response
 from webob import Request
 from webob import html_escape
@@ -271,7 +271,6 @@ ${body}''')
             args['html_comment'] = '<!-- %s -->' % escape(self.comment)
         else:
             args['html_comment'] = ''
-        body_tmpl = self.body_template_obj
         if WSGIHTTPException.body_template_obj is not self.body_template_obj:
             # Custom template; add headers to args
             for k, v in environ.items():
