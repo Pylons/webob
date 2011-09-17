@@ -18,6 +18,7 @@ from webob.compat import binary_type
 from webob.compat import url_quote
 from webob.compat import md5
 from webob.compat import next
+from webob.compat import PY3
 from webob.datetime_utils import parse_date_delta
 from webob.datetime_utils import serialize_date_delta
 from webob.datetime_utils import timedelta_to_seconds
@@ -668,8 +669,9 @@ class Response(object):
         elif max_age is None and expires is not None:
             max_age = expires - datetime.utcnow()
 
-        if isinstance(value, text_type):
-            value = value.encode('utf8')
+        if not PY3 and isinstance(value, text_type):
+            value = value.encode('utf-8')
+
         m = Morsel(key, value)
         m.path = path
         m.domain = domain
@@ -678,7 +680,7 @@ class Response(object):
         m.max_age = max_age
         m.secure = secure
         m.httponly = httponly
-        self.headerlist.append(('Set-Cookie', str(m)))
+        self.headerlist.append(('Set-Cookie', m.serialize()))
 
     def delete_cookie(self, key, path='/', domain=None):
         """
@@ -705,7 +707,7 @@ class Response(object):
             del cookies[key]
             del self.headers['Set-Cookie']
             for m in cookies.values():
-                self.headerlist.append(('Set-Cookie', str(m)))
+                self.headerlist.append(('Set-Cookie', m.serialize()))
         elif strict:
             raise KeyError("No cookie has been set with the name %r" % key)
 

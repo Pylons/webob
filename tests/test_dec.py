@@ -4,6 +4,7 @@ from webob import Response
 from webob.dec import _format_args
 from webob.dec import _func_name
 from webob.dec import wsgify
+from webob.compat import b
 
 class DecoratorTests(unittest.TestCase):
     def _testit(self, app, req):
@@ -99,7 +100,7 @@ class DecoratorTests(unittest.TestCase):
         self.assertEqual(resp.content_length, 0)
 
     def test_wsgify_get(self):
-        resp_str = "What'choo talkin' about, Willis?"
+        resp_str = b("What'choo talkin' about, Willis?")
         @wsgify
         def test_app(req):
             return Response(resp_str)

@@ -14,6 +14,7 @@ if PY3:
     class_types = type,
     text_type = str
     binary_type = bytes
+    long = int
 else:
     string_types = basestring,
     integer_types = (int, long)
@@ -21,34 +22,35 @@ else:
     text_type = unicode
     binary_type = str
 
-if PY3: # pragma: no cover
-    from urllib import parse
-    urlparse = parse
-    long = int
-else:
-    import urlparse
-
-if PY3: # pragma: no cover
+try: # pragma: no cover
     from collections import MutableMapping as DictMixin
-else:
+except ImportError:
     from UserDict import DictMixin
     
-if PY3: # pragma: no cover
+try: # pragma: no cover
+    from urllib import parse
+    urlparse = parse
     from urllib.parse import quote as url_quote
     from urllib.parse import unquote as url_unquote
     from urllib.parse import urlencode as url_encode
     from urllib.request import urlopen as url_open
-else:
+except ImportError:
+    import urlparse
     from urllib import quote as url_quote
     from urllib import unquote as url_unquote
     from urllib import urlencode as url_encode
     from urllib2 import urlopen as url_open
-    
 
+try: # pragma: no cover
+    from hashlib import md5
+except ImportError: # pragma: no cover
+    from md5 import md5
 
-def _add_doc(func, doc):
-    """Add documentation to a function."""
-    func.__doc__ = doc
+try:
+    next = next
+except NameError:
+    def next(v):
+        return v.next()
 
 if PY3: # pragma: no cover
     def b(s):
@@ -65,10 +67,8 @@ else:
         return unicode(s, "unicode_escape")
     import StringIO
     StringIO = BytesIO = StringIO.StringIO
-_add_doc(b, """Byte literal""")
-_add_doc(u, """Text literal""")
 
-if PY3:
+if PY3: # pragma: no cover
     import builtins
     exec_ = getattr(builtins, "exec")
 
@@ -165,24 +165,13 @@ if PY3: # pragma: no cover
         return u.encode(enc, esc).decode('iso-8859-1')
     def wsgi_to_unicode(u):
         # Convert a "bytes-as-unicode" string to Unicode
-        return u.encode('iso-8859-1', esc).decode(enc)
+        return u.encode('iso-8859-1').decode(enc, esc)
 else:
     def unicode_to_wsgi(u):
-        return u.encode('iso-8859-1')
+        return u.encode('iso-8859-1', 'surrogateescape')
     def wsgi_to_unicode(s):
-        return s.decode('iso-8859-1')
+        return s.decode('iso-8859-1', 'surrogateescape')
 
-try: # pragma: no cover
-    from hashlib import md5
-except ImportError: # pragma: no cover
-    from md5 import md5
-
-try:
-    next = next
-except NameError:
-    def next(v):
-        return v.next()
-    
 if PY3: # pragma: no cover
     def parse_qsl_text(qs, keep_blank_values=False, strict_parsing=False,
                        encoding='utf-8', errors='replace'):

@@ -1557,7 +1557,9 @@ class RequestTests_functional(unittest.TestCase):
                 'datetime.datetime(1994, 10, 29, 19, 43, 31, tzinfo=UTC)',
             "user_agent: 'Mozilla",
             'is_xhr: True',
-            "cookies is UnicodeMultiDict([(u'var1', u'value1')])",
+            "cookies is {",
+            'var1',
+            'value1',
             "params is NestedMultiDict([(u'foo', u'bar'), (u'baz', u'')])",
             "if_none_match: <ETag etag001 or etag002>",
             )
@@ -2210,8 +2212,8 @@ class RequestTests_functional(unittest.TestCase):
 
         # Cookies
         req.headers['Cookie'] = 'test=value'
-        self.assert_(isinstance(req.cookies, UnicodeMultiDict))
-        self.assertEqual(req.cookies.items(), [('test', u('value'))])
+        self.assert_(isinstance(req.cookies, dict))
+        self.assertEqual(list(req.cookies.items()), [('test', 'value')])
         req.charset = None
         self.assertEqual(req.cookies, {'test': 'value'})
 
@@ -2316,7 +2318,7 @@ def simpleapp(environ, start_response):
     start_response(status, response_headers)
     request = Request(environ)
     request.remote_user = 'bob'
-    return [
+    return [ b(x) for x in [
         'Hello world!\n',
         'The get is %r' % request.GET,
         ' and Val is %s\n' % repr(request.GET.get('name')),
@@ -2341,9 +2343,7 @@ def simpleapp(environ, start_response):
         'if_modified_since: %r\n' % request.if_modified_since,
         'user_agent: %r\n' % request.user_agent,
         'if_none_match: %r\n' % request.if_none_match,
-        ]
-
-
+        ]]
 
 _cgi_escaping_body = '''--boundary
 Content-Disposition: form-data; name="%20%22""

@@ -10,11 +10,18 @@ def test_cookie_empty():
 
 def test_cookie_one_value():
     c = cookies.Cookie('dismiss-top=6')
-    eq_(repr(c), "<Cookie: [<Morsel: dismiss-top='6'>]>")
+    vals = list(c.values())
+    eq_(len(vals), 1)
+    eq_(vals[0].name, u('dismiss-top'))
+    eq_(vals[0].value, u('6'))
 
 def test_cookie_one_value_with_trailing_semi():
     c = cookies.Cookie('dismiss-top=6;')
-    eq_(repr(c), "<Cookie: [<Morsel: dismiss-top='6'>]>")
+    vals = list(c.values())
+    eq_(len(vals), 1)
+    eq_(vals[0].name, u('dismiss-top'))
+    eq_(vals[0].value, u('6'))
+    c = cookies.Cookie('dismiss-top=6;')
 
 def test_cookie_complex():
     c = cookies.Cookie('dismiss-top=6; CP=null*, '\
@@ -35,7 +42,8 @@ def test_cookie_complex_serialize():
 
 def test_cookie_load_multiple():
     c = cookies.Cookie('a=1; Secure=true')
-    eq_(repr(c), "<Cookie: [<Morsel: a='1'>]>")
+    vals = list(c.values())
+    eq_(len(vals), 1)
     eq_(c['a']['secure'], 'true')
 
 def test_cookie_secure():
@@ -54,7 +62,7 @@ def test_cookie_reserved_keys():
     c = cookies.Cookie('dismiss-top=6; CP=null*; $version=42; a=42')
     assert '$version' not in c
     c = cookies.Cookie('$reserved=42; a=$42')
-    eq_(c.keys(), ['a'])
+    eq_(list(c.keys()), ['a'])
 
 def test_serialize_cookie_date():
     """
@@ -72,8 +80,8 @@ def test_serialize_cookie_date():
     eq_(cdate_delta, cdate_int)
 
 def test_ch_unquote():
-    eq_(cookies._unquote(u('"hello world')), u('"hello world'))
-    eq_(cookies._unquote(u('hello world')), u('hello world'))
+    eq_(cookies._unquote('"hello world'), '"hello world')
+    eq_(cookies._unquote('hello world'), 'hello world')
     eq_(cookies._unquote('"hello world"'), 'hello world')
     eq_(cookies._quote('hello world'), '"hello world"')
     # quotation mark is escaped w/ backslash
@@ -92,7 +100,7 @@ def test_cookie_setitem_needs_quoting():
     eq_(len(c), 0)
 
 def test_morsel_serialize_with_expires():
-    morsel = cookies.Morsel('bleh', 'blah')
+    morsel = cookies.Morsel(u('bleh'), u('blah'))
     morsel.expires = 'Tue, 04-Jan-2011 13:43:50 GMT'
     result = morsel.serialize()
     eq_(result, 'bleh=blah; expires=Tue, 04-Jan-2011 13:43:50 GMT')

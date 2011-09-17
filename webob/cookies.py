@@ -5,7 +5,7 @@ from datetime import datetime
 from datetime import date
 from datetime import timedelta
 
-from webob.compat import u
+from webob.compat import binary_type
 
 __all__ = ['Cookie']
 
@@ -36,7 +36,7 @@ class Cookie(dict):
         return '; '.join(m.serialize(full) for m in self.values())
 
     def values(self):
-        return [m for _,m in sorted(self.items())]
+        return [m for _, m in sorted(self.items())]
 
     __str__ = serialize
 
@@ -77,7 +77,6 @@ class Morsel(dict):
     def __init__(self, name, value):
         assert name.lower() not in _c_keys
         assert _valid_cookie_name(name)
-        assert isinstance(value, str)
         self.name = name
         # we can encode the unicode value as UTF-8 here,
         # but then the decoded cookie would still be str,
@@ -106,7 +105,6 @@ class Morsel(dict):
             for k in _c_valkeys:
                 v = self[k]
                 if v:
-                    assert isinstance(v, str), v
                     add("%s=%s" % (_c_renames[k], _quote(v)))
             expires = self['expires']
             if expires:
@@ -120,15 +118,9 @@ class Morsel(dict):
     __str__ = serialize
 
     def __repr__(self):
-        return '<%s: %s=%s>' % (self.__class__.__name__,
-                                self.name, repr(self.value))
-
-def _valid_cookie_name(key):
-    try:
-        key = key.encode('ascii')
-    except UnicodeError:
-        return False
-    return not needs_quoting(key)
+        name = getattr(self, 'name', None)
+        value = getattr(self, 'value', None)
+        return '<%s: %s=%r>' % (self.__class__.__name__, name, value)
 
 _c_renames = {
     "path" : "Path",
@@ -153,7 +145,8 @@ _re_legal_char  = r"[\w\d%s]" % re.escape(_legal_special_chars)
 _re_expires_val = r"\w{3},\s[\w\d-]{9,11}\s[\d:]{8}\sGMT"
 _rx_cookie_str_key = r"(%s+?)" % _re_legal_char
 _rx_cookie_str_equal = r"\s*=\s*"
-_rx_cookie_str_val = r"(%s|%s|%s*)" % (_re_quoted, _re_expires_val, _re_legal_char)
+_rx_cookie_str_val = r"(%s|%s|%s*)" % (_re_quoted, _re_expires_val,
+                                       _re_legal_char)
 _rx_cookie_str = _rx_cookie_str_key + _rx_cookie_str_equal + _rx_cookie_str_val
 _rx_cookie = re.compile(_rx_cookie_str)
 
@@ -176,32 +169,39 @@ def _unquote(v):
 # serializing
 #
 
-_notrans = ' '*256
-
 # these chars can be in cookie value w/o causing it to be quoted
 _no_escape_special_chars = "!#$%&'*+-.^_`|~/"
-_no_escape_chars = string.ascii_letters + string.digits + \
-                   _no_escape_special_chars
+_no_escape_chars = (string.ascii_letters + string.digits + 
+                    _no_escape_special_chars)
 # these chars never need to be quoted
 _escape_noop_chars = _no_escape_chars + ': '
 # this is a map used to escape the values
 _escape_map = dict((chr(i), '\\%03o' % i) for i in range(256))
-_escape_map.update(zip(_escape_noop_chars, _escape_noop_chars)) # XXX decode2a?
-_escape_map['"'] = u(r'\\"')
-_escape_map['\\'] = u(r'\\\\')
+_escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
+_escape_map['"'] = r'\"'
+_escape_map['\\'] = r'\\'
 _escape_char = _escape_map.__getitem__
-
 
 weekdays = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 months = (None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
           'Oct', 'Nov', 'Dec')
 
+_notrans_unicode = {}
+for k in _no_escape_chars:
+    _notrans_unicode[ord(k)] = None
+
+_notrans_binary = ' '*256
 
 def needs_quoting(v):
-    return v.translate(_notrans, _no_escape_chars)
+    if isinstance(v, binary_type):
+        return v.translate(_notrans_binary, _no_escape_chars)
+    return v.translate(_notrans_unicode)
 
 def _quote(v):
-    #assert isinstance(v, str)
     if needs_quoting(v):
         return '"' + ''.join(map(_escape_char, v)) + '"'
     return v
+
+def _valid_cookie_name(key):
+    return not needs_quoting(key)
+

@@ -28,6 +28,7 @@ from webob.compat import url_quote
 from webob.compat import multidict_from_bodyfile
 from webob.compat import b
 from webob.compat import iteritems_
+from webob.compat import wsgi_to_unicode
 from webob.cookies import Cookie
 from webob.descriptors import CHARSET_RE
 from webob.descriptors import SCHEME_RE
@@ -653,8 +654,6 @@ class BaseRequest(object):
             cookies = Cookie(source)
             for name in cookies:
                 vars[name] = cookies[name].value
-        vars = UnicodeMultiDict(vars, encoding=self.charset,
-                                errors=self.unicode_errors, decode_keys=True)
         env['webob._parsed_cookies'] = (vars, source)
         return vars
 
