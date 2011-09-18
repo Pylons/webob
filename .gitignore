@@ -1,5 +1,3 @@
-syntax: glob
-
 WebOb.egg-info
 *.pyc
 *.pyo
@@ -15,10 +13,10 @@ build/
 glob:_coverage
 Session.vim
 html_coverage/**
+_coverage/**
 *,cover
 *_fixt.py
 *$py.class
 .tox/
 coverage.xml
 nosetests.xml
-
