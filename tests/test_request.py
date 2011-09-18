@@ -2421,7 +2421,7 @@ class FakeCGIBodyTests(unittest.TestCase):
         import re
         self.assertEqual(
             re.sub(r'\b0x[0-9a-f]+\b', '<whereitsat>', repr(body)),
-            "<FakeCGIBody at <whereitsat> viewing {'bananas': 'ba...nas'} at position 1>",
+            "<FakeCGIBody at <whereitsat> viewing {'bananas': 'ba...nas'}>",
         )
 
     def test_iter(self):
@@ -2455,12 +2455,6 @@ class FakeCGIBodyTests(unittest.TestCase):
         body = FakeCGIBody({'bananas': 'bananas'}, 'application/x-www-form-urlencoded')
         self.assertEqual(body.read(), 'bananas=bananas')
 
-    def test_tell(self):
-        from webob.request import FakeCGIBody
-        body = FakeCGIBody({'bananas': 'bananas'},
-                           'application/x-www-form-urlencoded')
-        body.position = 1
-        self.assertEqual(body.tell(), 1)
 
 class Test_cgi_FieldStorage__repr__patch(unittest.TestCase):
     def _callFUT(self, fake):
