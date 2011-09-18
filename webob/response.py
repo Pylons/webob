@@ -8,7 +8,6 @@ from webob.descriptors import *
 from webob.datetime_utils import *
 from webob.cookies import Cookie, Morsel
 from webob.util import status_reasons, warn_deprecation
-from webob.request import StringIO
 
 __all__ = ['Response']
 
@@ -834,12 +833,11 @@ class Response(object):
                 "I don't know how to decode the content %s" % content_encoding)
         if content_encoding == 'gzip':
             from gzip import GzipFile
-            f = StringIO(self.body)
-            gzip_f = GzipFile(filename='', mode='r', fileobj=f)
+            from io import BytesIO
+            gzip_f = GzipFile(filename='', mode='r', fileobj=BytesIO(self.body))
             self.body = gzip_f.read()
             self.content_encoding = None
             gzip_f.close()
-            f.close()
         else:
             # Weird feature: http://bugs.python.org/issue5784
             self.body = zlib.decompress(self.body, -15)

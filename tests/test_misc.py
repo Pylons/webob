@@ -1,5 +1,4 @@
 import cgi, sys
-from cStringIO import StringIO
 from webob import html_escape, Response
 from webob.multidict import *
 from nose.tools import eq_ as eq, assert_raises
