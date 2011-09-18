@@ -49,8 +49,6 @@ def test_response():
     assert_raises(TypeError, Response, app_iter=iter(['a']),
                   body="somebody")
     del req.environ
-    eq_(Response(request=req)._environ, req)
-    eq_(Response(request=req)._request, None)
     assert_raises(TypeError, Response, charset=None,
                   body=u"unicode body")
     assert_raises(TypeError, Response, wrong_key='dummy')
@@ -118,52 +116,24 @@ def test_HEAD_closes():
 
 def test_HEAD_conditional_response_returns_empty_response():
     from webob.response import EmptyResponse
-    req = Request.blank('/')
-    req.method = 'HEAD'
-    res = Response(request=req, conditional_response=True)
-    class FakeRequest:
-        method = 'HEAD'
-        if_none_match = 'none'
-        if_modified_since = False
-        range = False
-        def __init__(self, env):
-            self.env = env
+    req = Request.blank('/',
+        method='HEAD',
+        if_none_match='none'
+    )
+    res = Response(conditional_response=True)
     def start_response(status, headerlist):
         pass
-    res.RequestClass = FakeRequest
-    result = res({}, start_response)
-    ok_(isinstance(result, EmptyResponse))
+    result = res(req.environ, start_response)
+    assert not list(result)
 
 def test_HEAD_conditional_response_range_empty_response():
     from webob.response import EmptyResponse
-    req = Request.blank('/')
-    req.method = 'HEAD'
-    res = Response(request=req, conditional_response=True)
-    res.status_int = 200
-    res.body = 'Are we not men?'
-    res.content_length = len(res.body)
-    class FakeRequest:
-        method = 'HEAD'
-        if_none_match = 'none'
-        if_modified_since = False
-        def __init__(self, env):
-            self.env = env
-            self.range = self # simulate inner api
-            self.if_range = self
-        def content_range(self, length):
-            """range attr"""
-            class Range:
-                start = 4
-                stop = 5
-            return Range
-        def match_response(self, res):
-            """if_range_match attr"""
-            return True
-    def start_response(status, headerlist):
-        pass
-    res.RequestClass = FakeRequest
-    result = res({}, start_response)
-    ok_(isinstance(result, EmptyResponse), result)
+    req = Request.blank('/',
+        method = 'HEAD',
+        range=(4,5),
+    )
+    res = Response('Are we not men?', conditional_response=True)
+    assert req.get_response(res).body == ''
 
 def test_conditional_response_if_none_match_false():
     req = Request.blank('/', if_none_match='foo')
@@ -216,56 +186,6 @@ def test_HEAD_conditional_response_range_not_satisfiable_response():
     eq_(resp.content_range.stop, None)
     eq_(resp.content_range.length, 4)
     eq_(resp.body, '')
-
-def test_del_environ():
-    res = Response()
-    res.environ = {'yo': 'mama'}
-    eq_(res.environ, {'yo': 'mama'})
-    del res.environ
-    eq_(res.environ, None)
-    eq_(res.request, None)
-
-def test_set_request_environ():
-    res = Response()
-    class FakeRequest:
-        environ = {'jo': 'mama'}
-    res.request = FakeRequest
-    eq_(res.environ, {'jo': 'mama'})
-    eq_(res.request, FakeRequest)
-    res.environ = None
-    eq_(res.environ, None)
-    eq_(res.request, None)
-
-def test_del_request():
-    res = Response()
-    class FakeRequest:
-        environ = {}
-    res.request = FakeRequest
-    del res.request
-    eq_(res.environ, None)
-    eq_(res.request, None)
-
-def test_set_environ_via_request_subterfuge():
-    class FakeRequest:
-        def __init__(self, env):
-            self.environ = env
-    res = Response()
-    res.RequestClass = FakeRequest
-    res.request = {'action': 'dwim'}
-    eq_(res.environ, {'action': 'dwim'})
-    ok_(isinstance(res.request, FakeRequest))
-    eq_(res.request.environ, res.environ)
-
-def test_set_request():
-    res = Response()
-    class FakeRequest:
-        environ = {'foo': 'bar'}
-    res.request = FakeRequest
-    eq_(res.request, FakeRequest)
-    eq_(res.environ, FakeRequest.environ)
-    res.request = None
-    eq_(res.environ, None)
-    eq_(res.request, None)
 
 def test_md5_etag():
     res = Response()
