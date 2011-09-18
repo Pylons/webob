@@ -1,5 +1,5 @@
 import sys, os, tempfile
-import urllib, urlparse, cgi
+import urllib, urlparse, cgi, io
 from io import BytesIO
 
 from webob.headers import EnvironHeaders
@@ -93,6 +93,7 @@ class BaseRequest(object):
             wrapped, raw = env.get('webob._body_file', (0,0))
             if raw is not r:
                 wrapped = LimitedLengthFile(r, clen)
+                wrapped = io.BufferedReader(wrapped)
                 env['webob._body_file'] = wrapped, r
             r = wrapped
         return r
@@ -1256,7 +1257,9 @@ class Request(AdhocAttrMixin, BaseRequest):
 class DisconnectionError(IOError):
     pass
 
-class LimitedLengthFile(object):
+
+# class LimitedLengthFile(object):
+class LimitedLengthFile(io.RawIOBase):
     def __init__(self, file, maxlen):
         self.file = file
         self.maxlen = maxlen
@@ -1269,46 +1272,28 @@ class LimitedLengthFile(object):
             self.maxlen
         )
 
-    def read(self, sz=-1):
-        if sz is None or sz < 0:
-            sz = self.remaining
-        else:
-            sz = min(sz, self.remaining)
-        if not sz:
-            return ''
-        r = self.file.read(sz)
-        self.remaining -= len(r)
-        if len(r) < sz:
-            self._check_disconnect()
-        return r
+    def fileno(self):
+        return self.file.fileno()
 
-    def readline(self, hint=None):
-        hint = self._normhint(hint)
-        r = self.file.readline(hint)
-        self.remaining -= len(r)
-        if not r:
-            self._check_disconnect()
-        return r
+    @staticmethod
+    def readable():
+        return True
 
-    def readlines(self, hint=None):
-        hint = self._normhint(hint)
-        r = self.file.readlines(hint)
-        total_len = sum(len(l) for l in r)
-        self.remaining -= total_len
-        if total_len < hint:
-            self._check_disconnect()
-        return r
-
-    def _normhint(self, hint):
-        return min(hint, self.remaining) if hint else self.remaining
-
-    def _check_disconnect(self):
-        if self.remaining:
+    def readinto(self, buff):
+        if not self.remaining:
+            return 0
+        sz0 = min(len(buff), self.remaining)
+        data = self.file.read(sz0)
+        sz = len(data)
+        self.remaining -= sz
+        #if not data:
+        if sz < sz0 and self.remaining:
             raise DisconnectionError(
                 "The client disconnected while sending the POST/PUT body "
                 + "(%d more bytes were expected)" % self.remaining
             )
-
+        buff[:sz] = data
+        return sz
 
 
 def _cgi_FieldStorage__repr__patch(self):
