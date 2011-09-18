@@ -59,23 +59,8 @@ class BaseRequestTests(unittest.TestCase):
         assert req.body_file.read() == ''
 
     def test_body_file_setter_w_string(self):
-        BEFORE = BytesIO('before')
-        AFTER = str('AFTER')
-        environ = {'wsgi.input': BEFORE,
-                   'CONTENT_LENGTH': len('before'),
-                   'REQUEST_METHOD': 'POST',
-                  }
-        req = BaseRequest(environ)
-        warnings.simplefilter('ignore', PendingDeprecationWarning)
-        req.body_file = AFTER
-        warnings.resetwarnings()
-        self.assertEqual(req.content_length, len(AFTER))
-        self.assertEqual(req.body_file.read(), AFTER)
-        del req.body_file
-        self.assertEqual(req.content_length, 0)
-        assert req.is_body_seekable
-        req.body_file.seek(0)
-        self.assertEqual(req.body_file.read(), '')
+        req = BaseRequest.blank('/', POST='body')
+        self.assertRaises(DeprecationWarning, setattr, req, 'body_file', 'str')
 
     def test_body_file_setter_non_string(self):
         BEFORE = BytesIO('before')
@@ -833,25 +818,25 @@ class BaseRequestTests(unittest.TestCase):
         self.assert_('paste.urlvars' not in environ)
         self.assert_('wsgiorg.routing_args' not in environ)
 
-    def test_str_cookies_empty_environ(self):
+    def test_cookies_empty_environ(self):
         req = BaseRequest({})
-        self.assertEqual(req.str_cookies, {})
+        self.assertEqual(req.cookies, {})
 
-    def test_str_cookies_w_webob_parsed_cookies_matching_source(self):
+    def test_cookies_w_webob_parsed_cookies_matching_source(self):
         environ = {
             'HTTP_COOKIE': 'a=b',
             'webob._parsed_cookies': ('a=b', {'a': 'b'}),
         }
         req = BaseRequest(environ)
-        self.assertEqual(req.str_cookies, {'a': 'b'})
+        self.assertEqual(req.cookies, {'a': 'b'})
 
-    def test_str_cookies_w_webob_parsed_cookies_mismatched_source(self):
+    def test_cookies_w_webob_parsed_cookies_mismatched_source(self):
         environ = {
             'HTTP_COOKIE': 'a=b',
             'webob._parsed_cookies': ('a=b;c=d', {'a': 'b', 'c': 'd'}),
         }
         req = BaseRequest(environ)
-        self.assertEqual(req.str_cookies, {'a': 'b'})
+        self.assertEqual(req.cookies, {'a': 'b'})
 
     def test_is_xhr_no_header(self):
         req = BaseRequest({})
@@ -949,37 +934,37 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(req.content_length, 0)
         self.assert_(req.is_body_seekable)
 
-    def test_str_POST_not_POST_or_PUT(self):
+    def test_POST_not_POST_or_PUT(self):
         from webob.multidict import NoVars
         environ = {'REQUEST_METHOD': 'GET',
                   }
         req = BaseRequest(environ)
-        result = req.str_POST
+        result = req.POST
         self.assert_(isinstance(result, NoVars))
         self.assert_(result.reason.startswith('Not a form request'))
 
-    def test_str_POST_existing_cache_hit(self):
+    def test_POST_existing_cache_hit(self):
         INPUT = BytesIO('input')
         environ = {'wsgi.input': INPUT,
                    'REQUEST_METHOD': 'POST',
                    'webob._parsed_post_vars': ({'foo': 'bar'}, INPUT),
                   }
         req = BaseRequest(environ)
-        result = req.str_POST
+        result = req.POST
         self.assertEqual(result, {'foo': 'bar'})
 
-    def test_str_PUT_missing_content_type(self):
+    def test_PUT_missing_content_type(self):
         from webob.multidict import NoVars
         INPUT = BytesIO('input')
         environ = {'wsgi.input': INPUT,
                    'REQUEST_METHOD': 'PUT',
                   }
         req = BaseRequest(environ)
-        result = req.str_POST
+        result = req.POST
         self.assert_(isinstance(result, NoVars))
         self.assert_(result.reason.startswith('Not an HTML form submission'))
 
-    def test_str_PUT_bad_content_type(self):
+    def test_PUT_bad_content_type(self):
         from webob.multidict import NoVars
         INPUT = BytesIO('input')
         environ = {'wsgi.input': INPUT,
@@ -987,11 +972,11 @@ class BaseRequestTests(unittest.TestCase):
                    'CONTENT_TYPE': 'text/plain',
                   }
         req = BaseRequest(environ)
-        result = req.str_POST
+        result = req.POST
         self.assert_(isinstance(result, NoVars))
         self.assert_(result.reason.startswith('Not an HTML form submission'))
 
-    def test_str_POST_multipart(self):
+    def test_POST_multipart(self):
         BODY_TEXT = (
             '------------------------------deb95b63e42a\n'
             'Content-Disposition: form-data; name="foo"\n'
@@ -1013,7 +998,7 @@ class BaseRequestTests(unittest.TestCase):
                    'CONTENT_LENGTH': len(BODY_TEXT),
                   }
         req = BaseRequest(environ)
-        result = req.str_POST
+        result = req.POST
         self.assertEqual(result['foo'], 'foo')
         bar = result['bar']
         self.assertEqual(bar.name, 'bar')
@@ -1022,31 +1007,31 @@ class BaseRequestTests(unittest.TestCase):
                          'these are the contents of the file "bar.txt"\n')
 
     # POST
-    # str_GET
-    def test_str_GET_reflects_query_string(self):
+    # GET
+    def test_GET_reflects_query_string(self):
         environ = {
             'QUERY_STRING': 'foo=123',
         }
         req = BaseRequest(environ)
-        result = req.str_GET
+        result = req.GET
         self.assertEqual(result, {'foo': '123'})
         req.query_string = 'foo=456'
-        result = req.str_GET
+        result = req.GET
         self.assertEqual(result, {'foo': '456'})
         req.query_string = ''
-        result = req.str_GET
+        result = req.GET
         self.assertEqual(result, {})
 
-    def test_str_GET_updates_query_string(self):
+    def test_GET_updates_query_string(self):
         environ = {
         }
         req = BaseRequest(environ)
         result = req.query_string
         self.assertEqual(result, '')
-        req.str_GET['foo'] = '123'
+        req.GET['foo'] = '123'
         result = req.query_string
         self.assertEqual(result, 'foo=123')
-        del req.str_GET['foo']
+        del req.GET['foo']
         result = req.query_string
         self.assertEqual(result, '')
 
@@ -1059,12 +1044,12 @@ class BaseRequestTests(unittest.TestCase):
     # str_params
     # params
 
-    def test_str_cookies_wo_webob_parsed_cookies(self):
+    def test_cookies_wo_webob_parsed_cookies(self):
         environ = {
             'HTTP_COOKIE': 'a=b',
         }
         req = Request.blank('/', environ)
-        self.assertEqual(req.str_cookies, {'a': 'b'})
+        self.assertEqual(req.cookies, {'a': 'b'})
 
     # cookies
     # copy
@@ -1431,11 +1416,11 @@ class RequestTests_functional(unittest.TestCase):
         app = TestApp(simpleapp)
         res = app.get('/')
         self.assert_('Hello' in res)
-        self.assert_("get is GET([])" in res)
+        self.assert_("get is UnicodeMultiDict([])" in res)
         self.assert_("post is <NoVars: Not a form request>" in res)
 
         res = app.get('/?name=george')
-        res.mustcontain("get is GET([('name', 'george')])")
+        res.mustcontain("get is UnicodeMultiDict([(u'name', u'george')])")
         res.mustcontain("Val is george")
 
     def test_language_parsing(self):
@@ -1543,8 +1528,8 @@ class RequestTests_functional(unittest.TestCase):
                 'datetime.datetime(1994, 10, 29, 19, 43, 31, tzinfo=UTC)',
             "user_agent: 'Mozilla",
             'is_xhr: True',
-            "cookies is {'var1': 'value1'}",
-            "params is NestedMultiDict([('foo', 'bar'), ('baz', '')])",
+            "cookies is {u'var1': u'value1'}",
+            "params is NestedMultiDict([(u'foo', u'bar'), (u'baz', u'')])",
             "if_none_match: <ETag etag001 or etag002>",
             )
 
@@ -1592,9 +1577,7 @@ class RequestTests_functional(unittest.TestCase):
         new_params['b'] = '4'
         self.assertEqual(new_params.items(), [('a', '1'), ('b', '4')])
         # The key name is \u1000:
-        req = Request.blank('/?%E1%80%80=x',
-                            decode_param_names=True, charset='UTF-8')
-        self.assert_(req.decode_param_names)
+        req = Request.blank('/?%E1%80%80=x', charset='UTF-8')
         self.assert_(u'\u1000' in req.GET.keys())
         self.assertEqual(req.GET[u'\u1000'], 'x')
 
@@ -2001,10 +1984,10 @@ class RequestTests_functional(unittest.TestCase):
             POST=_cgi_escaping_body
         )
         f0 = req.body_file_raw
-        post1 = req.str_POST
+        post1 = req.POST
         f1 = req.body_file_raw
         self.assert_(f1 is not f0)
-        post2 = req.str_POST
+        post2 = req.POST
         f2 = req.body_file_raw
         self.assert_(post1 is post2)
         self.assert_(f1 is f2)
@@ -2134,31 +2117,31 @@ class RequestTests_functional(unittest.TestCase):
         GET = TrackableMultiDict([('check', 'a'),
                                   ('check', 'b'),
                                   ('name', 'Bob')])
-        self.assertEqual(req.str_GET, GET)
-        self.assertEqual(req.str_GET['check'], 'b')
-        self.assertEqual(req.str_GET.getall('check'), ['a', 'b'])
-        self.assertEqual(req.str_GET.items(),
+        self.assertEqual(req.GET, GET)
+        self.assertEqual(req.GET['check'], 'b')
+        self.assertEqual(req.GET.getall('check'), ['a', 'b'])
+        self.assertEqual(req.GET.items(),
                          [('check', 'a'), ('check', 'b'), ('name', 'Bob')])
 
-        self.assert_(isinstance(req.str_POST, NoVars))
+        self.assert_(isinstance(req.POST, NoVars))
         # NoVars can be read like a dict, but not written
-        self.assertEqual(req.str_POST.items(), [])
+        self.assertEqual(req.POST.items(), [])
         req.method = 'POST'
         req.body = 'name=Joe&email=joe@example.com'
-        self.assertEqual(req.str_POST,
+        self.assertEqual(req.POST,
                          MultiDict([('name', 'Joe'),
                                     ('email', 'joe@example.com')]))
-        self.assertEqual(req.str_POST['name'], 'Joe')
+        self.assertEqual(req.POST['name'], 'Joe')
 
-        self.assert_(isinstance(req.str_params, NestedMultiDict))
-        self.assertEqual(req.str_params.items(),
+        self.assert_(isinstance(req.params, NestedMultiDict))
+        self.assertEqual(req.params.items(),
                          [('check', 'a'),
                           ('check', 'b'),
                           ('name', 'Bob'),
                           ('name', 'Joe'),
                           ('email', 'joe@example.com')])
-        self.assertEqual(req.str_params['name'], 'Bob')
-        self.assertEqual(req.str_params.getall('name'), ['Bob', 'Joe'])
+        self.assertEqual(req.params['name'], 'Bob')
+        self.assertEqual(req.params.getall('name'), ['Bob', 'Joe'])
 
     def test_request_put(self):
         from datetime import datetime
@@ -2179,8 +2162,8 @@ class RequestTests_functional(unittest.TestCase):
         GET = TrackableMultiDict([('check', 'a'),
                                   ('check', 'b'),
                                   ('name', 'Bob')])
-        self.assertEqual(req.str_GET, GET)
-        self.assertEqual(req.str_POST, MultiDict(
+        self.assertEqual(req.GET, GET)
+        self.assertEqual(req.POST, MultiDict(
                                 [('var1', 'value1'),
                                  ('var2', 'value2'),
                                  ('rep', '1'),
@@ -2197,7 +2180,7 @@ class RequestTests_functional(unittest.TestCase):
         self.assert_(isinstance(req.cookies, UnicodeMultiDict))
         self.assertEqual(req.cookies.items(), [('test', u'value')])
         req.charset = None
-        self.assertEqual(req.str_cookies, {'test': 'value'})
+        self.assertEqual(req.cookies, {'test': 'value'})
 
         # Accept-* headers
         self.assert_('text/html' in req.accept)
@@ -2205,8 +2188,6 @@ class RequestTests_functional(unittest.TestCase):
         self.assert_(isinstance(req.accept, MIMEAccept))
         self.assert_('text/html' in req.accept)
 
-        self.assertEqual(req.accept.first_match(['text/html',
-                                    'application/xhtml+xml']), 'text/html')
         self.assertEqual(req.accept.best_match(['text/html',
                                                 'application/xhtml+xml']),
                          'application/xhtml+xml')
@@ -2300,15 +2281,15 @@ def simpleapp(environ, start_response):
     request.remote_user = 'bob'
     return [
         'Hello world!\n',
-        'The get is %r' % request.str_GET,
-        ' and Val is %s\n' % request.str_GET.get('name'),
+        'The get is %r' % request.GET,
+        ' and Val is %s\n' % str(request.GET.get('name')),
         'The languages are: %s\n' %
             request.accept_language.best_matches('en-US'),
         'The accepttypes is: %s\n' %
             request.accept.best_match(['application/xml', 'text/html']),
-        'post is %r\n' % request.str_POST,
-        'params is %r\n' % request.str_params,
-        'cookies is %r\n' % request.str_cookies,
+        'post is %r\n' % request.POST,
+        'params is %r\n' % request.params,
+        'cookies is %r\n' % dict(request.cookies),
         'body: %r\n' % request.body,
         'method: %s\n' % request.method,
         'remote_user: %r\n' % request.environ['REMOTE_USER'],

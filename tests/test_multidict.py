@@ -205,7 +205,7 @@ class UnicodeMultiDictTestCase(BaseDictTests, unittest.TestCase):
 
     def test_repr_with_password(self):
         d = self._get_instance(password='pwd')
-        self.assertEqual(repr(d), "UnicodeMultiDict([('password', '******')])")
+        self.assertEqual(repr(d), "UnicodeMultiDict([(u'password', '******')])")
 
 class NestedMultiDictTestCase(BaseDictTests, unittest.TestCase):
     klass = multidict.NestedMultiDict

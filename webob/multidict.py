@@ -249,33 +249,24 @@ class UnicodeMultiDict(DictMixin):
     ``str``/``FieldStorages`` (as is returned by the ``paste.request.parse_``
     functions).
 
-    Can optionally also decode keys when the ``decode_keys`` argument is
-    True.
-
     ``FieldStorage`` instances are cloned, and the clone's ``filename``
-    variable is decoded. Its ``name`` variable is decoded when ``decode_keys``
-    is enabled.
-
+    variable is decoded.
     """
-    def __init__(self, multi, encoding=None, errors='strict',
-                 decode_keys=False):
+    def __init__(self, multi, encoding=None, errors='strict'):
         self.multi = multi
         if encoding is None:
             encoding = sys.getdefaultencoding()
         self.encoding = encoding
         self.errors = errors
-        self.decode_keys = decode_keys
 
     def _decode_key(self, key):
-        if self.decode_keys:
-            try:
-                key = key.decode(self.encoding, self.errors)
-            except AttributeError:
-                pass
-        return key
+        try:
+            return key.decode(self.encoding, self.errors)
+        except AttributeError:
+            return key
 
     def _encode_key(self, key):
-        if self.decode_keys and isinstance(key, unicode):
+        if isinstance(key, unicode):
             return key.encode(self.encoding, self.errors)
         return key
 
@@ -289,9 +280,8 @@ class UnicodeMultiDict(DictMixin):
         if isinstance(value, cgi.FieldStorage):
             # decode FieldStorage's field name and filename
             value = copy.copy(value)
-            if self.decode_keys:
-                if not isinstance(value.name, unicode):
-                    value.name = value.name.decode(self.encoding, self.errors)
+            if not isinstance(value.name, unicode):
+                value.name = value.name.decode(self.encoding, self.errors)
             if value.filename:
                 if not isinstance(value.filename, unicode):
                     value.filename = value.filename.decode(self.encoding,

@@ -52,7 +52,7 @@ def test_accept_str():
 def test_zero_quality():
     assert Accept('bar, *;q=0').best_match(['foo']) is None
     assert 'foo' not in Accept('*;q=0')
-    assert Accept('foo, *;q=0').first_match(['bar', 'foo']) == 'foo'
+    assert Accept('foo, *;q=0').best_match(['bar', 'foo']) == 'foo'
 
 
 def test_accept_str_with_q_not_1():
@@ -118,14 +118,7 @@ def test_quality_not_found():
 
 def test_first_match():
     accept = Accept('text/html, foo/bar')
-    assert accept.first_match(['text/html', 'foo/bar']) == 'text/html'
-    assert accept.first_match(['foo/bar', 'text/html']) == 'foo/bar'
-    assert accept.first_match(['xxx/xxx', 'text/html']) == 'text/html'
-    assert accept.first_match(['xxx/xxx']) == 'xxx/xxx'
-    assert accept.first_match([None, 'text/html']) is None
-    assert accept.first_match(['text/html', None]) == 'text/html'
-    assert accept.first_match(['foo/bar', None]) == 'foo/bar'
-    assert_raises(ValueError, accept.first_match, [])
+    assert_raises(DeprecationWarning, accept.first_match, ['text/html', 'foo/bar'])
 
 def test_best_match():
     accept = Accept('text/html, foo/bar')
@@ -231,9 +224,7 @@ def test_nil_contains():
 
 def test_nil_first_match():
     nilaccept = NilAccept()
-    # NilAccept.first_match always returns element 0 of the list
-    assert nilaccept.first_match(['dummy', '']) == 'dummy'
-    assert nilaccept.first_match(['', 'dummy']) == ''
+    assert_raises(DeprecationWarning, nilaccept.first_match, ['dummy', ''])
 
 def test_nil_best_match():
     nilaccept = NilAccept()

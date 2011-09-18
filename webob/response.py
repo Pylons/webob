@@ -29,9 +29,9 @@ class Response(object):
     unicode_errors = 'strict'
     default_conditional_response = False
 
-    # TODO: remove in 1.3
-    request = deprecated_property('request', 'Response.request will be removed completely in 1.3')
-    environ = deprecated_property('environ', 'Response.environ will be removed completely in 1.3')
+    # TODO: remove in 1.4
+    request = deprecated_property('request', 'Response.request will be removed completely in 1.4')
+    environ = deprecated_property('environ', 'Response.environ will be removed completely in 1.4')
 
 
     #
@@ -332,23 +332,6 @@ class Response(object):
         del self.body
 
     text = property(_text__get, _text__set, _text__del, doc=_text__get.__doc__)
-
-
-#     def _ubody__get(self):
-#         """
-#             Alias for text
-#         """
-#         _warn_ubody()
-#         return self.text
-
-#     def _ubody__set(self, val=None):
-#         _warn_ubody()
-#         if val is None:
-#             del self.body
-#         else:
-#             self.text = val
-
-#     unicode_body = ubody = property(_ubody__get, _ubody__set, _ubody__set)
 
     unicode_body = ubody = property(
         _text__get, _text__set, _text__del,
@@ -1120,9 +1103,6 @@ def gzip_app_iter(app_iter):
         yield compress.compress(item)
     yield compress.flush()
     yield struct.pack("<2L", crc, size & 0xffffffffL)
-
-def _warn_ubody():
-    warn_deprecation(".unicode_body is deprecated in favour of Response.text", '1.3', 3)
 
 def _error_unicode_in_app_iter(app_iter, body):
     app_iter_repr = repr(app_iter)

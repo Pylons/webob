@@ -129,3 +129,10 @@ def test_disconnect_detection_hinted_readline():
     assert line
     assert data.startswith(line)
 
+
+def test_decode_param_names_deprecated():
+    assert_raises(DeprecationWarning, Request.blank, '/', decode_param_names=False)
+    assert_raises(DeprecationWarning, Request.blank, '/', decode_param_names=True)
+    class BadRequest(Request):
+        decode_param_names = False
+    assert_raises(DeprecationWarning, BadRequest.blank, '/')

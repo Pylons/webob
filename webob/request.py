@@ -33,14 +33,15 @@ http_method_probably_has_body.update(dict.fromkeys(('POST', 'PUT'), True))
 class BaseRequest(object):
     ## Options:
     unicode_errors = 'strict'
-    decode_param_names = True # TODO: deprecate
     ## The limit after which request bodies should be stored on disk
     ## if they are read in (under this, and the request body is stored
     ## in memory):
     request_body_tempfile_limit = 10*1024
 
-    def __init__(self, environ,
-        charset=NoDefault, unicode_errors=NoDefault, decode_param_names=NoDefault,
+    def __init__(self,
+        environ,
+        charset=NoDefault,
+        unicode_errors=NoDefault,
         **kw
     ):
         if type(environ) is not dict:
@@ -51,11 +52,8 @@ class BaseRequest(object):
             self.charset = charset
         if unicode_errors is not NoDefault:
             d['unicode_errors'] = unicode_errors
-        if decode_param_names is not NoDefault:
-            warn_decode_deprecation()
-            d['decode_param_names'] = decode_param_names
-        elif not self.decode_param_names:
-            warn_decode_deprecation()
+        if 'decode_param_names' in kw or hasattr(self.__class__, 'decode_param_names'):
+            raise DeprecationWarning("decode_param_names is deprecated")
         if kw:
             cls = self.__class__
             if 'method' in kw:
@@ -511,23 +509,18 @@ class BaseRequest(object):
         self.body = ''
     body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
 
-
     @property
-    def str_POST(self):
+    def POST(self):
         """
-        Return a MultiDict containing all the variables from a form
-        request. Returns an empty dict-like object for non-form
+        A MultiDict containing all the variables from a form
+        request. An empty dict-like object for non-form
         requests.
 
         Form requests are typically POST requests, however PUT requests
         with an appropriate Content-Type are also supported.
+
+        All keys and values are unicode.
         """
-        warn_str_deprecation()
-        return self._str_POST
-
-
-    @property
-    def _str_POST(self):
         env = self.environ
         if self.method not in ('POST', 'PUT'):
             return NoVars('Not a form request')
@@ -558,108 +551,58 @@ class BaseRequest(object):
         #ctype = self.content_type or 'application/x-www-form-urlencoded'
         ctype = env.get('CONTENT_TYPE', 'application/x-www-form-urlencoded')
         self.body_file = io.BufferedReader(FakeCGIBody(vars, ctype))
+        vars = UnicodeMultiDict(vars, encoding=self.charset,
+                                errors=self.unicode_errors)
         env['webob._parsed_post_vars'] = (vars, self.body_file_raw)
         return vars
 
 
-
     @property
-    def POST(self):
+    def GET(self):
         """
-        Like ``.str_POST``, but decodes values and keys
+        A MultiDict containing all the variables from the QUERY_STRING.
         """
-        vars = self._str_POST
-        vars = UnicodeMultiDict(vars, encoding=self.charset,
-                                errors=self.unicode_errors,
-                                decode_keys=self.decode_param_names)
-        return vars
-
-
-
-    @property
-    def str_GET(self):
-        """
-        Return a MultiDict containing all the variables from the
-        QUERY_STRING.
-        """
-        warn_str_deprecation()
-        return self._str_GET
-
-    @property
-    def _str_GET(self):
         env = self.environ
         source = env.get('QUERY_STRING', '')
         if 'webob._parsed_query_vars' in env:
             vars, qs = env['webob._parsed_query_vars']
             if qs == source:
                 return vars
+
+        def _update_get(_vars, key=None, value=None):
+            assert _vars is vars.multi
+            qs = urllib.urlencode(_vars.items())
+            env['QUERY_STRING'] = qs
+            env['webob._parsed_query_vars'] = (vars, qs)
+
         if not source:
-            vars = TrackableMultiDict(__tracker=self._update_get, __name='GET')
+            #@@xxxxx
+            vars = TrackableMultiDict(__tracker=_update_get, __name='GET')
         else:
             vars = TrackableMultiDict(parse_qsl(source,
                                                 keep_blank_values=True,
                                                 strict_parsing=False),
-                                      __tracker=self._update_get, __name='GET')
+                                      __tracker=_update_get, __name='GET')
+        vars = UnicodeMultiDict(vars, encoding=self.charset,
+                                errors=self.unicode_errors)
         env['webob._parsed_query_vars'] = (vars, source)
         return vars
-
-    def _update_get(self, vars, key=None, value=None):
-        env = self.environ
-        qs = urllib.urlencode(vars.items())
-        env['QUERY_STRING'] = qs
-        env['webob._parsed_query_vars'] = (vars, qs)
-
-
-    @property
-    def GET(self):
-        """
-        Like ``.str_GET``, but decodes values and keys
-        """
-        vars = self._str_GET
-        vars = UnicodeMultiDict(vars, encoding=self.charset,
-                                errors=self.unicode_errors,
-                                decode_keys=self.decode_param_names)
-        return vars
-
-    # TODO: remove in version 1.2
-    str_postvars = deprecated_property('str_postvars', 'use str_POST instead')
-    postvars = deprecated_property('postvars', 'use POST instead')
-    str_queryvars = deprecated_property('str_queryvars', 'use str_GET instead')
-    queryvars = deprecated_property('queryvars', 'use GET instead')
-
-
-    @property
-    def str_params(self):
-        """
-        A dictionary-like object containing both the parameters from
-        the query string and request body.
-        """
-        warn_str_deprecation()
-        return NestedMultiDict(self._str_GET, self._str_POST)
 
 
     @property
     def params(self):
         """
-        Like ``.str_params``, but decodes values and keys
+        A dictionary-like object containing both the parameters from
+        the query string and request body.
         """
-        params = NestedMultiDict(self._str_GET, self._str_POST)
-        params = UnicodeMultiDict(params, encoding=self.charset,
-                                  errors=self.unicode_errors,
-                                  decode_keys=self.decode_param_names)
-        return params
+        return NestedMultiDict(self.GET, self.POST)
 
 
     @property
-    def str_cookies(self):
+    def cookies(self):
         """
-        Return a *plain* dictionary of cookies as found in the request.
+        A dictionary of cookies as found in the request.
         """
-        warn_str_deprecation()
-        return self._str_cookies
-
-    @property
-    def _str_cookies(self):
         env = self.environ
         source = env.get('HTTP_COOKIE', '')
         if 'webob._parsed_cookies' in env:
@@ -671,18 +614,10 @@ class BaseRequest(object):
             cookies = Cookie(source)
             for name in cookies:
                 vars[name] = cookies[name].value
-        env['webob._parsed_cookies'] = (vars, source)
-        return vars
-
-    @property
-    def cookies(self):
-        """
-        Like ``.str_cookies``, but decodes values and keys
-        """
-        vars = self._str_cookies
+        #@@ decode directly
         vars = UnicodeMultiDict(vars, encoding=self.charset,
-                                errors=self.unicode_errors,
-                                decode_keys=self.decode_param_names)
+                                errors=self.unicode_errors)
+        env['webob._parsed_cookies'] = (vars, source)
         return vars
 
 
@@ -690,7 +625,7 @@ class BaseRequest(object):
         """
         Copy the request and environment object.
 
-        This only does a shallow copy, except of wsgi.input
+        This only does a shallow copy, except for wsgi.input
         """
         self.make_body_seekable()
         env = self.environ.copy()
@@ -1391,18 +1326,9 @@ def _encode_multipart(vars, content_type):
     w('--%s--' % boundary)
     return content_type, f.getvalue()
 
-def warn_str_deprecation():
-    warn_deprecation(
-        "req.str_* attrs are depreacted and will be disabled in WebOb 1.2, "
-        "use the unicode versions instead",
-        '1.2',
-        3
-    )
 
-def warn_decode_deprecation():
-    warn_deprecation(
-        "decode_param_names is deprecated and will not be supported "
-        "starting with WebOb 1.2",
-        '1.2',
-        3
-    )
+# TODO: remove in 1.4
+for _name in 'GET POST params cookies'.split():
+    _str_name = 'str_'+_name
+    _prop = deprecated_property(_str_name, "disabled starting WebOb 1.2, use %s instead" % _name)
+    setattr(BaseRequest, _str_name, _prop)
