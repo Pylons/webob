@@ -6,7 +6,7 @@ Also If-Range parsing
 
 from webob.datetime_utils import serialize_date
 from webob.datetime_utils import parse_date
-from webob.util import header_docstring
+from webob.util import header_docstring, warn_deprecation
 
 __all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'NoIfRange',
            'etag_property']
@@ -32,6 +32,9 @@ def etag_property(key, default, rfc_section):
         del req.environ[key]
     return property(fget, fset, fdel, doc=doc)
 
+def _warn_weak_match_deprecated():
+    warn_deprecation("weak_match is deprecated", '1.2', 3)
+
 
 class _AnyETag(object):
     """
@@ -50,6 +53,7 @@ class _AnyETag(object):
         return True
 
     def weak_match(self, other):
+        _warn_weak_match_deprecated()
         return True
 
     def __str__(self):
@@ -74,6 +78,7 @@ class _NoETag(object):
         return False
 
     def weak_match(self, other):
+        _warn_weak_match_deprecated()
         return False
 
     def __str__(self):
@@ -97,8 +102,8 @@ class ETagMatcher(object):
     def __contains__(self, other):
         return other in self.etags or other in self.weak_etags
 
-    # TODO: deprecate weak_match
     def weak_match(self, other):
+        _warn_weak_match_deprecated()
         if other.lower().startswith('w/'):
             other = other[2:]
         return other in self.etags or other in self.weak_etags

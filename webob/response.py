@@ -84,6 +84,7 @@ class Response(object):
             self._headerlist = headerlist
         self._headers = None
         if request is not None:
+            _warn_req()
             if hasattr(request, 'environ'):
                 self._environ = request.environ
                 self._request = request
@@ -323,10 +324,7 @@ class Response(object):
         if isinstance(body, text_type):
             raise _error_unicode_in_app_iter(app_iter, body)
         self._app_iter = [body]
-        if (self._environ is not None and
-            self._environ['REQUEST_METHOD'] == 'HEAD'):
-            assert len(body) == 0, "HEAD responses must be empty"
-        elif len(body) == 0:
+        if len(body) == 0:
             # if body-length is zero, we assume it's a HEAD response and
             # leave content_length alone
             pass # pragma: no cover (no idea why necessary, it's hit)
@@ -905,11 +903,13 @@ class Response(object):
         """
         Return the request associated with this response if any.
         """
+        _warn_req()
         if self._request is None and self._environ is not None:
             self._request = self.RequestClass(self._environ)
         return self._request
 
     def _request__set(self, value):
+        _warn_req()
         if value is None:
             del self.request
             return
@@ -921,6 +921,7 @@ class Response(object):
             self._environ = value.environ
 
     def _request__del(self):
+        _warn_req()
         self._request = self._environ = None
 
     request = property(_request__get, _request__set, _request__del,
@@ -936,15 +937,18 @@ class Response(object):
         Get/set the request environ associated with this response, if
         any.
         """
+        _warn_req()
         return self._environ
 
     def _environ__set(self, value):
+        _warn_req()
         if value is None:
             del self.environ
         self._environ = value
         self._request = None
 
     def _environ__del(self):
+        _warn_req()
         self._request = self._environ = None
 
     environ = property(_environ__get, _environ__set, _environ__del,
@@ -1221,6 +1225,9 @@ def gzip_app_iter(app_iter):
         yield compress.compress(item)
     yield compress.flush()
     yield struct.pack("<2L", crc, size & 0xffffffff)
+
+def _warn_req():
+    warn_deprecation("Response.request and Response.environ are deprecated", '1.2', 3)
 
 def _error_unicode_in_app_iter(app_iter, body):
     app_iter_repr = repr(app_iter)

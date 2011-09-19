@@ -114,3 +114,19 @@ class _Helper_test_request_wrong_clen(object):
                 raise AssertionError("Reading should stop after first empty string")
             self.file_ended = True
         return r
+
+
+def test_disconnect_detection_cgi():
+    data = 'abc'*(1<<20)
+    req = Request.blank('/', POST={'file':('test-file', data)})
+    req.is_body_seekable = False
+    req.POST # should not raise exceptions
+
+def test_disconnect_detection_hinted_readline():
+    data = 'abc'*(1<<20)
+    req = Request.blank('/', POST=data)
+    req.is_body_seekable = False
+    line = req.body_file.readline(1<<16)
+    assert line
+    assert data.startswith(line)
+

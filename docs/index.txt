@@ -29,19 +29,18 @@ WebOb is an extraction and refinement of pieces from `Paste
 <http://pythonpaste.org/>`_.  It is under active development.
 Discussion should happen on the `Paste mailing lists
 <http://pythonpaste.org/community/>`_, and bugs can go on the `issue tracker
-<https://bitbucket.org/ianb/webob/issues>`_.  It was originally
+<https://github.com/Pylons/webob/issues>`_.  It was originally
 written by `Ian Bicking <http://ianbicking.org/>`_, and the primary
 maintainer is now `Sergey Schetinin <http://self.maluke.com/>`_.
 
 WebOb is released under an `MIT-style license <license.html>`_.
 
-WebOb is in a Mercurial repository at
-`http://bitbucket.org/ianb/webob/
-<http://bitbucket.org/ianb/webob/>`_, and installable via `easy_install
-webob==dev <http://bitbucket.org/ianb/webob/get/tip.gz>`__.  You
-can check it out with::
+WebOb development happens on `GitHub <https://github.com/Pylons/webob>`_.
+Development version is installable via `easy_install
+webob==dev <https://github.com/Pylons/webob/zipball/master>`__.  You
+can clone the source code with::
 
-    $ hg clone http://bitbucket.org/ianb/webob
+    $ git clone https://github.com/Pylons/webob.git
 
 Introduction
 ============

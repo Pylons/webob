@@ -9,7 +9,7 @@ master_doc = 'index' # The master toctree document.
 
 project = 'WebOb'
 copyright = '2011, Ian Bicking and contributors'
-version = release = '1.1'
+version = release = '1.1.1'
 exclude_patterns = ['jsonrpc-example-code/*']
 
 modindex_common_prefix = ['webob.']

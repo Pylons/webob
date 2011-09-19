@@ -80,6 +80,7 @@ def _req_int_cgi(req):
 def _req_int_readline(req):
     try:
         eq(req.body_file.readline(), 'a=b\n')
+        req.body_file.readline()
     except IOError:
         # too early to detect disconnect
         raise AssertionError

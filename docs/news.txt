@@ -3,9 +3,49 @@ News
 
 .. contents::
 
+master
+---------
+
+* Switched VCS from Mercurial to Git
+
+* Moved development to `GitHub <https://github.com/Pylons/webob>`_
+
+* Added full history from PyCon 2011 sprint to the repository
+
+* Do not set ``resp.request`` in ``req.get_response(app)``
+
+* Warn when passing ``request`` to ``Response(..)``
+
+
+1.1.1
+---------
+
+* Fix disconnect detection being incorrect in some cases (`issue 21
+  <https://bitbucket.org/ianb/webob/issue/21>`_).
+
+* Fix exception when calling ``.accept.best_match(..)`` on a header containing
+  ``'*'`` (instead of ``'*/*'``).
+
+* Extract some of the ``Accept`` code into subclasses (``AcceptCharset``,
+  ``AcceptLanguage``).
+
+* Improve language matching so that the app can now offer a generic
+  language code and it will match any of the accepted dialects
+  (``'en' in AcceptLanguage('en-gb')``).
+
+* Normalize locale names when matching
+  (``'en_GB' in AcceptLanguage('en-gb')``).
+
+* Deprecate ``etag.weak_match(..)``.
+
+* Deprecate ``Response.request`` and ``Response.environ`` attrs.
+
+
 1.1
 ---------
+
 * Remove deprecation warnings for ``unicode_body`` and ``ubody``.
+
 
 1.1rc1
 ---------
@@ -14,7 +54,7 @@ News
   (the old names will be removed in 1.3 or even later).
 
 * Make ``Response.write`` much more efficient (`issue 18
-  <https://bitbucket.org/ianb/webob/issue/18>`_)
+  <https://bitbucket.org/ianb/webob/issue/18>`_).
 
 * Make sure copying responses does not reset Content-Length or Content-MD5 of the
   original (and that of future copies).
