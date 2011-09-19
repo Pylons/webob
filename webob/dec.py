@@ -6,6 +6,7 @@ application (while also allowing normal calling of the method with an
 instantiated request).
 """
 
+import sys
 import webob
 import webob.exc
 from types import ClassType
@@ -144,8 +145,8 @@ class wsgify(object):
                 if self.middleware_wraps:
                     args = (self.middleware_wraps,) + args
                 resp = self.call_func(req, *args, **self.kwargs)
-            except webob.exc.HTTPException, resp:
-                pass
+            except webob.exc.HTTPException:
+                resp = sys.exc_info()[1]
             if resp is None:
                 ## FIXME: I'm not sure what this should be?
                 resp = req.response

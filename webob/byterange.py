@@ -127,7 +127,7 @@ class Range(object):
                         end = None
                     last_end = end
                 ranges.append((begin, end))
-        except ValueError, e:
+        except ValueError:
             # In this case where the Range header is malformed,
             # section 14.16 says to treat the request as if the
             # Range header was not present.  How do I log this?
