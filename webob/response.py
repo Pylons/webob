@@ -6,6 +6,7 @@ from base64 import b64encode
 from datetime import datetime
 from datetime import timedelta
 
+from webob.request import BaseRequest
 from webob.byterange import ContentRange
 from webob.cachecontrol import CacheControl
 from webob.cachecontrol import serialize_cache_control

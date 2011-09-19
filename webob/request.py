@@ -2,7 +2,9 @@ import cgi
 import os
 import re
 import sys
+import io
 import tempfile
+import urllib
 
 from io import BytesIO
 
@@ -582,7 +584,7 @@ class BaseRequest(object):
             encoding=self.charset,
             errors=self.unicode_errors,
             )
-                              
+
         #ctype = self.content_type or 'application/x-www-form-urlencoded'
         ctype = env.get('CONTENT_TYPE', 'application/x-www-form-urlencoded')
         self.body_file = io.BufferedReader(FakeCGIBody(vars, ctype))

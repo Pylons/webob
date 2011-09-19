@@ -1,11 +1,7 @@
 from __future__ import with_statement
-<<<<<<< HEAD
 from webob import Request, Response
 import sys, logging, threading, random, socket, cgi
 from webob.compat import url_open
-=======
-import sys, logging, threading, random, urllib2, socket, cgi
->>>>>>> bce343c65d61d2b0ff67b86fa7cee0f59f3bd288
 from contextlib import contextmanager
 from nose.tools import assert_raises, eq_ as eq
 from wsgiref.simple_server import make_server, WSGIRequestHandler, WSGIServer, ServerHandler
@@ -13,8 +9,6 @@ try:
     from queue import Queue, Empty
 except ImportError:
     from Queue import Queue, Empty
-
-from webob import Request, Response
 
 log = logging.getLogger(__name__)
 
