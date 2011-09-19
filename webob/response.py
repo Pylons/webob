@@ -61,12 +61,17 @@ class Response(object):
     unicode_errors = 'strict'
     default_conditional_response = False
 
+    # TODO: remove in 1.3
+    request = deprecated_property('request', 'Response.request will be removed completely in 1.3')
+    environ = deprecated_property('environ', 'Response.environ will be removed completely in 1.3')
+
+
     #
     # __init__, from_file, copy
     #
 
     def __init__(self, body=None, status=None, headerlist=None, app_iter=None,
-                 request=None, content_type=None, conditional_response=None,
+                 content_type=None, conditional_response=None,
                  **kw):
         if app_iter is None:
             if body is None:
@@ -83,16 +88,6 @@ class Response(object):
         else:
             self._headerlist = headerlist
         self._headers = None
-        if request is not None:
-            _warn_req()
-            if hasattr(request, 'environ'):
-                self._environ = request.environ
-                self._request = request
-            else:
-                self._environ = request
-                self._request = None
-        else:
-            self._environ = self._request = None
         if content_type is None:
             content_type = self.default_content_type
         charset = None
@@ -252,9 +247,6 @@ class Response(object):
         self._status = '%d %s' % (code, status_reasons[code])
     status_int = property(_status_int__get, _status_int__set,
                           doc=_status_int__get.__doc__)
-
-    # TODO: remove in version 1.2
-    status_code = deprecated_property('status_code', 'use .status or .status_int instead')
 
 
     #
@@ -894,66 +886,6 @@ class Response(object):
             self.content_md5 = md5_digest
 
 
-    #
-    # request
-    #
-
-    def _request__get(self):
-        """
-        Return the request associated with this response if any.
-        """
-        _warn_req()
-        if self._request is None and self._environ is not None:
-            self._request = self.RequestClass(self._environ)
-        return self._request
-
-    def _request__set(self, value):
-        _warn_req()
-        if value is None:
-            del self.request
-            return
-        if isinstance(value, dict):
-            self._environ = value
-            self._request = None
-        else:
-            self._request = value
-            self._environ = value.environ
-
-    def _request__del(self):
-        _warn_req()
-        self._request = self._environ = None
-
-    request = property(_request__get, _request__set, _request__del,
-                       doc=_request__get.__doc__)
-
-
-    #
-    # environ
-    #
-
-    def _environ__get(self):
-        """
-        Get/set the request environ associated with this response, if
-        any.
-        """
-        _warn_req()
-        return self._environ
-
-    def _environ__set(self, value):
-        _warn_req()
-        if value is None:
-            del self.environ
-        self._environ = value
-        self._request = None
-
-    def _environ__del(self):
-        _warn_req()
-        self._request = self._environ = None
-
-    environ = property(_environ__get, _environ__set, _environ__del,
-                       doc=_environ__get.__doc__)
-
-
 
     #
     # __call__, conditional_response_app
@@ -999,7 +931,7 @@ class Response(object):
         * If-None-Match       (304 Not Modified; only on GET, HEAD)
         * Range               (406 Partial Content; only on GET, HEAD)
         """
-        req = self.RequestClass(environ)
+        req = BaseRequest(environ)
         status304 = False
         headerlist = self._abs_headerlist(environ)
         if req.method in self._safe_methods:
@@ -1224,9 +1156,6 @@ def gzip_app_iter(app_iter):
         yield compress.compress(item)
     yield compress.flush()
     yield struct.pack("<2L", crc, size & 0xffffffff)
-
-def _warn_req():
-    warn_deprecation("Response.request and Response.environ are deprecated", '1.2', 3)
 
 def _error_unicode_in_app_iter(app_iter, body):
     app_iter_repr = repr(app_iter)

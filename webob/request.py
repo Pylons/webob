@@ -127,6 +127,7 @@ class BaseRequest(object):
             wrapped, raw = env.get('webob._body_file', (0,0))
             if raw is not r:
                 wrapped = LimitedLengthFile(r, clen)
+                wrapped = io.BufferedReader(wrapped)
                 env['webob._body_file'] = wrapped, r
             r = wrapped
         return r
@@ -584,7 +585,7 @@ class BaseRequest(object):
                               
         #ctype = self.content_type or 'application/x-www-form-urlencoded'
         ctype = env.get('CONTENT_TYPE', 'application/x-www-form-urlencoded')
-        self.body_file = FakeCGIBody(vars, ctype)
+        self.body_file = io.BufferedReader(FakeCGIBody(vars, ctype))
         env['webob._parsed_post_vars'] = (vars, self.body_file_raw)
         return vars
 
@@ -1245,7 +1246,8 @@ class Request(AdhocAttrMixin, BaseRequest):
 class DisconnectionError(IOError):
     pass
 
-class LimitedLengthFile(object):
+
+class LimitedLengthFile(io.RawIOBase):
     def __init__(self, file, maxlen):
         self.file = file
         self.maxlen = maxlen
@@ -1258,46 +1260,28 @@ class LimitedLengthFile(object):
             self.maxlen
         )
 
-    def read(self, sz=-1):
-        if sz is None or sz < 0:
-            sz = self.remaining
-        else:
-            sz = min(sz, self.remaining)
-        if not sz:
-            return _empty_byte
-        r = self.file.read(sz)
-        self.remaining -= len(r)
-        if len(r) < sz:
-            self._check_disconnect()
-        return r
+    def fileno(self):
+        return self.file.fileno()
 
-    def readline(self, hint=None):
-        hint = self._normhint(hint)
-        r = self.file.readline(hint)
-        self.remaining -= len(r)
-        if not r:
-            self._check_disconnect()
-        return r
+    @staticmethod
+    def readable():
+        return True
 
-    def readlines(self, hint=None):
-        hint = self._normhint(hint)
-        r = self.file.readlines(hint)
-        total_len = sum(len(l) for l in r)
-        self.remaining -= total_len
-        if total_len < hint:
-            self._check_disconnect()
-        return r
-
-    def _normhint(self, hint):
-        return min(hint, self.remaining) if hint else self.remaining
-
-    def _check_disconnect(self):
-        if self.remaining:
+    def readinto(self, buff):
+        if not self.remaining:
+            return 0
+        sz0 = min(len(buff), self.remaining)
+        data = self.file.read(sz0)
+        sz = len(data)
+        self.remaining -= sz
+        #if not data:
+        if sz < sz0 and self.remaining:
             raise DisconnectionError(
                 "The client disconnected while sending the POST/PUT body "
                 + "(%d more bytes were expected)" % self.remaining
             )
-
+        buff[:sz] = data
+        return sz
 
 
 def _cgi_FieldStorage__repr__patch(self):
@@ -1313,7 +1297,7 @@ def _cgi_FieldStorage__repr__patch(self):
 
 cgi.FieldStorage.__repr__ = _cgi_FieldStorage__repr__patch
 
-class FakeCGIBody(object):
+class FakeCGIBody(io.RawIOBase):
     def __init__(self, vars, content_type):
         if content_type.startswith('multipart/form-data'):
             if not _get_multipart_boundary(content_type):
@@ -1321,71 +1305,33 @@ class FakeCGIBody(object):
                             % content_type)
         self.vars = vars
         self.content_type = content_type
-        self._body = None
-        self.position = 0
-
-    def tell(self):
-        return self.position
-
-    def read(self, size=-1):
-        body = self._get_body()
-        if size < 0:
-            v = body[self.position:]
-            self.position = len(body)
-            return v
-        else:
-            v = body[self.position:self.position+size]
-            self.position = min(len(body), self.position+size)
-            return v
-
-    def _get_body(self):
-        if self._body is None:
-            ct = self.content_type
-            if ct.startswith('application/x-www-form-urlencoded'):
-                self._body = url_encode(self.vars.items())
-            elif ct.startswith('multipart/form-data'):
-                self._body = _encode_multipart(
-                    iteritems_(self.vars), self.content_type)[1]
-            else:
-                assert 0, ('Bad content type: %r' % self.content_type)
-        return self._body
-
-    def readline(self, size=None):
-        # We ignore size, but allow it to be hinted
-        rest = self._get_body()[self.position:]
-        next = rest.find('\r\n')
-        if next == -1:
-            return self.read()
-        self.position += next+2
-        return rest[:next+2]
-
-    def readlines(self, hint=None):
-        # Again, allow hint but ignore
-        body = self._get_body()
-        rest = body[self.position:]
-        self.position = len(body)
-        result = []
-        while 1:
-            next = rest.find('\r\n')
-            if next == -1:
-                result.append(rest)
-                break
-            result.append(rest[:next+2])
-            rest = rest[next+2:]
-        return result
-
-    def __iter__(self):
-        return iter(self.readlines())
+        self.file = None
 
     def __repr__(self):
         inner = repr(self.vars)
         if len(inner) > 20:
             inner = inner[:15] + '...' + inner[-5:]
-        if self.position:
-            inner += ' at position %s' % self.position
         return '<%s at 0x%x viewing %s>' % (
             self.__class__.__name__,
             abs(id(self)), inner)
+
+    def fileno(self):
+        return None
+
+    @staticmethod
+    def readable():
+        return True
+
+    def readinto(self, buff):
+        if self.file is None:
+            if self.content_type.startswith('application/x-www-form-urlencoded'):
+                data = urllib.urlencode(self.vars.items())
+            elif self.content_type.startswith('multipart/form-data'):
+                data = _encode_multipart(self.vars.iteritems(), self.content_type)[1]
+            else:
+                assert 0, ('Bad content type: %r' % self.content_type)
+            self.file = BytesIO(data)
+        return self.file.readinto(buff)
 
 
 def _get_multipart_boundary(ctype):

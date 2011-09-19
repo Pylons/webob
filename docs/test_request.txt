@@ -400,6 +400,8 @@ And for dealing with file uploads:
     >>> req.str_POST
     MultiDict([('a', 'b'), ('upload', FieldStorage('upload', 'test.html')), ('c', 'd')])
     >>> req.body_file_raw
+    <....BufferedReader>
+    >>> req.body_file_raw.raw
     <FakeCGIBody at ... viewing MultiDict([('a'...d')])>
     >>> sorted(req.str_POST.keys())
     ['a', 'c', 'upload']

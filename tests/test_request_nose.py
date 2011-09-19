@@ -81,7 +81,7 @@ def test_limited_length_file_repr():
     req = Request.blank('/', POST='x')
     req.body_file_raw = 'dummy'
     req.is_body_seekable = False
-    eq(repr(req.body_file), "<LimitedLengthFile('dummy', maxlen=1)>")
+    eq(repr(req.body_file.raw), "<LimitedLengthFile('dummy', maxlen=1)>")
 
 def test_request_wrong_clen(is_seekable=False):
     tlen = 1<<20

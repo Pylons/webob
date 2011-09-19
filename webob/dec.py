@@ -140,7 +140,6 @@ class wsgify(object):
             start_response = args[0]
             req = self.RequestClass(environ)
             req.response = req.ResponseClass()
-            req.response.request = req
             try:
                 args = self.args
                 if self.middleware_wraps:

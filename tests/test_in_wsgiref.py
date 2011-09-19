@@ -1,7 +1,11 @@
 from __future__ import with_statement
+<<<<<<< HEAD
 from webob import Request, Response
 import sys, logging, threading, random, socket, cgi
 from webob.compat import url_open
+=======
+import sys, logging, threading, random, urllib2, socket, cgi
+>>>>>>> bce343c65d61d2b0ff67b86fa7cee0f59f3bd288
 from contextlib import contextmanager
 from nose.tools import assert_raises, eq_ as eq
 from wsgiref.simple_server import make_server, WSGIRequestHandler, WSGIServer, ServerHandler
@@ -9,6 +13,8 @@ try:
     from queue import Queue, Empty
 except ImportError:
     from Queue import Queue, Empty
+
+from webob import Request, Response
 
 log = logging.getLogger(__name__)
 
@@ -53,21 +59,28 @@ def test_interrupted_request():
         for path in _test_ops_req_interrupt:
             _send_interrupted_req(server, path)
             try:
-                assert _global_res.get(timeout=1)
+                res = _global_res.get(timeout=1)
             except Empty:
                 raise AssertionError("Error during test %s", path)
+            if res is not None:
+                print "Error during test:", path
+                raise res[0], res[1], res[2]
 
 _global_res = Queue()
 
 def _test_app_req_interrupt(env, sr):
-    req = Request(env)
-    assert req.content_length == 100000
-    op = _test_ops_req_interrupt[req.path_info]
-    log.info("Running test: %s", req.path_info)
-    assert_raises(IOError, op, req)
-    _global_res.put(True)
-    sr('200 OK', [])
-    return []
+    try:
+        req = Request(env)
+        assert req.content_length == 100000
+        op = _test_ops_req_interrupt[req.path_info]
+        log.info("Running test: %s", req.path_info)
+        assert_raises(IOError, op, req)
+    except:
+        _global_res.put(sys.exc_info())
+    else:
+        _global_res.put(None)
+        sr('200 OK', [])
+        return []
 
 def _req_int_cgi(req):
     assert req.body_file.read(0) == ''
@@ -80,10 +93,9 @@ def _req_int_cgi(req):
 def _req_int_readline(req):
     try:
         eq(req.body_file.readline(), 'a=b\n')
-        req.body_file.readline()
     except IOError:
         # too early to detect disconnect
-        raise AssertionError
+        raise AssertionError("False disconnect alert")
     req.body_file.readline()
 
 

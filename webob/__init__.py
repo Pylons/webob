@@ -10,6 +10,5 @@ __all__ = [
 ]
 
 BaseRequest.ResponseClass = Response
-Response.RequestClass = BaseRequest #TODO: just use BaseRequest directly (1.2)
 
 __version__ = '1.2a1'
