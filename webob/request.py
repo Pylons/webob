@@ -4,10 +4,7 @@ import re
 import sys
 import tempfile
 
-if sys.version >= '2.7':
-    from io import BytesIO as StringIO # pragma nocover
-else:
-    from cStringIO import StringIO # pragma nocover
+from io import BytesIO
 
 from webob.acceptparse import AcceptCharset
 from webob.acceptparse import AcceptLanguage
@@ -116,7 +113,7 @@ class BaseRequest(object):
             (unlike setting req.body_file_raw).
         """
         if not self.is_body_readable:
-            return StringIO(b(''))
+            return BytesIO()
         r = self.body_file_raw
         clen = self.content_length
         if not self.is_body_seekable and clen is not None:
@@ -539,10 +536,10 @@ class BaseRequest(object):
         if not http_method_probably_has_body.get(self.method, True):
             if not value:
                 self.content_length = None
-                self.body_file_raw = StringIO(_empty_byte)
+                self.body_file_raw = BytesIO()
                 return
         self.content_length = len(value)
-        self.body_file_raw = StringIO(value)
+        self.body_file_raw = BytesIO(value)
         self.is_body_seekable = True
     def _body__del(self):
         self.body = _empty_byte
@@ -717,14 +714,14 @@ class BaseRequest(object):
     def make_body_seekable(self):
         """
         This forces ``environ['wsgi.input']`` to be seekable.
-        That means that, the content is copied into a StringIO or temporary
+        That means that, the content is copied into a BytesIO or temporary
         file and flagged as seekable, so that it will not be unnecessarily
         copied again.
 
         After calling this method the .body_file is always seeked to the
         start of file and .content_length is not None.
 
-        The choice to copy to StringIO is made from
+        The choice to copy to BytesIO is made from
         ``self.request_body_tempfile_limit``
         """
         if self.is_body_seekable:
@@ -738,7 +735,7 @@ class BaseRequest(object):
         Copies the body, in cases where it might be shared with
         another request object and that is not desired.
 
-        This copies the body in-place, either into a StringIO object
+        This copies the body in-place, either into a BytesIO object
         or a temporary file.
         """
         if not self.is_body_readable:
@@ -958,7 +955,7 @@ class BaseRequest(object):
             Create a request from HTTP string. If the string contains
             extra data after the request, raise a ValueError.
         """
-        f = StringIO(s)
+        f = BytesIO(s)
         r = cls.from_file(f)
         if f.tell() != len(s):
             raise ValueError("The string contains more data than expected")
@@ -1167,7 +1164,7 @@ def environ_from_url(path):
         'SERVER_PROTOCOL': 'HTTP/1.0',
         'wsgi.version': (1, 0),
         'wsgi.url_scheme': scheme,
-        'wsgi.input': StringIO(_empty_byte),
+        'wsgi.input': BytesIO(),
         'wsgi.errors': sys.stderr,
         'wsgi.multithread': False,
         'wsgi.multiprocess': False,
@@ -1204,7 +1201,7 @@ def environ_add_POST(env, data, content_type=None):
         if not isinstance(data, str):
             raise ValueError('Please provide `POST` data as string'
                              ' for content type `%s`' % content_type)
-    env['wsgi.input'] = StringIO(b(data))
+    env['wsgi.input'] = BytesIO(b(data))
     env['webob.is_body_seekable'] = True
     env['CONTENT_LENGTH'] = str(len(data))
     env['CONTENT_TYPE'] = content_type
@@ -1399,7 +1396,7 @@ def _get_multipart_boundary(ctype):
 
 def _encode_multipart(vars, content_type):
     """Encode a multipart request body into a string"""
-    f = StringIO()
+    f = BytesIO()
     w = f.write
     CRLF = '\r\n'
     boundary = _get_multipart_boundary(content_type)

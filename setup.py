@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = '1.1.1'
+version = '1.2a1'
 
 setup(
     name='WebOb',
@@ -32,7 +32,6 @@ You may install the `in-development version of WebOb
         "Topic :: Internet :: WWW/HTTP :: WSGI",
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware",
-        "Programming Language :: Python :: 2.5",
         "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
     ],
