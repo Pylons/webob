@@ -587,7 +587,8 @@ class BaseRequest(object):
 
         #ctype = self.content_type or 'application/x-www-form-urlencoded'
         ctype = env.get('CONTENT_TYPE', 'application/x-www-form-urlencoded')
-        self.body_file = io.BufferedReader(FakeCGIBody(vars, ctype))
+        f = FakeCGIBody(vars, ctype, self.charset)
+        self.body_file = io.BufferedReader(f)
         env['webob._parsed_post_vars'] = (vars, self.body_file_raw)
         return vars
 
@@ -1300,13 +1301,14 @@ def _cgi_FieldStorage__repr__patch(self):
 cgi.FieldStorage.__repr__ = _cgi_FieldStorage__repr__patch
 
 class FakeCGIBody(io.RawIOBase):
-    def __init__(self, vars, content_type):
+    def __init__(self, vars, content_type, encoding='utf-8'):
         if content_type.startswith('multipart/form-data'):
             if not _get_multipart_boundary(content_type):
                 raise ValueError('Content-type: %r does not contain boundary'
                             % content_type)
         self.vars = vars
         self.content_type = content_type
+        self.encoding = encoding
         self.file = None
 
     def __repr__(self):
@@ -1329,7 +1331,16 @@ class FakeCGIBody(io.RawIOBase):
             if self.content_type.startswith('application/x-www-form-urlencoded'):
                 data = urllib.urlencode(self.vars.items())
             elif self.content_type.startswith('multipart/form-data'):
-                data = _encode_multipart(self.vars.iteritems(), self.content_type)[1]
+                encoded = []
+                for k, v in self.vars.items():
+                    if hasattr(k, 'encode'):
+                        k = k.encode(self.encoding)
+                    if hasattr(v, 'encode'):
+                        v = v.encode(self.encoding)
+                    encoded.append((k, v))
+                data = _encode_multipart(
+                    encoded,
+                    self.content_type.encode(self.encoding))[1]
             else:
                 assert 0, ('Bad content type: %r' % self.content_type)
             self.file = BytesIO(data)
@@ -1352,10 +1363,10 @@ def _encode_multipart(vars, content_type):
         boundary = os.urandom(10).encode('hex')
         content_type += '; boundary=%s' % boundary
     for name, value in vars:
-        w('--%s' % boundary)
+        w(b('--%s' % boundary))
         w(CRLF)
         assert name is not None, 'Value associated with no name: %r' % value
-        w('Content-Disposition: form-data; name="%s"' % name)
+        w(b('Content-Disposition: form-data; name="%s"' % name))
         filename = None
         if getattr(value, 'filename', None):
             filename = value.filename
@@ -1381,4 +1392,3 @@ def _encode_multipart(vars, content_type):
         w(CRLF)
     w('--%s--' % boundary)
     return content_type, f.getvalue()
-
