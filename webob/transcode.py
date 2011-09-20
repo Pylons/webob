@@ -48,9 +48,7 @@ def _transcode_env(env, charset, errors='strict'):
         for field in fs.list or ():
             field.name = decode(field.name)
             if field.filename:
-                print `field.filename`, '->',
                 field.filename = decode(field.filename)
-                print `field.filename`
                 data.append((field.name, field))
             else:
                 data.append((field.name, decode(field.value)))
