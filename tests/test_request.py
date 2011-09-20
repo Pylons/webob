@@ -1416,11 +1416,11 @@ class RequestTests_functional(unittest.TestCase):
         app = TestApp(simpleapp)
         res = app.get('/')
         self.assert_('Hello' in res)
-        self.assert_("get is UnicodeMultiDict([])" in res)
+        self.assert_("get is GET([])" in res, res)
         self.assert_("post is <NoVars: Not a form request>" in res)
 
         res = app.get('/?name=george')
-        res.mustcontain("get is UnicodeMultiDict([(u'name', u'george')])")
+        res.mustcontain("get is GET([(u'name', u'george')])")
         res.mustcontain("Val is george")
 
     def test_language_parsing(self):
@@ -2112,11 +2112,11 @@ class RequestTests_functional(unittest.TestCase):
         from webob.multidict import MultiDict
         from webob.multidict import NestedMultiDict
         from webob.multidict import NoVars
-        from webob.multidict import TrackableMultiDict
+        from webob.multidict import GetDict
         req = Request.blank('/test?check=a&check=b&name=Bob')
-        GET = TrackableMultiDict([('check', 'a'),
-                                  ('check', 'b'),
-                                  ('name', 'Bob')])
+        GET = GetDict([('check', 'a'),
+                      ('check', 'b'),
+                      ('name', 'Bob')], lambda:None)
         self.assertEqual(req.GET, GET)
         self.assertEqual(req.GET['check'], 'b')
         self.assertEqual(req.GET.getall('check'), ['a', 'b'])
@@ -2151,16 +2151,15 @@ class RequestTests_functional(unittest.TestCase):
         from webob.byterange import Range
         from webob.etag import ETagMatcher
         from webob.multidict import MultiDict
-        from webob.multidict import TrackableMultiDict
-        from webob.multidict import UnicodeMultiDict
+        from webob.multidict import GetDict
         req = Request.blank('/test?check=a&check=b&name=Bob')
         req.method = 'PUT'
         req.body = 'var1=value1&var2=value2&rep=1&rep=2'
         req.environ['CONTENT_LENGTH'] = str(len(req.body))
         req.environ['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
-        GET = TrackableMultiDict([('check', 'a'),
-                                  ('check', 'b'),
-                                  ('name', 'Bob')])
+        GET = GetDict([('check', 'a'),
+                      ('check', 'b'),
+                      ('name', 'Bob')], lambda: None)
         self.assertEqual(req.GET, GET)
         self.assertEqual(req.POST, MultiDict(
                                 [('var1', 'value1'),
@@ -2170,14 +2169,13 @@ class RequestTests_functional(unittest.TestCase):
 
         # Unicode
         req.charset = 'utf8'
-        self.assert_(isinstance(req.GET, UnicodeMultiDict))
         self.assertEqual(req.GET.items(),
                          [('check', u'a'), ('check', u'b'), ('name', u'Bob')])
 
         # Cookies
         req.headers['Cookie'] = 'test=value'
-        self.assert_(isinstance(req.cookies, UnicodeMultiDict))
-        self.assertEqual(req.cookies.items(), [('test', u'value')])
+        self.assert_(isinstance(req.cookies, dict))
+        self.assertEqual(req.cookies.items(), [('test', 'value')])
         req.charset = None
         self.assertEqual(req.cookies, {'test': 'value'})
 

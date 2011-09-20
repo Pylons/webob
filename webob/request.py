@@ -4,7 +4,7 @@ from io import BytesIO
 
 from webob.headers import EnvironHeaders
 from webob.acceptparse import accept_property, Accept, MIMEAccept, AcceptCharset, NilAccept, MIMENilAccept, NoAccept, AcceptLanguage
-from webob.multidict import TrackableMultiDict, MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
+from webob.multidict import GetDict, MultiDict, NestedMultiDict, NoVars
 from webob.cachecontrol import CacheControl, serialize_cache_control
 from webob.etag import etag_property, AnyETag, NoETag, IfRange
 
@@ -552,12 +552,15 @@ class BaseRequest(object):
         fs = cgi.FieldStorage(fp=self.body_file,
                               environ=fs_environ,
                               keep_blank_values=True)
-        vars = MultiDict.from_fieldstorage(fs)
+        vars = MultiDict.from_fieldstorage(
+            fs,
+            encoding=self.charset,
+            errors=self.unicode_errors
+        )
         #ctype = self.content_type or 'application/x-www-form-urlencoded'
         ctype = env.get('CONTENT_TYPE', 'application/x-www-form-urlencoded')
-        self.body_file = io.BufferedReader(FakeCGIBody(vars, ctype))
-        vars = UnicodeMultiDict(vars, encoding=self.charset,
-                                errors=self.unicode_errors)
+        f = FakeCGIBody(vars, ctype, self.charset, self.unicode_errors)
+        self.body_file = io.BufferedReader(f)
         env['webob._parsed_post_vars'] = (vars, self.body_file_raw)
         return vars
 
@@ -575,21 +578,24 @@ class BaseRequest(object):
                 return vars
 
         def _update_get(_vars, key=None, value=None):
-            assert _vars is vars.multi
-            qs = urllib.urlencode(_vars.items())
+            assert _vars is vars
+            e = lambda t: t.encode(encoding, errors)
+            data = _vars.items()
+            data = [(e(k), e(v)) for k,v in data]
+            qs = urllib.urlencode(data)
             env['QUERY_STRING'] = qs
             env['webob._parsed_query_vars'] = (vars, qs)
 
-        if not source:
-            #@@xxxxx
-            vars = TrackableMultiDict(__tracker=_update_get, __name='GET')
-        else:
-            vars = TrackableMultiDict(urlparse.parse_qsl(source,
-                                                keep_blank_values=True,
-                                                strict_parsing=False),
-                                      __tracker=_update_get, __name='GET')
-        vars = UnicodeMultiDict(vars, encoding=self.charset,
-                                errors=self.unicode_errors)
+        data = []
+        encoding = self.charset
+        errors = self.unicode_errors
+        if source:
+            data = urlparse.parse_qsl(source, keep_blank_values=True,
+                                                    strict_parsing=False)
+            d = lambda b: b.decode(encoding, errors)
+            data = [(d(k), d(v)) for k,v in data]
+
+        vars = GetDict(data, _update_get)
         env['webob._parsed_query_vars'] = (vars, source)
         return vars
 
@@ -614,16 +620,18 @@ class BaseRequest(object):
             vars, var_source = env['webob._parsed_cookies']
             if var_source == source:
                 return vars
-        vars = {}
+
+        encoding = self.charset
+        errors = self.unicode_errors
+        d = lambda b: b.decode(encoding, errors)
+
+        r = {}
         if source:
             cookies = Cookie(source)
             for name in cookies:
-                vars[name] = cookies[name].value
-        #@@ decode directly
-        vars = UnicodeMultiDict(vars, encoding=self.charset,
-                                errors=self.unicode_errors)
-        env['webob._parsed_cookies'] = (vars, source)
-        return vars
+                r[d(name)] = d(cookies[name].value)
+        env['webob._parsed_cookies'] = (r, source)
+        return r
 
 
     def copy(self):
@@ -1142,6 +1150,7 @@ def environ_add_POST(env, data, content_type=None):
         content_type = 'multipart/form-data' if has_files else 'application/x-www-form-urlencoded'
     if content_type.startswith('multipart/form-data'):
         if not isinstance(data, str):
+            # TODO: use correct encoding
             content_type, data = _encode_multipart(data, content_type)
     elif content_type.startswith('application/x-www-form-urlencoded'):
         if has_files:
@@ -1249,13 +1258,15 @@ def _cgi_FieldStorage__repr__patch(self):
 cgi.FieldStorage.__repr__ = _cgi_FieldStorage__repr__patch
 
 class FakeCGIBody(io.RawIOBase):
-    def __init__(self, vars, content_type):
+    def __init__(self, vars, content_type, encoding='utf8', errors='strict'):
         if content_type.startswith('multipart/form-data'):
             if not _get_multipart_boundary(content_type):
                 raise ValueError('Content-type: %r does not contain boundary'
                             % content_type)
         self.vars = vars
         self.content_type = content_type
+        self.encoding = encoding
+        self.errors = errors
         self.file = None
 
     def __repr__(self):
@@ -1278,7 +1289,12 @@ class FakeCGIBody(io.RawIOBase):
             if self.content_type.startswith('application/x-www-form-urlencoded'):
                 data = urllib.urlencode(self.vars.items())
             elif self.content_type.startswith('multipart/form-data'):
-                data = _encode_multipart(self.vars.iteritems(), self.content_type)[1]
+                data = _encode_multipart(
+                    self.vars.iteritems(),
+                    self.content_type,
+                    self.encoding,
+                    self.errors
+                )[1]
             else:
                 assert 0, ('Bad content type: %r' % self.content_type)
             self.file = BytesIO(data)
@@ -1291,10 +1307,11 @@ def _get_multipart_boundary(ctype):
         return m.group(1).strip('"')
 
 
-def _encode_multipart(vars, content_type):
+def _encode_multipart(vars, content_type, encoding='utf8', errors='error'):
     """Encode a multipart request body into a string"""
     f = BytesIO()
     w = f.write
+    wt = lambda t: f.write(t.encode(encoding, errors))
     CRLF = '\r\n'
     boundary = _get_multipart_boundary(content_type)
     if not boundary:
@@ -1304,7 +1321,7 @@ def _encode_multipart(vars, content_type):
         w('--%s' % boundary)
         w(CRLF)
         assert name is not None, 'Value associated with no name: %r' % value
-        w('Content-Disposition: form-data; name="%s"' % name)
+        wt('Content-Disposition: form-data; name="%s"' % name)
         filename = None
         if getattr(value, 'filename', None):
             filename = value.filename
@@ -1313,7 +1330,7 @@ def _encode_multipart(vars, content_type):
             if hasattr(value, 'read'):
                 value = value.read()
         if filename is not None:
-            w('; filename="%s"' % filename)
+            wt('; filename="%s"' % filename)
         w(CRLF)
         # TODO: should handle value.disposition_options
         if getattr(value, 'type', None):
@@ -1324,9 +1341,9 @@ def _encode_multipart(vars, content_type):
             w(CRLF)
         w(CRLF)
         if hasattr(value, 'value'):
-            w(value.value)
+            wt(value.value)
         else:
-            w(value)
+            wt(value)
         w(CRLF)
     w('--%s--' % boundary)
     return content_type, f.getvalue()

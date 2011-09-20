@@ -168,44 +168,6 @@ class MultiDictTestCase(BaseDictTests, unittest.TestCase):
         d = self._get_instance(password='pwd')
         self.assertEqual(repr(d), "MultiDict([('password', '******')])")
 
-class UnicodeMultiDictTestCase(BaseDictTests, unittest.TestCase):
-    klass = multidict.UnicodeMultiDict
-
-    def test_decode_key(self):
-        d = self._get_instance()
-        d.decode_keys = True
-
-        class Key(object):
-            pass
-
-        key = Key()
-        self.assertEquals(key, d._decode_key(key))
-
-    def test_decode_value(self):
-        import cgi
-
-        d = self._get_instance()
-        d.decode_keys = True
-
-        env = {'QUERY_STRING': ''}
-        fs = cgi.FieldStorage(environ=env)
-        fs.name = 'a'
-        self.assertEqual(d._decode_value(fs).name, 'a')
-
-    def test_encode_key(self):
-        d = self._get_instance()
-        value = unicode('a')
-        d.decode_keys = True
-        self.assertEquals(d._encode_key(value),'a')
-
-    def test_encode_value(self):
-        d = self._get_instance()
-        value = unicode('a')
-        self.assertEquals(d._encode_value(value),'a')
-
-    def test_repr_with_password(self):
-        d = self._get_instance(password='pwd')
-        self.assertEqual(repr(d), "UnicodeMultiDict([(u'password', '******')])")
 
 class NestedMultiDictTestCase(BaseDictTests, unittest.TestCase):
     klass = multidict.NestedMultiDict
@@ -267,7 +229,7 @@ class NestedMultiDictTestCase(BaseDictTests, unittest.TestCase):
         assert not d
 
 class TrackableMultiDict(BaseDictTests, unittest.TestCase):
-    klass = multidict.TrackableMultiDict
+    klass = multidict.GetDict
 
     def _get_instance(self, **kwargs):
         if kwargs:
@@ -275,7 +237,7 @@ class TrackableMultiDict(BaseDictTests, unittest.TestCase):
         else:
             data = self.data.copy()
         def tracker(*args, **kwargs): pass
-        return self.klass(data, __tracker=tracker, __name='tracker')
+        return self.klass(data, tracker)
 
     def test_inititems(self):
         #The first argument passed into the __init__ method
@@ -285,7 +247,7 @@ class TrackableMultiDict(BaseDictTests, unittest.TestCase):
 
         d = self._get_instance()
         d._items = None
-        d.__init__(Arg())
+        d.__init__(Arg(), lambda:None)
         self.assertEquals(self.d._items, self._list)
 
     def test_nullextend(self):
@@ -338,7 +300,7 @@ class TrackableMultiDict(BaseDictTests, unittest.TestCase):
 
     def test_repr_with_password(self):
         d = self._get_instance(password='pwd')
-        self.assertEqual(repr(d), "tracker([('password', '******')])")
+        self.assertEqual(repr(d), "GET([('password', '******')])")
 
 class NoVarsTestCase(unittest.TestCase):
     klass = multidict.NoVars
