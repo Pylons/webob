@@ -10,7 +10,7 @@ from webob.etag import etag_property, AnyETag, NoETag, IfRange
 
 from webob.descriptors import *
 from webob.datetime_utils import *
-from webob.cookies import Cookie
+from webob.cookies import Cookie, parse_cookie
 from webob.util import warn_deprecation
 
 __all__ = ['BaseRequest', 'Request']
@@ -614,23 +614,11 @@ class BaseRequest(object):
         """
         A dictionary of cookies as found in the request.
         """
-        env = self.environ
-        source = env.get('HTTP_COOKIE', '')
-        if 'webob._parsed_cookies' in env:
-            vars, var_source = env['webob._parsed_cookies']
-            if var_source == source:
-                return vars
-
+        data = self.environ.get('HTTP_COOKIE', '')
         encoding = self.charset
         errors = self.unicode_errors
         d = lambda b: b.decode(encoding, errors)
-
-        r = {}
-        if source:
-            cookies = Cookie(source)
-            for name in cookies:
-                r[d(name)] = d(cookies[name].value)
-        env['webob._parsed_cookies'] = (r, source)
+        r = dict((d(k), d(v)) for k,v in parse_cookie(data))
         return r
 
 

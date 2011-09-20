@@ -43,6 +43,16 @@ class Cookie(dict):
                                ', '.join(map(repr, self.values())))
 
 
+def parse_cookie(data):
+    """
+    Parse cookies ignoring anything except names and values
+    """
+    for key, val in _rx_cookie.findall(data):
+        if key.lower() in _c_keys or not _valid_cookie_name(key):
+            continue
+        yield key, _unquote(val)
+
+
 def cookie_property(key, serialize=lambda v: v):
     def fset(self, v):
         self[key] = serialize(v)
@@ -126,7 +136,11 @@ def _valid_cookie_name(key):
         key = key.encode('ascii')
     except UnicodeError:
         return False
-    return not needs_quoting(key)
+    return not (needs_quoting(key)
+        or key.startswith('$')
+        or key in _c_keys
+    )
+
 
 _c_renames = {
     "path" : "Path",
