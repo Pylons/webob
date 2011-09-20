@@ -18,9 +18,10 @@ class DecoratorTests(unittest.TestCase):
         resp_str = 'hey, this is a test: %s'
         @wsgify
         def test_app(req):
-            return resp_str % req.url
+            return bytes_(resp_str % req.url)
         resp = self._testit(test_app, '/a url')
-        self.assertEqual(resp.body, resp_str % 'http://localhost/a%20url')
+        self.assertEqual(resp.body,
+                         bytes_(resp_str % 'http://localhost/a%20url'))
         self.assertEqual(resp.content_length, 45)
         self.assertEqual(resp.content_type, 'text/html')
         self.assertEqual(resp.charset, 'UTF-8')
@@ -43,7 +44,7 @@ class DecoratorTests(unittest.TestCase):
                          "wsgify(tests.test_dec.test_app, args=('%s',))" % resp_str)
 
     def test_wsgify_kwargs(self):
-        resp_str = 'hey hey my my'
+        resp_str = b'hey hey my my'
         @wsgify(kwargs=dict(strarg=resp_str))
         def test_app(req, strarg=''):
             return strarg
@@ -62,7 +63,7 @@ class DecoratorTests(unittest.TestCase):
         def test_app(req):
             raise HTTPBadRequest
         resp = self._testit(test_app, '/a url')
-        self.assert_(resp.body.startswith('400 Bad Request'))
+        self.assert_(resp.body.startswith(b'400 Bad Request'))
         self.assertEqual(resp.content_type, 'text/plain')
         self.assertEqual(resp.charset, 'UTF-8')
         self.assertEqual('%r' % test_app,
@@ -76,7 +77,7 @@ class DecoratorTests(unittest.TestCase):
                 return 'nothing to see here'
         test_app = wsgify(TestApp())
         resp = self._testit(test_app, '/a url')
-        self.assertEqual(resp.body, 'nothing to see here')
+        self.assertEqual(resp.body, b'nothing to see here')
         self.assert_(test_app.__get__(test_app) is test_app)
 
     def test_wsgify_args_no_func(self):
@@ -96,7 +97,7 @@ class DecoratorTests(unittest.TestCase):
         def test_app(req):
             return
         resp = self._testit(test_app, '/a url')
-        self.assertEqual(resp.body, '')
+        self.assertEqual(resp.body, b'')
         self.assertEqual(resp.content_type, 'text/html')
         self.assertEqual(resp.content_length, 0)
 
@@ -120,7 +121,7 @@ class DecoratorTests(unittest.TestCase):
                                                        post_dict['words'])))
 
     def test_wsgify_request_method(self):
-        resp_str = 'Nice body!'
+        resp_str = b'Nice body!'
         @wsgify
         def test_app(req):
             self.assertEqual(req.method, 'PUT')
@@ -143,9 +144,10 @@ class DecoratorTests(unittest.TestCase):
             pass
         @wsgify(RequestClass=MyRequest)
         def test_app(req):
-            return resp_str % req.url
+            return bytes_(resp_str % req.url)
         resp = self._testit(test_app, '/a url')
-        self.assertEqual(resp.body, resp_str % 'http://localhost/a%20url')
+        self.assertEqual(resp.body,
+                         bytes_(resp_str % 'http://localhost/a%20url'))
         self.assertEqual(resp.content_length, 45)
         self.assertEqual(resp.content_type, 'text/html')
         self.assertEqual(resp.charset, 'UTF-8')
@@ -214,7 +216,7 @@ class DecoratorTests(unittest.TestCase):
         self.assertEqual(resp.content_type, 'text/html')
         self.assertEqual(resp.charset, 'UTF-8')
         self.assertEqual(resp.content_length, 1)
-        self.assertEqual(resp.body, '1')
+        self.assertEqual(resp.body, b'1')
 
     def test__func_name(self):
         def func():

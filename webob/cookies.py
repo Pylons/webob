@@ -179,8 +179,8 @@ _escape_noop_chars = _no_escape_chars + ': '
 # this is a map used to escape the values
 _escape_map = dict((chr(i), '\\%03o' % i) for i in range(256))
 _escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
-_escape_map[b'"'] = r'\"'
-_escape_map[b'\\'] = r'\\'
+_escape_map['"'] = r'\"'
+_escape_map['\\'] = r'\\'
 _escape_char = _escape_map.__getitem__
 
 weekdays = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')

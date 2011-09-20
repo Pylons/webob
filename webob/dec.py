@@ -351,7 +351,7 @@ def _format_args(args=(), kw=None, leading_comma=False, obj=None, names=None,
     if names is not None:
         assert obj is not None
         kw = {}
-        if isinstance(names, basestring):
+        if isinstance(names, text_type):
             names = names.split()
         for name in names:
             kw[name] = getattr(obj, name)

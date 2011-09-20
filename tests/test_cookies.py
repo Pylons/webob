@@ -2,6 +2,7 @@
 from datetime import timedelta
 from webob import cookies
 from nose.tools import eq_
+from webob.compat import bytes_
 
 def test_cookie_empty():
     c = cookies.Cookie() # empty cookie
@@ -82,16 +83,16 @@ def test_ch_unquote():
     eq_(cookies._unquote('"hello world'), '"hello world')
     eq_(cookies._unquote('hello world'), 'hello world')
     eq_(cookies._unquote('"hello world"'), 'hello world')
-    eq_(cookies._quote('hello world'), '"hello world"')
+    eq_(cookies._quote(b'hello world'), b'"hello world"')
     # quotation mark is escaped w/ backslash
     eq_(cookies._unquote(r'"\""'), '"')
-    eq_(cookies._quote('"'), r'"\""')
+    eq_(cookies._quote(b'"'), bytes_(r'"\""'))
     # misc byte escaped as octal
     eq_(cookies._unquote(r'"\377"'), '\xff')
-    eq_(cookies._quote('\xff'), r'"\377"')
+    eq_(cookies._quote(b'\xff'), bytes_(r'"\377"'))
     # combination
     eq_(cookies._unquote(r'"a\"\377"'), 'a"\xff')
-    eq_(cookies._quote('a"\xff'), r'"a\"\377"')
+    eq_(cookies._quote(b'a"\xff'), bytes_(r'"a\"\377"'))
 
 def test_cookie_setitem_needs_quoting():
     c = cookies.Cookie()
