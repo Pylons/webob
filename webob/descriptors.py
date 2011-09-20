@@ -290,6 +290,6 @@ def serialize_auth(val):
         authtype, params = val
         if isinstance(params, dict):
             params = ', '.join(map('%s="%s"'.__mod__, params.items()))
-        assert isinstance(params, text_type)
+        assert isinstance(params, str)
         return '%s %s' % (authtype, params)
     return val

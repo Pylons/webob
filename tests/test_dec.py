@@ -5,11 +5,10 @@ from webob.dec import _format_args
 from webob.dec import _func_name
 from webob.dec import wsgify
 from webob.compat import bytes_
-from webob.compat import text_type
 
 class DecoratorTests(unittest.TestCase):
     def _testit(self, app, req):
-        if isinstance(req, text_type):
+        if isinstance(req, str):
             req = Request.blank(req)
         resp = req.get_response(app)
         return resp

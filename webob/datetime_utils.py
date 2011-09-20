@@ -71,8 +71,8 @@ def parse_date(value):
 
 def serialize_date(dt):
     if isinstance(dt, binary_type):
-        dt = text_(dt)
-    if isinstance(dt, text_type):
+        dt = str(dt)
+    if isinstance(dt, str):
         return dt
     if isinstance(dt, timedelta):
         dt = _now() + dt
