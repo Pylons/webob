@@ -169,45 +169,6 @@ class MultiDictTestCase(BaseDictTests, unittest.TestCase):
         d = self._get_instance(password='pwd')
         self.assertEqual(repr(d), "MultiDict([('password', '******')])")
 
-class UnicodeMultiDictTestCase(BaseDictTests, unittest.TestCase):
-    klass = multidict.UnicodeMultiDict
-
-    def test_decode_key(self):
-        d = self._get_instance()
-        d.decode_keys = True
-
-        class Key(object):
-            pass
-
-        key = Key()
-        self.assertEqual(key, d._decode_key(key))
-
-    def test_decode_value(self):
-        import cgi
-
-        d = self._get_instance()
-        d.decode_keys = True
-
-        env = {'QUERY_STRING': ''}
-        fs = cgi.FieldStorage(environ=env)
-        fs.name = 'a'
-        self.assertEqual(d._decode_value(fs).name, 'a')
-
-    def test_encode_key(self):
-        d = self._get_instance()
-        value = text_('a')
-        d.decode_keys = True
-        self.assertEqual(d._encode_key(value), b'a')
-
-    def test_encode_value(self):
-        d = self._get_instance()
-        value = text_('a')
-        self.assertEqual(d._encode_value(value), b'a')
-
-    def test_repr_with_password(self):
-        d = self._get_instance(password='pwd')
-        self.assertEqual(repr(d), "UnicodeMultiDict([('password', '******')])")
-
 class NestedMultiDictTestCase(BaseDictTests, unittest.TestCase):
     klass = multidict.NestedMultiDict
 

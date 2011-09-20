@@ -1,7 +1,5 @@
-import cgi
 from webob import html_escape
 from webob.multidict import MultiDict
-from webob.multidict import UnicodeMultiDict
 from nose.tools import eq_ as eq, assert_raises
 from webob.compat import text_
 
@@ -129,16 +127,4 @@ def test_multidict_init():
     assert_raises(TypeError, MultiDict.view_list, None)
 
 
-
-def test_multidict_cgi():
-    env = {'QUERY_STRING': ''}
-    fs = cgi.FieldStorage(environ=env)
-    fs.filename = '\xc3\xb8'
-    plain = MultiDict(key='\xc3\xb8', fs=fs)
-    ua = UnicodeMultiDict(multi=plain, encoding='utf-8')
-    eq(list(ua.getall('key')), [text_(b'\xf8')])
-    eq(repr(ua.getall('fs')), "[FieldStorage(None, u'\\xf8', [])]")
-    ub = UnicodeMultiDict(multi=ua, encoding='utf-8')
-    eq(ub.getall('key'), [text_(b'\xf8')])
-    eq(repr(ub.getall('fs')), "[FieldStorage(None, u'\\xf8', [])]")
 
