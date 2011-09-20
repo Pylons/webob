@@ -26,7 +26,7 @@ class Response(object):
 
     default_content_type = 'text/html'
     default_charset = 'UTF-8' # TODO: deprecate
-    unicode_errors = 'strict'
+    unicode_errors = 'strict' # TODO: deprecate (why would response body have errors?)
     default_conditional_response = False
 
     # TODO: remove in 1.4
