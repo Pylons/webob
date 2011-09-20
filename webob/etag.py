@@ -17,8 +17,6 @@ def etag_property(key, default, rfc_section):
         value = req.environ.get(key)
         if not value:
             return default
-        elif value == '*':
-            return AnyETag
         else:
             return ETagMatcher.parse(value)
     def fset(req, val):
@@ -106,6 +104,8 @@ class ETagMatcher(object):
         """
         Parse this from a header value
         """
+        if value == '*':
+            return AnyETag
         results = []
         weak_results = []
         while value:
