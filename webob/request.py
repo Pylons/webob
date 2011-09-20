@@ -10,7 +10,7 @@ from webob.etag import etag_property, AnyETag, NoETag, IfRange
 
 from webob.descriptors import *
 from webob.datetime_utils import *
-from webob.cookies import Cookie, parse_cookie
+from webob.cookies import parse_cookie
 from webob.util import warn_deprecation
 
 __all__ = ['BaseRequest', 'Request']
@@ -203,13 +203,9 @@ class BaseRequest(object):
         cached_ctype, cached_charset = self._charset_cache
         if cached_ctype == content_type:
             return cached_charset
-        charset_match = CHARSET_RE.search(content_type)
-        if charset_match:
-            result = charset_match.group(1).strip('"').strip()
-        else:
-            result = 'UTF-8'
-        self._charset_cache = (content_type, result)
-        return result
+        r = detect_charset(content_type) or 'UTF-8'
+        self._charset_cache = (content_type, r)
+        return r
     def _charset__set(self, charset):
         if charset is None or charset == '':
             del self.charset
@@ -1280,8 +1276,6 @@ class FakeCGIBody(io.RawIOBase):
                 data = _encode_multipart(
                     self.vars.iteritems(),
                     self.content_type,
-                    self.encoding,
-                    self.errors
                 )[1]
             else:
                 assert 0, ('Bad content type: %r' % self.content_type)
@@ -1295,11 +1289,11 @@ def _get_multipart_boundary(ctype):
         return m.group(1).strip('"')
 
 
-def _encode_multipart(vars, content_type, encoding='utf8', errors='error'):
+def _encode_multipart(vars, content_type, fout=None):
     """Encode a multipart request body into a string"""
-    f = BytesIO()
+    f = fout or BytesIO()
     w = f.write
-    wt = lambda t: f.write(t.encode(encoding, errors))
+    wt = lambda t: f.write(t.encode('utf8'))
     CRLF = '\r\n'
     boundary = _get_multipart_boundary(content_type)
     if not boundary:
@@ -1329,12 +1323,22 @@ def _encode_multipart(vars, content_type, encoding='utf8', errors='error'):
             w(CRLF)
         w(CRLF)
         if hasattr(value, 'value'):
-            wt(value.value)
+            value = value.value
+        if isinstance(value, str):
+            w(value)
         else:
             wt(value)
         w(CRLF)
     w('--%s--' % boundary)
-    return content_type, f.getvalue()
+    if fout:
+        return content_type, fout
+    else:
+        return content_type, f.getvalue()
+
+def detect_charset(ctype):
+    m = CHARSET_RE.search(ctype)
+    if m:
+        return m.group(1).strip('"').strip()
 
 
 # TODO: remove in 1.4
