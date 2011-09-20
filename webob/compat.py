@@ -15,12 +15,16 @@ if PY3:
     text_type = str
     binary_type = bytes
     long = int
+    def ords_(b):
+        return b
 else:
     string_types = basestring,
     integer_types = (int, long)
     class_types = (type, types.ClassType)
     text_type = unicode
     binary_type = str
+    def ords_(s):
+        return [ord(x) for x in s]
 
 def text_(s, encoding='latin-1'):
     if isinstance(s, binary_type):

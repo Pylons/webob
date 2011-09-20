@@ -617,7 +617,7 @@ def test_set_cookie_value_is_unicode():
     res = Response()
     val = text_(b'La Pe\xc3\xb1a', 'utf-8')
     res.set_cookie('a', val)
-    eq_(res.headerlist[-1], (r'Set-Cookie', 'a="La Pe\\303\\261a"; Path=/'))
+    eq_(res.headerlist[-1], ('Set-Cookie', 'a="La Pe\\303\\261a"; Path=/'))
 
 def test_delete_cookie():
     res = Response()

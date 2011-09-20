@@ -6,6 +6,9 @@ from datetime import date
 from datetime import timedelta
 
 from webob.compat import binary_type
+from webob.compat import bytes_
+from webob.compat import text_
+from webob.compat import ords_
 
 __all__ = ['Cookie']
 
@@ -78,9 +81,6 @@ class Morsel(dict):
         assert name.lower() not in _c_keys
         assert _valid_cookie_name(name)
         self.name = name
-        # we can encode the unicode value as UTF-8 here,
-        # but then the decoded cookie would still be str,
-        # so we don't do that
         self.value = value
         self.update(dict.fromkeys(_c_keys, None))
 
@@ -100,20 +100,20 @@ class Morsel(dict):
     def serialize(self, full=True):
         result = []
         add = result.append
-        add("%s=%s" % (self.name, _quote(self.value)))
+        add(bytes_(self.name) + b'=' + _quote(bytes_(self.value, 'utf-8')))
         if full:
             for k in _c_valkeys:
                 v = self[k]
                 if v:
-                    add("%s=%s" % (_c_renames[k], _quote(v)))
+                    add(bytes_(_c_renames[k]) + b'='+_quote(bytes_(v, 'utf-8')))
             expires = self['expires']
             if expires:
-                add("expires=%s" % expires)
+                add(b'expires=' + bytes_(expires))
             if self.secure:
-                add('secure')
+                add(b'secure')
             if self.httponly:
-                add('HttpOnly')
-        return '; '.join(result)
+                add(b'HttpOnly')
+        return text_(b'; '.join(result), 'utf-8')
 
     __str__ = serialize
 
@@ -173,13 +173,14 @@ def _unquote(v):
 _no_escape_special_chars = "!#$%&'*+-.^_`|~/"
 _no_escape_chars = (string.ascii_letters + string.digits + 
                     _no_escape_special_chars)
+_no_escape_bytes = bytes_(_no_escape_chars)
 # these chars never need to be quoted
 _escape_noop_chars = _no_escape_chars + ': '
 # this is a map used to escape the values
 _escape_map = dict((chr(i), '\\%03o' % i) for i in range(256))
 _escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
-_escape_map['"'] = r'\"'
-_escape_map['\\'] = r'\\'
+_escape_map[b'"'] = r'\"'
+_escape_map[b'\\'] = r'\\'
 _escape_char = _escape_map.__getitem__
 
 weekdays = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
@@ -190,18 +191,22 @@ _notrans_unicode = {}
 for k in _no_escape_chars:
     _notrans_unicode[ord(k)] = None
 
-_notrans_binary = ' '*256
+_notrans_binary = b' '*256
 
-def needs_quoting(v):
+def _needs_quoting(v):
     if isinstance(v, binary_type):
-        return v.translate(_notrans_binary, _no_escape_chars)
+        return v.translate(_notrans_binary, _no_escape_bytes)
     return v.translate(_notrans_unicode)
 
 def _quote(v):
-    if needs_quoting(v):
-        return '"' + ''.join(map(_escape_char, v)) + '"'
+    if _needs_quoting(v):
+        result = []
+        for ord in ords_(v):
+            escaped = _escape_char(chr(ord))
+            result.append(bytes_(escaped))
+        return b'"' + b''.join(result) + b'"'
     return v
 
 def _valid_cookie_name(key):
-    return not needs_quoting(key)
+    return not _needs_quoting(key)
 

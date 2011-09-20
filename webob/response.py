@@ -19,6 +19,7 @@ from webob.compat import url_quote
 from webob.compat import md5
 from webob.compat import next
 from webob.compat import PY3
+from webob.compat import bytes_
 from webob.datetime_utils import parse_date_delta
 from webob.datetime_utils import serialize_date_delta
 from webob.datetime_utils import timedelta_to_seconds
@@ -657,9 +658,6 @@ class Response(object):
             expires = datetime.utcnow() + max_age
         elif max_age is None and expires is not None:
             max_age = expires - datetime.utcnow()
-
-        if not PY3 and isinstance(value, text_type):
-            value = value.encode('utf-8')
 
         m = Morsel(key, value)
         m.path = path
