@@ -16,10 +16,12 @@ def html_escape(s):
     """
     if s is None:
         return ''
-    if hasattr(s, '__html__'):
+    __html__ = getattr(s, '__html__', None)
+    if __html__ is not None and callable(__html__):
         return s.__html__()
     if not isinstance(s, string_types):
-        if hasattr(s, '__unicode__'):
+        __unicode__ = getattr(s, '__unicode__', None)
+        if __unicode__ is not None and callable(__unicode__):
             s = s.__unicode__()
         else:
             s = str(s)

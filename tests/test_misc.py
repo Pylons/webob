@@ -37,7 +37,6 @@ def test_html_escape():
     ]:
         eq(html_escape(v), s)
 
-
 class t_esc_HTML(object):
     def __html__(self):
         return '<div>hello</div>'
@@ -49,7 +48,7 @@ class t_esc_Unicode(object):
 
 class t_esc_UnsafeAttrs(object):
     attr = 'value'
-    def __getattr__(self):
+    def __getattr__(self, k):
         return self.attr
     def __repr__(self):
         return '<UnsafeAttrs>'
