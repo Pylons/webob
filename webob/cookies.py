@@ -13,22 +13,20 @@ class Cookie(dict):
             self.load(input)
 
     def load(self, data):
-        ckey = None
-        for key, val in _rx_cookie.findall(data):
+        morsel = {}
+        for key, val in _parse_cookie(data):
             if key.lower() in _c_keys:
-                if ckey:
-                    self[ckey][key] = _unquote(val)
-            elif key[0] == '$':
-                # RFC2109: NAMEs that begin with $ are reserved for other uses
-                # and must not be used by applications.
-                continue
+                morsel[key] = val
             else:
-                self[key] = _unquote(val)
-                ckey = key
+                morsel = self.add(key, val)
 
-    def __setitem__(self, key, val):
-        if _valid_cookie_name(key):
-            dict.__setitem__(self, key, Morsel(key, val))
+    def add(self, key, val):
+        if not _valid_cookie_name(key):
+            return {}
+        r = Morsel(key, val)
+        dict.__setitem__(self, key, r)
+        return r
+    __setitem__ = add
 
     def serialize(self, full=True):
         return '; '.join(m.serialize(full) for m in self.values())
@@ -43,14 +41,15 @@ class Cookie(dict):
                                ', '.join(map(repr, self.values())))
 
 
+def _parse_cookie(data):
+    for key, val in _rx_cookie.findall(data):
+        yield key, _unquote(val)
+
 def parse_cookie(data):
     """
     Parse cookies ignoring anything except names and values
     """
-    for key, val in _rx_cookie.findall(data):
-        if key.lower() in _c_keys or not _valid_cookie_name(key):
-            continue
-        yield key, _unquote(val)
+    return ((k,v) for k,v in _parse_cookie(data) if _valid_cookie_name(k))
 
 
 def cookie_property(key, serialize=lambda v: v):
@@ -137,8 +136,10 @@ def _valid_cookie_name(key):
     except UnicodeError:
         return False
     return not (needs_quoting(key)
+        # RFC2109: NAMEs that begin with $ are reserved for other uses
+        # and must not be used by applications.
         or key.startswith('$')
-        or key in _c_keys
+        or key.lower() in _c_keys
     )
 
 
@@ -217,3 +218,4 @@ def _quote(v):
     if needs_quoting(v):
         return '"' + ''.join(map(_escape_char, v)) + '"'
     return v
+
