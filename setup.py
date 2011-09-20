@@ -45,5 +45,5 @@ You may install the `in-development version of WebOb
     packages=['webob'],
     zip_safe=True,
     test_suite='nose.collector',
-    tests_require=['nose', 'WebTest'],
+    tests_require=['nose'],
 )

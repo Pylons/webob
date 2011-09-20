@@ -1453,45 +1453,67 @@ class BaseRequestTests(unittest.TestCase):
 class RequestTests_functional(unittest.TestCase):
 
     def test_gets(self):
-        from webtest import TestApp
-        app = TestApp(simpleapp)
-        res = app.get('/')
-        self.assert_('Hello' in res)
-        self.assert_("MultiDict([])" in res)
-        self.assert_("post is <NoVars: Not a form request>" in res)
+        request = Request.blank('/')
+        status, headerlist, app_iter = request.call_application(simpleapp)
+        self.assertEqual(status, '200 OK')
+        res = b''.join(app_iter)
+        self.assert_(b'Hello' in res)
+        self.assert_(b"MultiDict([])" in res)
+        self.assert_(b"post is <NoVars: Not a form request>" in res)
 
-        res = app.get('/?name=george')
-        res.mustcontain("MultiDict",
-                        "'name'",
-                        "'george'")
-        res.mustcontain("Val is ",
-                        "'george'")
+    def test_gets_with_query_string(self):
+        request = Request.blank('/?name=george')
+        status, headerlist, app_iter = request.call_application(simpleapp)
+        res = b''.join(app_iter)
+        self.assert_(b"MultiDict" in res)
+        self.assert_(b"'name'" in res)
+        self.assert_(b"'george'" in res)
+        self.assert_(b"Val is " in res)
 
-    def test_language_parsing(self):
-        from webtest import TestApp
-        app = TestApp(simpleapp)
-        res = app.get('/')
-        self.assert_("The languages are: ['en-US']" in res)
+    def test_language_parsing1(self):
+        request = Request.blank('/')
+        status, headerlist, app_iter = request.call_application(simpleapp)
+        res = b''.join(app_iter)
+        self.assert_(b"The languages are: ['en-US']" in res)
 
-        res = app.get('/',
-                      headers={'Accept-Language': 'da, en-gb;q=0.8, en;q=0.7'})
-        self.assert_("languages are: ['da', 'en-gb', 'en-US']" in res)
+    def test_language_parsing2(self):
+        request = Request.blank(
+            '/', headers={'Accept-Language': 'da, en-gb;q=0.8, en;q=0.7'})
+        status, headerlist, app_iter = request.call_application(simpleapp)
+        res = b''.join(app_iter)
+        self.assert_(b"languages are: ['da', 'en-gb', 'en-US']" in res)
 
-        res = app.get('/',
-                      headers={'Accept-Language': 'en-gb;q=0.8, da, en;q=0.7'})
-        self.assert_("languages are: ['da', 'en-gb', 'en-US']" in res)
+    def test_language_parsing3(self):
+        request = Request.blank(
+            '/',
+            headers={'Accept-Language': 'en-gb;q=0.8, da, en;q=0.7'})
+        status, headerlist, app_iter = request.call_application(simpleapp)
+        res = b''.join(app_iter)
+        self.assert_(b"languages are: ['da', 'en-gb', 'en-US']" in res)
 
-    def test_mime_parsing(self):
-        from webtest import TestApp
-        app = TestApp(simpleapp)
-        res = app.get('/', headers={'Accept':'text/html'})
-        self.assert_("accepttypes is: text/html" in res)
+    def test_mime_parsing1(self):
+        request = Request.blank(
+            '/',
+            headers={'Accept':'text/html'})
+        status, headerlist, app_iter = request.call_application(simpleapp)
+        res = b''.join(app_iter)
+        self.assert_(b"accepttypes is: text/html" in res)
 
-        res = app.get('/', headers={'Accept':'application/xml'})
-        self.assert_("accepttypes is: application/xml" in res)
+    def test_mime_parsing2(self):
+        request = Request.blank(
+            '/',
+            headers={'Accept':'application/xml'})
+        status, headerlist, app_iter = request.call_application(simpleapp)
+        res = b''.join(app_iter)
+        self.assert_(b"accepttypes is: application/xml" in res)
 
-        res = app.get('/', headers={'Accept':'application/xml,*/*'})
-        self.assert_("accepttypes is: application/xml" in res)
+    def test_mime_parsing3(self):
+        request = Request.blank(
+            '/',
+            headers={'Accept':'application/xml,*/*'})
+        status, headerlist, app_iter = request.call_application(simpleapp)
+        res = b''.join(app_iter)
+        self.assert_(b"accepttypes is: application/xml" in res)
 
     def test_accept_best_match(self):
         accept = Request.blank('/').accept
@@ -1558,8 +1580,6 @@ class RequestTests_functional(unittest.TestCase):
             self.assertEqual(req.accept.best_match(offered), get)
 
     def test_headers(self):
-        from webtest import TestApp
-        app = TestApp(simpleapp)
         headers = {
             'If-Modified-Since': 'Sat, 29 Oct 1994 19:43:31 GMT',
             'Cookie': 'var1=value1',
@@ -1567,8 +1587,10 @@ class RequestTests_functional(unittest.TestCase):
             'If-None-Match': '"etag001", "etag002"',
             'X-Requested-With': 'XMLHttpRequest',
             }
-        res = app.get('/?foo=bar&baz', headers=headers)
-        res.mustcontain(
+        request = Request.blank('/?foo=bar&baz', headers=headers)
+        status, headerlist, app_iter = request.call_application(simpleapp)
+        res = b''.join(app_iter)
+        for thing in (
             'if_modified_since: ' +
                 'datetime.datetime(1994, 10, 29, 19, 43, 31, tzinfo=UTC)',
             "user_agent: 'Mozilla",
@@ -1581,7 +1603,8 @@ class RequestTests_functional(unittest.TestCase):
             'bar',
             'baz',
             'if_none_match: <ETag etag001 or etag002>',
-            )
+            ):
+            self.assert_(bytes_(thing) in res)
 
     def test_bad_cookie(self):
         req = Request.blank('/')
