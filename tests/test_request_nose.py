@@ -1,6 +1,7 @@
 import webob
 from webob import Request
 from nose.tools import eq_ as eq, assert_raises
+from webob.compat import bytes_
 
 def test_request_no_method():
     assert Request({}).method == 'GET'
@@ -127,5 +128,5 @@ def test_disconnect_detection_hinted_readline():
     req.is_body_seekable = False
     line = req.body_file.readline(1<<16)
     assert line
-    assert data.startswith(line)
+    assert bytes_(data).startswith(line)
 
