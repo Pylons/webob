@@ -72,4 +72,5 @@ def _transcode_env(env, charset, errors='strict'):
     r['CONTENT_TYPE'] = content_type + '; charset="UTF-8"'
     r['CONTENT_LENGTH'] = content_length
     r['wsgi.input'] = fout
+    r['webob.is_body_seekable'] = True
     return r
