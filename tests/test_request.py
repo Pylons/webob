@@ -948,14 +948,13 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(result, {})
 
     def test_GET_updates_query_string(self):
-        environ = {
-        }
-        req = BaseRequest(environ)
+        req = BaseRequest({})
         result = req.query_string
         self.assertEqual(result, '')
         req.GET['foo'] = '123'
         result = req.query_string
         self.assertEqual(result, 'foo=123')
+        print req.GET
         del req.GET['foo']
         result = req.query_string
         self.assertEqual(result, '')
@@ -2032,7 +2031,7 @@ class RequestTests_functional(unittest.TestCase):
         req = Request.blank('/test?check=a&check=b&name=Bob')
         GET = GetDict([('check', 'a'),
                       ('check', 'b'),
-                      ('name', 'Bob')], lambda:None)
+                      ('name', 'Bob')], {})
         self.assertEqual(req.GET, GET)
         self.assertEqual(req.GET['check'], 'b')
         self.assertEqual(req.GET.getall('check'), ['a', 'b'])
@@ -2075,7 +2074,7 @@ class RequestTests_functional(unittest.TestCase):
         req.environ['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
         GET = GetDict([('check', 'a'),
                       ('check', 'b'),
-                      ('name', 'Bob')], lambda: None)
+                      ('name', 'Bob')], {})
         self.assertEqual(req.GET, GET)
         self.assertEqual(req.POST, MultiDict(
                                 [('var1', 'value1'),

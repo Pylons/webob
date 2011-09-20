@@ -5,7 +5,7 @@ from webob import multidict
 
 class BaseDictTests(object):
     def setUp(self):
-        self._list = [('a', u'\xe9'), ('a', 'e'), ('a', 'f'), ('b', 1)]
+        self._list = [('a', u'\xe9'), ('a', 'e'), ('a', 'f'), ('b', '1')]
         self.data = multidict.MultiDict(self._list)
         self.d = self._get_instance()
 
@@ -20,7 +20,7 @@ class BaseDictTests(object):
         self.assertEqual(len(self.d), 4)
 
     def test_getone(self):
-        self.assertEqual(self.d.getone('b'),  1)
+        self.assertEqual(self.d.getone('b'),  '1')
 
     def test_getone_missing(self):
         self.assertRaises(KeyError, self.d.getone, 'z')
@@ -29,21 +29,21 @@ class BaseDictTests(object):
         self.assertRaises(KeyError, self.d.getone, 'a')
 
     def test_getall(self):
-        self.assertEqual(self.d.getall('b'), [1])
+        self.assertEqual(self.d.getall('b'), ['1'])
 
     def test_dict_of_lists(self):
         self.assertEqual(
             self.d.dict_of_lists(),
-            {'a': [u'\xe9', u'e', u'f'], 'b': [1]})
+            {'a': [u'\xe9', u'e', u'f'], 'b': ['1']})
 
     def test_dict_api(self):
         self.assertTrue('a' in self.d.mixed())
         self.assertTrue('a' in self.d.keys())
         self.assertTrue('a' in self.d.iterkeys())
-        self.assertTrue(('b', 1) in self.d.items())
-        self.assertTrue(('b', 1) in self.d.iteritems())
-        self.assertTrue(1 in self.d.values())
-        self.assertTrue(1 in self.d.itervalues())
+        self.assertTrue(('b', '1') in self.d.items())
+        self.assertTrue(('b', '1') in self.d.iteritems())
+        self.assertTrue('1' in self.d.values())
+        self.assertTrue('1' in self.d.itervalues())
         self.assertEqual(len(self.d), 4)
 
     def test_set_del_item(self):
@@ -54,13 +54,13 @@ class BaseDictTests(object):
 
     def test_pop(self):
         d = self._get_instance()
-        d['a'] = 1
-        self.assertEqual(d.pop('a'), 1)
-        self.assertEqual(d.pop('x', 1), 1)
+        d['a'] = '1'
+        self.assertEqual(d.pop('a'), '1')
+        self.assertEqual(d.pop('x', '1'), '1')
 
     def test_pop_wrong_args(self):
         d = self._get_instance()
-        self.assertRaises(TypeError, d.pop, 'a', 1, 1)
+        self.assertRaises(TypeError, d.pop, 'a', '1', '1')
 
     def test_pop_missing(self):
         d = self._get_instance()
@@ -68,28 +68,28 @@ class BaseDictTests(object):
 
     def test_popitem(self):
         d = self._get_instance()
-        self.assertEqual(d.popitem(), ('b', 1))
+        self.assertEqual(d.popitem(), ('b', '1'))
 
     def test_update(self):
         d = self._get_instance()
-        d.update(e=1)
+        d.update(e='1')
         self.assertTrue('e' in d)
-        d.update(dict(x=1))
+        d.update(dict(x='1'))
         self.assertTrue('x' in d)
-        d.update([('y', 1)])
+        d.update([('y', '1')])
         self.assertTrue('y' in d)
 
     def test_setdefault(self):
         d = self._get_instance()
-        d.setdefault('a', 1)
-        self.assertNotEqual(d['a'], 1)
-        d.setdefault('e', 1)
+        d.setdefault('a', '1')
+        self.assertNotEqual(d['a'], '1')
+        d.setdefault('e', '1')
         self.assertTrue('e' in d)
 
     def test_add(self):
         d = self._get_instance()
-        d.add('b', 3)
-        self.assertEqual(d.getall('b'), [1, 3])
+        d.add('b', '3')
+        self.assertEqual(d.getall('b'), ['1', '3'])
 
     def test_copy(self):
         assert self.d.copy() is not self.d
@@ -113,7 +113,7 @@ class BaseDictTests(object):
 
     def test_too_many_args(self):
         from webob.multidict import MultiDict
-        self.assertRaises(TypeError, MultiDict, 1, 2)
+        self.assertRaises(TypeError, MultiDict, '1', 2)
 
     def test_no_args(self):
         from webob.multidict import MultiDict
@@ -228,7 +228,7 @@ class NestedMultiDictTestCase(BaseDictTests, unittest.TestCase):
         self.assertEqual(d.__nonzero__(), False)
         assert not d
 
-class TrackableMultiDict(BaseDictTests, unittest.TestCase):
+class TestGetDict(BaseDictTests, unittest.TestCase):
     klass = multidict.GetDict
 
     def _get_instance(self, **kwargs):
@@ -236,8 +236,7 @@ class TrackableMultiDict(BaseDictTests, unittest.TestCase):
             data = multidict.MultiDict(kwargs)
         else:
             data = self.data.copy()
-        def tracker(*args, **kwargs): pass
-        return self.klass(data, tracker)
+        return self.klass(data, {})
 
     def test_inititems(self):
         #The first argument passed into the __init__ method

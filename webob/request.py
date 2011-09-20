@@ -527,22 +527,13 @@ class BaseRequest(object):
             if qs == source:
                 return vars
 
-        def _update_get(_vars, key=None, value=None):
-            assert _vars is vars
-            e = lambda t: t.encode('utf8')
-            data = _vars.items()
-            data = [(e(k), e(v)) for k,v in data]
-            qs = urllib.urlencode(data)
-            env['QUERY_STRING'] = qs
-            env['webob._parsed_query_vars'] = (vars, qs)
-
         data = []
         if source:
             data = urlparse.parse_qsl(source, keep_blank_values=True,
                                                     strict_parsing=False)
             d = lambda b: b.decode('utf8')
             data = [(d(k), d(v)) for k,v in data]
-        vars = GetDict(data, _update_get)
+        vars = GetDict(data, env)
         env['webob._parsed_query_vars'] = (vars, source)
         return vars
 
