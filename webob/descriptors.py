@@ -199,8 +199,7 @@ def parse_if_range(value):
 def serialize_if_range(value):
     if isinstance(value, (datetime, date)):
         return serialize_date(value)
-    if not isinstance(value, text_type):
-        value = text_type(value).encode('utf-8')
+    value = str(value)
     return value or None
 
 def parse_range(value):
@@ -254,7 +253,7 @@ def serialize_content_range(value):
         else:
             begin, end, length = value
         value = ContentRange(begin, end, length)
-    value = binary_type(value).strip()
+    value = str(value).strip()
     if not value:
         return None
     return value
@@ -291,6 +290,6 @@ def serialize_auth(val):
         authtype, params = val
         if isinstance(params, dict):
             params = ', '.join(map('%s="%s"'.__mod__, params.items()))
-        assert isinstance(params, binary_type)
+        assert isinstance(params, text_type)
         return '%s %s' % (authtype, params)
     return val

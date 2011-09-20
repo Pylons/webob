@@ -152,7 +152,7 @@ class ETagMatcher(object):
         return cls(results, weak_results)
 
     def __str__(self):
-        items = map('"%s"'.__mod__, self.etags)
+        items = list(map('"%s"'.__mod__, self.etags))
         for weak in self.weak_etags:
             items.append('W/"%s"' % weak)
         return ', '.join(items)
