@@ -46,13 +46,13 @@ class MultiDict(DictMixin):
         return obj
 
     @classmethod
-    def from_fieldstorage(cls, fs, encoding='utf8', errors='strict'):
+    def from_fieldstorage(cls, fs):
         """
         Create a dict from a cgi.FieldStorage instance
         """
         obj = cls()
         # fs.list can be None when there's nothing to parse
-        decode = lambda b: b.decode(encoding, errors)
+        decode = lambda b: b.decode('utf8')
         for field in fs.list or ():
             field.name = decode(field.name)
             if field.filename:

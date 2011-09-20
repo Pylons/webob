@@ -506,11 +506,9 @@ class BaseRequest(object):
         fs = cgi.FieldStorage(fp=self.body_file,
                               environ=fs_environ,
                               keep_blank_values=True)
-        #@@ hardcode
         vars = MultiDict.from_fieldstorage(fs)
         #ctype = self.content_type or 'application/x-www-form-urlencoded'
         ctype = env.get('CONTENT_TYPE', 'application/x-www-form-urlencoded')
-        #@@ hardcode
         f = FakeCGIBody(vars, ctype)
         self.body_file = io.BufferedReader(f)
         env['webob._parsed_post_vars'] = (vars, self.body_file_raw)
@@ -1193,15 +1191,13 @@ def _cgi_FieldStorage__repr__patch(self):
 cgi.FieldStorage.__repr__ = _cgi_FieldStorage__repr__patch
 
 class FakeCGIBody(io.RawIOBase):
-    def __init__(self, vars, content_type, encoding='utf8', errors='strict'):
+    def __init__(self, vars, content_type):
         if content_type.startswith('multipart/form-data'):
             if not _get_multipart_boundary(content_type):
                 raise ValueError('Content-type: %r does not contain boundary'
                             % content_type)
         self.vars = vars
         self.content_type = content_type
-        self.encoding = encoding
-        self.errors = errors
         self.file = None
 
     def __repr__(self):
@@ -1223,14 +1219,16 @@ class FakeCGIBody(io.RawIOBase):
         if self.file is None:
             if self.content_type.startswith('application/x-www-form-urlencoded'):
                 data = urllib.urlencode(self.vars.items())
+                self.file = BytesIO(data)
             elif self.content_type.startswith('multipart/form-data'):
-                data = _encode_multipart(
+                self.file = _encode_multipart(
                     self.vars.iteritems(),
                     self.content_type,
+                    fout=BytesIO()
                 )[1]
+                self.file.seek(0)
             else:
                 assert 0, ('Bad content type: %r' % self.content_type)
-            self.file = BytesIO(data)
         return self.file.readinto(buff)
 
 
