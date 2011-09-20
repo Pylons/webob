@@ -9,10 +9,6 @@ from webob import Request, Response
 
 log = logging.getLogger(__name__)
 
-__test__ = (sys.version >= '2.6') # skip these tests on py2.5
-
-
-
 def test_request_reading():
     """
         Test actual request/response cycle in the presence of Request.copy()

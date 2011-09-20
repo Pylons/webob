@@ -15,11 +15,6 @@ from webob.util import warn_deprecation
 
 __all__ = ['BaseRequest', 'Request']
 
-if sys.version >= '2.6':
-    parse_qsl = urlparse.parse_qsl
-else:
-    parse_qsl = cgi.parse_qsl # pragma nocover
-
 class _NoDefault:
     def __repr__(self):
         return '(No Default)'
@@ -579,7 +574,7 @@ class BaseRequest(object):
             #@@xxxxx
             vars = TrackableMultiDict(__tracker=_update_get, __name='GET')
         else:
-            vars = TrackableMultiDict(parse_qsl(source,
+            vars = TrackableMultiDict(urlparse.parse_qsl(source,
                                                 keep_blank_values=True,
                                                 strict_parsing=False),
                                       __tracker=_update_get, __name='GET')
