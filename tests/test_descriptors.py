@@ -7,7 +7,7 @@ from nose.tools import eq_
 from nose.tools import ok_
 from nose.tools import assert_raises
 
-from webob import Request
+from webob.request import Request
 
 
 class GMT(tzinfo):

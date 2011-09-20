@@ -1,12 +1,12 @@
 import zlib
+import io
 
 from nose.tools import eq_, ok_, assert_raises
 
-from webob import BaseRequest
-from webob import Request
-from webob import Response
+from webob.request import BaseRequest
+from webob.request import Request
+from webob.response import Response
 from webob.compat import md5
-from webob.compat import BytesIO
 from webob.compat import text_
 from webob.compat import bytes_
 
@@ -110,7 +110,7 @@ def test_response_copy_content_md5():
 def test_HEAD_closes():
     req = Request.blank('/')
     req.method = 'HEAD'
-    app_iter = BytesIO(b'foo')
+    app_iter = io.BytesIO(b'foo')
     res = req.get_response(Response(app_iter=app_iter))
     eq_(res.status_int, 200)
     eq_(res.body, b'')
@@ -321,7 +321,7 @@ def test_from_file():
     equal_resp(res)
 
 def equal_resp(res):
-    input_ = BytesIO(bytes_(str(res)))
+    input_ = io.BytesIO(bytes_(str(res)))
     res2 = Response.from_file(input_)
     eq_(res.body, res2.body)
     eq_(res.headers, res2.headers)
@@ -329,13 +329,13 @@ def equal_resp(res):
 def test_from_file_w_leading_space_in_header():
     # Make sure the removal of code dealing with leading spaces is safe
     res1 = Response()
-    file_w_space = BytesIO(
+    file_w_space = io.BytesIO(
         b'200 OK\n\tContent-Type: text/html; charset=UTF-8')
     res2 = Response.from_file(file_w_space)
     eq_(res1.headers, res2.headers)
 
 def test_file_bad_header():
-    file_w_bh = BytesIO(b'200 OK\nBad Header')
+    file_w_bh = io.BytesIO(b'200 OK\nBad Header')
     assert_raises(ValueError, Response.from_file, file_w_bh)
 
 def test_set_status():
@@ -705,7 +705,7 @@ def test_merge_cookies_resp_is_wsgi_callable():
 
 def test_body_get_body_is_None_len_app_iter_is_zero():
     res = Response()
-    res._app_iter = BytesIO()
+    res._app_iter = io.BytesIO()
     res._body = None
     result = res.body
     eq_(result, b'')
@@ -861,7 +861,7 @@ def test_encode_content_gzip_already_gzipped():
 
 def test_encode_content_gzip_notyet_gzipped():
     res = Response()
-    res.app_iter = BytesIO(b'foo')
+    res.app_iter = io.BytesIO(b'foo')
     result = res.encode_content('gzip')
     eq_(result, None)
     eq_(res.content_length, 23)
@@ -874,7 +874,7 @@ def test_encode_content_gzip_notyet_gzipped():
 
 def test_encode_content_gzip_notyet_gzipped_lazy():
     res = Response()
-    res.app_iter = BytesIO(b'foo')
+    res.app_iter = io.BytesIO(b'foo')
     result = res.encode_content('gzip', lazy=True)
     eq_(result, None)
     eq_(res.content_length, None)
@@ -898,11 +898,11 @@ def test_decode_content_weird():
 
 def test_decode_content_gzip():
     from gzip import GzipFile
-    io = BytesIO()
-    gzip_f = GzipFile(filename='', mode='w', fileobj=io)
+    io_ = io.BytesIO()
+    gzip_f = GzipFile(filename='', mode='w', fileobj=io_)
     gzip_f.write(b'abc')
     gzip_f.close()
-    body = io.getvalue()
+    body = io_.getvalue()
     res = Response()
     res.content_encoding = 'gzip'
     res.body = body
@@ -918,13 +918,13 @@ def test__abs_headerlist_location_with_scheme():
 
 def test_response_set_body_file1():
      data  = b'abc' 
-     file = BytesIO(data)
+     file = io.BytesIO(data)
      r = Response(body_file=file)
      assert r.body == data
 
 def test_response_set_body_file2():
     data = b'abcdef'*1024
-    file = BytesIO(data)
+    file = io.BytesIO(data)
     r = Response(body_file=file)
     assert r.body == data
 

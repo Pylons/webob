@@ -1,5 +1,12 @@
-from webob import Request
-from webob.acceptparse import Accept, MIMEAccept, NilAccept, NoAccept, accept_property, AcceptLanguage, AcceptCharset
+from webob.request import Request
+from webob.acceptparse import Accept
+from webob.acceptparse import MIMEAccept
+from webob.acceptparse import NilAccept
+from webob.acceptparse import NoAccept
+from webob.acceptparse import accept_property
+from webob.acceptparse import AcceptLanguage
+from webob.acceptparse import AcceptCharset
+
 from nose.tools import eq_, assert_raises
 
 def test_parse_accept_badq():

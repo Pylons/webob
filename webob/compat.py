@@ -36,6 +36,11 @@ def bytes_(s, encoding='latin-1', errors='strict'):
         return s.encode(encoding, errors)
     return s
 
+try:
+    from queue import Queue, Empty
+except ImportError:
+    from Queue import Queue, Empty
+
 try: # pragma: no cover
     from collections import MutableMapping as DictMixin
 except ImportError:
@@ -65,13 +70,6 @@ try:
 except NameError:
     def next(v):
         return v.next()
-
-try: # pragma: no cover
-    from io import StringIO
-    from io import BytesIO
-except ImportError:
-    import StringIO
-    StringIO = BytesIO = StringIO.StringIO
 
 if PY3: # pragma: no cover
     import builtins

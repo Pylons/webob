@@ -1,7 +1,7 @@
 import unittest, warnings
-from webob import Request
-from webob import BaseRequest
-from webob import UTC
+from webob.request import Request
+from webob.request import BaseRequest
+from webob.datetime_utils import UTC
 from webob.compat import text_type
 from webob.compat import bytes_
 from webob.compat import text_

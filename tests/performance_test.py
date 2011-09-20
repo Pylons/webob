@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import webob
+from webob.response import Response
 from webob.compat import print_
 
 def make_middleware(app):
@@ -12,7 +12,7 @@ def make_middleware(app):
         path='/__profile__')
 
 def simple_app(environ, start_response):
-    resp = webob.Response('Hello world!')
+    resp = Response('Hello world!')
     return resp(environ, start_response)
 
 if __name__ == '__main__':

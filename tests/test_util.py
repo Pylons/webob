@@ -1,5 +1,5 @@
 import unittest
-from webob import Response
+from webob.response import Response
 
 class Test_warn_deprecation(unittest.TestCase):
     def setUp(self):

@@ -1,4 +1,6 @@
-from webob.byterange import Range, ContentRange, _is_content_range_valid
+from webob.byterange import Range
+from webob.byterange import ContentRange
+from webob.byterange import _is_content_range_valid
 
 from nose.tools import assert_true, assert_false, assert_equal, assert_raises
 

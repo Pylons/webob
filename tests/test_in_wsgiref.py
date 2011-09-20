@@ -5,13 +5,11 @@ from webob.compat import url_open
 from webob.compat import print_
 from webob.compat import reraise
 from webob.compat import PY3
+from webob.compat import Queue
+from webob.compat import Empty
 from contextlib import contextmanager
 from nose.tools import assert_raises, eq_ as eq
 from wsgiref.simple_server import make_server, WSGIRequestHandler, WSGIServer, ServerHandler
-try:
-    from queue import Queue, Empty
-except ImportError:
-    from Queue import Queue, Empty
 
 log = logging.getLogger(__name__)
 

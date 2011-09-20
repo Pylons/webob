@@ -9,9 +9,7 @@ from email.utils import mktime_tz
 from email.utils import formatdate
 
 from webob.compat import binary_type
-from webob.compat import text_type
 from webob.compat import integer_types
-from webob.compat import text_
 
 __all__ = [
     'UTC', 'timedelta_to_seconds',

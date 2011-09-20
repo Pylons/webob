@@ -26,7 +26,6 @@ from webob.compat import multidict_from_bodyfile
 from webob.compat import text_
 from webob.compat import bytes_
 from webob.compat import iteritems_
-from webob.compat import BytesIO
 from webob.cookies import Cookie
 from webob.descriptors import CHARSET_RE
 from webob.descriptors import SCHEME_RE
@@ -113,7 +112,7 @@ class BaseRequest(object):
             (unlike setting req.body_file_raw).
         """
         if not self.is_body_readable:
-            return BytesIO()
+            return io.BytesIO()
         r = self.body_file_raw
         clen = self.content_length
         if not self.is_body_seekable and clen is not None:
@@ -533,10 +532,10 @@ class BaseRequest(object):
         if not http_method_probably_has_body.get(self.method, True):
             if not value:
                 self.content_length = None
-                self.body_file_raw = BytesIO()
+                self.body_file_raw = io.BytesIO()
                 return
         self.content_length = len(value)
-        self.body_file_raw = BytesIO(value)
+        self.body_file_raw = io.BytesIO(value)
         self.is_body_seekable = True
     def _body__del(self):
         self.body = _empty_byte
@@ -959,7 +958,7 @@ class BaseRequest(object):
             Create a request from HTTP bytes data. If the bytes contain
             extra data after the request, raise a ValueError.
         """
-        f = BytesIO(b)
+        f = io.BytesIO(b)
         r = cls.from_file(f)
         if f.tell() != len(b):
             raise ValueError("The string contains more data than expected")
@@ -1177,7 +1176,7 @@ def environ_from_url(path):
         'SERVER_PROTOCOL': 'HTTP/1.0',
         'wsgi.version': (1, 0),
         'wsgi.url_scheme': scheme,
-        'wsgi.input': BytesIO(),
+        'wsgi.input': io.BytesIO(),
         'wsgi.errors': sys.stderr,
         'wsgi.multithread': False,
         'wsgi.multiprocess': False,
@@ -1219,7 +1218,7 @@ def environ_add_POST(env, data, content_type=None, encoding='utf-8'):
             raise ValueError('Please provide `POST` data as string'
                              ' for content type `%s`' % content_type)
     data = bytes_(data, encoding)
-    env['wsgi.input'] = BytesIO(data)
+    env['wsgi.input'] = io.BytesIO(data)
     env['webob.is_body_seekable'] = True
     env['CONTENT_LENGTH'] = str(len(data))
     env['CONTENT_TYPE'] = content_type
@@ -1351,7 +1350,7 @@ class FakeCGIBody(io.RawIOBase):
                                          encoding=self.encoding)[1]
             else:
                 assert 0, ('Bad content type: %r' % self.content_type)
-            self.file = BytesIO(data)
+            self.file = io.BytesIO(data)
         return self.file.readinto(buff)
 
 
@@ -1363,7 +1362,7 @@ def _get_multipart_boundary(ctype):
 
 def _encode_multipart(vars, content_type, encoding='utf-8'):
     """Encode GET or POST vars into a bytes body"""
-    f = BytesIO()
+    f = io.BytesIO()
     w = f.write
     CRLF = b'\r\n'
     boundary = _get_multipart_boundary(content_type)
