@@ -30,8 +30,8 @@ class Response(object):
     default_conditional_response = False
 
     # TODO: remove in 1.4
-    request = deprecated_property('request', 'Response.request will be removed completely in 1.4')
-    environ = deprecated_property('environ', 'Response.environ will be removed completely in 1.4')
+    request = deprecated_property(None, 'request', 'Response.request will be removed completely in 1.4', '1.2')
+    environ = deprecated_property(None, 'environ', 'Response.environ will be removed completely in 1.4', '1.2')
 
 
     #

@@ -127,8 +127,6 @@ class BaseRequest(object):
     scheme = environ_getter('wsgi.url_scheme')
     method = environ_getter('REQUEST_METHOD', 'GET')
     http_version = environ_getter('SERVER_PROTOCOL')
-    script_name = environ_getter('SCRIPT_NAME', '')
-    path_info = environ_getter('PATH_INFO')
     content_length = converter(
         environ_getter('CONTENT_LENGTH', None, '14.13'),
         parse_int_safe, serialize_int, 'int')
@@ -140,8 +138,20 @@ class BaseRequest(object):
         environ_getter('SERVER_PORT'),
         parse_int, serialize_int, 'int')
 
-    uscript_name = upath_property('SCRIPT_NAME')
-    upath_info = upath_property('PATH_INFO')
+    script_name = upath_property('SCRIPT_NAME')
+    path_info = upath_property('PATH_INFO')
+    uscript_name = deprecated_property(
+        script_name,
+        'uscript_name',
+        "Use script_name directly",
+        '1.3'
+    )
+    upath_info = deprecated_property(
+        path_info,
+        'upath_info',
+        "Use path_info directly",
+        '1.3'
+    )
 
 
     def _content_type__get(self):
@@ -1325,5 +1335,5 @@ def _encode_multipart(vars, content_type):
 # TODO: remove in 1.4
 for _name in 'GET POST params cookies'.split():
     _str_name = 'str_'+_name
-    _prop = deprecated_property(_str_name, "disabled starting WebOb 1.2, use %s instead" % _name)
+    _prop = deprecated_property(None, _str_name, "disabled starting WebOb 1.2, use %s instead" % _name, '1.2')
     setattr(BaseRequest, _str_name, _prop)

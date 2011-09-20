@@ -373,7 +373,6 @@ def test_deprecated_property():
     assert_raises(DeprecationWarning, getattr, req, 'str_GET')
     assert_raises(DeprecationWarning, setattr, req, 'str_GET', {})
     assert_raises(DeprecationWarning, delattr, req, 'str_GET')
-    eq_(Request.str_GET.__repr__(), "<Deprecated attribute str_GET>")
 
 def test_parse_etag_response():
     from webob.descriptors import parse_etag_response
