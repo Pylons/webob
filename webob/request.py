@@ -930,7 +930,7 @@ class BaseRequest(object):
         if self.method in ('PUT', 'POST'):
             if skip_body > 1:
                 if len(self.body) > skip_body:
-                    body = '<body skipped (len=%s)>' % len(self.body)
+                    body = bytes_('<body skipped (len=%s)>' % len(self.body))
                 else:
                     skip_body = False
             if not skip_body:
@@ -1195,7 +1195,10 @@ def environ_add_POST(env, data, content_type=None, encoding='utf-8'):
     has_files = False
     if hasattr(data, 'items'):
         data = sorted(data.items())
-        has_files = filter(lambda _: isinstance(_[1], (tuple, list)), data)
+        for k, v in data:
+            if isinstance(v, (tuple, list)):
+                has_files = True
+                break
     if content_type is None:
         if has_files:
             content_type = 'multipart/form-data'
@@ -1215,7 +1218,7 @@ def environ_add_POST(env, data, content_type=None, encoding='utf-8'):
         if not isinstance(data, str):
             raise ValueError('Please provide `POST` data as string'
                              ' for content type `%s`' % content_type)
-    data = data.encode(encoding)
+    data = bytes_(data, encoding)
     env['wsgi.input'] = BytesIO(data)
     env['webob.is_body_seekable'] = True
     env['CONTENT_LENGTH'] = str(len(data))
@@ -1341,7 +1344,7 @@ class FakeCGIBody(io.RawIOBase):
         if self.file is None:
             if self.content_type.startswith(
                 'application/x-www-form-urlencoded'):
-                data = url_encode(self.vars.items())
+                data = bytes_(url_encode(self.vars), self.encoding)
             elif self.content_type.startswith('multipart/form-data'):
                 data = _encode_multipart(self.vars.items(),
                                          self.content_type,

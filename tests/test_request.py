@@ -4,6 +4,7 @@ from webob import BaseRequest
 from webob import UTC
 from webob.compat import text_type
 from webob.compat import bytes_
+from webob.compat import text_
 from io import BytesIO
 
 _marker = object()
@@ -226,14 +227,14 @@ class BaseRequestTests(unittest.TestCase):
         environ = {'SCRIPT_NAME': '/script',
                   }
         req = BaseRequest(environ)
-        self.assert_(isinstance(req.uscript_name, unicode))
+        self.assert_(isinstance(req.uscript_name, text_type))
         self.assertEqual(req.uscript_name, '/script')
 
     def test_upath_info(self):
         environ = {'PATH_INFO': '/path/info',
                   }
         req = BaseRequest(environ)
-        self.assert_(isinstance(req.upath_info, unicode))
+        self.assert_(isinstance(req.upath_info, text_type))
         self.assertEqual(req.upath_info, '/path/info')
 
     def test_content_type_getter_no_parameters(self):
@@ -1346,7 +1347,7 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(request.method, 'POST')
         self.assertEqual(request.content_type,
                          'application/x-www-form-urlencoded')
-        self.assertEqual(request.body, 'first=1&second=2')
+        self.assertEqual(request.body, b'first=1&second=2')
         self.assertEqual(request.content_length, 16)
 
     def test_blank__post_multipart(self):
@@ -1355,14 +1356,15 @@ class BaseRequestTests(unittest.TestCase):
             content_type='multipart/form-data; boundary=boundary')
         self.assertEqual(request.method, 'POST')
         self.assertEqual(request.content_type, 'multipart/form-data')
-        self.assertEqual(request.body,
-                         '--boundary\r\n'
-                         'Content-Disposition: form-data; name="first"\r\n\r\n'
-                         '1\r\n'
-                         '--boundary\r\n'
-                         'Content-Disposition: form-data; name="second"\r\n\r\n'
-                         '2\r\n'
-                         '--boundary--')
+        expected = (
+            b'--boundary\r\n'
+            b'Content-Disposition: form-data; name="first"\r\n\r\n'
+            b'1\r\n'
+            b'--boundary\r\n'
+            b'Content-Disposition: form-data; name="second"\r\n\r\n'
+            b'2\r\n'
+            b'--boundary--')
+        self.assertEqual(request.body, expected)
         self.assertEqual(request.content_length, 139)
 
     def test_blank__post_files(self):
@@ -1374,25 +1376,27 @@ class BaseRequestTests(unittest.TestCase):
         request = Request.blank('/', POST=POST)
         self.assertEqual(request.method, 'POST')
         self.assertEqual(request.content_type, 'multipart/form-data')
-        boundary = _get_multipart_boundary(request.headers['content-type'])
+        boundary = bytes_(
+            _get_multipart_boundary(request.headers['content-type']))
         body_norm = request.body.replace(boundary, b'boundary')
-        self.assertEqual(
-            body_norm,
-            '--boundary\r\n'
-            'Content-Disposition: form-data; name="first"; filename="filename1"\r\n\r\n'
-            '1\r\n'
-            '--boundary\r\n'
-            'Content-Disposition: form-data; name="second"; filename="filename2"\r\n\r\n'
-            '2\r\n'
-            '--boundary\r\n'
-            'Content-Disposition: form-data; name="third"\r\n\r\n'
-            '3\r\n'
-            '--boundary--')
+        expected = (
+            b'--boundary\r\n'
+            b'Content-Disposition: form-data; name="first"; filename="filename1"\r\n\r\n'
+            b'1\r\n'
+            b'--boundary\r\n'
+            b'Content-Disposition: form-data; name="second"; filename="filename2"\r\n\r\n'
+            b'2\r\n'
+            b'--boundary\r\n'
+            b'Content-Disposition: form-data; name="third"\r\n\r\n'
+            b'3\r\n'
+            b'--boundary--'
+            )
+        self.assertEqual(body_norm, expected)
         self.assertEqual(request.content_length, 294)
         self.assertTrue(isinstance(request.POST['first'], cgi.FieldStorage))
         self.assertTrue(isinstance(request.POST['second'], cgi.FieldStorage))
-        self.assertEqual(request.POST['first'].value, '1')
-        self.assertEqual(request.POST['second'].value, '2')
+        self.assertEqual(request.POST['first'].value, b'1')
+        self.assertEqual(request.POST['second'].value, b'2')
         self.assertEqual(request.POST['third'], '3')
 
     def test_blank__post_file_w_wrong_ctype(self):
@@ -1400,23 +1404,23 @@ class BaseRequestTests(unittest.TestCase):
             ValueError, Request.blank, '/', POST={'first':('filename1', '1')},
             content_type='application/x-www-form-urlencoded')
 
-    #from_string
-    def test_from_string_extra_data(self):
+    #from_bytes
+    def test_from_bytes_extra_data(self):
         from webob import BaseRequest
         _test_req_copy = _test_req.replace(
             b'Content-Type',
             b'Content-Length: 337\r\nContent-Type')
-        self.assertRaises(ValueError, BaseRequest.from_string,
+        self.assertRaises(ValueError, BaseRequest.from_bytes,
                 _test_req_copy+b'EXTRA!')
 
-    #as_string
-    def test_as_string_skip_body(self):
+    #as_bytes
+    def test_as_bytes_skip_body(self):
         from webob import BaseRequest
-        req = BaseRequest.from_string(_test_req)
+        req = BaseRequest.from_bytes(_test_req)
         body = req.as_string(skip_body=True)
         self.assertEqual(body.count(b'\r\n\r\n'), 0)
-        self.assertEqual(req.as_string(skip_body=337), req.as_string())
-        body = req.as_string(337-1).split(b'\r\n\r\n', 1)[1]
+        self.assertEqual(req.as_bytes(skip_body=337), req.as_bytes())
+        body = req.as_bytes(337-1).split(b'\r\n\r\n', 1)[1]
         self.assertEqual(body, b'<body skipped (len=337)>')
 
     def test_adhoc_attrs_set(self):
@@ -1865,21 +1869,21 @@ class RequestTests_functional(unittest.TestCase):
             def read(self, n=-1):
                 return self.txt[0:n]
         limit = BaseRequest.request_body_tempfile_limit
-        len_strl = limit // len(string.letters) + 1
+        len_strl = limit // len(string.ascii_letters) + 1
         r = Request({'a':1, 'REQUEST_METHOD': 'POST'},
-                    body_file=DummyIO(bytes_(string.letters) * len_strl))
-        self.assertEqual(len(r.body), len(string.letters*len_strl)-1)
+                    body_file=DummyIO(bytes_(string.ascii_letters) * len_strl))
+        self.assertEqual(len(r.body), len(string.ascii_letters*len_strl)-1)
         self.assertRaises(TypeError,
-                          setattr, r, 'body', unicode('hello world'))
+                          setattr, r, 'body', text_('hello world'))
         r.body = None
-        self.assertEqual(r.body, '')
+        self.assertEqual(r.body, b'')
         r = Request({'a':1}, method='PUT', body_file=DummyIO(
-            bytes_(string.letters)))
+            bytes_(string.ascii_letters)))
         self.assert_(not hasattr(r.body_file_raw, 'seek'))
         r.make_body_seekable()
         self.assert_(hasattr(r.body_file_raw, 'seek'))
         r = Request({'a':1}, method='PUT',
-                    body_file=BytesIO(bytes_(string.letters)))
+                    body_file=BytesIO(bytes_(string.ascii_letters)))
         self.assert_(hasattr(r.body_file_raw, 'seek'))
         r.make_body_seekable()
         self.assert_(hasattr(r.body_file_raw, 'seek'))
@@ -2028,7 +2032,7 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(req.get('CONTENT_LENGTH', None),'11')
         self.assertEqual(req.get('CONTENT_TYPE', None),
                          'application/x-www-form-urlencoded')
-        self.assertEqual(req['wsgi.input'].read(), 'hello=world')
+        self.assertEqual(req['wsgi.input'].read(), b'hello=world')
 
 
     def test_post_does_not_reparse(self):
@@ -2428,24 +2432,25 @@ class FakeCGIBodyTests(unittest.TestCase):
         from webob.request import BaseRequest, FakeCGIBody
         from webob.multidict import MultiDict
         multipart_type = 'multipart/form-data; boundary=foobar'
-        from io import StringIO
-        multipart_body = StringIO(text_type(
-            '--foobar\r\n'
-            'Content-Disposition: form-data; name="bananas"; filename="bananas.txt"\r\n'
-            'Content-type: text/plain; charset="utf-9"\r\n'
-            '\r\n'
-            "these are the contents of the file 'bananas.txt'\r\n"
-            '\r\n'
-            '--foobar--', 'unicode_escape')
-        )
+        from io import BytesIO
+        body = (
+            b'--foobar\r\n'
+            b'Content-Disposition: form-data; name="bananas"; filename="bananas.txt"\r\n'
+            b'Content-type: text/plain; charset="utf-9"\r\n'
+            b'\r\n'
+            b"these are the contents of the file 'bananas.txt'\r\n"
+            b'\r\n'
+            b'--foobar--')
+        multipart_body = BytesIO(body)
         environ = BaseRequest.blank('/').environ
         environ.update(CONTENT_TYPE=multipart_type)
         environ.update(REQUEST_METHOD='POST')
+        environ.update(CONTENT_LENGTH=len(body))
         fs = FieldStorage(multipart_body, environ=environ)
         vars = MultiDict.from_fieldstorage(fs)
         self.assertEqual(vars['bananas'].__class__, FieldStorage)
-        body = FakeCGIBody(vars, multipart_type)
-        self.assertEqual(body.read(), multipart_body.getvalue())
+        fake_body = FakeCGIBody(vars, multipart_type)
+        self.assertEqual(fake_body.read(), body)
 
     def test_encode_multipart_no_boundary(self):
         from webob.request import FakeCGIBody
@@ -2493,8 +2498,9 @@ class FakeCGIBodyTests(unittest.TestCase):
 
     def test_read_urlencoded(self):
         from webob.request import FakeCGIBody
-        body = FakeCGIBody({'bananas': 'bananas'}, 'application/x-www-form-urlencoded')
-        self.assertEqual(body.read(), 'bananas=bananas')
+        body = FakeCGIBody({'bananas': 'bananas'},
+                           'application/x-www-form-urlencoded')
+        self.assertEqual(body.read(), b'bananas=bananas')
 
 
 class Test_cgi_FieldStorage__repr__patch(unittest.TestCase):
@@ -2521,3 +2527,5 @@ class Test_cgi_FieldStorage__repr__patch(unittest.TestCase):
         fake = Fake()
         result = self._callFUT(fake)
         self.assertEqual(result, "FieldStorage('name', 'filename', 'value')")
+
+

@@ -26,14 +26,14 @@ else:
     def ords_(s):
         return [ord(x) for x in s]
 
-def text_(s, encoding='latin-1'):
+def text_(s, encoding='latin-1', errors='strict'):
     if isinstance(s, binary_type):
-        return s.decode(encoding)
+        return s.decode(encoding, errors)
     return s
 
-def bytes_(s, encoding='latin-1'):
+def bytes_(s, encoding='latin-1', errors='strict'):
     if isinstance(s, text_type):
-        return s.encode(encoding)
+        return s.encode(encoding, errors)
     return s
 
 try: # pragma: no cover
@@ -163,14 +163,14 @@ else:
         return d.itervalues()
 
 if PY3: # pragma: no cover
-    enc, esc = sys.getfilesystemencoding(), 'surrogateescape'
+    enc = sys.getfilesystemencoding()
     def unicode_to_wsgi(u):
         # On Python 3, convert an environment variable to a WSGI
         # "bytes-as-unicode" string
-        return u.encode(enc, esc).decode('latin-1')
+        return u.encode(enc, 'surrogateescape').decode('latin-1')
     def wsgi_to_unicode(u):
         # Convert a "bytes-as-unicode" string to Unicode
-        return u.encode('latin-1').decode(enc, esc)
+        return u.encode('latin-1').decode(enc, 'surrogateescape')
 else:
     def unicode_to_wsgi(u):
         return u.encode('latin-1', 'surrogateescape')
