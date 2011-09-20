@@ -10,6 +10,9 @@ import sys
 import webob
 import webob.exc
 from webob.compat import class_types
+from webob.compat import text_type
+from webob.compat import binary_type
+from webob.compat import bytes_
 
 __all__ = ['wsgify']
 
@@ -150,7 +153,9 @@ class wsgify(object):
             if resp is None:
                 ## FIXME: I'm not sure what this should be?
                 resp = req.response
-            elif isinstance(resp, basestring):
+            if isinstance(resp, text_type):
+                resp = bytes_(resp, req.charset)
+            if isinstance(resp, binary_type):
                 body = resp
                 resp = req.response
                 resp.write(body)

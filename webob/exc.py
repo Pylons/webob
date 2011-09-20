@@ -163,12 +163,15 @@ import re
 import sys
 from string import Template
 
-from webob import Response
-from webob import Request
-from webob import html_escape
 from webob.compat import urlparse
 from webob.compat import class_types
+from webob.compat import text_type
+from webob.compat import binary_type
+from webob.compat import text_
+from webob.request import Request
+from webob.response import Response
 from webob.util import warn_deprecation
+from webob.util import html_escape
 
 tag_re = re.compile(r'<.*?>', re.S)
 br_re = re.compile(r'<br.*?>', re.I|re.S)
@@ -177,11 +180,13 @@ comment_re = re.compile(r'<!--|-->')
 def no_escape(value):
     if value is None:
         return ''
-    if not isinstance(value, basestring):
+    if not isinstance(value, text_type):
         if hasattr(value, '__unicode__'):
-            value = unicode(value)
+            value = value.__unicode__()
+        if isinstance(value, binary_type):
+            value = text_(value, 'utf-8')
         else:
-            value = str(value)
+            value = text_type(value)
     return value
 
 def strip_tags(value):
@@ -304,7 +309,7 @@ ${body}''')
             content_type = 'text/plain'
             body = self.plain_body(environ)
         extra_kw = {}
-        if isinstance(body, unicode):
+        if isinstance(body, text_type):
             extra_kw.update(charset='utf-8')
         resp = Response(body,
             status=self.status,

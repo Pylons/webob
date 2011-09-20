@@ -2,6 +2,9 @@ from __future__ import with_statement
 from webob import Request, Response
 import sys, logging, threading, random, socket, cgi
 from webob.compat import url_open
+from webob.compat import print_
+from webob.compat import reraise
+from webob.compat import PY3
 from contextlib import contextmanager
 from nose.tools import assert_raises, eq_ as eq
 from wsgiref.simple_server import make_server, WSGIRequestHandler, WSGIServer, ServerHandler
@@ -57,8 +60,8 @@ def test_interrupted_request():
             except Empty:
                 raise AssertionError("Error during test %s", path)
             if res is not None:
-                print "Error during test:", path
-                raise res[0], res[1], res[2]
+                print_("Error during test:", path)
+                reraise(res[0], res[1], res[2])
 
 _global_res = Queue()
 
@@ -156,11 +159,13 @@ class QuietServer(WSGIServer):
         pass
 
 def _make_test_server(app):
+    if PY3:
+        raise NotImplementedError
     maxport = ((1<<16)-1)
     # we'll make 3 attempts to find a free port
     for i in range(3, 0, -1):
         try:
-            port = random.randint(maxport/2, maxport)
+            port = random.randint(maxport//2, maxport)
             server = make_server('localhost', port, app,
                 server_class=QuietServer,
                 handler_class=QuietHanlder

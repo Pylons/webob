@@ -1,13 +1,15 @@
 import unittest
-from webob import Request
-from webob import Response
+from webob.request import Request
+from webob.response import Response
 from webob.dec import _format_args
 from webob.dec import _func_name
 from webob.dec import wsgify
+from webob.compat import bytes_
+from webob.compat import text_type
 
 class DecoratorTests(unittest.TestCase):
     def _testit(self, app, req):
-        if isinstance(req, basestring):
+        if isinstance(req, text_type):
             req = Request.blank(req)
         resp = req.get_response(app)
         return resp
@@ -114,8 +116,8 @@ class DecoratorTests(unittest.TestCase):
             return Response('%s: %s' % (req.POST['speaker'],
                                         req.POST['words']))
         resp = test_app.post('/url/path', post_dict)
-        self.assertEqual(resp.body, '%s: %s' % (post_dict['speaker'],
-                                                post_dict['words']))
+        self.assertEqual(resp.body, bytes_('%s: %s' % (post_dict['speaker'],
+                                                       post_dict['words'])))
 
     def test_wsgify_request_method(self):
         resp_str = 'Nice body!'

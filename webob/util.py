@@ -2,6 +2,7 @@ import cgi, warnings
 from webob.headers import _trans_key
 from webob.compat import string_types
 from webob.compat import text_type
+from webob.compat import text_
 
 def html_escape(s):
     """HTML-escape a string or object
@@ -25,7 +26,7 @@ def html_escape(s):
     s = cgi.escape(s, True)
     if isinstance(s, text_type):
         s = s.encode('ascii', 'xmlcharrefreplace')
-    return s
+    return text_(s)
 
 def header_docstring(header, rfc_section):
     if header.isupper():

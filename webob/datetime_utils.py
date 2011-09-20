@@ -8,9 +8,10 @@ from email.utils import parsedate_tz
 from email.utils import mktime_tz
 from email.utils import formatdate
 
-from webob.compat import text_type
 from webob.compat import binary_type
+from webob.compat import text_type
 from webob.compat import integer_types
+from webob.compat import text_
 
 __all__ = [
     'UTC', 'timedelta_to_seconds',
@@ -69,9 +70,9 @@ def parse_date(value):
     return datetime.fromtimestamp(t, UTC)
 
 def serialize_date(dt):
-    if isinstance(dt, text_type):
-        dt = dt.encode('ascii')
     if isinstance(dt, binary_type):
+        dt = text_(dt)
+    if isinstance(dt, text_type):
         return dt
     if isinstance(dt, timedelta):
         dt = _now() + dt
