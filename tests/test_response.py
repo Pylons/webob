@@ -1,19 +1,14 @@
-import sys
 import zlib
-from io import BytesIO
-try:
-    from hashlib import md5
-except ImportError:
-    from md5 import md5
 
 from nose.tools import eq_, ok_, assert_raises
 
 from webob import BaseRequest
 from webob import Request
 from webob import Response
-from webob.compat import u
-from webob.compat import b
-from webob.compat import text_type
+from webob.compat import md5
+from webob.compat import BytesIO
+from webob.compat import text_
+from webob.compat import bytes_
 
 def simple_app(environ, start_response):
     start_response('200 OK', [
@@ -32,8 +27,8 @@ def test_response():
     res.status = 404
     assert res.status == '404 Not Found'
     assert res.status_int == 404
-    res.body = b('Not OK')
-    assert b('').join(res.app_iter) == b('Not OK')
+    res.body = b'Not OK'
+    assert b''.join(res.app_iter) == b'Not OK'
     res.charset = 'iso8859-1'
     assert res.headers['content-type'] == 'text/html; charset=iso8859-1'
     res.content_type = 'text/xml'
@@ -46,16 +41,16 @@ def test_response():
     res = Response('a body', '200 OK', content_type='text/html')
     res.encode_content()
     assert res.content_encoding == 'gzip'
-    eq_(res.body, '\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xffKTH\xcaO\xa9\x04\x00\xf6\x86GI\x06\x00\x00\x00')
+    eq_(res.body, b'\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xffKTH\xcaO\xa9\x04\x00\xf6\x86GI\x06\x00\x00\x00')
     res.decode_content()
     assert res.content_encoding is None
-    assert res.body == 'a body'
-    res.set_cookie('x', u('foo')) # test unicode value
+    assert res.body == b'a body'
+    res.set_cookie('x', text_(b'foo')) # test unicode value
     assert_raises(TypeError, Response, app_iter=iter(['a']),
                   body="somebody")
     del req.environ
     assert_raises(TypeError, Response, charset=None,
-                  body=u("unicode body"))
+                  body=text_(b"unicode body"))
     assert_raises(TypeError, Response, wrong_key='dummy')
 
 def test_content_type():
@@ -73,8 +68,10 @@ def test_content_type():
 
 def test_cookies():
     res = Response()
-    res.set_cookie('x', u('\N{BLACK SQUARE}')) # test unicode value
-    eq_(res.headers.getall('set-cookie'), ['x="\\342\\226\\240"; Path=/']) # uft8 encoded
+    # test unicode value
+    res.set_cookie('x', text_(b'\N{BLACK SQUARE}', 'unicode_escape'))
+    # utf8 encoded
+    eq_(res.headers.getall('set-cookie'), ['x="\\342\\226\\240"; Path=/']) 
     r2 = res.merge_cookies(simple_app)
     r2 = BaseRequest.blank('/').get_response(r2)
     eq_(r2.headerlist,
@@ -113,14 +110,13 @@ def test_response_copy_content_md5():
 def test_HEAD_closes():
     req = Request.blank('/')
     req.method = 'HEAD'
-    app_iter = BytesIO(b('foo'))
+    app_iter = BytesIO(b'foo')
     res = req.get_response(Response(app_iter=app_iter))
     eq_(res.status_int, 200)
-    eq_(res.body, b(''))
+    eq_(res.body, b'')
     ok_(app_iter.closed)
 
 def test_HEAD_conditional_response_returns_empty_response():
-    from webob.response import EmptyResponse
     req = Request.blank('/',
         method='HEAD',
         if_none_match='none'
@@ -132,13 +128,12 @@ def test_HEAD_conditional_response_returns_empty_response():
     assert not list(result)
 
 def test_HEAD_conditional_response_range_empty_response():
-    from webob.response import EmptyResponse
     req = Request.blank('/',
         method = 'HEAD',
         range=(4,5),
     )
     res = Response('Are we not men?', conditional_response=True)
-    assert req.get_response(res).body == ''
+    assert req.get_response(res).body == b''
 
 def test_conditional_response_if_none_match_false():
     req = Request.blank('/', if_none_match='foo')
@@ -190,11 +185,11 @@ def test_HEAD_conditional_response_range_not_satisfiable_response():
     eq_(resp.content_range.start, None)
     eq_(resp.content_range.stop, None)
     eq_(resp.content_range.length, 4)
-    eq_(resp.body, b(''))
+    eq_(resp.body, b'')
 
 def test_md5_etag():
     res = Response()
-    res.body = b("""\
+    res.body = b"""\
 In A.D. 2101
 War was beginning.
 Captain: What happen ?
@@ -212,7 +207,7 @@ Cats: HA HA HA HA ....
 Captain: Take off every 'zig' !!
 Captain: You know what you doing.
 Captain: Move 'zig'.
-Captain: For great justice.""")
+Captain: For great justice."""
     res.md5_etag()
     ok_(res.etag)
     ok_('\n' not in res.etag)
@@ -221,19 +216,19 @@ Captain: For great justice.""")
 
 def test_md5_etag_set_content_md5():
     res = Response()
-    body = b('The quick brown fox jumps over the lazy dog')
+    body = b'The quick brown fox jumps over the lazy dog'
     res.md5_etag(body, set_content_md5=True)
     md5_ok(res.content_md5, body)
 
 def test_decode_content_defaults_to_identity():
     res = Response()
-    res.body = b('There be dragons')
+    res.body = b'There be dragons'
     res.decode_content()
-    eq_(res.body, b('There be dragons'))
+    eq_(res.body, b'There be dragons')
 
 def test_decode_content_with_deflate():
     res = Response()
-    body = b('Hey Hey Hey')
+    body = b'Hey Hey Hey'
     # Simulate inflate by chopping the headers off
     # the gzip encoded data
     res.body = zlib.compress(body)[2:-4]
@@ -248,21 +243,21 @@ def test_content_length():
     req_head = Request.blank('/', method='HEAD')
     r1 = req_head.get_response(r0)
     eq_(r1.status_int, 200)
-    eq_(r1.body, b(''))
+    eq_(r1.body, b'')
     eq_(r1.content_length, 10)
 
     req_get = Request.blank('/')
     r2 = req_get.get_response(r0)
     eq_(r2.status_int, 200)
-    eq_(r2.body, b('x'*10))
+    eq_(r2.body, b'x'*10)
     eq_(r2.content_length, 10)
 
-    r3 = Response(app_iter=[b('x')]*10)
+    r3 = Response(app_iter=[b'x']*10)
     eq_(r3.content_length, None)
-    eq_(r3.body, b('x'*10))
+    eq_(r3.body, b'x'*10)
     eq_(r3.content_length, 10)
 
-    r4 = Response(app_iter=[b('x')]*10,
+    r4 = Response(app_iter=[b'x']*10,
                   content_length=20) # wrong content_length
     eq_(r4.content_length, 20)
     assert_raises(AssertionError, lambda: r4.body)
@@ -271,22 +266,22 @@ def test_content_length():
     r0.conditional_response = True
     r5 = req_range.get_response(r0)
     eq_(r5.status_int, 206)
-    eq_(r5.body, b('xxxxx'))
+    eq_(r5.body, b'xxxxx')
     eq_(r5.content_length, 5)
 
 def test_app_iter_range():
     req = Request.blank('/', range=(2,5))
     for app_iter in [
-        [b('012345')],
-        [b('0'), b('12345')],
-        [b('0'), b('1234'), b('5')],
-        [b('01'), b('2345')],
-        [b('01'), b('234'), b('5')],
-        [b('012'), b('34'), b('5')],
-        [b('012'), b('3'), b('4'), b('5')],
-        [b('012'), b('3'), b('45')],
-        [b('0'), b('12'), b('34'), b('5')],
-        [b('0'), b('12'), b('345')],
+        [b'012345'],
+        [b'0', b'12345'],
+        [b'0', b'1234', b'5'],
+        [b'01', b'2345'],
+        [b'01', b'234', b'5'],
+        [b'012', b'34', b'5'],
+        [b'012', b'3', b'4', b'5'],
+        [b'012', b'3', b'45'],
+        [b'0', b'12', b'34', b'5'],
+        [b'0', b'12', b'345'],
     ]:
         r = Response(
             app_iter=app_iter,
@@ -295,7 +290,7 @@ def test_app_iter_range():
         )
         res = req.get_response(r)
         eq_(list(res.content_range), [2,5,6])
-        eq_(res.body, b('234'), (res.body, app_iter))
+        eq_(res.body, b'234', (res.body, app_iter))
 
 def test_app_iter_range_inner_method():
     class FakeAppIter:
@@ -321,12 +316,12 @@ def test_content_type_in_headerlist():
 def test_from_file():
     res = Response('test')
     equal_resp(res)
-    res = Response(app_iter=iter([b('test '), b('body')]),
+    res = Response(app_iter=iter([b'test ', b'body']),
                     content_type='text/plain')
     equal_resp(res)
 
 def equal_resp(res):
-    input_ = BytesIO(b(str(res)))
+    input_ = BytesIO(bytes_(str(res)))
     res2 = Response.from_file(input_)
     eq_(res.body, res2.body)
     eq_(res.headers, res2.headers)
@@ -335,17 +330,17 @@ def test_from_file_w_leading_space_in_header():
     # Make sure the removal of code dealing with leading spaces is safe
     res1 = Response()
     file_w_space = BytesIO(
-        b('200 OK\n\tContent-Type: text/html; charset=UTF-8'))
+        b'200 OK\n\tContent-Type: text/html; charset=UTF-8')
     res2 = Response.from_file(file_w_space)
     eq_(res1.headers, res2.headers)
 
 def test_file_bad_header():
-    file_w_bh = BytesIO(b('200 OK\nBad Header'))
+    file_w_bh = BytesIO(b'200 OK\nBad Header')
     assert_raises(ValueError, Response.from_file, file_w_bh)
 
 def test_set_status():
     res = Response()
-    res.status = u("OK 200")
+    res.status = "OK 200"
     eq_(res.status, "OK 200")
     assert_raises(TypeError, setattr, res, 'status', float(200))
 
@@ -385,20 +380,20 @@ def test_app_iter_range_starts_after_iter_end():
     eq_(list(range), [])
 
 def test_resp_write_app_iter_non_list():
-    res = Response(app_iter=(b('a'), b('b')))
+    res = Response(app_iter=(b'a', b'b'))
     eq_(res.content_length, None)
-    res.write(b('c'))
-    eq_(res.body, b('abc'))
+    res.write(b'c')
+    eq_(res.body, b'abc')
     eq_(res.content_length, 3)
 
 def test_response_file_body_writelines():
     from webob.response import ResponseBodyFile
-    res = Response(app_iter=[b('foo')])
+    res = Response(app_iter=[b'foo'])
     rbo = ResponseBodyFile(res)
     rbo.writelines(['bar', 'baz'])
-    eq_(res.app_iter, [b('foo'), b('bar'), b('baz')])
+    eq_(res.app_iter, [b'foo', b'bar', b'baz'])
     rbo.flush() # noop
-    eq_(res.app_iter, [b('foo'), b('bar'), b('baz')])
+    eq_(res.app_iter, [b'foo', b'bar', b'baz'])
 
 def test_response_write_non_str():
     res = Response()
@@ -407,12 +402,12 @@ def test_response_write_non_str():
 def test_response_file_body_write_empty_app_iter():
     res = Response('foo')
     res.write('baz')
-    eq_(res.app_iter, [b('foo'), b('baz')])
+    eq_(res.app_iter, [b'foo', b'baz'])
 
 def test_response_file_body_write_empty_body():
     res = Response('')
     res.write('baz')
-    eq_(res.app_iter, [b(''), b('baz')])
+    eq_(res.app_iter, [b'', b'baz'])
 
 def test_response_file_body_close_not_implemented():
     rbo = Response().body_file
@@ -431,11 +426,11 @@ def test_body_get_is_none():
     assert_raises(AttributeError, res.__getattribute__, 'body')
 
 def test_body_get_is_unicode_notverylong():
-    res = Response(app_iter=(u('foo'),))
+    res = Response(app_iter=(text_(b'foo'),))
     assert_raises(TypeError, res.__getattribute__, 'body')
 
 def test_body_get_is_unicode():
-    res = Response(app_iter=(['x'] * 51 + [u('x')]))
+    res = Response(app_iter=(['x'] * 51 + [text_(b'x')]))
     assert_raises(TypeError, res.__getattribute__, 'body')
 
 def test_body_set_not_unicode_or_str():
@@ -444,17 +439,17 @@ def test_body_set_not_unicode_or_str():
 
 def test_body_set_unicode():
     res = Response()
-    assert_raises(TypeError, res.__setattr__, 'body', u('abc'))
+    assert_raises(TypeError, res.__setattr__, 'body', text_(b'abc'))
 
 def test_body_set_under_body_doesnt_exist():
     res = Response('abc')
-    eq_(res.body, b('abc'))
+    eq_(res.body, b'abc')
     eq_(res.content_length, 3)
 
 def test_body_del():
     res = Response('123')
     del res.body
-    eq_(res.body, b(''))
+    eq_(res.body, b'')
     eq_(res.content_length, 0)
 
 def test_text_get_no_charset():
@@ -464,20 +459,20 @@ def test_text_get_no_charset():
 def test_unicode_body():
     res = Response()
     res.charset = 'utf-8'
-    bbody = b('La Pe\xc3\xb1a') # binary string
-    ubody = text_type(bbody, 'utf-8') # unicode string
+    bbody = b'La Pe\xc3\xb1a' # binary string
+    ubody = text_(bbody, 'utf-8') # unicode string
     res.body = bbody
     eq_(res.unicode_body, ubody)
     res.ubody = ubody
     eq_(res.body, bbody)
     del res.ubody
-    eq_(res.body, b(''))
+    eq_(res.body, b'')
 
 def test_text_get_decode():
     res = Response()
     res.charset = 'utf-8'
-    res.body = b('La Pe\xc3\xb1a')
-    eq_(res.text, text_type(b('La Pe\xc3\xb1a'), 'utf-8'))
+    res.body = b'La Pe\xc3\xb1a'
+    eq_(res.text, text_(b'La Pe\xc3\xb1a', 'utf-8'))
 
 def test_text_set_no_charset():
     res = Response()
@@ -488,37 +483,37 @@ def test_text_set_not_unicode():
     res = Response()
     res.charset = 'utf-8'
     assert_raises(TypeError, res.__setattr__, 'text',
-                  b('La Pe\xc3\xb1a'))
+                  b'La Pe\xc3\xb1a')
 
 def test_text_del():
     res = Response('123')
     del res.text
-    eq_(res.body, b(''))
+    eq_(res.body, b'')
     eq_(res.content_length, 0)
 
 def test_body_file_del():
     res = Response()
-    res.body = b('123')
+    res.body = b'123'
     eq_(res.content_length, 3)
-    eq_(res.app_iter, [b('123')])
+    eq_(res.app_iter, [b'123'])
     del res.body_file
-    eq_(res.body, b(''))
+    eq_(res.body, b'')
     eq_(res.content_length, 0)
 
 def test_write_unicode():
     res = Response()
-    res.text = text_type(b('La Pe\xc3\xb1a'), 'utf-8')
-    res.write(u('a'))
-    eq_(res.text, text_type(b('La Pe\xc3\xb1aa'), 'utf-8'))
+    res.text = text_(b'La Pe\xc3\xb1a', 'utf-8')
+    res.write(text_(b'a'))
+    eq_(res.text, text_(b'La Pe\xc3\xb1aa', 'utf-8'))
 
 def test_write_unicode_no_charset():
     res = Response(charset=None)
-    assert_raises(TypeError, res.write, u('a'))
+    assert_raises(TypeError, res.write, text_(b'a'))
 
 def test_write_text():
     res = Response()
-    res.body = b('abc')
-    res.write(u('a'))
+    res.body = b'abc'
+    res.write(text_(b'a'))
     eq_(res.text, 'abca')
 
 def test_app_iter_del():
@@ -527,7 +522,7 @@ def test_app_iter_del():
         app_iter=['123'],
     )
     del res.app_iter
-    eq_(res.body, b(''))
+    eq_(res.body, b'')
     eq_(res.content_length, None)
 
 def test_charset_set_no_content_type_header():
@@ -620,7 +615,7 @@ def test_set_cookie_expires_is_not_None_and_max_age_is_None():
 
 def test_set_cookie_value_is_unicode():
     res = Response()
-    val = text_type(b('La Pe\xc3\xb1a'), 'utf-8')
+    val = text_(b'La Pe\xc3\xb1a', 'utf-8')
     res.set_cookie('a', val)
     eq_(res.headerlist[-1], (r'Set-Cookie', 'a="La Pe\\303\\261a"; Path=/'))
 
@@ -713,7 +708,7 @@ def test_body_get_body_is_None_len_app_iter_is_zero():
     res._app_iter = BytesIO()
     res._body = None
     result = res.body
-    eq_(result, b(''))
+    eq_(result, b'')
 
 def test_cache_control_get():
     res = Response()
@@ -785,7 +780,7 @@ def test_cache_control_set_None():
 
 def test_cache_control_set_unicode():
     res = Response()
-    res.cache_control = u('abc')
+    res.cache_control = text_(b'abc')
     eq_(repr(res.cache_control), "<CacheControl 'abc'>")
 
 def test_cache_control_set_control_obj_is_not_None():
@@ -811,13 +806,13 @@ def test_body_file_get():
 
 def test_body_file_write_no_charset():
     res = Response
-    assert_raises(TypeError, res.write, u('foo'))
+    assert_raises(TypeError, res.write, text_('foo'))
 
 def test_body_file_write_unicode_encodes():
-    s = text_type(b('La Pe\xc3\xb1a'), 'utf-8')
+    s = text_(b'La Pe\xc3\xb1a', 'utf-8')
     res = Response()
     res.write(s)
-    eq_(res.app_iter, [b(''), b('La Pe\xc3\xb1a')])
+    eq_(res.app_iter, [b'', b'La Pe\xc3\xb1a'])
 
 def test_repr():
     res = Response()
@@ -866,28 +861,28 @@ def test_encode_content_gzip_already_gzipped():
 
 def test_encode_content_gzip_notyet_gzipped():
     res = Response()
-    res.app_iter = BytesIO(b('foo'))
+    res.app_iter = BytesIO(b'foo')
     result = res.encode_content('gzip')
     eq_(result, None)
     eq_(res.content_length, 23)
     eq_(res.app_iter, [
-        b('\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff'),
-        b(''),
-        b('K\xcb\xcf\x07\x00'),
-        b('!es\x8c\x03\x00\x00\x00')
+        b'\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff',
+        b'',
+        b'K\xcb\xcf\x07\x00',
+        b'!es\x8c\x03\x00\x00\x00'
         ])
 
 def test_encode_content_gzip_notyet_gzipped_lazy():
     res = Response()
-    res.app_iter = BytesIO(b('foo'))
+    res.app_iter = BytesIO(b'foo')
     result = res.encode_content('gzip', lazy=True)
     eq_(result, None)
     eq_(res.content_length, None)
     eq_(list(res.app_iter), [
-        b('\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff'),
-        b(''),
-        b('K\xcb\xcf\x07\x00'),
-        b('!es\x8c\x03\x00\x00\x00')
+        b'\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff',
+        b'',
+        b'K\xcb\xcf\x07\x00',
+        b'!es\x8c\x03\x00\x00\x00'
         ])
 
 def test_decode_content_identity():
@@ -905,14 +900,14 @@ def test_decode_content_gzip():
     from gzip import GzipFile
     io = BytesIO()
     gzip_f = GzipFile(filename='', mode='w', fileobj=io)
-    gzip_f.write(b('abc'))
+    gzip_f.write(b'abc')
     gzip_f.close()
     body = io.getvalue()
     res = Response()
     res.content_encoding = 'gzip'
     res.body = body
     res.decode_content()
-    eq_(res.body, b('abc'))
+    eq_(res.body, b'abc')
 
 def test__abs_headerlist_location_with_scheme():
     res = Response()
@@ -921,11 +916,17 @@ def test__abs_headerlist_location_with_scheme():
     result = res._abs_headerlist({})
     eq_(result, [('Location', 'http:')])
 
-def test_response_set_body_file():
-    for data in [b('abc'), b('abcdef'*1024)]:
-        file = BytesIO(data)
-        r = Response(body_file=file)
-        assert r.body == data
+def test_response_set_body_file1():
+     data  = b'abc' 
+     file = BytesIO(data)
+     r = Response(body_file=file)
+     assert r.body == data
+
+def test_response_set_body_file2():
+    data = b'abcdef'*1024
+    file = BytesIO(data)
+    r = Response(body_file=file)
+    assert r.body == data
 
 def md5_ok(expected, body):
     from base64 import b64encode

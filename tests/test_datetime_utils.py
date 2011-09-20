@@ -5,7 +5,6 @@ import calendar
 from email.utils import formatdate
 from webob import datetime_utils
 from nose.tools import ok_, eq_, assert_raises
-from webob.compat import u
 
 def test_UTC():
     """Test missing function in _UTC"""
@@ -26,7 +25,7 @@ def test_parse_date():
     ok_(ret is None, "We passed a None value "
         "to parse_date. We should get None but instead we got %s" %\
         ret)
-    ret = datetime_utils.parse_date(u('Hi There'))
+    ret = datetime_utils.parse_date('Hi There')
     ok_(ret is None, "We passed an invalid value "
         "to parse_date. We should get None but instead we got %s" %\
         ret)
@@ -34,7 +33,7 @@ def test_parse_date():
     ok_(ret is None, "We passed an invalid value "
         "to parse_date. We should get None but instead we got %s" %\
         ret)
-    ret = datetime_utils.parse_date(u('á'))
+    ret = datetime_utils.parse_date('á')
     ok_(ret is None, "We passed an invalid value "
         "to parse_date. We should get None but instead we got %s" %\
         ret)
@@ -52,12 +51,13 @@ def test_serialize_date():
         * passing a timedelta, return now plus the delta
         * passing an invalid object, should raise ValueError
     """
-    ret = datetime_utils.serialize_date(u('Mon, 20 Nov 1995 19:12:08 GMT'))
+    ret = datetime_utils.serialize_date('Mon, 20 Nov 1995 19:12:08 GMT')
     assert type(ret) is (str)
     eq_(ret, 'Mon, 20 Nov 1995 19:12:08 GMT')
     dt = formatdate(
         calendar.timegm(
-            (datetime.datetime.now()+datetime.timedelta(1)).timetuple()), usegmt=True)
+            (datetime.datetime.now()+datetime.timedelta(1)).timetuple()),
+        usegmt=True)
     eq_(dt, datetime_utils.serialize_date(datetime.timedelta(1)))
     assert_raises(ValueError, datetime_utils.serialize_date, None)
 
@@ -92,8 +92,7 @@ def test_serialize_date_delta():
     """
     eq_(datetime_utils.serialize_date_delta(1), '1')
     eq_(datetime_utils.serialize_date_delta(1.5), '1')
-    ret = datetime_utils.serialize_date_delta(
-        u('Mon, 20 Nov 1995 19:12:08 GMT'))
+    ret = datetime_utils.serialize_date_delta('Mon, 20 Nov 1995 19:12:08 GMT')
     assert type(ret) is (str)
     eq_(ret, 'Mon, 20 Nov 1995 19:12:08 GMT')
 

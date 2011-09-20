@@ -7,7 +7,6 @@ from webob.exc import WSGIHTTPException
 from webob.exc import _HTTPMove
 from webob.exc import HTTPMethodNotAllowed
 from webob.exc import HTTPExceptionMiddleware
-from webob.compat import u
 
 from nose.tools import eq_, ok_, assert_equal, assert_raises
 
@@ -26,9 +25,9 @@ def test_noescape_not_basestring():
 def test_noescape_unicode():
     class DummyUnicodeObject(object):
         def __unicode__(self):
-            return u('42')
+            return '42'
     duo = DummyUnicodeObject()
-    assert_equal(no_escape(duo), u('42'))
+    assert_equal(no_escape(duo), '42')
 
 def test_strip_tags_empty():
     assert_equal(strip_tags(''), '')
@@ -64,7 +63,7 @@ def test_HTTPException():
     assert_equal(_called, [(environ, start_response)])
 
 def test_exception_with_unicode_data():
-    req = Request.blank('/', method=u('POST'))
+    req = Request.blank('/', method='POST')
     res = req.get_response(method_not_allowed_app)
     assert res.status_int == 405
 
@@ -232,13 +231,8 @@ def test_HTTPMove_location_not_none():
 def test_HTTPMove_add_slash_and_location():
     def start_response(status, headers, exc_info=None):
         pass
-    environ = {
-       'wsgi.url_scheme': 'HTTP',
-       'SERVER_NAME': 'localhost',
-       'SERVER_PORT': '80',
-       'REQUEST_METHOD': 'HEAD'
-    }
-    assert_raises( TypeError, _HTTPMove, location='http://example.com', add_slash=True )
+    assert_raises( TypeError, _HTTPMove, location='http://example.com',
+                   add_slash=True )
 
 def test_HTTPMove_call_add_slash():
     def start_response(status, headers, exc_info=None):

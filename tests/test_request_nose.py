@@ -1,41 +1,40 @@
 import webob
 from webob import Request
-from webob.compat import b
 from nose.tools import eq_ as eq, assert_raises
 
 def test_request_no_method():
     assert Request({}).method == 'GET'
 
 def test_request_read_no_content_length():
-    req, input = _make_read_tracked_request(b('abc'), 'FOO')
+    req, input = _make_read_tracked_request(b'abc', 'FOO')
     assert req.content_length is None
-    assert req.body == b('')
+    assert req.body == b''
     assert not input.was_read
 
 def test_request_read_no_content_length_POST():
-    req, input = _make_read_tracked_request(b('abc'), 'POST')
+    req, input = _make_read_tracked_request(b'abc', 'POST')
     assert req.content_length is None
-    assert req.body == b('abc')
+    assert req.body == b'abc'
     assert input.was_read
 
 def test_request_read_no_flag_but_content_length_is_present():
-    req, input = _make_read_tracked_request(b('abc'))
+    req, input = _make_read_tracked_request(b'abc')
     req.content_length = 3
-    assert req.body == b('abc')
+    assert req.body == b'abc'
     assert input.was_read
 
 def test_request_read_no_content_length_but_flagged_readable():
-    req, input = _make_read_tracked_request(b('abc'))
+    req, input = _make_read_tracked_request(b'abc')
     req.is_body_readable = True
-    assert req.body == b('abc')
+    assert req.body == b'abc'
     assert input.was_read
 
 def test_request_read_after_setting_body_file():
     req = _make_read_tracked_request()[0]
-    input = req.body_file = ReadTracker(b('abc'))
+    input = req.body_file = ReadTracker(b'abc')
     assert req.content_length is None
     assert not req.is_body_seekable
-    assert req.body == b('abc')
+    assert req.body == b'abc'
     # reading body made the input seekable and set the clen
     assert req.content_length == 3
     assert req.is_body_seekable
@@ -44,14 +43,14 @@ def test_request_read_after_setting_body_file():
 def test_request_readlines():
     req = Request.blank('/', POST='a\n'*3)
     req.is_body_seekable = False
-    eq(req.body_file.readlines(), [b('a\n')] * 3)
+    eq(req.body_file.readlines(), [b'a\n'] * 3)
 
 def test_request_delete_with_body():
     req = Request.blank('/', method='DELETE')
     assert not req.is_body_readable
-    req.body = b('abc')
+    req.body = b'abc'
     assert req.is_body_readable
-    assert req.body_file.read() == b('abc')
+    assert req.body_file.read() == b'abc'
 
 
 def _make_read_tracked_request(data='', method='PUT'):

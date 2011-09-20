@@ -8,7 +8,6 @@ from nose.tools import ok_
 from nose.tools import assert_raises
 
 from webob import Request
-from webob.compat import u
 
 
 class GMT(tzinfo):
@@ -160,8 +159,8 @@ def test_header_getter_unicode_fget():
     from webob import Response
     resp = Response('aresp')
     desc = header_getter('AHEADER', '14.3')
-    desc.fset(resp, u('avalue'))
-    eq_(desc.fget(resp), u('avalue'))
+    desc.fset(resp, 'avalue')
+    eq_(desc.fget(resp), 'avalue')
 
 def test_header_getter_unicode_fset_none():
     from webob.descriptors import header_getter
@@ -176,15 +175,15 @@ def test_header_getter_unicode_fset():
     from webob import Response
     resp = Response('aresp')
     desc = header_getter('AHEADER', '14.3')
-    desc.fset(resp, u('avalue2'))
-    eq_(desc.fget(resp), u('avalue2'))
+    desc.fset(resp, 'avalue2')
+    eq_(desc.fget(resp), 'avalue2')
 
 def test_header_getter_unicode_fdel():
     from webob.descriptors import header_getter
     from webob import Response
     resp = Response('aresp')
     desc = header_getter('AHEADER', '14.3')
-    desc.fset(resp, u('avalue3'))
+    desc.fset(resp, 'avalue3')
     desc.fdel(resp)
     eq_(desc.fget(resp), None)
 
@@ -300,12 +299,12 @@ def test_parse_list_none():
 
 def test_parse_list_unicode_single():
     from webob.descriptors import parse_list
-    result = parse_list(u('avalue'))
+    result = parse_list('avalue')
     eq_(result, ('avalue',))
 
 def test_parse_list_unicode_multiple():
     from webob.descriptors import parse_list
-    result = parse_list(u('avalue,avalue2'))
+    result = parse_list('avalue,avalue2')
     eq_(result, ('avalue', 'avalue2'))
 
 def test_serialize_list():
@@ -320,8 +319,8 @@ def test_serialize_list_string():
 
 def test_serialize_list_unicode():
     from webob.descriptors import serialize_list
-    result = serialize_list(u('avalue'))
-    eq_(result, u('avalue'))
+    result = serialize_list('avalue')
+    eq_(result, 'avalue')
 
 def test_converter_date():
     import datetime
@@ -423,8 +422,8 @@ def test_serialize_if_range_string():
 
 def test_serialize_if_range_unicode():
     from webob.descriptors import serialize_if_range
-    val = serialize_if_range(u("avalue"))
-    eq_(val, u("avalue"))
+    val = serialize_if_range("avalue")
+    eq_(val, "avalue")
 
 def test_serialize_if_range_datetime():
     import datetime

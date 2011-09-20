@@ -22,6 +22,16 @@ else:
     text_type = unicode
     binary_type = str
 
+def text_(s, encoding='latin-1'):
+    if isinstance(s, binary_type):
+        return s.decode(encoding)
+    return s
+
+def bytes_(s, encoding='latin-1'):
+    if isinstance(s, text_type):
+        return s.encode(encoding)
+    return s
+
 try: # pragma: no cover
     from collections import MutableMapping as DictMixin
 except ImportError:
@@ -52,19 +62,10 @@ except NameError:
     def next(v):
         return v.next()
 
-if PY3: # pragma: no cover
-    def b(s):
-        return s.encode("latin-1")
-    def u(s):
-        return s
-    import io
-    StringIO = io.StringIO
-    BytesIO = io.BytesIO
-else:
-    def b(s):
-        return s
-    def u(s):
-        return unicode(s, "unicode_escape")
+try: # pragma: no cover
+    from io import StringIO
+    from io import BytesIO
+except ImportError:
     import StringIO
     StringIO = BytesIO = StringIO.StringIO
 
@@ -162,15 +163,15 @@ if PY3: # pragma: no cover
     def unicode_to_wsgi(u):
         # On Python 3, convert an environment variable to a WSGI
         # "bytes-as-unicode" string
-        return u.encode(enc, esc).decode('iso-8859-1')
+        return u.encode(enc, esc).decode('latin-1')
     def wsgi_to_unicode(u):
         # Convert a "bytes-as-unicode" string to Unicode
-        return u.encode('iso-8859-1').decode(enc, esc)
+        return u.encode('latin-1').decode(enc, esc)
 else:
     def unicode_to_wsgi(u):
-        return u.encode('iso-8859-1', 'surrogateescape')
+        return u.encode('latin-1', 'surrogateescape')
     def wsgi_to_unicode(s):
-        return s.decode('iso-8859-1', 'surrogateescape')
+        return s.decode('latin-1', 'surrogateescape')
 
 if PY3: # pragma: no cover
     def parse_qsl_text(qs, keep_blank_values=False, strict_parsing=False,

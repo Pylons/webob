@@ -4,9 +4,7 @@ import re
 import sys
 import io
 import tempfile
-import urllib
-
-from io import BytesIO
+import binascii
 
 from webob.acceptparse import AcceptCharset
 from webob.acceptparse import AcceptLanguage
@@ -25,9 +23,10 @@ from webob.compat import url_unquote
 from webob.compat import url_encode
 from webob.compat import url_quote
 from webob.compat import multidict_from_bodyfile
-from webob.compat import b
+from webob.compat import text_
+from webob.compat import bytes_
 from webob.compat import iteritems_
-from webob.compat import wsgi_to_unicode
+from webob.compat import BytesIO
 from webob.cookies import Cookie
 from webob.descriptors import CHARSET_RE
 from webob.descriptors import SCHEME_RE
@@ -51,7 +50,6 @@ from webob.headers import EnvironHeaders
 from webob.multidict import  NestedMultiDict
 from webob.multidict import  NoVars
 from webob.multidict import TrackableMultiDict
-from webob.multidict import UnicodeMultiDict
 from webob.util import warn_deprecation
 
 __all__ = ['BaseRequest', 'Request']
@@ -68,7 +66,7 @@ http_method_probably_has_body = dict.fromkeys(
 http_method_probably_has_body.update(
     dict.fromkeys(('POST', 'PUT'), True))
 
-_empty_byte = b('')
+_empty_byte = b''
 
 class BaseRequest(object):
     ## Options:
@@ -236,11 +234,7 @@ class BaseRequest(object):
         cached_ctype, cached_charset = self._charset_cache
         if cached_ctype == content_type:
             return cached_charset
-        charset_match = CHARSET_RE.search(content_type)
-        if charset_match:
-            result = charset_match.group(1).strip('"').strip()
-        else:
-            result = 'UTF-8'
+        result = _get_charset(content_type)
         self._charset_cache = (content_type, result)
         return result
     def _charset__set(self, charset):
@@ -916,9 +910,9 @@ class BaseRequest(object):
             abs(id(self)), name)
         return msg
 
-    def as_string(self, skip_body=False):
+    def as_bytes(self, skip_body=False):
         """
-            Return HTTP string representing this request.
+            Return HTTP bytes representing this request.
             If skip_body is True, exclude the body.
             If skip_body is an integer larger than one, skip body
             only if its length is bigger than that number.
@@ -927,7 +921,7 @@ class BaseRequest(object):
         host = self.host_url
         assert url.startswith(host)
         url = url[len(host):]
-        parts = [b('%s %s %s' % (self.method, url, self.http_version))]
+        parts = [bytes_('%s %s %s' % (self.method, url, self.http_version))]
         #self.headers.setdefault('Host', self.host)
 
         # acquire body before we handle headers so that
@@ -943,27 +937,40 @@ class BaseRequest(object):
                 body = self.body
 
         for k, v in sorted(self.headers.items()):
-            header = b('%s: %s'  % (k, v))
+            header = bytes_('%s: %s'  % (k, v))
             parts.append(header)
 
         if body:
             parts.extend( [_empty_byte, body] )
         # HTTP clearly specifies CRLF
-        return b('\r\n').join(parts)
+        return b'\r\n'.join(parts)
 
-    __str__ = as_string
+    as_string = as_bytes # XXX deprecate
+
+    def as_text(self):
+        bytes = self.as_bytes()
+        return bytes.encode(self.encoding)
+
+    __str__ = as_text
 
     @classmethod
-    def from_string(cls, s):
+    def from_bytes(cls, b):
         """
-            Create a request from HTTP string. If the string contains
+            Create a request from HTTP bytes data. If the bytes contain
             extra data after the request, raise a ValueError.
         """
-        f = BytesIO(s)
+        f = BytesIO(b)
         r = cls.from_file(f)
-        if f.tell() != len(s):
+        if f.tell() != len(b):
             raise ValueError("The string contains more data than expected")
         return r
+
+    from_string = from_bytes # XXX deprecate
+
+    @classmethod
+    def from_text(cls, s):
+        b = s.encode('utf-8')
+        return cls.from_bytes(b)
 
     @classmethod
     def from_file(cls, fp):
@@ -979,8 +986,8 @@ class BaseRequest(object):
         encoding = getattr(fp, 'encoding', None)
         start_line = fp.readline()
         if encoding is None:
-            crlf = b('\r\n')
-            colon = b(':')
+            crlf = b'\r\n'
+            colon = b':'
         else:
             crlf = '\r\n'
             colon = ':'
@@ -1127,7 +1134,9 @@ class BaseRequest(object):
             content_type = headers['Content-Type']
         if content_type is not None:
             kw['content_type'] = content_type
-        environ_add_POST(env, POST, content_type)
+        encoding = _get_charset(content_type)
+        environ_add_POST(env, POST, content_type=content_type,
+                         encoding=encoding)
         obj = cls(env, **kw)
         if headers is not None:
             obj.headers.update(headers)
@@ -1178,7 +1187,7 @@ def environ_from_url(path):
     return env
 
 
-def environ_add_POST(env, data, content_type=None):
+def environ_add_POST(env, data, content_type=None, encoding='utf-8'):
     if data is None:
         return
     if env['REQUEST_METHOD'] not in ('POST', 'PUT'):
@@ -1194,7 +1203,8 @@ def environ_add_POST(env, data, content_type=None):
             content_type = 'application/x-www-form-urlencoded'
     if content_type.startswith('multipart/form-data'):
         if not isinstance(data, str):
-            content_type, data = _encode_multipart(data, content_type)
+            content_type, data = _encode_multipart(data, content_type,
+                                                   encoding=encoding)
     elif content_type.startswith('application/x-www-form-urlencoded'):
         if has_files:
             raise ValueError('Submiting files is not allowed for'
@@ -1205,7 +1215,8 @@ def environ_add_POST(env, data, content_type=None):
         if not isinstance(data, str):
             raise ValueError('Please provide `POST` data as string'
                              ' for content type `%s`' % content_type)
-    env['wsgi.input'] = BytesIO(b(data))
+    data = data.encode(encoding)
+    env['wsgi.input'] = BytesIO(data)
     env['webob.is_body_seekable'] = True
     env['CONTENT_LENGTH'] = str(len(data))
     env['CONTENT_TYPE'] = content_type
@@ -1328,19 +1339,13 @@ class FakeCGIBody(io.RawIOBase):
 
     def readinto(self, buff):
         if self.file is None:
-            if self.content_type.startswith('application/x-www-form-urlencoded'):
-                data = urllib.urlencode(self.vars.items())
+            if self.content_type.startswith(
+                'application/x-www-form-urlencoded'):
+                data = url_encode(self.vars.items())
             elif self.content_type.startswith('multipart/form-data'):
-                encoded = []
-                for k, v in self.vars.items():
-                    if hasattr(k, 'encode'):
-                        k = k.encode(self.encoding)
-                    if hasattr(v, 'encode'):
-                        v = v.encode(self.encoding)
-                    encoded.append((k, v))
-                data = _encode_multipart(
-                    encoded,
-                    self.content_type.encode(self.encoding))[1]
+                data = _encode_multipart(self.vars.items(),
+                                         self.content_type,
+                                         encoding=self.encoding)[1]
             else:
                 assert 0, ('Bad content type: %r' % self.content_type)
             self.file = BytesIO(data)
@@ -1353,20 +1358,21 @@ def _get_multipart_boundary(ctype):
         return m.group(1).strip('"')
 
 
-def _encode_multipart(vars, content_type):
-    """Encode a multipart request body into a string"""
+def _encode_multipart(vars, content_type, encoding='utf-8'):
+    """Encode GET or POST vars into a bytes body"""
     f = BytesIO()
     w = f.write
-    CRLF = '\r\n'
+    CRLF = b'\r\n'
     boundary = _get_multipart_boundary(content_type)
     if not boundary:
-        boundary = os.urandom(10).encode('hex')
-        content_type += '; boundary=%s' % boundary
+        boundary = binascii.hexlify(os.urandom(10))
+        content_type += '; boundary=%s' % text_(boundary)
     for name, value in vars:
-        w(b('--%s' % boundary))
+        w(b'--')
+        w(bytes_(boundary, encoding))
         w(CRLF)
         assert name is not None, 'Value associated with no name: %r' % value
-        w(b('Content-Disposition: form-data; name="%s"' % name))
+        w(bytes_('Content-Disposition: form-data; name="%s"' % name, encoding))
         filename = None
         if getattr(value, 'filename', None):
             filename = value.filename
@@ -1375,20 +1381,32 @@ def _encode_multipart(vars, content_type):
             if hasattr(value, 'read'):
                 value = value.read()
         if filename is not None:
-            w('; filename="%s"' % filename)
+            w(bytes_('; filename="%s"' % filename, encoding))
         w(CRLF)
         # TODO: should handle value.disposition_options
         if getattr(value, 'type', None):
-            w('Content-type: %s' % value.type)
+            w(bytes_('Content-type: %s' % value.type, encoding))
             if value.type_options:
                 for ct_name, ct_value in sorted(value.type_options.items()):
-                    w('; %s="%s"' % (ct_name, ct_value))
+                    w(bytes_('; %s="%s"' % (ct_name, ct_value), encoding))
             w(CRLF)
         w(CRLF)
         if hasattr(value, 'value'):
-            w(value.value)
+            w(bytes_(value.value, encoding))
         else:
-            w(value)
+            w(bytes_(value, encoding))
         w(CRLF)
-    w('--%s--' % boundary)
+    w(b'--')
+    w(bytes_(boundary, encoding))
+    w(b'--')
     return content_type, f.getvalue()
+
+def _get_charset(content_type):
+    if content_type is None:
+        return 'UTF-8'
+    charset_match = CHARSET_RE.search(content_type)
+    if charset_match:
+        return charset_match.group(1).strip('"').strip()
+    else:
+        return 'UTF-8'
+    

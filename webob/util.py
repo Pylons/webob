@@ -1,6 +1,5 @@
 import cgi, warnings
 from webob.headers import _trans_key
-from webob.compat import u
 from webob.compat import string_types
 from webob.compat import text_type
 

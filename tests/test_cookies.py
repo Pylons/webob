@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import timedelta
 from webob import cookies
-from webob.compat import u
 from nose.tools import eq_
 
 def test_cookie_empty():
@@ -12,15 +11,15 @@ def test_cookie_one_value():
     c = cookies.Cookie('dismiss-top=6')
     vals = list(c.values())
     eq_(len(vals), 1)
-    eq_(vals[0].name, u('dismiss-top'))
-    eq_(vals[0].value, u('6'))
+    eq_(vals[0].name, 'dismiss-top')
+    eq_(vals[0].value, '6')
 
 def test_cookie_one_value_with_trailing_semi():
     c = cookies.Cookie('dismiss-top=6;')
     vals = list(c.values())
     eq_(len(vals), 1)
-    eq_(vals[0].name, u('dismiss-top'))
-    eq_(vals[0].value, u('6'))
+    eq_(vals[0].name, 'dismiss-top')
+    eq_(vals[0].value, '6')
     c = cookies.Cookie('dismiss-top=6;')
 
 def test_cookie_complex():
@@ -100,7 +99,7 @@ def test_cookie_setitem_needs_quoting():
     eq_(len(c), 0)
 
 def test_morsel_serialize_with_expires():
-    morsel = cookies.Morsel(u('bleh'), u('blah'))
+    morsel = cookies.Morsel('bleh', 'blah')
     morsel.expires = 'Tue, 04-Jan-2011 13:43:50 GMT'
     result = morsel.serialize()
     eq_(result, 'bleh=blah; expires=Tue, 04-Jan-2011 13:43:50 GMT')

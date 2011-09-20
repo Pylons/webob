@@ -12,7 +12,6 @@ from webob.cachecontrol import CacheControl
 from webob.cachecontrol import serialize_cache_control
 from webob.cookies import Cookie
 from webob.cookies import Morsel
-from webob.compat import b
 from webob.compat import urlparse
 from webob.compat import text_type
 from webob.compat import binary_type
@@ -41,16 +40,15 @@ from webob.descriptors import serialize_etag_response
 from webob.descriptors import serialize_int
 from webob.headers import ResponseHeaders
 from webob.util import status_reasons
-from webob.util import warn_deprecation
 
 __all__ = ['Response']
 
 _PARAM_RE = re.compile(r'([a-z0-9]+)=(?:"([^"]*)"|([a-z0-9_.-]*))', re.I)
 _OK_PARAM_RE = re.compile(r'^[a-z0-9_.-]+$', re.I)
 
-_gzip_header = b('\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff')
+_gzip_header = b'\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff'
 
-_empty_bytes = b('')
+_empty_bytes = b''
 
 class Response(object):
     """
@@ -76,7 +74,7 @@ class Response(object):
                  **kw):
         if app_iter is None:
             if body is None:
-                body = b('')
+                body = b''
         elif body is not None:
             raise TypeError(
                 "You may only give one of the body and app_iter arguments")
@@ -147,7 +145,7 @@ class Response(object):
         headerlist = []
         status = fp.readline().strip()
         if encoding is None:
-            _colon = b(':')
+            _colon = b':'
         else:
             _colon = ':'
         while 1:
@@ -1061,7 +1059,7 @@ class AppIterRange(object):
             if self._pos < start:
                 continue
             elif self._pos == start:
-                return b('')
+                return b''
             else:
                 chunk = chunk[start-self._pos:]
                 if stop is not None and self._pos > stop:
@@ -1146,7 +1144,7 @@ def iter_close(iter):
 
 def gzip_app_iter(app_iter):
     size = 0
-    crc = zlib.crc32(b("")) & 0xffffffff
+    crc = zlib.crc32(b"") & 0xffffffff
     compress = zlib.compressobj(9, zlib.DEFLATED, -zlib.MAX_WBITS,
                                 zlib.DEF_MEM_LEVEL, 0)
 

@@ -3,7 +3,7 @@ from webob import html_escape
 from webob.multidict import MultiDict
 from webob.multidict import UnicodeMultiDict
 from nose.tools import eq_ as eq, assert_raises
-from webob.compat import u
+from webob.compat import text_
 
 def test_html_escape():
     for v, s in [
@@ -13,12 +13,13 @@ def test_html_escape():
         ('&egrave;', '&amp;egrave;'),
         # The apostrophe is *not* escaped, which some might consider to be
         # a serious bug (see, e.g. http://www.cvedetails.com/cve/CVE-2010-2480/)
-        (u('the majestic m\xf8ose'), 'the majestic m&#248;ose'),
+        (text_('the majestic m\xf8ose'), 'the majestic m&#248;ose'),
         #("'", "&#39;")
 
         # 8-bit strings are passed through
-        (u('\xe9'), '&#233;'),
-        (u('the majestic m\xf8ose').encode('utf-8'), 'the majestic m\xc3\xb8ose'),
+        (text_('\xe9'), '&#233;'),
+        (text_(b'the majestic m\xf8ose').encode('utf-8'),
+         'the majestic m\xc3\xb8ose'),
 
         # ``None`` is treated specially, and returns the empty string.
         (None, ''),
@@ -46,7 +47,7 @@ class t_esc_HTML(object):
 
 class t_esc_Unicode(object):
     def __unicode__(self):
-        return u('\xe9')
+        return text_(b'\xe9')
 
 class t_esc_UnsafeAttrs(object):
     attr = 'value'
@@ -57,9 +58,9 @@ class t_esc_UnsafeAttrs(object):
 
 class t_esc_SuperMoose(object):
     def __str__(self):
-        return u('m\xf8ose').encode('UTF-8')
+        return text_(b'm\xf8ose').encode('utf-8')
     def __unicode__(self):
-        return u('m\xf8ose')
+        return text_(b'm\xf8ose')
 
 
 
@@ -135,9 +136,9 @@ def test_multidict_cgi():
     fs.filename = '\xc3\xb8'
     plain = MultiDict(key='\xc3\xb8', fs=fs)
     ua = UnicodeMultiDict(multi=plain, encoding='utf-8')
-    eq(list(ua.getall('key')), [u('\xf8')])
+    eq(list(ua.getall('key')), [text_(b'\xf8')])
     eq(repr(ua.getall('fs')), "[FieldStorage(None, u'\\xf8', [])]")
     ub = UnicodeMultiDict(multi=ua, encoding='utf-8')
-    eq(ub.getall('key'), [u('\xf8')])
+    eq(ub.getall('key'), [text_(b'\xf8')])
     eq(repr(ub.getall('fs')), "[FieldStorage(None, u'\\xf8', [])]")
 

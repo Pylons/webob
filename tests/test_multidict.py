@@ -2,12 +2,11 @@
 
 import unittest
 from webob import multidict
-from webob.compat import u
-from webob.compat import b
+from webob.compat import text_
 
 class BaseDictTests(object):
     def setUp(self):
-        self._list = [('a', u('\xe9')), ('a', 'e'), ('a', 'f'), ('b', 1)]
+        self._list = [('a', text_('\xe9')), ('a', 'e'), ('a', 'f'), ('b', 1)]
         self.data = multidict.MultiDict(self._list)
         self.d = self._get_instance()
 
@@ -36,7 +35,7 @@ class BaseDictTests(object):
     def test_dict_of_lists(self):
         self.assertEqual(
             self.d.dict_of_lists(),
-            {'a': [u('\xe9'), u('e'), u('f')], 'b': [1]})
+            {'a': [text_('\xe9'), 'e', 'f'], 'b': [1]})
 
     def test_dict_api(self):
         self.assertTrue('a' in self.d.mixed())
@@ -196,14 +195,14 @@ class UnicodeMultiDictTestCase(BaseDictTests, unittest.TestCase):
 
     def test_encode_key(self):
         d = self._get_instance()
-        value = u('a')
+        value = text_('a')
         d.decode_keys = True
-        self.assertEqual(d._encode_key(value), b('a'))
+        self.assertEqual(d._encode_key(value), b'a')
 
     def test_encode_value(self):
         d = self._get_instance()
-        value = u('a')
-        self.assertEqual(d._encode_value(value), b('a'))
+        value = text_('a')
+        self.assertEqual(d._encode_value(value), b'a')
 
     def test_repr_with_password(self):
         d = self._get_instance(password='pwd')
@@ -283,7 +282,7 @@ class TrackableMultiDict(BaseDictTests, unittest.TestCase):
         #The first argument passed into the __init__ method
         class Arg:
             def items(self):
-                return [('a', u('\xe9')), ('a', 'e'), ('a', 'f'), ('b', 1)]
+                return [('a', text_('\xe9')), ('a', 'e'), ('a', 'f'), ('b', 1)]
 
         d = self._get_instance()
         d._items = None
@@ -299,13 +298,13 @@ class TrackableMultiDict(BaseDictTests, unittest.TestCase):
     def test_listextend(self):
         class Other:
             def items(self):
-                return [u('\xe9'), u('e'), r'f', 1]
+                return [text_('\xe9'), 'e', 'f', 1]
 
         other = Other()
         d = self._get_instance()
         d.extend(other)
 
-        _list = [u('\xe9'), u('e'), r'f', 1]
+        _list = [text_('\xe9'), 'e', r'f', 1]
         for v in _list:
             self.assertTrue(v in d._items)
 
