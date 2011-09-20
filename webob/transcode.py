@@ -4,7 +4,7 @@ Middleware that transcodes requests from non-UTF-8 charsets
 __all__ = ['transcode_mw']
 
 import io, urllib, urlparse, cgi
-from webob.request import detect_charset, LimitedLengthFile, _encode_multipart
+from webob.request import detect_charset, LimitedLengthFile, _encode_multipart, _is_utf8
 from webob.descriptors import parse_int_safe
 
 def transcode_mw(app, unicode_errors='strict'):
@@ -13,7 +13,7 @@ def transcode_mw(app, unicode_errors='strict'):
             and env.get('CONTENT_TYPE')
         ):
             charset = detect_charset(env['CONTENT_TYPE'])
-            if charset and charset.lower().replace('-', '') != 'utf8':
+            if not _is_utf8(charset):
                 env = _transcode_env(env, charset, unicode_errors)
         return app(env, sr)
     return transcode_mw_inner

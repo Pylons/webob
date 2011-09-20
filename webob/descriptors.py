@@ -40,9 +40,9 @@ def environ_getter(key, default=_not_given, rfc_section=None):
 
 def upath_property(key):
     def fget(req):
-        return req.environ.get(key, '').decode('UTF8', req.unicode_errors)
+        return req.environ.get(key, '').decode('UTF8')
     def fset(req, val):
-        req.environ[key] = val.encode('UTF8', req.unicode_errors)
+        req.environ[key] = val.encode('UTF8')
     return property(fget, fset, doc='upath_property(%r)' % key)
 
 

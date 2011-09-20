@@ -26,27 +26,23 @@ http_method_probably_has_body = dict.fromkeys(('GET', 'HEAD', 'DELETE', 'TRACE')
 http_method_probably_has_body.update(dict.fromkeys(('POST', 'PUT'), True))
 
 class BaseRequest(object):
-    ## Options:
-    unicode_errors = 'strict'
     ## The limit after which request bodies should be stored on disk
     ## if they are read in (under this, and the request body is stored
     ## in memory):
     request_body_tempfile_limit = 10*1024
 
-    def __init__(self,
-        environ,
-        charset=NoDefault,
-        unicode_errors=NoDefault,
-        **kw
-    ):
+    def __init__(self, environ, charset=None, unicode_errors=None, **kw):
         if type(environ) is not dict:
             raise TypeError("WSGI environ must be a dict")
+        if (unicode_errors is not None
+            or not _is_utf8(charset)
+        ):
+            raise DeprecationWarning("If you get non-UTF-8 requests, "
+                "use webob.transcode.transcode_mw"
+            )
+        _check_charset(environ.get('CONTENT_TYPE', ''))
         d = self.__dict__
         d['environ'] = environ
-        if charset is not NoDefault:
-            self.charset = charset
-        if unicode_errors is not NoDefault:
-            d['unicode_errors'] = unicode_errors
         if 'decode_param_names' in kw or hasattr(self.__class__, 'decode_param_names'):
             raise DeprecationWarning("decode_param_names is deprecated")
         if kw:
@@ -60,6 +56,13 @@ class BaseRequest(object):
                     raise TypeError(
                         "Unexpected keyword: %s=%r" % (name, value))
                 setattr(self, name, value)
+
+    def _set_charset(self, charset):
+        if not _is_utf8(charset):
+            raise DeprecationWarning("If you get non-UTF-8 requests, "
+                "use webob.transcode.transcode_mw"
+            )
+    charset = property(lambda self: 'UTF-8', _set_charset)
 
     # this is necessary for correct warnings depth for both
     # BaseRequest and Request (due to AdhocAttrMixin.__setattr__)
@@ -169,7 +172,9 @@ class BaseRequest(object):
             del self.content_type
             return
         value = str(value)
-        if ';' not in value:
+        if ';' in value:
+            _check_charset(value)
+        else:
             content_type = self.environ.get('CONTENT_TYPE', '')
             if ';' in content_type:
                 value += ';' + content_type.split(';', 1)[1]
@@ -182,53 +187,6 @@ class BaseRequest(object):
                             _content_type__set,
                             _content_type__del,
                             _content_type__get.__doc__)
-
-    _charset_cache = (None, None)
-
-    def _charset__get(self):
-        """Get the charset of the request.
-
-        If the request was sent with a charset parameter on the
-        Content-Type, that will be used.  Otherwise if there is a
-        default charset (set during construction, or as a class
-        attribute) that will be returned.  Otherwise None.
-
-        Setting this property after request instantiation will always
-        update Content-Type.  Deleting the property updates the
-        Content-Type to remove any charset parameter (if none exists,
-        then deleting the property will do nothing, and there will be
-        no error).
-        """
-        content_type = self.environ.get('CONTENT_TYPE', '')
-        cached_ctype, cached_charset = self._charset_cache
-        if cached_ctype == content_type:
-            return cached_charset
-        r = detect_charset(content_type) or 'UTF-8'
-        self._charset_cache = (content_type, r)
-        return r
-    def _charset__set(self, charset):
-        if charset is None or charset == '':
-            del self.charset
-            return
-        charset = str(charset)
-        content_type = self.environ.get('CONTENT_TYPE', '')
-        charset_match = CHARSET_RE.search(self.environ.get('CONTENT_TYPE', ''))
-        if charset_match:
-            content_type = (content_type[:charset_match.start(1)] +
-                            charset + content_type[charset_match.end(1):])
-        # comma to separate params? there's nothing like that in RFCs AFAICT
-        #elif ';' in content_type:
-        #    content_type += ', charset="%s"' % charset
-        else:
-            content_type += '; charset="%s"' % charset
-        self.environ['CONTENT_TYPE'] = content_type
-    def _charset__del(self):
-        new_content_type = CHARSET_RE.sub('', self.environ.get('CONTENT_TYPE', ''))
-        new_content_type = new_content_type.rstrip().rstrip(';').rstrip(',')
-        self.environ['CONTENT_TYPE'] = new_content_type
-
-    charset = property(_charset__get, _charset__set, _charset__del,
-                       _charset__get.__doc__)
 
     _headers = None
 
@@ -548,14 +506,12 @@ class BaseRequest(object):
         fs = cgi.FieldStorage(fp=self.body_file,
                               environ=fs_environ,
                               keep_blank_values=True)
-        vars = MultiDict.from_fieldstorage(
-            fs,
-            encoding=self.charset,
-            errors=self.unicode_errors
-        )
+        #@@ hardcode
+        vars = MultiDict.from_fieldstorage(fs)
         #ctype = self.content_type or 'application/x-www-form-urlencoded'
         ctype = env.get('CONTENT_TYPE', 'application/x-www-form-urlencoded')
-        f = FakeCGIBody(vars, ctype, self.charset, self.unicode_errors)
+        #@@ hardcode
+        f = FakeCGIBody(vars, ctype)
         self.body_file = io.BufferedReader(f)
         env['webob._parsed_post_vars'] = (vars, self.body_file_raw)
         return vars
@@ -575,7 +531,7 @@ class BaseRequest(object):
 
         def _update_get(_vars, key=None, value=None):
             assert _vars is vars
-            e = lambda t: t.encode(encoding, errors)
+            e = lambda t: t.encode('utf8')
             data = _vars.items()
             data = [(e(k), e(v)) for k,v in data]
             qs = urllib.urlencode(data)
@@ -583,14 +539,11 @@ class BaseRequest(object):
             env['webob._parsed_query_vars'] = (vars, qs)
 
         data = []
-        encoding = self.charset
-        errors = self.unicode_errors
         if source:
             data = urlparse.parse_qsl(source, keep_blank_values=True,
                                                     strict_parsing=False)
-            d = lambda b: b.decode(encoding, errors)
+            d = lambda b: b.decode('utf8')
             data = [(d(k), d(v)) for k,v in data]
-
         vars = GetDict(data, _update_get)
         env['webob._parsed_query_vars'] = (vars, source)
         return vars
@@ -611,9 +564,7 @@ class BaseRequest(object):
         A dictionary of cookies as found in the request.
         """
         data = self.environ.get('HTTP_COOKIE', '')
-        encoding = self.charset
-        errors = self.unicode_errors
-        d = lambda b: b.decode(encoding, errors)
+        d = lambda b: b.decode('utf8')
         r = dict((d(k), d(v)) for k,v in parse_cookie(data))
         return r
 
@@ -1339,6 +1290,17 @@ def detect_charset(ctype):
     m = CHARSET_RE.search(ctype)
     if m:
         return m.group(1).strip('"').strip()
+
+def _check_charset(value):
+    charset = detect_charset(value)
+    if not _is_utf8(charset):
+        raise DeprecationWarning("We only support UTF-8 encoding, not %s" % charset)
+
+def _is_utf8(charset):
+    if not charset:
+        return True
+    else:
+        return charset.lower().replace('-', '') == 'utf8'
 
 
 # TODO: remove in 1.4
