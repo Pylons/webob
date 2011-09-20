@@ -1083,7 +1083,6 @@ def environ_add_POST(env, data, content_type=None):
         content_type = 'multipart/form-data' if has_files else 'application/x-www-form-urlencoded'
     if content_type.startswith('multipart/form-data'):
         if not isinstance(data, str):
-            # TODO: use correct encoding
             content_type, data = _encode_multipart(data, content_type)
     elif content_type.startswith('application/x-www-form-urlencoded'):
         if has_files:
