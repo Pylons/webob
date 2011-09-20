@@ -2,7 +2,7 @@ import re
 from datetime import datetime, date
 
 from webob.byterange import Range, ContentRange
-from webob.etag import IfRange, NoIfRange
+from webob.etag import IfRange
 from webob.datetime_utils import parse_date, serialize_date
 from webob.util import header_docstring
 
@@ -172,12 +172,6 @@ def parse_etag_response(value):
 
 def serialize_etag_response(value):
     return '"%s"' % value.replace('"', '\\"')
-
-def parse_if_range(value):
-    if not value:
-        return NoIfRange
-    else:
-        return IfRange.parse(value)
 
 def serialize_if_range(value):
     if isinstance(value, (datetime, date)):

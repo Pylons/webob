@@ -7,7 +7,7 @@ Also If-Range parsing
 from webob.datetime_utils import *
 from webob.util import header_docstring, warn_deprecation
 
-__all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'NoIfRange', 'etag_property']
+__all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'etag_property']
 
 
 def etag_property(key, default, rfc_section):
@@ -146,92 +146,71 @@ class ETagMatcher(object):
             items.append('W/"%s"' % weak)
         return ', '.join(items)
 
+
 class IfRange(object):
-    """
-    Parses and represents the If-Range header, which can be
-    an ETag *or* a date
-    """
-    def __init__(self, etag=None, date=None):
+    def __init__(self, etag):
         self.etag = etag
-        self.date = date
-
-    def __repr__(self):
-        if self.etag is None:
-            etag = '*'
-        else:
-            etag = str(self.etag)
-        if self.date is None:
-            date = '*'
-        else:
-            date = serialize_date(self.date)
-        return '<%s etag=%s, date=%s>' % (
-            self.__class__.__name__,
-            etag, date)
-
-    def __str__(self):
-        if self.etag is not None:
-            return str(self.etag)
-        elif self.date:
-            return serialize_date(self.date)
-        else:
-            return ''
-
-    def match(self, etag=None, last_modified=None):
-        """
-        Return True if the If-Range header matches the given etag or last_modified
-        """
-        if self.date is not None:
-            if last_modified is None:
-                # Conditional with nothing to base the condition won't work
-                return False
-            return last_modified <= self.date
-        elif self.etag is not None:
-            if not etag:
-                return False
-            return etag in self.etag
-        return True
-
-    def match_response(self, response):
-        """
-        Return True if this matches the given ``webob.Response`` instance.
-        """
-        return self.match(etag=response.etag, last_modified=response.last_modified)
 
     @classmethod
     def parse(cls, value):
         """
         Parse this from a header value.
         """
-        date = etag = None
         if not value:
-            etag = NoETag()
-        elif value and value.endswith(' GMT'):
+            return cls(AnyETag)
+        elif value.endswith(' GMT'):
             # Must be a date
-            date = parse_date(value)
+            return IfRangeDate(parse_date(value))
         else:
-            etag = ETagMatcher.parse(value)
-        return cls(etag=etag, date=date)
-
-class _NoIfRange(object):
-    """
-    Represents a missing If-Range header
-    """
-
-    def __repr__(self):
-        return '<Empty If-Range>'
-
-    def __str__(self):
-        return ''
-
-    def __nonzero__(self):
-        return False
+            return cls(ETagMatcher.parse(value))
 
     def match(self, etag=None, last_modified=None):
-        return True
+        """
+        Return True if the If-Range header matches the given etag or last_modified
+        """
+        #TODO: deprecate
+        return etag in self.etag
 
     def match_response(self, response):
-        return True
+        """
+        Return True if this matches the given ``webob.Response`` instance.
+        """
+        return self.match(etag=response.etag)
 
-NoIfRange = _NoIfRange()
+    def __nonzero__(self):
+        return bool(self.etag)
 
+    def __repr__(self):
+        return '%s(%r)' % (
+            self.__class__.__name__,
+            self.etag
+        )
+
+    def __str__(self):
+        return str(self.etag) if self.etag else ''
+
+
+
+class IfRangeDate(object):
+    def __init__(self, date):
+        self.date = date
+
+    def match(self, etag=None, last_modified=None):
+        #TODO: deprecate
+        if isinstance(last_modified, str):
+            last_modified = parse_date(last_modified)
+        return last_modified and (last_modified <= self.date)
+
+    def match_response(self, response):
+        return self.match(last_modified=response.last_modified)
+
+    def __repr__(self):
+        return '%s(%r)' % (
+            self.__class__.__name__,
+            self.date
+            #serialize_date(self.date)
+        )
+
+    def __str__(self):
+        return serialize_date(self.date)
 

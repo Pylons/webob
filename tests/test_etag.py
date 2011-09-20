@@ -1,5 +1,5 @@
 import unittest
-from webob.etag import ETagMatcher
+from webob.etag import ETagMatcher, IfRange
 
 class etag_propertyTests(unittest.TestCase):
     def _getTargetClass(self):
@@ -222,99 +222,60 @@ class ParseTests(unittest.TestCase):
         self.assertEqual(et.weak_etags, [])
 
 class IfRangeTests(unittest.TestCase):
-    def _getTargetClass(self):
-        from webob.etag import IfRange
-        return IfRange
-
-    def _makeOne(self, *args, **kw):
-        return self._getTargetClass()(*args, **kw)
-
-    def test___init__(self):
-        ir = self._makeOne()
-        self.assertEqual(ir.etag, None)
-        self.assertEqual(ir.date, None)
-
-    def test___init__etag(self):
-        ir = self._makeOne(etag='ETAG')
-        self.assertEqual(ir.etag, 'ETAG')
-        self.assertEqual(ir.date, None)
-
-    def test___init__date(self):
-        ir = self._makeOne(date='DATE')
-        self.assertEqual(ir.etag, None)
-        self.assertEqual(ir.date, 'DATE')
-
-    def test___init__etag_date(self):
-        ir = self._makeOne(etag='ETAG', date='DATE')
-        self.assertEqual(ir.etag, 'ETAG')
-        self.assertEqual(ir.date, 'DATE')
-
     def test___repr__(self):
-        ir = self._makeOne()
-        self.assertEqual(ir.__repr__(), '<IfRange etag=*, date=*>')
+        self.assertEqual(repr(IfRange(None)), 'IfRange(None)')
 
     def test___repr__etag(self):
-        ir = self._makeOne(etag='ETAG')
-        self.assertEqual(ir.__repr__(), '<IfRange etag=ETAG, date=*>')
+        self.assertEqual(repr(IfRange('ETAG')), "IfRange('ETAG')")
 
     def test___repr__date(self):
-        ir = self._makeOne(date='Fri, 09 Nov 2001 01:08:47 -0000')
-        self.assertEqual(ir.__repr__(),
-                         '<IfRange etag=*, ' +
-                         'date=Fri, 09 Nov 2001 01:08:47 -0000>')
-
-    def test___repr__etag_date(self):
-        ir = self._makeOne(etag='ETAG', date='Fri, 09 Nov 2001 01:08:47 -0000')
-        self.assertEqual(ir.__repr__(),
-                         '<IfRange etag=ETAG, ' +
-                         'date=Fri, 09 Nov 2001 01:08:47 -0000>')
+        ir = IfRange.parse('Fri, 09 Nov 2001 01:08:47 GMT')
+        self.assertEqual(
+            repr(ir),
+            'IfRangeDate(datetime.datetime(2001, 11, 9, 1, 8, 47, tzinfo=UTC))'
+        )
 
     def test___str__(self):
-        ir = self._makeOne()
-        self.assertEqual(str(ir), '')
+        self.assertEqual(str(IfRange(None)), '')
 
     def test___str__etag(self):
-        ir = self._makeOne(etag='ETAG', date='Fri, 09 Nov 2001 01:08:47 -0000')
+        ir = IfRange('ETAG')
         self.assertEqual(str(ir), 'ETAG')
 
     def test___str__date(self):
-        ir = self._makeOne(date='Fri, 09 Nov 2001 01:08:47 -0000')
-        self.assertEqual(str(ir), 'Fri, 09 Nov 2001 01:08:47 -0000')
-
-    def test_match(self):
-        ir = self._makeOne()
-        self.assertTrue(ir.match())
+        ir = IfRange.parse('Fri, 09 Nov 2001 01:08:47 GMT')
+        self.assertEqual(str(ir), 'Fri, 09 Nov 2001 01:08:47 GMT')
 
     def test_match_date_none(self):
-        ir = self._makeOne(date='Fri, 09 Nov 2001 01:08:47 -0000')
+        ir = IfRange.parse('Fri, 09 Nov 2001 01:08:47 GMT')
         self.assertFalse(ir.match())
 
     def test_match_date_earlier(self):
-        ir = self._makeOne(date='Fri, 09 Nov 2001 01:08:47 -0000')
+        ir = IfRange.parse('Fri, 09 Nov 2001 01:08:47 GMT')
         self.assertTrue(ir.match(last_modified=
-                                 'Fri, 09 Nov 2001 01:00:00 -0000'))
+                                 'Fri, 09 Nov 2001 01:00:00 GMT'))
 
     def test_match_etag_none(self):
-        ir = self._makeOne(etag="ETAG")
+        ir = IfRange.parse('ETAG')
         self.assertFalse(ir.match())
 
     def test_match_etag_different(self):
-        ir = self._makeOne(etag="ETAG")
+        ir = IfRange.parse('ETAG')
         self.assertFalse(ir.match("DIFFERENT"))
 
     def test_match_response_no_date(self):
         class DummyResponse(object):
             etag = "ETAG"
             last_modified = None
-        ir = self._makeOne(etag="ETAG", date='Fri, 09 Nov 2001 01:08:47 -0000')
+        ir = IfRange.parse('Fri, 09 Nov 2001 01:08:47 GMT')
         response = DummyResponse()
         self.assertFalse(ir.match_response(response))
 
     def test_match_response_w_date_earlier(self):
         class DummyResponse(object):
-            etag = "ETAG"
-            last_modified = 'Fri, 09 Nov 2001 01:00:00 -0000'
-        ir = self._makeOne(etag="ETAG", date='Fri, 09 Nov 2001 01:08:47 -0000')
+            etag = 'foo'
+            last_modified = 'Fri, 09 Nov 2001 01:00:00 GMT'
+        ir = IfRange.parse('Fri, 09 Nov 2001 01:08:47 GMT')
         response = DummyResponse()
         self.assertTrue(ir.match_response(response))
 
@@ -322,20 +283,13 @@ class IfRangeTests(unittest.TestCase):
         class DummyResponse(object):
             etag = "ETAG"
             last_modified = None
-        ir = self._makeOne(etag="ETAG")
+        ir = IfRange(etag="ETAG")
         response = DummyResponse()
         self.assertTrue(ir.match_response(response))
 
-    def test_parse_none(self):
-        ir = self._makeOne(etag="ETAG")
-        # I believe this identifies a bug: '_NoETag' object is not callable
-        self.assertRaises(TypeError, ir.parse, None)
-
     def test_parse_wo_gmt(self):
-        ir = self._makeOne(etag="ETAG")
-        res = ir.parse('INTERPRETED_AS_ETAG')
+        res = IfRange.parse('INTERPRETED_AS_ETAG')
         self.assertEquals(res.etag.etags, ['INTERPRETED_AS_ETAG'])
-        self.assertEquals(res.date, None)
 
     def test_parse_with_gmt(self):
         import datetime
@@ -344,36 +298,7 @@ class IfRangeTests(unittest.TestCase):
                 return datetime.timedelta(0)
             def tzname(self, dt):
                 return 'UTC'
-        ir = self._makeOne(etag="ETAG")
-        res = ir.parse('Fri, 09 Nov 2001 01:08:47 GMT')
-        self.assertEquals(res.etag, None)
+        res = IfRange.parse('Fri, 09 Nov 2001 01:08:47 GMT')
         dt = datetime.datetime(2001,11,9, 1,8,47,0, UTC())
         self.assertEquals(res.date, dt)
 
-class NoIfRangeTests(unittest.TestCase):
-    def _getTargetClass(self):
-        from webob.etag import _NoIfRange
-        return _NoIfRange
-
-    def _makeOne(self, *args, **kw):
-        return self._getTargetClass()(*args, **kw)
-
-    def test___repr__(self):
-        ir = self._makeOne()
-        self.assertEquals(ir.__repr__(), '<Empty If-Range>')
-
-    def test___str__(self):
-        ir = self._makeOne()
-        self.assertEquals(str(ir), '')
-
-    def test___nonzero__(self):
-        ir = self._makeOne()
-        self.assertEquals(ir.__nonzero__(), False)
-
-    def test_match(self):
-        ir = self._makeOne()
-        self.assertEquals(ir.match(), True)
-
-    def test_match_response(self):
-        ir = self._makeOne()
-        self.assertEquals(ir.match_response("IGNORED"), True)

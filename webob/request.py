@@ -6,7 +6,7 @@ from webob.headers import EnvironHeaders
 from webob.acceptparse import accept_property, Accept, MIMEAccept, AcceptCharset, NilAccept, MIMENilAccept, NoAccept, AcceptLanguage
 from webob.multidict import TrackableMultiDict, MultiDict, UnicodeMultiDict, NestedMultiDict, NoVars
 from webob.cachecontrol import CacheControl, serialize_cache_control
-from webob.etag import etag_property, AnyETag, NoETag
+from webob.etag import etag_property, AnyETag, NoETag, IfRange
 
 from webob.descriptors import *
 from webob.datetime_utils import *
@@ -844,7 +844,7 @@ class BaseRequest(object):
                     environ_getter('HTTP_IF_UNMODIFIED_SINCE', None, '14.28'))
     if_range = converter(
         environ_getter('HTTP_IF_RANGE', None, '14.27'),
-        parse_if_range, serialize_if_range, 'IfRange object')
+        IfRange.parse, serialize_if_range, 'IfRange object')
 
 
     max_forwards = converter(

@@ -2150,7 +2150,6 @@ class RequestTests_functional(unittest.TestCase):
         from webob.acceptparse import MIMEAccept
         from webob.byterange import Range
         from webob.etag import ETagMatcher
-        from webob.etag import _NoIfRange
         from webob.multidict import MultiDict
         from webob.multidict import TrackableMultiDict
         from webob.multidict import UnicodeMultiDict
@@ -2215,7 +2214,7 @@ class RequestTests_functional(unittest.TestCase):
         self.assert_(req.if_modified_since)
         self.assert_(req.if_modified_since >= server_modified)
 
-        self.assert_(isinstance(req.if_range, _NoIfRange))
+        self.assert_(not req.if_range)
         self.assert_(req.if_range.match(etag='some-etag',
                      last_modified=datetime(2005, 1, 1, 12, 0)))
         req.if_range = 'opaque-etag'
