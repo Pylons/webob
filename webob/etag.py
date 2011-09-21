@@ -175,7 +175,7 @@ class IfRange(object):
         """
         Return True if this matches the given ``webob.Response`` instance.
         """
-        return self.match(etag=response.etag)
+        return self.match(etag=response.etag_strong)
 
     def __nonzero__(self):
         return bool(self.etag)

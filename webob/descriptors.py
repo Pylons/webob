@@ -7,7 +7,6 @@ from webob.datetime_utils import parse_date, serialize_date
 from webob.util import header_docstring, warn_deprecation
 
 CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
-QUOTES_RE = re.compile('"(.*)"')
 SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
 
 
@@ -153,22 +152,35 @@ def date_header(header, rfc_section):
 ########################
 
 
-def parse_etag_response(value):
+_rx_etag = re.compile('(W/)?"(.*)"')
+
+def parse_etag_response(value, strong=False):
     """
-    Parse a response ETag. Weak ETags are dropped.
+    Parse a response ETag.
     See:
         * http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.19
         * http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.11
     """
-    if value and not value.startswith('W/'):
-        unquote_match = QUOTES_RE.match(value)
-        if unquote_match is not None:
-            value = unquote_match.group(1)
-            value = value.replace('\\"', '"')
+    if not value:
+        return None
+    m = _rx_etag.match(value)
+    if not m:
+        # this etag is invalid, but we'll just return it anyway
         return value
+    elif strong and m.group(1):
+        # this is a weak etag and we want only strong ones
+        return None
+    else:
+        return m.group(2).replace('\\"', '"')
 
 def serialize_etag_response(value):
-    return '"%s"' % value.replace('"', '\\"')
+    m = _rx_etag.match(value)
+    if m:
+        # this is a valid etag already
+        return value
+    else:
+        # let's quote the value
+        return '"%s"' % value.replace('"', '\\"')
 
 def serialize_if_range(value):
     if isinstance(value, (datetime, date)):

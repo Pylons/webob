@@ -439,9 +439,14 @@ class Response(object):
     expires = date_header('Expires', '14.21')
     last_modified = date_header('Last-Modified', '14.29')
 
-    etag = converter(
-        header_getter('ETag', '14.19'),
-        parse_etag_response, serialize_etag_response, 'Entity tag')
+    _etag_raw = header_getter('ETag', '14.19')
+    etag = converter(_etag_raw,
+        parse_etag_response, serialize_etag_response,
+        'Entity tag'
+    )
+    @property
+    def etag_strong(self):
+        return parse_etag_response(self._etag_raw, strong=True)
 
     location = header_getter('Location', '14.30')
     pragma = header_getter('Pragma', '14.32')
@@ -902,7 +907,6 @@ class Response(object):
             and self.content_length is not None
         ):
             content_range = req.range.content_range(self.content_length)
-            # TODO: add support for If-Range
             if content_range is None:
                 iter_close(self._app_iter)
                 body = "Requested range not satisfiable: %s" % req.range

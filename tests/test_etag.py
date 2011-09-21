@@ -1,4 +1,5 @@
 import unittest
+from webob import Response
 from webob.etag import ETagMatcher, IfRange
 
 class etag_propertyTests(unittest.TestCase):
@@ -280,11 +281,8 @@ class IfRangeTests(unittest.TestCase):
         self.assertTrue(ir.match_response(response))
 
     def test_match_response_etag(self):
-        class DummyResponse(object):
-            etag = "ETAG"
-            last_modified = None
-        ir = IfRange(etag="ETAG")
-        response = DummyResponse()
+        ir = IfRange.parse('etag')
+        response = Response(etag='etag')
         self.assertTrue(ir.match_response(response))
 
     def test_parse_wo_gmt(self):
