@@ -1,22 +1,27 @@
 from __future__ import with_statement
-from webob import Request, Response
-import sys, logging, threading, random, socket, cgi
+import sys
+import logging
+import threading
+import random
+import socket
+import cgi
+from webob.request import Request
+from webob.response import Response
 from webob.compat import url_open
 from webob.compat import print_
 from webob.compat import bytes_
 from webob.compat import reraise
-from webob.compat import PY3
 from webob.compat import Queue
 from webob.compat import Empty
 from contextlib import contextmanager
-from nose.tools import assert_raises, eq_ as eq
-from wsgiref.simple_server import make_server, WSGIRequestHandler, WSGIServer, ServerHandler
+from nose.tools import assert_raises
+from nose.tools import eq_ as eq
+from wsgiref.simple_server import make_server
+from wsgiref.simple_server import WSGIRequestHandler
+from wsgiref.simple_server import WSGIServer
+from wsgiref.simple_server import ServerHandler
 
 log = logging.getLogger(__name__)
-
-__test__ = (sys.version >= '2.6') # skip these tests on py2.5
-
-
 
 def test_request_reading():
     """
@@ -26,7 +31,7 @@ def test_request_reading():
     with serve(_test_app_req_reading) as server:
         for key in _test_ops_req_read:
             resp = url_open(server.url+key, timeout=3)
-            assert resp.read() == "ok"
+            assert resp.read() == b"ok"
 
 def _test_app_req_reading(env, sr):
     req = Request(env)
@@ -65,9 +70,13 @@ def test_interrupted_request():
 _global_res = Queue()
 
 def _test_app_req_interrupt(env, sr):
+    target_cl = 100000
     try:
         req = Request(env)
-        assert req.content_length == 100000
+        cl = req.content_length
+        if cl != target_cl:
+            raise AssertionError(
+                'request.content_length is %s instead of %s' % (cl, target_cl))
         op = _test_ops_req_interrupt[req.path_info]
         log.info("Running test: %s", req.path_info)
         assert_raises(IOError, op, req)
@@ -79,7 +88,7 @@ def _test_app_req_interrupt(env, sr):
         return []
 
 def _req_int_cgi(req):
-    assert req.body_file.read(0) == ''
+    assert req.body_file.read(0) == b''
     #req.environ.setdefault('CONTENT_LENGTH', '0')
     d = cgi.FieldStorage(
         fp=req.body_file,
@@ -88,7 +97,7 @@ def _req_int_cgi(req):
 
 def _req_int_readline(req):
     try:
-        eq(req.body_file.readline(), 'a=b\n')
+        eq(req.body_file.readline(), b'a=b\n')
     except IOError:
         # too early to detect disconnect
         raise AssertionError("False disconnect alert")
