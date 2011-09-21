@@ -13,6 +13,7 @@ from webob.compat import class_types
 from webob.compat import text_type
 from webob.compat import binary_type
 from webob.compat import bytes_
+from webob.compat import PY3
 
 __all__ = ['wsgify']
 
@@ -326,8 +327,13 @@ def _func_name(func):
         name = func.__name__
         if func.__module__ not in ('__main__', '__builtin__'):
             name = '%s.%s' % (func.__module__, name)
-        return name
-    name = getattr(func, 'func_name', None)
+        return name   
+    
+    if PY3:
+        name = getattr(func, '__name__', None)
+    else:
+        name = getattr(func, 'func_name', None)
+    
     if name is None:
         name = repr(func)
     else:
