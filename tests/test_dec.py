@@ -219,6 +219,7 @@ class DecoratorTests(unittest.TestCase):
         name = _func_name(k.meth)
         self.assert_(name.startswith('tests.test_dec.%s' % kname))
         self.assert_(name.endswith('>.meth'))
+        import pdb;pdb.set_trace()
         name = _func_name(Klass.meth)
         self.assertEqual(name, 'tests.test_dec.Klass.meth')
         name = _func_name(Klass.classmeth)

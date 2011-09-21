@@ -337,14 +337,26 @@ def _func_name(func):
     if name is None:
         name = repr(func)
     else:
-        name_self = getattr(func, 'im_self', None)
+        if PY3:
+            name_self = getattr(func, '__self__', None)
+        else:
+            name_self = getattr(func, 'im_self', None)
+            
         if name_self is not None:
             name = '%r.%s' % (name_self, name)
         else:
-            name_class = getattr(func, 'im_class', None)
+            if PY3:
+                name_class = getattr(func, '__self__.__class__', None)
+            else:
+                name_class = getattr(func, 'im_class', None)
             if name_class is not None:
                 name = '%s.%s' % (name_class.__name__, name)
-        module = getattr(func, 'func_globals', {}).get('__name__')
+        
+        if PY3:
+            module = getattr(func, '__globals__', {}).get('__name__')
+        else:
+            module = getattr(func, 'func_globals', {}).get('__name__')
+        
         if module and module != '__main__':
             name = '%s.%s' % (module, name)
     return name
