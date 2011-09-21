@@ -327,38 +327,36 @@ def _func_name(func):
         name = func.__name__
         if func.__module__ not in ('__main__', '__builtin__'):
             name = '%s.%s' % (func.__module__, name)
-        return name   
+        return name
     
     if PY3:
         name = getattr(func, '__name__', None)
+        if name is None:
+            name = repr(func)
+        else:
+            name_self = getattr(func, '__self__', None)
+            if name_self is not None:
+                name = '%s.%s' % (name_self, name)
+            
+            module = getattr(func, '__module__', None)
+            if module and module != '__main__':
+                name = '%s.%s' % (module, name)
     else:
         name = getattr(func, 'func_name', None)
-    
-    if name is None:
-        name = repr(func)
-    else:
-        if PY3:
-            name_self = getattr(func, '__self__', None)
+        if name is None:
+            name = repr(func)
         else:
             name_self = getattr(func, 'im_self', None)
-            
-        if name_self is not None:
-            name = '%r.%s' % (name_self, name)
-        else:
-            if PY3:
-                name_class = getattr(func, '__self__.__class__', None)
+            if name_self is not None:
+                name = '%r.%s' % (name_self, name)
             else:
                 name_class = getattr(func, 'im_class', None)
-            if name_class is not None:
-                name = '%s.%s' % (name_class.__name__, name)
-        
-        if PY3:
-            module = getattr(func, '__globals__', {}).get('__name__')
-        else:
+                if name_class is not None:
+                    name = '%s.%s' % (name_class.__name__, name)
+            
             module = getattr(func, 'func_globals', {}).get('__name__')
-        
-        if module and module != '__main__':
-            name = '%s.%s' % (module, name)
+            if module and module != '__main__':
+                name = '%s.%s' % (module, name)
     return name
 
 def _format_args(args=(), kw=None, leading_comma=False, obj=None, names=None,
