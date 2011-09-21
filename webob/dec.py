@@ -13,6 +13,7 @@ from webob.compat import class_types
 from webob.compat import text_type
 from webob.compat import binary_type
 from webob.compat import bytes_
+from webob.compat import PY3
 
 __all__ = ['wsgify']
 
@@ -327,20 +328,35 @@ def _func_name(func):
         if func.__module__ not in ('__main__', '__builtin__'):
             name = '%s.%s' % (func.__module__, name)
         return name
-    name = getattr(func, 'func_name', None)
-    if name is None:
-        name = repr(func)
-    else:
-        name_self = getattr(func, 'im_self', None)
-        if name_self is not None:
-            name = '%r.%s' % (name_self, name)
+    
+    if PY3:
+        name = getattr(func, '__name__', None)
+        if name is None:
+            name = repr(func)
         else:
-            name_class = getattr(func, 'im_class', None)
-            if name_class is not None:
-                name = '%s.%s' % (name_class.__name__, name)
-        module = getattr(func, 'func_globals', {}).get('__name__')
-        if module and module != '__main__':
-            name = '%s.%s' % (module, name)
+            name_self = getattr(func, '__self__', None)
+            if name_self is not None:
+                name = '%s.%s' % (name_self, name)
+            
+            module = getattr(func, '__module__', None)
+            if module and module != '__main__':
+                name = '%s.%s' % (module, name)
+    else:
+        name = getattr(func, 'func_name', None)
+        if name is None:
+            name = repr(func)
+        else:
+            name_self = getattr(func, 'im_self', None)
+            if name_self is not None:
+                name = '%r.%s' % (name_self, name)
+            else:
+                name_class = getattr(func, 'im_class', None)
+                if name_class is not None:
+                    name = '%s.%s' % (name_class.__name__, name)
+            
+            module = getattr(func, 'func_globals', {}).get('__name__')
+            if module and module != '__main__':
+                name = '%s.%s' % (module, name)
     return name
 
 def _format_args(args=(), kw=None, leading_comma=False, obj=None, names=None,

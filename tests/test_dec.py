@@ -219,11 +219,13 @@ class DecoratorTests(unittest.TestCase):
         name = _func_name(k.meth)
         self.assert_(name.startswith('tests.test_dec.%s' % kname))
         self.assert_(name.endswith('>.meth'))
-        name = _func_name(Klass.meth)
-        self.assertEqual(name, 'tests.test_dec.Klass.meth')
-        name = _func_name(Klass.classmeth)
-        self.assertEqual(name, "tests.test_dec.<class "
-                         "'tests.test_dec.Klass'>.classmeth")
+        # Should we remove tests below?  There is no such thing as an unbound
+        # method in Python 3.
+        # name = _func_name(Klass.meth)
+        # self.assertEqual(name, 'tests.test_dec.Klass.meth')
+        # name = _func_name(Klass.classmeth)
+        # self.assertEqual(name, "tests.test_dec.<class "
+        #                 "'tests.test_dec.Klass'>.classmeth")
 
     def test__format_args(self):
         args_rep = _format_args()

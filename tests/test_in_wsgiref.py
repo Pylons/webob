@@ -3,6 +3,7 @@ from webob import Request, Response
 import sys, logging, threading, random, socket, cgi
 from webob.compat import url_open
 from webob.compat import print_
+from webob.compat import bytes_
 from webob.compat import reraise
 from webob.compat import PY3
 from webob.compat import Queue
@@ -111,7 +112,7 @@ def _send_interrupted_req(server, path='/'):
     sock = socket.socket()
     sock.connect(('localhost', server.server_port))
     f = sock.makefile('wb')
-    f.write(_interrupted_req % path)
+    f.write(bytes_(_interrupted_req % path))
     f.flush()
     f.close()
     sock.close()
@@ -157,8 +158,6 @@ class QuietServer(WSGIServer):
         pass
 
 def _make_test_server(app):
-    if PY3:
-        raise NotImplementedError
     maxport = ((1<<16)-1)
     # we'll make 3 attempts to find a free port
     for i in range(3, 0, -1):
