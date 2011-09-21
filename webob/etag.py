@@ -31,6 +31,9 @@ def etag_property(key, default, rfc_section):
 def _warn_weak_match_deprecated():
     warn_deprecation("weak_match is deprecated", '1.2', 3)
 
+def _warn_if_range_match_deprecated(*args, **kw):
+    raise DeprecationWarning("IfRange.match[_response] API is deprecated")
+
 
 class _AnyETag(object):
     """
@@ -76,38 +79,28 @@ class _NoETag(object):
 
 NoETag = _NoETag()
 
-class ETagMatcher(object):
-    """
-    Represents an ETag request.  Supports containment to see if an
-    ETag matches.  You can also use
-    ``etag_matcher.weak_contains(etag)`` to allow weak ETags to match
-    (allowable for conditional GET requests, but not ranges or other
-    methods).
-    """
 
-    def __init__(self, etags, weak_etags=()):
+# TODO: convert into a simple tuple
+
+class ETagMatcher(object):
+    def __init__(self, etags):
         self.etags = etags
-        self.weak_etags = weak_etags
 
     def __contains__(self, other):
-        return other in self.etags or other in self.weak_etags
+        return other in self.etags
 
     def weak_match(self, other):
         _warn_weak_match_deprecated()
 
     def __repr__(self):
-        return '<ETag %s>' % (
-            ' or '.join(self.etags))
+        return '<ETag %s>' % (' or '.join(self.etags))
 
     @classmethod
-    def parse(cls, value):
+    def parse(cls, value, strong=True):
         """
         Parse this from a header value
         """
-        if value == '*':
-            return AnyETag
-        results = []
-        weak_results = []
+        r = []
         while value:
             if value.lower().startswith('w/'):
                 # Next item is weak
@@ -132,19 +125,13 @@ class ETagMatcher(object):
                     rest = ''
             if etag == '*':
                 return AnyETag
-            if etag:
-                if weak:
-                    weak_results.append(etag)
-                else:
-                    results.append(etag)
+            if etag and (not weak or not strong):
+                r.append(etag)
             value = rest
-        return cls(results, weak_results)
+        return cls(r)
 
     def __str__(self):
-        items = map('"%s"'.__mod__, self.etags)
-        for weak in self.weak_etags:
-            items.append('W/"%s"' % weak)
-        return ', '.join(items)
+        return ', '.join(map('"%s"'.__mod__, self.etags))
 
 
 class IfRange(object):
@@ -162,9 +149,7 @@ class IfRange(object):
             # Must be a date
             return IfRangeDate(parse_date(value))
         else:
-            etag = ETagMatcher.parse(value)
-            etag.weak_etags = []
-            return cls(etag)
+            return cls(ETagMatcher.parse(value))
 
     def __contains__(self, resp):
         """
@@ -184,6 +169,7 @@ class IfRange(object):
     def __str__(self):
         return str(self.etag) if self.etag else ''
 
+    match = match_response = _warn_if_range_match_deprecated
 
 
 class IfRangeDate(object):
@@ -206,3 +192,4 @@ class IfRangeDate(object):
     def __str__(self):
         return serialize_date(self.date)
 
+    match = match_response = _warn_if_range_match_deprecated
