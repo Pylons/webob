@@ -900,7 +900,7 @@ class Response(object):
         if status304:
             start_response('304 Not Modified', filter_headers(headerlist))
             return EmptyResponse(self._app_iter)
-        if (req.range and req.if_range.match_response(self)
+        if (req.range and self in req.if_range
             and self.content_range is None
             and req.method in ('HEAD', 'GET')
             and self.status_int == 200

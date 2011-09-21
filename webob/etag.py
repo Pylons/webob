@@ -162,20 +162,15 @@ class IfRange(object):
             # Must be a date
             return IfRangeDate(parse_date(value))
         else:
-            return cls(ETagMatcher.parse(value))
+            etag = ETagMatcher.parse(value)
+            etag.weak_etags = []
+            return cls(etag)
 
-    def match(self, etag=None, last_modified=None):
+    def __contains__(self, resp):
         """
         Return True if the If-Range header matches the given etag or last_modified
         """
-        #TODO: deprecate
-        return etag in self.etag
-
-    def match_response(self, response):
-        """
-        Return True if this matches the given ``webob.Response`` instance.
-        """
-        return self.match(etag=response.etag_strong)
+        return resp.etag_strong in self.etag
 
     def __nonzero__(self):
         return bool(self.etag)
@@ -195,14 +190,11 @@ class IfRangeDate(object):
     def __init__(self, date):
         self.date = date
 
-    def match(self, etag=None, last_modified=None):
-        #TODO: deprecate
+    def __contains__(self, resp):
+        last_modified = resp.last_modified
         if isinstance(last_modified, str):
             last_modified = parse_date(last_modified)
         return last_modified and (last_modified <= self.date)
-
-    def match_response(self, response):
-        return self.match(last_modified=response.last_modified)
 
     def __repr__(self):
         return '%s(%r)' % (

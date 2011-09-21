@@ -2128,14 +2128,14 @@ class RequestTests_functional(unittest.TestCase):
         self.assert_(req.if_modified_since >= server_modified)
 
         self.assert_(not req.if_range)
-        self.assert_(req.if_range.match(etag='some-etag',
-                     last_modified=datetime(2005, 1, 1, 12, 0)))
+        self.assert_(Response(etag='some-etag', last_modified=datetime(2005, 1, 1, 12, 0))
+            in req.if_range)
         req.if_range = 'opaque-etag'
-        self.assert_(not req.if_range.match(etag='other-etag'))
-        self.assert_(req.if_range.match(etag='opaque-etag'))
+        self.assert_(Response(etag='other-etag') not in req.if_range)
+        self.assert_(Response(etag='opaque-etag') in req.if_range)
 
         res = Response(etag='opaque-etag')
-        self.assert_(req.if_range.match_response(res))
+        self.assert_(res in req.if_range)
 
         req.range = 'bytes=0-100'
         self.assert_(isinstance(req.range, Range))
