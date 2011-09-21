@@ -1007,9 +1007,10 @@ class BaseRequestTests(unittest.TestCase):
 
     def test_remove_conditional_headers_if_none_match(self):
         req = Request.blank('/')
-        req.if_none_match = 'foo, bar'
+        req.if_none_match = 'foo'
+        assert req.if_none_match
         req.remove_conditional_headers()
-        self.assertEqual(bool(req.if_none_match), False)
+        assert not req.if_none_match
 
     def test_remove_conditional_headers_if_range(self):
         req = Request.blank('/')

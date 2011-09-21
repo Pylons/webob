@@ -6,6 +6,7 @@ Also If-Range parsing
 
 from webob.datetime_utils import *
 from webob.util import header_docstring, warn_deprecation
+from webob.descriptors import _rx_etag
 
 __all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'etag_property']
 
@@ -100,35 +101,17 @@ class ETagMatcher(object):
         """
         Parse this from a header value
         """
-        r = []
-        while value:
-            if value.lower().startswith('w/'):
-                # Next item is weak
-                weak = True
-                value = value[2:]
-            else:
-                weak = False
-            if value.startswith('"'):
-                try:
-                    etag, rest = value[1:].split('"', 1)
-                except ValueError:
-                    etag = value.strip(' ",')
-                    rest = ''
-                else:
-                    rest = rest.strip(', ')
-            else:
-                if ',' in value:
-                    etag, rest = value.split(',', 1)
-                    rest = rest.strip()
-                else:
-                    etag = value
-                    rest = ''
-            if etag == '*':
-                return AnyETag
-            if etag and (not weak or not strong):
-                r.append(etag)
-            value = rest
-        return cls(r)
+        if value == '*':
+            return AnyETag
+        if not value:
+            return cls([])
+        matches = _rx_etag.findall(value)
+        if not matches:
+            return cls([value])
+        elif strong:
+            return cls([t for w,t in matches if not w])
+        else:
+            return cls([t for w,t in matches])
 
     def __str__(self):
         return ', '.join(map('"%s"'.__mod__, self.etags))

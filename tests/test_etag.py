@@ -23,7 +23,7 @@ class etag_propertyTests(unittest.TestCase):
 
     def test_fget_found_key(self):
         ep = etag_property("KEY", "DEFAULT", "RFC_SECTION")
-        req = self._makeDummyRequest(environ={'KEY':'VALUE'})
+        req = self._makeDummyRequest(environ={'KEY':'"VALUE"'})
         res = ep.fget(req)
         self.assertEquals(res.etags, ['VALUE'])
 
@@ -125,16 +125,26 @@ class ParseTests(unittest.TestCase):
         self.assertEqual(et.__repr__(), '<ETag *>')
 
     def test_parse_one(self):
-        et = ETagMatcher.parse('ONE')
+        et = ETagMatcher.parse('"ONE"')
         self.assertEqual(et.etags, ['ONE'])
 
+    def test_parse_invalid(self):
+        for tag in ['one', 'one, two', '"one two']:
+            et = ETagMatcher.parse(tag)
+            self.assertEqual(et.etags, [tag])
+        et = ETagMatcher.parse('"foo" and w/"weak"', strong=False)
+        self.assertEqual(et.etags, ['foo'])
+
+
     def test_parse_commasep(self):
-        et = ETagMatcher.parse('ONE, TWO')
+        et = ETagMatcher.parse('"ONE", "TWO"')
         self.assertEqual(et.etags, ['ONE', 'TWO'])
 
     def test_parse_commasep_w_weak(self):
-        et = ETagMatcher.parse('ONE, w/TWO')
+        et = ETagMatcher.parse('"ONE", W/"TWO"')
         self.assertEqual(et.etags, ['ONE'])
+        et = ETagMatcher.parse('"ONE", W/"TWO"', strong=False)
+        self.assertEqual(et.etags, ['ONE', 'TWO'])
 
     def test_parse_quoted(self):
         et = ETagMatcher.parse('"ONE"')
@@ -149,11 +159,6 @@ class ParseTests(unittest.TestCase):
         self.assertEqual(et.etags, ['ONE'])
         et = ETagMatcher.parse('"ONE", W/"TWO"', strong=False)
         self.assertEqual(et.etags, ['ONE', 'TWO'])
-
-    def test_parse_wo_close_quote(self):
-        # Unsure if this is testing likely input
-        et = ETagMatcher.parse('"ONE')
-        self.assertEqual(et.etags, ['ONE'])
 
 class IfRangeTests(unittest.TestCase):
     def test___repr__(self):

@@ -2,7 +2,6 @@ import re
 from datetime import datetime, date
 
 from webob.byterange import Range, ContentRange
-from webob.etag import IfRange
 from webob.datetime_utils import parse_date, serialize_date
 from webob.util import header_docstring, warn_deprecation
 
@@ -152,7 +151,7 @@ def date_header(header, rfc_section):
 ########################
 
 
-_rx_etag = re.compile('(W/)?"(.*)"')
+_rx_etag = re.compile(r'(?:^|\s)(W/)?"((?:\\"|.)*?)"')
 
 def parse_etag_response(value, strong=False):
     """
