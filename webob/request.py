@@ -777,7 +777,7 @@ class BaseRequest(object):
 
 
     if_match = etag_property('HTTP_IF_MATCH', AnyETag, '14.24')
-    if_none_match = etag_property('HTTP_IF_NONE_MATCH', NoETag, '14.26')
+    if_none_match = etag_property('HTTP_IF_NONE_MATCH', NoETag, '14.26', strong=False)
 
     date = converter_date(environ_getter('HTTP_DATE', None, '14.8'))
     if_modified_since = converter_date(

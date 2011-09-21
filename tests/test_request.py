@@ -2120,6 +2120,12 @@ class RequestTests_functional(unittest.TestCase):
         self.assert_(isinstance(req.if_none_match, ETagMatcher))
         # You *should* return 304
         self.assert_(server_token in req.if_none_match)
+        # if_none_match should use weak matching
+        weak_token = 'W/"%s"' % server_token
+        req.if_none_match = weak_token
+        assert req.headers['if-none-match'] == weak_token
+        self.assert_(server_token in req.if_none_match)
+
 
         req.if_modified_since = datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
         self.assertEqual(req.headers['If-Modified-Since'],

@@ -11,7 +11,7 @@ from webob.descriptors import _rx_etag
 __all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'etag_property']
 
 
-def etag_property(key, default, rfc_section):
+def etag_property(key, default, rfc_section, strong=True):
     doc = header_docstring(key, rfc_section)
     doc += "  Converts it as a Etag."
     def fget(req):
@@ -19,7 +19,7 @@ def etag_property(key, default, rfc_section):
         if not value:
             return default
         else:
-            return ETagMatcher.parse(value)
+            return ETagMatcher.parse(value, strong=strong)
     def fset(req, val):
         if val is None:
             req.environ[key] = None
