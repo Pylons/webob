@@ -57,13 +57,6 @@ class Response(object):
     unicode_errors = 'strict'
     default_conditional_response = False
 
-    # TODO: remove in 1.3
-    request = deprecated_property(
-        'request', 'Response.request will be removed completely in 1.3')
-    environ = deprecated_property(
-        'environ', 'Response.environ will be removed completely in 1.3')
-
-
     #
     # __init__, from_file, copy
     #

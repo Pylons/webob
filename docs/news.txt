@@ -14,8 +14,35 @@ master
 
 * Do not set ``resp.request`` in ``req.get_response(app)``
 
-* Warn when passing ``request`` to ``Response(..)``
+* The ``request`` argument to the ``Response(..)`` constructor has been
+  removed.
 
+* The deprecated ``environ``, ``request`` and ``status_code`` attributes of
+  the Response no longer exist.
+
+* Python 3.2 compatibility.
+
+* No longer compatible with Python 2.5 (only 2.6, 2.7, and 3.2 are supported).
+
+* Deprecated request methods ``str_GET`` and ``str_POST`` have been removed.
+
+* Remove testing dependency on WebTest.
+
+* Remove UnicodeMultiDict class; the result of ``Request.GET`` and
+  ``Request.POST`` is now just a plain ``MultiDict``.
+
+* The ``decode_param_names`` Request constructor argument has been removed,
+  along with the ``Request.decode_param_names`` attribute.
+
+* The ``Request.as_string()`` method is now better known as
+  ``Request.as_bytes()``.
+
+* The ``Request.from_string()`` method is now better known as
+  ``Request.from_bytes()``.
+
+* A new method named ``Request.as_text()`` now exists.
+
+* A new method named ``Request.from_text()`` now exists.
 
 1.1.1
 ---------
