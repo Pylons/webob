@@ -1,12 +1,12 @@
 import zlib
 import io
+from hashlib import md5
 
 from nose.tools import eq_, ok_, assert_raises
 
 from webob.request import BaseRequest
 from webob.request import Request
 from webob.response import Response
-from webob.compat import md5
 from webob.compat import text_
 from webob.compat import bytes_
 

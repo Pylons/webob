@@ -2,6 +2,7 @@ import re
 import zlib
 import struct
 from base64 import b64encode
+from hashlib import md5
 
 from datetime import datetime
 from datetime import timedelta
@@ -16,7 +17,6 @@ from webob.compat import urlparse
 from webob.compat import text_type
 from webob.compat import binary_type
 from webob.compat import url_quote
-from webob.compat import md5
 from webob.datetime_utils import parse_date_delta
 from webob.datetime_utils import serialize_date_delta
 from webob.datetime_utils import timedelta_to_seconds

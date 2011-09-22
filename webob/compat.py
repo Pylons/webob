@@ -76,11 +76,6 @@ except ImportError:
     from urllib import urlencode as url_encode
     from urllib2 import urlopen as url_open
 
-try: # pragma: no cover
-    from hashlib import md5
-except ImportError: # pragma: no cover
-    from md5 import md5
-
 if PY3: # pragma: no cover
     import builtins
     exec_ = getattr(builtins, "exec")
