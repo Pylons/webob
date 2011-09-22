@@ -890,16 +890,16 @@ class Response(object):
         * Range               (406 Partial Content; only on GET, HEAD)
         """
         req = BaseRequest(environ)
-        status304 = False
         headerlist = self._abs_headerlist(environ)
         if req.method in self._safe_methods:
+            status304 = False
             if req.if_none_match and self.etag:
                 status304 = self.etag in req.if_none_match
             elif req.if_modified_since and self.last_modified:
                 status304 = self.last_modified <= req.if_modified_since
-        if status304:
-            start_response('304 Not Modified', filter_headers(headerlist))
-            return EmptyResponse(self._app_iter)
+            if status304:
+                start_response('304 Not Modified', filter_headers(headerlist))
+                return EmptyResponse(self._app_iter)
         if (req.range and self in req.if_range
             and self.content_range is None
             and req.method in ('HEAD', 'GET')
