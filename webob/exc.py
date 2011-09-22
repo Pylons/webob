@@ -480,7 +480,8 @@ ${html_comment}''')
             self.location = location
             if add_slash:
                 raise TypeError(
-                    "You can only provide one of the arguments location and add_slash")
+                    "You can only provide one of the arguments location "
+                    "and add_slash")
         self.add_slash = add_slash
 
     def __call__(self, environ, start_response):
@@ -898,8 +899,9 @@ class HTTPFailedDependency(HTTPClientError):
     ## Note: from WebDAV
     code = 424
     title = 'Failed Dependency'
-    explanation = ('The method could not be performed because the requested '
-                   'action dependended on another action and that action failed')
+    explanation = (
+        'The method could not be performed because the requested '
+        'action dependended on another action and that action failed')
 
 ############################################################
 ## 5xx Server Error
