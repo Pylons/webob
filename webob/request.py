@@ -545,7 +545,11 @@ class BaseRequest(object):
     @property
     def POST(self):
         """
-        Like ``.str_POST``, but decodes values and keys
+        Return a MultiDict containing all the variables from a form
+        request. Returns an empty dict-like object for non-form requests.
+
+        Form requests are typically POST requests, however PUT requests with
+        an appropriate Content-Type are also supported.
         """
         env = self.environ
         if self.method not in ('POST', 'PUT'):
@@ -594,7 +598,8 @@ class BaseRequest(object):
     @property
     def GET(self):
         """
-        Like ``.str_GET``, but decodes values and keys
+        Return a MultiDict containing all the variables from the
+        QUERY_STRING.
         """
         env = self.environ
         source = env.get('QUERY_STRING', '')
