@@ -132,13 +132,13 @@ class Response(object):
         This reads the response as represented by ``str(resp)``; it
         may not read every valid HTTP response properly.  Responses
         must have a ``Content-Length``"""
-        encoding = getattr(fp, 'encoding', None)
         headerlist = []
         status = fp.readline().strip()
-        if encoding is None:
-            _colon = b':'
-        else:
+        is_text = isinstance(status, text_type)
+        if is_text:
             _colon = ':'
+        else:
+            _colon = b':'
         while 1:
             line = fp.readline().strip()
             if not line:
@@ -149,7 +149,7 @@ class Response(object):
             except ValueError:
                 raise ValueError('Bad header line: %r' % line)
             value = value.strip()
-            if encoding is None:
+            if not is_text:
                 header_name = header_name.decode('utf-8')
                 value = value.decode('utf-8')
             headerlist.append((header_name, value))
@@ -159,10 +159,10 @@ class Response(object):
             app_iter=(),
         )
         body = fp.read(r.content_length or 0)
-        if encoding is None:
-            r.body = body
-        else:
+        if is_text:
             r.text = body
+        else:
+            r.body = body
         return r
 
     def copy(self):

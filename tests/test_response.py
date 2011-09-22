@@ -315,14 +315,24 @@ def test_content_type_in_headerlist():
 
 def test_from_file():
     res = Response('test')
-    equal_resp(res)
+    inp = io.BytesIO(bytes_(str(res)))
+    equal_resp(res, inp)
     res = Response(app_iter=iter([b'test ', b'body']),
                     content_type='text/plain')
-    equal_resp(res)
+    inp = io.BytesIO(bytes_(str(res)))
+    equal_resp(res, inp)
 
-def equal_resp(res):
-    input_ = io.BytesIO(bytes_(str(res)))
-    res2 = Response.from_file(input_)
+def test_from_text_file():
+    res = Response('test')
+    inp = io.StringIO(text_(str(res), 'utf-8'))
+    equal_resp(res, inp)
+    res = Response(app_iter=iter([b'test ', b'body']),
+                    content_type='text/plain')
+    inp = io.StringIO(text_(str(res), 'utf-8'))
+    equal_resp(res, inp)
+
+def equal_resp(res, inp):
+    res2 = Response.from_file(inp)
     eq_(res.body, res2.body)
     eq_(res.headers, res2.headers)
 
