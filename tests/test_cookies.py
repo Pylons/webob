@@ -135,3 +135,9 @@ def test_parse_expires_no_quoting():
     v = r'x="\"\073\054\""; expires=Sun, 12-Jun-2011 23:16:01 GMT'
     c = cookies.Cookie(v)
     eq_(c['x'].expires, 'Sun, 12-Jun-2011 23:16:01 GMT')
+
+def test_morsel_repr():
+    v = cookies.Morsel('a', 'b')
+    result = repr(v)
+    eq_(result, "<Morsel: a='b'>")
+    
