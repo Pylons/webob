@@ -1,7 +1,7 @@
 # coding: cp1251
 from webob.request import Request
 from webob.response import Response
-from webob.transcode import transcode_mw
+from webob.transcode import transcode_mw, Transcoder
 from nose.tools import eq_
 
 # def tapp(env, sr):
@@ -46,3 +46,8 @@ def test_transcode():
     # print req.environ.get('CONTENT_TYPE')
     #print '\xd0\xba\xd1\x83...'.decode('utf8').encode('cp1251')
     #print u'\u043a'.encode('cp1251')
+
+
+def test_transcode_query():
+    t = Transcoder('ascii')
+    assert t.transcode_query('a') == 'a'
