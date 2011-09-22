@@ -210,6 +210,9 @@ if PY3: # pragma: no cover
         # fs.list can be None when there's nothing to parse
         for field in fs.list or ():
             if field.filename:
+                # decode filename and name from str to unicode
+                field.filename = text_(field.filename, encoding, errors)
+                field.name = text_(field.name, encoding, errors)
                 obj.add(field.name, field)
             else:
                 obj.add(field.name, field.value)
@@ -228,7 +231,10 @@ else:
         # fs.list can be None when there's nothing to parse
         for field in fs.list or ():
             if field.filename:
-                obj.add(field.name.decode(encoding, errors), field)
+                # decode filename and name from str to unicode
+                field.filename = text_(field.filename, encoding, errors)
+                field.name = text_(field.name, encoding, errors)
+                obj.add(field.name, field)
             else:
                 obj.add(field.name.decode(encoding, errors),
                         field.value.decode(encoding, errors))
