@@ -1070,7 +1070,7 @@ class BaseRequest(object):
     # Will be filled in later:
     ResponseClass = None
 
-    def get_response(self, application):
+    def get_response(self, application, catch_exc_info=False):
         """
         Like ``.call_application(application)``, except returns a
         response object with ``.status``, ``.headers``, and ``.body``
@@ -1079,12 +1079,15 @@ class BaseRequest(object):
         This will use ``self.ResponseClass`` to figure out the class
         of the response object to return.
         """
-        status, headers, app_iter = self.call_application(application)
+        if catch_exc_info:
+            status, headers, app_iter, exc_info = self.call_application(
+                application, catch_exc_info=True)
+            del exc_info
+        else:
+            status, headers, app_iter = self.call_application(
+                application, catch_exc_info=False)
         return self.ResponseClass(
-            status=status,
-            headerlist=list(headers),
-            app_iter=app_iter
-        )
+            status=status, headerlist=list(headers), app_iter=app_iter)
 
     @classmethod
     def blank(cls, path, environ=None, base_url=None,
