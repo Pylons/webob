@@ -1964,13 +1964,46 @@ class RequestTests_functional(unittest.TestCase):
         )
         self.assertRaises(ValueError, BaseRequest.from_file, val_file)
 
-    def test_from_string(self):
+    def test_from_bytes(self):
         # A valid request without a Content-Length header should still read
         # the full body.
-        # Also test parity between as_string and from_string / from_file.
+        # Also test parity between as_string and from_bytes / from_file.
         import cgi
         from webob import BaseRequest
         req = BaseRequest.from_bytes(_test_req)
+        self.assert_(isinstance(req, BaseRequest))
+        self.assert_(not repr(req).endswith('(invalid WSGI environ)>'))
+        self.assert_('\n' not in req.http_version or '\r' in req.http_version)
+        self.assert_(',' not in req.host)
+        self.assert_(req.content_length is not None)
+        self.assertEqual(req.content_length, 337)
+        self.assert_(b'foo' in req.body)
+        bar_contents = b"these are the contents of the file 'bar.txt'\r\n"
+        self.assert_(bar_contents in req.body)
+        self.assertEqual(req.params['foo'], 'foo')
+        bar = req.params['bar']
+        self.assert_(isinstance(bar, cgi.FieldStorage))
+        self.assertEqual(bar.type, 'application/octet-stream')
+        bar.file.seek(0)
+        self.assertEqual(bar.file.read(), bar_contents)
+        # out should equal contents, except for the Content-Length header,
+        # so insert that.
+        _test_req_copy = _test_req.replace(
+            b'Content-Type',
+            b'Content-Length: 337\r\nContent-Type'
+            )
+        self.assertEqual(req.as_bytes(), _test_req_copy)
+
+        req2 = BaseRequest.from_bytes(_test_req2)
+        self.assert_('host' not in req2.headers)
+        self.assertEqual(req2.as_bytes(), _test_req2.rstrip())
+        self.assertRaises(ValueError,
+                          BaseRequest.from_bytes, _test_req2 + b'xx')
+
+    def test_from_text(self):
+        import cgi
+        from webob import BaseRequest
+        req = BaseRequest.from_text(text_(_test_req, 'utf-8'))
         self.assert_(isinstance(req, BaseRequest))
         self.assert_(not repr(req).endswith('(invalid WSGI environ)>'))
         self.assert_('\n' not in req.http_version or '\r' in req.http_version)
