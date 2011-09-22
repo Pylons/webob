@@ -189,7 +189,8 @@ class IfRange(object):
 
     def match(self, etag=None, last_modified=None):
         """
-        Return True if the If-Range header matches the given etag or last_modified
+        Return True if the If-Range header matches the given etag or
+        last_modified
         """
         if self.date is not None:
             if last_modified is None:
@@ -206,7 +207,8 @@ class IfRange(object):
         """
         Return True if this matches the given ``webob.Response`` instance.
         """
-        return self.match(etag=response.etag, last_modified=response.last_modified)
+        return self.match(
+            etag=response.etag, last_modified=response.last_modified)
 
     @classmethod
     def parse(cls, value):
