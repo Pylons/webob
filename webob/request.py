@@ -19,9 +19,11 @@ from webob.compat import bytes_
 from webob.compat import integer_types
 from webob.compat import iteritems_
 from webob.compat import multidict_from_bodyfile
+from webob.compat import native_
 from webob.compat import parse_qsl_text
 from webob.compat import reraise
 from webob.compat import text_
+from webob.compat import text_type
 from webob.compat import url_encode
 from webob.compat import url_quote
 from webob.compat import url_unquote
@@ -953,7 +955,7 @@ class BaseRequest(object):
 
     def as_text(self):
         bytes = self.as_bytes()
-        return bytes.encode(self.encoding)
+        return bytes.decode(self.charset)
 
     __str__ = as_text
 
@@ -973,7 +975,7 @@ class BaseRequest(object):
 
     @classmethod
     def from_text(cls, s):
-        b = s.encode('utf-8')
+        b = bytes_(s, 'utf-8')
         return cls.from_bytes(b)
 
     @classmethod
@@ -987,21 +989,20 @@ class BaseRequest(object):
 
         This reads the request as represented by ``str(req)``; it may
         not read every valid HTTP request properly."""
-        encoding = getattr(fp, 'encoding', None)
         start_line = fp.readline()
-        if encoding is None:
-            crlf = b'\r\n'
-            colon = b':'
-        else:
+        is_text = isinstance(start_line, text_type)
+        if is_text:
             crlf = '\r\n'
             colon = ':'
+        else:
+            crlf = b'\r\n'
+            colon = b':'
         try:
             header = start_line.rstrip(crlf)
             method, resource, http_version = header.split(None, 2)
-            if encoding is None:
-                method = method.decode('utf-8')
-                resource = resource.decode('utf-8')
-                http_version = http_version.decode('utf-8')
+            method = native_(method, 'utf-8')
+            resource = native_(resource, 'utf-8')
+            http_version = native_(http_version, 'utf-8')
         except ValueError:
             raise ValueError('Bad HTTP request line: %r' % start_line)
         r = cls(environ_from_url(resource),
@@ -1015,18 +1016,20 @@ class BaseRequest(object):
                 # end of headers
                 break
             hname, hval = line.split(colon, 1)
-            if not encoding:
-                hname = hname.decode('utf-8')
-                hval = hval.decode('utf-8').strip()
+            hname = native_(hname, 'utf-8')
+            hval = native_(hval, 'utf-8').strip()
             if hname in r.headers:
                 hval = r.headers[hname] + ', ' + hval
             r.headers[hname] = hval
         if r.method in ('PUT', 'POST'):
             clen = r.content_length
             if clen is None:
-                r.body = fp.read()
+                body = fp.read()
             else:
-                r.body = fp.read(clen)
+                body = fp.read(clen)
+            if is_text:
+                body = bytes_(body, 'utf-8')
+            r.body = body
         return r
 
     def call_application(self, application, catch_exc_info=False):
@@ -1067,7 +1070,7 @@ class BaseRequest(object):
     # Will be filled in later:
     ResponseClass = None
 
-    def get_response(self, application, catch_exc_info=False):
+    def get_response(self, application):
         """
         Like ``.call_application(application)``, except returns a
         response object with ``.status``, ``.headers``, and ``.body``
@@ -1076,13 +1079,7 @@ class BaseRequest(object):
         This will use ``self.ResponseClass`` to figure out the class
         of the response object to return.
         """
-        if catch_exc_info:
-            status, headers, app_iter, exc_info = self.call_application(
-                application, catch_exc_info=True)
-            del exc_info
-        else:
-            status, headers, app_iter = self.call_application(
-                application, catch_exc_info=False)
+        status, headers, app_iter = self.call_application(application)
         return self.ResponseClass(
             status=status,
             headerlist=list(headers),

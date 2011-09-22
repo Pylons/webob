@@ -6,6 +6,7 @@ from webob.compat import text_type
 from webob.compat import bytes_
 from webob.compat import text_
 from io import BytesIO
+from io import StringIO
 
 _marker = object()
 
@@ -1730,12 +1731,25 @@ class RequestTests_functional(unittest.TestCase):
 
     def test_from_file(self):
         req = Request.blank('http://example.com:8000/test.html?params')
-        self.equal_req(req)
+        inp = BytesIO(req.as_bytes())
+        self.equal_req(req, inp)
 
         req = Request.blank('http://example.com/test2')
         req.method = 'POST'
         req.body = b'test=example'
-        self.equal_req(req)
+        inp = BytesIO(req.as_bytes())
+        self.equal_req(req, inp)
+
+    def test_from_file_text(self):
+        req = Request.blank('http://example.com:8000/test.html?params')
+        inp = StringIO(req.as_text())
+        self.equal_req(req, inp)
+
+        req = Request.blank('http://example.com/test2')
+        req.method = 'POST'
+        req.body = b'test=example'
+        inp = StringIO(req.as_text())
+        self.equal_req(req, inp)
 
     def test_req_kw_none_val(self):
         request = Request({}, content_length=None)
@@ -2341,9 +2355,8 @@ class RequestTests_functional(unittest.TestCase):
                          [('Content-type', 'text/plain')])
         self.assertEqual(res.body, b'Hi!')
 
-    def equal_req(self, req):
-        input = BytesIO(req.as_bytes())
-        req2 = Request.from_file(input)
+    def equal_req(self, req, inp):
+        req2 = Request.from_file(inp)
         self.assertEqual(req.url, req2.url)
         headers1 = dict(req.headers)
         headers2 = dict(req2.headers)
@@ -2354,7 +2367,9 @@ class RequestTests_functional(unittest.TestCase):
         if 'Content-Length' in headers2:
             del headers2['Content-Length']
         self.assertEqual(headers1, headers2)
-        self.assertEqual(req.body, req2.body)
+        req_body = req.body
+        req2_body = req2.body
+        self.assertEqual(req_body, req2_body)
 
 
 def simpleapp(environ, start_response):
@@ -2559,3 +2574,16 @@ class Test_cgi_FieldStorage__repr__patch(unittest.TestCase):
         self.assertEqual(result, "FieldStorage('name', 'filename', 'value')")
 
 
+class TestLimitedLengthFile(unittest.TestCase):
+    def _makeOne(self, file, maxlen):
+        from webob.request import LimitedLengthFile
+        return LimitedLengthFile(file, maxlen)
+
+    def test_fileno(self):
+        class DummyFile(object):
+            def fileno(self):
+                return 1
+        dummyfile = DummyFile()
+        inst = self._makeOne(dummyfile, 0)
+        self.assertEqual(inst.fileno(), 1)
+        

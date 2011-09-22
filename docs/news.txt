@@ -44,6 +44,9 @@ master
 
 * A new method named ``Request.from_text()`` now exists.
 
+* The ``catch_exc_info`` argument to ``Request.get_response()`` has been
+  removed.  It had no effect.
+
 1.1.1
 ---------
 
