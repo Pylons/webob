@@ -329,7 +329,7 @@ def _func_name(func):
             name = '%s.%s' % (func.__module__, name)
         return name
     
-    if PY3:
+    if PY3: # pragma: no cover
         name = getattr(func, '__name__', None)
         if name is None:
             name = repr(func)
