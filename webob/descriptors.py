@@ -1,18 +1,33 @@
-from datetime import date
-from datetime import datetime
+from datetime import (
+    date,
+    datetime,
+    )
+
 import re
 
-from webob.byterange import ContentRange
-from webob.byterange import Range
-from webob.compat import binary_type
-from webob.compat import native_
-from webob.compat import text_
-from webob.compat import text_to_wsgi
-from webob.compat import text_type
-from webob.datetime_utils import parse_date
-from webob.datetime_utils import serialize_date
-from webob.etag import IfRange
-from webob.etag import NoIfRange
+from webob.byterange import (
+    ContentRange,
+    Range,
+    )
+
+from webob.compat import (
+    binary_type,
+    native_,
+    text_,
+    text_to_wsgi,
+    text_type,
+    )
+
+from webob.datetime_utils import (
+    parse_date,
+    serialize_date,
+    )
+
+from webob.etag import (
+    IfRange,
+    NoIfRange,
+    )
+
 from webob.util import header_docstring
 
 CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)

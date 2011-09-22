@@ -1,6 +1,8 @@
 from collections import MutableMapping
-from webob.compat import iteritems_
-from webob.compat import string_types
+from webob.compat import (
+    iteritems_,
+    string_types,
+    )
 from webob.multidict import MultiDict
 
 __all__ = ['ResponseHeaders', 'EnvironHeaders']

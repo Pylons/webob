@@ -1,39 +1,57 @@
 from base64 import b64encode
-from datetime import datetime
-from datetime import timedelta
+from datetime import (
+    datetime,
+    timedelta,
+    )
 from hashlib import md5
 import re
 import struct
 import zlib
 
 from webob.byterange import ContentRange
-from webob.cachecontrol import CacheControl
-from webob.cachecontrol import serialize_cache_control
-from webob.compat import binary_type
-from webob.compat import native_
-from webob.compat import text_type
-from webob.compat import url_quote
-from webob.compat import urlparse
-from webob.cookies import Cookie
-from webob.cookies import Morsel
-from webob.datetime_utils import parse_date_delta
-from webob.datetime_utils import serialize_date_delta
-from webob.datetime_utils import timedelta_to_seconds
-from webob.descriptors import CHARSET_RE
-from webob.descriptors import SCHEME_RE
-from webob.descriptors import converter
-from webob.descriptors import date_header
-from webob.descriptors import header_getter
-from webob.descriptors import list_header
-from webob.descriptors import parse_auth
-from webob.descriptors import parse_content_range
-from webob.descriptors import parse_etag_response
-from webob.descriptors import parse_int
-from webob.descriptors import parse_int_safe
-from webob.descriptors import serialize_auth
-from webob.descriptors import serialize_content_range
-from webob.descriptors import serialize_etag_response
-from webob.descriptors import serialize_int
+
+from webob.cachecontrol import (
+    CacheControl,
+    serialize_cache_control,
+    )
+
+from webob.compat import (
+    binary_type,
+    native_,
+    text_type,
+    url_quote,
+    urlparse,
+    )
+
+from webob.cookies import (
+    Cookie,
+    Morsel,
+    )
+
+from webob.datetime_utils import (
+    parse_date_delta,
+    serialize_date_delta,
+    timedelta_to_seconds,
+    )
+
+from webob.descriptors import (
+    CHARSET_RE,
+    SCHEME_RE,
+    converter,
+    date_header,
+    header_getter,
+    list_header,
+    parse_auth,
+    parse_content_range,
+    parse_etag_response,
+    parse_int,
+    parse_int_safe,
+    serialize_auth,
+    serialize_content_range,
+    serialize_etag_response,
+    serialize_int,
+    )
+    
 from webob.headers import ResponseHeaders
 from webob.request import BaseRequest
 from webob.util import status_reasons

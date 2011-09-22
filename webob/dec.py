@@ -8,11 +8,14 @@ instantiated request).
 
 import sys
 
-from webob.compat import PY3
-from webob.compat import binary_type
-from webob.compat import bytes_
-from webob.compat import class_types
-from webob.compat import text_type
+from webob.compat import (
+    PY3,
+    binary_type,
+    bytes_,
+    class_types,
+    text_type,
+    )
+
 from webob.request import Request
 import webob.exc
 

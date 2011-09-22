@@ -1,17 +1,26 @@
-from datetime import date
-from datetime import datetime
-from datetime import timedelta
-from datetime import tzinfo
-from email.utils import formatdate
-from email.utils import mktime_tz
-from email.utils import parsedate_tz
 import calendar
+
+from datetime import (
+    date,
+    datetime,
+    timedelta,
+    tzinfo,
+    )
+
+from email.utils import (
+    formatdate,
+    mktime_tz,
+    parsedate_tz,
+    )
+
 import time
 
-from webob.compat import binary_type
-from webob.compat import integer_types
-from webob.compat import native_
-from webob.compat import text_type
+from webob.compat import (
+    binary_type,
+    integer_types,
+    native_,
+    text_type,
+    )
 
 __all__ = [
     'UTC', 'timedelta_to_seconds',

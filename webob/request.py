@@ -6,51 +6,70 @@ import re
 import sys
 import tempfile
 
-from webob.acceptparse import AcceptCharset
-from webob.acceptparse import AcceptLanguage
-from webob.acceptparse import MIMEAccept
-from webob.acceptparse import MIMENilAccept
-from webob.acceptparse import NoAccept
-from webob.acceptparse import accept_property
-from webob.cachecontrol import CacheControl
-from webob.cachecontrol import serialize_cache_control
-from webob.compat import binary_type
-from webob.compat import bytes_
-from webob.compat import integer_types
-from webob.compat import iteritems_
-from webob.compat import multidict_from_bodyfile
-from webob.compat import native_
-from webob.compat import parse_qsl_text
-from webob.compat import reraise
-from webob.compat import text_
-from webob.compat import text_type
-from webob.compat import url_encode
-from webob.compat import url_quote
-from webob.compat import url_unquote
-from webob.compat import urlparse
+from webob.acceptparse import (
+    AcceptLanguage,
+    AcceptCharset,
+    MIMEAccept,
+    MIMENilAccept,
+    NoAccept,
+    accept_property,
+    )
+
+from webob.cachecontrol import (
+    CacheControl,
+    serialize_cache_control,
+    )
+
+from webob.compat import (
+    binary_type,
+    bytes_,
+    integer_types,
+    iteritems_,
+    multidict_from_bodyfile,
+    native_,
+    parse_qsl_text,
+    reraise,
+    text_,
+    text_type,
+    url_encode,
+    url_quote,
+    url_unquote,
+    urlparse,
+    )
 from webob.cookies import Cookie
-from webob.descriptors import CHARSET_RE
-from webob.descriptors import SCHEME_RE
-from webob.descriptors import converter
-from webob.descriptors import converter_date
-from webob.descriptors import environ_getter
-from webob.descriptors import parse_auth
-from webob.descriptors import parse_if_range
-from webob.descriptors import parse_int
-from webob.descriptors import parse_int_safe
-from webob.descriptors import parse_range
-from webob.descriptors import serialize_auth
-from webob.descriptors import serialize_if_range
-from webob.descriptors import serialize_int
-from webob.descriptors import serialize_range
-from webob.descriptors import upath_property
-from webob.etag import AnyETag
-from webob.etag import NoETag
-from webob.etag import etag_property
+
+from webob.descriptors import (
+    CHARSET_RE,
+    SCHEME_RE,
+    converter,
+    converter_date,
+    environ_getter,
+    parse_auth,
+    parse_if_range,
+    parse_int,
+    parse_int_safe,
+    parse_range,
+    serialize_auth,
+    serialize_if_range,
+    serialize_int,
+    serialize_range,
+    upath_property,
+    )
+
+from webob.etag import (
+    AnyETag,
+    NoETag,
+    etag_property,
+    )
+
 from webob.headers import EnvironHeaders
-from webob.multidict import  NestedMultiDict
-from webob.multidict import  NoVars
-from webob.multidict import TrackableMultiDict
+
+from webob.multidict import (
+    NestedMultiDict,
+    NoVars,
+    TrackableMultiDict,
+    )
+
 from webob.util import warn_deprecation
 
 __all__ = ['BaseRequest', 'Request']

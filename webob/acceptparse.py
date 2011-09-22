@@ -12,8 +12,10 @@ exists, but this ignores them.
 import re
 
 from webob.headers import _trans_name as header_to_key
-from webob.util import header_docstring
-from webob.util import warn_deprecation
+from webob.util import (
+    header_docstring,
+    warn_deprecation,
+    )
 
 part_re = re.compile(
     r',\s*([^\s;,\n]+)(?:[^,]*?;\s*q=([0-9.]*))?')
