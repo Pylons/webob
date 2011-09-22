@@ -2481,13 +2481,20 @@ class FakeCGIBodyTests(unittest.TestCase):
 
     def test_repr(self):
         from webob.request import FakeCGIBody
-        body = FakeCGIBody({'bananas': 'bananas'}, 'multipart/form-data; boundary=foobar')
+        body = FakeCGIBody({'bananas': 'bananas'},
+                           'multipart/form-data; boundary=foobar')
         body.read(1)
         import re
         self.assertEqual(
             re.sub(r'\b0x[0-9a-f]+\b', '<whereitsat>', repr(body)),
             "<FakeCGIBody at <whereitsat> viewing {'bananas': 'ba...nas'}>",
         )
+
+    def test_fileno(self):
+        from webob.request import FakeCGIBody
+        body = FakeCGIBody({'bananas': 'bananas'},
+                           'multipart/form-data; boundary=foobar')
+        self.assertEqual(body.fileno(), None)
 
     def test_iter(self):
         from webob.request import FakeCGIBody

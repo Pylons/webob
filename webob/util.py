@@ -38,7 +38,7 @@ def header_docstring(header, rfc_section):
     return "Gets and sets the ``%s`` header (`HTTP spec section %s <%s>`_)." \
         % (header, rfc_section, link)
 
-def warn_deprecation(text, version, stacklevel):
+def warn_deprecation(text, version, stacklevel): # pragma: no cover
     # version specifies when to start raising exceptions instead of warnings
     if version == '1.2':
         cls = DeprecationWarning
