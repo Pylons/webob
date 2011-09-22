@@ -40,7 +40,6 @@ class BaseRequest(object):
             raise DeprecationWarning("If you get non-UTF-8 requests, "
                 "use webob.transcode.transcode_mw"
             )
-        _check_charset(environ.get('CONTENT_TYPE', ''))
         d = self.__dict__
         d['environ'] = environ
         if 'decode_param_names' in kw or hasattr(self.__class__, 'decode_param_names'):
@@ -57,12 +56,28 @@ class BaseRequest(object):
                         "Unexpected keyword: %s=%r" % (name, value))
                 setattr(self, name, value)
 
-    def _set_charset(self, charset):
-        if not _is_utf8(charset):
-            raise DeprecationWarning("If you get non-UTF-8 requests, "
-                "use webob.transcode.transcode_mw"
-            )
-    charset = property(lambda self: 'UTF-8', _set_charset)
+    _charset = None
+
+    @property
+    def charset(self):
+        if self._charset is None:
+            charset = detect_charset(self._content_type_raw)
+            if _is_utf8(charset):
+                charset = 'UTF-8'
+            self._charset = charset
+        return self._charset
+
+    @charset.setter
+    def charset(self, charset):
+        if _is_utf8(charset):
+            charset = 'UTF-8'
+        if charset != self.charset:
+            raise DeprecationWarning("Use req = req.decode(%r)" % charset)
+
+    def decode(self, charset=None):
+        charset = charset or self.charset
+        raise NotImplementedError
+
 
     # this is necessary for correct warnings depth for both
     # BaseRequest and Request (due to AdhocAttrMixin.__setattr__)
@@ -156,6 +171,7 @@ class BaseRequest(object):
         '1.3'
     )
 
+    _content_type_raw = environ_getter('CONTENT_TYPE', '')
 
     def _content_type__get(self):
         """Return the content type, but leaving off any parameters (like
@@ -166,26 +182,19 @@ class BaseRequest(object):
         you don't include any parameters in the value then existing
         parameters will be preserved.
         """
-        return self.environ.get('CONTENT_TYPE', '').split(';', 1)[0]
-    def _content_type__set(self, value):
-        if value is None:
-            del self.content_type
-            return
-        value = str(value)
-        if ';' in value:
-            _check_charset(value)
-        else:
-            content_type = self.environ.get('CONTENT_TYPE', '')
-            if ';' in content_type:
-                value += ';' + content_type.split(';', 1)[1]
-        self.environ['CONTENT_TYPE'] = value
-    def _content_type__del(self):
-        if 'CONTENT_TYPE' in self.environ:
-            del self.environ['CONTENT_TYPE']
+        return self._content_type_raw.split(';', 1)[0]
+    def _content_type__set(self, value=None):
+        if value is not None:
+            value = str(value)
+            if ';' not in value:
+                content_type = self._content_type_raw
+                if ';' in content_type:
+                    value += ';' + content_type.split(';', 1)[1]
+        self._content_type_raw = value
 
     content_type = property(_content_type__get,
                             _content_type__set,
-                            _content_type__del,
+                            _content_type__set,
                             _content_type__get.__doc__)
 
     _headers = None
@@ -496,6 +505,7 @@ class BaseRequest(object):
             # Not an HTML form submission
             return NoVars('Not an HTML form submission (Content-Type: %s)'
                           % content_type)
+        self._check_charset()
         if self.is_body_seekable:
             self.body_file_raw.seek(0)
         fs_environ = env.copy()
@@ -508,12 +518,11 @@ class BaseRequest(object):
                               keep_blank_values=True)
         vars = MultiDict.from_fieldstorage(fs)
         #ctype = self.content_type or 'application/x-www-form-urlencoded'
-        ctype = env.get('CONTENT_TYPE', 'application/x-www-form-urlencoded')
+        ctype = self._content_type_raw or 'application/x-www-form-urlencoded'
         f = FakeCGIBody(vars, ctype)
         self.body_file = io.BufferedReader(f)
         env['webob._parsed_post_vars'] = (vars, self.body_file_raw)
         return vars
-
 
     @property
     def GET(self):
@@ -529,6 +538,9 @@ class BaseRequest(object):
 
         data = []
         if source:
+            # this is disabled because we want to access req.GET
+            # for text/plain; charset=ascii uploads for example
+            #self._check_charset()
             data = urlparse.parse_qsl(source, keep_blank_values=True,
                                                     strict_parsing=False)
             d = lambda b: b.decode('utf8')
@@ -537,6 +549,12 @@ class BaseRequest(object):
         env['webob._parsed_query_vars'] = (vars, source)
         return vars
 
+    def _check_charset(self):
+        if self.charset != 'UTF-8':
+            raise DeprecationWarning(
+                "Requests are expected to be submitted in UTF-8, not %s. "
+                "You can fix this by doing req = req.decode()" % self.charset
+            )
 
     @property
     def params(self):
@@ -1279,11 +1297,6 @@ def detect_charset(ctype):
     if m:
         return m.group(1).strip('"').strip()
 
-def _check_charset(value):
-    charset = detect_charset(value)
-    if not _is_utf8(charset):
-        raise DeprecationWarning("We only support UTF-8 encoding, not %s" % charset)
-
 def _is_utf8(charset):
     if not charset:
         return True
@@ -1296,3 +1309,6 @@ for _name in 'GET POST params cookies'.split():
     _str_name = 'str_'+_name
     _prop = deprecated_property(None, _str_name, "disabled starting WebOb 1.2, use %s instead" % _name, '1.2')
     setattr(BaseRequest, _str_name, _prop)
+
+
+

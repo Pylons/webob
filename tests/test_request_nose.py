@@ -136,3 +136,27 @@ def test_decode_param_names_deprecated():
     class BadRequest(Request):
         decode_param_names = False
     assert_raises(DeprecationWarning, BadRequest.blank, '/')
+
+
+def test_charset_in_content_type():
+    # should raise no exception
+    req = Request({
+        'REQUEST_METHOD': 'POST',
+        'QUERY_STRING':'a=b',
+        'CONTENT_TYPE':'text/html;charset=ascii'
+    })
+    eq(req.charset, 'ascii')
+    eq(dict(req.GET), {'a': 'b'})
+    eq(dict(req.POST), {})
+    req.charset = 'ascii' # no exception
+    assert_raises(DeprecationWarning, setattr, req, 'charset', 'utf-8')
+
+    # again no exception
+    req = Request({
+        'REQUEST_METHOD': 'POST',
+        'QUERY_STRING':'a=b',
+        'CONTENT_TYPE':'multipart/form-data;charset=ascii'
+    })
+    eq(req.charset, 'ascii')
+    eq(dict(req.GET), {'a': 'b'})
+    assert_raises(DeprecationWarning, getattr, req, 'POST')

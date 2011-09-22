@@ -1945,11 +1945,6 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(r.content_type, 'text/html')
         r.content_type = None
 
-    def test_charset_in_content_type(self):
-        self.assertRaises(DeprecationWarning, Request, {'CONTENT_TYPE':'text/html;charset=ascii'})
-        req = Request.blank('/')
-        self.assertRaises(DeprecationWarning, setattr, req, 'charset', 'shift-jis')
-
     def test_body_file_seekable(self):
         r = Request.blank('/', method='POST')
         r.body_file = BytesIO('body')
