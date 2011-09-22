@@ -10,6 +10,7 @@ from webob.byterange import ContentRange
 from webob.cachecontrol import CacheControl
 from webob.cachecontrol import serialize_cache_control
 from webob.compat import binary_type
+from webob.compat import native_
 from webob.compat import text_type
 from webob.compat import url_quote
 from webob.compat import urlparse
@@ -212,7 +213,7 @@ class Response(object):
     def _status__set(self, value):
         if isinstance(value, (binary_type, text_type)):
             # Status messages have to be ASCII safe, so this is OK:
-            value = str(value)
+            value = native_(value, 'ascii')
         if isinstance(value, int):
             value = str(value)
         if not isinstance(value, str):

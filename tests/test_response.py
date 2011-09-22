@@ -53,6 +53,13 @@ def test_response():
                   body=text_(b"unicode body"))
     assert_raises(TypeError, Response, wrong_key='dummy')
 
+def test_set_response_status_binary():
+    req = BaseRequest.blank('/')
+    res = req.get_response(simple_app)
+    res.status == b'200 OK'
+    assert res.status_int == 200
+    assert res.status == '200 OK'
+
 def test_content_type():
     r = Response()
     # default ctype and charset
