@@ -22,7 +22,6 @@ from webob.descriptors import CHARSET_RE
 from webob.descriptors import SCHEME_RE
 from webob.descriptors import converter
 from webob.descriptors import date_header
-from webob.descriptors import deprecated_property
 from webob.descriptors import header_getter
 from webob.descriptors import list_header
 from webob.descriptors import parse_auth
