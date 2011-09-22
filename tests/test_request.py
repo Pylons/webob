@@ -2388,6 +2388,21 @@ class RequestTests_functional(unittest.TestCase):
                          [('Content-type', 'text/plain')])
         self.assertEqual(res.body, b'Hi!')
 
+    def test_get_response_catch_exc_info_true(self):
+        req = Request.blank('/')
+        def wsgi_app(environ, start_response):
+            start_response('200 OK', [('Content-type', 'text/plain')])
+            return [b'Hi!']
+        res = req.get_response(wsgi_app, catch_exc_info=True)
+        from webob.response import Response
+        self.assert_(isinstance(res, Response))
+        self.assertEqual(res.status, '200 OK')
+        from webob.headers import ResponseHeaders
+        self.assert_(isinstance(res.headers, ResponseHeaders))
+        self.assertEqual(list(res.headers.items()),
+                         [('Content-type', 'text/plain')])
+        self.assertEqual(res.body, b'Hi!')
+
     def equal_req(self, req, inp):
         req2 = Request.from_file(inp)
         self.assertEqual(req.url, req2.url)
