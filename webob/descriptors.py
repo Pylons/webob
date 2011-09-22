@@ -47,7 +47,7 @@ def environ_getter(key, default=_not_given, rfc_section=None):
     return property(fget, fset, fdel, doc=doc)
 
 
-if PY3:
+if PY3: # pragma: no cover
     def upath_property(key):
         def fget(req):
             return req.environ.get(key, '')

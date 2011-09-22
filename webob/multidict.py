@@ -224,7 +224,7 @@ class MultiDict(MutableMapping):
     def iterkeys(self):
         for k, v in self._items:
             yield k
-    if PY3:
+    if PY3: # pragma: no cover
         keys = iterkeys
     else:
         def keys(self):
@@ -235,7 +235,7 @@ class MultiDict(MutableMapping):
     def iteritems(self):
         return iter(self._items)
 
-    if PY3:
+    if PY3: # pragma: no cover
         items = iteritems
     else:
         def items(self):
@@ -245,7 +245,7 @@ class MultiDict(MutableMapping):
         for k, v in self._items:
             yield v
 
-    if PY3:
+    if PY3: # pragma: no cover
         values = itervalues
     else:
         def values(self):
@@ -361,7 +361,7 @@ class NestedMultiDict(MultiDict):
         for d in self.dicts:
             for item in iteritems_(d):
                 yield item
-    if PY3:
+    if PY3: # pragma: no cover
         items = iteritems
     else:
         def items(self):
@@ -371,7 +371,7 @@ class NestedMultiDict(MultiDict):
         for d in self.dicts:
             for value in itervalues_(d):
                 yield value
-    if PY3:
+    if PY3: # pragma: no cover
         values = itervalues
     else:
         def values(self):
@@ -384,7 +384,7 @@ class NestedMultiDict(MultiDict):
 
     iterkeys = __iter__
 
-    if PY3:
+    if PY3: # pragma: no cover
         keys = iterkeys
     else:
         def keys(self):
@@ -450,7 +450,7 @@ class NoVars(object):
     def iterkeys(self):
         return iter([])
 
-    if PY3:
+    if PY3: # pragma: no cover
         keys = iterkeys
         items = iterkeys
         values = iterkeys
