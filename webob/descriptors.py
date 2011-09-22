@@ -201,8 +201,9 @@ def serialize_range(value):
     if isinstance(value, (list, tuple)):
         if len(value) != 2:
             raise ValueError(
-                "If setting .range to a list or tuple, it must be of length 2 (not %r)"
-                % value)
+                "If setting .range to a list or tuple, it must be of length "
+                "2 (not %r)" % value
+                )
         value = Range([value])
     if value is None:
         return None
