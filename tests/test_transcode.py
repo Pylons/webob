@@ -1,7 +1,6 @@
 # coding: cp1251
-from webob.request import Request
+from webob.request import Request, Transcoder
 from webob.response import Response
-from webob.transcode import transcode_mw, Transcoder
 from nose.tools import eq_
 
 # def tapp(env, sr):
@@ -17,6 +16,7 @@ t3 = '--BOUNDARY\r\nContent-Disposition: form-data; name="a"; filename="\xea\xf3
 def test_transcode():
     def tapp(env, sr):
         req = Request(env)
+        req = req.decode()
         v = req.POST[req.query_string]
         if hasattr(v, 'filename'):
             r = Response(u'%s\n%r' % (v.filename, v.value))
@@ -27,7 +27,7 @@ def test_transcode():
     def test(post):
         req = Request.blank('/?a', POST=post)
         req.environ['CONTENT_TYPE'] = 'multipart/form-data; charset=windows-1251; boundary=BOUNDARY'
-        return req.get_response(transcode_mw(tapp))
+        return req.get_response(tapp)
 
     r = test(t1)
     eq_(r.text, text)
