@@ -1424,6 +1424,15 @@ class BaseRequestTests(unittest.TestCase):
         body = req.as_bytes(337-1).split(b'\r\n\r\n', 1)[1]
         self.assertEqual(body, b'<body skipped (len=337)>')
 
+    def test_as_string_skip_body(self):
+        from webob import BaseRequest
+        req = BaseRequest.from_string(_test_req)
+        body = req.as_string(skip_body=True)
+        self.assertEqual(body.count(b'\r\n\r\n'), 0)
+        self.assertEqual(req.as_string(skip_body=337), req.as_string())
+        body = req.as_string(337-1).split(b'\r\n\r\n', 1)[1]
+        self.assertEqual(body, b'<body skipped (len=337)>')
+
     def test_adhoc_attrs_set(self):
         req = Request.blank('/')
         req.foo = 1

@@ -970,7 +970,13 @@ class BaseRequest(object):
         # HTTP clearly specifies CRLF
         return b'\r\n'.join(parts)
 
-    as_string = as_bytes # XXX deprecate
+    def as_string(self, skip_body=False):
+        warn_deprecation(
+            "Please use req.as_bytes",
+            '1.2',
+            self._setattr_stacklevel
+            )
+        return self.as_bytes(skip_body=skip_body)
 
     def as_text(self):
         bytes = self.as_bytes()
@@ -990,7 +996,14 @@ class BaseRequest(object):
             raise ValueError("The string contains more data than expected")
         return r
 
-    from_string = from_bytes # XXX deprecate
+    @classmethod
+    def from_string(cls, b):
+        warn_deprecation(
+            "Please use req.from_bytes",
+            '1.2',
+            cls._setattr_stacklevel
+            )
+        return cls.from_bytes(b)
 
     @classmethod
     def from_text(cls, s):
