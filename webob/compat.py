@@ -1,9 +1,9 @@
 # code stolen from "six"
 
-import sys
-import types
 import cgi
 import os
+import sys
+import types
 
 # True if we are running on Python 3.
 PY3 = sys.version_info[0] == 3

@@ -4,12 +4,12 @@
 """
 Gives a multi-value dictionary object (MultiDict) plus several wrappers
 """
-import warnings
 from collections import MutableMapping
+import warnings
 
+from webob.compat import PY3
 from webob.compat import iteritems_
 from webob.compat import itervalues_
-from webob.compat import PY3
 
 __all__ = ['MultiDict', 'NestedMultiDict', 'NoVars', 'TrackableMultiDict']
 

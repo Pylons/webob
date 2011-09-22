@@ -159,19 +159,19 @@ References:
 
 """
 
+from string import Template
 import re
 import sys
-from string import Template
 
-from webob.compat import urlparse
-from webob.compat import class_types
-from webob.compat import text_type
 from webob.compat import binary_type
+from webob.compat import class_types
 from webob.compat import text_
+from webob.compat import text_type
+from webob.compat import urlparse
 from webob.request import Request
 from webob.response import Response
-from webob.util import warn_deprecation
 from webob.util import html_escape
+from webob.util import warn_deprecation
 
 tag_re = re.compile(r'<.*?>', re.S)
 br_re = re.compile(r'<br.*?>', re.I|re.S)

@@ -4,9 +4,10 @@ Does parsing of ETag-related headers: If-None-Matches, If-Matches
 Also If-Range parsing
 """
 
-from webob.datetime_utils import serialize_date
 from webob.datetime_utils import parse_date
-from webob.util import header_docstring, warn_deprecation
+from webob.datetime_utils import serialize_date
+from webob.util import header_docstring
+from webob.util import warn_deprecation
 
 __all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'NoIfRange',
            'etag_property']

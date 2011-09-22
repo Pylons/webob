@@ -1,14 +1,14 @@
-import re
-import time
-import string
-from datetime import datetime
 from datetime import date
+from datetime import datetime
 from datetime import timedelta
+import re
+import string
+import time
 
 from webob.compat import binary_type
 from webob.compat import bytes_
-from webob.compat import text_
 from webob.compat import ords_
+from webob.compat import text_
 
 __all__ = ['Cookie']
 

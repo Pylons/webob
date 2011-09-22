@@ -1,22 +1,20 @@
-import re
-import zlib
-import struct
 from base64 import b64encode
-from hashlib import md5
-
 from datetime import datetime
 from datetime import timedelta
+from hashlib import md5
+import re
+import struct
+import zlib
 
-from webob.request import BaseRequest
 from webob.byterange import ContentRange
 from webob.cachecontrol import CacheControl
 from webob.cachecontrol import serialize_cache_control
+from webob.compat import binary_type
+from webob.compat import text_type
+from webob.compat import url_quote
+from webob.compat import urlparse
 from webob.cookies import Cookie
 from webob.cookies import Morsel
-from webob.compat import urlparse
-from webob.compat import text_type
-from webob.compat import binary_type
-from webob.compat import url_quote
 from webob.datetime_utils import parse_date_delta
 from webob.datetime_utils import serialize_date_delta
 from webob.datetime_utils import timedelta_to_seconds
@@ -37,6 +35,7 @@ from webob.descriptors import serialize_content_range
 from webob.descriptors import serialize_etag_response
 from webob.descriptors import serialize_int
 from webob.headers import ResponseHeaders
+from webob.request import BaseRequest
 from webob.util import status_reasons
 
 __all__ = ['Response']

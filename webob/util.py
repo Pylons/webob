@@ -1,8 +1,10 @@
-import cgi, warnings
-from webob.headers import _trans_key
+import cgi
+import warnings
+
 from webob.compat import string_types
-from webob.compat import text_type
 from webob.compat import text_
+from webob.compat import text_type
+from webob.headers import _trans_key
 
 def html_escape(s):
     """HTML-escape a string or object

@@ -1,19 +1,19 @@
-import re
-from datetime import datetime
 from datetime import date
+from datetime import datetime
+import re
 
-from webob.byterange import Range
 from webob.byterange import ContentRange
-from webob.etag import IfRange
-from webob.etag import NoIfRange
+from webob.byterange import Range
+from webob.compat import binary_type
+from webob.compat import native_
+from webob.compat import text_
+from webob.compat import text_to_wsgi
+from webob.compat import text_type
 from webob.datetime_utils import parse_date
 from webob.datetime_utils import serialize_date
+from webob.etag import IfRange
+from webob.etag import NoIfRange
 from webob.util import header_docstring
-from webob.compat import text_type
-from webob.compat import binary_type
-from webob.compat import text_to_wsgi
-from webob.compat import text_
-from webob.compat import native_
 
 CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
 QUOTES_RE = re.compile('"(.*)"')

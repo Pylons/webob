@@ -1,10 +1,10 @@
+import binascii
 import cgi
+import io
 import os
 import re
 import sys
-import io
 import tempfile
-import binascii
 
 from webob.acceptparse import AcceptCharset
 from webob.acceptparse import AcceptLanguage
@@ -14,18 +14,18 @@ from webob.acceptparse import NoAccept
 from webob.acceptparse import accept_property
 from webob.cachecontrol import CacheControl
 from webob.cachecontrol import serialize_cache_control
-from webob.compat import reraise
-from webob.compat import urlparse
-from webob.compat import parse_qsl_text
-from webob.compat import integer_types
 from webob.compat import binary_type
-from webob.compat import url_unquote
+from webob.compat import bytes_
+from webob.compat import integer_types
+from webob.compat import iteritems_
+from webob.compat import multidict_from_bodyfile
+from webob.compat import parse_qsl_text
+from webob.compat import reraise
+from webob.compat import text_
 from webob.compat import url_encode
 from webob.compat import url_quote
-from webob.compat import multidict_from_bodyfile
-from webob.compat import text_
-from webob.compat import bytes_
-from webob.compat import iteritems_
+from webob.compat import url_unquote
+from webob.compat import urlparse
 from webob.cookies import Cookie
 from webob.descriptors import CHARSET_RE
 from webob.descriptors import SCHEME_RE

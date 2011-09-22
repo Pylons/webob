@@ -7,13 +7,14 @@ instantiated request).
 """
 
 import sys
-import webob
-import webob.exc
-from webob.compat import class_types
-from webob.compat import text_type
+
+from webob.compat import PY3
 from webob.compat import binary_type
 from webob.compat import bytes_
-from webob.compat import PY3
+from webob.compat import class_types
+from webob.compat import text_type
+from webob.request import Request
+import webob.exc
 
 __all__ = ['wsgify']
 
@@ -81,7 +82,7 @@ class wsgify(object):
     the function).
     """
 
-    RequestClass = webob.Request
+    RequestClass = Request
 
     def __init__(self, func=None, RequestClass=None,
                  args=(), kwargs=None, middleware_wraps=None):
