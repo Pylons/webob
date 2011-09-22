@@ -40,11 +40,11 @@ if PY3: # pragma: no cover
     def native_(s, encoding='latin-1', errors='strict'):
         if isinstance(s, text_type):
             return s
-        return str(s, encoding)
+        return str(s, encoding, errors)
 else:
     def native_(s, encoding='latin-1', errors='strict'):
         if isinstance(s, text_type):
-            return s.encode(encoding)
+            return s.encode(encoding, errors)
         return str(s)
 
 if PY3: # pragma: no cover

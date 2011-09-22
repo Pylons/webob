@@ -13,7 +13,7 @@ from webob.compat import text_type
 from webob.compat import binary_type
 from webob.compat import text_to_wsgi
 from webob.compat import text_
-from webob.compat import PY3
+from webob.compat import native_
 
 CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
 QUOTES_RE = re.compile('"(.*)"')
@@ -47,23 +47,12 @@ def environ_getter(key, default=_not_given, rfc_section=None):
     return property(fget, fset, fdel, doc=doc)
 
 
-if PY3: # pragma: no cover
-    def upath_property(key):
-        def fget(req):
-            return req.environ.get(key, '')
-        def fset(req, val):
-            val = text_(val, 'utf-8')
-            req.environ[key] = val
-        return property(fget, fset, doc='upath_property(%r)' % key)
-    
-else:
-    def upath_property(key):
-        def fget(req):
-            return req.environ.get(key, '').decode('UTF8', req.unicode_errors)
-        def fset(req, val):
-            req.environ[key] = val.encode('UTF8', req.unicode_errors)
-        return property(fget, fset, doc='upath_property(%r)' % key)
-
+def upath_property(key):
+    def fget(req):
+        return text_(req.environ.get(key, ''), 'utf-8', req.unicode_errors)
+    def fset(req, val):
+        req.environ[key] = native_(val, 'utf-8', req.unicode_errors)
+    return property(fget, fset, doc='upath_property(%r)' % key)
 
 def header_getter(header, rfc_section):
     doc = header_docstring(header, rfc_section)
