@@ -80,7 +80,8 @@ class exists_property(object):
         if (self.type is not None
             and self.type != obj.type):
             raise AttributeError(
-                "The property %s only applies to %s Cache-Control" % (self.prop, self.type))
+                "The property %s only applies to %s Cache-Control" % (
+                    self.prop, self.type))
 
         if value:
             obj.properties[self.prop] = None
@@ -120,7 +121,8 @@ class value_property(object):
         if (self.type is not None
             and self.type != obj.type):
             raise AttributeError(
-                "The property %s only applies to %s Cache-Control" % (self.prop, self.type))
+                "The property %s only applies to %s Cache-Control" % (
+                    self.prop, self.type))
         if value == self.default:
             if self.prop in obj.properties:
                 del obj.properties[self.prop]

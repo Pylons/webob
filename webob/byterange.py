@@ -63,11 +63,13 @@ class Range(object):
                     parts.append(str(begin))
             else:
                 if begin < 0:
-                    raise ValueError("(%r, %r) should have a non-negative first value"
-                                    % (begin, end))
+                    raise ValueError(
+                        "(%r, %r) should have a non-negative first value"
+                        % (begin, end))
                 if end <= 0:
-                    raise ValueError("(%r, %r) should have a positive second value"
-                                    % (begin, end))
+                    raise ValueError(
+                        "(%r, %r) should have a positive second value"
+                        % (begin, end))
                 parts.append('%s-%s' % (begin, end-1))
         return 'bytes=%s' % ','.join(parts)
 
@@ -146,7 +148,8 @@ class ContentRange(object):
 
     def __init__(self, start, stop, length):
         if not _is_content_range_valid(start, stop, length):
-            raise ValueError("Bad start:stop/length: %r-%r/%r" % (start, stop, length))
+            raise ValueError(
+                "Bad start:stop/length: %r-%r/%r" % (start, stop, length))
         self.start = start
         self.stop = stop # this is python-style range end (non-inclusive)
         self.length = length
