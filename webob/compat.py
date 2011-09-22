@@ -8,7 +8,7 @@ import os
 # True if we are running on Python 3.
 PY3 = sys.version_info[0] == 3
 
-if PY3:
+if PY3: # pragma: no cover
     string_types = str,
     integer_types = int,
     class_types = type,
@@ -36,16 +36,21 @@ def bytes_(s, encoding='latin-1', errors='strict'):
         return s.encode(encoding, errors)
     return s
 
+if PY3: # pragma: no cover
+    fsenc = sys.getfilesystemencoding()
+    def text_to_wsgi(u):
+        # On Python 3, convert an environment variable to a WSGI
+        # "bytes-as-unicode" string
+        return u.encode(fsenc, 'surrogateescape').decode('latin-1')
+else:
+    def text_to_wsgi(u):
+        return u.encode('latin-1', 'surrogateescape')
+
 try:
     from queue import Queue, Empty
 except ImportError:
     from Queue import Queue, Empty
 
-try: # pragma: no cover
-    from collections import MutableMapping as DictMixin
-except ImportError:
-    from UserDict import DictMixin
-    
 try: # pragma: no cover
     from urllib import parse
     urlparse = parse
@@ -65,12 +70,6 @@ try: # pragma: no cover
 except ImportError: # pragma: no cover
     from md5 import md5
 
-try:
-    next = next
-except NameError:
-    def next(v):
-        return v.next()
-
 if PY3: # pragma: no cover
     import builtins
     exec_ = getattr(builtins, "exec")
@@ -85,7 +84,7 @@ if PY3: # pragma: no cover
     print_ = getattr(builtins, "print")
     del builtins
 
-else:
+else: # pragma: no cover
     def exec_(code, globs=None, locs=None):
         """Execute code in a namespace."""
         if globs is None:
@@ -161,24 +160,9 @@ else:
         return d.itervalues()
 
 if PY3: # pragma: no cover
-    enc = sys.getfilesystemencoding()
-    def unicode_to_wsgi(u):
-        # On Python 3, convert an environment variable to a WSGI
-        # "bytes-as-unicode" string
-        return u.encode(enc, 'surrogateescape').decode('latin-1')
-    def wsgi_to_unicode(u):
-        # Convert a "bytes-as-unicode" string to Unicode
-        return u.encode('latin-1').decode(enc, 'surrogateescape')
-else:
-    def unicode_to_wsgi(u):
-        return u.encode('latin-1', 'surrogateescape')
-    def wsgi_to_unicode(s):
-        return s.decode('latin-1', 'surrogateescape')
-
-if PY3: # pragma: no cover
     def parse_qsl_text(qs, keep_blank_values=False, strict_parsing=False,
                        encoding='utf-8', errors='replace'):
-        source = wsgi_to_unicode(qs)
+        source = qs.encode('latin-1').decode(fsenc, 'surrogateescape')
         decoded = urlparse.parse_qsl(
             source,
             keep_blank_values=keep_blank_values,
@@ -187,6 +171,7 @@ if PY3: # pragma: no cover
             errors=errors,
             )
         return decoded
+
 else:
     def parse_qsl_text(qs, keep_blank_values=False, strict_parsing=False,
                        encoding='utf-8', errors='replace'):
@@ -198,7 +183,7 @@ else:
                  strict_parsing=strict_parsing)
             ]
         return decoded
-                
+
 if PY3: # pragma: no cover
     def multidict_from_bodyfile(fp=None, environ=os.environ,
                                 keep_blank_values=False, encoding='utf-8',

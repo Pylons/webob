@@ -1,5 +1,5 @@
+from collections import MutableMapping
 from webob.multidict import MultiDict
-from webob.compat import DictMixin
 from webob.compat import string_types
 from webob.compat import iteritems_
 
@@ -119,7 +119,7 @@ def _trans_name(name):
         return header2key[name]
     return 'HTTP_'+name.replace('-', '_')
 
-class EnvironHeaders(DictMixin):
+class EnvironHeaders(MutableMapping):
     """An object that represents the headers as present in a
     WSGI environment.
 

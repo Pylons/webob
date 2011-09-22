@@ -4,15 +4,15 @@
 Gives a multi-value dictionary object (MultiDict) plus several wrappers
 """
 import warnings
+from collections import MutableMapping
 
-from webob.compat import DictMixin
 from webob.compat import iteritems_
 from webob.compat import itervalues_
 from webob.compat import PY3
 
 __all__ = ['MultiDict', 'NestedMultiDict', 'NoVars', 'TrackableMultiDict']
 
-class MultiDict(DictMixin):
+class MultiDict(MutableMapping):
     """
         An ordered dictionary that can have multiple values for each key.
         Adds the methods getall, getone, mixed and extend and add to the normal
@@ -194,7 +194,7 @@ class MultiDict(DictMixin):
                     "and overwrites duplicate keys. Consider using .extend()"
                 )
                 warnings.warn(msg, UserWarning, stacklevel=2)
-        DictMixin.update(self, *args, **kw)
+        MutableMapping.update(self, *args, **kw)
 
     def extend(self, other=None, **kwargs):
         if other is None:

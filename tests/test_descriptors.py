@@ -111,7 +111,8 @@ def test_upath_property_fset():
 def test_header_getter_doc():
     from webob.descriptors import header_getter
     desc = header_getter('X-Header', '14.3')
-    assert 'http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3' in desc.__doc__
+    assert('http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3'
+           in desc.__doc__)
     assert '``X-Header`` header' in desc.__doc__
 
 def test_header_getter_fget():
@@ -137,6 +138,16 @@ def test_header_getter_fset_none():
     desc.fset(resp, 'avalue')
     desc.fset(resp, None)
     eq_(desc.fget(resp), None)
+
+def test_header_getter_fset_text():
+    from webob.compat import text_to_wsgi
+    from webob.compat import text_
+    from webob.descriptors import header_getter
+    from webob import Response
+    resp = Response('aresp')
+    desc = header_getter('AHEADER', '14.3')
+    desc.fset(resp, text_('avalue'))
+    eq_(desc.fget(resp), text_to_wsgi('avalue'))
 
 def test_header_getter_fdel():
     from webob.descriptors import header_getter

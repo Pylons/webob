@@ -11,7 +11,7 @@ from webob.datetime_utils import serialize_date
 from webob.util import header_docstring
 from webob.compat import text_type
 from webob.compat import binary_type
-from webob.compat import unicode_to_wsgi
+from webob.compat import text_to_wsgi
 from webob.compat import text_
 from webob.compat import PY3
 
@@ -78,7 +78,7 @@ def header_getter(header, rfc_section):
         fdel(r)
         if value is not None:
             if isinstance(value, text_type):
-                value = unicode_to_wsgi(value)
+                value = text_to_wsgi(value)
             r._headerlist.append((header, value))
 
     def fdel(r):

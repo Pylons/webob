@@ -17,9 +17,6 @@ from webob.compat import text_type
 from webob.compat import binary_type
 from webob.compat import url_quote
 from webob.compat import md5
-from webob.compat import next
-from webob.compat import PY3
-from webob.compat import bytes_
 from webob.datetime_utils import parse_date_delta
 from webob.datetime_utils import serialize_date_delta
 from webob.datetime_utils import timedelta_to_seconds
