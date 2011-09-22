@@ -9,7 +9,9 @@ from email.utils import mktime_tz
 from email.utils import formatdate
 
 from webob.compat import binary_type
+from webob.compat import text_type
 from webob.compat import integer_types
+from webob.compat import native_
 
 __all__ = [
     'UTC', 'timedelta_to_seconds',
@@ -54,7 +56,7 @@ def parse_date(value):
     if not value:
         return None
     try:
-        value = str(value)
+        value = native_(value)
     except:
         return None
     t = parsedate_tz(value)
@@ -68,10 +70,8 @@ def parse_date(value):
     return datetime.fromtimestamp(t, UTC)
 
 def serialize_date(dt):
-    if isinstance(dt, binary_type):
-        dt = str(dt)
-    if isinstance(dt, str):
-        return dt
+    if isinstance(dt, (binary_type, text_type)):
+        return native_(dt)
     if isinstance(dt, timedelta):
         dt = _now() + dt
     if isinstance(dt, (datetime, date)):
@@ -80,7 +80,8 @@ def serialize_date(dt):
         dt = calendar.timegm(dt)
     if not (isinstance(dt, float) or isinstance(dt, integer_types)):
         raise ValueError(
-            "You must pass in a datetime, date, time tuple, or integer object, not %r" % dt)
+            "You must pass in a datetime, date, time tuple, or integer object, "
+            "not %r" % dt)
     return formatdate(dt, usegmt=True)
 
 

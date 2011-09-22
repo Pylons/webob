@@ -37,6 +37,17 @@ def bytes_(s, encoding='latin-1', errors='strict'):
     return s
 
 if PY3: # pragma: no cover
+    def native_(s, encoding='latin-1', errors='strict'):
+        if isinstance(s, text_type):
+            return s
+        return str(s, encoding)
+else:
+    def native_(s, encoding='latin-1', errors='strict'):
+        if isinstance(s, text_type):
+            return s.encode(encoding)
+        return str(s)
+
+if PY3: # pragma: no cover
     fsenc = sys.getfilesystemencoding()
     def text_to_wsgi(u):
         # On Python 3, convert an environment variable to a WSGI

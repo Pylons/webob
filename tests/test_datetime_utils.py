@@ -43,16 +43,27 @@ def test_parse_date():
     ret = datetime_utils.parse_date('Mon, 20 Nov 1995 19:12:08')
     eq_(ret,
         datetime.datetime(1995, 11, 20, 19, 12, 8, tzinfo=datetime_utils.UTC))
+    ret = datetime_utils.parse_date(Uncooperative())
+    eq_(ret, None)
+
+class Uncooperative(object):
+    def __str__(self):
+        raise NotImplementedError
 
 def test_serialize_date():
     """Testing datetime_utils.serialize_date
     We need to verify the following scenarios:
-        * passing an unicode date, return the same date but str
+        * on py3, passing an binary date, return the same date but str
+        * on py2, passing an unicode date, return the same date but str
         * passing a timedelta, return now plus the delta
         * passing an invalid object, should raise ValueError
     """
+    from webob.compat import text_
     ret = datetime_utils.serialize_date('Mon, 20 Nov 1995 19:12:08 GMT')
-    assert type(ret) is (str)
+    assert isinstance(ret, str)
+    eq_(ret, 'Mon, 20 Nov 1995 19:12:08 GMT')
+    ret = datetime_utils.serialize_date(text_('Mon, 20 Nov 1995 19:12:08 GMT'))
+    assert isinstance(ret, str)
     eq_(ret, 'Mon, 20 Nov 1995 19:12:08 GMT')
     dt = formatdate(
         calendar.timegm(
