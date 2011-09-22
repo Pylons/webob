@@ -5,6 +5,8 @@ from webob.dec import _format_args
 from webob.dec import _func_name
 from webob.dec import wsgify
 from webob.compat import bytes_
+from webob.compat import text_
+from webob.compat import PY3
 
 class DecoratorTests(unittest.TestCase):
     def _testit(self, app, req):
@@ -26,7 +28,7 @@ class DecoratorTests(unittest.TestCase):
         self.assertEqual(resp.charset, 'UTF-8')
 
     def test_wsgify_empty_repr(self):
-        self.assertEqual('%r' % (wsgify(),), 'wsgify()')
+        self.assertEqual(repr(wsgify()), 'wsgify()')
 
     def test_wsgify_args(self):
         resp_str = b'hey hey my my'
@@ -70,6 +72,13 @@ class DecoratorTests(unittest.TestCase):
         resp = self._testit(test_app, '/a url')
         self.assertEqual(resp.body, b'nothing to see here')
         self.assert_(test_app.__get__(test_app) is test_app)
+
+    def test_wsgify_app_returns_unicode(self):
+        def test_app(req):
+            return text_('some text')
+        test_app = wsgify(test_app)
+        resp = self._testit(test_app, '/a url')
+        self.assertEqual(resp.body, b'some text')
 
     def test_wsgify_args_no_func(self):
         test_app = wsgify(None, args=(1,))
@@ -151,8 +160,9 @@ class DecoratorTests(unittest.TestCase):
             return app(req)
         from webob.dec import _MiddlewareFactory
         self.assert_(set_urlvar.__class__ is _MiddlewareFactory)
-        repr = '%r' % (set_urlvar,)
-        self.assert_(repr.startswith('wsgify.middleware(<function set_urlvar at '))
+        r = repr(set_urlvar)
+        self.assert_(
+            r.startswith('wsgify.middleware(<function set_urlvar at '))
         @wsgify
         def show_vars(req):
             return resp_str % (sorted(req.urlvars.items()))
@@ -175,14 +185,14 @@ class DecoratorTests(unittest.TestCase):
         def middle(req, app, **kw):
             return app(req)
         self.assert_(middle.__class__ is wsgify)
+        self.assertTrue('test_app' in repr(unbound))
 
     def test_unbound_middleware_no_app(self):
         unbound = wsgify.middleware(None, None)
         from webob.dec import _UnboundMiddleware
         self.assert_(unbound.__class__ is _UnboundMiddleware)
         self.assertEqual(unbound.kw, dict())
-        self.assertEqual('%r' % (unbound,),
-                         "wsgify.middleware()")
+        self.assertEqual(repr(unbound,), "wsgify.middleware()")
 
     def test_classapp(self):
         class HostMap(dict):
@@ -219,13 +229,12 @@ class DecoratorTests(unittest.TestCase):
         name = _func_name(k.meth)
         self.assert_(name.startswith('tests.test_dec.%s' % kname))
         self.assert_(name.endswith('>.meth'))
-        # Should we remove tests below?  There is no such thing as an unbound
-        # method in Python 3.
-        # name = _func_name(Klass.meth)
-        # self.assertEqual(name, 'tests.test_dec.Klass.meth')
-        # name = _func_name(Klass.classmeth)
-        # self.assertEqual(name, "tests.test_dec.<class "
-        #                 "'tests.test_dec.Klass'>.classmeth")
+        if not PY3:
+            name = _func_name(Klass.meth)
+            self.assertEqual(name, 'tests.test_dec.Klass.meth')
+            name = _func_name(Klass.classmeth)
+            self.assertEqual(name, "tests.test_dec.<class "
+                             "'tests.test_dec.Klass'>.classmeth")
 
     def test__format_args(self):
         args_rep = _format_args()
@@ -248,6 +257,11 @@ class DecoratorTests(unittest.TestCase):
         self.assertEqual(args_rep, 'a=1, b=2, c=3')
         args_rep = _format_args(kw=kw, defaults=dict(a=4, b=5))
         self.assertEqual(args_rep, 'c=6')
+        class dummy(object):
+            one = 1
+            two = 2
+        args_rep = _format_args(obj=dummy(), names=text_('one two'))
+        self.assertEqual(args_rep, 'one=1, two=2')
 
     def test_middleware_direct_call(self):
         @wsgify.middleware
