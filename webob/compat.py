@@ -196,6 +196,7 @@ else:
         return decoded
 
 if PY3: # pragma: no cover
+    from webob.multidict import MultiDict
     def multidict_from_bodyfile(fp=None, environ=os.environ,
                                 keep_blank_values=False, encoding='utf-8',
                                 errors='replace'):
@@ -205,7 +206,6 @@ if PY3: # pragma: no cover
             keep_blank_values=keep_blank_values,
             encoding=encoding,
             errors=errors)
-        from webob.multidict import MultiDict
         obj = MultiDict()
         # fs.list can be None when there's nothing to parse
         for field in fs.list or ():
@@ -218,6 +218,7 @@ if PY3: # pragma: no cover
                 obj.add(field.name, field.value)
         return obj
 else:
+    from webob.multidict import MultiDict
     def multidict_from_bodyfile(fp=None, environ=os.environ,
                                 keep_blank_values=False, encoding='utf-8',
                                 errors='replace'):
@@ -226,7 +227,6 @@ else:
             environ=environ,
             keep_blank_values=keep_blank_values
             )
-        from webob.multidict import MultiDict
         obj = MultiDict()
         # fs.list can be None when there's nothing to parse
         for field in fs.list or ():
