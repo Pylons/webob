@@ -34,9 +34,10 @@ def header_docstring(header, rfc_section):
     if header.isupper():
         header = _trans_key(header)
     major_section = rfc_section.split('.')[0]
-    link = 'http://www.w3.org/Protocols/rfc2616/rfc2616-sec%s.html#sec%s' % (major_section, rfc_section)
-    return "Gets and sets the ``%s`` header (`HTTP spec section %s <%s>`_)." \
-        % (header, rfc_section, link)
+    link = 'http://www.w3.org/Protocols/rfc2616/rfc2616-sec%s.html#sec%s' % (
+        major_section, rfc_section)
+    return "Gets and sets the ``%s`` header (`HTTP spec section %s <%s>`_)." % (
+        header, rfc_section, link)
 
 def warn_deprecation(text, version, stacklevel): # pragma: no cover
     # version specifies when to start raising exceptions instead of warnings
