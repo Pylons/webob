@@ -9,10 +9,8 @@ instantiated request).
 import sys
 
 from webob.compat import (
-    PY3,
     binary_type,
     bytes_,
-    class_types,
     text_type,
     )
 
@@ -100,28 +98,8 @@ class wsgify(object):
         self.middleware_wraps = middleware_wraps
 
     def __repr__(self):
-        if self.func is None:
-            args = []
-        else:
-            args = [_func_name(self.func)]
-        if self.RequestClass is not self.__class__.RequestClass:
-            args.append('RequestClass=%r' % self.RequestClass)
-        if self.args:
-            args.append('args=%r' % (self.args,))
-        my_name = self.__class__.__name__
-        if self.middleware_wraps is not None:
-            my_name = '%s.middleware' % my_name
-        else:
-            if self.kwargs:
-                args.append('kwargs=%r' % self.kwargs)
-        r = '%s(%s)' % (my_name, ', '.join(args))
-        if self.middleware_wraps is not None:
-            args = [repr(self.middleware_wraps)]
-            if self.kwargs:
-                args.extend(['%s=%r' % (name, value)
-                             for name, value in sorted(self.kwargs.items())])
-            r += '(%s)' % ', '.join(args)
-        return r
+        return '<%s at %s wrapping %r>' % (self.__class__.__name__,
+                                           id(self), self.func)
 
     def __get__(self, obj, type=None):
         # This handles wrapping methods
@@ -294,14 +272,11 @@ class _UnboundMiddleware(object):
         self.wrapper_class = wrapper_class
         self.app = app
         self.kw = kw
+
     def __repr__(self):
-        if self.app:
-            args = (self.app,)
-        else:
-            args = ()
-        return '%s.middleware(%s)' % (
-            self.wrapper_class.__name__,
-            _format_args(args, self.kw))
+        return '<%s at %s wrapping %r>' % (self.__class__.__name__,
+                                           id(self), self.app)
+
     def __call__(self, func, app=None):
         if app is None:
             app = self.app
@@ -316,72 +291,12 @@ class _MiddlewareFactory(object):
         self.wrapper_class = wrapper_class
         self.middleware = middleware
         self.kw = kw
+
     def __repr__(self):
-        return '%s.middleware(%s)' % (
-            self.wrapper_class.__name__,
-            _format_args((self.middleware,), self.kw))
+        return '<%s at %s wrapping %r>' % (self.__class__.__name__, id(self),
+                                           self.middleware)
+
     def __call__(self, app, **config):
         kw = self.kw.copy()
         kw.update(config)
         return self.wrapper_class.middleware(self.middleware, app, **kw)
-
-def _func_name(func):
-    """Returns the string name of a function, or method, as best it can"""
-    if isinstance(func, class_types):
-        name = func.__name__
-        if func.__module__ not in ('__main__', '__builtin__'):
-            name = '%s.%s' % (func.__module__, name)
-        return name
-    
-    if PY3: # pragma: no cover
-        name = getattr(func, '__name__', None)
-        if name is None:
-            name = repr(func)
-        else:
-            name_self = getattr(func, '__self__', None)
-            if name_self is not None:
-                name = '%s.%s' % (name_self, name)
-            
-            module = getattr(func, '__module__', None)
-            if module and module != '__main__':
-                name = '%s.%s' % (module, name)
-    else:
-        name = getattr(func, 'func_name', None)
-        if name is None:
-            name = repr(func)
-        else:
-            name_self = getattr(func, 'im_self', None)
-            if name_self is not None:
-                name = '%r.%s' % (name_self, name)
-            else:
-                name_class = getattr(func, 'im_class', None)
-                if name_class is not None:
-                    name = '%s.%s' % (name_class.__name__, name)
-            
-            module = getattr(func, 'func_globals', {}).get('__name__')
-            if module and module != '__main__':
-                name = '%s.%s' % (module, name)
-    return name
-
-def _format_args(args=(), kw=None, leading_comma=False, obj=None, names=None,
-                 defaults=None):
-    if kw is None:
-        kw = {}
-    all = [repr(arg) for arg in args]
-    if names is not None:
-        assert obj is not None
-        kw = {}
-        if isinstance(names, text_type):
-            names = names.split()
-        for name in names:
-            kw[name] = getattr(obj, name)
-    if defaults is not None:
-        kw = kw.copy()
-        for name, value in defaults.items():
-            if name in kw and value == kw[name]:
-                del kw[name]
-    all.extend(['%s=%r' % (name, value) for name, value in sorted(kw.items())])
-    result = ', '.join(all)
-    if result and leading_comma:
-        result = ', ' + result
-    return result

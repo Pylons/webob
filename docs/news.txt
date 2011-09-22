@@ -44,8 +44,8 @@ master
 
 * A new method named ``Request.from_text()`` now exists.
 
-* The ``catch_exc_info`` argument to ``Request.get_response()`` has been
-  removed.  It had no effect.
+* The ``webob.dec.wsgify`` repr() is now much less informative, but a lot
+  easier to test and maintain.
 
 1.1.1
 ---------

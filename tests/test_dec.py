@@ -1,8 +1,6 @@
 import unittest
 from webob.request import Request
 from webob.response import Response
-from webob.dec import _format_args
-from webob.dec import _func_name
 from webob.dec import wsgify
 from webob.compat import bytes_
 from webob.compat import text_
@@ -28,7 +26,7 @@ class DecoratorTests(unittest.TestCase):
         self.assertEqual(resp.charset, 'UTF-8')
 
     def test_wsgify_empty_repr(self):
-        self.assertEqual(repr(wsgify()), 'wsgify()')
+        self.assertTrue('wsgify at' in repr(wsgify()))
 
     def test_wsgify_args(self):
         resp_str = b'hey hey my my'
@@ -161,8 +159,7 @@ class DecoratorTests(unittest.TestCase):
         from webob.dec import _MiddlewareFactory
         self.assert_(set_urlvar.__class__ is _MiddlewareFactory)
         r = repr(set_urlvar)
-        self.assert_(
-            r.startswith('wsgify.middleware(<function set_urlvar at '))
+        self.assert_('set_urlvar' in r)
         @wsgify
         def show_vars(req):
             return resp_str % (sorted(req.urlvars.items()))
@@ -192,7 +189,6 @@ class DecoratorTests(unittest.TestCase):
         from webob.dec import _UnboundMiddleware
         self.assert_(unbound.__class__ is _UnboundMiddleware)
         self.assertEqual(unbound.kw, dict())
-        self.assertEqual(repr(unbound,), "wsgify.middleware()")
 
     def test_classapp(self):
         class HostMap(dict):
@@ -207,61 +203,6 @@ class DecoratorTests(unittest.TestCase):
         self.assertEqual(resp.charset, 'UTF-8')
         self.assertEqual(resp.content_length, 1)
         self.assertEqual(resp.body, b'1')
-
-    def test__func_name(self):
-        def func():
-            pass
-        name = _func_name(func)
-        self.assertEqual(name, 'tests.test_dec.func')
-        name = _func_name('a')
-        self.assertEqual(name, "'a'")
-        class Klass(object):
-            @classmethod
-            def classmeth(cls):
-                pass
-            def meth(self):
-                pass
-        name = _func_name(Klass)
-        self.assertEqual(name, 'tests.test_dec.Klass')
-        k = Klass()
-        kname = _func_name(k)
-        self.assert_(kname.startswith('<tests.test_dec.Klass object at 0x'))
-        name = _func_name(k.meth)
-        self.assert_(name.startswith('tests.test_dec.%s' % kname))
-        self.assert_(name.endswith('>.meth'))
-        if not PY3:
-            name = _func_name(Klass.meth)
-            self.assertEqual(name, 'tests.test_dec.Klass.meth')
-            name = _func_name(Klass.classmeth)
-            self.assertEqual(name, "tests.test_dec.<class "
-                             "'tests.test_dec.Klass'>.classmeth")
-
-    def test__format_args(self):
-        args_rep = _format_args()
-        self.assertEqual(args_rep, '')
-        kw = dict(a=4, b=5, c=6)
-        args_rep = _format_args(args=(1, 2, 3), kw=kw)
-        self.assertEqual(args_rep, '1, 2, 3, a=4, b=5, c=6')
-        args_rep = _format_args(args=(1, 2, 3), kw=kw, leading_comma=True)
-        self.assertEqual(args_rep, ', 1, 2, 3, a=4, b=5, c=6')
-        class Klass(object):
-            a = 1
-            b = 2
-            c = 3
-        names = ['a', 'b', 'c']
-        obj = Klass()
-        self.assertRaises(AssertionError, _format_args, names=names)
-        args_rep = _format_args(obj=obj, names='a')
-        self.assertEqual(args_rep, 'a=1')
-        args_rep = _format_args(obj=obj, names=names)
-        self.assertEqual(args_rep, 'a=1, b=2, c=3')
-        args_rep = _format_args(kw=kw, defaults=dict(a=4, b=5))
-        self.assertEqual(args_rep, 'c=6')
-        class dummy(object):
-            one = 1
-            two = 2
-        args_rep = _format_args(obj=dummy(), names=text_('one two'))
-        self.assertEqual(args_rep, 'one=1, two=2')
 
     def test_middleware_direct_call(self):
         @wsgify.middleware
