@@ -123,9 +123,7 @@ class Morsel(dict):
     __str__ = serialize
 
     def __repr__(self):
-        name = getattr(self, 'name', None)
-        value = getattr(self, 'value', None)
-        return '<%s: %s=%r>' % (self.__class__.__name__, name, value)
+        return '<%s: %s=%r>' % (self.__class__.__name__, self.name, self.value)
 
 _c_renames = {
     "path" : "Path",
