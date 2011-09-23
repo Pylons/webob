@@ -193,16 +193,10 @@ weekdays = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 months = (None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
           'Oct', 'Nov', 'Dec')
 
-_notrans_unicode = {}
-for k in _no_escape_chars:
-    _notrans_unicode[ord(k)] = None
-
 _notrans_binary = b' '*256
 
 def _needs_quoting(v):
-    if isinstance(v, binary_type):
-        return v.translate(_notrans_binary, _no_escape_bytes)
-    return v.translate(_notrans_unicode)
+    return v.translate(_notrans_binary, _no_escape_bytes)
 
 def _quote(v):
     if _needs_quoting(v):
@@ -210,5 +204,8 @@ def _quote(v):
     return v
 
 def _valid_cookie_name(key):
+    if not isinstance(key, binary_type):
+        key = key.encode('ascii', 'replace')
     return not _needs_quoting(key)
+
 
