@@ -18,6 +18,7 @@ from webob.cachecontrol import (
 from webob.compat import (
     binary_type,
     native_,
+    bytes_,
     text_type,
     url_quote,
     urlparse,
@@ -958,7 +959,7 @@ class Response(object):
             # TODO: add support for If-Range
             if content_range is None:
                 iter_close(self._app_iter)
-                body = "Requested range not satisfiable: %s" % req.range
+                body = bytes_("Requested range not satisfiable: %s" % req.range)
                 headerlist = [
                     ('Content-Length', str(len(body))),
                     ('Content-Range', str(ContentRange(None, None,
