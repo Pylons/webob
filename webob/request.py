@@ -671,7 +671,7 @@ class BaseRequest(object):
         if source:
             cookies = Cookie(source)
             for name in cookies:
-                vars[name] = cookies[name].value
+                vars[name.decode('ascii')] = cookies[name].value.decode('utf-8')
         env['webob._parsed_cookies'] = (vars, source)
         return vars
 

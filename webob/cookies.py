@@ -9,9 +9,11 @@ import string
 import time
 
 from webob.compat import (
-    binary_type,
-    bytes_,
     PY3,
+    binary_type,
+    text_type,
+    bytes_,
+    native_,
     text_,
     )
 
@@ -23,12 +25,14 @@ class Cookie(dict):
             self.load(input)
 
     def load(self, data):
+        if PY3:
+            data = data.encode('latin-1')
         ckey = None
         for key, val in _rx_cookie.findall(data):
             if key.lower() in _c_keys:
                 if ckey:
                     self[ckey][key] = _unquote(val)
-            elif key[0] == '$':
+            elif key[0] == _b_dollar_sign:
                 # RFC2109: NAMEs that begin with $ are reserved for other uses
                 # and must not be used by applications.
                 continue
@@ -37,6 +41,8 @@ class Cookie(dict):
                 ckey = key
 
     def __setitem__(self, key, val):
+        if not isinstance(key, binary_type):
+            key = key.encode('ascii', 'replace')
         if _valid_cookie_name(key):
             dict.__setitem__(self, key, Morsel(key, val))
 
@@ -69,8 +75,10 @@ def serialize_max_age(v):
 def serialize_cookie_date(v):
     if v is None:
         return None
-    elif isinstance(v, str):
+    elif isinstance(v, bytes):
         return v
+    elif isinstance(v, text_type):
+        return v.encode('ascii')
     elif isinstance(v, int):
         v = timedelta(seconds=v)
     if isinstance(v, timedelta):
@@ -78,62 +86,66 @@ def serialize_cookie_date(v):
     if isinstance(v, (datetime, date)):
         v = v.timetuple()
     r = time.strftime('%%s, %d-%%s-%Y %H:%M:%S GMT', v)
-    return r % (weekdays[v[6]], months[v[1]])
+    return bytes_(r % (weekdays[v[6]], months[v[1]]), 'ascii')
 
 class Morsel(dict):
     __slots__ = ('name', 'value')
     def __init__(self, name, value):
-        assert name.lower() not in _c_keys
         assert _valid_cookie_name(name)
+        assert name.lower() not in _c_keys
+        assert isinstance(value, bytes)
         self.name = name
         self.value = value
         self.update(dict.fromkeys(_c_keys, None))
 
-    path = cookie_property('path')
-    domain = cookie_property('domain')
-    comment = cookie_property('comment')
-    expires = cookie_property('expires', serialize_cookie_date)
-    max_age = cookie_property('max-age', serialize_max_age)
-    httponly = cookie_property('httponly', bool)
-    secure = cookie_property('secure', bool)
+    path = cookie_property(b'path')
+    domain = cookie_property(b'domain')
+    comment = cookie_property(b'comment')
+    expires = cookie_property(b'expires', serialize_cookie_date)
+    max_age = cookie_property(b'max-age', serialize_max_age)
+    httponly = cookie_property(b'httponly', bool)
+    secure = cookie_property(b'secure', bool)
 
     def __setitem__(self, k, v):
-        k = k.lower()
+        k = bytes_(k.lower(), 'ascii')
         if k in _c_keys:
             dict.__setitem__(self, k, v)
 
     def serialize(self, full=True):
         result = []
         add = result.append
-        add(bytes_(self.name) + b'=' + _quote(bytes_(self.value, 'utf-8')))
+        add(self.name + b'=' + _quote(self.value))
         if full:
             for k in _c_valkeys:
                 v = self[k]
                 if v:
-                    add(bytes_(_c_renames[k]) + b'='+_quote(bytes_(v, 'utf-8')))
-            expires = self['expires']
+                    add(_c_renames[k] + b'='+_quote(bytes_(v, 'utf-8')))
+            expires = self[b'expires']
             if expires:
-                add(b'expires=' + bytes_(expires))
+                add(b'expires=' + expires)
             if self.secure:
                 add(b'secure')
             if self.httponly:
                 add(b'HttpOnly')
-        return text_(b'; '.join(result), 'ascii')
+        return native_(b'; '.join(result), 'ascii')
 
     __str__ = serialize
 
     def __repr__(self):
-        return '<%s: %s=%r>' % (self.__class__.__name__, self.name, self.value)
+        return '<%s: %s=%r>' % (self.__class__.__name__,
+            native_(self.name),
+            native_(self.value)
+        )
 
 _c_renames = {
-    "path" : "Path",
-    "comment" : "Comment",
-    "domain" : "Domain",
-    "max-age" : "Max-Age",
+    b"path" : b"Path",
+    b"comment" : b"Comment",
+    b"domain" : b"Domain",
+    b"max-age" : b"Max-Age",
 }
 _c_valkeys = sorted(_c_renames)
 _c_keys = set(_c_renames)
-_c_keys.update(['expires', 'secure', 'httponly'])
+_c_keys.update([b'expires', b'secure', b'httponly'])
 
 
 
@@ -151,21 +163,27 @@ _rx_cookie_str_equal = r"\s*=\s*"
 _rx_cookie_str_val = r"(%s|%s|%s*)" % (_re_quoted, _re_expires_val,
                                        _re_legal_char)
 _rx_cookie_str = _rx_cookie_str_key + _rx_cookie_str_equal + _rx_cookie_str_val
-_rx_cookie = re.compile(_rx_cookie_str)
+_rx_cookie = re.compile(bytes_(_rx_cookie_str, 'ascii'))
 
-_rx_unquote = re.compile(r'\\([0-3][0-7][0-7]|.)')
+_rx_unquote = re.compile(bytes_(r'\\([0-3][0-7][0-7]|.)', 'ascii'))
+
+_bchr = (lambda i: bytes([i])) if PY3 else chr
+_ch_unquote_map = dict((bytes_('%03o' % i), _bchr(i))
+    for i in range(256)
+)
+_ch_unquote_map.update((v, v) for v in list(_ch_unquote_map.values()))
+
+_b_dollar_sign = 36 if PY3 else '$'
+_b_quote_mark = 34 if PY3 else '"'
 
 def _unquote(v):
-    if v and v[0] == v[-1] == '"':
+    assert isinstance(v, bytes)
+    if v and v[0] == v[-1] == _b_quote_mark:
         v = v[1:-1]
         def _ch_unquote(m):
-            v = m.group(1)
-            if v.isdigit():
-                return chr(int(v, 8))
-            return v
+            return _ch_unquote_map[m.group(1)]
         v = _rx_unquote.sub(_ch_unquote, v)
     return v
-
 
 
 #
@@ -204,8 +222,6 @@ def _quote(v):
     return v
 
 def _valid_cookie_name(key):
-    if not isinstance(key, binary_type):
-        key = key.encode('ascii', 'replace')
-    return not _needs_quoting(key)
+    return isinstance(key, bytes) and not _needs_quoting(key)
 
 

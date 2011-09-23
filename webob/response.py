@@ -51,7 +51,7 @@ from webob.descriptors import (
     serialize_etag_response,
     serialize_int,
     )
-    
+
 from webob.headers import ResponseHeaders
 from webob.request import BaseRequest
 from webob.util import status_reasons
@@ -667,7 +667,10 @@ class Response(object):
             expires = datetime.utcnow() + max_age
         elif max_age is None and expires is not None:
             max_age = expires - datetime.utcnow()
-
+        if isinstance(value, text_type):
+            value = value.encode('utf8')
+        if isinstance(key, text_type):
+            key = key.encode('utf8')
         m = Morsel(key, value)
         m.path = path
         m.domain = domain
@@ -699,6 +702,8 @@ class Response(object):
         cookies = Cookie()
         for header in existing:
             cookies.load(header)
+        if isinstance(key, text_type):
+            key = key.encode('utf8')
         if key in cookies:
             del cookies[key]
             del self.headers['Set-Cookie']
