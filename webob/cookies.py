@@ -118,7 +118,7 @@ class Morsel(dict):
                 add(b'secure')
             if self.httponly:
                 add(b'HttpOnly')
-        return text_(b'; '.join(result), 'utf-8')
+        return text_(b'; '.join(result), 'ascii')
 
     __str__ = serialize
 

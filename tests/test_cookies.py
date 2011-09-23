@@ -94,7 +94,7 @@ def test_ch_unquote():
     eq_(cookies._unquote(r'"a\"\377"'), 'a"\xff')
     eq_(cookies._quote(b'a"\xff'), bytes_(r'"a\"\377"'))
 
-def test_cookie_setitem_needs_quoting():
+def test_cookie_invalid_name():
     c = cookies.Cookie()
     c['La Pe\xc3\xb1a'] = '1'
     eq_(len(c), 0)
@@ -140,4 +140,4 @@ def test_morsel_repr():
     v = cookies.Morsel('a', 'b')
     result = repr(v)
     eq_(result, "<Morsel: a='b'>")
-    
+
