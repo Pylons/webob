@@ -181,7 +181,7 @@ def test_conditional_response_range_not_satisfiable_response():
     eq_(resp.content_range.start, None)
     eq_(resp.content_range.stop, None)
     eq_(resp.content_range.length, 4)
-    eq_(resp.body, 'Requested range not satisfiable: bytes=100-200')
+    eq_(resp.body, b'Requested range not satisfiable: bytes=100-200')
 
 def test_HEAD_conditional_response_range_not_satisfiable_response():
     req = Request.blank('/', method='HEAD', range='bytes=100-200')
