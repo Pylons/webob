@@ -15,16 +15,12 @@ if PY3: # pragma: no cover
     text_type = str
     binary_type = bytes
     long = int
-    def ords_(b):
-        return b
 else:
     string_types = basestring,
     integer_types = (int, long)
     class_types = (type, types.ClassType)
     text_type = unicode
     binary_type = str
-    def ords_(s):
-        return [ord(x) for x in s]
 
 def text_(s, encoding='latin-1', errors='strict'):
     if isinstance(s, binary_type):
@@ -48,11 +44,8 @@ else:
         return str(s)
 
 if PY3: # pragma: no cover
-    fsenc = sys.getfilesystemencoding()
     def text_to_wsgi(u):
-        # On Python 3, convert an environment variable to a WSGI
-        # "bytes-as-unicode" string
-        return u.encode(fsenc, 'surrogateescape').decode('latin-1')
+        return u.encode('ascii').decode('latin-1')
 else:
     def text_to_wsgi(u):
         return u.encode('latin-1', 'surrogateescape')
@@ -165,30 +158,47 @@ else:
     def itervalues_(d):
         return d.itervalues()
 
-if PY3: # pragma: no cover
-    def parse_qsl_text(qs, keep_blank_values=False, strict_parsing=False,
-                       encoding='utf-8', errors='replace'):
-        source = qs.encode('latin-1').decode(fsenc, 'surrogateescape')
-        decoded = urlparse.parse_qsl(
-            source,
-            keep_blank_values=keep_blank_values,
-            strict_parsing=strict_parsing,
-            encoding=encoding,
-            errors=errors,
-            )
-        return decoded
+
+if PY3:
+    #from urllib.parse import unquote
+
+    def unquote(string):
+        if not string:
+            return b''
+        res = string.split(b'%')
+        if len(res) != 1:
+            string = res[0]
+            for item in res[1:]:
+                try:
+                    string += bytes([int(item[:2], 16)]) + item[2:]
+                except ValueError:
+                    string += b'%' + item
+        return string
+
+    def parse_qsl_text(qs, encoding='utf-8', errors='replace'):
+        qs = qs.encode('latin-1')
+        qs = qs.replace(b'+', b' ')
+        pairs = [s2 for s1 in qs.split(b'&') for s2 in s1.split(b';') if s3]
+        for name_value in pairs:
+            nv = name_value.split(b'=', 1)
+            if len(nv) != 2:
+                nv.append('')
+            name = unquote(nv[0])
+            value = unquote(nv[1])
+            yield (name.decode(encoding, errors), value.decode(encoding, errors))
 
 else:
-    def parse_qsl_text(qs, keep_blank_values=False, strict_parsing=False,
-                       encoding='utf-8', errors='replace'):
-        decoded = [
-            (x.decode(encoding, errors), y.decode(encoding, errors))
-             for (x, y) in urlparse.parse_qsl(
-                 qs,
-                 keep_blank_values=keep_blank_values,
-                 strict_parsing=strict_parsing)
-            ]
-        return decoded
+    from urlparse import parse_qsl
+
+    def parse_qsl_text(qs, encoding='utf-8', errors='replace'):
+        qsl = parse_qsl(
+            qs,
+            keep_blank_values=True,
+            strict_parsing=False
+        )
+        for (x, y) in qsl:
+            yield (x.decode(encoding, errors), y.decode(encoding, errors))
+
 
 if PY3: # pragma: no cover
     from webob.multidict import MultiDict
@@ -234,4 +244,4 @@ else:
                 obj.add(field.name.decode(encoding, errors),
                         field.value.decode(encoding, errors))
         return obj
-        
+

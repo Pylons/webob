@@ -11,7 +11,7 @@ import time
 from webob.compat import (
     binary_type,
     bytes_,
-    ords_,
+    PY3,
     text_,
     )
 
@@ -123,9 +123,7 @@ class Morsel(dict):
     __str__ = serialize
 
     def __repr__(self):
-        name = getattr(self, 'name', None)
-        value = getattr(self, 'value', None)
-        return '<%s: %s=%r>' % (self.__class__.__name__, name, value)
+        return '<%s: %s=%r>' % (self.__class__.__name__, self.name, self.value)
 
 _c_renames = {
     "path" : "Path",
@@ -176,7 +174,7 @@ def _unquote(v):
 
 # these chars can be in cookie value w/o causing it to be quoted
 _no_escape_special_chars = "!#$%&'*+-.^_`|~/"
-_no_escape_chars = (string.ascii_letters + string.digits + 
+_no_escape_chars = (string.ascii_letters + string.digits +
                     _no_escape_special_chars)
 _no_escape_bytes = bytes_(_no_escape_chars)
 # these chars never need to be quoted
@@ -186,6 +184,9 @@ _escape_map = dict((chr(i), '\\%03o' % i) for i in range(256))
 _escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
 _escape_map['"'] = r'\"'
 _escape_map['\\'] = r'\\'
+if PY3:
+    # convert to {int -> bytes}
+    _escape_map = dict((ord(k), bytes_(v, 'ascii')) for k, v in _escape_map.items())
 _escape_char = _escape_map.__getitem__
 
 weekdays = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
@@ -205,11 +206,7 @@ def _needs_quoting(v):
 
 def _quote(v):
     if _needs_quoting(v):
-        result = []
-        for ord in ords_(v):
-            escaped = _escape_char(chr(ord))
-            result.append(bytes_(escaped))
-        return b'"' + b''.join(result) + b'"'
+        return b'"' + b''.join(map(_escape_char, v)) + b'"'
     return v
 
 def _valid_cookie_name(key):

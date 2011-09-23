@@ -634,13 +634,11 @@ class BaseRequest(object):
                 __name='GET'
                 )
         else:
-            decoded = parse_qsl_text(
+            decoded = list(parse_qsl_text(
                 source,
-                keep_blank_values=True,
-                strict_parsing=False,
                 encoding=self.charset,
                 errors=self.unicode_errors
-                )
+            ))
             vars = TrackableMultiDict(
                 decoded,
                 __tracker=self._update_get,
@@ -1448,4 +1446,4 @@ def _get_charset(content_type):
         return charset_match.group(1).strip('"').strip()
     else:
         return 'UTF-8'
-    
+

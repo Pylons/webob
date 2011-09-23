@@ -464,7 +464,7 @@ class NoVars(object):
         values = keys
         itervalues = iterkeys
         iteritems = iterkeys
-    
+
     __iter__ = iterkeys
 
 
