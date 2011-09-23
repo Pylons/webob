@@ -178,7 +178,7 @@ if PY3:
     def parse_qsl_text(qs, encoding='utf-8', errors='replace'):
         qs = qs.encode('latin-1')
         qs = qs.replace(b'+', b' ')
-        pairs = [s2 for s1 in qs.split(b'&') for s2 in s1.split(b';') if s3]
+        pairs = [s2 for s1 in qs.split(b'&') for s2 in s1.split(b';') if s2]
         for name_value in pairs:
             nv = name_value.split(b'=', 1)
             if len(nv) != 2:
