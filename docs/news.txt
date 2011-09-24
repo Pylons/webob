@@ -16,6 +16,9 @@ News
 
 * Added full history from PyCon 2011 sprint to the repository
 
+* Change ``LimitedLengthFile`` and ``FakeCGIBody`` to inherit from
+  ``io.RawIOBase`` and benefit from ``io.BufferedReader``.
+
 * Do not set ``resp.request`` in ``req.get_response(app)``
 
 * ``Response.request`` and ``.environ`` attrs are deprecated and raise exceptions
