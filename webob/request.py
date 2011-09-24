@@ -87,8 +87,6 @@ http_method_probably_has_body = dict.fromkeys(
 http_method_probably_has_body.update(
     dict.fromkeys(('POST', 'PUT'), True))
 
-_empty_byte = b''
-
 class BaseRequest(object):
     ## Options:
     unicode_errors = 'strict'
@@ -165,7 +163,7 @@ class BaseRequest(object):
         self.is_body_seekable = False
         self.is_body_readable = True
     def _body_file__del(self):
-        self.body = _empty_byte
+        self.body = b''
     body_file = property(_body_file__get,
                          _body_file__set,
                          _body_file__del,
@@ -538,14 +536,14 @@ class BaseRequest(object):
         Return the content of the request body.
         """
         if not self.is_body_readable:
-            return _empty_byte
+            return b''
         self.make_body_seekable() # we need this to have content_length
         r = self.body_file.read(self.content_length)
         self.body_file_raw.seek(0)
         return r
     def _body__set(self, value):
         if value is None:
-            value = _empty_byte
+            value = b''
         if not isinstance(value, binary_type):
             raise TypeError("You can only set Request.body to bytes (not %r)"
                                 % type(value))
@@ -558,7 +556,7 @@ class BaseRequest(object):
         self.body_file_raw = io.BytesIO(value)
         self.is_body_seekable = True
     def _body__del(self):
-        self.body = _empty_byte
+        self.body = b''
     body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
 
 
@@ -694,7 +692,7 @@ class BaseRequest(object):
         """
         env = self.environ.copy()
         return self.__class__(env, method='GET', content_type=None,
-                              body=_empty_byte)
+                              body=b'')
 
     # webob.is_body_seekable marks input streams that are seekable
     # this way we can have seekable input without testing the .seek() method
@@ -760,7 +758,7 @@ class BaseRequest(object):
         """
         if not self.is_body_readable:
             # there's no body to copy
-            self.body = _empty_byte
+            self.body = b''
         elif self.content_length is None:
             # chunked body or FakeCGIBody
             self.body = self.body_file_raw.read()
@@ -963,7 +961,7 @@ class BaseRequest(object):
             parts.append(header)
 
         if body:
-            parts.extend( [_empty_byte, body] )
+            parts.extend([b'', body])
         # HTTP clearly specifies CRLF
         return b'\r\n'.join(parts)
 
