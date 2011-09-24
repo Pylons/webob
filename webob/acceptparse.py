@@ -131,15 +131,6 @@ class Accept(object):
         at the end of the match list then that will be returned.
         """
         _warn_first_match()
-        if not offers:
-            raise ValueError("You must pass in a non-empty list")
-        for offer in offers:
-            if offer is None:
-                return None
-            for mask, quality in self._parsed_nonzero:
-                if self._match(mask, offer):
-                    return offer
-        return offers[0]
 
     def best_match(self, offers, default_match=None):
         """
@@ -241,7 +232,6 @@ class NilAccept(object):
 
     def first_match(self, offers):
         _warn_first_match()
-        return offers[0]
 
     def best_match(self, offers, default_match=None):
         best_quality = -1
