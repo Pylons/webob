@@ -3,8 +3,12 @@ News
 
 .. contents::
 
-master
+1.2a1
 ---------
+
+* Python 3.2 compatibility.
+
+* No longer compatible with Python 2.5 (only 2.6, 2.7, and 3.2 are supported).
 
 * Switched VCS from Mercurial to Git
 
@@ -14,17 +18,11 @@ master
 
 * Do not set ``resp.request`` in ``req.get_response(app)``
 
-* The ``request`` argument to the ``Response(..)`` constructor has been
-  removed.
+* ``Response.request`` and ``.environ`` attrs are deprecated and raise exceptions
+  when used.
 
-* The deprecated ``environ``, ``request`` and ``status_code`` attributes of
-  the Response no longer exist.
-
-* Python 3.2 compatibility.
-
-* No longer compatible with Python 2.5 (only 2.6, 2.7, and 3.2 are supported).
-
-* Deprecated request methods ``str_GET`` and ``str_POST`` have been removed.
+* Deprecated request attributes ``str_GET``, ``str_POST``, ``str_cookies`` and
+  ``str_params`` now raise exceptions when touched.
 
 * Remove testing dependency on WebTest.
 
@@ -46,6 +44,7 @@ master
 
 * The ``webob.dec.wsgify`` repr() is now much less informative, but a lot
   easier to test and maintain.
+
 
 1.1.1
 ---------
