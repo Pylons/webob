@@ -55,14 +55,13 @@ try:
 except ImportError:
     from Queue import Queue, Empty
 
-try: # pragma: no cover
+if PY3: # pragma: no cover
     from urllib import parse
     urlparse = parse
     from urllib.parse import quote as url_quote
-    from urllib.parse import unquote as url_unquote
     from urllib.parse import urlencode as url_encode
     from urllib.request import urlopen as url_open
-except ImportError:
+else:
     import urlparse
     from urllib import quote as url_quote
     from urllib import unquote as url_unquote
@@ -172,6 +171,9 @@ if PY3: # pragma: no cover
                 except ValueError:
                     string += b'%' + item
         return string
+
+    def url_unquote(s):
+        return unquote(s.encode('latin-1')).decode('utf8')
 
     def parse_qsl_text(qs, encoding='utf-8', errors='replace'):
         qs = qs.encode('latin-1')
