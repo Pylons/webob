@@ -1,7 +1,7 @@
-import cgi
 import warnings
 
 from webob.compat import (
+    escape,
     string_types,
     text_,
     text_type,
@@ -30,7 +30,7 @@ def html_escape(s):
             s = s.__unicode__()
         else:
             s = str(s)
-    s = cgi.escape(s, True)
+    s = escape(s, True)
     if isinstance(s, text_type):
         s = s.encode('ascii', 'xmlcharrefreplace')
     return text_(s)

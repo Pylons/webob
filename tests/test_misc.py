@@ -1,9 +1,16 @@
 from webob.util import html_escape
 from webob.multidict import MultiDict
 from nose.tools import eq_ as eq, assert_raises
-from webob.compat import text_
+from webob.compat import (
+    text_,
+    PY3
+    )
 
 def test_html_escape():
+    if PY3:
+        EXPECTED_LT = 'expected a &#x27;&lt;&#x27;.'
+    else:
+        EXPECTED_LT = "expected a '&lt;'."
     for v, s in [
         # unsafe chars
         ('these chars: < > & "', 'these chars: &lt; &gt; &amp; &quot;'),
@@ -27,7 +34,7 @@ def test_html_escape():
 
         # Things that are not strings are converted to strings and then escaped
         (42, '42'),
-        (Exception("expected a '<'."), "expected a '&lt;'."),
+        (Exception("expected a '<'."), EXPECTED_LT),
 
         # If an object implements both ``__str__`` and ``__unicode__``, the latter
         # is preferred
