@@ -34,6 +34,7 @@ You may install the `in-development version of WebOb
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware",
         "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.2",
     ],
     keywords='wsgi request web http',
     author='Ian Bicking',
