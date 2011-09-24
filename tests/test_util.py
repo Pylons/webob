@@ -20,27 +20,6 @@ class Test_warn_deprecation(unittest.TestCase):
     def _warn(self, text, type, stacklevel=1):
         self.warnings.append(locals())
 
-    def test_not_1_2(self):
-        self._callFUT('text', 'version', 1)
-        self.assertEqual(len(self.warnings), 2)
-        unknown_version_warning = self.warnings[0]
-        self.assertEqual(unknown_version_warning['text'],
-                         "Unknown warn_deprecation version arg: 'version'")
-        self.assertEqual(unknown_version_warning['type'], RuntimeWarning)
-        self.assertEqual(unknown_version_warning['stacklevel'], 1)
-        deprecation_warning = self.warnings[1]
-        self.assertEqual(deprecation_warning['text'], 'text')
-        self.assertEqual(deprecation_warning['type'], DeprecationWarning)
-        self.assertEqual(deprecation_warning['stacklevel'], 2)
-
-    def test_is_1_2(self):
-        self._callFUT('text', '1.2', 1)
-        self.assertEqual(len(self.warnings), 1)
-        deprecation_warning = self.warnings[0]
-        self.assertEqual(deprecation_warning['text'], 'text')
-        self.assertEqual(deprecation_warning['type'], DeprecationWarning)
-        self.assertEqual(deprecation_warning['stacklevel'], 2)
-
     def test_multidict_update_warning(self):
         # test warning when duplicate keys are passed
         r = Response()
@@ -58,3 +37,8 @@ class Test_warn_deprecation(unittest.TestCase):
         r = Response()
         r.headers.update([('Set-Cookie', 'a=b')])
         self.assertEqual(len(self.warnings), 0)
+
+    def test_warn_deprecation(self):
+        from webob import __version__ as v
+        from webob.util import warn_deprecation
+        self.assertRaises(DeprecationWarning, warn_deprecation, 'foo', v[:3], 1)

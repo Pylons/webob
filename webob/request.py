@@ -54,6 +54,7 @@ from webob.descriptors import (
     serialize_int,
     serialize_range,
     upath_property,
+    deprecated_property,
     )
 
 from webob.etag import (
@@ -971,7 +972,7 @@ class BaseRequest(object):
     def as_string(self, skip_body=False):
         warn_deprecation(
             "Please use req.as_bytes",
-            '1.2',
+            '1.3',
             self._setattr_stacklevel
             )
         return self.as_bytes(skip_body=skip_body)
@@ -998,7 +999,7 @@ class BaseRequest(object):
     def from_string(cls, b):
         warn_deprecation(
             "Please use req.from_bytes",
-            '1.2',
+            '1.3',
             cls._setattr_stacklevel
             )
         return cls.from_bytes(b)
@@ -1447,3 +1448,9 @@ def _get_charset(content_type):
     else:
         return 'UTF-8'
 
+
+# TODO: remove in 1.4
+for _name in 'GET POST params cookies'.split():
+    _str_name = 'str_'+_name
+    _prop = deprecated_property(None, _str_name, "disabled starting WebOb 1.2, use %s instead" % _name, '1.2')
+    setattr(BaseRequest, _str_name, _prop)

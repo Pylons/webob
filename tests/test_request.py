@@ -65,25 +65,8 @@ class BaseRequestTests(unittest.TestCase):
         assert req.body_file.read() == b''
 
     def test_body_file_setter_w_string(self):
-        data = b'input'
-        BEFORE = BytesIO(data)
-        AFTER = b'AFTER'
-        environ = {
-            'wsgi.input': BEFORE,
-            'CONTENT_LENGTH': str(len(data)),
-            'REQUEST_METHOD': 'POST',
-            }
-        req = BaseRequest(environ)
-        warnings.simplefilter('ignore', PendingDeprecationWarning)
-        req.body_file = AFTER
-        warnings.resetwarnings()
-        self.assertEqual(req.content_length, len(AFTER))
-        self.assertEqual(req.body_file.read(), AFTER)
-        del req.body_file
-        self.assertEqual(req.content_length, 0)
-        assert req.is_body_seekable
-        req.body_file.seek(0)
-        self.assertEqual(req.body_file.read(), b'')
+        req = BaseRequest.blank('/')
+        self.assertRaises(DeprecationWarning, setattr, req, 'body_file', b'foo')
 
     def test_body_file_setter_non_string(self):
         BEFORE = BytesIO(b'before')
@@ -2324,8 +2307,7 @@ class RequestTests_functional(unittest.TestCase):
         self.assert_(isinstance(req.accept, MIMEAccept))
         self.assert_('text/html' in req.accept)
 
-        self.assertEqual(req.accept.first_match(['text/html',
-                                    'application/xhtml+xml']), 'text/html')
+        self.assertRaises(DeprecationWarning, req.accept.first_match, ['text/html'])
         self.assertEqual(req.accept.best_match(['text/html',
                                                 'application/xhtml+xml']),
                          'application/xhtml+xml')
@@ -2643,4 +2625,4 @@ class TestLimitedLengthFile(unittest.TestCase):
         dummyfile = DummyFile()
         inst = self._makeOne(dummyfile, 0)
         self.assertEqual(inst.fileno(), 1)
-        
+

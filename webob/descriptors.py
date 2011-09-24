@@ -28,7 +28,11 @@ from webob.etag import (
     NoIfRange,
     )
 
-from webob.util import header_docstring
+from webob.util import (
+    header_docstring,
+    warn_deprecation,
+    )
+
 
 CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
 QUOTES_RE = re.compile('"(.*)"')
@@ -68,6 +72,30 @@ def upath_property(key):
     def fset(req, val):
         req.environ[key] = native_(val, 'utf-8', req.unicode_errors)
     return property(fget, fset, doc='upath_property(%r)' % key)
+
+def deprecated_property(attr, name, text, version):
+    """
+    Wraps a descriptor, with a deprecation warning or error
+    """
+    def warn():
+        warn_deprecation('The attribute %s is deprecated: %s'
+            % (attr, text),
+            version,
+            3
+        )
+    def fget(self):
+        warn()
+        return attr.__get__(self, type(self))
+    def fset(self, val):
+        warn()
+        attr.__set__(self, val)
+    def fdel(self):
+        warn()
+        attr.__delete__(self)
+    return property(fget, fset, fdel,
+        '<Deprecated attribute %s>' % attr
+    )
+
 
 def header_getter(header, rfc_section):
     doc = header_docstring(header, rfc_section)
@@ -141,34 +169,6 @@ def date_header(header, rfc_section):
 
 
 
-
-
-class deprecated_property(object):
-    """
-    Wraps a descriptor, with a deprecation warning or error
-    """
-    def __init__(self, attr, message):
-        self.attr = attr
-        self.message = message
-
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        self.warn()
-
-    def __set__(self, obj, value):
-        self.warn()
-
-    def __delete__(self, obj):
-        self.warn()
-
-    def __repr__(self):
-        return '<Deprecated attribute %s>' % self.attr
-
-    def warn(self):
-        raise DeprecationWarning('The attribute %s is deprecated: %s'
-            % (self.attr, self.message)
-        )
 
 
 
@@ -298,3 +298,4 @@ def serialize_auth(val):
         assert isinstance(params, str)
         return '%s %s' % (authtype, params)
     return val
+

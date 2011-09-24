@@ -84,7 +84,7 @@ class AnyETagTests(unittest.TestCase):
 
     def test_weak_match_something(self):
         etag = self._makeOne()
-        self.assertEqual(etag.weak_match('anything'), True)
+        self.assertRaises(DeprecationWarning, etag.weak_match, 'anything')
 
     def test___str__(self):
         etag = self._makeOne()
@@ -109,14 +109,6 @@ class NoETagTests(unittest.TestCase):
     def test___contains__something(self):
         etag = self._makeOne()
         assert 'anything' not in etag
-
-    def test_weak_match_None(self):
-        etag = self._makeOne()
-        self.assertEqual(etag.weak_match(None), False)
-
-    def test_weak_match_something(self):
-        etag = self._makeOne()
-        assert not etag.weak_match('anything')
 
     def test___str__(self):
         etag = self._makeOne()
@@ -154,26 +146,6 @@ class ETagMatcherTests(unittest.TestCase):
     def test___contains__None(self):
         matcher = self._makeOne(("ETAGS",), ("WEAK",))
         self.assertFalse(None in matcher)
-
-    def test_weak_match_etags(self):
-        matcher = self._makeOne(("ETAGS",), ("WEAK",))
-        self.assertTrue(matcher.weak_match("W/ETAGS"))
-
-    def test_weak_match_weak_etags(self):
-        matcher = self._makeOne(("ETAGS",), ("WEAK",))
-        self.assertTrue(matcher.weak_match("W/WEAK"))
-
-    def test_weak_match_weak_not(self):
-        matcher = self._makeOne(("ETAGS",), ("WEAK",))
-        self.assertFalse(matcher.weak_match("W/BEER"))
-
-    def test_weak_match_weak_wo_wslash(self):
-        matcher = self._makeOne(("ETAGS",), ("WEAK",))
-        self.assertTrue(matcher.weak_match("ETAGS"))
-
-    def test_weak_match_weak_wo_wslash_not(self):
-        matcher = self._makeOne(("ETAGS",), ("WEAK",))
-        self.assertFalse(matcher.weak_match("BEER"))
 
     def test___repr__one(self):
         matcher = self._makeOne(("ETAGS",), ("WEAK",))
