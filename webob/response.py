@@ -669,14 +669,12 @@ class Response(object):
             expires = datetime.utcnow() + max_age
         elif max_age is None and expires is not None:
             max_age = expires - datetime.utcnow()
-        if isinstance(value, text_type):
-            value = value.encode('utf8')
-        if isinstance(key, text_type):
-            key = key.encode('utf8')
+        value = bytes_(value, 'utf8')
+        key = bytes_(key, 'utf8')
         m = Morsel(key, value)
-        m.path = path
-        m.domain = domain
-        m.comment = comment
+        m.path = bytes_(path, 'utf8')
+        m.domain = bytes_(domain, 'utf8')
+        m.comment = bytes_(comment, 'utf8')
         m.expires = expires
         m.max_age = max_age
         m.secure = secure

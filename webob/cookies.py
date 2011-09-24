@@ -66,11 +66,10 @@ def cookie_property(key, serialize=lambda v: v):
 
 def serialize_max_age(v):
     if isinstance(v, timedelta):
-        return str(v.seconds + v.days*24*60*60)
+        v = str(v.seconds + v.days*24*60*60)
     elif isinstance(v, int):
-        return str(v)
-    else:
-        return v
+        v = str(v)
+    return bytes_(v)
 
 def serialize_cookie_date(v):
     if v is None:
@@ -119,7 +118,7 @@ class Morsel(dict):
             for k in _c_valkeys:
                 v = self[k]
                 if v:
-                    add(_c_renames[k] + b'='+_quote(bytes_(v, 'utf-8')))
+                    add(_c_renames[k]+b'='+_quote(v))
             expires = self[b'expires']
             if expires:
                 add(b'expires=' + expires)
@@ -177,7 +176,7 @@ _b_dollar_sign = 36 if PY3 else '$'
 _b_quote_mark = 34 if PY3 else '"'
 
 def _unquote(v):
-    assert isinstance(v, bytes)
+    #assert isinstance(v, bytes)
     if v and v[0] == v[-1] == _b_quote_mark:
         v = v[1:-1]
         def _ch_unquote(m):
@@ -217,6 +216,7 @@ def _needs_quoting(v):
     return v.translate(_notrans_binary, _no_escape_bytes)
 
 def _quote(v):
+    #assert isinstance(v, bytes)
     if _needs_quoting(v):
         return b'"' + b''.join(map(_escape_char, v)) + b'"'
     return v

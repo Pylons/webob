@@ -112,17 +112,17 @@ def test_serialize_max_age_timedelta():
     import datetime
     val = datetime.timedelta(86400)
     result = cookies.serialize_max_age(val)
-    eq_(result, '7464960000')
+    eq_(result, b'7464960000')
 
 def test_serialize_max_age_int():
     val = 86400
     result = cookies.serialize_max_age(val)
-    eq_(result, '86400')
+    eq_(result, b'86400')
 
 def test_serialize_max_age_str():
     val = '86400'
     result = cookies.serialize_max_age(val)
-    eq_(result, '86400')
+    eq_(result, b'86400')
 
 def test_escape_comma():
     c = cookies.Cookie()
