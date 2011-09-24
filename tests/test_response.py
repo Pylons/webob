@@ -38,6 +38,8 @@ def test_response():
     assert res.headerlist == [('content-type', 'text/html')]
     res.set_cookie('x', 'y')
     assert res.headers['set-cookie'].strip(';') == 'x=y; Path=/'
+    res.set_cookie(text_('x'), text_('y'))
+    assert res.headers['set-cookie'].strip(';') == 'x=y; Path=/'
     res = Response('a body', '200 OK', content_type='text/html')
     res.encode_content()
     assert res.content_encoding == 'gzip'
@@ -78,7 +80,7 @@ def test_cookies():
     # test unicode value
     res.set_cookie('x', text_(b'\N{BLACK SQUARE}', 'unicode_escape'))
     # utf8 encoded
-    eq_(res.headers.getall('set-cookie'), ['x="\\342\\226\\240"; Path=/']) 
+    eq_(res.headers.getall('set-cookie'), ['x="\\342\\226\\240"; Path=/'])
     r2 = res.merge_cookies(simple_app)
     r2 = BaseRequest.blank('/').get_response(r2)
     eq_(r2.headerlist,
@@ -678,8 +680,8 @@ def test_delete_cookie_with_domain():
 
 def test_unset_cookie_not_existing_and_not_strict():
     res = Response()
-    result = res.unset_cookie('a', strict=False)
-    assert result is None
+    res.unset_cookie('a', strict=False) # no exception
+
 
 def test_unset_cookie_not_existing_and_strict():
     res = Response()
@@ -691,6 +693,8 @@ def test_unset_cookie_key_in_cookies():
     res.headers.add('Set-Cookie', 'b=3; Path=/')
     res.unset_cookie('a')
     eq_(res.headers.getall('Set-Cookie'), ['b=3; Path=/'])
+    res.unset_cookie(text_('b'))
+    eq_(res.headers.getall('Set-Cookie'), [])
 
 def test_merge_cookies_no_set_cookie():
     res = Response()
@@ -934,7 +938,7 @@ def test__abs_headerlist_location_with_scheme():
     eq_(result, [('Location', 'http:')])
 
 def test_response_set_body_file1():
-     data  = b'abc' 
+     data  = b'abc'
      file = io.BytesIO(data)
      r = Response(body_file=file)
      assert r.body == data
@@ -952,5 +956,5 @@ def md5_ok(expected, body):
     md5_digest = md5_digest.replace('\n', '')
     result = md5_digest.strip('=')
     eq_(expected, result)
-    
-    
+
+

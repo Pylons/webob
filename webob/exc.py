@@ -213,7 +213,6 @@ class HTTPException(Exception):
     @property
     def exception(self):
         warn_deprecation("Raise HTTP exceptions directly", '1.2', 2)
-        return self
 
 class WSGIHTTPException(Response, HTTPException):
 

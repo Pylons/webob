@@ -160,8 +160,6 @@ class BaseRequest(object):
                 '1.2',
                 self._setattr_stacklevel
             )
-            self.body = value
-            return
         self.content_length = None
         self.body_file_raw = value
         self.is_body_seekable = False
