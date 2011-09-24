@@ -159,9 +159,7 @@ else:
         return d.itervalues()
 
 
-if PY3:
-    #from urllib.parse import unquote
-
+if PY3: # pragma: no cover
     def unquote(string):
         if not string:
             return b''

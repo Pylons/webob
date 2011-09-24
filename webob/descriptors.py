@@ -73,7 +73,7 @@ def upath_property(key):
         req.environ[key] = native_(val, 'utf-8', req.unicode_errors)
     return property(fget, fset, doc='upath_property(%r)' % key)
 
-def deprecated_property(attr, name, text, version):
+def deprecated_property(attr, name, text, version): # pragma: no cover
     """
     Wraps a descriptor, with a deprecation warning or error
     """

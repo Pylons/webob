@@ -230,7 +230,7 @@ class NilAccept(object):
     def quality(self, offer, default_quality=1):
         return 0
 
-    def first_match(self, offers):
+    def first_match(self, offers): # pragma: no cover
         _warn_first_match()
 
     def best_match(self, offers, default_match=None):

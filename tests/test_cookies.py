@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from datetime import timedelta
 from webob import cookies
+from webob.compat import text_
 from nose.tools import eq_
 
 def test_cookie_empty():
@@ -48,7 +49,7 @@ def test_cookie_load_multiple():
 
 def test_cookie_secure():
     c = cookies.Cookie()
-    c['foo'] = b'bar'
+    c[text_('foo')] = b'bar'
     c[b'foo'].secure = True
     eq_(c.serialize(), 'foo=bar; secure')
 
@@ -72,7 +73,9 @@ def test_serialize_cookie_date():
             * input value is an int, should be converted to timedelta and we
               should continue the rest of the process
     """
-    eq_(cookies.serialize_cookie_date('Tue, 04-Jan-2011 13:43:50 GMT'),
+    eq_(cookies.serialize_cookie_date(b'Tue, 04-Jan-2011 13:43:50 GMT'),
+        b'Tue, 04-Jan-2011 13:43:50 GMT')
+    eq_(cookies.serialize_cookie_date(text_('Tue, 04-Jan-2011 13:43:50 GMT')),
         b'Tue, 04-Jan-2011 13:43:50 GMT')
     eq_(cookies.serialize_cookie_date(None), None)
     cdate_delta = cookies.serialize_cookie_date(timedelta(seconds=10))

@@ -25,7 +25,7 @@ class Cookie(dict):
             self.load(input)
 
     def load(self, data):
-        if PY3:
+        if PY3: # pragma: no cover
             data = data.encode('latin-1')
         ckey = None
         for key, val in _rx_cookie.findall(data):
@@ -202,7 +202,7 @@ _escape_map = dict((chr(i), '\\%03o' % i) for i in range(256))
 _escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
 _escape_map['"'] = r'\"'
 _escape_map['\\'] = r'\\'
-if PY3:
+if PY3: # pragma: no cover
     # convert to {int -> bytes}
     _escape_map = dict((ord(k), bytes_(v, 'ascii')) for k, v in _escape_map.items())
 _escape_char = _escape_map.__getitem__
