@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# http://sphinx.pocoo.org/config.html#build-config
+from webob import __version__
 
 extensions = ['sphinx.ext.autodoc']
 
@@ -9,7 +9,7 @@ master_doc = 'index' # The master toctree document.
 
 project = 'WebOb'
 copyright = '2011, Ian Bicking and contributors'
-version = release = '1.1.1'
+version = release = __version__
 exclude_patterns = ['jsonrpc-example-code/*']
 
 modindex_common_prefix = ['webob.']
