@@ -60,7 +60,6 @@ class _AnyETag(object):
 
     def weak_match(self, other):
         _warn_weak_match_deprecated()
-        return True
 
     def __str__(self):
         return '*'
@@ -85,7 +84,6 @@ class _NoETag(object):
 
     def weak_match(self, other):
         _warn_weak_match_deprecated()
-        return False
 
     def __str__(self):
         return ''
@@ -110,9 +108,6 @@ class ETagMatcher(object):
 
     def weak_match(self, other):
         _warn_weak_match_deprecated()
-        if other.lower().startswith('w/'):
-            other = other[2:]
-        return other in self.etags or other in self.weak_etags
 
     def __repr__(self):
         return '<ETag %s>' % (
