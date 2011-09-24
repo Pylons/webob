@@ -82,7 +82,7 @@ class _NoETag(object):
     def __contains__(self, other):
         return False
 
-    def weak_match(self, other):
+    def weak_match(self, other): # pragma: no cover
         _warn_weak_match_deprecated()
 
     def __str__(self):
@@ -106,7 +106,7 @@ class ETagMatcher(object):
     def __contains__(self, other):
         return other in self.etags or other in self.weak_etags
 
-    def weak_match(self, other):
+    def weak_match(self, other): # pragma: no cover
         _warn_weak_match_deprecated()
 
     def __repr__(self):
