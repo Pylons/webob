@@ -173,7 +173,7 @@ if PY3: # pragma: no cover
         return string
 
     def url_unquote(s):
-        return unquote(s.encode('latin-1')).decode('utf8')
+        return unquote(s.encode('ascii')).decode('latin-1')
 
     def parse_qsl_text(qs, encoding='utf-8', errors='replace'):
         qs = qs.encode('latin-1')
