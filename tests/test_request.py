@@ -2098,10 +2098,6 @@ class RequestTests_functional(unittest.TestCase):
 
     def test_environ_from_url_highorder_path_info(self):
         from webob.request import environ_from_url
-        self.assertRaises(TypeError, environ_from_url,
-                    'http://www.example.com/foo?bar=baz#qux')
-        self.assertRaises(TypeError, environ_from_url,
-                    'gopher://gopher.example.com')
         env = environ_from_url('/%E6%B5%81')
         self.assertEqual(env['PATH_INFO'], '/\xe6\xb5\x81')
 
