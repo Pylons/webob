@@ -1023,7 +1023,7 @@ class HTTPExceptionMiddleware(object):
     def __call__(self, environ, start_response):
         try:
             return self.application(environ, start_response)
-        except HTTPException, exc:
+        except HTTPException as exc:
             parent_exc_info = sys.exc_info()
             def repl_start_response(status, headers, exc_info=None):
                 if exc_info is None:

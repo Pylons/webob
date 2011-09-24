@@ -145,8 +145,8 @@ class wsgify(object):
                 if self.middleware_wraps:
                     args = (self.middleware_wraps,) + args
                 resp = self.call_func(req, *args, **self.kwargs)
-            except webob.exc.HTTPException:
-                resp = sys.exc_info()[1]
+            except webob.exc.HTTPException as resp:
+                pass
             if resp is None:
                 ## FIXME: I'm not sure what this should be?
                 resp = req.response
