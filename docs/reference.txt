@@ -198,30 +198,30 @@ Some examples:
 .. code-block:: python
 
     >>> req = Request.blank('/test?check=a&check=b&name=Bob')
-    >>> req.str_GET
-    GET([('check', 'a'), ('check', 'b'), ('name', 'Bob')])
-    >>> req.str_GET['check']
-    'b'
-    >>> req.str_GET.getall('check')
-    ['a', 'b']
-    >>> req.str_GET.items()
-    [('check', 'a'), ('check', 'b'), ('name', 'Bob')]
+    >>> req.GET
+    UnicodeMultiDict([(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob')])
+    >>> req.GET['check']
+    u'b'
+    >>> req.GET.getall('check')
+    [u'a', u'b']
+    >>> req.GET.items()
+    [(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob')]
 
 We'll have to create a request body and change the method to get
 POST.  Until we do that, the variables are boring:
 
 .. code-block:: python
 
-    >>> req.str_POST
+    >>> req.POST
     <NoVars: Not a form request>
-    >>> req.str_POST.items()  # NoVars can be read like a dict, but not written
+    >>> req.POST.items()  # NoVars can be read like a dict, but not written
     []
     >>> req.method = 'POST'
     >>> req.body = 'name=Joe&email=joe@example.com'
-    >>> req.str_POST
-    MultiDict([('name', 'Joe'), ('email', 'joe@example.com')])
-    >>> req.str_POST['name']
-    'Joe'
+    >>> req.POST
+    UnicodeMultiDict([(u'name', u'Joe'), (u'email', u'joe@example.com')])
+    >>> req.POST['name']
+    u'Joe'
 
 Often you won't care where the variables come from.  (Even if you care
 about the method, the location of the variables might not be
@@ -230,19 +230,19 @@ contains variables from both sources:
 
 .. code-block:: python
 
-    >>> req.str_params
-    NestedMultiDict([('check', 'a'), ('check', 'b'), ('name', 'Bob'), ('name', 'Joe'), ('email', 'joe@example.com')])
-    >>> req.str_params['name']
-    'Bob'
-    >>> req.str_params.getall('name')
-    ['Bob', 'Joe']
-    >>> for name, value in req.str_params.items():
+    >>> req.params
+    NestedMultiDict([(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob'), (u'name', u'Joe'), (u'email', u'joe@example.com')])
+    >>> req.params['name']
+    u'Bob'
+    >>> req.params.getall('name')
+    [u'Bob', u'Joe']
+    >>> for name, value in req.params.items():
     ...     print '%s: %r' % (name, value)
-    check: 'a'
-    check: 'b'
-    name: 'Bob'
-    name: 'Joe'
-    email: 'joe@example.com'
+    check: u'a'
+    check: u'b'
+    name: u'Bob'
+    name: u'Joe'
+    email: u'joe@example.com'
 
 The ``POST`` and ``GET`` nomenclature is historical -- ``req.GET`` can
 be used for non-GET requests to access query parameters, and
@@ -254,10 +254,10 @@ Content-Type.
     >>> req.body = body = 'var1=value1&var2=value2&rep=1&rep=2'
     >>> req.environ['CONTENT_LENGTH'] = str(len(req.body))
     >>> req.environ['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
-    >>> req.str_GET
-    GET([('check', 'a'), ('check', 'b'), ('name', 'Bob')])
-    >>> req.str_POST
-    MultiDict([('var1', 'value1'), ('var2', 'value2'), ('rep', '1'), ('rep', '2')])
+    >>> req.GET
+    UnicodeMultiDict([(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob')])
+    >>> req.POST
+    UnicodeMultiDict([(u'var1', u'value1'), (u'var2', u'value2'), (u'rep', u'1'), (u'rep', u'2')])
 
 Unicode Variables
 ~~~~~~~~~~~~~~~~~
@@ -276,9 +276,6 @@ all the variables:
     >>> req.GET
     UnicodeMultiDict([(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob')])
 
-If you always want ``str`` values, you can use ``req.str_GET``
-and ``str_POST``.
-
 Cookies
 -------
 
@@ -290,9 +287,6 @@ they will be decoded into Unicode strings if you set the charset.
     >>> req.headers['Cookie'] = 'test=value'
     >>> req.cookies
     UnicodeMultiDict([(u'test', u'value')])
-    >>> req.charset = None
-    >>> req.str_cookies
-    {'test': 'value'}
 
 Modifying the request
 ---------------------
@@ -349,18 +343,7 @@ example means that ``text/html`` is okay, but
     >>> 'text/html' in req.accept
     True
 
-There's three methods for different strategies of finding a match.
-First, when you trust the server's preference over the client (a good
-idea for Accept):
-
-.. code-block:: python
-
-    >>> req.accept.first_match(['text/html', 'application/xhtml+xml'])
-    'text/html'
-
-Because ``text/html`` is at least *somewhat* acceptible, it is
-returned, even if the client says it prefers
-``application/xhtml+xml``.  If we trust the client more:
+There are a few methods for different strategies of finding a match.
 
 .. code-block:: python
 
