@@ -1,9 +1,7 @@
 News
 ====
 
-.. contents::
-
-master
+1.2a2
 ---------
 
 * ``req.script_name`` and ``path_info`` now contain text, not bytes.
