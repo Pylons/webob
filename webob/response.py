@@ -18,6 +18,7 @@ from webob.cachecontrol import (
 from webob.compat import (
     PY3,
     bytes_,
+    native_,
     text_type,
     url_quote,
     urlparse,
@@ -886,10 +887,10 @@ class Response(object):
         if body is None:
             body = self.body
         md5_digest = md5(body).digest()
-        md5_digest = str(b64encode(md5_digest))
-        md5_digest = md5_digest.replace('\n', '')
-        md5_digest = md5_digest.strip('=')
-        self.etag = md5_digest
+        md5_digest = b64encode(md5_digest)
+        md5_digest = md5_digest.replace(b'\n', b'')
+        md5_digest = native_(md5_digest)
+        self.etag = md5_digest.strip('=')
         if set_content_md5:
             self.content_md5 = md5_digest
 

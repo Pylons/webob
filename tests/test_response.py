@@ -220,14 +220,14 @@ Captain: For great justice."""
     res.md5_etag()
     ok_(res.etag)
     ok_('\n' not in res.etag)
-    md5_ok(res.etag, res.body)
+    eq_(res.etag, 'pN8sSTUrEaPRzmurGptqmw')
     eq_(res.content_md5, None)
 
 def test_md5_etag_set_content_md5():
     res = Response()
     body = b'The quick brown fox jumps over the lazy dog'
     res.md5_etag(body, set_content_md5=True)
-    md5_ok(res.content_md5, body)
+    eq_(res.content_md5, 'nhB9nTcrtoJr2B01QqQZ1g==')
 
 def test_decode_content_defaults_to_identity():
     res = Response()
@@ -948,13 +948,4 @@ def test_response_set_body_file2():
     file = io.BytesIO(data)
     r = Response(body_file=file)
     assert r.body == data
-
-def md5_ok(expected, body):
-    from base64 import b64encode
-    md5_digest = md5(body).digest()
-    md5_digest = str(b64encode(md5_digest))
-    md5_digest = md5_digest.replace('\n', '')
-    result = md5_digest.strip('=')
-    eq_(expected, result)
-
 
