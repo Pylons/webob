@@ -21,10 +21,8 @@ from webob.cachecontrol import (
     )
 
 from webob.compat import (
-    binary_type,
     bytes_,
     integer_types,
-    iteritems_,
     multidict_from_bodyfile,
     native_,
     parse_qsl_text,
@@ -115,7 +113,7 @@ class BaseRequest(object):
                 # set method first, because .body setters
                 # depend on it for checks
                 self.method = kw.pop('method')
-            for name, value in iteritems_(kw):
+            for name, value in kw.items():
                 if not hasattr(cls, name):
                     raise TypeError(
                         "Unexpected keyword: %s=%r" % (name, value))
@@ -152,7 +150,7 @@ class BaseRequest(object):
         return r
 
     def _body_file__set(self, value):
-        if isinstance(value, binary_type):
+        if isinstance(value, bytes):
             warn_deprecation(
                 "Please use req.body = 'bytes' or req.body_file = fileobj",
                 '1.2',
@@ -553,7 +551,7 @@ class BaseRequest(object):
     def _body__set(self, value):
         if value is None:
             value = b''
-        if not isinstance(value, binary_type):
+        if not isinstance(value, bytes):
             raise TypeError("You can only set Request.body to bytes (not %r)"
                                 % type(value))
         if not http_method_probably_has_body.get(self.method, True):
