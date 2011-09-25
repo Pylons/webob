@@ -12,7 +12,6 @@ from webob.byterange import (
 
 from webob.compat import (
     PY3,
-    binary_type,
     text_type,
     )
 
@@ -157,7 +156,7 @@ def parse_list(value):
     return tuple(filter(None, [v.strip() for v in value.split(',')]))
 
 def serialize_list(value):
-    if isinstance(value, (text_type, binary_type)):
+    if isinstance(value, (text_type, bytes)):
         return str(value)
     else:
         return ', '.join(map(str, value))

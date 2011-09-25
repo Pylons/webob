@@ -164,7 +164,6 @@ import re
 import sys
 
 from webob.compat import (
-    binary_type,
     class_types,
     text_,
     text_type,
@@ -187,7 +186,7 @@ def no_escape(value):
     if not isinstance(value, text_type):
         if hasattr(value, '__unicode__'):
             value = value.__unicode__()
-        if isinstance(value, binary_type):
+        if isinstance(value, bytes):
             value = text_(value, 'utf-8')
         else:
             value = text_type(value)

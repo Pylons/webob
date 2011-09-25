@@ -16,7 +16,6 @@ from email.utils import (
 import time
 
 from webob.compat import (
-    binary_type,
     integer_types,
     native_,
     text_type,
@@ -79,7 +78,7 @@ def parse_date(value):
     return datetime.fromtimestamp(t, UTC)
 
 def serialize_date(dt):
-    if isinstance(dt, (binary_type, text_type)):
+    if isinstance(dt, (bytes, text_type)):
         return native_(dt)
     if isinstance(dt, timedelta):
         dt = _now() + dt

@@ -9,7 +9,6 @@ instantiated request).
 import sys
 
 from webob.compat import (
-    binary_type,
     bytes_,
     text_type,
     )
@@ -138,7 +137,7 @@ class wsgify(object):
                 resp = req.response
             if isinstance(resp, text_type):
                 resp = bytes_(resp, req.charset)
-            if isinstance(resp, binary_type):
+            if isinstance(resp, bytes):
                 body = resp
                 resp = req.response
                 resp.write(body)

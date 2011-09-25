@@ -10,7 +10,6 @@ import time
 
 from webob.compat import (
     PY3,
-    binary_type,
     text_type,
     bytes_,
     native_,
@@ -41,7 +40,7 @@ class Cookie(dict):
                 ckey = key
 
     def __setitem__(self, key, val):
-        if not isinstance(key, binary_type):
+        if not isinstance(key, bytes):
             key = key.encode('ascii', 'replace')
         if _valid_cookie_name(key):
             dict.__setitem__(self, key, Morsel(key, val))

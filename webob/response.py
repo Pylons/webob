@@ -16,7 +16,6 @@ from webob.cachecontrol import (
     )
 
 from webob.compat import (
-    binary_type,
     native_,
     bytes_,
     text_type,
@@ -231,7 +230,7 @@ class Response(object):
         return self._status
 
     def _status__set(self, value):
-        if isinstance(value, (binary_type, text_type)):
+        if isinstance(value, (bytes, text_type)):
             # Status messages have to be ASCII safe, so this is OK:
             value = native_(value, 'ascii')
         if isinstance(value, int):
@@ -342,7 +341,7 @@ class Response(object):
         return body
 
     def _body__set(self, value=_empty_bytes):
-        if not isinstance(value, binary_type):
+        if not isinstance(value, bytes):
             if isinstance(value, text_type):
                 msg = ("You cannot set Response.body to a text object "
                        "(use Response.text)")
@@ -417,7 +416,7 @@ class Response(object):
                          doc=_body_file__get.__doc__)
 
     def write(self, text):
-        if not isinstance(text, binary_type):
+        if not isinstance(text, bytes):
             if not isinstance(text, text_type):
                 msg = "You can only write str to a Response.body_file, not %s"
                 raise TypeError(msg % type(text))
