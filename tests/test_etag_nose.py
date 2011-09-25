@@ -48,6 +48,11 @@ def test_resp_etag():
     t('a"b', 'a"b', '"a\\"b"', 'a"b')
     t('W/"foo"', 'foo', 'W/"foo"', None)
     t('W/"a\\"b"', 'a"b', 'W/"a\\"b"', None)
+    t(('foo', True), 'foo', '"foo"', 'foo')
+    t(('foo', False), 'foo', 'W/"foo"', None)
+    t(('"foo"', True), '"foo"', r'"\"foo\""', '"foo"')
+    t(('W/"foo"', True), 'W/"foo"', r'"W/\"foo\""', 'W/"foo"')
+    t(('W/"foo"', False), 'W/"foo"', r'W/"W/\"foo\""', None)
 
 def test_matcher():
     matcher = ETagMatcher(['ETAGS'])

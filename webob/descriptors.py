@@ -198,14 +198,18 @@ def parse_etag_response(value, strong=False):
     else:
         return m.group(2).replace('\\"', '"')
 
-def serialize_etag_response(value):
-    m = _rx_etag.match(value)
-    if m:
+def serialize_etag_response(value): #return '"%s"' % value.replace('"', '\\"')
+    strong = True
+    if isinstance(value, tuple):
+        value, strong = value
+    elif _rx_etag.match(value):
         # this is a valid etag already
         return value
-    else:
-        # let's quote the value
-        return '"%s"' % value.replace('"', '\\"')
+    # let's quote the value
+    r = '"%s"' % value.replace('"', '\\"')
+    if not strong:
+        r = 'W/' + r
+    return r
 
 def serialize_if_range(value):
     if isinstance(value, (datetime, date)):
