@@ -8,7 +8,6 @@ import cgi
 from webob.request import Request
 from webob.response import Response
 from webob.compat import url_open
-from webob.compat import print_
 from webob.compat import bytes_
 from webob.compat import reraise
 from webob.compat import Queue
@@ -64,7 +63,7 @@ def test_interrupted_request():
             except Empty:
                 raise AssertionError("Error during test %s", path)
             if res is not None:
-                print_("Error during test:", path)
+                print("Error during test:", path)
                 reraise(res[0], res[1], res[2])
 
 _global_res = Queue()

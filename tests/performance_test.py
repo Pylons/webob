@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 from webob.response import Response
-from webob.compat import print_
 
 def make_middleware(app):
     from repoze.profile.profiler import AccumulatingProfileMiddleware
@@ -33,7 +32,7 @@ if __name__ == '__main__':
         subprocess.call(['ab', '-n', '1000', 'http://localhost:8080/'])
         if arg == 'open':
             webbrowser.open('http://localhost:8080/__profile__')
-        print_('Hit ^C to end')
+        print('Hit ^C to end')
         try:
             while 1:
                 raw_input()
@@ -42,10 +41,10 @@ if __name__ == '__main__':
     else:
         from paste.httpserver import serve
         if os.environ.get('SHOW_OUTPUT') != '0':
-            print_('Note you can also use:)')
-            print_('  %s %s open' % (sys.executable, __file__))
-            print_('to run ab and open a browser (or "run" to just run ab)')
-            print_('Now do:')
-            print_('ab -n 1000 http://localhost:8080/')
-            print_('wget -O - http://localhost:8080/__profile__')
+            print('Note you can also use:)')
+            print('  %s %s open' % (sys.executable, __file__))
+            print('to run ab and open a browser (or "run" to just run ab)')
+            print('Now do:')
+            print('ab -n 1000 http://localhost:8080/')
+            print('wget -O - http://localhost:8080/__profile__')
         serve(make_middleware(simple_app))
