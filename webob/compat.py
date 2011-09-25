@@ -60,33 +60,13 @@ else:
     from urllib2 import urlopen as url_open
 
 if PY3: # pragma: no cover
-    import builtins
-    exec_ = getattr(builtins, "exec")
-
-
-    def reraise(tp, value, tb=None):
-        if value.__traceback__ is not tb:
-            raise value.with_traceback(tb)
-        raise value
-    del builtins
-
+    def reraise(exc_info):
+        etype, exc, tb = exc_info
+        if exc.__traceback__ is not tb:
+            raise exc.with_traceback(tb)
+        raise exc
 else: # pragma: no cover
-    def exec_(code, globs=None, locs=None):
-        """Execute code in a namespace."""
-        if globs is None:
-            frame = sys._getframe(1)
-            globs = frame.f_globals
-            if locs is None:
-                locs = frame.f_locals
-            del frame
-        elif locs is None:
-            locs = globs
-        exec("""exec code in globs, locs""")
-
-
-    exec_("""def reraise(tp, value, tb=None):
-    raise tp, value, tb
-""")
+    exec("def reraise(exc): raise exc[0], exc[1], exc[2]")
 
 
 if PY3: # pragma: no cover

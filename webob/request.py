@@ -1085,7 +1085,7 @@ class BaseRequest(object):
         output = []
         def start_response(status, headers, exc_info=None):
             if exc_info is not None and not catch_exc_info:
-                reraise(exc_info[0], exc_info[1], exc_info[2])
+                reraise(exc_info)
             captured[:] = [status, headers, exc_info]
             return output.append
         app_iter = application(self.environ, start_response)
