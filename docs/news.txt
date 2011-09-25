@@ -3,6 +3,26 @@ News
 
 .. contents::
 
+master
+---------
+
+* ``req.script_name`` and ``path_info`` now contain text, not bytes.
+
+* Deprecated ``uscript_name`` and ``upath_info``.
+
+* ``charset`` argument to ``Request`` as well as the attribute can only
+  be set to UTF-8 or the value already present in the ``Content-Type`` header.
+
+* ``unicode_errors`` attribute of ``Request`` and related functionality is gone.
+
+* To process requests that come in an encoding different from UTF-8, the request
+  needs to be transcoded like this: ``req = req.decode('windows-1251')``
+
+* Added support for weak ETag matching in conditional responses.
+
+* Most of etag-related functionality was refactored.
+
+
 1.2a1
 ---------
 
