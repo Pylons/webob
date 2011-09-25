@@ -64,8 +64,6 @@ _OK_PARAM_RE = re.compile(r'^[a-z0-9_.-]+$', re.I)
 
 _gzip_header = b'\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff'
 
-_empty_bytes = b''
-
 class Response(object):
     """
         Represents a WSGI response
@@ -320,7 +318,7 @@ class Response(object):
         if app_iter is None:
             raise AttributeError("No body has been set")
         try:
-            body = _empty_bytes.join(app_iter)
+            body = b''.join(app_iter)
         finally:
             iter_close(app_iter)
         if isinstance(body, text_type):
@@ -340,7 +338,7 @@ class Response(object):
             )
         return body
 
-    def _body__set(self, value=_empty_bytes):
+    def _body__set(self, value=b''):
         if not isinstance(value, bytes):
             if isinstance(value, text_type):
                 msg = ("You cannot set Response.body to a text object "
