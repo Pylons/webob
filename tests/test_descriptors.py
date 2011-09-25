@@ -140,14 +140,13 @@ def test_header_getter_fset_none():
     eq_(desc.fget(resp), None)
 
 def test_header_getter_fset_text():
-    from webob.compat import text_to_wsgi
     from webob.compat import text_
     from webob.descriptors import header_getter
     from webob import Response
     resp = Response('aresp')
     desc = header_getter('AHEADER', '14.3')
     desc.fset(resp, text_('avalue'))
-    eq_(desc.fget(resp), text_to_wsgi('avalue'))
+    eq_(desc.fget(resp), 'avalue')
 
 def test_header_getter_fdel():
     from webob.descriptors import header_getter

@@ -43,13 +43,6 @@ else:
             return s.encode(encoding, errors)
         return str(s)
 
-if PY3: # pragma: no cover
-    def text_to_wsgi(u):
-        return u.encode('ascii').decode('latin-1')
-else:
-    def text_to_wsgi(u):
-        return u.encode('latin-1', 'surrogateescape')
-
 try:
     from queue import Queue, Empty
 except ImportError:

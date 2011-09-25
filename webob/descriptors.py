@@ -13,7 +13,6 @@ from webob.byterange import (
 from webob.compat import (
     PY3,
     binary_type,
-    text_to_wsgi,
     text_type,
     )
 
@@ -116,8 +115,8 @@ def header_getter(header, rfc_section):
     def fset(r, value):
         fdel(r)
         if value is not None:
-            if isinstance(value, text_type):
-                value = text_to_wsgi(value)
+            if isinstance(value, text_type) and not PY3:
+                value = value.encode('latin-1')
             r._headerlist.append((header, value))
 
     def fdel(r):
