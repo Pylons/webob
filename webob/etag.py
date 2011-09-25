@@ -41,7 +41,7 @@ def etag_property(key, default, rfc_section, strong=True):
 def _warn_weak_match_deprecated():
     warn_deprecation("weak_match is deprecated", '1.2', 3)
 
-def _warn_if_range_match_deprecated(*args, **kw):
+def _warn_if_range_match_deprecated(*args, **kw): # pragma: no cover
     raise DeprecationWarning("IfRange.match[_response] API is deprecated")
 
 
@@ -175,8 +175,8 @@ class IfRangeDate(object):
 
     def __contains__(self, resp):
         last_modified = resp.last_modified
-        if isinstance(last_modified, str):
-            last_modified = parse_date(last_modified)
+        #if isinstance(last_modified, str):
+        #    last_modified = parse_date(last_modified)
         return last_modified and (last_modified <= self.date)
 
     def __repr__(self):

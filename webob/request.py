@@ -24,7 +24,6 @@ from webob.compat import (
     PY3,
     bytes_,
     integer_types,
-    multidict_from_bodyfile,
     native_,
     parse_qsl_text,
     reraise,
@@ -99,7 +98,7 @@ class BaseRequest(object):
             raise TypeError("WSGI environ must be a dict")
         if (unicode_errors is not None
             or not _is_utf8(charset)
-        ):
+        ): # pragma: no cover
             raise DeprecationWarning("If you get non-UTF-8 requests, "
                 "use req = req.decode(charset)"
             )
@@ -151,7 +150,7 @@ class BaseRequest(object):
         )
 
         if content_type == 'application/x-www-form-urlencoded':
-            r.body = t.transcode_query(r.body)
+            r.body = bytes_(t.transcode_query(native_(r.body)))
             return r
         elif content_type != 'multipart/form-data':
             return r
@@ -619,11 +618,12 @@ class BaseRequest(object):
                 encoding='utf8')
             vars = MultiDict.from_fieldstorage(fs)
         else:
-            vars = multidict_from_bodyfile(
+            fs = cgi.FieldStorage(
                 fp=self.body_file,
                 environ=fs_environ,
-                keep_blank_values=True,
-                )
+                keep_blank_values=True)
+            vars = MultiDict.from_fieldstorage(fs)
+
 
         #ctype = self.content_type or 'application/x-www-form-urlencoded'
         ctype = self._content_type_raw or 'application/x-www-form-urlencoded'
@@ -1468,22 +1468,25 @@ class Transcoder(object):
     def __init__(self, charset, errors='strict'):
         self.charset = charset # source charset
         self.errors = errors # unicode errors
-
+        self._trans = lambda b: b.decode(charset, errors).encode('utf8')
 
     def transcode_query(self, q):
-        q_orig = q
-        if isinstance(q, text_type):
-            q = q.encode('utf8')
-        t = lambda b: b.decode(charset, errors).encode('utf8')
-        if '='.encode(self.charset) not in q:
-            # this doesn't look like a form submission
-            return q_orig
-        q = urlparse.parse_qsl(q,
-            keep_blank_values=True,
-            strict_parsing=False
-        )
-        q = [(t(k), t(v)) for k,v in q]
-        return url_encode(q)
+        if PY3: # pragma: no cover
+            q_orig = q
+            if '=' not in q:
+                # this doesn't look like a form submission
+                return q_orig
+            q = list(parse_qsl_text(q, self.charset))
+            return url_encode(q)
+        else:
+            q_orig = q
+            if '=' not in q:
+                # this doesn't look like a form submission
+                return q_orig
+            q = urlparse.parse_qsl(q, self.charset)
+            t = self._trans
+            q = [(t(k), t(v)) for k,v in q]
+            return url_encode(q)
 
     def transcode_fs(self, fs, content_type):
         # transcode FieldStorage

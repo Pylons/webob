@@ -125,49 +125,6 @@ else:
             yield (x.decode(encoding), y.decode(encoding))
 
 
-if PY3: # pragma: no cover
-    from webob.multidict import MultiDict
-    def multidict_from_bodyfile(fp=None, environ=os.environ,
-                                keep_blank_values=False,
-                                ):
-        fs = cgi.FieldStorage(
-            fp=fp,
-            environ=environ,
-            keep_blank_values=keep_blank_values,
-            encoding='utf8')
-        obj = MultiDict()
-        # fs.list can be None when there's nothing to parse
-        for field in fs.list or ():
-            if field.filename:
-                # decode filename and name from str to unicode
-                field.filename = text_(field.filename, 'utf8')
-                field.name = text_(field.name, 'utf8')
-                obj.add(field.name, field)
-            else:
-                obj.add(field.name, field.value)
-        return obj
-else:
-    from webob.multidict import MultiDict
-    def multidict_from_bodyfile(fp=None, environ=os.environ,
-                                keep_blank_values=False):
-        fs = cgi.FieldStorage(
-            fp=fp,
-            environ=environ,
-            keep_blank_values=keep_blank_values
-            )
-        obj = MultiDict()
-        # fs.list can be None when there's nothing to parse
-        for field in fs.list or ():
-            if field.filename:
-                # decode filename and name from str to unicode
-                field.filename = text_(field.filename, 'utf8')
-                field.name = text_(field.name, 'utf8')
-                obj.add(field.name, field)
-            else:
-                obj.add(field.name.decode('utf8'),
-                        field.value.decode('utf8'))
-        return obj
-
 if PY3: # pragma no cover
     from html import escape
 else:

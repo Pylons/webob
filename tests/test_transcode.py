@@ -1,7 +1,7 @@
 # coding: cp1251
 from webob.request import Request, Transcoder
 from webob.response import Response
-from webob.compat import text_
+from webob.compat import text_, native_
 from nose.tools import eq_
 
 # def tapp(env, sr):
@@ -52,6 +52,26 @@ def test_transcode():
     #print '\xd0\xba\xd1\x83...'.decode('utf8').encode('cp1251')
     #print u'\u043a'.encode('cp1251')
 
+def test_transcode_query():
+    req = Request.blank('/?%EF%F0%E8=%E2%E5%F2')
+    req2 = req.decode('cp1251')
+    eq_(req2.query_string, '%D0%BF%D1%80%D0%B8=%D0%B2%D0%B5%D1%82')
+
+def test_transcode_non_multipart():
+    req = Request.blank('/?a', POST='%EF%F0%E8=%E2%E5%F2')
+    req._content_type_raw = 'application/x-www-form-urlencoded'
+    req2 = req.decode('cp1251')
+    eq_(native_(req2.body), '%D0%BF%D1%80%D0%B8=%D0%B2%D0%B5%D1%82')
+
+def test_transcode_non_form():
+    req = Request.blank('/?a', POST='%EF%F0%E8=%E2%E5%F2')
+    req._content_type_raw = 'application/x-foo'
+    req2 = req.decode('cp1251')
+    eq_(native_(req2.body), '%EF%F0%E8=%E2%E5%F2')
+
+def test_transcode_noop():
+    req = Request.blank('/')
+    assert req.decode() is req
 
 def test_transcode_query():
     t = Transcoder('ascii')

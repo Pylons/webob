@@ -60,7 +60,7 @@ class MultiDict(MutableMapping):
         """
         obj = cls()
         # fs.list can be None when there's nothing to parse
-        if PY3:
+        if PY3: # pragma: no cover
             decode = lambda b: b
         else:
             decode = lambda b: b.decode('utf8')
