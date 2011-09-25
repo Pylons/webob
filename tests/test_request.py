@@ -2100,7 +2100,7 @@ class RequestTests_functional(unittest.TestCase):
         from webob.request import environ_from_url
         env = environ_from_url('/%E6%B5%81')
         self.assertEqual(env['PATH_INFO'], '/\xe6\xb5\x81')
-        self.assertEqual(Request(env).path_info, text_('/\xe6\xb5\x81', 'utf8')) # u'/\u6d41'
+        self.assertEqual(Request(env).path_info, b'/\xe6\xb5\x81'.decode('utf8')) # u'/\u6d41'
 
 
     def test_post_does_not_reparse(self):

@@ -11,9 +11,8 @@ from webob.byterange import (
     )
 
 from webob.compat import (
+    PY3,
     binary_type,
-    native_,
-    text_,
     text_to_wsgi,
     text_type,
     )
@@ -67,10 +66,18 @@ def environ_getter(key, default=_not_given, rfc_section=None):
 
 
 def upath_property(key):
-    def fget(req):
-        return text_(req.environ.get(key, ''), 'utf-8', req.unicode_errors)
-    def fset(req, val):
-        req.environ[key] = native_(val, 'utf-8', req.unicode_errors)
+    if PY3: # pragma: no cover
+        def fget(req):
+            return req.environ.get(key, '').encode('latin-1').decode('utf8', req.unicode_errors)
+        def fset(req, val):
+            req.environ[key] = val.encode('utf8').decode('latin-1')
+    else:
+        def fget(req):
+            return req.environ.get(key, '').decode('utf8', req.unicode_errors)
+        def fset(req, val):
+            if isinstance(val, unicode):
+                val = val.encode('utf8', req.unicode_errors)
+            req.environ[key] = val
     return property(fget, fset, doc='upath_property(%r)' % key)
 
 def deprecated_property(attr, name, text, version): # pragma: no cover
