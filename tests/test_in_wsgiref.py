@@ -64,7 +64,7 @@ def test_interrupted_request():
                 raise AssertionError("Error during test %s", path)
             if res is not None:
                 print("Error during test:", path)
-                reraise(res[0], res[1], res[2])
+                reraise(res)
 
 _global_res = Queue()
 

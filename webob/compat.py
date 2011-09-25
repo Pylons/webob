@@ -20,6 +20,8 @@ else:
     class_types = (type, types.ClassType)
     text_type = unicode
 
+# TODO check if errors is ever used
+
 def text_(s, encoding='latin-1', errors='strict'):
     if isinstance(s, bytes):
         return s.decode(encoding, errors)
@@ -98,7 +100,7 @@ if PY3: # pragma: no cover
     def url_unquote(s):
         return unquote(s.encode('ascii')).decode('latin-1')
 
-    def parse_qsl_text(qs, encoding='utf-8', errors='replace'):
+    def parse_qsl_text(qs, encoding='utf-8'):
         qs = qs.encode('latin-1')
         qs = qs.replace(b'+', b' ')
         pairs = [s2 for s1 in qs.split(b'&') for s2 in s1.split(b';') if s2]
@@ -108,39 +110,38 @@ if PY3: # pragma: no cover
                 nv.append('')
             name = unquote(nv[0])
             value = unquote(nv[1])
-            yield (name.decode(encoding, errors), value.decode(encoding, errors))
+            yield (name.decode(encoding), value.decode(encoding))
 
 else:
     from urlparse import parse_qsl
 
-    def parse_qsl_text(qs, encoding='utf-8', errors='replace'):
+    def parse_qsl_text(qs, encoding='utf-8'):
         qsl = parse_qsl(
             qs,
             keep_blank_values=True,
             strict_parsing=False
         )
         for (x, y) in qsl:
-            yield (x.decode(encoding, errors), y.decode(encoding, errors))
+            yield (x.decode(encoding), y.decode(encoding))
 
 
 if PY3: # pragma: no cover
     from webob.multidict import MultiDict
     def multidict_from_bodyfile(fp=None, environ=os.environ,
-                                keep_blank_values=False, encoding='utf-8',
-                                errors='replace'):
+                                keep_blank_values=False,
+                                ):
         fs = cgi.FieldStorage(
             fp=fp,
             environ=environ,
             keep_blank_values=keep_blank_values,
-            encoding=encoding,
-            errors=errors)
+            encoding='utf8')
         obj = MultiDict()
         # fs.list can be None when there's nothing to parse
         for field in fs.list or ():
             if field.filename:
                 # decode filename and name from str to unicode
-                field.filename = text_(field.filename, encoding, errors)
-                field.name = text_(field.name, encoding, errors)
+                field.filename = text_(field.filename, 'utf8')
+                field.name = text_(field.name, 'utf8')
                 obj.add(field.name, field)
             else:
                 obj.add(field.name, field.value)
@@ -148,8 +149,7 @@ if PY3: # pragma: no cover
 else:
     from webob.multidict import MultiDict
     def multidict_from_bodyfile(fp=None, environ=os.environ,
-                                keep_blank_values=False, encoding='utf-8',
-                                errors='replace'):
+                                keep_blank_values=False):
         fs = cgi.FieldStorage(
             fp=fp,
             environ=environ,
@@ -160,12 +160,12 @@ else:
         for field in fs.list or ():
             if field.filename:
                 # decode filename and name from str to unicode
-                field.filename = text_(field.filename, encoding, errors)
-                field.name = text_(field.name, encoding, errors)
+                field.filename = text_(field.filename, 'utf8')
+                field.name = text_(field.name, 'utf8')
                 obj.add(field.name, field)
             else:
-                obj.add(field.name.decode(encoding, errors),
-                        field.value.decode(encoding, errors))
+                obj.add(field.name.decode('utf8'),
+                        field.value.decode('utf8'))
         return obj
 
 if PY3: # pragma no cover

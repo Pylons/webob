@@ -20,11 +20,6 @@ from webob.datetime_utils import (
     serialize_date,
     )
 
-from webob.etag import (
-    IfRange,
-    NoIfRange,
-    )
-
 from webob.util import (
     header_docstring,
     warn_deprecation,
@@ -32,7 +27,6 @@ from webob.util import (
 
 
 CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
-QUOTES_RE = re.compile('"(.*)"')
 SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
 
 
@@ -66,15 +60,15 @@ def environ_getter(key, default=_not_given, rfc_section=None):
 def upath_property(key):
     if PY3: # pragma: no cover
         def fget(req):
-            return req.environ.get(key, '').encode('latin-1').decode('utf8', req.unicode_errors)
+            return req.environ.get(key, '').encode('latin-1').decode('utf8')
         def fset(req, val):
             req.environ[key] = val.encode('utf8').decode('latin-1')
     else:
         def fget(req):
-            return req.environ.get(key, '').decode('utf8', req.unicode_errors)
+            return req.environ.get(key, '').decode('utf8')
         def fset(req, val):
             if isinstance(val, unicode):
-                val = val.encode('utf8', req.unicode_errors)
+                val = val.encode('utf8')
             req.environ[key] = val
     return property(fget, fset, doc='upath_property(%r)' % key)
 
@@ -177,33 +171,41 @@ def date_header(header, rfc_section):
 
 
 
+
 ########################
 ## Converter functions
 ########################
 
 
-def parse_etag_response(value):
+_rx_etag = re.compile(r'(?:^|\s)(W/)?"((?:\\"|.)*?)"')
+
+def parse_etag_response(value, strong=False):
     """
-    Parse a response ETag. Weak ETags are dropped.
+    Parse a response ETag.
     See:
         * http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.19
         * http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.11
     """
-    if value and not value.startswith('W/'):
-        unquote_match = QUOTES_RE.match(value)
-        if unquote_match is not None:
-            value = unquote_match.group(1)
-            value = value.replace('\\"', '"')
+    if not value:
+        return None
+    m = _rx_etag.match(value)
+    if not m:
+        # this etag is invalid, but we'll just return it anyway
         return value
+    elif strong and m.group(1):
+        # this is a weak etag and we want only strong ones
+        return None
+    else:
+        return m.group(2).replace('\\"', '"')
 
 def serialize_etag_response(value):
-    return '"%s"' % value.replace('"', '\\"')
-
-def parse_if_range(value):
-    if not value:
-        return NoIfRange
+    m = _rx_etag.match(value)
+    if m:
+        # this is a valid etag already
+        return value
     else:
-        return IfRange.parse(value)
+        # let's quote the value
+        return '"%s"' % value.replace('"', '\\"')
 
 def serialize_if_range(value):
     if isinstance(value, (datetime, date)):

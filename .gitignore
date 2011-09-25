@@ -12,8 +12,7 @@ build/
 *.egg
 glob:_coverage
 Session.vim
-html_coverage/**
-_coverage/**
+*_coverage/**
 *,cover
 *_fixt.py
 *$py.class

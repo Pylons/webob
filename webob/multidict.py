@@ -11,9 +11,10 @@ from webob.compat import (
     PY3,
     iteritems_,
     itervalues_,
+    url_encode,
     )
 
-__all__ = ['MultiDict', 'NestedMultiDict', 'NoVars', 'TrackableMultiDict']
+__all__ = ['MultiDict', 'NestedMultiDict', 'NoVars', 'GetDict']
 
 class MultiDict(MutableMapping):
     """
@@ -59,11 +60,17 @@ class MultiDict(MutableMapping):
         """
         obj = cls()
         # fs.list can be None when there's nothing to parse
+        if PY3:
+            decode = lambda b: b
+        else:
+            decode = lambda b: b.decode('utf8')
         for field in fs.list or ():
+            field.name = decode(field.name)
             if field.filename:
+                field.filename = decode(field.filename)
                 obj.add(field.name, field)
             else:
-                obj.add(field.name, field.value)
+                obj.add(field.name, decode(field.value))
         return obj
 
     def __getitem__(self, key):
@@ -256,46 +263,50 @@ class MultiDict(MutableMapping):
 
 _dummy = object()
 
-class TrackableMultiDict(MultiDict):
-    tracker = None
-    name = None
-    def __init__(self, *args, **kw):
-        if '__tracker' in kw:
-            self.tracker = kw.pop('__tracker')
-        if '__name' in kw:
-            self.name = kw.pop('__name')
-        MultiDict.__init__(self, *args, **kw)
+class GetDict(MultiDict):
+#     def __init__(self, data, tracker, encoding, errors):
+#         d = lambda b: b.decode(encoding, errors)
+#         data = [(d(k), d(v)) for k,v in data]
+    def __init__(self, data, env):
+        self.env = env
+        MultiDict.__init__(self, data)
+    def on_change(self):
+        e = lambda t: t.encode('utf8')
+        data = [(e(k), e(v)) for k,v in self.items()]
+        qs = url_encode(data)
+        self.env['QUERY_STRING'] = qs
+        self.env['webob._parsed_query_vars'] = (self, qs)
     def __setitem__(self, key, value):
         MultiDict.__setitem__(self, key, value)
-        self.tracker(self, key, value)
+        self.on_change()
     def add(self, key, value):
         MultiDict.add(self, key, value)
-        self.tracker(self, key, value)
+        self.on_change()
     def __delitem__(self, key):
         MultiDict.__delitem__(self, key)
-        self.tracker(self, key)
+        self.on_change()
     def clear(self):
         MultiDict.clear(self)
-        self.tracker(self)
+        self.on_change()
     def setdefault(self, key, default=None):
         result = MultiDict.setdefault(self, key, default)
-        self.tracker(self, key, result)
+        self.on_change()
         return result
     def pop(self, key, *args):
         result = MultiDict.pop(self, key, *args)
-        self.tracker(self, key)
+        self.on_change()
         return result
     def popitem(self):
         result = MultiDict.popitem(self)
-        self.tracker(self)
+        self.on_change()
         return result
     def update(self, *args, **kwargs):
         MultiDict.update(self, *args, **kwargs)
-        self.tracker(self)
+        self.on_change()
     def __repr__(self):
         items = map('(%r, %r)'.__mod__, _hide_passwd(self.items()))
-        return '%s([%s])' % (self.name or self.__class__.__name__,
-                             ', '.join(items))
+        # TODO: GET -> GetDict
+        return 'GET([%s])' % (', '.join(items))
     def copy(self):
         # Copies shouldn't be tracked
         return MultiDict(self)

@@ -1,3 +1,4 @@
+import cgi
 from webob.util import html_escape
 from webob.multidict import MultiDict
 from nose.tools import eq_ as eq, assert_raises
@@ -131,6 +132,5 @@ def test_multidict_init():
 
     # TypeError: MultiDict.view_list(obj) takes only actual list objects, not None
     assert_raises(TypeError, MultiDict.view_list, None)
-
 
 

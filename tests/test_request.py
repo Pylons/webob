@@ -264,81 +264,6 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(req.content_type, '')
         self.assert_('CONTENT_TYPE' not in environ)
 
-    def test_charset_getter_cache_hit(self):
-        CT = 'application/xml+foobar'
-        environ = {'CONTENT_TYPE': CT,
-                  }
-        req = BaseRequest(environ)
-        req._charset_cache = (CT, 'cp1252')
-        self.assertEqual(req.charset, 'cp1252')
-
-    def test_charset_getter_cache_miss_w_parameter(self):
-        CT = 'application/xml+foobar;charset="utf8"'
-        environ = {'CONTENT_TYPE': CT,
-                  }
-        req = BaseRequest(environ)
-        self.assertEqual(req.charset, 'utf8')
-        self.assertEqual(req._charset_cache, (CT, 'utf8'))
-
-    def test_charset_getter_cache_miss_wo_parameter(self):
-        CT = 'application/xml+foobar'
-        environ = {'CONTENT_TYPE': CT,
-                  }
-        req = BaseRequest(environ)
-        self.assertEqual(req.charset, 'UTF-8')
-        self.assertEqual(req._charset_cache, (CT, 'UTF-8'))
-
-    def test_charset_setter_None_w_parameter(self):
-        CT = 'application/xml+foobar;charset="utf8"'
-        environ = {'CONTENT_TYPE': CT,
-                  }
-        req = BaseRequest(environ)
-        req.charset = None
-        self.assertEqual(environ['CONTENT_TYPE'], 'application/xml+foobar')
-        self.assertEqual(req.charset, 'UTF-8')
-
-    def test_charset_setter_empty_w_parameter(self):
-        CT = 'application/xml+foobar;charset="utf8"'
-        environ = {'CONTENT_TYPE': CT,
-                  }
-        req = BaseRequest(environ)
-        req.charset = ''
-        self.assertEqual(environ['CONTENT_TYPE'], 'application/xml+foobar')
-        self.assertEqual(req.charset, 'UTF-8')
-
-    def test_charset_setter_nonempty_w_parameter(self):
-        CT = 'application/xml+foobar;charset="utf8"'
-        environ = {'CONTENT_TYPE': CT,
-                  }
-        req = BaseRequest(environ)
-        req.charset = 'cp1252'
-        self.assertEqual(environ['CONTENT_TYPE'],
-                         #'application/xml+foobar; charset="cp1252"') WTF?
-                         'application/xml+foobar;charset=cp1252',
-                         )
-        self.assertEqual(req.charset, 'cp1252')
-
-    def test_charset_setter_nonempty_wo_parameter(self):
-        CT = 'application/xml+foobar'
-        environ = {'CONTENT_TYPE': CT,
-                  }
-        req = BaseRequest(environ)
-        req.charset = 'cp1252'
-        self.assertEqual(environ['CONTENT_TYPE'],
-                         'application/xml+foobar; charset="cp1252"',
-                         #'application/xml+foobar;charset=cp1252',  WTF?
-                         )
-        self.assertEqual(req.charset, 'cp1252')
-
-    def test_charset_deleter_w_parameter(self):
-        CT = 'application/xml+foobar;charset="utf8"'
-        environ = {'CONTENT_TYPE': CT,
-                  }
-        req = BaseRequest(environ)
-        del req.charset
-        self.assertEqual(environ['CONTENT_TYPE'], 'application/xml+foobar')
-        self.assertEqual(req.charset, 'UTF-8')
-
     def test_headers_getter_miss(self):
         CONTENT_TYPE = 'application/xml+foobar;charset="utf8"'
         environ = {'CONTENT_TYPE': CONTENT_TYPE,
@@ -1035,9 +960,7 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(result, {})
 
     def test_GET_updates_query_string(self):
-        environ = {
-        }
-        req = BaseRequest(environ)
+        req = BaseRequest({})
         result = req.query_string
         self.assertEqual(result, '')
         req.GET['foo'] = '123'
@@ -1091,9 +1014,10 @@ class BaseRequestTests(unittest.TestCase):
 
     def test_remove_conditional_headers_if_none_match(self):
         req = Request.blank('/')
-        req.if_none_match = 'foo, bar'
+        req.if_none_match = 'foo'
+        assert req.if_none_match
         req.remove_conditional_headers()
-        self.assertEqual(bool(req.if_none_match), False)
+        assert not req.if_none_match
 
     def test_remove_conditional_headers_if_range(self):
         req = Request.blank('/')
@@ -1643,7 +1567,7 @@ class RequestTests_functional(unittest.TestCase):
         new_params['b'] = '4'
         self.assertEqual(list(new_params.items()), [('a', '1'), ('b', '4')])
         # The key name is \u1000:
-        req = Request.blank('/?%E1%80%80=x', charset='UTF-8')
+        req = Request.blank('/?%E1%80%80=x')
         val = text_type(b'\u1000', 'unicode_escape')
         self.assert_(val in list(req.GET.keys()))
         self.assertEqual(req.GET[val], 'x')
@@ -1764,22 +1688,13 @@ class RequestTests_functional(unittest.TestCase):
         # Environ is a a mandatory not null param in Request.
         self.assertRaises(TypeError, Request, environ=None)
 
-    def test_unicode_errors(self):
-        # Passing unicode_errors != NoDefault should assign value to
-        # dictionary['unicode_errors'], else not
-        r = Request({'a':1}, unicode_errors='strict')
-        self.assert_('unicode_errors' in r.__dict__)
-        r = Request({'a':1})
-        self.assert_('unicode_errors' not in r.__dict__)
-
     def test_unexpected_kw(self):
         # Passed an attr in kw that does not exist in the class, should
         # raise an error
         # Passed an attr in kw that does exist in the class, should be ok
         self.assertRaises(TypeError,
                           Request, {'a':1}, this_does_not_exist=1)
-        r = Request({'a':1}, **{'charset':'utf-8', 'server_name':'127.0.0.1'})
-        self.assertEqual(getattr(r, 'charset', None), 'utf-8')
+        r = Request({'a':1}, server_name='127.0.0.1')
         self.assertEqual(getattr(r, 'server_name', None), '127.0.0.1')
 
     def test_conttype_set_del(self):
@@ -2156,11 +2071,6 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(r.content_type, 'text/html')
         r.content_type = None
 
-    def test_charset_in_content_type(self):
-        r = Request({'CONTENT_TYPE':'text/html;charset=ascii'})
-        r.charset = 'shift-jis'
-        self.assertEqual(r.charset, 'shift-jis')
-
     def test_body_file_seekable(self):
         r = Request.blank('/', method='POST')
         r.body_file = BytesIO(b'body')
@@ -2240,11 +2150,11 @@ class RequestTests_functional(unittest.TestCase):
         from webob.multidict import MultiDict
         from webob.multidict import NestedMultiDict
         from webob.multidict import NoVars
-        from webob.multidict import TrackableMultiDict
+        from webob.multidict import GetDict
         req = Request.blank('/test?check=a&check=b&name=Bob')
-        GET = TrackableMultiDict([('check', 'a'),
-                                  ('check', 'b'),
-                                  ('name', 'Bob')])
+        GET = GetDict([('check', 'a'),
+                      ('check', 'b'),
+                      ('name', 'Bob')], {})
         self.assertEqual(req.GET, GET)
         self.assertEqual(req.GET['check'], 'b')
         self.assertEqual(req.GET.getall('check'), ['a', 'b'])
@@ -2278,18 +2188,16 @@ class RequestTests_functional(unittest.TestCase):
         from webob.acceptparse import MIMEAccept
         from webob.byterange import Range
         from webob.etag import ETagMatcher
-        from webob.etag import _NoIfRange
         from webob.multidict import MultiDict
-        from webob.multidict import TrackableMultiDict
+        from webob.multidict import GetDict
         req = Request.blank('/test?check=a&check=b&name=Bob')
         req.method = 'PUT'
         req.body = b'var1=value1&var2=value2&rep=1&rep=2'
         req.environ['CONTENT_LENGTH'] = str(len(req.body))
         req.environ['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
-        req.charset = 'utf8'
-        GET = TrackableMultiDict([('check', 'a'),
-                                  ('check', 'b'),
-                                  ('name', 'Bob')])
+        GET = GetDict([('check', 'a'),
+                      ('check', 'b'),
+                      ('name', 'Bob')], {})
         self.assertEqual(req.GET, GET)
         self.assertEqual(req.POST, MultiDict(
                                 [('var1', 'value1'),
@@ -2299,6 +2207,11 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(
             list(req.GET.items()),
             [('check', 'a'), ('check', 'b'), ('name', 'Bob')])
+
+        # Unicode
+        req.charset = 'utf8'
+        self.assertEqual(list(req.GET.items()),
+                         [('check', 'a'), ('check', 'b'), ('name', 'Bob')])
 
         # Cookies
         req.headers['Cookie'] = 'test=value'
@@ -2333,6 +2246,12 @@ class RequestTests_functional(unittest.TestCase):
         self.assert_(isinstance(req.if_none_match, ETagMatcher))
         # You *should* return 304
         self.assert_(server_token in req.if_none_match)
+        # if_none_match should use weak matching
+        weak_token = 'W/"%s"' % server_token
+        req.if_none_match = weak_token
+        assert req.headers['if-none-match'] == weak_token
+        self.assert_(server_token in req.if_none_match)
+
 
         req.if_modified_since = datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
         self.assertEqual(req.headers['If-Modified-Since'],
@@ -2341,15 +2260,15 @@ class RequestTests_functional(unittest.TestCase):
         self.assert_(req.if_modified_since)
         self.assert_(req.if_modified_since >= server_modified)
 
-        self.assert_(isinstance(req.if_range, _NoIfRange))
-        self.assert_(req.if_range.match(etag='some-etag',
-                     last_modified=datetime(2005, 1, 1, 12, 0)))
+        self.assert_(not req.if_range)
+        self.assert_(Response(etag='some-etag', last_modified=datetime(2005, 1, 1, 12, 0))
+            in req.if_range)
         req.if_range = 'opaque-etag'
-        self.assert_(not req.if_range.match(etag='other-etag'))
-        self.assert_(req.if_range.match(etag='opaque-etag'))
+        self.assert_(Response(etag='other-etag') not in req.if_range)
+        self.assert_(Response(etag='opaque-etag') in req.if_range)
 
         res = Response(etag='opaque-etag')
-        self.assert_(req.if_range.match_response(res))
+        self.assert_(res in req.if_range)
 
         req.range = 'bytes=0-100'
         self.assert_(isinstance(req.range, Range))

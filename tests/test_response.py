@@ -144,19 +144,35 @@ def test_HEAD_conditional_response_range_empty_response():
     res = Response('Are we not men?', conditional_response=True)
     assert req.get_response(res).body == b''
 
+
 def test_conditional_response_if_none_match_false():
+    req = Request.blank('/', if_none_match='foo')
+    resp = Response(app_iter=['foo\n'],
+            conditional_response=True, etag='bar')
+    resp = req.get_response(resp)
+    eq_(resp.status_int, 200)
+
+def test_conditional_response_if_none_match_true():
     req = Request.blank('/', if_none_match='foo')
     resp = Response(app_iter=['foo\n'],
             conditional_response=True, etag='foo')
     resp = req.get_response(resp)
     eq_(resp.status_int, 304)
 
-def test_conditional_response_if_none_match_true():
-    req = Request.blank('/', if_none_match='foo')
-    resp = Response(app_iter=['foo\n'],
-            conditional_response=True, etag='bar')
-    resp = req.get_response(resp)
-    eq_(resp.status_int, 200)
+def test_conditional_response_if_none_match_weak():
+    req = Request.blank('/', headers={'if-none-match': '"bar"'})
+    req_weak = Request.blank('/', headers={'if-none-match': 'W/"bar"'})
+    resp = Response(app_iter=['foo\n'], conditional_response=True, etag='bar')
+    resp_weak = Response(app_iter=['foo\n'], conditional_response=True, headers={'etag': 'W/"bar"'})
+    for rq in [req, req_weak]:
+        for rp in [resp, resp_weak]:
+            rq.get_response(rp).status_int == 304
+
+    r2 = Response(app_iter=['foo\n'], conditional_response=True, headers={'etag': '"foo"'})
+    r2_weak = Response(app_iter=['foo\n'], conditional_response=True, headers={'etag': 'W/"foo"'})
+    req_weak.get_response(r2).status_int == 200
+    req.get_response(r2_weak) == 200
+
 
 def test_conditional_response_if_modified_since_false():
     from datetime import datetime, timedelta

@@ -21,6 +21,7 @@ from webob.cachecontrol import (
     )
 
 from webob.compat import (
+    PY3,
     bytes_,
     integer_types,
     multidict_from_bodyfile,
@@ -34,7 +35,8 @@ from webob.compat import (
     url_unquote,
     urlparse,
     )
-from webob.cookies import Cookie
+from webob.cookies import parse_cookie
+
 
 from webob.descriptors import (
     CHARSET_RE,
@@ -43,7 +45,6 @@ from webob.descriptors import (
     converter_date,
     environ_getter,
     parse_auth,
-    parse_if_range,
     parse_int,
     parse_int_safe,
     parse_range,
@@ -56,6 +57,7 @@ from webob.descriptors import (
     )
 
 from webob.etag import (
+    IfRange,
     AnyETag,
     NoETag,
     etag_property,
@@ -65,8 +67,9 @@ from webob.headers import EnvironHeaders
 
 from webob.multidict import (
     NestedMultiDict,
+    MultiDict,
     NoVars,
-    TrackableMultiDict,
+    GetDict,
     )
 
 from webob.util import warn_deprecation
@@ -86,27 +89,22 @@ http_method_probably_has_body.update(
     dict.fromkeys(('POST', 'PUT'), True))
 
 class BaseRequest(object):
-    ## Options:
-    unicode_errors = 'strict'
     ## The limit after which request bodies should be stored on disk
     ## if they are read in (under this, and the request body is stored
     ## in memory):
     request_body_tempfile_limit = 10*1024
 
-    def __init__(self,
-                 environ,
-                 charset=NoDefault,
-                 unicode_errors=NoDefault,
-                 **kw
-                 ):
+    def __init__(self, environ, charset=None, unicode_errors=None, **kw):
         if type(environ) is not dict:
             raise TypeError("WSGI environ must be a dict")
+        if (unicode_errors is not None
+            or not _is_utf8(charset)
+        ):
+            raise DeprecationWarning("If you get non-UTF-8 requests, "
+                "use req = req.decode(charset)"
+            )
         d = self.__dict__
         d['environ'] = environ
-        if charset is not NoDefault:
-            self.charset = charset
-        if unicode_errors is not NoDefault:
-            d['unicode_errors'] = unicode_errors
         if kw:
             cls = self.__class__
             if 'method' in kw:
@@ -118,6 +116,70 @@ class BaseRequest(object):
                     raise TypeError(
                         "Unexpected keyword: %s=%r" % (name, value))
                 setattr(self, name, value)
+
+    _charset = None
+
+    @property
+    def charset(self):
+        if self._charset is None:
+            charset = detect_charset(self._content_type_raw)
+            if _is_utf8(charset):
+                charset = 'UTF-8'
+            self._charset = charset
+        return self._charset
+
+    @charset.setter
+    def charset(self, charset):
+        if _is_utf8(charset):
+            charset = 'UTF-8'
+        if charset != self.charset:
+            raise DeprecationWarning("Use req = req.decode(%r)" % charset)
+
+    def decode(self, charset=None, errors='strict'):
+        charset = charset or self.charset
+        if charset == 'UTF-8':
+            return self
+        # cookies and path are always utf-8
+        t = Transcoder(charset, errors)
+
+        new_content_type = CHARSET_RE.sub('; charset="UTF-8"', self._content_type_raw)
+        content_type = self.content_type
+        r = self.__class__(
+            self.environ.copy(),
+            query_string=t.transcode_query(self.query_string),
+            content_type=new_content_type,
+        )
+
+        if content_type == 'application/x-www-form-urlencoded':
+            r.body = t.transcode_query(r.body)
+            return r
+        elif content_type != 'multipart/form-data':
+            return r
+
+        fs_environ = self.environ.copy()
+        fs_environ.setdefault('CONTENT_LENGTH', '0')
+        fs_environ['QUERY_STRING'] = ''
+        if PY3: # pragma: no cover
+            fs = cgi.FieldStorage(fp=self.body_file,
+                                  environ=fs_environ,
+                                  keep_blank_values=True,
+                                  encoding=charset,
+                                  errors=errors)
+        else:
+            fs = cgi.FieldStorage(fp=self.body_file,
+                                  environ=fs_environ,
+                                  keep_blank_values=True)
+
+
+        fout = t.transcode_fs(fs, r._content_type_raw)
+
+        # this order is important, because setting body_file
+        # resets content_length
+        r.body_file = fout
+        r.content_length = fout.tell()
+        fout.seek(0)
+        return r
+
 
     # this is necessary for correct warnings depth for both
     # BaseRequest and Request (due to AdhocAttrMixin.__setattr__)
@@ -152,7 +214,7 @@ class BaseRequest(object):
     def _body_file__set(self, value):
         if isinstance(value, bytes):
             warn_deprecation(
-                "Please use req.body = 'bytes' or req.body_file = fileobj",
+                "Please use req.body = b'bytes' or req.body_file = fileobj",
                 '1.2',
                 self._setattr_stacklevel
             )
@@ -209,6 +271,8 @@ class BaseRequest(object):
         '1.3'
     )
 
+    _content_type_raw = environ_getter('CONTENT_TYPE', '')
+
     def _content_type__get(self):
         """Return the content type, but leaving off any parameters (like
         charset, but also things like the type in ``application/atom+xml;
@@ -218,73 +282,20 @@ class BaseRequest(object):
         you don't include any parameters in the value then existing
         parameters will be preserved.
         """
-        return self.environ.get('CONTENT_TYPE', '').split(';', 1)[0]
-    def _content_type__set(self, value):
-        if value is None:
-            del self.content_type
-            return
-        value = str(value)
-        if ';' not in value:
-            content_type = self.environ.get('CONTENT_TYPE', '')
-            if ';' in content_type:
-                value += ';' + content_type.split(';', 1)[1]
-        self.environ['CONTENT_TYPE'] = value
-    def _content_type__del(self):
-        if 'CONTENT_TYPE' in self.environ:
-            del self.environ['CONTENT_TYPE']
+        return self._content_type_raw.split(';', 1)[0]
+    def _content_type__set(self, value=None):
+        if value is not None:
+            value = str(value)
+            if ';' not in value:
+                content_type = self._content_type_raw
+                if ';' in content_type:
+                    value += ';' + content_type.split(';', 1)[1]
+        self._content_type_raw = value
 
     content_type = property(_content_type__get,
                             _content_type__set,
-                            _content_type__del,
+                            _content_type__set,
                             _content_type__get.__doc__)
-
-    _charset_cache = (None, None)
-
-    def _charset__get(self):
-        """Get the charset of the request.
-
-        If the request was sent with a charset parameter on the
-        Content-Type, that will be used.  Otherwise if there is a
-        default charset (set during construction, or as a class
-        attribute) that will be returned.  Otherwise None.
-
-        Setting this property after request instantiation will always
-        update Content-Type.  Deleting the property updates the
-        Content-Type to remove any charset parameter (if none exists,
-        then deleting the property will do nothing, and there will be
-        no error).
-        """
-        content_type = self.environ.get('CONTENT_TYPE', '')
-        cached_ctype, cached_charset = self._charset_cache
-        if cached_ctype == content_type:
-            return cached_charset
-        result = _get_charset(content_type)
-        self._charset_cache = (content_type, result)
-        return result
-    def _charset__set(self, charset):
-        if charset is None or charset == '':
-            del self.charset
-            return
-        charset = str(charset)
-        content_type = self.environ.get('CONTENT_TYPE', '')
-        charset_match = CHARSET_RE.search(self.environ.get('CONTENT_TYPE', ''))
-        if charset_match:
-            content_type = (content_type[:charset_match.start(1)] +
-                            charset + content_type[charset_match.end(1):])
-        # comma to separate params? there's nothing like that in RFCs AFAICT
-        #elif ';' in content_type:
-        #    content_type += ', charset="%s"' % charset
-        else:
-            content_type += '; charset="%s"' % charset
-        self.environ['CONTENT_TYPE'] = content_type
-    def _charset__del(self):
-        new_content_type = CHARSET_RE.sub('',
-                                          self.environ.get('CONTENT_TYPE', ''))
-        new_content_type = new_content_type.rstrip().rstrip(';').rstrip(',')
-        self.environ['CONTENT_TYPE'] = new_content_type
-
-    charset = property(_charset__get, _charset__set, _charset__del,
-                       _charset__get.__doc__)
 
     _headers = None
 
@@ -592,6 +603,7 @@ class BaseRequest(object):
             # Not an HTML form submission
             return NoVars('Not an HTML form submission (Content-Type: %s)'
                           % content_type)
+        self._check_charset()
         if self.is_body_seekable:
             self.body_file_raw.seek(0)
         fs_environ = env.copy()
@@ -599,26 +611,26 @@ class BaseRequest(object):
         # default of 0 is better:
         fs_environ.setdefault('CONTENT_LENGTH', '0')
         fs_environ['QUERY_STRING'] = ''
-        vars = multidict_from_bodyfile(
-            fp=self.body_file,
-            environ=fs_environ,
-            keep_blank_values=True,
-            encoding=self.charset,
-            errors=self.unicode_errors,
-            )
+        if PY3:
+            fs = cgi.FieldStorage(
+                fp=self.body_file,
+                environ=fs_environ,
+                keep_blank_values=True,
+                encoding='utf8')
+            vars = MultiDict.from_fieldstorage(fs)
+        else:
+            vars = multidict_from_bodyfile(
+                fp=self.body_file,
+                environ=fs_environ,
+                keep_blank_values=True,
+                )
 
         #ctype = self.content_type or 'application/x-www-form-urlencoded'
-        ctype = env.get('CONTENT_TYPE', 'application/x-www-form-urlencoded')
-        f = FakeCGIBody(vars, ctype, self.charset)
+        ctype = self._content_type_raw or 'application/x-www-form-urlencoded'
+        f = FakeCGIBody(vars, ctype)
         self.body_file = io.BufferedReader(f)
         env['webob._parsed_post_vars'] = (vars, self.body_file_raw)
         return vars
-
-    def _update_get(self, vars, key=None, value=None):
-        env = self.environ
-        qs = url_encode(list(vars.items())) # XXX needs charset encoding on py2
-        env['QUERY_STRING'] = qs
-        env['webob._parsed_query_vars'] = (vars, qs)
 
     @property
     def GET(self):
@@ -632,24 +644,25 @@ class BaseRequest(object):
             vars, qs = env['webob._parsed_query_vars']
             if qs == source:
                 return vars
-        if not source:
-            vars = TrackableMultiDict(
-                __tracker=self._update_get,
-                __name='GET'
-                )
-        else:
-            decoded = list(parse_qsl_text(
-                source,
-                encoding=self.charset,
-                errors=self.unicode_errors
-            ))
-            vars = TrackableMultiDict(
-                decoded,
-                __tracker=self._update_get,
-                __name='GET'
-                )
+
+        data = []
+        if source:
+            # this is disabled because we want to access req.GET
+            # for text/plain; charset=ascii uploads for example
+            #self._check_charset()
+            data = parse_qsl_text(source)
+            #d = lambda b: b.decode('utf8')
+            #data = [(d(k), d(v)) for k,v in data]
+        vars = GetDict(data, env)
         env['webob._parsed_query_vars'] = (vars, source)
         return vars
+
+    def _check_charset(self):
+        if self.charset != 'UTF-8':
+            raise DeprecationWarning(
+                "Requests are expected to be submitted in UTF-8, not %s. "
+                "You can fix this by doing req = req.decode()" % self.charset
+            )
 
     @property
     def params(self):
@@ -665,19 +678,10 @@ class BaseRequest(object):
         """
         Like ``.str_cookies``, but decodes values and keys
         """
-        env = self.environ
-        source = env.get('HTTP_COOKIE', '')
-        if 'webob._parsed_cookies' in env:
-            vars, var_source = env['webob._parsed_cookies']
-            if var_source == source:
-                return vars
-        vars = {}
-        if source:
-            cookies = Cookie(source)
-            for name in cookies:
-                vars[name.decode('ascii')] = cookies[name].value.decode('utf-8')
-        env['webob._parsed_cookies'] = (vars, source)
-        return vars
+        data = self.environ.get('HTTP_COOKIE', '')
+        d = lambda b: b.decode('utf8')
+        r = dict((d(k), d(v)) for k,v in parse_cookie(data))
+        return r
 
     def copy(self):
         """
@@ -900,7 +904,7 @@ class BaseRequest(object):
 
 
     if_match = etag_property('HTTP_IF_MATCH', AnyETag, '14.24')
-    if_none_match = etag_property('HTTP_IF_NONE_MATCH', NoETag, '14.26')
+    if_none_match = etag_property('HTTP_IF_NONE_MATCH', NoETag, '14.26', strong=False)
 
     date = converter_date(environ_getter('HTTP_DATE', None, '14.8'))
     if_modified_since = converter_date(
@@ -909,7 +913,7 @@ class BaseRequest(object):
                     environ_getter('HTTP_IF_UNMODIFIED_SINCE', None, '14.28'))
     if_range = converter(
         environ_getter('HTTP_IF_RANGE', None, '14.27'),
-        parse_if_range, serialize_if_range, 'IfRange object')
+        IfRange.parse, serialize_if_range, 'IfRange object')
 
 
     max_forwards = converter(
@@ -1172,9 +1176,7 @@ class BaseRequest(object):
             content_type = headers['Content-Type']
         if content_type is not None:
             kw['content_type'] = content_type
-        encoding = _get_charset(content_type)
-        environ_add_POST(env, POST, content_type=content_type,
-                         encoding=encoding)
+        environ_add_POST(env, POST, content_type=content_type)
         obj = cls(env, **kw)
         if headers is not None:
             obj.headers.update(headers)
@@ -1225,9 +1227,11 @@ def environ_from_url(path):
     return env
 
 
-def environ_add_POST(env, data, content_type=None, encoding='utf-8'):
+def environ_add_POST(env, data, content_type=None):
     if data is None:
         return
+    elif isinstance(data, text_type):
+        data = data.encode('ascii')
     if env['REQUEST_METHOD'] not in ('POST', 'PUT'):
         env['REQUEST_METHOD'] = 'POST'
     has_files = False
@@ -1243,20 +1247,19 @@ def environ_add_POST(env, data, content_type=None, encoding='utf-8'):
         else:
             content_type = 'application/x-www-form-urlencoded'
     if content_type.startswith('multipart/form-data'):
-        if not isinstance(data, str):
-            content_type, data = _encode_multipart(data, content_type,
-                                                   encoding=encoding)
+        if not isinstance(data, bytes):
+            content_type, data = _encode_multipart(data, content_type)
     elif content_type.startswith('application/x-www-form-urlencoded'):
         if has_files:
             raise ValueError('Submiting files is not allowed for'
                              ' content type `%s`' % content_type)
-        if not isinstance(data, str):
+        if not isinstance(data, bytes):
             data = url_encode(data)
     else:
-        if not isinstance(data, str):
+        if not isinstance(data, bytes):
             raise ValueError('Please provide `POST` data as string'
                              ' for content type `%s`' % content_type)
-    data = bytes_(data, encoding)
+    data = bytes_(data, 'utf8')
     env['wsgi.input'] = io.BytesIO(data)
     env['webob.is_body_seekable'] = True
     env['CONTENT_LENGTH'] = str(len(data))
@@ -1353,14 +1356,13 @@ def _cgi_FieldStorage__repr__patch(self):
 cgi.FieldStorage.__repr__ = _cgi_FieldStorage__repr__patch
 
 class FakeCGIBody(io.RawIOBase):
-    def __init__(self, vars, content_type, encoding='utf-8'):
+    def __init__(self, vars, content_type):
         if content_type.startswith('multipart/form-data'):
             if not _get_multipart_boundary(content_type):
                 raise ValueError('Content-type: %r does not contain boundary'
                             % content_type)
         self.vars = vars
         self.content_type = content_type
-        self.encoding = encoding
         self.file = None
 
     def __repr__(self):
@@ -1382,38 +1384,43 @@ class FakeCGIBody(io.RawIOBase):
         if self.file is None:
             if self.content_type.startswith(
                 'application/x-www-form-urlencoded'):
-                data = bytes_(url_encode(self.vars), self.encoding)
+                # TODO: check if bytes_ is necessary
+                data = bytes_(url_encode(self.vars), 'utf8')
+                self.file = io.BytesIO(data)
             elif self.content_type.startswith('multipart/form-data'):
-                data = _encode_multipart(self.vars.items(),
-                                         self.content_type,
-                                         encoding=self.encoding)[1]
+                self.file = _encode_multipart(
+                    self.vars.items(),
+                    self.content_type,
+                    fout=io.BytesIO()
+                )[1]
+                self.file.seek(0)
             else:
                 assert 0, ('Bad content type: %r' % self.content_type)
-            self.file = io.BytesIO(data)
         return self.file.readinto(buff)
 
 
 def _get_multipart_boundary(ctype):
     m = re.search(r'boundary=([^ ]+)', ctype, re.I)
     if m:
-        return m.group(1).strip('"')
+        return native_(m.group(1).strip('"'))
 
 
-def _encode_multipart(vars, content_type, encoding='utf-8'):
-    """Encode GET or POST vars into a bytes body"""
-    f = io.BytesIO()
+def _encode_multipart(vars, content_type, fout=None):
+    """Encode a multipart request body into a string"""
+    f = fout or io.BytesIO()
     w = f.write
+    wt = lambda t: f.write(t.encode('utf8'))
     CRLF = b'\r\n'
     boundary = _get_multipart_boundary(content_type)
     if not boundary:
-        boundary = binascii.hexlify(os.urandom(10))
-        content_type += '; boundary=%s' % text_(boundary)
+        boundary = native_(binascii.hexlify(os.urandom(10)))
+        content_type += ('; boundary=%s' % boundary)
     for name, value in vars:
         w(b'--')
-        w(bytes_(boundary, encoding))
+        wt(boundary)
         w(CRLF)
         assert name is not None, 'Value associated with no name: %r' % value
-        w(bytes_('Content-Disposition: form-data; name="%s"' % name, encoding))
+        wt('Content-Disposition: form-data; name="%s"' % name)
         filename = None
         if getattr(value, 'filename', None):
             filename = value.filename
@@ -1422,34 +1429,84 @@ def _encode_multipart(vars, content_type, encoding='utf-8'):
             if hasattr(value, 'read'):
                 value = value.read()
         if filename is not None:
-            w(bytes_('; filename="%s"' % filename, encoding))
+            wt('; filename="%s"' % filename)
         w(CRLF)
         # TODO: should handle value.disposition_options
         if getattr(value, 'type', None):
-            w(bytes_('Content-type: %s' % value.type, encoding))
+            wt('Content-type: %s' % value.type)
             if value.type_options:
                 for ct_name, ct_value in sorted(value.type_options.items()):
-                    w(bytes_('; %s="%s"' % (ct_name, ct_value), encoding))
+                    wt('; %s="%s"' % (ct_name, ct_value))
             w(CRLF)
         w(CRLF)
         if hasattr(value, 'value'):
-            w(bytes_(value.value, encoding))
+            value = value.value
+        if isinstance(value, bytes):
+            w(value)
         else:
-            w(bytes_(value, encoding))
+            wt(value)
         w(CRLF)
-    w(b'--')
-    w(bytes_(boundary, encoding))
-    w(b'--')
-    return content_type, f.getvalue()
-
-def _get_charset(content_type):
-    if content_type is None:
-        return 'UTF-8'
-    charset_match = CHARSET_RE.search(content_type)
-    if charset_match:
-        return charset_match.group(1).strip('"').strip()
+    wt('--%s--' % boundary)
+    if fout:
+        return content_type, fout
     else:
-        return 'UTF-8'
+        return content_type, f.getvalue()
+
+def detect_charset(ctype):
+    m = CHARSET_RE.search(ctype)
+    if m:
+        return m.group(1).strip('"').strip()
+
+def _is_utf8(charset):
+    if not charset:
+        return True
+    else:
+        return charset.lower().replace('-', '') == 'utf8'
+
+
+class Transcoder(object):
+    def __init__(self, charset, errors='strict'):
+        self.charset = charset # source charset
+        self.errors = errors # unicode errors
+
+
+    def transcode_query(self, q):
+        q_orig = q
+        if isinstance(q, text_type):
+            q = q.encode('utf8')
+        t = lambda b: b.decode(charset, errors).encode('utf8')
+        if '='.encode(self.charset) not in q:
+            # this doesn't look like a form submission
+            return q_orig
+        q = urlparse.parse_qsl(q,
+            keep_blank_values=True,
+            strict_parsing=False
+        )
+        q = [(t(k), t(v)) for k,v in q]
+        return url_encode(q)
+
+    def transcode_fs(self, fs, content_type):
+        # transcode FieldStorage
+        if PY3: # pragma: no cover
+            decode = lambda b: b
+        else:
+            decode = lambda b: b.decode(self.charset, self.errors)
+        data = []
+        for field in fs.list or ():
+            field.name = decode(field.name)
+            if field.filename:
+                field.filename = decode(field.filename)
+                data.append((field.name, field))
+            else:
+                data.append((field.name, decode(field.value)))
+
+        # TODO: transcode big requests to temp file
+        content_type, fout = _encode_multipart(
+            data,
+            content_type,
+            fout=io.BytesIO()
+        )
+        return fout
 
 
 # TODO: remove in 1.4

@@ -3,7 +3,6 @@ from datetime import (
     datetime,
     timedelta,
     )
-
 import re
 import string
 import time
@@ -24,26 +23,22 @@ class Cookie(dict):
             self.load(input)
 
     def load(self, data):
-        if PY3: # pragma: no cover
-            data = data.encode('latin-1')
-        ckey = None
-        for key, val in _rx_cookie.findall(data):
+        morsel = {}
+        for key, val in _parse_cookie(data):
             if key.lower() in _c_keys:
-                if ckey:
-                    self[ckey][key] = _unquote(val)
-            elif key[0] == _b_dollar_sign:
-                # RFC2109: NAMEs that begin with $ are reserved for other uses
-                # and must not be used by applications.
-                continue
+                morsel[key] = val
             else:
-                self[key] = _unquote(val)
-                ckey = key
+                morsel = self.add(key, val)
 
-    def __setitem__(self, key, val):
+    def add(self, key, val):
         if not isinstance(key, bytes):
-            key = key.encode('ascii', 'replace')
-        if _valid_cookie_name(key):
-            dict.__setitem__(self, key, Morsel(key, val))
+           key = key.encode('ascii', 'replace')
+        if not _valid_cookie_name(key):
+            return {}
+        r = Morsel(key, val)
+        dict.__setitem__(self, key, r)
+        return r
+    __setitem__ = add
 
     def serialize(self, full=True):
         return '; '.join(m.serialize(full) for m in self.values())
@@ -56,6 +51,19 @@ class Cookie(dict):
     def __repr__(self):
         return '<%s: [%s]>' % (self.__class__.__name__,
                                ', '.join(map(repr, self.values())))
+
+
+def _parse_cookie(data):
+    if PY3: # pragma: no cover
+        data = data.encode('latin-1')
+    for key, val in _rx_cookie.findall(data):
+        yield key, _unquote(val)
+
+def parse_cookie(data):
+    """
+    Parse cookies ignoring anything except names and values
+    """
+    return ((k,v) for k,v in _parse_cookie(data) if _valid_cookie_name(k))
 
 
 def cookie_property(key, serialize=lambda v: v):
@@ -90,7 +98,6 @@ class Morsel(dict):
     __slots__ = ('name', 'value')
     def __init__(self, name, value):
         assert _valid_cookie_name(name)
-        assert name.lower() not in _c_keys
         assert isinstance(value, bytes)
         self.name = name
         self.value = value
@@ -221,6 +228,8 @@ def _quote(v):
     return v
 
 def _valid_cookie_name(key):
-    return isinstance(key, bytes) and not _needs_quoting(key)
-
-
+    return isinstance(key, bytes) and not (
+        _needs_quoting(key)
+        or key[0] == _b_dollar_sign
+        or key.lower() in _c_keys
+    )
