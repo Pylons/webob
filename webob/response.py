@@ -16,7 +16,7 @@ from webob.cachecontrol import (
     )
 
 from webob.compat import (
-    native_,
+    PY3,
     bytes_,
     text_type,
     url_quote,
@@ -230,20 +230,20 @@ class Response(object):
         return self._status
 
     def _status__set(self, value):
-        if isinstance(value, (bytes, text_type)):
-            # Status messages have to be ASCII safe, so this is OK:
-            value = native_(value, 'ascii')
         if isinstance(value, int):
-            value = str(value)
+            self.status_int = value
+            return
+        if PY3: # pragma: no cover
+            if isinstance(value, bytes):
+                value = value.decode('ascii')
+        elif isinstance(value, text_type):
+            value = value.encode('ascii')
         if not isinstance(value, str):
             raise TypeError(
                 "You must set status to a string or integer (not %s)"
                 % type(value))
         if ' ' not in value:
-            # Need to add a reason:
-            code = int(value)
-            reason = status_reasons[code]
-            value += ' ' + reason
+            value += ' ' + status_reasons[int(value)]
         self._status = value
 
     status = property(_status__get, _status__set, doc=_status__get.__doc__)
