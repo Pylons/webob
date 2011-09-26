@@ -62,9 +62,16 @@ class Accept(object):
                     pass
             yield (name, 1)
 
-
     def __repr__(self):
         return '<%s(%r)>' % (self.__class__.__name__, str(self))
+
+    def __iter__(self):
+        for m,q in sorted(
+            self._parsed_nonzero,
+            key=lambda i: i[1],
+            reverse=True
+        ):
+            yield m
 
     def __str__(self):
         result = []
@@ -171,21 +178,6 @@ class Accept(object):
                     matched_by = mask
         return best_offer
 
-    def best_matches(self, fallback=None):
-        """
-        Return all the matches in order of quality, with fallback (if
-        given) at the end.
-        """
-        items = [i for i, q in sorted(self._parsed, key=lambda iq: -iq[1])]
-        if fallback:
-            for index, item in enumerate(items):
-                if self._match(item, fallback):
-                    items[index:] = [fallback]
-                    break
-            else:
-                items.append(fallback)
-        return items
-
     def _match(self, mask, offer):
         _check_offer(offer)
         return mask == '*' or offer.lower() == mask.lower()
@@ -193,11 +185,6 @@ class Accept(object):
 
 
 class NilAccept(object):
-
-    """
-    Represents an Accept header with no value.
-    """
-
     MasterClass = Accept
 
     def __repr__(self):
@@ -208,8 +195,10 @@ class NilAccept(object):
 
     def __nonzero__(self):
         return False
-
     __bool__ = __nonzero__ # python 3
+
+    def __iter__(self):
+        return iter(())
 
     def __add__(self, item):
         if isinstance(item, self.MasterClass):
@@ -246,12 +235,6 @@ class NilAccept(object):
                 best_offer = offer
                 best_quality = quality
         return best_offer
-
-    def best_matches(self, fallback=None):
-        if fallback:
-            return [fallback]
-        else:
-            return []
 
 class NoAccept(NilAccept):
     def __contains__(self, item):
@@ -352,6 +335,3 @@ def accept_property(header, rfc_section,
     def fdel(req):
         del req.environ[key]
     return property(fget, fset, fdel, doc)
-
-
-

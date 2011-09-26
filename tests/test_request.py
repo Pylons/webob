@@ -1391,22 +1391,22 @@ class RequestTests_functional(unittest.TestCase):
         request = Request.blank('/')
         status, headerlist, app_iter = request.call_application(simpleapp)
         res = b''.join(app_iter)
-        self.assert_(b"The languages are: ['en-US']" in res)
+        self.assert_(b"The languages are: []" in res)
 
     def test_language_parsing2(self):
         request = Request.blank(
-            '/', headers={'Accept-Language': 'da, en-gb;q=0.8, en;q=0.7'})
+            '/', headers={'Accept-Language': 'da, en-gb;q=0.8'})
         status, headerlist, app_iter = request.call_application(simpleapp)
         res = b''.join(app_iter)
-        self.assert_(b"languages are: ['da', 'en-gb', 'en-US']" in res)
+        self.assert_(b"languages are: ['da', 'en-gb']" in res)
 
     def test_language_parsing3(self):
         request = Request.blank(
             '/',
-            headers={'Accept-Language': 'en-gb;q=0.8, da, en;q=0.7'})
+            headers={'Accept-Language': 'en-gb;q=0.8, da'})
         status, headerlist, app_iter = request.call_application(simpleapp)
         res = b''.join(app_iter)
-        self.assert_(b"languages are: ['da', 'en-gb', 'en-US']" in res)
+        self.assert_(b"languages are: ['da', 'en-gb']" in res)
 
     def test_mime_parsing1(self):
         request = Request.blank(
@@ -2230,13 +2230,9 @@ class RequestTests_functional(unittest.TestCase):
         self.assertEqual(req.accept.best_match(['text/html',
                                                 'application/xhtml+xml']),
                          'application/xhtml+xml')
-        self.assertEqual(req.accept.best_matches(),
-                         ['application/xhtml+xml', 'text/html'])
 
         req.accept_language = 'es, pt-BR'
-        self.assertEqual(req.accept_language.best_matches('en-US'),
-                         ['es', 'pt-BR', 'en-US'])
-        self.assertEqual(req.accept_language.best_matches('es'), ['es'])
+        self.assertEqual(req.accept_language.best_match(['es']), 'es')
 
         # Conditional Requests
         server_token = 'opaque-token'
@@ -2346,8 +2342,7 @@ def simpleapp(environ, start_response):
         'Hello world!\n',
         'The get is %r' % request.GET,
         ' and Val is %s\n' % repr(request.GET.get('name')),
-        'The languages are: %s\n' %
-            request.accept_language.best_matches('en-US'),
+        'The languages are: %s\n' % list(request.accept_language),
         'The accepttypes is: %s\n' %
             request.accept.best_match(['application/xml', 'text/html']),
         'post is %r\n' % request.POST,

@@ -8,7 +8,9 @@ master
 
 * ``Range`` only parses single range now.
 
-* ``Range.satisfiable(..)` is gone.
+* ``Range.satisfiable(..)`` is gone.
+
+* ``Accept.best_matches()`` is gone.
 
 
 1.2a2

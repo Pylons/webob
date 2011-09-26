@@ -138,25 +138,6 @@ def test_best_match_with_one_lower_q():
     accept = Accept('text/html;q=0.5, foo/bar')
     assert accept.best_match(['text/html', 'foo/bar']) == 'foo/bar'
 
-def test_best_matches():
-    accept = Accept('text/html, foo/bar')
-    assert accept.best_matches() == ['text/html', 'foo/bar']
-    accept = Accept('text/html, foo/bar;q=0.5')
-    assert accept.best_matches() == ['text/html', 'foo/bar']
-    accept = Accept('text/html;q=0.5, foo/bar')
-    assert accept.best_matches() == ['foo/bar', 'text/html']
-
-def test_best_matches_with_fallback():
-    accept = Accept('text/html, foo/bar')
-    assert accept.best_matches('xxx/yyy') == ['text/html',
-                                              'foo/bar',
-                                              'xxx/yyy']
-    accept = Accept('text/html;q=0.5, foo/bar')
-    assert accept.best_matches('xxx/yyy') == ['foo/bar',
-                                              'text/html',
-                                              'xxx/yyy']
-    assert accept.best_matches('foo/bar') == ['foo/bar']
-    assert accept.best_matches('text/html') == ['foo/bar', 'text/html']
 
 def test_accept_match():
     for mask in ['*', 'text/html', 'TEXT/HTML']:
@@ -191,9 +172,6 @@ def test_nil():
     assert not nilaccept
     assert str(nilaccept) == ''
     assert nilaccept.quality('dummy') == 0
-    assert nilaccept.best_matches() == []
-    assert nilaccept.best_matches('foo') == ['foo']
-
 
 def test_nil_add():
     nilaccept = NilAccept()
