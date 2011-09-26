@@ -2272,9 +2272,9 @@ class RequestTests_functional(unittest.TestCase):
 
         req.range = 'bytes=0-100'
         self.assert_(isinstance(req.range, Range))
-        self.assertEqual(req.range.ranges, [(0, 101)])
+        self.assertEqual(tuple(req.range), (0, 101))
         cr = req.range.content_range(length=1000)
-        self.assertEqual((cr.start, cr.stop, cr.length), (0, 101, 1000))
+        self.assertEqual(tuple(cr), (0, 101, 1000))
 
         self.assert_(server_token in req.if_match)
         # No If-Match means everything is ok

@@ -224,17 +224,13 @@ def parse_range(value):
     return Range.parse(value)
 
 def serialize_range(value):
-    if isinstance(value, (list, tuple)):
-        if len(value) != 2:
-            raise ValueError(
-                "If setting .range to a list or tuple, it must be of length "
-                "2 (not %r)" % value
-                )
-        value = Range([value])
-    if value is None:
+    if not value:
         return None
-    value = str(value)
-    return value or None
+    elif isinstance(value, (list, tuple)):
+        return str(Range(*value))
+    else:
+        assert isinstance(value, str)
+        return value
 
 def parse_int(value):
     if value is None or value == '':

@@ -430,8 +430,7 @@ def test_serialize_if_range_other():
 
 def test_parse_range_none():
     from webob.descriptors import parse_range
-    val = parse_range(None)
-    eq_(val, None)
+    eq_(parse_range(None), None)
 
 def test_parse_range_type():
     from webob.byterange import Range
@@ -441,9 +440,9 @@ def test_parse_range_type():
 
 def test_parse_range_values():
     from webob.byterange import Range
-    from webob.descriptors import parse_range
-    val = parse_range("bytes=1-500")
-    eq_(val.ranges, Range.parse("bytes=1-500").ranges)
+    range = Range.parse("bytes=1-500")
+    eq_(range.start, 1)
+    eq_(range.end, 501)
 
 def test_serialize_range_none():
     from webob.descriptors import serialize_range
@@ -454,10 +453,6 @@ def test_serialize_range():
     from webob.descriptors import serialize_range
     val = serialize_range((1,500))
     eq_(val, 'bytes=1-499')
-
-def test_serialize_invalid_len():
-    from webob.descriptors import serialize_range
-    assert_raises(ValueError, serialize_range, (1,))
 
 def test_parse_int_none():
     from webob.descriptors import parse_int

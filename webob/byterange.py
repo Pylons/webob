@@ -1,3 +1,9 @@
+import re
+
+__all__ = ['Range', 'ContentRange']
+
+_rx_range = re.compile('bytes=(\d*)-(\d*)')
+
 class Range(object):
     """
         Represents the Range header.
@@ -7,27 +13,20 @@ class Range(object):
         but no place else is this multi-range facility supported.
     """
 
-    def __init__(self, ranges): # expect non-inclusive
-        for begin, end in ranges:
-            assert end is None or end >= 0, "Bad ranges: %r" % ranges
-        self.ranges = ranges
-
-    def satisfiable(self, length):
-        """
-            Returns true if this range can be satisfied by the resource
-            with the given byte length.
-        """
-        return self.range_for_length(length) is not None
+    def __init__(self, start, end):
+        assert end is None or end >= 0, "Bad range end: %r" % end
+        self.start = start
+        self.end = end # non-inclusive
 
     def range_for_length(self, length):
         """
             *If* there is only one range, and *if* it is satisfiable by
-            the given length, then return a (begin, end) non-inclusive range
+            the given length, then return a (start, end) non-inclusive range
             of bytes to serve.  Otherwise return None
         """
-        if length is None or len(self.ranges) != 1:
+        if length is None:
             return None
-        start, end = self.ranges[0]
+        start, end = self.start, self.end
         if end is None:
             end = length
             if start < 0:
@@ -54,87 +53,40 @@ class Range(object):
         return ContentRange(range[0], range[1], length)
 
     def __str__(self):
-        parts = []
-        for begin, end in self.ranges:
-            if end is None:
-                if begin >= 0:
-                    parts.append('%s-' % begin)
-                else:
-                    parts.append(str(begin))
-            else:
-                if begin < 0:
-                    raise ValueError(
-                        "(%r, %r) should have a non-negative first value"
-                        % (begin, end))
-                if end <= 0:
-                    raise ValueError(
-                        "(%r, %r) should have a positive second value"
-                        % (begin, end))
-                parts.append('%s-%s' % (begin, end-1))
-        return 'bytes=%s' % ','.join(parts)
+        s,e = self.start, self.end
+        if e is None:
+            r = 'bytes=%s' % s
+            if s >= 0:
+                r += '-'
+            return r
+        return 'bytes=%s-%s' % (s, e-1)
 
     def __repr__(self):
-        return '<%s ranges=%s>' % (
+        return '%s(%r, %r)' % (
             self.__class__.__name__,
-            ', '.join(map(repr, self.ranges)))
+            self.start, self.end)
+
+    def __iter__(self):
+        return iter((self.start, self.end))
 
     @classmethod
     def parse(cls, header):
         """
             Parse the header; may return None if header is invalid
         """
-        bytes = cls.parse_bytes(header)
-        if bytes is None:
+        m = _rx_range.match(header or '')
+        if not m:
             return None
-        units, ranges = bytes
-        if units != 'bytes' or ranges is None:
+        start, end = m.groups()
+        if not start:
+            return cls(-int(end), None)
+        start = int(start)
+        if not end:
+            return cls(start, None)
+        end = int(end) + 1 # return val is non-inclusive
+        if start >= end:
             return None
-        return cls(ranges)
-
-    @staticmethod
-    def parse_bytes(header):
-        """
-            Parse a Range header into (bytes, list_of_ranges).
-            ranges in list_of_ranges are non-inclusive (unlike the HTTP header).
-
-            Will return None if the header is invalid
-        """
-        if not header:
-            raise TypeError("The header must not be empty")
-        ranges = []
-        last_end = 0
-        try:
-            (units, range) = header.split("=", 1)
-            units = units.strip().lower()
-            for item in range.split(","):
-                if '-' not in item:
-                    raise ValueError()
-                if item.startswith('-'):
-                    # This is a range asking for a trailing chunk.
-                    if last_end < 0:
-                        raise ValueError('too many end ranges')
-                    begin = int(item)
-                    end = None
-                    last_end = -1
-                else:
-                    (begin, end) = item.split("-", 1)
-                    begin = int(begin)
-                    if begin < last_end or last_end < 0:
-                        raise ValueError('begin<last_end, or last_end<0')
-                    if end.strip():
-                        end = int(end) + 1 # return val is non-inclusive
-                        if begin >= end:
-                            raise ValueError('begin>end')
-                    else:
-                        end = None
-                    last_end = end
-                ranges.append((begin, end))
-        except ValueError:
-            # In this case where the Range header is malformed,
-            # section 14.16 says to treat the request as if the
-            # Range header was not present.  How do I log this?
-            return None
-        return (units, ranges)
+        return cls(start, end)
 
 
 class ContentRange(object):
