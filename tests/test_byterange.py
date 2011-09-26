@@ -64,66 +64,28 @@ def test_contentrange_bad_input():
 
 def test_contentrange_repr():
     contentrange = ContentRange(0, 99, 100)
-    assert_true(contentrange.__repr__(), '<ContentRange bytes 0-98/100>')
+    assert_true(repr(contentrange), '<ContentRange bytes 0-98/100>')
 
-def test_contentrange_str_length_none():
-    contentrange = ContentRange(0, 99, 100)
-    contentrange.length = None
+def test_contentrange_str():
+    contentrange = ContentRange(0, 99, None)
     eq_(str(contentrange), 'bytes 0-98/*')
-
-def test_contentrange_str_start_none():
-    contentrange = ContentRange(0, 99, 100)
-    contentrange.start = None
-    contentrange.stop = None
+    contentrange = ContentRange(None, None, 100)
     eq_(str(contentrange), 'bytes */100')
 
 def test_contentrange_iter():
     contentrange = ContentRange(0, 99, 100)
     assert_true(type(contentrange.__iter__()), iter)
-
-def test_cr_parse_ok():
-    contentrange = ContentRange(0, 99, 100)
-    assert_true(contentrange.parse('bytes 0-99/100').__class__, ContentRange)
-
-def test_cr_parse_none():
-    contentrange = ContentRange(0, 99, 100)
-    eq_(contentrange.parse(None), None)
-
-def test_cr_parse_no_bytes():
-    contentrange = ContentRange(0, 99, 100)
-    eq_(contentrange.parse('0-99 100'), None)
-
-def test_cr_parse_missing_slash():
-    contentrange = ContentRange(0, 99, 100)
-    eq_(contentrange.parse('bytes 0-99 100'), None)
-
-def test_cr_parse_invalid_length():
-    contentrange = ContentRange(0, 99, 100)
-    eq_(contentrange.parse('bytes 0-99/xxx'), None)
-
-def test_cr_parse_no_range():
-    contentrange = ContentRange(0, 99, 100)
-    eq_(contentrange.parse('bytes 0 99/100'), None)
-
-def test_cr_parse_range_star():
-    contentrange = ContentRange(0, 99, 100)
-    eq_(contentrange.parse('bytes */100').__class__, ContentRange)
-
-def test_cr_parse_parse_problem_1():
-    contentrange = ContentRange(0, 99, 100)
-    eq_(contentrange.parse('bytes A-99/100'), None)
-
-def test_cr_parse_parse_problem_2():
-    contentrange = ContentRange(0, 99, 100)
-    eq_(contentrange.parse('bytes 0-B/100'), None)
-
-def test_cr_parse_content_invalid():
-    contentrange = ContentRange(0, 99, 100)
-    eq_(contentrange.parse('bytes 99-0/100'), None)
-
-def test_contentrange_str_length_start():
-    contentrange = ContentRange(0, 99, 100)
-    eq_(contentrange.parse('bytes 0 99/*'), None)
+    assert_true(ContentRange.parse('bytes 0-99/100').__class__, ContentRange)
+    eq_(ContentRange.parse(None), None)
+    eq_(ContentRange.parse('0-99 100'), None)
+    eq_(ContentRange.parse('bytes 0-99 100'), None)
+    eq_(ContentRange.parse('bytes 0-99/xxx'), None)
+    eq_(ContentRange.parse('bytes 0 99/100'), None)
+    eq_(ContentRange.parse('bytes */100').__class__, ContentRange)
+    eq_(ContentRange.parse('bytes A-99/100'), None)
+    eq_(ContentRange.parse('bytes 0-B/100'), None)
+    eq_(ContentRange.parse('bytes 99-0/100'), None)
+    eq_(ContentRange.parse('bytes 0 99/*'), None)
 
 # _is_content_range_valid function
 

@@ -3,6 +3,7 @@ import re
 __all__ = ['Range', 'ContentRange']
 
 _rx_range = re.compile('bytes=(\d*)-(\d*)')
+_rx_content_range = re.compile(r'bytes (?:(\d+)-(\d+)|[*])/(?:(\d+)|[*])')
 
 class Range(object):
     """
@@ -129,42 +130,17 @@ class ContentRange(object):
         """
             Parse the header.  May return None if it cannot parse.
         """
-        if value is None:
+        m = _rx_content_range.match(value or '')
+        if not m:
             return None
-        value = value.strip()
-        if not value.startswith('bytes '):
-            # Unparseable
+        s, e, l = m.groups()
+        if s:
+            s = int(s)
+            e = int(e) + 1
+        l = l and int(l)
+        if not _is_content_range_valid(s, e, l, response=True):
             return None
-        value = value[len('bytes '):].strip()
-        if '/' not in value:
-            # Invalid, no length given
-            return None
-        range, length = value.split('/', 1)
-        if length == '*':
-            length = None
-        elif length.isdigit():
-            length = int(length)
-        else:
-            return None # invalid length
-
-        if range == '*':
-            return cls(None, None, length)
-        elif '-' not in range:
-            # Invalid, no range
-            return None
-        else:
-            start, stop = range.split('-', 1)
-            try:
-                start = int(start)
-                stop = int(stop)
-                stop += 1 # convert to non-inclusive
-            except ValueError:
-                # Parse problem
-                return None
-            if _is_content_range_valid(start, stop, length, response=True):
-                return cls(start, stop, length)
-            return None
-
+        return cls(s, e, l)
 
 
 def _is_content_range_valid(start, stop, length, response=False):
