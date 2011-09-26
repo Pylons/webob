@@ -7,10 +7,6 @@ _rx_range = re.compile('bytes=(\d*)-(\d*)')
 class Range(object):
     """
         Represents the Range header.
-
-        This only represents ``bytes`` ranges, which are the only kind
-        specified in HTTP.  This can represent multiple sets of ranges,
-        but no place else is this multi-range facility supported.
     """
 
     def __init__(self, start, end):

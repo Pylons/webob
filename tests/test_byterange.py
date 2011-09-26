@@ -13,7 +13,10 @@ def test_not_satisfiable():
     assert range.range_for_length(50) is None
 
 def test_range_parse():
+    assert isinstance(Range.parse('bytes=0-99'), Range)
     assert Range.parse('bytes=10-5') is None
+    assert Range.parse('bytes 5-10') is None
+    assert Range.parse('words=10-5') is None
 
 def test_range_content_range_length_none():
     range = Range(0, 100)
@@ -51,115 +54,84 @@ def test_range_str_1():
 
 def test_range_repr():
     range = Range(0, 99)
-    assert_true( range.__repr__(), '<Range bytes 0-98>' )
-
-def test_parse_valid_input():
-    range = Range(0, 100)
-    eq_(range.parse( 'bytes=0-99' ).__class__, Range)
-
-def test_parse_missing_equals_sign():
-    range = Range(0, 100)
-    eq_(range.parse( 'bytes 0-99' ), None)
-
-def test_parse_invalid_units():
-    range = Range(0, 100)
-    eq_(range.parse( 'words=0-99' ), None)
+    assert_true(range.__repr__(), '<Range bytes 0-98>')
 
 
 # ContentRange class
 
 def test_contentrange_bad_input():
-    assert_raises( ValueError, ContentRange, None, 99, None )
+    assert_raises(ValueError, ContentRange, None, 99, None)
 
 def test_contentrange_repr():
-    contentrange = ContentRange( 0, 99, 100 )
-    assert_true( contentrange.__repr__(), '<ContentRange bytes 0-98/100>' )
+    contentrange = ContentRange(0, 99, 100)
+    assert_true(contentrange.__repr__(), '<ContentRange bytes 0-98/100>')
 
 def test_contentrange_str_length_none():
-    contentrange = ContentRange( 0, 99, 100 )
+    contentrange = ContentRange(0, 99, 100)
     contentrange.length = None
     eq_(str(contentrange), 'bytes 0-98/*')
 
 def test_contentrange_str_start_none():
-    contentrange = ContentRange( 0, 99, 100 )
+    contentrange = ContentRange(0, 99, 100)
     contentrange.start = None
     contentrange.stop = None
     eq_(str(contentrange), 'bytes */100')
 
 def test_contentrange_iter():
-    contentrange = ContentRange( 0, 99, 100 )
-    assert_true( type(contentrange.__iter__()), iter )
+    contentrange = ContentRange(0, 99, 100)
+    assert_true(type(contentrange.__iter__()), iter)
 
 def test_cr_parse_ok():
-    contentrange = ContentRange( 0, 99, 100 )
-    assert_true( contentrange.parse( 'bytes 0-99/100' ).__class__, ContentRange )
+    contentrange = ContentRange(0, 99, 100)
+    assert_true(contentrange.parse('bytes 0-99/100').__class__, ContentRange)
 
 def test_cr_parse_none():
-    contentrange = ContentRange( 0, 99, 100 )
-    eq_(contentrange.parse( None ), None)
+    contentrange = ContentRange(0, 99, 100)
+    eq_(contentrange.parse(None), None)
 
 def test_cr_parse_no_bytes():
-    contentrange = ContentRange( 0, 99, 100 )
-    eq_(contentrange.parse( '0-99 100' ), None)
+    contentrange = ContentRange(0, 99, 100)
+    eq_(contentrange.parse('0-99 100'), None)
 
 def test_cr_parse_missing_slash():
-    contentrange = ContentRange( 0, 99, 100 )
-    eq_(contentrange.parse( 'bytes 0-99 100' ), None)
+    contentrange = ContentRange(0, 99, 100)
+    eq_(contentrange.parse('bytes 0-99 100'), None)
 
 def test_cr_parse_invalid_length():
-    contentrange = ContentRange( 0, 99, 100 )
-    eq_(contentrange.parse( 'bytes 0-99/xxx' ), None)
+    contentrange = ContentRange(0, 99, 100)
+    eq_(contentrange.parse('bytes 0-99/xxx'), None)
 
 def test_cr_parse_no_range():
-    contentrange = ContentRange( 0, 99, 100 )
-    eq_(contentrange.parse( 'bytes 0 99/100' ), None)
+    contentrange = ContentRange(0, 99, 100)
+    eq_(contentrange.parse('bytes 0 99/100'), None)
 
 def test_cr_parse_range_star():
-    contentrange = ContentRange( 0, 99, 100 )
-    eq_(contentrange.parse( 'bytes */100' ).__class__, ContentRange)
+    contentrange = ContentRange(0, 99, 100)
+    eq_(contentrange.parse('bytes */100').__class__, ContentRange)
 
 def test_cr_parse_parse_problem_1():
-    contentrange = ContentRange( 0, 99, 100 )
-    eq_(contentrange.parse( 'bytes A-99/100' ), None)
+    contentrange = ContentRange(0, 99, 100)
+    eq_(contentrange.parse('bytes A-99/100'), None)
 
 def test_cr_parse_parse_problem_2():
-    contentrange = ContentRange( 0, 99, 100 )
-    eq_(contentrange.parse( 'bytes 0-B/100' ), None)
+    contentrange = ContentRange(0, 99, 100)
+    eq_(contentrange.parse('bytes 0-B/100'), None)
 
 def test_cr_parse_content_invalid():
-    contentrange = ContentRange( 0, 99, 100 )
-    eq_(contentrange.parse( 'bytes 99-0/100' ), None)
+    contentrange = ContentRange(0, 99, 100)
+    eq_(contentrange.parse('bytes 99-0/100'), None)
 
 def test_contentrange_str_length_start():
-    contentrange = ContentRange( 0, 99, 100 )
+    contentrange = ContentRange(0, 99, 100)
     eq_(contentrange.parse('bytes 0 99/*'), None)
 
 # _is_content_range_valid function
 
-def test_is_content_range_valid_start_none():
-    contentrange = ContentRange( 0, 99, 100 )
-    eq_(_is_content_range_valid( None, 99, 90), False)
-
-def test_is_content_range_valid_stop_none():
-    contentrange = ContentRange( 0, 99, 100 )
-    eq_(_is_content_range_valid( 99, None, 90), False)
-
-def test_is_content_range_valid_start_stop_none():
-    contentrange = ContentRange( 0, 99, 100 )
-    eq_(_is_content_range_valid( None, None, 90), True)
-
-def test_is_content_range_valid_start_none():
-    contentrange = ContentRange( 0, 99, 100 )
-    eq_(_is_content_range_valid( None, 99, 90), False)
-
-def test_is_content_range_valid_length_none():
-    contentrange = ContentRange( 0, 99, 100 )
-    eq_(_is_content_range_valid( 0, 99, None), True)
-
-def test_is_content_range_valid_stop_greater_than_length_response():
-    contentrange = ContentRange( 0, 99, 100 )
-    eq_(_is_content_range_valid( 0, 99, 90, response=True), False)
-
-def test_is_content_range_valid_stop_greater_than_length():
-    contentrange = ContentRange( 0, 99, 100 )
-    eq_(_is_content_range_valid( 0, 99, 90), True)
+def test_is_content_range_valid():
+    assert not _is_content_range_valid( None, 99, 90)
+    assert not _is_content_range_valid( 99, None, 90)
+    assert _is_content_range_valid(None, None, 90)
+    assert not _is_content_range_valid(None, 99, 90)
+    assert _is_content_range_valid(0, 99, None)
+    assert not _is_content_range_valid(0, 99, 90, response=True)
+    assert _is_content_range_valid(0, 99, 90)
