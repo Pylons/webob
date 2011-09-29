@@ -360,6 +360,39 @@ class NoVarsTestCase(unittest.TestCase):
         d = self._get_instance()
         self.assertEqual(list(d.iterkeys()), [])
 
+class TestImmutableDict(unittest.TestCase):
+    def _makeOne(self, *arg, **kw):
+        from webob.multidict import ImmutableDict
+        return ImmutableDict(*arg, **kw)
+
+    def test_is_dict(self):
+        inst = self._makeOne()
+        isinstance(inst, dict)
+
+    def test___setitem__(self):
+        inst = self._makeOne({'a':1})
+        self.assertRaises(TypeError, inst.__setitem__, 'a', 1)
+
+    def test_pop(self):
+        inst = self._makeOne({'a':1})
+        self.assertRaises(TypeError, inst.pop, 'a', '1')
+
+    def test_popitem(self):
+        inst = self._makeOne({'a':1})
+        self.assertRaises(TypeError, inst.popitem)
+
+    def test_clear(self):
+        inst = self._makeOne({'a':1})
+        self.assertRaises(TypeError, inst.clear)
+
+    def test_update(self):
+        inst = self._makeOne({'a':1})
+        self.assertRaises(TypeError, inst.update, ('b', 2), c=3)
+
+    def test_setdefault(self):
+        inst = self._makeOne({'a':1})
+        self.assertRaises(TypeError, inst.setdefault, 'b', 2)
+
 class DummyField(object):
     def __init__(self, name, value, filename=None):
         self.name = name
@@ -369,4 +402,3 @@ class DummyField(object):
 class DummyFieldStorage(object):
     def __init__(self, name, value, filename=None):
         self.list = [DummyField(name, value, filename)]
-

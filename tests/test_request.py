@@ -755,6 +755,11 @@ class BaseRequestTests(unittest.TestCase):
         req = BaseRequest({})
         self.assertEqual(req.cookies, {})
 
+    def test_cookies_is_immutable(self):
+        req = BaseRequest({})
+        cookies = req.cookies
+        self.assertRaises(TypeError, cookies.__setitem__, 'a', 1)
+
     def test_cookies_w_webob_parsed_cookies_matching_source(self):
         environ = {
             'HTTP_COOKIE': 'a=b',

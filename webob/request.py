@@ -27,7 +27,6 @@ from webob.compat import (
     native_,
     parse_qsl_text,
     reraise,
-    text_,
     text_type,
     url_encode,
     url_quote,
@@ -69,6 +68,7 @@ from webob.multidict import (
     MultiDict,
     NoVars,
     GetDict,
+    ImmutableDict,
     )
 
 from webob.util import warn_deprecation
@@ -680,7 +680,7 @@ class BaseRequest(object):
         """
         data = self.environ.get('HTTP_COOKIE', '')
         d = lambda b: b.decode('utf8')
-        r = dict((d(k), d(v)) for k,v in parse_cookie(data))
+        r = ImmutableDict((d(k), d(v)) for k,v in parse_cookie(data))
         return r
 
     def copy(self):

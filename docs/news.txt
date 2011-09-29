@@ -4,6 +4,9 @@ News
 master
 ---------
 
+* ``request.cookies`` property now returns an immutable dictionary;
+  attempting to modify it will result in a TypeError.
+
 * ``Response.etag = (tag, False)`` sets weak etag.
 
 * ``Range`` only parses single range now.
