@@ -367,7 +367,7 @@ class TestImmutableDict(unittest.TestCase):
 
     def test_is_dict(self):
         inst = self._makeOne()
-        isinstance(inst, dict)
+        self.assertTrue(isinstance(inst, dict))
 
     def test___setitem__(self):
         inst = self._makeOne({'a':1})
