@@ -12,7 +12,6 @@ from webob.compat import (
     text_type,
     bytes_,
     native_,
-    text_,
     )
 
 __all__ = ['Cookie']
