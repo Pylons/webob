@@ -484,7 +484,7 @@ class ImmutableDict(dict):
     @staticmethod
     def _immutable(*args, **kw):
         msg = "This mapping is immutable; you must copy it and change the copy"
-        raise TypeError()
+        raise TypeError(msg)
 
     __setitem__ = __delitem__ = \
         pop = popitem = clear = update = setdefault = _immutable
