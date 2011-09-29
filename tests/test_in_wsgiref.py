@@ -108,7 +108,7 @@ _test_ops_req_interrupt = {
     '/read-body': lambda req: req.body,
     '/read-post': lambda req: req.POST,
     '/read-all': lambda req: req.body_file.read(),
-    '/read-too-much': lambda req: req.body_file.read(1<<30),
+    '/read-too-much': lambda req: req.body_file.read(1<<22),
     '/readline': _req_int_readline,
     '/readlines': lambda req: req.body_file.readlines(),
     '/read-cgi': _req_int_cgi,
