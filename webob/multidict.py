@@ -480,32 +480,15 @@ class NoVars(object):
 
     __iter__ = iterkeys
 
-_immutable = 'This mapping is immutable; you must copy it and change the copy'
-
 class ImmutableDict(dict):
+    @staticmethod
+    def _immutable(*args, **kw):
+        msg = "This mapping is immutable; you must copy it and change the copy"
+        raise TypeError()
 
-    def __setitem__(self, key, value):
-        raise TypeError(_immutable)
+    __setitem__ = __delitem__ = \
+        pop = popitem = clear = update = setdefault = _immutable
 
-    def __delitem__(self, key):
-        raise TypeError(_immutable)
-
-    __marker = object()
-
-    def pop(self, key, default=__marker):
-        raise TypeError(_immutable)
-
-    def popitem(self):
-        raise TypeError(_immutable)
-
-    def clear(self):
-        raise TypeError(_immutable)
-
-    def update(self, other=(), **kwds):
-        raise TypeError(_immutable)
-
-    def setdefault(self, key, default=None):
-        raise TypeError(_immutable)
 
 def _hide_passwd(items):
     for k, v in items:
