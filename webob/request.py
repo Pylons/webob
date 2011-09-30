@@ -5,6 +5,7 @@ import os
 import re
 import sys
 import tempfile
+import json
 
 from webob.acceptparse import (
     AcceptLanguage,
@@ -33,8 +34,8 @@ from webob.compat import (
     url_unquote,
     urlparse,
     )
-from webob.cookies import parse_cookie
 
+from webob.cookies import parse_cookie
 
 from webob.descriptors import (
     CHARSET_RE,
@@ -576,6 +577,9 @@ class BaseRequest(object):
         self.body = b''
     body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
 
+    @property
+    def json_body(self):
+        return json.loads(self.body.decode(self.charset))
 
     @property
     def POST(self):

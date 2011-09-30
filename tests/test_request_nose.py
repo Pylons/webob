@@ -154,3 +154,29 @@ def test_charset_in_content_type():
     eq(req.charset, 'ascii')
     eq(dict(req.GET), {'a': 'b'})
     assert_raises(DeprecationWarning, getattr, req, 'POST')
+
+
+
+
+def test_json_body_invalid_json():
+    request = Request.blank('/', POST=b'{')
+    assert_raises(ValueError, getattr, request, 'json_body')
+
+def test_json_body_valid_json():
+    request = Request.blank('/', POST=b'{"a":1}')
+    eq(request.json_body, {'a':1})
+
+def test_json_body_alternate_charset():
+    import json
+    body = (b'\xff\xfe{\x00"\x00a\x00"\x00:\x00 \x00"\x00/\x00\\\x00u\x006\x00d\x004\x001\x00'
+        b'\\\x00u\x008\x008\x004\x00c\x00\\\x00u\x008\x00d\x008\x00b\x00\\\x00u\x005\x002\x00'
+        b'b\x00f\x00"\x00}\x00'
+    )
+    request = Request.blank('/', POST=body)
+    request.content_type = 'application/json; charset=utf-16'
+    s = request.json_body['a']
+    eq(s.encode('utf8'), b'/\xe6\xb5\x81\xe8\xa1\x8c\xe8\xb6\x8b\xe5\x8a\xbf')
+
+def test_json_body_GET_request():
+    request = Request.blank('/')
+    assert_raises(ValueError, getattr, request, 'json_body')
