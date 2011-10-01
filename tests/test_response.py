@@ -342,6 +342,8 @@ def test_from_file():
     res = Response('test')
     inp = io.BytesIO(bytes_(str(res)))
     equal_resp(res, inp)
+
+def test_from_file2():
     res = Response(app_iter=iter([b'test ', b'body']),
                     content_type='text/plain')
     inp = io.BytesIO(bytes_(str(res)))

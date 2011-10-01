@@ -20,3 +20,5 @@ Session.vim
 coverage.xml
 nosetests.xml
 env32/
+
+_website/
