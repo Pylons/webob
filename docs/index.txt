@@ -325,9 +325,11 @@ tuples; all the keys are ordered, and all the values are ordered.
 Example
 =======
 
-I haven't figured out the example I want to use here.  The
-`file-serving example <file-example.html>`_ shows how to do more
+The `file-serving example <file-example.html>`_ shows how to do more
 advanced HTTP techniques, while the `comment middleware example
 <comment-example.html>`_ shows middleware.  For applications it's more
 reasonable to use WebOb in the context of a larger framework.  `Pylons
 <http://pylonshq.com>`_ uses WebOb in 0.9.7+.
+
+.. meta::
+   :google-site-verification: 1oDd59jXPaC0wzgPn3g6cFMI-QvEHjkh8-2rlZeXqwc
