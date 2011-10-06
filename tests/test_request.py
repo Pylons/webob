@@ -221,6 +221,14 @@ class BaseRequestTests(unittest.TestCase):
         self.assert_(isinstance(req.upath_info, text_type))
         self.assertEqual(req.upath_info, '/path/info')
 
+    def test_upath_info_set_unicode(self):
+        environ = {'PATH_INFO': '/path/info',
+                  }
+        req = BaseRequest(environ)
+        req.upath_info = text_('/another')
+        self.assert_(isinstance(req.upath_info, text_type))
+        self.assertEqual(req.upath_info, '/another')
+
     def test_content_type_getter_no_parameters(self):
         environ = {'CONTENT_TYPE': 'application/xml+foobar',
                   }
@@ -2020,7 +2028,10 @@ class RequestTests_functional(unittest.TestCase):
         from webob.request import environ_from_url
         env = environ_from_url('/%E6%B5%81')
         self.assertEqual(env['PATH_INFO'], '/\xe6\xb5\x81')
-        self.assertEqual(Request(env).path_info, b'/\xe6\xb5\x81'.decode('utf8')) # u'/\u6d41'
+        request = Request(env)
+        self.assertEqual(request.path_info, '/\xe6\xb5\x81')
+        self.assertEqual(request.upath_info,
+                         b'/\xe6\xb5\x81'.decode('utf8')) # u'/\u6d41'
 
 
     def test_post_does_not_reparse(self):

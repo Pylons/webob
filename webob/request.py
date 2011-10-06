@@ -256,20 +256,13 @@ class BaseRequest(object):
         environ_getter('SERVER_PORT'),
         parse_int, serialize_int, 'int')
 
-    script_name = upath_property('SCRIPT_NAME')
-    path_info = upath_property('PATH_INFO')
-    uscript_name = deprecated_property(
-        script_name,
-        'uscript_name',
-        "Use script_name directly",
-        '1.3'
-    )
-    upath_info = deprecated_property(
-        path_info,
-        'upath_info',
-        "Use path_info directly",
-        '1.3'
-    )
+    # native strings
+    script_name = environ_getter('SCRIPT_NAME', '')
+    path_info = environ_getter('PATH_INFO')
+
+    # text
+    uscript_name = upath_property('SCRIPT_NAME')
+    upath_info = upath_property('PATH_INFO')
 
     _content_type_raw = environ_getter('CONTENT_TYPE', '')
 

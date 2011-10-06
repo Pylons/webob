@@ -26,6 +26,13 @@ master
   lifetime of the response just as you passed them.  Default values for both
   ``request`` and ``environ`` on any given response are ``None`` now.
 
+* Undeprecated ``uscript_name`` and ``upath_info``.
+
+* For backwards compatibility purposes, switch ``req.script_name`` and
+  ``path_info`` back again to contain "raw" undecoded native strings rather
+  than text.  Use ``uscript_name`` and ``upath_info`` to get the text version
+  of SCRIPT_NAME and PATH_INFO.
+
 1.2a2
 ---------
 
