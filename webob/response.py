@@ -1181,5 +1181,5 @@ def _error_unicode_in_app_iter(app_iter, body):
 
 
 # TODO: remove in 1.4
-Response.request = deprecated_property(None, 'request', 'Response.request will be removed completely in 1.4', '1.2')
-Response.environ = deprecated_property(None, 'environ', 'Response.environ will be removed completely in 1.4', '1.2')
+Response.request = deprecated_property('request', 'request', 'Response.request will be removed completely in 1.4', '1.2')
+Response.environ = deprecated_property('environ',  'environ', 'Response.environ will be removed completely in 1.4', '1.2')
