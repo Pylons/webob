@@ -15,10 +15,16 @@ master
 
 * ``Accept.best_matches()`` is gone.
 
-* Fix deprecation error messages for ``response.request`` and
-  ``response.environ`` (they previously showed ``None`` as the attribute name
-  when displayed).
-
+* ``Response.request`` and ``Response.environ`` attrs are undeprecated and no
+  longer raise exceptions when used.  These can also be passed to the
+  Response constructor.  This is to support codebases that pass them to the
+  constructor or assign them to a response instance.  However, some behavior
+  differences from 1.1 exist.  In particular, synchronization is no longer
+  done between environ and request attribute properties of Response; you may
+  pass either to the constructor (or both) or assign one or the other or
+  both, but they wont be managed specially and will remain the same over the
+  lifetime of the response just as you passed them.  Default values for both
+  ``request`` and ``environ`` on any given response are ``None`` now.
 
 1.2a2
 ---------

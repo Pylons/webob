@@ -379,12 +379,14 @@ def test_date_header_fdel():
     eq_(desc.fget(resp), None)
 
 def test_deprecated_property():
-    from webob import Response
-    assert_raises(DeprecationWarning, Response, environ={})
-    resp = Response()
-    assert_raises(DeprecationWarning, getattr, resp, 'environ')
-    assert_raises(DeprecationWarning, setattr, resp, 'environ', {})
-    assert_raises(DeprecationWarning, delattr, resp, 'environ')
+    from webob.descriptors import deprecated_property
+    class Foo(object):
+        pass
+    Foo.attr = deprecated_property('attr', 'attr', 'whatever', '1.2')
+    foo = Foo()
+    assert_raises(DeprecationWarning, getattr, foo, 'attr')
+    assert_raises(DeprecationWarning, setattr, foo, 'attr', {})
+    assert_raises(DeprecationWarning, delattr, foo, 'attr')
 
 def test_parse_etag_response():
     from webob.descriptors import parse_etag_response
