@@ -4,8 +4,9 @@ News
 master
 ---------
 
-* ``request.cookies`` property now returns an immutable dictionary;
-  attempting to modify it will result in a TypeError.
+* Mutating the ``request.cookies`` property now retains the mutated value
+  during the course of a single request (bug-for-bug compatibility with
+  previous versions; in-the-wild codebases depend upon this behavior).
 
 * ``Response.etag = (tag, False)`` sets weak etag.
 

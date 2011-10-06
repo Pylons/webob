@@ -69,7 +69,6 @@ from webob.multidict import (
     MultiDict,
     NoVars,
     GetDict,
-    ImmutableDict,
     )
 
 from webob.util import warn_deprecation
@@ -671,7 +670,8 @@ class BaseRequest(object):
     @property
     def params(self):
         """
-        Like ``.str_params``, but decodes values and keys
+        A dictionary-like object containing both the parameters from
+        the query string and request body.
         """
         params = NestedMultiDict(self.GET, self.POST)
         return params
@@ -680,12 +680,18 @@ class BaseRequest(object):
     @property
     def cookies(self):
         """
-        Like ``.str_cookies``, but decodes values and keys
+        Return a dictionary of cookies as found in the request.
         """
+        env = self.environ
         data = self.environ.get('HTTP_COOKIE', '')
+        if 'webob._parsed_cookies' in env:
+            vars, var_source = env['webob._parsed_cookies']
+            if var_source == data:
+                return vars
         d = lambda b: b.decode('utf8')
-        r = ImmutableDict((d(k), d(v)) for k,v in parse_cookie(data))
-        return r
+        vars = dict((d(k), d(v)) for k,v in parse_cookie(data))
+        env['webob._parsed_cookies'] = (vars, data)
+        return vars
 
     def copy(self):
         """

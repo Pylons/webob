@@ -5,7 +5,6 @@
 Gives a multi-value dictionary object (MultiDict) plus several wrappers
 """
 from collections import MutableMapping
-from collections import Mapping
 
 import warnings
 
@@ -479,16 +478,6 @@ class NoVars(object):
         iteritems = iterkeys
 
     __iter__ = iterkeys
-
-class ImmutableDict(dict):
-    @staticmethod
-    def _immutable(*args, **kw):
-        msg = "This mapping is immutable; you must copy it and change the copy"
-        raise TypeError(msg)
-
-    __setitem__ = __delitem__ = \
-        pop = popitem = clear = update = setdefault = _immutable
-
 
 def _hide_passwd(items):
     for k, v in items:
