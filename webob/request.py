@@ -671,7 +671,8 @@ class BaseRequest(object):
     @property
     def params(self):
         """
-        Like ``.str_params``, but decodes values and keys
+        A dictionary-like object containing both the parameters from
+        the query string and request body.
         """
         params = NestedMultiDict(self.GET, self.POST)
         return params
@@ -680,7 +681,7 @@ class BaseRequest(object):
     @property
     def cookies(self):
         """
-        Like ``.str_cookies``, but decodes values and keys
+        Return a dictionary of cookies as found in the request.
         """
         data = self.environ.get('HTTP_COOKIE', '')
         d = lambda b: b.decode('utf8')
