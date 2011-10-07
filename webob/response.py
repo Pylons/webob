@@ -51,7 +51,6 @@ from webob.descriptors import (
     serialize_content_range,
     serialize_etag_response,
     serialize_int,
-    deprecated_property,
     )
 
 from webob.headers import ResponseHeaders
@@ -74,6 +73,8 @@ class Response(object):
     default_charset = 'UTF-8' # TODO: deprecate
     unicode_errors = 'strict' # TODO: deprecate (why would response body have errors?)
     default_conditional_response = False
+    request = None
+    environ = None
 
     #
     # __init__, from_file, copy
@@ -1177,8 +1178,3 @@ def _error_unicode_in_app_iter(app_iter, body):
     raise TypeError(
         'An item of the app_iter (%s) was text, causing a '
         'text body: %r' % (app_iter_repr, body))
-
-
-# TODO: remove in 1.4
-Response.request = deprecated_property('request', 'request', 'Response.request will be removed completely in 1.4', '1.2')
-Response.environ = deprecated_property('environ',  'environ', 'Response.environ will be removed completely in 1.4', '1.2')
