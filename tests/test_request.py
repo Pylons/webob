@@ -24,6 +24,11 @@ class BaseRequestTests(unittest.TestCase):
         req = BaseRequest(environ)
         self.assertEqual(req.environ, environ)
 
+    def test_ctor_w_non_utf8_charset(self):
+        environ = {}
+        self.assertRaises(DeprecationWarning, BaseRequest, environ,
+                          charset='latin-1')
+
     def test_body_file_getter(self):
         body = b'input'
         INPUT = BytesIO(body)

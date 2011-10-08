@@ -99,9 +99,15 @@ class BaseRequest(object):
             raise TypeError("WSGI environ must be a dict")
         if (unicode_errors is not None
             or not _is_utf8(charset)
-        ): # pragma: no cover
-            raise DeprecationWarning("If you get non-UTF-8 requests, "
-                "use req = req.decode(charset)"
+        ):
+            raise DeprecationWarning(
+                "As of WebOb 1.2, if you need a non-UTF-8 request charset, "
+                "please construct the request with a charset of ``None`` "
+                "then use ``req = req.decode(charset)`` instead of passing "
+                "a non-UTF8 charset to the Reqeuest constructor.  This "
+                "exception is also thrown if you pass ``unicode_errors`` as "
+                "a non-``None`` value; this constructor argument is no "
+                "longer supported."
             )
         d = self.__dict__
         d['environ'] = environ
@@ -658,7 +664,8 @@ class BaseRequest(object):
         if self.charset != 'UTF-8':
             raise DeprecationWarning(
                 "Requests are expected to be submitted in UTF-8, not %s. "
-                "You can fix this by doing req = req.decode()" % self.charset
+                "You can fix this by doing req = req.decode('%s')" % (
+                    self.charset, self.charset)
             )
 
     @property
