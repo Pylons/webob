@@ -104,7 +104,7 @@ class BaseRequest(object):
                 "As of WebOb 1.2, if you need a non-UTF-8 request charset, "
                 "please construct the request with a charset of ``None`` "
                 "then use ``req = req.decode(charset)`` instead of passing "
-                "a non-UTF8 charset to the Reqeuest constructor.  This "
+                "a non-UTF8 charset to the Request constructor.  This "
                 "exception is also thrown if you pass ``unicode_errors`` as "
                 "a non-``None`` value; this constructor argument is no "
                 "longer supported."
