@@ -35,7 +35,7 @@ from webob.compat import (
     urlparse,
     )
 
-from webob.cookies import parse_cookie
+from webob.cookies import RequestCookies
 
 from webob.descriptors import (
     CHARSET_RE,
@@ -682,16 +682,13 @@ class BaseRequest(object):
         """
         Return a dictionary of cookies as found in the request.
         """
-        env = self.environ
-        data = self.environ.get('HTTP_COOKIE', '')
-        if 'webob._parsed_cookies' in env:
-            vars, var_source = env['webob._parsed_cookies']
-            if var_source == data:
-                return vars
-        d = lambda b: b.decode('utf8')
-        vars = dict((d(k), d(v)) for k,v in parse_cookie(data))
-        env['webob._parsed_cookies'] = (vars, data)
-        return vars
+        return RequestCookies(self.environ)
+
+    @cookies.setter
+    def cookies(self, val):
+        self.environ.pop('HTTP_COOKIE', None)
+        r = RequestCookies(self.environ)
+        r.update(val)
 
     def copy(self):
         """

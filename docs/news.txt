@@ -4,9 +4,8 @@ News
 master
 ---------
 
-* Mutating the ``request.cookies`` property now retains the mutated value
-  during the course of a single request (bug-for-bug compatibility with
-  previous versions; in-the-wild codebases depend upon this behavior).
+* Mutating the ``request.cookies`` property now reflects the mutations into
+  the ``HTTP_COOKIES`` environ header.
 
 * ``Response.etag = (tag, False)`` sets weak etag.
 

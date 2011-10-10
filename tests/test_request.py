@@ -1,3 +1,4 @@
+import collections
 import unittest, warnings
 from webob.request import Request
 from webob.request import BaseRequest
@@ -790,6 +791,16 @@ class BaseRequestTests(unittest.TestCase):
         req = BaseRequest(environ)
         self.assertEqual(req.cookies, {'a': 'b'})
 
+    def test_set_cookies(self):
+        environ = {
+            'HTTP_COOKIE': 'a=b',
+        }
+        req = BaseRequest(environ)
+        req.cookies = {'a':'1', 'b': '2'}
+        self.assertEqual(req.cookies, {'a': '1', 'b':'2'})
+        rcookies = [x.strip() for x in environ['HTTP_COOKIE'].split(';')]
+        self.assertEqual(sorted(rcookies), ['a=1', 'b=2'])
+
     def test_is_xhr_no_header(self):
         req = BaseRequest({})
         self.assert_(not req.is_xhr)
@@ -1531,7 +1542,7 @@ class RequestTests_functional(unittest.TestCase):
                 'datetime.datetime(1994, 10, 29, 19, 43, 31, tzinfo=UTC)',
             "user_agent: 'Mozilla",
             'is_xhr: True',
-            "cookies is {",
+            "cookies is <RequestCookies",
             'var1',
             'value1',
             'params is NestedMultiDict',
@@ -2237,7 +2248,7 @@ class RequestTests_functional(unittest.TestCase):
 
         # Cookies
         req.headers['Cookie'] = 'test=value'
-        self.assert_(isinstance(req.cookies, dict))
+        self.assert_(isinstance(req.cookies, collections.MutableMapping))
         self.assertEqual(list(req.cookies.items()), [('test', 'value')])
         req.charset = None
         self.assertEqual(req.cookies, {'test': 'value'})
