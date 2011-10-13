@@ -57,7 +57,7 @@ def test_HTTPException():
     start_response = object()
     exc = HTTPException('testing', _response)
     ok_(exc.wsgi_response is _response)
-    assert_raises(DeprecationWarning, getattr, exc, 'exception')
+    assert(exc.exception is exc)
     result = exc(environ, start_response)
     ok_(result is result)
     assert_equal(_called, [(environ, start_response)])

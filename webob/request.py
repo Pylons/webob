@@ -6,6 +6,7 @@ import re
 import sys
 import tempfile
 import json
+import warnings
 
 from webob.acceptparse import (
     AcceptLanguage,
@@ -93,20 +94,35 @@ class BaseRequest(object):
     ## in memory):
     request_body_tempfile_limit = 10*1024
 
-    def __init__(self, environ, charset=None, unicode_errors=None, **kw):
+    def __init__(self, environ, charset=None, unicode_errors=None,
+                 decode_param_names=None, **kw):
         if type(environ) is not dict:
-            raise TypeError("WSGI environ must be a dict")
-        if (unicode_errors is not None
-            or not _is_utf8(charset)
-        ):
+            raise TypeError(
+                "WSGI environ must be a dict; you passed %r" % (environ,))
+        if unicode_errors is not None:
+            warnings.warn(
+                "You unicode_errors=%r to the Request constructor.  Passing a "
+                "``unicode_errors`` value to the Request is no longer "
+                "supported in WebOb 1.2+.  This value has been ignored " % (
+                    unicode_errors,),
+                DeprecationWarning
+                )
+        if decode_param_names is not None:
+            warnings.warn(
+                "You passed decode_param_names=%r to the Request constructor. "
+                "Passing a ``decode_param_names`` value to the Request "
+                "is no longer supported in WebOb 1.2+.  This value has "
+                "been ignored " % (decode_param_names,),
+                DeprecationWarning
+                )
+        if not _is_utf8(charset):
             raise DeprecationWarning(
-                "As of WebOb 1.2, if you need a non-UTF-8 request charset, "
-                "please construct the request with a charset of ``None`` "
-                "then use ``req = req.decode(charset)`` instead of passing "
-                "a non-UTF8 charset to the Request constructor.  This "
-                "exception is also thrown if you pass ``unicode_errors`` as "
-                "a non-``None`` value; this constructor argument is no "
-                "longer supported."
+                "You passed charset=%r to the Request constructor. As of "
+                "WebOb 1.2, if your application needs a non-UTF-8 request "
+                "charset, please construct the request without a charset or "
+                "with a charset of 'None',  then use ``req = "
+                "req.decode(charset)``" % charset
+
             )
         d = self.__dict__
         d['environ'] = environ

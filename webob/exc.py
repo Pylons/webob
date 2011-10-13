@@ -211,7 +211,8 @@ class HTTPException(Exception):
     # TODO: remove in version 1.3
     @property
     def exception(self):
-        warn_deprecation("Raise HTTP exceptions directly", '1.2', 2)
+        warn_deprecation("Raise HTTP exceptions directly", '1.3', 2)
+        return self
 
 class WSGIHTTPException(Response, HTTPException):
 

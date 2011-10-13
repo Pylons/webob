@@ -30,6 +30,16 @@ class BaseRequestTests(unittest.TestCase):
         self.assertRaises(DeprecationWarning, BaseRequest, environ,
                           charset='latin-1')
 
+    def test_ctor_w_unicode_errors(self):
+        with warnings.catch_warnings(record=True) as w:
+            BaseRequest({}, unicode_errors=True)
+        self.assertEqual(len(w), 1)
+
+    def test_ctor_w_decode_param_names(self):
+        with warnings.catch_warnings(record=True) as w:
+            BaseRequest({}, decode_param_names=True)
+        self.assertEqual(len(w), 1)
+
     def test_body_file_getter(self):
         body = b'input'
         INPUT = BytesIO(body)
