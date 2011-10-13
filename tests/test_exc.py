@@ -48,6 +48,7 @@ def test_strip_tags_zaps_tags():
     assert_equal(strip_tags('foo<bar>baz</bar>'), 'foobaz')
 
 def test_HTTPException():
+    import warnings
     _called = []
     _result = object()
     def _response(environ, start_response):
@@ -57,7 +58,9 @@ def test_HTTPException():
     start_response = object()
     exc = HTTPException('testing', _response)
     ok_(exc.wsgi_response is _response)
-    assert(exc.exception is exc)
+    with warnings.catch_warnings(record=True) as w:
+        assert(exc.exception is exc)
+        assert(len(w) == 1)
     result = exc(environ, start_response)
     ok_(result is result)
     assert_equal(_called, [(environ, start_response)])

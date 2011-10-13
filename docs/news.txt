@@ -33,6 +33,13 @@ master
   than text.  Use ``uscript_name`` and ``upath_info`` to get the text version
   of SCRIPT_NAME and PATH_INFO.
 
+* Don't raise an exception if ``unicode_errors`` or ``decode_param_names`` is
+  passed to the Request constructor.  Instead, emit a warning.  For benefit
+  of Pylons 1.X, which passes both.
+
+* Don't raise an exception if HTTPException.exception is used; instead emit a
+  warning.  For benefit of Pylons 1.X, which uses it.
+
 1.2a2
 ---------
 
