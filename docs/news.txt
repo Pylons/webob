@@ -13,7 +13,9 @@ master
 
 * ``Range.satisfiable(..)`` is gone.
 
-* ``Accept.best_matches()`` is gone.
+* ``Accept.best_matches()`` is gone; use ``list(request.accept)`` or
+  ``request.accept.best_match(..)`` instead (applies to all Accept-*
+  headers) or similar with ``request.accept_language``.
 
 * ``Response.request`` and ``Response.environ`` attrs are undeprecated and no
   longer raise exceptions when used.  These can also be passed to the
