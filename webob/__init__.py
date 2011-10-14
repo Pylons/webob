@@ -11,4 +11,4 @@ __all__ = [
 
 BaseRequest.ResponseClass = Response
 
-__version__ = '1.2a2'
+__version__ = '1.2b1'

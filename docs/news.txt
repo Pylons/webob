@@ -1,7 +1,7 @@
 News
 ====
 
-master
+1.2b1
 ---------
 
 * Mutating the ``request.cookies`` property now reflects the mutations into
