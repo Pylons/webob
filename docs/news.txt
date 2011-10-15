@@ -1,7 +1,7 @@
 News
 ====
 
-master
+1.2b2
 ------
 
 * Fix ``request.cookies.get('name', 'default')``.  Previously ``default`` was
