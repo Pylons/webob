@@ -1,6 +1,12 @@
 News
 ====
 
+master
+------
+
+* Fix ``request.cookies.get('name', 'default')``.  Previously ``default`` was
+  ignored.
+
 1.2b1
 ---------
 

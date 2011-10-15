@@ -182,6 +182,11 @@ class TestRequestCookies(unittest.TestCase):
         self.assertEqual(parsed['b'], '2')
         self.assertEqual(environ['HTTP_COOKIE'], header) # no change
 
+    def test_get_missing_with_default(self):
+        environ = {}
+        inst = self._makeOne(environ)
+        self.assertEqual(inst.get('a', ''), '')
+
     def test___setitem__name_not_string_type(self):
         inst = self._makeOne({})
         self.assertRaises(TypeError, inst.__setitem__, None, 1)

@@ -108,7 +108,7 @@ class RequestCookies(collections.MutableMapping):
         return self._cache[name]
 
     def get(self, name, default=None):
-        return self._cache.get(name)
+        return self._cache.get(name, default)
 
     def __delitem__(self, name):
         name = self._valid_cookie_name(name)
