@@ -208,11 +208,11 @@ def test_nil_best_match():
     assert nilaccept.best_match([('foo', 1), ('bar', 0.5)]) == 'foo'
     assert nilaccept.best_match([('foo', 0.5), ('bar', 1)]) == 'bar'
     assert nilaccept.best_match([('foo', 0.5), 'bar']) == 'bar'
-    # default_match has no effect on NilAccept class
     assert nilaccept.best_match([('foo', 0.5), 'bar'],
                                 default_match=True) == 'bar'
     assert nilaccept.best_match([('foo', 0.5), 'bar'],
                                 default_match=False) == 'bar'
+    assert nilaccept.best_match([], default_match='fallback') == 'fallback'
 
 
 # NoAccept tests
