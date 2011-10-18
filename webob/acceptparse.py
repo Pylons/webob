@@ -224,7 +224,7 @@ class NilAccept(object):
 
     def best_match(self, offers, default_match=None):
         best_quality = -1
-        best_match = default_match
+        best_offer = default_match
         for offer in offers:
             _check_offer(offer)
             if isinstance(offer, (list, tuple)):
