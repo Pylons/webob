@@ -1,6 +1,12 @@
 News
 ====
 
+Next release
+------------
+
+* Added ``request.host_port`` API (returns port number implied by HTTP_HOST,
+  falling back to SERVER_PORT).
+
 1.2b2
 ------
 

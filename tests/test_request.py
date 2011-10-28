@@ -331,6 +331,55 @@ class BaseRequestTests(unittest.TestCase):
             del req.headers
         self.assertRaises(AttributeError, _test)
 
+    def test_host_port_w_http_host_and_no_port(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'HTTP_HOST': 'example.com',
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.host_port, '80')
+
+    def test_host_port_w_http_host_and_standard_port(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'HTTP_HOST': 'example.com:80',
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.host_port, '80')
+
+    def test_host_port_w_http_host_and_oddball_port(self):
+        environ = {'wsgi.url_scheme': 'http',
+                   'HTTP_HOST': 'example.com:8888',
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.host_port, '8888')
+
+    def test_host_port_w_http_host_https_and_no_port(self):
+        environ = {'wsgi.url_scheme': 'https',
+                   'HTTP_HOST': 'example.com',
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.host_port, '443')
+
+    def test_host_port_w_http_host_https_and_standard_port(self):
+        environ = {'wsgi.url_scheme': 'https',
+                   'HTTP_HOST': 'example.com:443',
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.host_port, '443')
+
+    def test_host_port_w_http_host_https_and_oddball_port(self):
+        environ = {'wsgi.url_scheme': 'https',
+                   'HTTP_HOST': 'example.com:8888',
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.host_port, '8888')
+
+    def test_host_port_wo_http_host(self):
+        environ = {'wsgi.url_scheme': 'https',
+                   'SERVER_PORT': '4333',
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.host_port, '4333')
+
     def test_host_url_w_http_host_and_no_port(self):
         environ = {'wsgi.url_scheme': 'http',
                    'HTTP_HOST': 'example.com',

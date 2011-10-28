@@ -329,6 +329,33 @@ class BaseRequest(object):
     headers = property(_headers__get, _headers__set, doc=_headers__get.__doc__)
 
     @property
+    def host_port(self):
+        """
+        The effective server port number as a string.  If the ``HTTP_HOST``
+        header exists in the WSGI environ, this attribute returns the port
+        number present in that header. If the ``HTTP_HOST`` header exists but
+        contains no explicit port number: if the WSGI url scheme is "https" ,
+        this attribute returns "443", if the WSGI url scheme is "http", this
+        attribute returns "80" .  If no ``HTTP_HOST`` header is present in
+        the environ at all, this attribute will return the value of the
+        ``SERVER_PORT`` header (which is guaranteed to be present).
+        """
+        e = self.environ
+        host = e.get('HTTP_HOST')
+        if host is not None:
+            if ':' in host:
+                host, port = host.split(':', 1)
+            else:
+                url_scheme = self.environ['wsgi.url_scheme']
+                if url_scheme == 'https':
+                    port = '443'
+                else:
+                    port = '80'
+        else:
+            port = e['SERVER_PORT']
+        return port    
+
+    @property
     def host_url(self):
         """
         The URL through the host (no path)
