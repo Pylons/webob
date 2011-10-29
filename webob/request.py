@@ -329,6 +329,26 @@ class BaseRequest(object):
     headers = property(_headers__get, _headers__set, doc=_headers__get.__doc__)
 
     @property
+    def client_addr(self):
+        """
+        The effective client IP address as a string.  If the
+        ``HTTP_X_FORWARDED_FOR`` header exists in the WSGI environ, this
+        attribute returns the client IP address present in that header
+        (e.g. if the header value is ``192.168.1.1, 192.168.1.2``, the value
+        will be ``192.168.1.1``). If no ``HTTP_X_FORWARDED_FOR`` header is
+        present in the environ at all, this attribute will return the value
+        of the ``REMOTE_ADDR`` header.  If the ``REMOTE_ADDR`` header is
+        unset, this attribute will return the value ``None``.
+        """
+        e = self.environ
+        xff = e.get('HTTP_X_FORWARDED_FOR')
+        if xff is not None:
+            addr = xff.split(',')[0].strip()
+        else:
+            addr = e.get('REMOTE_ADDR')
+        return addr
+
+    @property
     def host_port(self):
         """
         The effective server port number as a string.  If the ``HTTP_HOST``

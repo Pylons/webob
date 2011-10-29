@@ -7,6 +7,9 @@ Next release
 * Added ``request.host_port`` API (returns port number implied by HTTP_HOST,
   falling back to SERVER_PORT).
 
+* Added ``request.client_addr`` API (returns IP address implied by
+  HTTP_X_FORWARDED_FOR, falling back to REMOTE_ADDR).
+
 1.2b2
 ------
 

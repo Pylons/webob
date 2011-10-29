@@ -331,6 +331,38 @@ class BaseRequestTests(unittest.TestCase):
             del req.headers
         self.assertRaises(AttributeError, _test)
 
+    def test_client_addr_xff_singleval(self):
+        environ = {
+                   'HTTP_X_FORWARDED_FOR': '192.168.1.1',
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.client_addr, '192.168.1.1')
+
+    def test_client_addr_xff_multival(self):
+        environ = {
+                   'HTTP_X_FORWARDED_FOR': '192.168.1.1, 192.168.1.2',
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.client_addr, '192.168.1.1')
+
+    def test_client_addr_prefers_xff(self):
+        environ = {'REMOTE_ADDR': '192.168.1.2',
+                   'HTTP_X_FORWARDED_FOR': '192.168.1.1',
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.client_addr, '192.168.1.1')
+
+    def test_client_addr_no_xff(self):
+        environ = {'REMOTE_ADDR': '192.168.1.2',
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.client_addr, '192.168.1.2')
+
+    def test_client_addr_no_xff_no_remote_addr(self):
+        environ = {}
+        req = BaseRequest(environ)
+        self.assertEqual(req.client_addr, None)
+
     def test_host_port_w_http_host_and_no_port(self):
         environ = {'wsgi.url_scheme': 'http',
                    'HTTP_HOST': 'example.com',
