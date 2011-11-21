@@ -80,6 +80,7 @@ everything into memory, and that's bad.  We'll create an iterator instead:
    ...         if not chunk:
    ...             raise StopIteration
    ...         return chunk
+   ...     __next__ = next # py3 compat
    >>> def make_response(filename):
    ...     res = Response(content_type=get_mimetype(filename))
    ...     res.app_iter = FileIterable(filename)
@@ -185,6 +186,7 @@ looks for:
    ...                 # Chop off the extra:
    ...                 chunk = chunk[:self.length]
    ...         return chunk
+   ...     __next__ = next # py3 compat
 
 Now we'll test it out:
 
