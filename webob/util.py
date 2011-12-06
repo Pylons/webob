@@ -105,6 +105,7 @@ status_reasons = {
     415: 'Unsupported Media Type',
     416: 'Requested Range Not Satisfiable',
     417: 'Expectation Failed',
+    418: "I'm a teapot",
     422: 'Unprocessable Entity',
     423: 'Locked',
     424: 'Failed Dependency',
@@ -121,3 +122,11 @@ status_reasons = {
     510: 'Not Extended',
 }
 
+# generic class responses as per RFC2616
+status_generic_reasons = {
+    1: 'Continue',
+    2: 'Success',
+    3: 'Multiple Choices',
+    4: 'Unknown Client Error',
+    5: 'Unknown Server Error',
+}
