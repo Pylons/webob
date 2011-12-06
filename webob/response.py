@@ -55,7 +55,7 @@ from webob.descriptors import (
 
 from webob.headers import ResponseHeaders
 from webob.request import BaseRequest
-from webob.util import status_reasons
+from webob.util import status_reasons, status_generic_reasons
 
 __all__ = ['Response']
 
@@ -242,7 +242,10 @@ class Response(object):
                 "You must set status to a string or integer (not %s)"
                 % type(value))
         if ' ' not in value:
-            value += ' ' + status_reasons[int(value)]
+             try:
+                value += ' ' + status_reasons[int(value)]
+             except KeyError:
+                value += ' ' + status_generic_reasons[int(value) / 100]
         self._status = value
 
     status = property(_status__get, _status__set, doc=_status__get.__doc__)
@@ -253,7 +256,11 @@ class Response(object):
         """
         return int(self._status.split()[0])
     def _status_int__set(self, code):
-        self._status = '%d %s' % (code, status_reasons[code])
+         try:
+            self._status = '%d %s' % (code, status_reasons[code])
+         except KeyError:
+            self._status = '%d %s' % (code, status_generic_reasons[code / 100])
+
     status_int = property(_status_int__get, _status_int__set,
                           doc=_status_int__get.__doc__)
 
