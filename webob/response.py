@@ -838,6 +838,28 @@ class Response(object):
         else:
             cache_control.max_age = seconds
             self.expires = datetime.utcnow() + timedelta(seconds=seconds)
+            
+        # IE Fixes
+        user_agent = self.environ.get('HTTP_USER_AGENT', '')
+        if is_ie(user_agent):
+            # IE loves to cache and loves to ignore cache headers.
+            # http://blogs.msdn.com/b/ieinternals/archive/2009/07/20/using-post_2d00_check-and-pre_2d00_check-cache-directives.aspx
+            del self.cache_control.pre_check
+            del self.cache_control.post_check
+        
+            # IE also loves to screw up downloads over SSL when we try to not
+            # cache. We still have the expires header.
+            # http://support.microsoft.com/kb/323308
+            if is_ie(user_agent, max_version=(8, 9, 9)) and \
+                self.environ.get('wsgi.url_scheme', '').lower()=='https':
+                
+                del self.cache_control.no_store 
+                del self.cache_control.no_cache
+                
+                # MS didn't mention this in the KB report...
+                # http://blogs.msdn.com/b/ieinternals/archive/2009/10/03/internet-explorer-cannot-download-over-https-when-no-cache.aspx
+                del self.pragma
+                        
         for name, value in kw.items():
             setattr(cache_control, name, value)
 
@@ -1185,3 +1207,27 @@ def _error_unicode_in_app_iter(app_iter, body):
     raise TypeError(
         'An item of the app_iter (%s) was text, causing a '
         'text body: %r' % (app_iter_repr, body))
+    
+    
+def is_ie(user_agent, min_version=None, max_version=None):
+    ie = user_agent.find('MSIE')
+    if ie == -1:
+        return False
+    
+    if not min_version and not max_version:
+        return True
+    
+    version_match = re.match('\d(?:\.\d)*', user_agent[ie+5:])
+    if not version_match:
+        return False
+    
+    version = tuple(map(int, version_match.group(0).split('.')))
+    result = True
+    
+    if min_version:
+        result = result and version >= min_version
+    
+    if max_version:
+        result = result and version <= max_version
+        
+    return result
