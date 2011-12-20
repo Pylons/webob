@@ -940,7 +940,7 @@ request will an HTML response be given:
 
 
 This is taken from `paste.httpexceptions
-<http://pythonpaste.org/module-paste.httpexceptions.html>`_, and if
+<http://pythonpaste.org/modules/httpexceptions.html#module-paste.httpexceptions>`_, and if
 you have Paste installed then these exceptions will be subclasses of
 the Paste exceptions.
 
