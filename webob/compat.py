@@ -52,10 +52,11 @@ if PY3: # pragma: no cover
     from urllib import parse
     urlparse = parse
     from urllib.parse import quote as url_quote
-    from urllib.parse import urlencode as url_encode
+    from urllib.parse import urlencode as url_encode, quote_plus
     from urllib.request import urlopen as url_open
 else:
     import urlparse
+    from urllib import quote_plus
     from urllib import quote as url_quote
     from urllib import unquote as url_unquote
     from urllib import urlencode as url_encode

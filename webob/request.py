@@ -33,6 +33,7 @@ from webob.compat import (
     url_encode,
     url_quote,
     url_unquote,
+    quote_plus,
     urlparse,
     )
 
@@ -373,7 +374,7 @@ class BaseRequest(object):
                     port = '80'
         else:
             port = e['SERVER_PORT']
-        return port    
+        return port
 
     @property
     def host_url(self):
@@ -1454,9 +1455,11 @@ class FakeCGIBody(io.RawIOBase):
         if self.file is None:
             if self.content_type.startswith(
                 'application/x-www-form-urlencoded'):
-                # TODO: check if bytes_ is necessary
-                data = bytes_(url_encode(self.vars), 'utf8')
-                self.file = io.BytesIO(data)
+                data = '&'.join(
+                    '%s=%s' % (quote_plus(bytes_(k, 'utf8')), quote_plus(bytes_(v, 'utf8')))
+                    for k,v in self.vars.items()
+                )
+                self.file = io.BytesIO(bytes_(data))
             elif self.content_type.startswith('multipart/form-data'):
                 self.file = _encode_multipart(
                     self.vars.items(),
