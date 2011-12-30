@@ -182,7 +182,7 @@ def test_json_body_GET_request():
     assert_raises(ValueError, getattr, request, 'json_body')
 
 def test_non_ascii_body_params():
-    body = 'test=%D1%82%D0%B5%D1%81%D1%82'
+    body = b'test=%D1%82%D0%B5%D1%81%D1%82'
     req = Request.blank('/', POST=body)
     # acessing params parses request body
     req.params
