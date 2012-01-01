@@ -15,8 +15,6 @@ from webob.util import (
     warn_deprecation,
     )
 
-__all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'etag_property']
-
 __all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'NoIfRange',
            'etag_property']
 
