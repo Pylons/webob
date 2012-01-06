@@ -340,6 +340,16 @@ class BaseRequest(object):
         present in the environ at all, this attribute will return the value
         of the ``REMOTE_ADDR`` header.  If the ``REMOTE_ADDR`` header is
         unset, this attribute will return the value ``None``.
+
+        .. warning::
+
+           It is possible for user agents to put someone else's IP or just
+           any string in ``HTTP_X_FORWARDED_FOR`` as it is a normal HTTP
+           header. Forward proxies can also provide incorrect values (private
+           IP addresses etc).  You cannot "blindly" trust the result of this
+           method to provide you with valid data unless you're certain that
+           ``HTTP_X_FORWARDED_FOR`` has the correct values.  The WSGI server
+           must be behind a trusted proxy for this to be true.
         """
         e = self.environ
         xff = e.get('HTTP_X_FORWARDED_FOR')
