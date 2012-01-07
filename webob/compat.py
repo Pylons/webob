@@ -130,3 +130,4 @@ if PY3: # pragma no cover
     from html import escape
 else:
     from cgi import escape
+
