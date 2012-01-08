@@ -8,6 +8,7 @@ from webob.request import Request
 from webob.response import Response
 from webob.compat import text_
 from webob.compat import bytes_
+from webob.compat import PY3
 
 def simple_app(environ, start_response):
     start_response('200 OK', [
@@ -437,6 +438,25 @@ def test_request_uri_https():
         'SCRIPT_NAME': '/foobar',
     }
     eq_(_request_uri(environ), 'https://test.com/foobar')
+
+def test_request_uri_highorder_path_info_and_script_name():
+    from webob.response import _request_uri
+    encoded_path_info = b'/\xe6\xb5\x81'
+    encoded_script_name = b'/\xe6\xb5\x82'
+    if PY3:
+        wsgiencoded_path_info = encoded_path_info.decode('latin-1')
+        wsgiencoded_script_name = encoded_script_name.decode('latin-1')
+    else:
+        wsgiencoded_path_info = encoded_path_info
+        wsgiencoded_script_name = encoded_script_name
+    environ = {
+        'wsgi.url_scheme': 'http',
+        'HTTP_HOST': 'test.com',
+        'SCRIPT_NAME': wsgiencoded_script_name,
+        'PATH_INFO': wsgiencoded_path_info,
+    }
+
+    eq_(_request_uri(environ), 'http://test.com/%E6%B5%82/%E6%B5%81')
 
 def test_app_iter_range_starts_after_iter_end():
     from webob.response import AppIterRange

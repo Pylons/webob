@@ -1152,7 +1152,7 @@ def _request_uri(environ):
 
     script_name = environ.get('SCRIPT_NAME') or '/'
     path_info = environ.get('PATH_INFO','')
-    if PY3:
+    if PY3: # pragma: no cover
         script_name = script_name.encode('latin-1').decode('utf-8')
         path_info = path_info.encode('latin-1').decode('utf-8')
 

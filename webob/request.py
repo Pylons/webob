@@ -312,7 +312,7 @@ class BaseRequest(object):
         ``environ['PATH_INFO']`` will be bytes-tunnelled-via-text (as per PEP
         3333).
 
-        If no ``PATH_INFO`` is in the environ, the empty string will be
+        If no ``PATH_INFO`` is in the environ, the string '/' will be
         returned.
 
         If you attempt to set this value, you must pass a text value, not
@@ -326,10 +326,10 @@ class BaseRequest(object):
         The request attribute named ``upath_info`` is an alias for this
         attribute.
         """
-        val = self.environ.get('PATH_INFO', '')
-        if val: # optimization
+        val = self.environ.get('PATH_INFO', None)
+        if val is not None: # optimization
             return self._bytes_from_wsgi(val).decode(self.url_encoding)
-        return val
+        return '/'
 
     def _pathinfo__set(self, val):
         if not isinstance(val, text_type):
@@ -359,7 +359,7 @@ class BaseRequest(object):
         and Python 3 ``environ['PATH_INFO']`` will be
         bytes-tunnelled-via-text (as per PEP 3333).
 
-        If no ``PATH_INFO`` is in the environ, the empty string will be
+        If no ``PATH_INFO`` is in the environ, the byte value b'/' will be
         returned.
 
         If you attempt to set this value, you must pass a binary (bytes)
@@ -370,8 +370,10 @@ class BaseRequest(object):
         value will be decoded to Latin-1 and stored in the ``PATH_INFO``
         environment variable as text.
         """
-        val = self.environ.get('PATH_INFO', '')
-        return self._bytes_from_wsgi(val)
+        val = self.environ.get('PATH_INFO', None)
+        if val is not None:
+            return self._bytes_from_wsgi(val)
+        return b'/'
 
     def _pathinfo_bytes__set(self, val):
         if not isinstance(val, bytes):
@@ -1433,7 +1435,7 @@ class BaseRequest(object):
                 env['HTTP_HOST'] = netloc
             if path:
                 script_name = url_unquote(path)
-                if PY3:
+                if PY3: #pragma: no cover
                     script_name = script_name.encode('utf-8').decode('latin-1')
                 env['SCRIPT_NAME'] = script_name
         if environ:
@@ -1473,7 +1475,7 @@ def environ_from_url(path):
     else:
         path_info = url_unquote(path)
         query_string = ''
-    if PY3:
+    if PY3: # pragma: no cover
         path_info = path_info.encode('utf-8').decode('latin-1')
     env = {
         'REQUEST_METHOD': 'GET',

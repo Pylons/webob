@@ -168,11 +168,185 @@ class BaseRequestTests(unittest.TestCase):
         req = BaseRequest(environ)
         self.assertEqual(req.script_name, '/script')
 
+    def test_scriptname_empty(self):
+        environ = {'SCRIPT_NAME': '',
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.scriptname, '')
+
+    def test_scriptname_missing(self):
+        environ = {}
+        req = BaseRequest(environ)
+        self.assertEqual(req.scriptname, '')
+
+    def test_scriptname(self):
+        encoded = b'/\xe6\xb5\x81'
+        if PY3:
+            val = text_(encoded, 'latin-1')
+        else:
+            val = encoded
+        environ = {'SCRIPT_NAME': val,
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.scriptname, text_(encoded, 'utf-8'))
+
+    def test_scriptname_altencoding(self):
+        encoded = b'/\xe6\xb5\x81'
+        if PY3:
+            val = text_(encoded, 'latin-1')
+        else:
+            val = encoded
+        environ = {'SCRIPT_NAME': val,
+                  }
+        req = BaseRequest(environ)
+        req.url_encoding = 'latin-1'
+        self.assertEqual(req.scriptname, text_(encoded, 'latin-1'))
+
+    def test_scriptname_set(self):
+        encoded = b'/\xe6\xb5\x81'
+        decoded = text_(encoded, 'utf-8')
+        if PY3:
+            wsgiencoded = encoded.decode('latin-1')
+        else:
+            wsgiencoded = encoded
+        req = BaseRequest({})
+        req.scriptname = decoded
+        self.assertEqual(req.scriptname, decoded)
+        self.assertEqual(req.environ['SCRIPT_NAME'], wsgiencoded)
+
+    def test_scriptname_set_nottext(self):
+        req = BaseRequest({})
+        self.assertRaises(ValueError, req.__setattr__, 'scriptname', None)
+
+    def test_scriptname_bytes_empty(self):
+        environ = {'SCRIPT_NAME': '',
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.scriptname_bytes, b'')
+
+    def test_scriptname_bytes_missing(self):
+        environ = {}
+        req = BaseRequest(environ)
+        self.assertEqual(req.scriptname_bytes, b'')
+
+    def test_scriptname_bytes(self):
+        encoded = b'/\xe6\xb5\x81'
+        if PY3:
+            val = text_(encoded, 'latin-1')
+        else:
+            val = encoded
+        environ = {'SCRIPT_NAME': val,
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.scriptname_bytes, encoded)
+
+    def test_scriptname_bytes_set(self):
+        encoded = b'/\xe6\xb5\x81'
+        if PY3:
+            wsgiencoded = encoded.decode('latin-1')
+        else:
+            wsgiencoded = encoded
+        req = BaseRequest({})
+        req.scriptname_bytes = encoded
+        self.assertEqual(req.scriptname_bytes, encoded)
+        self.assertEqual(req.environ['SCRIPT_NAME'], wsgiencoded)
+
+    def test_scriptname_bytes_set_notbytes(self):
+        req = BaseRequest({})
+        self.assertRaises(ValueError, req.__setattr__, 'scriptname_bytes', None)
+
     def test_path_info(self):
         environ = {'PATH_INFO': '/path/info',
                   }
         req = BaseRequest(environ)
         self.assertEqual(req.path_info, '/path/info')
+
+    def test_pathinfo_empty(self):
+        environ = {'PATH_INFO': '',
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.pathinfo, '')
+
+    def test_pathinfo_missing(self):
+        environ = {}
+        req = BaseRequest(environ)
+        self.assertEqual(req.pathinfo, '/')
+
+    def test_pathinfo(self):
+        encoded = b'/\xe6\xb5\x81'
+        if PY3:
+            val = text_(encoded, 'latin-1')
+        else:
+            val = encoded
+        environ = {'PATH_INFO': val,
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.pathinfo, text_(encoded, 'utf-8'))
+
+    def test_pathinfo_altencoding(self):
+        encoded = b'/\xe6\xb5\x81'
+        if PY3:
+            path_info = text_(encoded, 'latin-1')
+        else:
+            path_info = encoded
+        environ = {'PATH_INFO': path_info,
+                  }
+        req = BaseRequest(environ)
+        req.url_encoding = 'latin-1'
+        self.assertEqual(req.pathinfo, text_(encoded, 'latin-1'))
+
+    def test_pathinfo_set(self):
+        encoded = b'/\xe6\xb5\x81'
+        decoded = text_(encoded, 'utf-8')
+        if PY3:
+            wsgiencoded = encoded.decode('latin-1')
+        else:
+            wsgiencoded = encoded
+        req = BaseRequest({})
+        req.pathinfo = decoded
+        self.assertEqual(req.pathinfo, decoded)
+        self.assertEqual(req.environ['PATH_INFO'], wsgiencoded)
+
+    def test_pathinfo_set_nottext(self):
+        req = BaseRequest({})
+        self.assertRaises(ValueError, req.__setattr__, 'pathinfo', None)
+
+    def test_pathinfo_bytes_empty(self):
+        environ = {'PATH_INFO': '',
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.pathinfo_bytes, b'')
+
+    def test_pathinfo_bytes_missing(self):
+        environ = {}
+        req = BaseRequest(environ)
+        self.assertEqual(req.pathinfo_bytes, b'/')
+
+    def test_pathinfo_bytes(self):
+        encoded = b'/\xe6\xb5\x81'
+        if PY3:
+            val = text_(encoded, 'latin-1')
+        else:
+            val = encoded
+        environ = {'PATH_INFO': val,
+                  }
+        req = BaseRequest(environ)
+        self.assertEqual(req.pathinfo_bytes, encoded)
+
+    def test_pathinfo_bytes_set(self):
+        encoded = b'/\xe6\xb5\x81'
+        if PY3:
+            wsgiencoded = encoded.decode('latin-1')
+        else:
+            wsgiencoded = encoded
+        req = BaseRequest({})
+        req.pathinfo_bytes = encoded
+        self.assertEqual(req.pathinfo_bytes, encoded)
+        self.assertEqual(req.environ['PATH_INFO'], wsgiencoded)
+
+    def test_pathinfo_bytes_set_notbytes(self):
+        req = BaseRequest({})
+        self.assertRaises(ValueError, req.__setattr__, 'pathinfo_bytes', None)
 
     def test_content_length_getter(self):
         environ = {'CONTENT_LENGTH': '1234',
@@ -1345,6 +1519,13 @@ class BaseRequestTests(unittest.TestCase):
             '/', environ={'CONTENT_TYPE': 'application/json'}, POST='')
         self.assertEqual(request.content_type, 'application/json')
         self.assertEqual(request.method, 'POST')
+
+    def test_blank__highorder_path_in_base_url(self):
+        base_url = 'http://localhost:8080/%E6%B5%81'
+        encoded = b'/\xe6\xb5\x81'
+        request = BaseRequest.blank('/abc', base_url=base_url)
+        self.assertEqual(request.scriptname_bytes, encoded)
+        self.assertEqual(request.pathinfo, '/abc')
 
     def test_blank__ctype_in_headers(self):
         request = BaseRequest.blank(
