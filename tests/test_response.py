@@ -997,10 +997,29 @@ def test_decode_content_gzip():
 
 def test__abs_headerlist_location_with_scheme():
     res = Response()
-    res.content_encoding = 'gzip'
     res.headerlist = [('Location', 'http:')]
     result = res._abs_headerlist({})
     eq_(result, [('Location', 'http:')])
+
+def test__abs_headerlist_location_with_relative():
+    encoded_path_info = b'/\xe6\xb5\x81'
+    encoded_script_name = b'/\xe6\xb5\x82'
+    if PY3:
+        wsgiencoded_path_info = encoded_path_info.decode('latin-1')
+        wsgiencoded_script_name = encoded_script_name.decode('latin-1')
+    else:
+        wsgiencoded_path_info = encoded_path_info
+        wsgiencoded_script_name = encoded_script_name
+    environ = {
+        'wsgi.url_scheme': 'http',
+        'HTTP_HOST': 'test.com',
+        'SCRIPT_NAME': wsgiencoded_script_name,
+        'PATH_INFO': wsgiencoded_path_info,
+    }
+    res = Response()
+    res.headerlist = [('Location', 'foo')]
+    result = res._abs_headerlist(environ)
+    eq_(result, [('Location', 'http://test.com/%E6%B5%82/%E6%B5%81/foo')])
 
 def test_response_set_body_file1():
      data  = b'abc'

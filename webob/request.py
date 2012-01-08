@@ -281,8 +281,16 @@ class BaseRequest(object):
         parse_int, serialize_int, 'int')
 
     # raw wsgi values (bytes on py2, bytes-tunneled-via-text on py3)
-    script_name = environ_getter('SCRIPT_NAME', '')
-    path_info = environ_getter('PATH_INFO')
+    script_name = deprecated_property(
+        environ_getter('SCRIPT_NAME', ''),
+        'script_name',
+        'deprecated in WebOb 1.2, use scriptname or scriptname_bytes instead',
+        '1.4')
+    path_info = deprecated_property(
+        environ_getter('PATH_INFO'),
+        'path_info',
+        'deprecated in WebOb 1.2, use pathinfo or pathinfo_bytes instead',
+        '1.4')
 
     if PY3: # pragma: no cover
         def _bytes_to_wsgi(self, val):
@@ -671,7 +679,8 @@ class BaseRequest(object):
 
         Optional ``pattern`` argument is a regexp to match the return value
         before returning. If there is no match, no changes are made to the
-        request and None is returned.
+        request and None is returned.  The pattern must always match against
+        a bytes object (not unicode).
         """
         path = self.pathinfo_bytes
         if not path:
@@ -684,7 +693,7 @@ class BaseRequest(object):
         if idx == -1:
             idx = len(path)
         r = path[:idx]
-        if pattern is None or re.match(pattern, r.decode(self.url_encoding)):
+        if pattern is None or re.match(pattern, r):
             self.scriptname_bytes += slashes + r
             self.pathinfo_bytes = path[idx:]
             return r

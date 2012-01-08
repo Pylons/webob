@@ -15,6 +15,75 @@ Next release
 
 * Removed (non-API) ``webob.descriptors.upath_property``.
 
+* ``request.path_info_pop`` and ``request.path_info_peek`` now return
+  bytestrings on Python 3.  Previously, they would return text.  Rationale:
+  the raw value of ``PATH_INFO`` on Python 3 is "WSGI-encoded", and doesn't
+  make sense to work against at all.  We normalize behavior on Python 2 and
+  Python 3 by explicitly working against and returning bytes on both
+  platforms.
+
+* ``Request.blank(<url_with_nonascii_url_encoded_value>)`` and
+  ``Request.blank(base_url=<url_with_nonascii_url_encoded_value>)`` now
+  produce a request environment with correct ``PATH_INFO`` and
+  ``SCRIPT_NAME`` environment variables.
+
+* Request.from_file now produces a request environment with correct
+  ``PATH_INFO`` and ``SCRIPT_NAME`` environment variables when the header
+  line of the request contains nonascii characters in the URI.
+
+* Response ``location`` header value mutation (converting relative paths to
+  absolute) when a response is generated will now create the correct URL when
+  SCRIPT_NAME or PATH_INFO exists in the environment.  Also fixed same code
+  to not barf when nonascii characters are in the location.
+
+* BaseRequest now accepts a ``url_encoding`` argument, which defaults to
+  'utf-8'.  It represents the presumed encoding of the SCRIPT_NAME and
+  PATH_INFO environment variables.
+
+* Four new descriptor APIs have been added to BaseRequest: ``pathinfo``,
+  ``pathinfo_bytes``, ``scriptname``, and ``scriptname_bytes``.  These
+  supersede the existing ``path_info`` and ``script_name`` descriptors and
+  should be used going forward instead. The ``path_info`` and ``script_name``
+  descriptor have been deprecated.
+
+  This was done to address Python 3-related PEP 3333 issues.  The older
+  ``path_info`` and ``script_name`` descriptors have historically operated
+  against the raw ``PATH_INFO`` and ``SCRIPT_NAME`` values in the WSGI
+  environment, treating them as if they were bytestring values.  However,
+  because PEP 3333 specifies that PATH_INFO and SCRIPT_NAME are *text* (raw
+  bytes decoded from Latin-1) on Python 3, operating on the raw environ
+  values as if they are bytes is not sane on that platform, and will not
+  work.
+
+  In the meantime, we can't just make ``path_info`` and ``script_name``
+  return decoded (Unicode) values on Python 2 without breaking existing
+  consumer code, and having these return bytestrings on Python 3 is what no
+  one expects.  It's generally much saner to operate against text (decoded)
+  values on both platforms, and we'd prefer to make this the default
+  name-wise going forward. So we've chosen to deprecate both ``path_info``
+  and ``script_name``.  They'll continue operating like they always have,
+  which is to say, they'll work fine on Python 2, and they'll return nonsense
+  on Python 3.  We'll leave both in place for a long time, but they'll emit a
+  warning when used.
+
+  ``pathinfo`` is a replacement for the older deprecated ``path_info``
+  descriptor; it returns the PATH_INFO as unicode/text (decoded using the
+  request's url_encoding).  It's a descriptor, so you can also set it using a
+  text value.  It will raise an exception if you try to set it using a
+  non-text value.  ``pathinfo_bytes`` is the bytes-oriented version, which
+  you can use to get and set PATH_INFO using a bytes value.
+
+  ``scriptname`` is a replacement for the older deprecated ``script_name``
+  descriptor; it returns the SCRIPT_NAME as unicode/text (decoded using the
+  request's url_encoding).  It's a descriptor, so you can also set it using a
+  text value.  It will raise an exception if you try to set it using a
+  non-text value.  ``scriptname_bytes`` is the bytes-oriented version, which
+  you can use to get and set SCRIPT_NAME using a bytes value.
+
+  The pre-existing ``upath_info`` descriptor is now aliased to the new
+  ``pathinfo`` descriptor.  The pre-existing ``uscript_name`` descriptor is
+  now aliased to the new ``scriptname`` descriptor.
+
 1.2b2
 ------
 

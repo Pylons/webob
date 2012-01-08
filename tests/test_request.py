@@ -797,7 +797,7 @@ class BaseRequestTests(unittest.TestCase):
 
     def test_path_info_pop_non_empty_w_pattern_miss(self):
         import re
-        PATTERN = re.compile('miss')
+        PATTERN = re.compile(b'miss')
         environ = {'wsgi.url_scheme': 'http',
                    'SERVER_NAME': 'example.com',
                    'SERVER_PORT': '80',
@@ -812,7 +812,7 @@ class BaseRequestTests(unittest.TestCase):
 
     def test_path_info_pop_non_empty_w_pattern_hit(self):
         import re
-        PATTERN = re.compile('path')
+        PATTERN = re.compile(b'path')
         environ = {'wsgi.url_scheme': 'http',
                    'SERVER_NAME': 'example.com',
                    'SERVER_PORT': '80',

@@ -934,8 +934,10 @@ class Response(object):
             if name.lower() == 'location':
                 if SCHEME_RE.search(value):
                     break
-                new_location = urlparse.urljoin(
-                    _request_uri(environ), value)
+                uri = _request_uri(environ)
+                if not uri.endswith('/'):
+                    uri += '/'
+                new_location = urlparse.urljoin(uri, value)
                 headerlist = list(headerlist)
                 idx = headerlist.index((name, value))
                 headerlist[idx] = (name, new_location)
@@ -1152,16 +1154,17 @@ def _request_uri(environ):
 
     script_name = environ.get('SCRIPT_NAME') or '/'
     path_info = environ.get('PATH_INFO','')
+
     if PY3: # pragma: no cover
         script_name = script_name.encode('latin-1').decode('utf-8')
         path_info = path_info.encode('latin-1').decode('utf-8')
 
     url += url_quote(script_name)
     path_info = url_quote(path_info)
-    if not environ.get('SCRIPT_NAME'):
-        url += path_info[1:]
-    else:
+    if environ.get('SCRIPT_NAME'):
         url += path_info
+    else:
+        url += path_info[1:]
     return url
 
 
