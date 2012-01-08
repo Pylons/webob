@@ -6,6 +6,7 @@ from webob.datetime_utils import UTC
 from webob.compat import text_type
 from webob.compat import bytes_
 from webob.compat import text_
+from webob.compat import PY3
 from io import BytesIO
 from io import StringIO
 
@@ -603,7 +604,7 @@ class BaseRequestTests(unittest.TestCase):
                   }
         req = BaseRequest(environ)
         popped = req.path_info_pop()
-        self.assertEqual(popped, '')
+        self.assertEqual(popped, b'')
         self.assertEqual(environ['SCRIPT_NAME'], '/script/')
         self.assertEqual(environ['PATH_INFO'], '')
 
@@ -616,7 +617,7 @@ class BaseRequestTests(unittest.TestCase):
                   }
         req = BaseRequest(environ)
         popped = req.path_info_pop()
-        self.assertEqual(popped, 'path')
+        self.assertEqual(popped, b'path')
         self.assertEqual(environ['SCRIPT_NAME'], '/script/path')
         self.assertEqual(environ['PATH_INFO'], '/info')
 
@@ -646,7 +647,7 @@ class BaseRequestTests(unittest.TestCase):
                   }
         req = BaseRequest(environ)
         popped = req.path_info_pop(PATTERN)
-        self.assertEqual(popped, 'path')
+        self.assertEqual(popped, b'path')
         self.assertEqual(environ['SCRIPT_NAME'], '/script/path')
         self.assertEqual(environ['PATH_INFO'], '/info')
 
@@ -659,7 +660,7 @@ class BaseRequestTests(unittest.TestCase):
                   }
         req = BaseRequest(environ)
         popped = req.path_info_pop()
-        self.assertEqual(popped, 'path')
+        self.assertEqual(popped, b'path')
         self.assertEqual(environ['SCRIPT_NAME'], '/script//path')
         self.assertEqual(environ['PATH_INFO'], '/info')
 
@@ -685,7 +686,7 @@ class BaseRequestTests(unittest.TestCase):
                   }
         req = BaseRequest(environ)
         peeked = req.path_info_peek()
-        self.assertEqual(peeked, '')
+        self.assertEqual(peeked, b'')
         self.assertEqual(environ['SCRIPT_NAME'], '/script')
         self.assertEqual(environ['PATH_INFO'], '/')
 
@@ -698,7 +699,7 @@ class BaseRequestTests(unittest.TestCase):
                   }
         req = BaseRequest(environ)
         peeked = req.path_info_peek()
-        self.assertEqual(peeked, 'path')
+        self.assertEqual(peeked, b'path')
         self.assertEqual(environ['SCRIPT_NAME'], '/script')
         self.assertEqual(environ['PATH_INFO'], '/path')
 
@@ -1869,10 +1870,10 @@ class RequestTests_functional(unittest.TestCase):
         # Peek path_info to see what's coming
         # Pop path_info until there's nothing remaining
         a = Request({'a':1}, **{'path_info':'/foo/bar','script_name':''})
-        self.assertEqual(a.path_info_peek(), 'foo')
-        self.assertEqual(a.path_info_pop(), 'foo')
-        self.assertEqual(a.path_info_peek(), 'bar')
-        self.assertEqual(a.path_info_pop(), 'bar')
+        self.assertEqual(a.path_info_peek(), b'foo')
+        self.assertEqual(a.path_info_pop(), b'foo')
+        self.assertEqual(a.path_info_peek(), b'bar')
+        self.assertEqual(a.path_info_pop(), b'bar')
         self.assertEqual(a.path_info_peek(), None)
         self.assertEqual(a.path_info_pop(), None)
 
@@ -2135,10 +2136,14 @@ class RequestTests_functional(unittest.TestCase):
     def test_environ_from_url_highorder_path_info(self):
         from webob.request import environ_from_url
         env = environ_from_url('/%E6%B5%81')
-        self.assertEqual(env['PATH_INFO'], '/\xe6\xb5\x81')
+        if PY3:
+            self.assertEqual(env['PATH_INFO'],
+                             text_(b'/\xe6\xb5\x81', 'latin-1'))
+        else:
+            self.assertEqual(env['PATH_INFO'], '/\xe6\xb5\x81')
         request = Request(env)
-        self.assertEqual(request.path_info, '/\xe6\xb5\x81')
-        self.assertEqual(request.upath_info,
+        self.assertEqual(request.pathinfo_bytes, b'/\xe6\xb5\x81')
+        self.assertEqual(request.pathinfo,
                          b'/\xe6\xb5\x81'.decode('utf8')) # u'/\u6d41'
 
 
@@ -2252,9 +2257,9 @@ class RequestTests_functional(unittest.TestCase):
                          'http://localhost/blog/archive')
 
         # Doesn't change request
-        self.assertEqual(req.path_info_peek(), 'article')
+        self.assertEqual(req.path_info_peek(), b'article')
         # Does change request!
-        self.assertEqual(req.path_info_pop(), 'article')
+        self.assertEqual(req.path_info_pop(), b'article')
         self.assertEqual(req.script_name, '/blog/article')
         self.assertEqual(req.path_info, '')
 

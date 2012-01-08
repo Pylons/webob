@@ -85,21 +85,23 @@ else:
 
 
 if PY3: # pragma: no cover
-    def unquote(string):
-        if not string:
+    def _unquote_bytes(bytestring):
+        if not bytestring:
             return b''
-        res = string.split(b'%')
+        res = bytestring.split(b'%')
         if len(res) != 1:
-            string = res[0]
+            bytestring = res[0]
             for item in res[1:]:
                 try:
-                    string += bytes([int(item[:2], 16)]) + item[2:]
+                    bytestring += bytes([int(item[:2], 16)]) + item[2:]
                 except ValueError:
-                    string += b'%' + item
-        return string
+                    bytestring += b'%' + item
+        return bytestring
 
-    def url_unquote(s):
-        return unquote(s.encode('ascii')).decode('latin-1')
+    def url_unquote(val, encoding='utf-8', errors='strict'):
+        if val.__class__ is text_type:
+            val = val.encode('ascii')
+        return _unquote_bytes(val).decode(encoding, errors)
 
     def parse_qsl_text(qs, encoding='utf-8'):
         qs = qs.encode('latin-1')
@@ -109,8 +111,8 @@ if PY3: # pragma: no cover
             nv = name_value.split(b'=', 1)
             if len(nv) != 2:
                 nv.append('')
-            name = unquote(nv[0])
-            value = unquote(nv[1])
+            name = _unquote_bytes(nv[0])
+            value = _unquote_bytes(nv[1])
             yield (name.decode(encoding), value.decode(encoding))
 
 else:

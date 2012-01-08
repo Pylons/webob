@@ -602,16 +602,16 @@ class BaseRequest(object):
     @property
     def application_url(self):
         """
-        The URL including scriptname (no pathinfo or query string)
+        The URL including script name (no path info or query string)
         """
         return self.host_url + url_quote(self.scriptname_bytes, PATH_SAFE)
 
     @property
     def path_url(self):
         """
-        The URL including scriptname and pathinfo, but not query string
+        The URL including script name and path info, but not query string
         """
-        return self.host_url + url_quote(self.pathinfo_bytes, PATH_SAFE)
+        return self.application_url + url_quote(self.pathinfo_bytes, PATH_SAFE)
 
     @property
     def path(self):
@@ -661,8 +661,8 @@ class BaseRequest(object):
     def path_info_pop(self, pattern=None):
         """
         'Pops' off the next bytestring segment of PATH_INFO, pushing it onto
-        SCRIPT_NAME, and returning the popped segment.  Returns None if there
-        is nothing left on PATH_INFO.
+        SCRIPT_NAME, and returning the popped segment, which will be a
+        bytestring.  Returns None if there is nothing left on PATH_INFO.
 
         Does not return ``''`` when there's an empty segment (like
         ``/path//path``); these segments are just ignored.
@@ -682,7 +682,7 @@ class BaseRequest(object):
         if idx == -1:
             idx = len(path)
         r = path[:idx]
-        if pattern is None or re.match(pattern, r):
+        if pattern is None or re.match(pattern, r.decode(self.url_encoding)):
             self.scriptname_bytes += slashes + r
             self.pathinfo_bytes = path[idx:]
             return r
