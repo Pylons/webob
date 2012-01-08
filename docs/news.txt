@@ -10,6 +10,9 @@ Next release
 * Added ``request.client_addr`` API (returns IP address implied by
   HTTP_X_FORWARDED_FOR, falling back to REMOTE_ADDR).
 
+* Fix corner-case ``response.status_int`` and ``response.status`` mutation
+  bug on py3 (use explicit floor division).
+
 1.2b2
 ------
 
