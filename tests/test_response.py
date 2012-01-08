@@ -1,6 +1,5 @@
 import zlib
 import io
-from hashlib import md5
 
 from nose.tools import eq_, ok_, assert_raises
 
@@ -61,6 +60,34 @@ def test_set_response_status_binary():
     res.status == b'200 OK'
     assert res.status_int == 200
     assert res.status == '200 OK'
+
+def test_set_response_status_str_no_reason():
+    req = BaseRequest.blank('/')
+    res = req.get_response(simple_app)
+    res.status = '200'
+    assert res.status_int == 200
+    assert res.status == '200 OK'
+
+def test_set_response_status_str_generic_reason():
+    req = BaseRequest.blank('/')
+    res = req.get_response(simple_app)
+    res.status = '299'
+    assert res.status_int == 299
+    assert res.status == '299 Success'
+
+def test_set_response_status_int():
+    req = BaseRequest.blank('/')
+    res = req.get_response(simple_app)
+    res.status_int = 200
+    assert res.status_int == 200
+    assert res.status == '200 OK'
+
+def test_set_response_status_int_generic_reason():
+    req = BaseRequest.blank('/')
+    res = req.get_response(simple_app)
+    res.status_int = 299
+    assert res.status_int == 299
+    assert res.status == '299 Success'
 
 def test_content_type():
     r = Response()

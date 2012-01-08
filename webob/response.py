@@ -245,7 +245,7 @@ class Response(object):
              try:
                 value += ' ' + status_reasons[int(value)]
              except KeyError:
-                value += ' ' + status_generic_reasons[int(value) / 100]
+                value += ' ' + status_generic_reasons[int(value) // 100]
         self._status = value
 
     status = property(_status__get, _status__set, doc=_status__get.__doc__)
@@ -259,7 +259,7 @@ class Response(object):
          try:
             self._status = '%d %s' % (code, status_reasons[code])
          except KeyError:
-            self._status = '%d %s' % (code, status_generic_reasons[code / 100])
+            self._status = '%d %s' % (code, status_generic_reasons[code // 100])
 
     status_int = property(_status_int__get, _status_int__set,
                           doc=_status_int__get.__doc__)
