@@ -2136,15 +2136,14 @@ class RequestTests_functional(unittest.TestCase):
     def test_environ_from_url_highorder_path_info(self):
         from webob.request import environ_from_url
         env = environ_from_url('/%E6%B5%81')
+        encoded = b'/\xe6\xb5\x81'
         if PY3:
-            self.assertEqual(env['PATH_INFO'],
-                             text_(b'/\xe6\xb5\x81', 'latin-1'))
+            self.assertEqual(env['PATH_INFO'], text_(encoded, 'latin-1'))
         else:
-            self.assertEqual(env['PATH_INFO'], '/\xe6\xb5\x81')
+            self.assertEqual(env['PATH_INFO'], encoded)
         request = Request(env)
-        self.assertEqual(request.pathinfo_bytes, b'/\xe6\xb5\x81')
-        self.assertEqual(request.pathinfo,
-                         b'/\xe6\xb5\x81'.decode('utf8')) # u'/\u6d41'
+        self.assertEqual(request.pathinfo_bytes, encoded)
+        self.assertEqual(request.pathinfo, encoded.decode('utf8')) # u'/\u6d41'
 
 
     def test_post_does_not_reparse(self):
