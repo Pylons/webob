@@ -1150,8 +1150,14 @@ def _request_uri(environ):
     elif url.endswith(':443') and environ['wsgi.url_scheme'] == 'https':
         url = url[:-4]
 
-    url += url_quote(environ.get('SCRIPT_NAME') or '/')
-    path_info = url_quote(environ.get('PATH_INFO',''))
+    script_name = environ.get('SCRIPT_NAME') or '/'
+    path_info = environ.get('PATH_INFO','')
+    if PY3:
+        script_name = script_name.encode('latin-1').decode('utf-8')
+        path_info = path_info.encode('latin-1').decode('utf-8')
+
+    url += url_quote(script_name)
+    path_info = url_quote(path_info)
     if not environ.get('SCRIPT_NAME'):
         url += path_info[1:]
     else:

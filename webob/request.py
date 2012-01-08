@@ -280,7 +280,7 @@ class BaseRequest(object):
         environ_getter('SERVER_PORT'),
         parse_int, serialize_int, 'int')
 
-    # raw wsgi values
+    # raw wsgi values (bytes on py2, bytes-tunneled-via-text on py3)
     script_name = environ_getter('SCRIPT_NAME', '')
     path_info = environ_getter('PATH_INFO')
 
@@ -296,26 +296,40 @@ class BaseRequest(object):
             return val
 
     def _pathinfo__get(self):
-        """ Returns the decoded value of ``PATH_INFO`` WSGI variable as text.
+        """ Returns the decoded value of ``PATH_INFO`` WSGI variable as text
+        (a ``unicode`` value on Python 2, a ``str`` value on Python 3).  On
+        Python 2, ``pathinfo`` will return the value of
+        ``environ['PATH_INFO']`` decoded from the request's URL encoding, but
+        on Python 3, it will return the value of ``environ['PATH_INFO']``
+        encoded to Latin-1, *then* decoded from the request's URL encoding as
+        per the PEP 333 spec.
+
         This differs from the older deprecated ``path_info`` descriptor
-        inasmuch as it decodes the value before returning it.  The decoded
-        value is the only sensible value to use across software that must run
-        on both Python 2 and Python 3, because Python 2 ``PATH_INFO`` will be
-        bytes, and Python 3 ``PATH_INFO`` will be bytes-tunnelled-via-text
-        (as per PEP 3333).
+        because it "WSGI-decodes" the value before returning it.  The "raw"
+        ``environ['PATH_INFO']`` value is not a sensible value to use across
+        software that must run on both Python 2 and Python 3, because Python
+        2 ``environ['PATH_INFO']`` will be bytes, and Python 3
+        ``environ['PATH_INFO']`` will be bytes-tunnelled-via-text (as per PEP
+        3333).
+
+        If no ``PATH_INFO`` is in the environ, the empty string will be
+        returned.
 
         If you attempt to set this value, you must pass a text value, not
-        bytes.  On Python 2, the value will be encoded to the URL encoding
-        (usually UTF-8) and stored in the ``PATH_INFO`` environment variable
-        as bytes.  On Python 3, it will be encoded to to the URL encoding,
-        then the resulting encoded value will be decoded to Latin-1 and
-        stored in the ``PATH_INFO`` environment variable as text.
+        bytes.  On Python 2, the value will be encoded to the request's URL
+        encoding (usually UTF-8) and stored in the ``PATH_INFO`` environment
+        variable as bytes.  On Python 3, it will be encoded to to the
+        request's URL encoding, then the resulting encoded value will be
+        decoded to Latin-1 and stored in the ``PATH_INFO`` environment
+        variable as text.
 
         The request attribute named ``upath_info`` is an alias for this
         attribute.
         """
-        val = self.environ['PATH_INFO']
-        return self._bytes_from_wsgi(val).decode(self.url_encoding)
+        val = self.environ.get('PATH_INFO', '')
+        if val: # optimization
+            return self._bytes_from_wsgi(val).decode(self.url_encoding)
+        return val
 
     def _pathinfo__set(self, val):
         if not isinstance(val, text_type):
@@ -331,23 +345,32 @@ class BaseRequest(object):
     upath_info = pathinfo # bw compat (forever)
 
     def _pathinfo_bytes__get(self):
-        """ Returns the value of ``PATH_INFO`` WSGI variable as a bytestring.
-        This differs from the older deprecated ``path_info`` descriptor
-        inasmuch as it WSGI-decodes the value before returning it.  The
-        WSGI-decoded value is the only sensible value to use across software
-        that must run on both Python 2 and Python 3, because Python 2 raw
-        ``PATH_INFO`` will be bytes, and Python 3 raw ``PATH_INFO`` will be
-        bytes-tunnelled-via-text (as per PEP 3333).  This means that on
+        """ Returns the decoded value of ``PATH_INFO`` WSGI variable as bytes
+        (A ``str`` value on Python 2, a ``bytes`` value on Python 3).  On
         Python 2, ``pathinfo_bytes`` will return the raw value of
-        ``PATH_INFO`` but on Python 3, it will return the value of
-        ``PATH_INFO`` encoded to Latin-1, as per the spec.
+        ``environ['PATH_INFO']`` but on Python 3, it will return the value of
+        ``environ['PATH_INFO']`` encoded to Latin-1, as per the PEP 333 spec.
 
-        If you attempt to set this value, you must pass a bytes value, not
-        text.  On Python 2, stored in the ``PATH_INFO`` environment variable
-        as bytes unchanged.  On Python 3, it will be decoded to Latin-1, and
-        stored in the ``PATH_INFO`` environment variable as text.
+        This behvaior differs from the older deprecated ``path_info``
+        descriptor because it "WSGI-decodes" the value before returning it on
+        Python 3.  The "raw" ``environ['PATH_INFO']`` value is not a sensible
+        value to use across software that must run on both Python 2 and
+        Python 3, because Python 2 ``environ['PATH_INFO']`` will be bytes,
+        and Python 3 ``environ['PATH_INFO']`` will be
+        bytes-tunnelled-via-text (as per PEP 3333).
+
+        If no ``PATH_INFO`` is in the environ, the empty string will be
+        returned.
+
+        If you attempt to set this value, you must pass a binary (bytes)
+        value, not text.  On Python 2, the value will be encoded to the
+        request's URL encoding (usually UTF-8) and stored in the
+        ``PATH_INFO`` environment variable as bytes.  On Python 3, it will be
+        encoded to to the request's URL encoding, then the resulting encoded
+        value will be decoded to Latin-1 and stored in the ``PATH_INFO``
+        environment variable as text.
         """
-        val = self.environ['PATH_INFO']
+        val = self.environ.get('PATH_INFO', '')
         return self._bytes_from_wsgi(val)
 
     def _pathinfo_bytes__set(self, val):
@@ -363,12 +386,20 @@ class BaseRequest(object):
 
     def _scriptname__get(self):
         """ Returns the decoded value of the ``SCRIPT_NAME`` WSGI variable as
-        text.  This differs from the older deprecated ``script_name``
-        descriptor inasmuch as it decodes the value before returning it.  The
-        decoded value is the only sensible value to use across software that
-        must run on both Python 2 and Python 3, because Python 2
-        ``SCRIPT_NAME`` will be bytes, and Python 3 ``SCRIPT_NAME`` will be
-        bytes-tunnelled-via-text (as per PEP 3333).
+        text (a ``unicode`` value on Python 2, a ``str`` value on Python 3).
+        On Python 2, ``scriptname`` will return the value of
+        ``environ['SCRIPT_NAME']`` deoded using the request's URL encoding,
+        but on Python 3, it will return the value of
+        ``environ['SCRIPT_NAME']`` encoded to Latin-1, *then* decoded using
+        the request's URL encoding as per the PEP 333 spec.
+
+        This differs from the older deprecated ``script_name`` descriptor
+        because it "WSGI-decodes" the value before returning it on Python 3.
+        The "raw" ``environ['SCRIPT_NAME']`` value is not a sensible value to
+        use across software that must run on both Python 2 and Python 3,
+        because Python 2 ``environ['SCRIPT_NAME']`` will be bytes, and Python
+        3 ``environ['SCRIPT_NAME']`` will be bytes-tunnelled-via-text (as per
+        PEP 3333).
 
         If ``SCRIPT_NAME`` does not exist in the environ, an empty text value
         will be returned.
@@ -403,16 +434,20 @@ class BaseRequest(object):
 
     def _scriptname_bytes__get(self):
         """ Returns the value of ``SCRIPT_NAME`` WSGI variable as a
-        bytestring.  This differs from the older deprecated ``script_name``
-        descriptor inasmuch as it WSGI-decodes the value before returning it.
-        The WSGI-decoded value is the only sensible value to use across
-        software that must run on both Python 2 and Python 3, because Python
-        2 raw ``SCRIPT_NAME`` will be bytes, and Python 3 raw ``SCRIPT_NAME``
-        will be bytes-tunnelled-via-text (as per PEP 3333).  This means that
-        on Python 2, ``pathinfo_bytes`` will return the raw value of
-        ``SCRIPT_NAME`` but on Python 3, it will return the value of
-        ``SCRIPT_NAME`` encoded to Latin-1, as per the spec.
+        bytestring (a ``str`` value on Python 2, a ``bytes`` value on Python
+        3).  This means that on Python 2, ``scriptname_bytes`` will return
+        the raw value of ``SCRIPT_NAME`` but on Python 3, it will return the
+        value of ``SCRIPT_NAME`` encoded to Latin-1, as per the PEP 3333
+        spec.
 
+        This differs from the older deprecated ``script_name`` descriptor
+        because it WSGI-decodes the value before returning it onm Python 3.
+        The "raw" ``environ['SCRIPT_NAME']`` value is not a sensible value to
+        use across software that must run on both Python 2 and Python 3,
+        because Python 2 ``environ['SCRIPT_NAME']`` will be bytes, and Python
+        3 ``environ['SCRIPT_NAME']`` will be bytes-tunnelled-via-text (as per
+        PEP 3333).
+        
         If ``SCRIPT_NAME`` does not exist in the environ, the empty byte will
         be returned.
 
@@ -423,12 +458,10 @@ class BaseRequest(object):
         text.
         """
         val = self.environ.get('SCRIPT_NAME', '')
-        if val: # optimization
-            return self._bytes_from_wsgi(val)
-        return val
+        return self._bytes_from_wsgi(val)
 
     def _scriptname_bytes__set(self, val):
-        if not isinstance(val, binary_type):
+        if not isinstance(val, bytes):
             raise ValueError(
                 'setting scriptname_bytes requires binary input, not %r' % val)
         val = self._bytes_to_wsgi(val)
@@ -627,9 +660,9 @@ class BaseRequest(object):
 
     def path_info_pop(self, pattern=None):
         """
-        'Pops' off the next segment of PATH_INFO, pushing it onto
-        SCRIPT_NAME, and returning the popped segment.  Returns None if
-        there is nothing left on PATH_INFO.
+        'Pops' off the next bytestring segment of PATH_INFO, pushing it onto
+        SCRIPT_NAME, and returning the popped segment.  Returns None if there
+        is nothing left on PATH_INFO.
 
         Does not return ``''`` when there's an empty segment (like
         ``/path//path``); these segments are just ignored.
@@ -641,29 +674,29 @@ class BaseRequest(object):
         path = self.pathinfo_bytes
         if not path:
             return None
-        slashes = ''
-        while path.startswith('/'):
-            slashes += '/'
+        slashes = b''
+        while path.startswith(b'/'):
+            slashes += b'/'
             path = path[1:]
-        idx = path.find('/')
+        idx = path.find(b'/')
         if idx == -1:
             idx = len(path)
         r = path[:idx]
         if pattern is None or re.match(pattern, r):
-            self.script_name += slashes + r
-            self.path_info = path[idx:]
+            self.scriptname_bytes += slashes + r
+            self.pathinfo_bytes = path[idx:]
             return r
 
     def path_info_peek(self):
         """
-        Returns the next segment on PATH_INFO, or None if there is no
-        next segment.  Doesn't modify the environment.
+        Returns the next bytestring segment on PATH_INFO, or None if there is
+        no next segment.  Doesn't modify the environment.
         """
         path = self.pathinfo_bytes
         if not path:
             return None
-        path = path.lstrip('/')
-        return path.split('/', 1)[0]
+        path = path.lstrip(b'/')
+        return path.split(b'/', 1)[0]
 
     def _urlvars__get(self):
         """
@@ -1366,8 +1399,8 @@ class BaseRequest(object):
         given path (path should be urlencoded), and any keys from
         environ.
 
-        The path will become path_info, with any query string split
-        off and used.
+        The path will become PATH_INFO, with any query string split off and
+        used.
 
         All necessary keys will be added to the environ, but the
         values you pass in will take precedence.  If you pass in
@@ -1399,7 +1432,10 @@ class BaseRequest(object):
                 env['SERVER_NAME'] = host
                 env['HTTP_HOST'] = netloc
             if path:
-                env['SCRIPT_NAME'] = url_unquote(path)
+                script_name = url_unquote(path)
+                if PY3:
+                    script_name = script_name.encode('utf-8').decode('latin-1')
+                env['SCRIPT_NAME'] = script_name
         if environ:
             env.update(environ)
         content_type = kw.get('content_type', env.get('CONTENT_TYPE'))
@@ -1437,6 +1473,8 @@ def environ_from_url(path):
     else:
         path_info = url_unquote(path)
         query_string = ''
+    if PY3:
+        path_info = path_info.encode('utf-8').decode('latin-1')
     env = {
         'REQUEST_METHOD': 'GET',
         'SCRIPT_NAME': '',
