@@ -13,6 +13,8 @@ Next release
 * Fix corner-case ``response.status_int`` and ``response.status`` mutation
   bug on py3 (use explicit floor division).
 
+* Removed (non-API) ``webob.descriptors.upath_property``.
+
 1.2b2
 ------
 

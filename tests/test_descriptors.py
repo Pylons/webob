@@ -95,19 +95,6 @@ def test_environ_getter_rfc_section():
     )
 
 
-def test_upath_property_fget():
-    from webob.descriptors import upath_property
-    req = Request.blank('/')
-    desc = upath_property('akey')
-    eq_(desc.fget(req), '')
-
-def test_upath_property_fset():
-    from webob.descriptors import upath_property
-    req = Request.blank('/')
-    desc = upath_property('akey')
-    desc.fset(req, 'avalue')
-    eq_(desc.fget(req), 'avalue')
-
 def test_header_getter_doc():
     from webob.descriptors import header_getter
     desc = header_getter('X-Header', '14.3')

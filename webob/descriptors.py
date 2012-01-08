@@ -57,21 +57,6 @@ def environ_getter(key, default=_not_given, rfc_section=None):
     return property(fget, fset, fdel, doc=doc)
 
 
-def upath_property(key):
-    if PY3: # pragma: no cover
-        def fget(req):
-            return req.environ.get(key, '').encode('latin-1').decode('utf8')
-        def fset(req, val):
-            req.environ[key] = val.encode('utf8').decode('latin-1')
-    else:
-        def fget(req):
-            return req.environ.get(key, '').decode('utf8')
-        def fset(req, val):
-            if isinstance(val, unicode):
-                val = val.encode('utf8')
-            req.environ[key] = val
-    return property(fget, fset, doc='upath_property(%r)' % key)
-
 def deprecated_property(attr, name, text, version): # pragma: no cover
     """
     Wraps a descriptor, with a deprecation warning or error
