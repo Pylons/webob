@@ -57,6 +57,36 @@ def environ_getter(key, default=_not_given, rfc_section=None):
     return property(fget, fset, fdel, doc=doc)
 
 
+def environ_decoder(key, default=_not_given, rfc_section=None,
+                    encattr=None):
+    if rfc_section:
+        doc = header_docstring(key, rfc_section)
+    else:
+        doc = "Gets and sets the ``%s`` key in the environment." % key
+    if default is _not_given:
+        def fget(req):
+            return req.encget(key, encattr=encattr)
+        def fset(req, val):
+            return req.encset(key, val, encattr=encattr)
+        fdel = None
+    else:
+        def fget(req):
+            if default.__class__ is bytes:
+                d = req.decode_default(default)
+            else:
+                d = default
+            return req.encget(key, d, encattr=encattr)
+        def fset(req, val):
+            if val is None:
+                if key in req.environ:
+                    del req.environ[key]
+            else:
+                return req.encset(key, val, encattr=encattr)
+        def fdel(req):
+            del req.environ[key]
+    return property(fget, fset, fdel, doc=doc)
+
+
 def upath_property(key):
     if PY3: # pragma: no cover
         def fget(req):
@@ -71,6 +101,7 @@ def upath_property(key):
                 val = val.encode('utf8')
             req.environ[key] = val
     return property(fget, fset, doc='upath_property(%r)' % key)
+
 
 def deprecated_property(attr, name, text, version): # pragma: no cover
     """
@@ -306,31 +337,3 @@ def serialize_auth(val):
         return '%s %s' % (authtype, params)
     return val
 
-def environ_decoder(key, default=_not_given, rfc_section=None,
-                    encattr=None):
-    if rfc_section:
-        doc = header_docstring(key, rfc_section)
-    else:
-        doc = "Gets and sets the ``%s`` key in the environment." % key
-    if default is _not_given:
-        def fget(req):
-            return req.encget(key, encattr=encattr)
-        def fset(req, val):
-            return req.encset(key, val, encattr=encattr)
-        fdel = None
-    else:
-        def fget(req):
-            if default.__class__ is bytes:
-                d = req.decode_default(default)
-            else:
-                d = default
-            return req.encget(key, d, encattr=encattr)
-        def fset(req, val):
-            if val is None:
-                if key in req.environ:
-                    del req.environ[key]
-            else:
-                return req.encset(key, val, encattr=encattr)
-        def fdel(req):
-            del req.environ[key]
-    return property(fget, fset, fdel, doc=doc)
