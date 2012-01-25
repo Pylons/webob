@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+import unittest
+
+from webob.compat import (
+    PY3,
+    text_,
+    text_type,
+    )
 
 from datetime import tzinfo
 from datetime import timedelta
@@ -570,6 +577,19 @@ def test_parse_auth_params_emptystr():
     from webob.descriptors import parse_auth_params
     eq_(parse_auth_params(''), {})
 
+def test_authorization2():
+    from webob.descriptors import parse_auth_params
+    for s, d in [
+            ('x=y', {'x': 'y'}),
+            ('x="y"', {'x': 'y'}),
+            ('x=y,z=z', {'x': 'y', 'z': 'z'}),
+            ('x=y, z=z', {'x': 'y', 'z': 'z'}),
+            ('x="y",z=z', {'x': 'y', 'z': 'z'}),
+            ('x="y", z=z', {'x': 'y', 'z': 'z'}),
+            ('x="y,x", z=z', {'x': 'y,x', 'z': 'z'}),
+            ]:
+        eq_(parse_auth_params(s), d)
+
 def test_parse_auth_none():
     from webob.descriptors import parse_auth
     eq_(parse_auth(None), None)
@@ -622,3 +642,126 @@ def test_serialize_auth_digest_tuple():
     flags = val[len('Digest'):]
     result = sorted([ x.strip() for x in flags.split(',') ])
     eq_(result, ['nonce="abcde12345"', 'qop="foo"', 'realm=""WebOb""'])
+
+
+_nodefault = object()
+
+class _TestEnvironDecoder(object):
+    def _callFUT(self, key, default=_nodefault, rfc_section=None,
+                 encattr=None):
+        from webob.descriptors import environ_decoder
+        if default is _nodefault:
+            return environ_decoder(key, rfc_section=rfc_section,
+                                   encattr=encattr)
+        else:
+            return environ_decoder(key, default=default,
+                                   rfc_section=rfc_section, encattr=encattr)
+
+    def test_docstring(self):
+        desc = self._callFUT('akey')
+        self.assertEqual(desc.__doc__,
+                         "Gets and sets the ``akey`` key in the environment.")
+
+    def test_nodefault_keyerror(self):
+        req = self._makeRequest()
+        desc = self._callFUT('akey')
+        self.assertRaises(KeyError, desc.fget, req)
+
+    def test_nodefault_fget(self):
+        req = self._makeRequest()
+        desc = self._callFUT('akey')
+        desc.fset(req, 'bar')
+        self.assertEqual(req.environ['akey'], 'bar')
+
+    def test_nodefault_fdel(self):
+        desc = self._callFUT('akey')
+        self.assertEqual(desc.fdel, None)
+
+    def test_default_fget(self):
+        req = self._makeRequest()
+        desc = self._callFUT('akey', default='the_default')
+        self.assertEqual(desc.fget(req), 'the_default')
+
+    def test_default_fset(self):
+        req = self._makeRequest()
+        desc = self._callFUT('akey', default='the_default')
+        desc.fset(req, 'bar')
+        self.assertEqual(req.environ['akey'], 'bar')
+
+    def test_default_fset_none(self):
+        req = self._makeRequest()
+        desc = self._callFUT('akey', default='the_default')
+        desc.fset(req, 'baz')
+        desc.fset(req, None)
+        self.assertTrue('akey' not in req.environ)
+
+    def test_default_fdel(self):
+        req = self._makeRequest()
+        desc = self._callFUT('akey', default='the_default')
+        desc.fset(req, 'baz')
+        self.assertTrue('akey' in req.environ)
+        desc.fdel(req)
+        self.assertTrue('akey' not in req.environ)
+
+    def test_rfc_section(self):
+        desc = self._callFUT('HTTP_X_AKEY', rfc_section='14.3')
+        self.assertEqual(
+            desc.__doc__,
+            "Gets and sets the ``X-Akey`` header "
+            "(`HTTP spec section 14.3 "
+            "<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3>`_)."
+        )
+
+    def test_fset_nonascii(self):
+        desc = self._callFUT('HTTP_X_AKEY', encattr='url_encoding')
+        req = self._makeRequest()
+        desc.fset(req, text_(b'\xc3\xab', 'utf-8'))
+        if PY3:
+            self.assertEqual(req.environ['HTTP_X_AKEY'],
+                             b'\xc3\xab'.decode('latin-1'))
+        else:
+            self.assertEqual(req.environ['HTTP_X_AKEY'], b'\xc3\xab')
+        
+
+class TestEnvironDecoderBytes(unittest.TestCase, _TestEnvironDecoder):
+    def _makeRequest(self):
+        from webob.request import BytesRequest
+        req = BytesRequest.blank('/')
+        return req
+
+    def test_fget_nonascii(self):
+        desc = self._callFUT('HTTP_X_AKEY', encattr='url_encoding')
+        req = self._makeRequest()
+        if PY3:
+            req.environ['HTTP_X_AKEY'] = b'\xc3\xab'.decode('latin-1')
+        else:
+            req.environ['HTTP_X_AKEY'] = b'\xc3\xab'
+        result = desc.fget(req)
+        self.assertEqual(result, b'\xc3\xab')
+
+    def test_default_fget_nonascii(self):
+        req = self._makeRequest()
+        desc = self._callFUT('akey', default=b'the_default')
+        self.assertEqual(desc.fget(req).__class__, bytes)
+
+class TestEnvironDecoderText(unittest.TestCase, _TestEnvironDecoder):
+    def _makeRequest(self):
+        from webob.request import TextRequest
+        req = TextRequest.blank('/')
+        return req
+
+    def test_fget_nonascii(self):
+        desc = self._callFUT('HTTP_X_AKEY', encattr='url_encoding')
+        req = self._makeRequest()
+        if PY3:
+            req.environ['HTTP_X_AKEY'] = b'\xc3\xab'.decode('latin-1')
+        else:
+            req.environ['HTTP_X_AKEY'] = b'\xc3\xab'
+        result = desc.fget(req)
+        self.assertEqual(result, text_(b'\xc3\xab', 'utf-8'))
+
+    def test_default_fget_nonascii(self):
+        req = self._makeRequest()
+        desc = self._callFUT('akey', default=b'the_default')
+        self.assertEqual(desc.fget(req).__class__, text_type)
+
