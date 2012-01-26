@@ -90,15 +90,19 @@ def environ_decoder(key, default=_not_given, rfc_section=None,
 def upath_property(key):
     if PY3: # pragma: no cover
         def fget(req):
-            return req.environ.get(key, '').encode('latin-1').decode('utf8')
+            encoding = req.url_encoding
+            return req.environ.get(key, '').encode('latin-1').decode(encoding)
         def fset(req, val):
-            req.environ[key] = val.encode('utf8').decode('latin-1')
+            encoding = req.url_encoding
+            req.environ[key] = val.encode(encoding).decode('latin-1')
     else:
         def fget(req):
-            return req.environ.get(key, '').decode('utf8')
+            encoding = req.url_encoding
+            return req.environ.get(key, '').decode(encoding)
         def fset(req, val):
-            if isinstance(val, unicode):
-                val = val.encode('utf8')
+            encoding = req.url_encoding
+            if isinstance(val, text_type):
+                val = val.encode(encoding)
             req.environ[key] = val
     return property(fget, fset, doc='upath_property(%r)' % key)
 
