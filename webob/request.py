@@ -1314,7 +1314,7 @@ class BytesRequest(RequestMixin):
 
     def decode_default(self, default):
         if default.__class__ is text_type:
-            return default.encode('ascii')
+            return default.encode('latin-1')
         return default
 
 class TextRequest(RequestMixin):
@@ -1348,7 +1348,7 @@ class TextRequest(RequestMixin):
 
     def decode_default(self, default):
         if default.__class__ is bytes:
-            return default.decode('ascii')
+            return default.decode('latin-1')
         return default
 
 
