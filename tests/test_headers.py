@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import unittest
+
 from webob import headers
 from nose.tools import ok_, assert_raises, eq_
 
@@ -75,27 +77,6 @@ def test_ResponseHeaders_contains():
     ok_('a' in d)
     ok_(not 'b' in d)
 
-def test_EnvironHeaders_delitem():
-    d = headers.EnvironHeaders({'CONTENT_LENGTH': '10'})
-    del d['CONTENT-LENGTH']
-    assert not d
-    assert_raises(KeyError, d.__delitem__, 'CONTENT-LENGTH')
-
-def test_EnvironHeaders_getitem():
-    d = headers.EnvironHeaders({'CONTENT_LENGTH': '10'})
-    eq_(d['CONTENT-LENGTH'], '10')
-
-def test_EnvironHeaders_setitem():
-    d = headers.EnvironHeaders({})
-    d['abc'] = '10'
-    eq_(d['abc'], '10')
-
-def test_EnvironHeaders_contains():
-    d = headers.EnvironHeaders({})
-    d['a'] = '10'
-    ok_('a' in d)
-    ok_(not 'b' in d)
-
 def test__trans_key_not_basestring():
     result = headers._trans_key(None)
     eq_(result, None)
@@ -111,3 +92,41 @@ def test__trans_key_key2header():
 def test__trans_key_httpheader():
     result = headers._trans_key('HTTP_FOO_BAR')
     eq_(result, 'Foo-Bar')
+
+class TestEnvironHeaders(unittest.TestCase):
+    def _makeOne(self, env=None):
+        if env is None:
+            env = {}
+        req = DummyRequest(env)
+        from webob.headers import EnvironHeaders
+        return EnvironHeaders(req)
+
+    def test___delitem__(self):
+        d = self._makeOne({'CONTENT_LENGTH': '10'})
+        del d['CONTENT-LENGTH']
+        assert not d
+        assert_raises(KeyError, d.__delitem__, 'CONTENT-LENGTH')
+
+    def test___getitem__(self):
+        d = self._makeOne({'CONTENT_LENGTH': '10'})
+        eq_(d['CONTENT-LENGTH'], '10')
+
+    def test___setitem__(self):
+        d = self._makeOne({})
+        d['abc'] = '10'
+        eq_(d['abc'], '10')
+
+    def test___contains__(self):
+        d = self._makeOne({})
+        d['a'] = '10'
+        ok_('a' in d)
+        ok_(not 'b' in d)
+
+class DummyRequest(object):
+    def __init__(self, environ):
+        self.environ = environ
+    def encset(self, k, v):
+        self.environ[k] = v
+    def encget(self, k):
+        return self.environ[k]
+    

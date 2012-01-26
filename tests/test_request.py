@@ -305,7 +305,7 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(req.content_type, '')
         self.assert_('CONTENT_TYPE' not in environ)
 
-    def test_headers_getter_miss(self):
+    def test_headers_getter(self):
         CONTENT_TYPE = 'application/xml+foobar;charset="utf8"'
         environ = {'CONTENT_TYPE': CONTENT_TYPE,
                    'CONTENT_LENGTH': '123',
@@ -315,17 +315,6 @@ class BaseRequestTests(unittest.TestCase):
         self.assertEqual(headers,
                         {'Content-Type': CONTENT_TYPE,
                          'Content-Length': '123'})
-        self.assertEqual(req._headers, headers)
-
-    def test_headers_getter_hit(self):
-        CONTENT_TYPE = 'application/xml+foobar;charset="utf8"'
-        environ = {'CONTENT_TYPE': CONTENT_TYPE,
-                   'CONTENT_LENGTH': '123',
-                  }
-        req = self._makeOne(environ)
-        req._headers = {'Foo': 'Bar'}
-        self.assertEqual(req.headers,
-                        {'Foo': 'Bar'})
 
     def test_headers_setter(self):
         CONTENT_TYPE = 'application/xml+foobar;charset="utf8"'
@@ -333,10 +322,10 @@ class BaseRequestTests(unittest.TestCase):
                    'CONTENT_LENGTH': '123',
                   }
         req = self._makeOne(environ)
-        req._headers = {'Foo': 'Bar'}
         req.headers = {'Qux': 'Spam'}
         self.assertEqual(req.headers,
                         {'Qux': 'Spam'})
+        self.assertEqual(environ, {'HTTP_QUX': 'Spam'})
 
     def test_no_headers_deleter(self):
         CONTENT_TYPE = 'application/xml+foobar;charset="utf8"'
@@ -2505,6 +2494,33 @@ class TestBytesRequest(unittest.TestCase):
         self.assertEqual(result.__class__, bytes)
         self.assertEqual(result, b'http://localhost/%C3%AB/a')
 
+    def test_header_getter(self):
+        if PY3:
+            val = b'abc'.decode('latin-1')
+        else:
+            val = b'abc'
+        inst = self._makeOne({'HTTP_FLUB':val})
+        result = inst.headers['Flub']
+        self.assertEqual(result.__class__, bytes)
+        self.assertEqual(result, b'abc')
+
+    def test_json_body(self):
+        inst = self._makeOne({})
+        inst.body = b'{"a":"1"}'
+        self.assertEqual(inst.json_body, {'a':'1'})
+
+    def test_host_get_w_http_host(self):
+        inst = self._makeOne({'HTTP_HOST':'example.com'})
+        result = inst.host
+        self.assertEqual(result.__class__, bytes)
+        self.assertEqual(result, b'example.com')
+
+    def test_host_get_w_no_http_host(self):
+        inst = self._makeOne({'SERVER_NAME':'example.com', 'SERVER_PORT':'80'})
+        result = inst.host
+        self.assertEqual(result.__class__, bytes)
+        self.assertEqual(result, b'example.com:80')
+
 class TestTextRequest(unittest.TestCase):
     def _getTargetClass(self):
         from webob.request import TextRequest
@@ -2595,6 +2611,33 @@ class TestTextRequest(unittest.TestCase):
         result = inst.relative_url('a')
         self.assertEqual(result.__class__, text_type)
         self.assertEqual(result, 'http://localhost/%C3%AB/a')
+
+    def test_header_getter(self):
+        if PY3:
+            val = b'abc'.decode('latin-1')
+        else:
+            val = b'abc'
+        inst = self._makeOne({'HTTP_FLUB':val})
+        result = inst.headers['Flub']
+        self.assertEqual(result.__class__, text_type)
+        self.assertEqual(result, text_(b'abc'))
+
+    def test_json_body(self):
+        inst = self._makeOne({})
+        inst.body = b'{"a":"1"}'
+        self.assertEqual(inst.json_body, {'a':'1'})
+
+    def test_host_get(self):
+        inst = self._makeOne({'HTTP_HOST':'example.com'})
+        result = inst.host
+        self.assertEqual(result.__class__, text_type)
+        self.assertEqual(result, text_('example.com'))
+
+    def test_host_get_w_no_http_host(self):
+        inst = self._makeOne({'SERVER_NAME':'example.com', 'SERVER_PORT':'80'})
+        result = inst.host
+        self.assertEqual(result.__class__, text_type)
+        self.assertEqual(result, text_(b'example.com:80'))
 
 class Test_environ_from_url(unittest.TestCase):
     def _callFUT(self, *arg, **kw):

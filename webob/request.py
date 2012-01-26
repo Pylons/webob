@@ -331,20 +331,17 @@ class RequestMixin(object):
                             _content_type__set,
                             _content_type__get.__doc__)
 
-    _headers = None
-
     def _headers__get(self):
         """
         All the request headers as a case-insensitive dictionary-like
         object.
         """
-        if self._headers is None:
-            self._headers = EnvironHeaders(self.environ)
-        return self._headers
+        return EnvironHeaders(self)
 
     def _headers__set(self, value):
-        self.headers.clear()
-        self.headers.update(value)
+        headers = self.headers
+        headers.clear()
+        headers.update(value)
 
     headers = property(_headers__get, _headers__set, doc=_headers__get.__doc__)
 
