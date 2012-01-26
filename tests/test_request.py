@@ -2434,6 +2434,10 @@ class TestBytesRequest(unittest.TestCase):
         cls = self._getTargetClass()
         return cls(*arg, **kw)
 
+    def _blankOne(self, *arg, **kw):
+        cls = self._getTargetClass()
+        return cls.blank(*arg, **kw)
+
     def test_encget_raises_without_default(self):
         inst = self._makeOne({})
         self.assertRaises(KeyError, inst.encget, 'a')
@@ -2462,11 +2466,44 @@ class TestBytesRequest(unittest.TestCase):
         inst = self._makeOne({})
         self.assertEqual(inst.decode_default(None), None)
 
-    def test_decode_bytes(self):
+    def test_decode_default_bytes(self):
         inst = self._makeOne({})
         val = inst.decode_default(b'123')
         self.assertEqual(val.__class__, bytes)
         self.assertEqual(val, bytes_('123'))
+
+    def test_decode_default_text(self):
+        inst = self._makeOne({})
+        val = inst.decode_default(text_('123'))
+        self.assertEqual(val.__class__, bytes)
+        self.assertEqual(val, bytes_('123'))
+
+    def test_application_url(self):
+        inst = self._blankOne('/%C3%AB')
+        inst.script_name = b'/\xc3\xab'
+        app_url = inst.application_url
+        self.assertEqual(app_url.__class__, bytes)
+        self.assertEqual(app_url, b'http://localhost/%C3%AB')
+
+    def test_path_url(self):
+        inst = self._blankOne('/%C3%AB')
+        inst.script_name = b'/\xc3\xab'
+        app_url = inst.path_url
+        self.assertEqual(app_url.__class__, bytes)
+        self.assertEqual(app_url, b'http://localhost/%C3%AB/%C3%AB')
+
+    def test_path(self):
+        inst = self._blankOne('/%C3%AB')
+        inst.script_name = b'/\xc3\xab'
+        app_url = inst.path
+        self.assertEqual(app_url.__class__, bytes)
+        self.assertEqual(app_url, b'/%C3%AB/%C3%AB')
+
+    def test_relative_url(self):
+        inst = self._blankOne('/%C3%AB/c')
+        result = inst.relative_url('a')
+        self.assertEqual(result.__class__, bytes)
+        self.assertEqual(result, b'http://localhost/%C3%AB/a')
 
 class TestTextRequest(unittest.TestCase):
     def _getTargetClass(self):
@@ -2476,6 +2513,10 @@ class TestTextRequest(unittest.TestCase):
     def _makeOne(self, *arg, **kw):
         cls = self._getTargetClass()
         return cls(*arg, **kw)
+
+    def _blankOne(self, *arg, **kw):
+        cls = self._getTargetClass()
+        return cls.blank(*arg, **kw)
 
     def test_encget_raises_without_default(self):
         inst = self._makeOne({})
@@ -2516,11 +2557,44 @@ class TestTextRequest(unittest.TestCase):
         inst = self._makeOne({})
         self.assertEqual(inst.decode_default(None), None)
 
-    def test_decode_bytes(self):
+    def test_decode_default_bytes(self):
         inst = self._makeOne({})
         val = inst.decode_default(b'123')
         self.assertEqual(val.__class__, text_type)
         self.assertEqual(val, text_('123'))
+
+    def test_decode_default_text(self):
+        inst = self._makeOne({})
+        val = inst.decode_default(text_('123'))
+        self.assertEqual(val.__class__, text_type)
+        self.assertEqual(val, text_('123'))
+
+    def test_application_url(self):
+        inst = self._blankOne('/%C3%AB')
+        inst.script_name = text_(b'/\xc3\xab', 'utf-8')
+        app_url = inst.application_url
+        self.assertEqual(app_url.__class__, text_type)
+        self.assertEqual(app_url, 'http://localhost/%C3%AB')
+
+    def test_path_url(self):
+        inst = self._blankOne('/%C3%AB')
+        inst.script_name = text_(b'/\xc3\xab', 'utf-8')
+        app_url = inst.path_url
+        self.assertEqual(app_url.__class__, text_type)
+        self.assertEqual(app_url, 'http://localhost/%C3%AB/%C3%AB')
+
+    def test_path(self):
+        inst = self._blankOne('/%C3%AB')
+        inst.script_name = text_(b'/\xc3\xab', 'utf-8')
+        app_url = inst.path
+        self.assertEqual(app_url.__class__, text_type)
+        self.assertEqual(app_url, '/%C3%AB/%C3%AB')
+
+    def test_relative_url(self):
+        inst = self._blankOne('/%C3%AB/c')
+        result = inst.relative_url('a')
+        self.assertEqual(result.__class__, text_type)
+        self.assertEqual(result, 'http://localhost/%C3%AB/a')
 
 class Test_environ_from_url(unittest.TestCase):
     def _callFUT(self, *arg, **kw):

@@ -215,7 +215,8 @@ def test_HTTPMove():
        'wsgi.url_scheme': 'HTTP',
        'SERVER_NAME': 'localhost',
        'SERVER_PORT': '80',
-       'REQUEST_METHOD': 'HEAD'
+       'REQUEST_METHOD': 'HEAD',
+       'PATH_INFO': '/',
     }
     m = _HTTPMove()
     assert_equal( m( environ, start_response ), [] )
@@ -227,7 +228,8 @@ def test_HTTPMove_location_not_none():
        'wsgi.url_scheme': 'HTTP',
        'SERVER_NAME': 'localhost',
        'SERVER_PORT': '80',
-       'REQUEST_METHOD': 'HEAD'
+       'REQUEST_METHOD': 'HEAD',
+       'PATH_INFO': '/',
     }
     m = _HTTPMove(location='http://example.com')
     assert_equal( m( environ, start_response ), [] )
@@ -245,7 +247,8 @@ def test_HTTPMove_call_add_slash():
        'wsgi.url_scheme': 'HTTP',
        'SERVER_NAME': 'localhost',
        'SERVER_PORT': '80',
-       'REQUEST_METHOD': 'HEAD'
+       'REQUEST_METHOD': 'HEAD',
+       'PATH_INFO': '/',
     }
     m = _HTTPMove()
     m.add_slash = True
@@ -263,6 +266,7 @@ def test_HTTPMove_call_query_string():
     m = _HTTPMove()
     m.add_slash = True
     environ[ 'QUERY_STRING' ] = 'querystring'
+    environ['PATH_INFO'] = '/'
     assert_equal( m( environ, start_response ), [] )
 
 def test_HTTPExceptionMiddleware_ok():
