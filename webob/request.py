@@ -214,7 +214,7 @@ class RequestMixin(object):
                                   keep_blank_values=True)
 
 
-        fout = t.transcode_fs(fs, native_(r._content_type_raw))
+        fout = t.transcode_fs(fs, r._content_type_raw)
 
         # this order is important, because setting body_file
         # resets content_length
@@ -316,15 +316,15 @@ class RequestMixin(object):
         you don't include any parameters in the value then existing
         parameters will be preserved.
         """
-        return self._content_type_raw.split(self._semicolon, 1)[0]
+        return self._content_type_raw.split(';', 1)[0]
     def _content_type__set(self, value=None):
         if value is not None:
             value = str(value)
             if ';' not in value:
                 content_type = self._content_type_raw
-                if self._semicolon in content_type:
-                    value += ';' + native_(content_type).split(';', 1)[1]
-        self._content_type_raw = value
+                if ';' in content_type:
+                    value += ';' + content_type.split(';', 1)[1]
+        self._content_type_raw = self.decode_default(value)
 
     content_type = property(_content_type__get,
                             _content_type__set,
@@ -1293,12 +1293,8 @@ class RequestMixin(object):
 class BytesRequest(RequestMixin):
     uscript_name = upath_property('SCRIPT_NAME')
     upath_info = upath_property('PATH_INFO')
-    _colonslashslash = b'://'
     _colon = b':'
-    _semicolon = b';'
     _comma = b','
-    _https_name = b'https'
-    _http_name = b'http'
     _443_name = b'443'
     _80_name = b'80'
     _put_name = b'PUT'
@@ -1325,12 +1321,8 @@ class TextRequest(RequestMixin):
     # bw compat
     uscript_name = environ_decoder('SCRIPT_NAME', '', encattr='url_encoding')
     upath_info = environ_decoder('PATH_INFO', encattr='url_encoding')
-    _colonslashslash = text_('://')
     _colon = text_(':')
-    _semicolon = text_(';')
     _comma = text_(',')
-    _https_name = text_('https')
-    _http_name = text_('http')
     _443_name = text_('443')
     _80_name = text_('80')
     _put_name = text_('PUT')
