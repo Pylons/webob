@@ -951,7 +951,8 @@ class Response(object):
         """
         req = BaseRequest(environ)
         headerlist = self._abs_headerlist(environ)
-        if req.method in self._safe_methods:
+        method = environ.get('REQUEST_METHOD', 'GET')
+        if method in self._safe_methods:
             status304 = False
             if req.if_none_match and self.etag:
                 status304 = self.etag in req.if_none_match
@@ -962,7 +963,7 @@ class Response(object):
                 return EmptyResponse(self._app_iter)
         if (req.range and self in req.if_range
             and self.content_range is None
-            and req.method in ('HEAD', 'GET')
+            and method in ('HEAD', 'GET')
             and self.status_int == 200
             and self.content_length is not None
         ):
@@ -978,7 +979,7 @@ class Response(object):
                 ] + filter_headers(headerlist)
                 start_response('416 Requested Range Not Satisfiable',
                                headerlist)
-                if req.method == 'HEAD':
+                if method == 'HEAD':
                     return ()
                 return [body]
             else:
@@ -994,12 +995,12 @@ class Response(object):
                         ('Content-Range', str(content_range)),
                     ] + filter_headers(headerlist, ('content-length',))
                     start_response('206 Partial Content', headerlist)
-                    if req.method == 'HEAD':
+                    if method == 'HEAD':
                         return EmptyResponse(app_iter)
                     return app_iter
 
         start_response(self.status, headerlist)
-        if req.method == 'HEAD':
+        if method  == 'HEAD':
             return EmptyResponse(self._app_iter)
         return self._app_iter
 
