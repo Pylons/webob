@@ -15,8 +15,7 @@ from webob.util import (
     warn_deprecation,
     )
 
-__all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'NoIfRange',
-           'etag_property']
+__all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'etag_property']
 
 def etag_property(key, default, rfc_section, strong=True):
     doc = header_docstring(key, rfc_section)
