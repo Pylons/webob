@@ -167,22 +167,22 @@ class RequestMixin(object):
             charset = detect_charset(self._content_type_raw)
             if _is_utf8(charset):
                 charset = 'UTF-8'
-            self._charset = self.decode_default(charset)
+            self._charset = charset
         return self._charset
 
     @charset.setter
     def charset(self, charset):
         if _is_utf8(charset):
-            charset = self._utf8_name
-        if self.decode_default(charset) != self.charset:
+            charset = 'UTF-8'
+        if charset != self.charset:
             raise DeprecationWarning("Use req = req.decode(%r)" % charset)
 
     def decode(self, charset=None, errors='strict'):
         charset = charset or self.charset
-        if charset == self.decode_default('UTF-8'):
+        if charset == 'UTF-8':
             return self
         # cookies and path are always utf-8
-        t = Transcoder(native_(charset), errors)
+        t = Transcoder(charset, errors)
 
         new_content_type = CHARSET_RE.sub('; charset="UTF-8"',
                                           self._content_type_raw)
@@ -285,8 +285,8 @@ class RequestMixin(object):
             self.make_body_seekable()
         return self.body_file_raw
 
-    url_encoding = environ_getter('webob.url_encoding', 'utf-8')
-    remote_user_encoding = environ_getter('webob.remote_user_encoding', 'utf-8')
+    url_encoding = environ_getter('webob.url_encoding', 'UTF-8')
+    remote_user_encoding = environ_getter('webob.remote_user_encoding', 'UTF-8')
     scheme = environ_getter('wsgi.url_scheme')
     method = environ_decoder('REQUEST_METHOD', 'GET')
     http_version = environ_decoder('SERVER_PROTOCOL')
@@ -305,7 +305,7 @@ class RequestMixin(object):
     script_name = environ_decoder('SCRIPT_NAME', '', encattr='url_encoding')
     path_info = environ_decoder('PATH_INFO', encattr='url_encoding')
 
-    _content_type_raw = environ_decoder('CONTENT_TYPE', '')
+    _content_type_raw = environ_getter('CONTENT_TYPE', '')
 
     def _content_type__get(self):
         """Return the content type, but leaving off any parameters (like
@@ -758,11 +758,11 @@ class RequestMixin(object):
         return vars
 
     def _check_charset(self):
-        if self.charset != self._utf8_name:
+        if self.charset != 'UTF-8':
             raise DeprecationWarning(
                 "Requests are expected to be submitted in UTF-8, not %s. "
                 "You can fix this by doing req = req.decode('%s')" % (
-                    native_(self.charset), native_(self.charset))
+                    self.charset, self.charset)
             )
 
     @property
@@ -1304,7 +1304,6 @@ class BytesRequest(RequestMixin):
     _put_name = b'PUT'
     _slash = b'/'
     _questionmark = b'?'
-    _utf8_name = b'UTF-8'
     
     def encget(self, key, default=NoDefault, encattr=None):
         val = self.environ.get(key, default)
@@ -1337,7 +1336,6 @@ class TextRequest(RequestMixin):
     _put_name = text_('PUT')
     _slash = text_('/')
     _questionmark = text_('?')
-    _utf8_name = text_('UTF-8')
 
     def encget(self, key, default=NoDefault, encattr=None):
         val = self.environ.get(key, default)
@@ -1646,7 +1644,7 @@ def _is_utf8(charset):
     if not charset:
         return True
     else:
-        return native_(charset).lower().replace('-', '') == 'utf8'
+        return charset.lower().replace('-', '') == 'utf8'
 
 
 class Transcoder(object):
