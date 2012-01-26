@@ -313,7 +313,8 @@ def parse_auth_params(params):
     return r
 
 # see http://lists.w3.org/Archives/Public/ietf-http-wg/2009OctDec/0297.html
-known_auth_schemes = ['Basic', 'Digest', 'WSSE', 'HMACDigest', 'GoogleLogin', 'Cookie', 'OpenID']
+known_auth_schemes = ['Basic', 'Digest', 'WSSE', 'HMACDigest', 'GoogleLogin',
+                      'Cookie', 'OpenID']
 known_auth_schemes = dict.fromkeys(known_auth_schemes, None)
 
 def parse_auth(val):

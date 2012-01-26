@@ -1,7 +1,5 @@
 # code stolen from "six"
 
-import cgi
-import os
 import sys
 import types
 

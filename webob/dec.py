@@ -6,8 +6,6 @@ application (while also allowing normal calling of the method with an
 instantiated request).
 """
 
-import sys
-
 from webob.compat import (
     bytes_,
     text_type,
