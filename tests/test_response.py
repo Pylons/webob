@@ -424,9 +424,8 @@ def test_request_uri_no_script_name():
     environ = {
         'wsgi.url_scheme': 'http',
         'HTTP_HOST': 'test.com',
-        'SCRIPT_NAME': '/foobar',
     }
-    eq_(_request_uri(environ), 'http://test.com/foobar')
+    eq_(_request_uri(environ), 'http://test.com/')
 
 def test_request_uri_https():
     from webob.response import _request_uri
@@ -981,6 +980,14 @@ def test__abs_headerlist_location_with_scheme():
     res.headerlist = [('Location', 'http:')]
     result = res._abs_headerlist({})
     eq_(result, [('Location', 'http:')])
+
+def test__abs_headerlist_location_no_scheme():
+    res = Response()
+    res.content_encoding = 'gzip'
+    res.headerlist = [('Location', '/abc')]
+    result = res._abs_headerlist({'wsgi.url_scheme':'http',
+                                  'HTTP_HOST':'example.com:80'})
+    eq_(result, [('Location', 'http://example.com/abc')])
 
 def test_response_set_body_file1():
      data  = b'abc'

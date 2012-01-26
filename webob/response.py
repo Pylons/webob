@@ -929,16 +929,13 @@ class Response(object):
         """Returns a headerlist, with the Location header possibly
         made absolute given the request environ.
         """
-        headerlist = self.headerlist
-        for name, value in headerlist:
+        headerlist = list(self.headerlist)
+        for i, (name, value) in enumerate(headerlist):
             if name.lower() == 'location':
                 if SCHEME_RE.search(value):
                     break
-                new_location = urlparse.urljoin(
-                    _request_uri(environ), value)
-                headerlist = list(headerlist)
-                idx = headerlist.index((name, value))
-                headerlist[idx] = (name, new_location)
+                new_location = urlparse.urljoin(_request_uri(environ), value)
+                headerlist[i] = (name, new_location)
                 break
         return headerlist
 
@@ -1150,12 +1147,19 @@ def _request_uri(environ):
     elif url.endswith(':443') and environ['wsgi.url_scheme'] == 'https':
         url = url[:-4]
 
-    url += url_quote(environ.get('SCRIPT_NAME') or '/')
-    path_info = url_quote(environ.get('PATH_INFO',''))
-    if not environ.get('SCRIPT_NAME'):
-        url += path_info[1:]
+    if PY3: # pragma: no cover
+        script_name = bytes_(environ.get('SCRIPT_NAME', '/'), 'latin-1')
+        path_info = bytes_(environ.get('PATH_INFO', ''), 'latin-1')
     else:
-        url += path_info
+        script_name = environ.get('SCRIPT_NAME', '/')
+        path_info = environ.get('PATH_INFO', '')
+
+    url += url_quote(script_name)
+    qpath_info = url_quote(path_info)
+    if not 'SCRIPT_NAME' in environ:
+        url += qpath_info[1:]
+    else:
+        url += qpath_info
     return url
 
 

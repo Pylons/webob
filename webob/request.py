@@ -104,8 +104,6 @@ class RequestMixin(object):
     ## in memory):
     request_body_tempfile_limit = 10*1024
 
-    url_encoding = 'utf-8'
-    remote_user_encoding = 'utf-8'
     _charset = None
 
     def __init__(self, environ, charset=None, unicode_errors=None,
@@ -287,7 +285,9 @@ class RequestMixin(object):
             self.make_body_seekable()
         return self.body_file_raw
 
-    scheme = environ_decoder('wsgi.url_scheme')
+    url_encoding = environ_getter('webob.url_encoding', 'utf-8')
+    remote_user_encoding = environ_getter('webob.remote_user_encoding', 'utf-8')
+    scheme = environ_getter('wsgi.url_scheme')
     method = environ_decoder('REQUEST_METHOD', 'GET')
     http_version = environ_decoder('SERVER_PROTOCOL')
     content_length = converter(
