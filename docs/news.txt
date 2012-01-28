@@ -13,6 +13,53 @@ Next release
 * Fix corner-case ``response.status_int`` and ``response.status`` mutation
   bug on py3 (use explicit floor division).
 
+* Backwards incompatibility: Request and BaseRequest objects now return
+  Unicode for ``request.path_info`` and ``request.script_name`` under Python
+  2.  Rationale: the legacy behavior of returning the respective raw environ
+  values was nonsensical on Python 3.  Working with non-ascii encoded environ
+  variables as raw WSGI values under Python 3 makes no sense, as PEP 3333
+  specifies that environ variables are bytes-tunneled-as-latin-1 strings, and
+  therefore their values are not sensible to use if there are high-order
+  characters in them.
+
+  If you don't care about Python 3, and you need backwards compatibility, to
+  get legacy behavior of returning bytes on Python 2 for these attributes,
+  use ``webob.LegacyRequest`` instead of ``webob.Request``.  Although it's
+  possible to use ``webob.LegacyRequest`` under Python 3, it makes no sense
+  at all to do so, so don't.
+
+* The above backwards incompatibility fixed nonsensical behavior of
+  ``request.host_url``, ``request.application_url``, ``request.path_url``,
+  ``request.path``, ``request.path_qs``, ``request.url``,
+  ``request.relative_url``, ``request.path_info_peek``,
+  ``request.path_info_pop`` under Python 3.
+
+* The WebOb Request object now respects two WSGI environment variables:
+  ``webob.url_encoding`` and ``webob.remote_user_encoding``.
+  ``webob.url_encoding`` will be used to decode the raw WSGI PATH_INFO and
+  SCRIPT_NAME variables when the ``request.path_info`` API is used.
+  ``webob.remote_user_encoding`` will be used to decode the raw WSGI
+  REMOTE_USER variable when the ``request.remote_user`` API is used.
+
+* Request objects now accept two additional constructor parameters:
+  ``url_encoding`` and ``remote_user_encoding``.  These will be used to
+  decode PATH_INFO/SCRIPT_NAME and REMOTE_USER respectively from their
+  WSGI-encoded values.
+
+  Note that passing ``url_encoding`` will cause the WSGI environment variable
+  ``webob.url_encoding`` to be set, and passing ``remote_user_encoding`` will
+  cause the WSGI environment variable ``webob.remote_user_encoding`` to be
+  set.
+
+* Fix ``webob.response._request_uri`` internal function to generate sensible
+  request URI under Python 3.  This fixed a problem under Python 3 if you
+  were using non-absolute Location headers in responses.
+
+* Internal: a cached version of EnvironHeaders is no longer kept as a
+  _headers attribute of the request when ``request.headers`` is used, because
+  changes to EnvironHeaders meant the caching would have implied a circular
+  reference.
+
 1.2b2
 ------
 

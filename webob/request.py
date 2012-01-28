@@ -208,7 +208,7 @@ class BaseRequest(object):
 
         new_content_type = CHARSET_RE.sub('; charset="UTF-8"',
                                           self._content_type_raw)
-        content_type = native_(self.content_type)
+        content_type = self.content_type
         r = self.__class__(
             self.environ.copy(),
             query_string=t.transcode_query(self.query_string),
@@ -228,7 +228,7 @@ class BaseRequest(object):
             fs = cgi.FieldStorage(fp=self.body_file,
                                   environ=fs_environ,
                                   keep_blank_values=True,
-                                  encoding=native_(charset),
+                                  encoding=charset,
                                   errors=errors)
         else:
             fs = cgi.FieldStorage(fp=self.body_file,
@@ -308,7 +308,7 @@ class BaseRequest(object):
         return self.body_file_raw
 
     url_encoding = environ_getter('webob.url_encoding', 'UTF-8')
-    remote_user_encoding = environ_getter('webob.remote_user_encoding', 'UTF-8')
+    remote_user_encoding = environ_getter('webob.remote_user_encoding', 'ascii')
     scheme = environ_getter('wsgi.url_scheme')
     method = environ_getter('REQUEST_METHOD', 'GET')
     http_version = environ_getter('SERVER_PROTOCOL')
@@ -345,7 +345,7 @@ class BaseRequest(object):
         return self._content_type_raw.split(';', 1)[0]
     def _content_type__set(self, value=None):
         if value is not None:
-            value = native_(value)
+            value = str(value)
             if ';' not in value:
                 content_type = self._content_type_raw
                 if ';' in content_type:
@@ -393,11 +393,12 @@ class BaseRequest(object):
            ``HTTP_X_FORWARDED_FOR`` has the correct values.  The WSGI server
            must be behind a trusted proxy for this to be true.
         """
-        xff = self.environ.get('HTTP_X_FORWARDED_FOR', None)
+        e = self.environ
+        xff = e.get('HTTP_X_FORWARDED_FOR', None)
         if xff is not None:
             addr = xff.split(',')[0].strip()
         else:
-            addr = self.environ.get('REMOTE_ADDR', None)
+            addr = e.get('REMOTE_ADDR', None)
         return addr
 
     @property
@@ -412,18 +413,19 @@ class BaseRequest(object):
         the environ at all, this attribute will return the value of the
         ``SERVER_PORT`` header (which is guaranteed to be present).
         """
-        host = self.environ.get('HTTP_HOST', None)
+        e = self.environ
+        host = e.get('HTTP_HOST', None)
         if host is not None:
             if ':' in host:
                 host, port = host.split(':', 1)
             else:
-                url_scheme = self.environ['wsgi.url_scheme']
+                url_scheme = e['wsgi.url_scheme']
                 if url_scheme == 'https':
                     port = '443'
                 else:
                     port = '80'
         else:
-            port = self.environ['SERVER_PORT']
+            port = e['SERVER_PORT']
         return port
 
     @property
@@ -431,17 +433,18 @@ class BaseRequest(object):
         """
         The URL through the host (no path)
         """
-        scheme = self.environ.get('wsgi.url_scheme')
+        e = self.environ
+        scheme = e.get('wsgi.url_scheme')
         url = scheme + '://'
-        host = self.environ.get('HTTP_HOST', None)
+        host = e.get('HTTP_HOST', None)
         if host is not None:
             if ':' in host:
                 host, port = host.split(':', 1)
             else:
                 port = None
         else:
-            host = self.environ.get('SERVER_NAME')
-            port = self.environ.get('SERVER_PORT')
+            host = e.get('SERVER_NAME')
+            port = e.get('SERVER_PORT')
         if scheme == 'https':
             if port == '443':
                 port = None
@@ -484,7 +487,7 @@ class BaseRequest(object):
         The path of the request, without host but with query string
         """
         path = self.path
-        qs = self.encget('QUERY_STRING', None)
+        qs = self.environ.get('QUERY_STRING', None)
         if qs:
             path += '?' + qs
         return path
@@ -495,7 +498,7 @@ class BaseRequest(object):
         The full request URL, including QUERY_STRING
         """
         url = self.path_url
-        qs = self.encget('QUERY_STRING', None)
+        qs = self.environ.get('QUERY_STRING', None)
         if qs:
             url += '?' + qs
         return url
@@ -649,12 +652,10 @@ class BaseRequest(object):
 
     def _host__get(self):
         """Host name provided in HTTP_HOST, with fall-back to SERVER_NAME"""
-        host = self.environ.get('HTTP_HOST')
-        if host is None:
-            h = self.environ.get('SERVER_NAME')
-            p = self.environ.get('SERVER_PORT')
-            host = h + ':' + p
-        return host
+        if 'HTTP_HOST' in self.environ:
+            return self.environ['HTTP_HOST']
+        else:
+            return '%(SERVER_NAME)s:%(SERVER_PORT)s' % self.environ
     def _host__set(self, value):
         self.environ['HTTP_HOST'] = value
     def _host__del(self):
@@ -987,7 +988,7 @@ class BaseRequest(object):
         <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9>`_)
         """
         env = self.environ
-        value = self.environ.get('HTTP_CACHE_CONTROL', '')
+        value = env.get('HTTP_CACHE_CONTROL', '')
         cache_header, cache_obj = env.get('webob._cache_control', (None, None))
         if cache_obj is not None and cache_header == value:
             return cache_obj
@@ -1004,10 +1005,10 @@ class BaseRequest(object):
             value = CacheControl(value, type='request')
         if isinstance(value, CacheControl):
             str_value = str(value)
-            self.environ['HTTP_CACHE_CONTROL'] = str_value
+            env['HTTP_CACHE_CONTROL'] = str_value
             env['webob._cache_control'] = (str_value, value)
         else:
-            self.environ['HTTP_CACHE_CONTROL'] = value
+            env['HTTP_CACHE_CONTROL'] = value
             env['webob._cache_control'] = (None, None)
 
     def _cache_control__del(self):
@@ -1076,15 +1077,13 @@ class BaseRequest(object):
         host = self.host_url
         assert url.startswith(host)
         url = url[len(host):]
-        method = self.method
-        http_version = self.http_version
-        parts = [bytes_('%s %s %s' % (method, url, http_version))]
+        parts = [bytes_('%s %s %s' % (self.method, url, self.http_version))]
         #self.headers.setdefault('Host', self.host)
 
         # acquire body before we handle headers so that
         # content-length will be set
         body = None
-        if self.method in ('POST', 'PUT'):
+        if self.method in ('PUT', 'POST'):
             if skip_body > 1:
                 if len(self.body) > skip_body:
                     body = bytes_('<body skipped (len=%s)>' % len(self.body))
@@ -1186,7 +1185,7 @@ class BaseRequest(object):
             if hname in r.headers:
                 hval = r.headers[hname] + ', ' + hval
             r.headers[hname] = hval
-        if r.method in ('POST', 'PUT'):
+        if r.method in ('PUT', 'POST'):
             clen = r.content_length
             if clen is None:
                 body = fp.read()
@@ -1590,7 +1589,6 @@ def _encode_multipart(vars, content_type, fout=None):
         return content_type, f.getvalue()
 
 def detect_charset(ctype):
-    ctype = native_(ctype)
     m = CHARSET_RE.search(ctype)
     if m:
         return m.group(1).strip('"').strip()
