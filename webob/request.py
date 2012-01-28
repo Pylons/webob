@@ -394,11 +394,11 @@ class BaseRequest(object):
            must be behind a trusted proxy for this to be true.
         """
         e = self.environ
-        xff = e.get('HTTP_X_FORWARDED_FOR', None)
+        xff = e.get('HTTP_X_FORWARDED_FOR')
         if xff is not None:
             addr = xff.split(',')[0].strip()
         else:
-            addr = e.get('REMOTE_ADDR', None)
+            addr = e.get('REMOTE_ADDR')
         return addr
 
     @property
@@ -414,7 +414,7 @@ class BaseRequest(object):
         ``SERVER_PORT`` header (which is guaranteed to be present).
         """
         e = self.environ
-        host = e.get('HTTP_HOST', None)
+        host = e.get('HTTP_HOST')
         if host is not None:
             if ':' in host:
                 host, port = host.split(':', 1)
@@ -436,7 +436,7 @@ class BaseRequest(object):
         e = self.environ
         scheme = e.get('wsgi.url_scheme')
         url = scheme + '://'
-        host = e.get('HTTP_HOST', None)
+        host = e.get('HTTP_HOST')
         if host is not None:
             if ':' in host:
                 host, port = host.split(':', 1)
@@ -453,7 +453,7 @@ class BaseRequest(object):
                 port = None
         url += host
         if port:
-            url += ':' + port
+            url += ':%s' % port
         return url
 
     @property
@@ -487,7 +487,7 @@ class BaseRequest(object):
         The path of the request, without host but with query string
         """
         path = self.path
-        qs = self.environ.get('QUERY_STRING', None)
+        qs = self.environ.get('QUERY_STRING')
         if qs:
             path += '?' + qs
         return path
@@ -498,7 +498,7 @@ class BaseRequest(object):
         The full request URL, including QUERY_STRING
         """
         url = self.path_url
-        qs = self.environ.get('QUERY_STRING', None)
+        qs = self.environ.get('QUERY_STRING')
         if qs:
             url += '?' + qs
         return url
@@ -1008,7 +1008,7 @@ class BaseRequest(object):
             env['HTTP_CACHE_CONTROL'] = str_value
             env['webob._cache_control'] = (str_value, value)
         else:
-            env['HTTP_CACHE_CONTROL'] = value
+            env['HTTP_CACHE_CONTROL'] = str(value)
             env['webob._cache_control'] = (None, None)
 
     def _cache_control__del(self):
