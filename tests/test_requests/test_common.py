@@ -1969,8 +1969,6 @@ class TestLimitedLengthFile(unittest.TestCase):
         self.assertEqual(inst.fileno(), 1)
 
 
-
-
 class Test_environ_from_url(unittest.TestCase):
     def _callFUT(self, *arg, **kw):
         from webob.request import environ_from_url
@@ -2023,14 +2021,9 @@ class Test_environ_from_url(unittest.TestCase):
         env = self._callFUT('/%E6%B5%81')
         self.assertEqual(env['PATH_INFO'], '/\xe6\xb5\x81')
         request = Request(env)
-        if PY3:
-            self.assertEqual(request.path_info,
-                             text_(b'/\xe6\xb5\x81', 'utf-8'))
-        else:
-            self.assertEqual(request.path_info, '/\xe6\xb5\x81')
-        self.assertEqual(request.upath_info,
-                         b'/\xe6\xb5\x81'.decode('utf8')) # u'/\u6d41'
-
+        expected = text_(b'/\xe6\xb5\x81', 'utf-8') # u'/\u6d41'
+        self.assertEqual(request.path_info, expected)
+        self.assertEqual(request.upath_info, expected)
 
 def simpleapp(environ, start_response):
     from webob.request import Request

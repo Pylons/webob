@@ -35,7 +35,6 @@ from webob.compat import (
     url_unquote,
     quote_plus,
     urlparse,
-    text_,
     )
 
 from webob.cookies import RequestCookies
@@ -77,8 +76,7 @@ from webob.multidict import (
 
 from webob.util import warn_deprecation
 
-__all__ = ['BaseRequest', 'Request', 'BytesRequest', 'TextRequest',
-           'RequestMixin']
+__all__ = ['BaseRequest', 'Request', 'LegacyRequest']
 
 class _NoDefault:
     def __repr__(self):
@@ -91,14 +89,13 @@ http_method_probably_has_body = dict.fromkeys(
     ('GET', 'HEAD', 'DELETE', 'TRACE'), False)
 http_method_probably_has_body.update(
     dict.fromkeys(('POST', 'PUT'), True))
-postput_names = ('PUT', 'POST', b'POST', b'PUT')
 
-_LATIN1_ENCODINGS = (
-    'latin-1', 'latin', 'latin_1', 'l1', 'latin1',
-    'iso-8859-1', 'iso8859_1', 'iso_8859_1', 'iso8859', '8859'
+_LATIN_ENCODINGS = (
+    'ascii', 'latin-1', 'latin', 'latin_1', 'l1', 'latin1',
+    'iso-8859-1', 'iso8859_1', 'iso_8859_1', 'iso8859', '8859',
     )
 
-class RequestMixin(object):
+class BaseRequest(object):
     ## The limit after which request bodies should be stored on disk
     ## if they are read in (under this, and the request body is stored
     ## in memory):
@@ -150,6 +147,31 @@ class RequestMixin(object):
                     raise TypeError(
                         "Unexpected keyword: %s=%r" % (name, value))
                 setattr(self, name, value)
+
+    if PY3: # pragma: no cover
+        def encget(self, key, default=NoDefault, encattr=None):
+            val = self.environ.get(key, default)
+            if val is NoDefault:
+                raise KeyError(key)
+            if val is default:
+                return default
+            if not encattr:
+                return val
+            encoding = getattr(self, encattr)
+            if encoding in _LATIN_ENCODINGS: # shortcut
+                return val
+            return bytes_(val, 'latin-1').decode(encoding)
+    else:
+        def encget(self, key, default=NoDefault, encattr=None):
+            val = self.environ.get(key, default)
+            if val is NoDefault:
+                raise KeyError(key)
+            if val is default:
+                return default
+            if encattr is None:
+                return val
+            encoding = getattr(self, encattr)
+            return val.decode(encoding)
 
     def encset(self, key, val, encattr=None):
         if encattr:
@@ -286,6 +308,8 @@ class RequestMixin(object):
         return self.body_file_raw
 
     url_encoding = environ_getter('webob.url_encoding', 'UTF-8')
+    uscript_name = environ_decoder('SCRIPT_NAME', '', encattr='url_encoding')
+    upath_info = environ_decoder('PATH_INFO', encattr='url_encoding')
     remote_user_encoding = environ_getter('webob.remote_user_encoding', 'UTF-8')
     scheme = environ_getter('wsgi.url_scheme')
     method = environ_decoder('REQUEST_METHOD', 'GET')
@@ -316,7 +340,7 @@ class RequestMixin(object):
         you don't include any parameters in the value then existing
         parameters will be preserved.
         """
-        return self.decode_default(self._content_type_raw.split(';', 1)[0])
+        return self._content_type_raw.split(';', 1)[0]
     def _content_type__set(self, value=None):
         if value is not None:
             value = native_(value)
@@ -367,11 +391,11 @@ class RequestMixin(object):
            ``HTTP_X_FORWARDED_FOR`` has the correct values.  The WSGI server
            must be behind a trusted proxy for this to be true.
         """
-        xff = self.encget('HTTP_X_FORWARDED_FOR', None)
+        xff = self.environ.get('HTTP_X_FORWARDED_FOR', None)
         if xff is not None:
-            addr = xff.split(self._comma)[0].strip()
+            addr = xff.split(',')[0].strip()
         else:
-            addr = self.encget('REMOTE_ADDR', None)
+            addr = self.environ.get('REMOTE_ADDR', None)
         return addr
 
     @property
@@ -386,19 +410,18 @@ class RequestMixin(object):
         the environ at all, this attribute will return the value of the
         ``SERVER_PORT`` header (which is guaranteed to be present).
         """
-        host = self.encget('HTTP_HOST', None)
+        host = self.environ.get('HTTP_HOST', None)
         if host is not None:
-            colon = self._colon
-            if colon in host:
-                host, port = host.split(colon, 1)
+            if ':' in host:
+                host, port = host.split(':', 1)
             else:
                 url_scheme = self.environ['wsgi.url_scheme']
                 if url_scheme == 'https':
-                    port = self._443_name
+                    port = '443'
                 else:
-                    port = self._80_name
+                    port = '80'
         else:
-            port = self.encget('SERVER_PORT')
+            port = self.environ['SERVER_PORT']
         return port
 
     @property
@@ -426,7 +449,7 @@ class RequestMixin(object):
         url += host
         if port:
             url += ':' + port
-        return self.decode_default(url)
+        return url
 
     @property
     def application_url(self):
@@ -434,8 +457,7 @@ class RequestMixin(object):
         The URL including SCRIPT_NAME (no PATH_INFO or query string)
         """
         bscript_name = bytes_(self.script_name, self.url_encoding)
-        return self.host_url + self.decode_default(
-            url_quote(bscript_name, PATH_SAFE))
+        return self.host_url + url_quote(bscript_name, PATH_SAFE)
 
     @property
     def path_url(self):
@@ -443,19 +465,16 @@ class RequestMixin(object):
         The URL including SCRIPT_NAME and PATH_INFO, but not QUERY_STRING
         """
         bpath_info = bytes_(self.path_info, self.url_encoding)
-        return self.application_url + self.decode_default(
-            url_quote(bpath_info, PATH_SAFE))
+        return self.application_url + url_quote(bpath_info, PATH_SAFE)
 
     @property
     def path(self):
         """
         The path of the request, without host or query string
         """
-        bscript_name = bytes_(self.script_name, self.url_encoding)
-        bpath_info = bytes_(self.path_info, self.url_encoding)
-        return self.decode_default(
-            url_quote(bscript_name, PATH_SAFE)+url_quote(bpath_info, PATH_SAFE)
-            )
+        bscript = bytes_(self.script_name, self.url_encoding)
+        bpath = bytes_(self.path_info, self.url_encoding)
+        return url_quote(bscript, PATH_SAFE) + url_quote(bpath, PATH_SAFE)
 
     @property
     def path_qs(self):
@@ -465,7 +484,7 @@ class RequestMixin(object):
         path = self.path
         qs = self.encget('QUERY_STRING', None)
         if qs:
-            path += self._questionmark + qs
+            path += '?' + qs
         return path
 
     @property
@@ -476,7 +495,7 @@ class RequestMixin(object):
         url = self.path_url
         qs = self.encget('QUERY_STRING', None)
         if qs:
-            url += self._questionmark + qs
+            url += '?' + qs
         return url
 
     def relative_url(self, other_url, to_application=False):
@@ -488,11 +507,11 @@ class RequestMixin(object):
         """
         if to_application:
             url = self.application_url
-            if not url.endswith(self._slash):
-                url += self._slash
+            if not url.endswith('/'):
+                url += '/'
         else:
             url = self.path_url
-        return urlparse.urljoin(url, self.decode_default(other_url))
+        return urlparse.urljoin(url, other_url)
 
     def path_info_pop(self, pattern=None):
         """
@@ -510,11 +529,11 @@ class RequestMixin(object):
         path = self.path_info
         if not path:
             return None
-        slashes = self._empty
-        while path.startswith(self._slash):
-            slashes += self._slash
+        slashes = ''
+        while path.startswith('/'):
+            slashes += '/'
             path = path[1:]
-        idx = path.find(self._slash)
+        idx = path.find('/')
         if idx == -1:
             idx = len(path)
         r = path[:idx]
@@ -531,8 +550,8 @@ class RequestMixin(object):
         path = self.path_info
         if not path:
             return None
-        path = path.lstrip(self._slash)
-        return path.split(self._slash, 1)[0]
+        path = path.lstrip('/')
+        return path.split('/', 1)[0]
 
     def _urlvars__get(self):
         """
@@ -628,14 +647,14 @@ class RequestMixin(object):
 
     def _host__get(self):
         """Host name provided in HTTP_HOST, with fall-back to SERVER_NAME"""
-        host = self.encget('HTTP_HOST', None)
+        host = self.environ.get('HTTP_HOST')
         if host is None:
-            h = self.encget('SERVER_NAME')
-            p = self.encget('SERVER_PORT')
-            host = h + self._colon + p
+            h = self.environ.get('SERVER_NAME')
+            p = self.environ.get('SERVER_PORT')
+            host = h + ':' + p
         return host
     def _host__set(self, value):
-        self.encset('HTTP_HOST', value)
+        self.environ['HTTP_HOST'] = value
     def _host__del(self):
         if 'HTTP_HOST' in self.environ:
             del self.environ['HTTP_HOST']
@@ -671,7 +690,7 @@ class RequestMixin(object):
 
     @property
     def json_body(self):
-        return json.loads(self.body.decode(native_(self.charset)))
+        return json.loads(self.body.decode(self.charset))
 
     @property
     def POST(self):
@@ -683,21 +702,18 @@ class RequestMixin(object):
         an appropriate Content-Type are also supported.
         """
         env = self.environ
-        if self.method not in postput_names:
+        if self.method not in ('POST', 'PUT'):
             return NoVars('Not a form request')
         if 'webob._parsed_post_vars' in env:
             vars, body_file = env['webob._parsed_post_vars']
             if body_file is self.body_file_raw:
                 return vars
         content_type = self.content_type
-        if ((self.method == self._put_name and not content_type)
+        if ((self.method == 'PUT' and not content_type)
             or content_type not in
                 ('',
                  'application/x-www-form-urlencoded',
-                 'multipart/form-data',
-                 b'',
-                 b'application/x-www-form-urlencoded',
-                 b'multipart/form-data')
+                 'multipart/form-data')
                  ):
             # Not an HTML form submission
             return NoVars('Not an HTML form submission (Content-Type: %s)'
@@ -986,10 +1002,10 @@ class RequestMixin(object):
             value = CacheControl(value, type='request')
         if isinstance(value, CacheControl):
             str_value = str(value)
-            self.encset('HTTP_CACHE_CONTROL', str_value)
+            self.environ['HTTP_CACHE_CONTROL'] = str_value
             env['webob._cache_control'] = (str_value, value)
         else:
-            self.encset('HTTP_CACHE_CONTROL', value)
+            self.environ['HTTP_CACHE_CONTROL'] = value
             env['webob._cache_control'] = (None, None)
 
     def _cache_control__del(self):
@@ -1000,7 +1016,7 @@ class RequestMixin(object):
             del env['webob._cache_control']
 
     def _update_cache_control(self, prop_dict):
-        self.encset('HTTP_CACHE_CONTROL', serialize_cache_control(prop_dict))
+        self.environ['HTTP_CACHE_CONTROL'] = serialize_cache_control(prop_dict)
 
     cache_control = property(_cache_control__get,
                              _cache_control__set,
@@ -1039,7 +1055,7 @@ class RequestMixin(object):
 
     def __repr__(self):
         try:
-            name = '%s %s' % (native_(self.method), native_(self.url))
+            name = '%s %s' % (self.method, self.url)
         except KeyError:
             name = '(invalid WSGI environ)'
         msg = '<%s at 0x%x %s>' % (
@@ -1057,16 +1073,16 @@ class RequestMixin(object):
         url = self.url
         host = self.host_url
         assert url.startswith(host)
-        url = native_(url[len(host):])
-        method = native_(self.method)
-        http_version = native_(self.http_version)
+        url = url[len(host):]
+        method = self.method
+        http_version = self.http_version
         parts = [bytes_('%s %s %s' % (method, url, http_version))]
         #self.headers.setdefault('Host', self.host)
 
         # acquire body before we handle headers so that
         # content-length will be set
         body = None
-        if self.method in postput_names:
+        if self.method in ('POST', 'PUT'):
             if skip_body > 1:
                 if len(self.body) > skip_body:
                     body = bytes_('<body skipped (len=%s)>' % len(self.body))
@@ -1134,7 +1150,8 @@ class RequestMixin(object):
         Content-Length, in that case, the entire file is read).
 
         This reads the request as represented by ``str(req)``; it may
-        not read every valid HTTP request properly."""
+        not read every valid HTTP request properly.
+        """
         start_line = fp.readline()
         is_text = isinstance(start_line, text_type)
         if is_text:
@@ -1167,7 +1184,7 @@ class RequestMixin(object):
             if hname in r.headers:
                 hval = r.headers[hname] + ', ' + hval
             r.headers[hname] = hval
-        if r.method in postput_names:
+        if r.method in ('POST', 'PUT'):
             clen = r.content_length
             if clen is None:
                 body = fp.read()
@@ -1290,17 +1307,9 @@ class RequestMixin(object):
             obj.headers.update(headers)
         return obj
 
-class BytesRequest(RequestMixin):
+class LegacyRequest(BaseRequest):
     uscript_name = upath_property('SCRIPT_NAME')
     upath_info = upath_property('PATH_INFO')
-    _colon = b':'
-    _comma = b','
-    _443_name = b'443'
-    _80_name = b'80'
-    _put_name = b'PUT'
-    _slash = b'/'
-    _questionmark = b'?'
-    _empty = b''
     
     def encget(self, key, default=NoDefault, encattr=None):
         val = self.environ.get(key, default)
@@ -1308,51 +1317,7 @@ class BytesRequest(RequestMixin):
             raise KeyError(key)
         if val is default:
             return default
-        if PY3: # pragma: no cover
-            return bytes_(val, 'latin-1')
-        else:
-            return val
-
-    def decode_default(self, default):
-        if default.__class__ is text_type:
-            return default.encode('latin-1')
-        return default
-
-class TextRequest(RequestMixin):
-    # bw compat
-    uscript_name = environ_decoder('SCRIPT_NAME', '', encattr='url_encoding')
-    upath_info = environ_decoder('PATH_INFO', encattr='url_encoding')
-    _colon = text_(':')
-    _comma = text_(',')
-    _443_name = text_('443')
-    _80_name = text_('80')
-    _put_name = text_('PUT')
-    _slash = text_('/')
-    _questionmark = text_('?')
-    _empty = text_('')
-
-    def encget(self, key, default=NoDefault, encattr=None):
-        val = self.environ.get(key, default)
-        if val is NoDefault:
-            raise KeyError(key)
-        if val is default:
-            return default
-        if encattr:
-            encoding = getattr(self, encattr)
-        else:
-            encoding = 'ascii'
-        if PY3: # pragma: no cover
-            if encoding in _LATIN1_ENCODINGS:
-                return val
-            return bytes_(val, 'latin-1').decode(encoding)
-        else:
-            return val.decode(encoding)
-
-    def decode_default(self, default):
-        if default.__class__ is bytes:
-            return default.decode('latin-1')
-        return default
-
+        return val
 
 class AdhocAttrMixin(object):
     _setattr_stacklevel = 3
@@ -1377,11 +1342,6 @@ class AdhocAttrMixin(object):
             del self.environ['webob.adhoc_attrs'][attr]
         except KeyError:
             raise AttributeError(attr)
-
-if PY3: # pragma: no cover
-    BaseRequest = TextRequest
-else:
-    BaseRequest = BytesRequest
 
 class Request(AdhocAttrMixin, BaseRequest):
     """ The default request implementation """
@@ -1435,7 +1395,7 @@ def environ_add_POST(env, data, content_type=None):
         return
     elif isinstance(data, text_type): # pragma: no cover
         data = data.encode('ascii')
-    if env['REQUEST_METHOD'] not in postput_names:
+    if env['REQUEST_METHOD'] not in ('POST', 'PUT'):
         env['REQUEST_METHOD'] = 'POST'
     has_files = False
     if hasattr(data, 'items'):
@@ -1691,4 +1651,4 @@ class Transcoder(object):
 for _name in 'GET POST params cookies'.split():
     _str_name = 'str_'+_name
     _prop = deprecated_property(None, _str_name, "disabled starting WebOb 1.2, use %s instead" % _name, '1.2')
-    setattr(BytesRequest, _str_name, _prop)
+    setattr(LegacyRequest, _str_name, _prop)

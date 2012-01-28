@@ -71,11 +71,7 @@ def environ_decoder(key, default=_not_given, rfc_section=None,
         fdel = None
     else:
         def fget(req):
-            if default.__class__ is bytes:
-                d = req.decode_default(default)
-            else:
-                d = default
-            return req.encget(key, d, encattr=encattr)
+            return req.encget(key, default, encattr=encattr)
         def fset(req, val):
             if val is None:
                 if key in req.environ:

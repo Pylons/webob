@@ -1,16 +1,16 @@
 import unittest
 
 from webob.compat import (
-    text_type,
     text_,
+    text_type,
     PY3,
     )
     
-class TestTextRequest(unittest.TestCase):
-    # tests of methods of a textrequest which are encoding-specific
+class TestBaseRequest(unittest.TestCase):
+    # tests of methods of a base request which are encoding-specific
     def _getTargetClass(self):
-        from webob.request import TextRequest
-        return TextRequest
+        from webob.request import BaseRequest
+        return BaseRequest
         
     def _makeOne(self, *arg, **kw):
         cls = self._getTargetClass()
@@ -25,7 +25,7 @@ class TestTextRequest(unittest.TestCase):
                   }
         req = self._makeOne(environ)
         result = req.method
-        self.assertEqual(result.__class__, text_type)
+        self.assertEqual(result.__class__, str)
         self.assertEqual(result, 'OPTIONS')
 
     def test_http_version(self):
@@ -329,21 +329,21 @@ class TestTextRequest(unittest.TestCase):
         inst = self._blankOne('/%C3%AB')
         inst.script_name = text_(b'/\xc3\xab', 'utf-8')
         app_url = inst.application_url
-        self.assertEqual(app_url.__class__, text_type)
+        self.assertEqual(app_url.__class__, str)
         self.assertEqual(app_url, 'http://localhost/%C3%AB')
 
     def test_path_url(self):
         inst = self._blankOne('/%C3%AB')
         inst.script_name = text_(b'/\xc3\xab', 'utf-8')
         app_url = inst.path_url
-        self.assertEqual(app_url.__class__, text_type)
+        self.assertEqual(app_url.__class__, str)
         self.assertEqual(app_url, 'http://localhost/%C3%AB/%C3%AB')
 
     def test_path(self):
         inst = self._blankOne('/%C3%AB')
         inst.script_name = text_(b'/\xc3\xab', 'utf-8')
         app_url = inst.path
-        self.assertEqual(app_url.__class__, text_type)
+        self.assertEqual(app_url.__class__, str)
         self.assertEqual(app_url, '/%C3%AB/%C3%AB')
 
     def test_path_qs_no_qs(self):
@@ -633,28 +633,12 @@ class TestTextRequest(unittest.TestCase):
         else:
             val = b'\xc3\xab'
         inst = self._makeOne({'a':val})
-        self.assertRaises(UnicodeDecodeError, inst.encget, 'a')
-
-    def test_decode_default(self):
-        inst = self._makeOne({})
-        self.assertEqual(inst.decode_default(None), None)
-
-    def test_decode_default_bytes(self):
-        inst = self._makeOne({})
-        val = inst.decode_default(b'123')
-        self.assertEqual(val.__class__, text_type)
-        self.assertEqual(val, text_('123'))
-
-    def test_decode_default_text(self):
-        inst = self._makeOne({})
-        val = inst.decode_default(text_('123'))
-        self.assertEqual(val.__class__, text_type)
-        self.assertEqual(val, text_('123'))
+        self.assertEqual(inst.encget('a'), val)
 
     def test_relative_url(self):
         inst = self._blankOne('/%C3%AB/c')
         result = inst.relative_url('a')
-        self.assertEqual(result.__class__, text_type)
+        self.assertEqual(result.__class__, str)
         self.assertEqual(result, 'http://localhost/%C3%AB/a')
 
     def test_header_getter(self):
@@ -664,8 +648,8 @@ class TestTextRequest(unittest.TestCase):
             val = b'abc'
         inst = self._makeOne({'HTTP_FLUB':val})
         result = inst.headers['Flub']
-        self.assertEqual(result.__class__, text_type)
-        self.assertEqual(result, text_(b'abc'))
+        self.assertEqual(result.__class__, str)
+        self.assertEqual(result, 'abc')
 
     def test_json_body(self):
         inst = self._makeOne({})
@@ -675,11 +659,11 @@ class TestTextRequest(unittest.TestCase):
     def test_host_get(self):
         inst = self._makeOne({'HTTP_HOST':'example.com'})
         result = inst.host
-        self.assertEqual(result.__class__, text_type)
-        self.assertEqual(result, text_('example.com'))
+        self.assertEqual(result.__class__, str)
+        self.assertEqual(result, 'example.com')
 
     def test_host_get_w_no_http_host(self):
         inst = self._makeOne({'SERVER_NAME':'example.com', 'SERVER_PORT':'80'})
         result = inst.host
-        self.assertEqual(result.__class__, text_type)
-        self.assertEqual(result, text_(b'example.com:80'))
+        self.assertEqual(result.__class__, str)
+        self.assertEqual(result, 'example.com:80')

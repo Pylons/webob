@@ -8,11 +8,11 @@ from webob.compat import (
     PY3,
     )
 
-class TestBytesRequest(unittest.TestCase):
+class TestLegacyRequest(unittest.TestCase):
     # tests of methods of a bytesrequest which deal with http environment vars
     def _getTargetClass(self):
-        from webob.request import BytesRequest
-        return BytesRequest
+        from webob.request import LegacyRequest
+        return LegacyRequest
         
     def _makeOne(self, *arg, **kw):
         cls = self._getTargetClass()
@@ -26,25 +26,25 @@ class TestBytesRequest(unittest.TestCase):
         environ = {'REQUEST_METHOD': 'OPTIONS',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.method, b'OPTIONS')
+        self.assertEqual(req.method, 'OPTIONS')
 
     def test_http_version(self):
         environ = {'SERVER_PROTOCOL': '1.1',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.http_version, b'1.1')
+        self.assertEqual(req.http_version, '1.1')
 
     def test_script_name(self):
         environ = {'SCRIPT_NAME': '/script',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.script_name, b'/script')
+        self.assertEqual(req.script_name, '/script')
 
     def test_path_info(self):
         environ = {'PATH_INFO': '/path/info',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.path_info, b'/path/info')
+        self.assertEqual(req.path_info, '/path/info')
 
     def test_content_length_getter(self):
         environ = {'CONTENT_LENGTH': '1234',
@@ -63,25 +63,25 @@ class TestBytesRequest(unittest.TestCase):
         environ = {'REMOTE_USER': 'phred',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.remote_user, b'phred')
+        self.assertEqual(req.remote_user, 'phred')
 
     def test_remote_addr(self):
         environ = {'REMOTE_ADDR': '1.2.3.4',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.remote_addr, b'1.2.3.4')
+        self.assertEqual(req.remote_addr, '1.2.3.4')
 
     def test_query_string(self):
         environ = {'QUERY_STRING': 'foo=bar&baz=bam',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.query_string, b'foo=bar&baz=bam')
+        self.assertEqual(req.query_string, 'foo=bar&baz=bam')
 
     def test_server_name(self):
         environ = {'SERVER_NAME': 'somehost.tld',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.server_name, b'somehost.tld')
+        self.assertEqual(req.server_name, 'somehost.tld')
 
     def test_server_port_getter(self):
         environ = {'SERVER_PORT': '6666',
@@ -126,20 +126,20 @@ class TestBytesRequest(unittest.TestCase):
         environ = {'CONTENT_TYPE': 'application/xml+foobar',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.content_type, b'application/xml+foobar')
+        self.assertEqual(req.content_type, 'application/xml+foobar')
 
     def test_content_type_getter_w_parameters(self):
         environ = {'CONTENT_TYPE': 'application/xml+foobar;charset="utf8"',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.content_type, b'application/xml+foobar')
+        self.assertEqual(req.content_type, 'application/xml+foobar')
 
     def test_content_type_setter_w_None(self):
         environ = {'CONTENT_TYPE': 'application/xml+foobar;charset="utf8"',
                   }
         req = self._makeOne(environ)
         req.content_type = None
-        self.assertEqual(req.content_type, b'')
+        self.assertEqual(req.content_type, '')
         self.assertTrue('CONTENT_TYPE' not in environ)
 
     def test_content_type_setter_existing_paramter_no_new_paramter(self):
@@ -147,7 +147,7 @@ class TestBytesRequest(unittest.TestCase):
                   }
         req = self._makeOne(environ)
         req.content_type = 'text/xml'
-        self.assertEqual(req.content_type, b'text/xml')
+        self.assertEqual(req.content_type, 'text/xml')
         self.assertEqual(environ['CONTENT_TYPE'], 'text/xml;charset="utf8"')
 
     def test_content_type_deleter_clears_environ_value(self):
@@ -155,14 +155,14 @@ class TestBytesRequest(unittest.TestCase):
                   }
         req = self._makeOne(environ)
         del req.content_type
-        self.assertEqual(req.content_type, b'')
+        self.assertEqual(req.content_type, '')
         self.assertTrue('CONTENT_TYPE' not in environ)
 
     def test_content_type_deleter_no_environ_value(self):
         environ = {}
         req = self._makeOne(environ)
         del req.content_type
-        self.assertEqual(req.content_type, b'')
+        self.assertEqual(req.content_type, '')
         self.assertTrue('CONTENT_TYPE' not in environ)
 
     def test_headers_getter(self):
@@ -173,8 +173,8 @@ class TestBytesRequest(unittest.TestCase):
         req = self._makeOne(environ)
         headers = req.headers
         self.assertEqual(headers,
-                        {'Content-Type': bytes_(CONTENT_TYPE),
-                         'Content-Length': b'123'})
+                        {'Content-Type':CONTENT_TYPE,
+                         'Content-Length': '123'})
 
     def test_headers_setter(self):
         CONTENT_TYPE = 'application/xml+foobar;charset="utf8"'
@@ -184,7 +184,7 @@ class TestBytesRequest(unittest.TestCase):
         req = self._makeOne(environ)
         req.headers = {'Qux': 'Spam'}
         self.assertEqual(req.headers,
-                        {'Qux': b'Spam'})
+                        {'Qux': 'Spam'})
         self.assertEqual(environ['HTTP_QUX'], native_('Spam'))
         self.assertEqual(environ, {'HTTP_QUX': 'Spam'})
 
@@ -203,27 +203,27 @@ class TestBytesRequest(unittest.TestCase):
                    'HTTP_X_FORWARDED_FOR': '192.168.1.1',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.client_addr, b'192.168.1.1')
+        self.assertEqual(req.client_addr, '192.168.1.1')
 
     def test_client_addr_xff_multival(self):
         environ = {
                    'HTTP_X_FORWARDED_FOR': '192.168.1.1, 192.168.1.2',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.client_addr, b'192.168.1.1')
+        self.assertEqual(req.client_addr, '192.168.1.1')
 
     def test_client_addr_prefers_xff(self):
         environ = {'REMOTE_ADDR': '192.168.1.2',
                    'HTTP_X_FORWARDED_FOR': '192.168.1.1',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.client_addr, b'192.168.1.1')
+        self.assertEqual(req.client_addr, '192.168.1.1')
 
     def test_client_addr_no_xff(self):
         environ = {'REMOTE_ADDR': '192.168.1.2',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.client_addr, b'192.168.1.2')
+        self.assertEqual(req.client_addr, '192.168.1.2')
 
     def test_client_addr_no_xff_no_remote_addr(self):
         environ = {}
@@ -235,91 +235,91 @@ class TestBytesRequest(unittest.TestCase):
                    'HTTP_HOST': 'example.com',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.host_port, b'80')
+        self.assertEqual(req.host_port, '80')
 
     def test_host_port_w_http_host_and_standard_port(self):
         environ = {'wsgi.url_scheme': 'http',
                    'HTTP_HOST': 'example.com:80',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.host_port, b'80')
+        self.assertEqual(req.host_port, '80')
 
     def test_host_port_w_http_host_and_oddball_port(self):
         environ = {'wsgi.url_scheme': 'http',
                    'HTTP_HOST': 'example.com:8888',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.host_port, b'8888')
+        self.assertEqual(req.host_port, '8888')
 
     def test_host_port_w_http_host_https_and_no_port(self):
         environ = {'wsgi.url_scheme': 'https',
                    'HTTP_HOST': 'example.com',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.host_port, b'443')
+        self.assertEqual(req.host_port, '443')
 
     def test_host_port_w_http_host_https_and_standard_port(self):
         environ = {'wsgi.url_scheme': 'https',
                    'HTTP_HOST': 'example.com:443',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.host_port, b'443')
+        self.assertEqual(req.host_port, '443')
 
     def test_host_port_w_http_host_https_and_oddball_port(self):
         environ = {'wsgi.url_scheme': 'https',
                    'HTTP_HOST': 'example.com:8888',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.host_port, b'8888')
+        self.assertEqual(req.host_port, '8888')
 
     def test_host_port_wo_http_host(self):
         environ = {'wsgi.url_scheme': 'https',
                    'SERVER_PORT': '4333',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.host_port, b'4333')
+        self.assertEqual(req.host_port, '4333')
 
     def test_host_url_w_http_host_and_no_port(self):
         environ = {'wsgi.url_scheme': 'http',
                    'HTTP_HOST': 'example.com',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.host_url, b'http://example.com')
+        self.assertEqual(req.host_url, 'http://example.com')
 
     def test_host_url_w_http_host_and_standard_port(self):
         environ = {'wsgi.url_scheme': 'http',
                    'HTTP_HOST': 'example.com:80',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.host_url, b'http://example.com')
+        self.assertEqual(req.host_url, 'http://example.com')
 
     def test_host_url_w_http_host_and_oddball_port(self):
         environ = {'wsgi.url_scheme': 'http',
                    'HTTP_HOST': 'example.com:8888',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.host_url, b'http://example.com:8888')
+        self.assertEqual(req.host_url, 'http://example.com:8888')
 
     def test_host_url_w_http_host_https_and_no_port(self):
         environ = {'wsgi.url_scheme': 'https',
                    'HTTP_HOST': 'example.com',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.host_url, b'https://example.com')
+        self.assertEqual(req.host_url, 'https://example.com')
 
     def test_host_url_w_http_host_https_and_standard_port(self):
         environ = {'wsgi.url_scheme': 'https',
                    'HTTP_HOST': 'example.com:443',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.host_url, b'https://example.com')
+        self.assertEqual(req.host_url, 'https://example.com')
 
     def test_host_url_w_http_host_https_and_oddball_port(self):
         environ = {'wsgi.url_scheme': 'https',
                    'HTTP_HOST': 'example.com:4333',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.host_url, b'https://example.com:4333')
+        self.assertEqual(req.host_url, 'https://example.com:4333')
 
     def test_host_url_wo_http_host(self):
         environ = {'wsgi.url_scheme': 'https',
@@ -327,28 +327,38 @@ class TestBytesRequest(unittest.TestCase):
                    'SERVER_PORT': '4333',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.host_url, b'https://example.com:4333')
+        self.assertEqual(req.host_url, 'https://example.com:4333')
 
     def test_application_url(self):
         inst = self._blankOne('/%C3%AB')
         inst.script_name = b'/\xc3\xab'
         app_url = inst.application_url
-        self.assertEqual(app_url.__class__, bytes)
-        self.assertEqual(app_url, b'http://localhost/%C3%AB')
+        if PY3: # pragma: no cover
+            # this result is why you should not use legacyrequest under py 3
+            self.assertEqual(app_url, 'http://localhost/%C3%83%C2%AB')
+        else:
+            self.assertEqual(app_url, 'http://localhost/%C3%AB')
 
     def test_path_url(self):
         inst = self._blankOne('/%C3%AB')
         inst.script_name = b'/\xc3\xab'
-        app_url = inst.path_url
-        self.assertEqual(app_url.__class__, bytes)
-        self.assertEqual(app_url, b'http://localhost/%C3%AB/%C3%AB')
+        result = inst.path_url
+        if PY3: # pragma: no cover
+            # this result is why you should not use legacyrequest under py 3
+            self.assertEqual(result,
+                             'http://localhost/%C3%83%C2%AB/%C3%83%C2%AB')
+        else:
+            self.assertEqual(result, 'http://localhost/%C3%AB/%C3%AB')
 
     def test_path(self):
         inst = self._blankOne('/%C3%AB')
         inst.script_name = b'/\xc3\xab'
-        app_url = inst.path
-        self.assertEqual(app_url.__class__, bytes)
-        self.assertEqual(app_url, b'/%C3%AB/%C3%AB')
+        result = inst.path
+        if PY3: # pragma: no cover
+            # this result is why you should not use legacyrequest under py 3
+            self.assertEqual(result, '/%C3%83%C2%AB/%C3%83%C2%AB')
+        else:
+            self.assertEqual(result, '/%C3%AB/%C3%AB')
 
     def test_path_qs_no_qs(self):
         environ = {'wsgi.url_scheme': 'http',
@@ -358,7 +368,7 @@ class TestBytesRequest(unittest.TestCase):
                    'PATH_INFO': '/path/info',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.path_qs, b'/script/path/info')
+        self.assertEqual(req.path_qs, '/script/path/info')
 
     def test_path_qs_w_qs(self):
         environ = {'wsgi.url_scheme': 'http',
@@ -369,7 +379,7 @@ class TestBytesRequest(unittest.TestCase):
                    'QUERY_STRING': 'foo=bar&baz=bam'
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.path_qs, b'/script/path/info?foo=bar&baz=bam')
+        self.assertEqual(req.path_qs, '/script/path/info?foo=bar&baz=bam')
 
     def test_url_no_qs(self):
         environ = {'wsgi.url_scheme': 'http',
@@ -379,7 +389,7 @@ class TestBytesRequest(unittest.TestCase):
                    'PATH_INFO': '/path/info',
                   }
         req = self._makeOne(environ)
-        self.assertEqual(req.url, b'http://example.com/script/path/info')
+        self.assertEqual(req.url, 'http://example.com/script/path/info')
 
     def test_url_w_qs(self):
         environ = {'wsgi.url_scheme': 'http',
@@ -391,7 +401,7 @@ class TestBytesRequest(unittest.TestCase):
                   }
         req = self._makeOne(environ)
         self.assertEqual(req.url,
-                         b'http://example.com/script/path/info?foo=bar&baz=bam')
+                         'http://example.com/script/path/info?foo=bar&baz=bam')
 
     def test_relative_url_to_app_true_wo_leading_slash(self):
         environ = {'wsgi.url_scheme': 'http',
@@ -403,7 +413,7 @@ class TestBytesRequest(unittest.TestCase):
                   }
         req = self._makeOne(environ)
         self.assertEqual(req.relative_url('other/page', True),
-                         b'http://example.com/script/other/page')
+                         'http://example.com/script/other/page')
 
     def test_relative_url_to_app_true_w_leading_slash(self):
         environ = {'wsgi.url_scheme': 'http',
@@ -415,7 +425,7 @@ class TestBytesRequest(unittest.TestCase):
                   }
         req = self._makeOne(environ)
         self.assertEqual(req.relative_url('/other/page', True),
-                         b'http://example.com/other/page')
+                         'http://example.com/other/page')
 
     def test_relative_url_to_app_false_other_w_leading_slash(self):
         environ = {'wsgi.url_scheme': 'http',
@@ -427,7 +437,7 @@ class TestBytesRequest(unittest.TestCase):
                   }
         req = self._makeOne(environ)
         self.assertEqual(req.relative_url('/other/page', False),
-                         b'http://example.com/other/page')
+                         'http://example.com/other/page')
 
     def test_relative_url_to_app_false_other_wo_leading_slash(self):
         environ = {'wsgi.url_scheme': 'http',
@@ -439,7 +449,7 @@ class TestBytesRequest(unittest.TestCase):
                   }
         req = self._makeOne(environ)
         self.assertEqual(req.relative_url('other/page', False),
-                         b'http://example.com/script/path/other/page')
+                         'http://example.com/script/path/other/page')
 
     def test_path_info_pop_empty(self):
         environ = {'wsgi.url_scheme': 'http',
@@ -462,7 +472,7 @@ class TestBytesRequest(unittest.TestCase):
                   }
         req = self._makeOne(environ)
         popped = req.path_info_pop()
-        self.assertEqual(popped, b'')
+        self.assertEqual(popped, '')
         self.assertEqual(environ['SCRIPT_NAME'], '/script/')
         self.assertEqual(environ['PATH_INFO'], '')
 
@@ -475,13 +485,13 @@ class TestBytesRequest(unittest.TestCase):
                   }
         req = self._makeOne(environ)
         popped = req.path_info_pop()
-        self.assertEqual(popped, b'path')
+        self.assertEqual(popped, 'path')
         self.assertEqual(environ['SCRIPT_NAME'], '/script/path')
         self.assertEqual(environ['PATH_INFO'], '/info')
 
     def test_path_info_pop_non_empty_w_pattern_miss(self):
         import re
-        PATTERN = re.compile(b'miss')
+        PATTERN = re.compile('miss')
         environ = {'wsgi.url_scheme': 'http',
                    'SERVER_NAME': 'example.com',
                    'SERVER_PORT': '80',
@@ -496,7 +506,7 @@ class TestBytesRequest(unittest.TestCase):
 
     def test_path_info_pop_non_empty_w_pattern_hit(self):
         import re
-        PATTERN = re.compile(b'path')
+        PATTERN = re.compile('path')
         environ = {'wsgi.url_scheme': 'http',
                    'SERVER_NAME': 'example.com',
                    'SERVER_PORT': '80',
@@ -505,7 +515,7 @@ class TestBytesRequest(unittest.TestCase):
                   }
         req = self._makeOne(environ)
         popped = req.path_info_pop(PATTERN)
-        self.assertEqual(popped, b'path')
+        self.assertEqual(popped, 'path')
         self.assertEqual(environ['SCRIPT_NAME'], '/script/path')
         self.assertEqual(environ['PATH_INFO'], '/info')
 
@@ -518,7 +528,7 @@ class TestBytesRequest(unittest.TestCase):
                   }
         req = self._makeOne(environ)
         popped = req.path_info_pop()
-        self.assertEqual(popped, b'path')
+        self.assertEqual(popped, 'path')
         self.assertEqual(environ['SCRIPT_NAME'], '/script//path')
         self.assertEqual(environ['PATH_INFO'], '/info')
 
@@ -544,7 +554,7 @@ class TestBytesRequest(unittest.TestCase):
                   }
         req = self._makeOne(environ)
         peeked = req.path_info_peek()
-        self.assertEqual(peeked, b'')
+        self.assertEqual(peeked, '')
         self.assertEqual(environ['SCRIPT_NAME'], '/script')
         self.assertEqual(environ['PATH_INFO'], '/')
 
@@ -557,7 +567,7 @@ class TestBytesRequest(unittest.TestCase):
                   }
         req = self._makeOne(environ)
         peeked = req.path_info_peek()
-        self.assertEqual(peeked, b'path')
+        self.assertEqual(peeked, 'path')
         self.assertEqual(environ['SCRIPT_NAME'], '/script')
         self.assertEqual(environ['PATH_INFO'], '/path')
 
@@ -579,13 +589,13 @@ class TestBytesRequest(unittest.TestCase):
     def test_host_getter_w_HTTP_HOST(self):
         environ = {'HTTP_HOST': 'example.com:8888'}
         req = self._makeOne(environ)
-        self.assertEqual(req.host, b'example.com:8888')
+        self.assertEqual(req.host, 'example.com:8888')
 
     def test_host_getter_wo_HTTP_HOST(self):
         environ = {'SERVER_NAME': 'example.com',
                    'SERVER_PORT': '8888'}
         req = self._makeOne(environ)
-        self.assertEqual(req.host, b'example.com:8888')
+        self.assertEqual(req.host, 'example.com:8888')
 
     def test_host_setter(self):
         environ = {}
@@ -618,7 +628,8 @@ class TestBytesRequest(unittest.TestCase):
         else:
             val = b'\xc3\xab'
         inst = self._makeOne({'a':val})
-        self.assertEqual(inst.encget('a', encattr='url_encoding'), b'\xc3\xab')
+        self.assertEqual(inst.encget('a', encattr='url_encoding'),
+                         native_(b'\xc3\xab', 'latin-1'))
 
     def test_encget_no_encattr(self):
         if PY3:
@@ -626,29 +637,16 @@ class TestBytesRequest(unittest.TestCase):
         else:
             val = b'\xc3\xab'
         inst = self._makeOne({'a':val})
-        self.assertEqual(inst.encget('a'), b'\xc3\xab')
-
-    def test_decode_default(self):
-        inst = self._makeOne({})
-        self.assertEqual(inst.decode_default(None), None)
-
-    def test_decode_default_bytes(self):
-        inst = self._makeOne({})
-        val = inst.decode_default(b'123')
-        self.assertEqual(val.__class__, bytes)
-        self.assertEqual(val, bytes_('123'))
-
-    def test_decode_default_text(self):
-        inst = self._makeOne({})
-        val = inst.decode_default(text_('123'))
-        self.assertEqual(val.__class__, bytes)
-        self.assertEqual(val, bytes_('123'))
+        self.assertEqual(inst.encget('a'), native_(b'\xc3\xab', 'latin-1'))
 
     def test_relative_url(self):
         inst = self._blankOne('/%C3%AB/c')
         result = inst.relative_url('a')
-        self.assertEqual(result.__class__, bytes)
-        self.assertEqual(result, b'http://localhost/%C3%AB/a')
+        if PY3: # pragma: no cover
+            # this result is why you should not use legacyrequest under py 3
+            self.assertEqual(result, 'http://localhost/%C3%83%C2%AB/a')
+        else:
+            self.assertEqual(result, 'http://localhost/%C3%AB/a')
 
     def test_header_getter(self):
         if PY3:
@@ -657,8 +655,7 @@ class TestBytesRequest(unittest.TestCase):
             val = b'abc'
         inst = self._makeOne({'HTTP_FLUB':val})
         result = inst.headers['Flub']
-        self.assertEqual(result.__class__, bytes)
-        self.assertEqual(result, b'abc')
+        self.assertEqual(result, 'abc')
 
     def test_json_body(self):
         inst = self._makeOne({})
@@ -668,12 +665,10 @@ class TestBytesRequest(unittest.TestCase):
     def test_host_get_w_http_host(self):
         inst = self._makeOne({'HTTP_HOST':'example.com'})
         result = inst.host
-        self.assertEqual(result.__class__, bytes)
-        self.assertEqual(result, b'example.com')
+        self.assertEqual(result, 'example.com')
 
     def test_host_get_w_no_http_host(self):
         inst = self._makeOne({'SERVER_NAME':'example.com', 'SERVER_PORT':'80'})
         result = inst.host
-        self.assertEqual(result.__class__, bytes)
-        self.assertEqual(result, b'example.com:80')
+        self.assertEqual(result, 'example.com:80')
 

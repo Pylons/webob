@@ -4,7 +4,7 @@ import unittest
 from webob.compat import (
     PY3,
     text_,
-    text_type,
+    native_,
     )
 
 from datetime import tzinfo
@@ -722,32 +722,10 @@ class _TestEnvironDecoder(object):
         else:
             self.assertEqual(req.environ['HTTP_X_AKEY'], b'\xc3\xab')
         
-
-class TestEnvironDecoderBytes(unittest.TestCase, _TestEnvironDecoder):
+class TestEnvironDecoder(unittest.TestCase, _TestEnvironDecoder):
     def _makeRequest(self):
-        from webob.request import BytesRequest
-        req = BytesRequest.blank('/')
-        return req
-
-    def test_fget_nonascii(self):
-        desc = self._callFUT('HTTP_X_AKEY', encattr='url_encoding')
-        req = self._makeRequest()
-        if PY3:
-            req.environ['HTTP_X_AKEY'] = b'\xc3\xab'.decode('latin-1')
-        else:
-            req.environ['HTTP_X_AKEY'] = b'\xc3\xab'
-        result = desc.fget(req)
-        self.assertEqual(result, b'\xc3\xab')
-
-    def test_default_fget_nonascii(self):
-        req = self._makeRequest()
-        desc = self._callFUT('akey', default=b'the_default')
-        self.assertEqual(desc.fget(req).__class__, bytes)
-
-class TestEnvironDecoderText(unittest.TestCase, _TestEnvironDecoder):
-    def _makeRequest(self):
-        from webob.request import TextRequest
-        req = TextRequest.blank('/')
+        from webob.request import BaseRequest
+        req = BaseRequest.blank('/')
         return req
 
     def test_fget_nonascii(self):
@@ -760,8 +738,24 @@ class TestEnvironDecoderText(unittest.TestCase, _TestEnvironDecoder):
         result = desc.fget(req)
         self.assertEqual(result, text_(b'\xc3\xab', 'utf-8'))
 
+class TestEnvironDecoderLegacy(unittest.TestCase, _TestEnvironDecoder):
+    def _makeRequest(self):
+        from webob.request import LegacyRequest
+        req = LegacyRequest.blank('/')
+        return req
+
+    def test_fget_nonascii(self):
+        desc = self._callFUT('HTTP_X_AKEY', encattr='url_encoding')
+        req = self._makeRequest()
+        if PY3:
+            req.environ['HTTP_X_AKEY'] = b'\xc3\xab'.decode('latin-1')
+        else:
+            req.environ['HTTP_X_AKEY'] = b'\xc3\xab'
+        result = desc.fget(req)
+        self.assertEqual(result, native_(b'\xc3\xab', 'latin-1'))
+
     def test_default_fget_nonascii(self):
         req = self._makeRequest()
         desc = self._callFUT('akey', default=b'the_default')
-        self.assertEqual(desc.fget(req).__class__, text_type)
+        self.assertEqual(desc.fget(req).__class__, bytes)
 
