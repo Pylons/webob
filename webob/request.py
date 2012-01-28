@@ -308,26 +308,28 @@ class BaseRequest(object):
         return self.body_file_raw
 
     url_encoding = environ_getter('webob.url_encoding', 'UTF-8')
-    uscript_name = environ_decoder('SCRIPT_NAME', '', encattr='url_encoding')
-    upath_info = environ_decoder('PATH_INFO', encattr='url_encoding')
     remote_user_encoding = environ_getter('webob.remote_user_encoding', 'UTF-8')
     scheme = environ_getter('wsgi.url_scheme')
-    method = environ_decoder('REQUEST_METHOD', 'GET')
-    http_version = environ_decoder('SERVER_PROTOCOL')
+    method = environ_getter('REQUEST_METHOD', 'GET')
+    http_version = environ_getter('SERVER_PROTOCOL')
     content_length = converter(
         environ_getter('CONTENT_LENGTH', None, '14.13'),
         parse_int_safe, serialize_int, 'int')
     remote_user = environ_decoder(
         'REMOTE_USER', None, encattr='remote_user_encoding')
-    remote_addr = environ_decoder('REMOTE_ADDR', None)
-    query_string = environ_decoder('QUERY_STRING', '')
-    server_name = environ_decoder('SERVER_NAME')
+    remote_addr = environ_getter('REMOTE_ADDR', None)
+    query_string = environ_getter('QUERY_STRING', '')
+    server_name = environ_getter('SERVER_NAME')
     server_port = converter(
         environ_getter('SERVER_PORT'),
         parse_int, serialize_int, 'int')
 
     script_name = environ_decoder('SCRIPT_NAME', '', encattr='url_encoding')
     path_info = environ_decoder('PATH_INFO', encattr='url_encoding')
+
+    # bw compat
+    uscript_name = script_name
+    upath_info = path_info
 
     _content_type_raw = environ_getter('CONTENT_TYPE', '')
 
@@ -1042,16 +1044,16 @@ class BaseRequest(object):
         environ_getter('HTTP_MAX_FORWARDS', None, '14.31'),
         parse_int, serialize_int, 'int')
 
-    pragma = environ_decoder('HTTP_PRAGMA', None, '14.32')
+    pragma = environ_getter('HTTP_PRAGMA', None, '14.32')
 
     range = converter(
         environ_getter('HTTP_RANGE', None, '14.35'),
         parse_range, serialize_range, 'Range object')
 
-    referer = environ_decoder('HTTP_REFERER', None, '14.36')
+    referer = environ_getter('HTTP_REFERER', None, '14.36')
     referrer = referer
 
-    user_agent = environ_decoder('HTTP_USER_AGENT', None, '14.43')
+    user_agent = environ_getter('HTTP_USER_AGENT', None, '14.43')
 
     def __repr__(self):
         try:
@@ -1650,5 +1652,7 @@ class Transcoder(object):
 # TODO: remove in 1.4
 for _name in 'GET POST params cookies'.split():
     _str_name = 'str_'+_name
-    _prop = deprecated_property(None, _str_name, "disabled starting WebOb 1.2, use %s instead" % _name, '1.2')
-    setattr(LegacyRequest, _str_name, _prop)
+    _prop = deprecated_property(
+        None, _str_name,
+        "disabled starting WebOb 1.2, use %s instead" % _name, '1.2')
+    setattr(BaseRequest, _str_name, _prop)

@@ -82,7 +82,6 @@ def environ_decoder(key, default=_not_given, rfc_section=None,
             del req.environ[key]
     return property(fget, fset, fdel, doc=doc)
 
-
 def upath_property(key):
     if PY3: # pragma: no cover
         def fget(req):
