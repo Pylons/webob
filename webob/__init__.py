@@ -4,11 +4,11 @@ from webob.response import *
 from webob.util import html_escape
 
 __all__ = [
-    'Request', 'Response',
+    'Request', 'Response', 'TextRequest', 'BytesRequest', 'RequestMixin',
     'UTC', 'day', 'week', 'hour', 'minute', 'second', 'month', 'year',
     'html_escape'
 ]
 
-BaseRequest.ResponseClass = Response
+RequestMixin.ResponseClass = Response
 
 __version__ = '1.2b2'

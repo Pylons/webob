@@ -159,11 +159,9 @@ class MultiDictTestCase(BaseDictTests, unittest.TestCase):
         foo = Foo()
         foo['a'] = 1
         d = self._get_instance()
-        try:
-            warnings.simplefilter('error')
-            self.assertRaises(UserWarning, d.update, foo)
-        finally:
-            warnings.resetwarnings()
+        with warnings.catch_warnings(record=True) as w:
+            d.update(foo)
+        self.assertEqual(len(w), 1)
 
     def test_repr_with_password(self):
         d = self._get_instance(password='pwd')

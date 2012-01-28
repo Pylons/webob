@@ -46,6 +46,7 @@ from webob.descriptors import (
     converter,
     converter_date,
     environ_getter,
+    environ_decoder,
     parse_auth,
     parse_int,
     parse_int_safe,
@@ -56,7 +57,6 @@ from webob.descriptors import (
     serialize_range,
     upath_property,
     deprecated_property,
-    environ_decoder,
     )
 
 from webob.etag import (
@@ -316,15 +316,15 @@ class RequestMixin(object):
         you don't include any parameters in the value then existing
         parameters will be preserved.
         """
-        return self._content_type_raw.split(';', 1)[0]
+        return self.decode_default(self._content_type_raw.split(';', 1)[0])
     def _content_type__set(self, value=None):
         if value is not None:
-            value = str(value)
+            value = native_(value)
             if ';' not in value:
                 content_type = self._content_type_raw
                 if ';' in content_type:
                     value += ';' + content_type.split(';', 1)[1]
-        self._content_type_raw = self.decode_default(value)
+        self._content_type_raw = value
 
     content_type = property(_content_type__get,
                             _content_type__set,
@@ -510,7 +510,7 @@ class RequestMixin(object):
         path = self.path_info
         if not path:
             return None
-        slashes = ''
+        slashes = self._empty
         while path.startswith(self._slash):
             slashes += self._slash
             path = path[1:]
@@ -1300,6 +1300,7 @@ class BytesRequest(RequestMixin):
     _put_name = b'PUT'
     _slash = b'/'
     _questionmark = b'?'
+    _empty = b''
     
     def encget(self, key, default=NoDefault, encattr=None):
         val = self.environ.get(key, default)
@@ -1328,6 +1329,7 @@ class TextRequest(RequestMixin):
     _put_name = text_('PUT')
     _slash = text_('/')
     _questionmark = text_('?')
+    _empty = text_('')
 
     def encget(self, key, default=NoDefault, encattr=None):
         val = self.environ.get(key, default)
@@ -1377,13 +1379,12 @@ class AdhocAttrMixin(object):
             raise AttributeError(attr)
 
 if PY3: # pragma: no cover
-    class Request(AdhocAttrMixin, TextRequest):
-        """ The default request implementation for Python 3"""
     BaseRequest = TextRequest
 else:
-    class Request(AdhocAttrMixin, BytesRequest):
-        """ The default request implementation for Python 2"""
     BaseRequest = BytesRequest
+
+class Request(AdhocAttrMixin, BaseRequest):
+    """ The default request implementation """
 
 def environ_from_url(path):
     if SCHEME_RE.search(path):
