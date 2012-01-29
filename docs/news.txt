@@ -22,11 +22,11 @@ Next release
   therefore their values are not sensible to use if there are high-order
   characters in them.
 
-  If you don't care about Python 3, and you need backwards compatibility, to
-  get legacy behavior of returning bytes on Python 2 for these attributes,
-  use ``webob.LegacyRequest`` instead of ``webob.Request``.  Although it's
-  possible to use ``webob.LegacyRequest`` under Python 3, it makes no sense
-  at all to do so, so don't.
+  If you don't care about Python 3, and you need strict backwards
+  compatibility, to get legacy behavior of returning bytes on Python 2 for
+  these attributes, use ``webob.LegacyRequest`` instead of ``webob.Request``.
+  Although it's possible to use ``webob.LegacyRequest`` under Python 3, it
+  makes no sense at all to do so, so don't.
 
 * The above backwards incompatibility fixed nonsensical behavior of
   ``request.host_url``, ``request.application_url``, ``request.path_url``,
