@@ -132,23 +132,23 @@ class EnvironHeaders(MutableMapping):
     headers).
     """
 
-    def __init__(self, req):
-        self.req = req
+    def __init__(self, environ):
+        self.environ = environ
 
     def __getitem__(self, hname):
-        return self.req.encget(_trans_name(hname))
+        return self.environ[_trans_name(hname)]
 
     def __setitem__(self, hname, value):
-        self.req.encset(_trans_name(hname), value)
+        self.environ[_trans_name(hname)] = value
 
     def __delitem__(self, hname):
-        del self.req.environ[_trans_name(hname)]
+        del self.environ[_trans_name(hname)]
 
     def keys(self):
-        return filter(None, map(_trans_key, self.req.environ))
+        return filter(None, map(_trans_key, self.environ))
 
     def __contains__(self, hname):
-        return _trans_name(hname) in self.req.environ
+        return _trans_name(hname) in self.environ
 
     def __len__(self):
         return len(list(self.keys()))
