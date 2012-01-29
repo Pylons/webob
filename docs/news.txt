@@ -14,13 +14,13 @@ Next release
   bug on py3 (use explicit floor division).
 
 * Backwards incompatibility: Request and BaseRequest objects now return
-  Unicode for ``request.path_info`` and ``request.script_name`` under Python
-  2.  Rationale: the legacy behavior of returning the respective raw environ
-  values was nonsensical on Python 3.  Working with non-ascii encoded environ
-  variables as raw WSGI values under Python 3 makes no sense, as PEP 3333
-  specifies that environ variables are bytes-tunneled-as-latin-1 strings, and
-  therefore their values are not sensible to use if there are high-order
-  characters in them.
+  Unicode for ``request.path_info``, ``request.script_name``, and
+  ``request.remote_user`` under Python 2.  Rationale: the legacy behavior of
+  returning the respective raw environ values was nonsensical on Python 3.
+  Working with non-ascii encoded environ variables as raw WSGI values under
+  Python 3 makes no sense, as PEP 3333 specifies that environ variables are
+  bytes-tunneled-as-latin-1 strings, and therefore their values are not
+  sensible to use if there are high-order characters in them.
 
   If you don't care about Python 3, and you need strict backwards
   compatibility, to get legacy behavior of returning bytes on Python 2 for
@@ -39,12 +39,17 @@ Next release
   ``webob.url_encoding`` will be used to decode the raw WSGI PATH_INFO and
   SCRIPT_NAME variables when the ``request.path_info`` API is used.
   ``webob.remote_user_encoding`` will be used to decode the raw WSGI
-  REMOTE_USER variable when the ``request.remote_user`` API is used.
+  REMOTE_USER variable when the ``request.remote_user`` API is used.  
 
 * Request objects now accept two additional constructor parameters:
   ``url_encoding`` and ``remote_user_encoding``.  These will be used to
   decode PATH_INFO/SCRIPT_NAME and REMOTE_USER respectively from their
-  WSGI-encoded values.
+  WSGI-encoded values. If ``webob.url_encoding`` is not set in the environ
+  and ``url_encoding`` is not passed to the Request constructor, the default
+  value ``utf-8`` will be used to decode the PATH_INFO and SCRIPT_NAME.  If
+  ``webob.remote_user_encoding`` is not set in the environ and
+  ``remote_user_encoding`` is not passed to the Request constructor, the
+  default value ``ascii`` will be used to decode REMOTE_USER.
 
   Note that passing ``url_encoding`` will cause the WSGI environment variable
   ``webob.url_encoding`` to be set, and passing ``remote_user_encoding`` will
