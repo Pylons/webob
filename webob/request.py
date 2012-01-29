@@ -308,15 +308,13 @@ class BaseRequest(object):
         return self.body_file_raw
 
     url_encoding = environ_getter('webob.url_encoding', 'UTF-8')
-    remote_user_encoding = environ_getter('webob.remote_user_encoding', 'ascii')
     scheme = environ_getter('wsgi.url_scheme')
     method = environ_getter('REQUEST_METHOD', 'GET')
     http_version = environ_getter('SERVER_PROTOCOL')
     content_length = converter(
         environ_getter('CONTENT_LENGTH', None, '14.13'),
         parse_int_safe, serialize_int, 'int')
-    remote_user = environ_decoder(
-        'REMOTE_USER', None, encattr='remote_user_encoding')
+    remote_user = environ_getter('REMOTE_USER', None)
     remote_addr = environ_getter('REMOTE_ADDR', None)
     query_string = environ_getter('QUERY_STRING', '')
     server_name = environ_getter('SERVER_NAME')
