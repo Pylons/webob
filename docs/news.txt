@@ -55,11 +55,6 @@ Next release
   request URI under Python 3.  This fixed a problem under Python 3 if you
   were using non-absolute Location headers in responses.
 
-* Internal: a cached version of EnvironHeaders is no longer kept as a
-  _headers attribute of the request when ``request.headers`` is used, because
-  changes to EnvironHeaders meant the caching would have implied a circular
-  reference.
-
 1.2b2
 ------
 
