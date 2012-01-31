@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = '1.2b2'
+version = '1.2b3'
 
 setup(
     name='WebOb',

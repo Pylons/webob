@@ -1,7 +1,7 @@
 News
 ====
 
-Next release
+1.2b3
 ------------
 
 * Added ``request.host_port`` API (returns port number implied by HTTP_HOST,
