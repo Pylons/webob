@@ -26,6 +26,9 @@ def test_cookie_one_value_with_trailing_semi():
     eq_(vals[0].value, b'6')
     c = cookies.Cookie('dismiss-top=6;')
 
+def test_cookie_escaped_unquoted():
+    eq_(list(cookies.parse_cookie('x=\\040')) == [('x', ' ')])
+
 def test_cookie_complex():
     c = cookies.Cookie('dismiss-top=6; CP=null*, '\
                        'PHPSESSID=0a539d42abc001cdc762809248d4beed, a="42,"')

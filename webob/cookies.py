@@ -292,17 +292,19 @@ _c_keys.update([b'expires', b'secure', b'httponly'])
 # parsing
 #
 
+
 _re_quoted = r'"(?:\\"|.)*?"' # any doublequoted string
 _legal_special_chars = "~!@#$%^&*()_+=-`.?|:/(){}<>'"
 _re_legal_char  = r"[\w\d%s]" % re.escape(_legal_special_chars)
 _re_expires_val = r"\w{3},\s[\w\d-]{9,11}\s[\d:]{8}\sGMT"
-_rx_cookie_str_key = r"(%s+?)" % _re_legal_char
-_rx_cookie_str_equal = r"\s*=\s*"
-_rx_cookie_str_val = r"(%s|%s|%s*)" % (_re_quoted, _re_expires_val,
-                                       _re_legal_char)
-_rx_cookie_str = _rx_cookie_str_key + _rx_cookie_str_equal + _rx_cookie_str_val
-_rx_cookie = re.compile(bytes_(_rx_cookie_str, 'ascii'))
+_re_cookie_str_key = r"(%s+?)" % _re_legal_char
+_re_cookie_str_equal = r"\s*=\s*"
+_re_unquoted_val = r"(?:%s|\\(?:[0-3][0-7][0-7]|.))*" % _re_legal_char
+_re_cookie_str_val = r"(%s|%s|%s)" % (_re_quoted, _re_expires_val,
+                                       _re_unquoted_val)
+_re_cookie_str = _re_cookie_str_key + _re_cookie_str_equal + _re_cookie_str_val
 
+_rx_cookie = re.compile(bytes_(_re_cookie_str, 'ascii'))
 _rx_unquote = re.compile(bytes_(r'\\([0-3][0-7][0-7]|.)', 'ascii'))
 
 _bchr = (lambda i: bytes([i])) if PY3 else chr
@@ -318,10 +320,10 @@ def _unquote(v):
     #assert isinstance(v, bytes)
     if v and v[0] == v[-1] == _b_quote_mark:
         v = v[1:-1]
-        def _ch_unquote(m):
-            return _ch_unquote_map[m.group(1)]
-        v = _rx_unquote.sub(_ch_unquote, v)
-    return v
+    return _rx_unquote.sub(_ch_unquote, v)
+
+def _ch_unquote(m):
+    return _ch_unquote_map[m.group(1)]
 
 
 #
