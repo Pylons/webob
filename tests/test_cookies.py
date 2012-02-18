@@ -27,7 +27,7 @@ def test_cookie_one_value_with_trailing_semi():
     c = cookies.Cookie('dismiss-top=6;')
 
 def test_cookie_escaped_unquoted():
-    eq_(list(cookies.parse_cookie('x=\\040')), [('x', ' ')])
+    eq_(list(cookies.parse_cookie('x=\\040')), [(b'x', b' ')])
 
 def test_cookie_complex():
     c = cookies.Cookie('dismiss-top=6; CP=null*, '\
