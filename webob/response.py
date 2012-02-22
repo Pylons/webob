@@ -110,7 +110,7 @@ class Response(object):
                                  or (content_type.startswith('application/')
                                      and content_type.endswith('+xml'))):
                 charset = self.default_charset
-        if content_type and charset:
+        if content_type and charset and 'charset' not in content_type:
             content_type += '; charset=' + charset
         elif self._headerlist and charset:
             self.charset = charset
