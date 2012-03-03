@@ -1,7 +1,14 @@
-import os, mimetypes, zipfile, tarfile
 from datetime import datetime
+import mimetypes
+import os
+import tarfile
+import zipfile
+
 from pkg_resources import resource_string, resource_exists, resource_isdir
-from pasteob import *
+
+from webob import exc
+from webob.dec import wsgify
+from webob.response import Response
 
 __all__ = [
     'DataApp', 'FileApp', 'DirectoryApp',
@@ -31,15 +38,13 @@ class DataApp(Response):
     def __lshift__(self, req):
         return NotImplemented
 
-    @wapp
+    @wsgify
     def __call__(self, req):
         if req.method in self.allowed_methods:
             return self.conditional_response_app
         else:
-            return ErrorResponse('method',
-                "You cannot %s a file" % req.method,
-                allow=self.allowed_methods
-            )
+            return exc.HTTPMethodNotAllowed("You cannot %s a file" %
+                                            req.method)
 
 
 class FileApp(object):
@@ -61,7 +66,7 @@ class FileApp(object):
         try:
             stat = os.stat(self.filename)
         except (IOError, OSError):
-            self.cached_response = ErrorResponse(404)
+            self.cached_response = exc.HTTPNotFound(comment=self.filename)
             return
         if stat.st_mtime != self.last_modified or force:
             self.last_modified = stat.st_mtime
@@ -72,22 +77,24 @@ class FileApp(object):
                 self.cached_response = None
                 self.content_length = stat.st_size
 
-    @wapp
+    @wsgify
     def __call__(self, req):
         if req.method not in ('GET', 'HEAD'):
-            return ErrorResponse('method', "You cannot %s a file" % req.method, allow=('GET', 'HEAD'))
+            return exc.HTTPMethodNotAllowed("You cannot %s a file" %
+                                            req.method)
         force = (req.cache_control.max_age == 0)
         self.update(force) # RFC 2616 13.2.6
         r = self.cached_response # access just once to avoid the need for locking
         if r:
             return r
         elif not os.path.exists(self.filename):
-            return ErrorResponse(404, comment=self.filename)
+            return exc.HTTPNotFound(comment=self.filename)
 
         try:
             file = open(self.filename, 'rb')
         except (IOError, OSError), e:
-            return ErrorResponse('forbidden', "You are not permitted to view this file (%s)" % e)
+            msg = "You are not permitted to view this file (%s)" % e
+            return exc.HTTPForbidden(msg)
         return DataApp(
             app_iter = FileIter(file),
             content_length = self.content_length,
@@ -140,7 +147,7 @@ class DirectoryApp(object):
     def make_fileapp(self, path):
         return FileApp(path, **self.fileapp_kw)
 
-    @wapp
+    @wsgify
     def __call__(self, req):
         path_info = req.path_info.lstrip('/')
         try:
@@ -148,9 +155,9 @@ class DirectoryApp(object):
         except KeyError:
             path = os.path.abspath(os.path.join(self.path, path_info))
             if not os.path.isfile(path):
-                return ErrorResponse(404, comment=path)
+                return exc.HTTPNotFound(comment=path)
             elif not path.startswith(self.path):
-                return ErrorResponse('forbidden')
+                return exc.HTTPForbidden()
             else:
                 return self.cached_apps.setdefault(path_info, self.make_fileapp(path))
 
@@ -169,7 +176,7 @@ class ArchivedFilesApp(object):
         self.expires = expires
         self.cached_apps = {}
 
-    @wapp
+    @wsgify
     def __call__(self, req):
         path = req.path_info.lstrip('/')
         try:
@@ -205,7 +212,7 @@ class PkgResourcesApp(object):
         self.prefix = prefix
         self.cached_apps = {}
 
-    @wapp
+    @wsgify
     def __call__(self, req):
         path_info = req.path_info.lstrip('/')
         try:

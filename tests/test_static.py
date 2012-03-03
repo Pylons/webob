@@ -1,76 +1,93 @@
-from pasteob import *
-from pasteob.fileapp import *
-
-from pasteob.test import *
-from mext.test import *
-
-from os.path import getmtime
-from time import gmtime
 from datetime import date, datetime
+from os.path import getmtime
+import tempfile
+from time import gmtime
+import os
+import string
+import unittest
 
-def _check_foo(r, status, body):
-    eq(r.status_int, status)
-    eq(r.accept_ranges, 'bytes')
-    eq(r.content_type, 'application/octet-stream')
-    eq(r.content_length, 3)
-    eq(r.body, body)
+from nose.tools import eq_
+
+from webob import static
+from webob.request import Request, environ_from_url
+
 
 def test_dataapp():
-    app = DataApp('foo')
-    _check_foo(test(app), 200, 'foo')
-    _check_foo(test(app, method='HEAD'), 200, '')
-    eq(test(app, method='POST').status_int, 405)
+    def exec_app(app, *args, **kw):
+        req = Request(environ_from_url('/'), *args, **kw)
+        resp = req.get_response(app)
+        if req.method == 'HEAD':
+            resp._app_iter = ()
+        return resp
+
+    def _check_foo(r, status, body):
+        eq_(r.status_int, status)
+        eq_(r.accept_ranges, 'bytes')
+        eq_(r.content_type, 'application/octet-stream')
+        eq_(r.content_length, 3)
+        eq_(r.body, body)
+
+    app = static.DataApp('foo')
+    _check_foo(exec_app(app), 200, 'foo')
+    _check_foo(exec_app(app, method='HEAD'), 200, '')
+    eq_(exec_app(app, method='POST').status_int, 405)
+
 
 def test_dataapp_last_modified():
-    app = DataApp('data', last_modified=date(2005,1,1))
+    app = static.DataApp('data', last_modified=date(2005,1,1))
 
-    req1 = Request('/', if_modified_since=date(2000,1,1))
-    resp1 = app << req1
-    eq(resp1.status_int, 200)
-    eq(resp1.content_length, 4)
+    req1 = Request(environ_from_url('/'), if_modified_since=date(2000,1,1))
+    resp1 = req1.get_response(app)
+    eq_(resp1.status_int, 200)
+    eq_(resp1.content_length, 4)
 
-    req2 = Request('/', if_modified_since=date(2010,1,1))
-    resp2 = app << req2
-    eq(resp2.status_int, 304)
-    eq(resp2.content_length, None)
-    eq(resp2.body, '')
+    req2 = Request(environ_from_url('/'), if_modified_since=date(2010,1,1))
+    resp2 = req2.get_response(app)
+    eq_(resp2.status_int, 304)
+    eq_(resp2.content_length, None)
+    eq_(resp2.body, '')
 
     app.body = 'update'
 
-    resp3 = app << req1
-    eq(resp3.status_int, 200)
-    eq(resp3.content_length, 6)
-    eq(resp3.body, 'update')
+    resp3 = req1.get_response(app)
+    eq_(resp3.status_int, 200)
+    eq_(resp3.content_length, 6)
+    eq_(resp3.body, 'update')
 
-    resp4 = app << req2
-    eq(resp4.status_int, 200)
-    eq(resp4.content_length, 6)
-    eq(resp4.body, 'update')
-
-    print resp1
-    print resp2
+    resp4 = req2.get_response(app)
+    eq_(resp4.status_int, 200)
+    eq_(resp4.content_length, 6)
+    eq_(resp4.body, 'update')
 
 
-def test_fileapp():
-    app = FileApp(__file__)
-    req1 = Request('/')
-    resp1 = app << req1
-    eq(resp1.content_type, 'text/x-python')
-    eq(resp1.charset, 'UTF-8')
-    eq(resp1.last_modified.timetuple(), gmtime(getmtime(__file__)))
+class TestFileApp(unittest.TestCase):
+    def setUp(self):
+        fp = tempfile.NamedTemporaryFile(suffix=".py", delete=False)
+        self.tempfile = fp.name
+        fp.write("import this\n")
+        fp.close()
 
-    assert app.cached_response is not None
-    app._max_cache_size = 0
-    app.update(force=True)
-    resp2 = app << req1
-    eq(resp2.content_type, 'text/x-python')
-    eq(resp2.last_modified.timetuple(), gmtime(getmtime(__file__)))
+    def tearDown(self):
+        os.unlink(self.tempfile)
 
-    req3 = Request('/', range=(5,10))
-    resp3 = app << req3
-    eq(resp3.status_int, 206)
-    eq(tuple(resp3.content_range)[:2], (5,10))
-    eq(resp3.last_modified.timetuple(), gmtime(getmtime(__file__)))
-    eq(resp3.body, 'paste')
+    def test_fileapp(self):
+        app = static.FileApp(self.tempfile)
+        req1 = Request(environ_from_url('/'))
+        resp1 = req1.get_response(app)
+        eq_(resp1.content_type, 'text/x-python')
+        eq_(resp1.charset, 'UTF-8')
+        eq_(resp1.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
 
-test_fileapp()
+        self.assertNotEqual(None, app.cached_response)
+        app._max_cache_size = 0
+        app.update(force=True)
+        resp2 = req1.get_response(app)
+        eq_(resp2.content_type, 'text/x-python')
+        eq_(resp2.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
+
+        req3 = Request(environ_from_url('/'), range=(7, 11))
+        resp3 = req3.get_response(app)
+        eq_(resp3.status_int, 206)
+        eq_(tuple(resp3.content_range)[:2], (7, 11))
+        eq_(resp3.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
+        eq_(resp3.body, 'this')
