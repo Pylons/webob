@@ -27,7 +27,7 @@ def test_cookie_one_value_with_trailing_semi():
     c = cookies.Cookie('dismiss-top=6;')
 
 def test_cookie_escaped_unquoted():
-    eq_(list(cookies.parse_cookie('x=\\040')) == [('x', ' ')])
+    eq_(list(cookies.parse_cookie('x=\\040')), [('x', ' ')])
 
 def test_cookie_complex():
     c = cookies.Cookie('dismiss-top=6; CP=null*, '\
@@ -193,17 +193,17 @@ class TestRequestCookies(unittest.TestCase):
     def test___setitem__name_not_string_type(self):
         inst = self._makeOne({})
         self.assertRaises(TypeError, inst.__setitem__, None, 1)
-        
+
     def test___setitem__name_not_encodeable_to_ascii(self):
         name = native_(b'La Pe\xc3\xb1a', 'utf-8')
         inst = self._makeOne({})
         self.assertRaises(TypeError, inst.__setitem__, name, 'abc')
-        
+
     def test___setitem__name_not_rfc2109_valid(self):
         name = '$a'
         inst = self._makeOne({})
         self.assertRaises(TypeError, inst.__setitem__, name, 'abc')
-        
+
     def test___setitem__value_not_string_type(self):
         inst = self._makeOne({})
         self.assertRaises(ValueError, inst.__setitem__, 'a', None)
@@ -220,7 +220,7 @@ class TestRequestCookies(unittest.TestCase):
         inst = self._makeOne(environ)
         inst['a'] = value
         self.assertEqual(environ['HTTP_COOKIE'], 'a="La Pe\\303\\261a"')
-        
+
     def test__setitem__success_append(self):
         value = native_(b'La Pe\xc3\xb1a', 'utf-8')
         environ = {'HTTP_COOKIE':'a=1; b=2'}
@@ -260,7 +260,7 @@ class TestRequestCookies(unittest.TestCase):
         environ = {'HTTP_COOKIE':'a=1; b="La Pe\\303\\261a"; c=3'}
         inst = self._makeOne(environ)
         self.assertEqual(sorted(list(inst.keys())), ['a', 'b', 'c'])
-        
+
     def test_values(self):
         val = text_(b'La Pe\xc3\xb1a', 'utf-8')
         environ = {'HTTP_COOKIE':'a=1; b="La Pe\\303\\261a"; c=3'}
@@ -298,7 +298,7 @@ class TestRequestCookies(unittest.TestCase):
         inst = self._makeOne(environ)
         self.assertTrue('a' in inst)
         self.assertFalse('b' in inst)
-        
+
     def test___iter__(self):
         environ = {'HTTP_COOKIE':'a=1; b=2; c=3'}
         inst = self._makeOne(environ)
@@ -325,9 +325,9 @@ class TestRequestCookies(unittest.TestCase):
         self.assertTrue(r.startswith(
             '<RequestCookies (dict-like) with values '))
         self.assertTrue(r.endswith('>'))
-        
-        
-        
-        
 
-        
+
+
+
+
+
