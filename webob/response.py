@@ -104,11 +104,13 @@ class Response(object):
         if 'charset' in kw:
             charset = kw.pop('charset')
         elif self.default_charset:
-            if content_type and (content_type == 'text/html'
-                                 or content_type.startswith('text/')
-                                 or content_type.startswith('application/xml')
-                                 or (content_type.startswith('application/')
-                                     and content_type.endswith('+xml'))):
+            if (content_type
+                and 'charset=' not in content_type
+                and (content_type == 'text/html'
+                    or content_type.startswith('text/')
+                    or content_type.startswith('application/xml')
+                    or (content_type.startswith('application/')
+                         and content_type.endswith('+xml')))):
                 charset = self.default_charset
         if content_type and charset:
             content_type += '; charset=' + charset

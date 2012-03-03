@@ -102,6 +102,11 @@ def test_content_type():
     r.content_type = None
     eq_(r.content_type, None)
 
+def test_init_content_type_w_charset():
+    v = 'text/plain;charset=ISO-8859-1'
+    eq_(Response(content_type=v).headers['content-type'], v)
+
+
 def test_cookies():
     res = Response()
     # test unicode value
