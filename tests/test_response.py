@@ -1006,3 +1006,6 @@ def test_response_set_body_file2():
     r = Response(body_file=file)
     assert r.body == data
 
+def test_response_content_type_in_constructor():
+    res = Response(content_type='text/plain;charset=ISO-8859-1')
+    eq_(res.headers['content-type'],'text/plain;charset=ISO-8859-1')
