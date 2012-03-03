@@ -7,6 +7,7 @@ import zipfile
 from pkg_resources import resource_string, resource_exists, resource_isdir
 
 from webob import exc
+from webob.compat import bytes_
 from webob.dec import wsgify
 from webob.response import Response
 
@@ -92,7 +93,7 @@ class FileApp(object):
 
         try:
             file = open(self.filename, 'rb')
-        except (IOError, OSError), e:
+        except (IOError, OSError) as e:
             msg = "You are not permitted to view this file (%s)" % e
             return exc.HTTPForbidden(msg)
         return DataApp(
