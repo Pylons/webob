@@ -132,6 +132,8 @@ def test_headers():
     tval = 'application/x-test'
     r.headers.update({'content-type': tval})
     eq_(r.headers.getall('content-type'), [tval])
+    r.headers.clear()
+    assert not r.headerlist
 
 def test_response_copy():
     r = Response(app_iter=iter(['a']))

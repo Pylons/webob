@@ -166,7 +166,7 @@ class MultiDict(MutableMapping):
     has_key = __contains__
 
     def clear(self):
-        self._items = []
+        del self._items[:]
 
     def copy(self):
         return self.__class__(self)
