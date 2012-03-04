@@ -79,8 +79,6 @@ class TestFileApp(unittest.TestCase):
         eq_(resp1.charset, 'UTF-8')
         eq_(resp1.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
 
-        self.assertNotEqual(None, app.cached_response)
-        app._max_cache_size = 0
         app.update(force=True)
         resp2 = req1.get_response(app)
         eq_(resp2.content_type, 'text/x-python')

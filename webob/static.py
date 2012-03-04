@@ -36,9 +36,6 @@ class DataApp(Response):
 
     body = property(Response.body.fget, _set_body)
 
-    def __lshift__(self, req):
-        return NotImplemented
-
     @wsgify
     def __call__(self, req):
         if req.method in self.allowed_methods:
@@ -53,7 +50,6 @@ class FileApp(object):
         An application that will send the file at the given filename.
         Adds a mime type based on ``mimetypes.guess_type()``.
     """
-    _max_cache_size = (1<<12) # 4Kb
 
     def __init__(self, filename, **kw):
         self.filename = filename
@@ -67,16 +63,10 @@ class FileApp(object):
         try:
             stat = os.stat(self.filename)
         except (IOError, OSError):
-            self.cached_response = exc.HTTPNotFound(comment=self.filename)
             return
         if stat.st_mtime != self.last_modified or force:
             self.last_modified = stat.st_mtime
-            if stat.st_size < self._max_cache_size:
-                data = open(self.filename, 'rb').read()
-                self.cached_response = DataApp(data, last_modified=stat.st_mtime, **self.kw)
-            else:
-                self.cached_response = None
-                self.content_length = stat.st_size
+            self.content_length = stat.st_size
 
     @wsgify
     def __call__(self, req):
@@ -85,10 +75,7 @@ class FileApp(object):
                                             req.method)
         force = (req.cache_control.max_age == 0)
         self.update(force) # RFC 2616 13.2.6
-        r = self.cached_response # access just once to avoid the need for locking
-        if r:
-            return r
-        elif not os.path.exists(self.filename):
+        if not os.path.exists(self.filename):
             return exc.HTTPNotFound(comment=self.filename)
 
         try:
@@ -133,7 +120,7 @@ class FileIter(object):
 class DirectoryApp(object):
     """
         An application that dispatches requests to corresponding FileApps based on PATH_INFO.
-        FileApp instances are cached. This app double-checks not to serve any files that are not in a subdirectory.
+        This app double-checks not to serve any files that are not in a subdirectory.
         To customize FileApp instances creation override `make_fileapp` method.
     """
 
@@ -142,7 +129,6 @@ class DirectoryApp(object):
         if not self.path.endswith(os.path.sep):
             self.path += os.path.sep
         assert os.path.isdir(self.path)
-        self.cached_apps = {}
         self.fileapp_kw = kw
 
     def make_fileapp(self, path):
@@ -150,17 +136,14 @@ class DirectoryApp(object):
 
     @wsgify
     def __call__(self, req):
-        path_info = req.path_info.lstrip('/')
-        try:
-            return self.cached_apps[path_info]
-        except KeyError:
-            path = os.path.abspath(os.path.join(self.path, path_info))
-            if not os.path.isfile(path):
-                return exc.HTTPNotFound(comment=path)
-            elif not path.startswith(self.path):
-                return exc.HTTPForbidden()
-            else:
-                return self.cached_apps.setdefault(path_info, self.make_fileapp(path))
+        path = os.path.abspath(os.path.join(self.path,
+                                            req.path_info.lstrip('/')))
+        if not os.path.isfile(path):
+            return exc.HTTPNotFound(comment=path)
+        elif not path.startswith(self.path):
+            return exc.HTTPForbidden()
+        else:
+            return self.make_fileapp(path)
 
 
 class ArchivedFilesApp(object):
@@ -175,31 +158,27 @@ class ArchivedFilesApp(object):
         else:
             raise AssertionError("filepath '%s' is not a zip or tar " % filepath)
         self.expires = expires
-        self.cached_apps = {}
 
     @wsgify
     def __call__(self, req):
         path = req.path_info.lstrip('/')
         try:
-            return self.cached_apps[path_info]
+            info = self.archive.getinfo(path)
         except KeyError:
-            try:
-                info = self.archive.getinfo(path)
-            except KeyError:
+            app = None
+        else:
+            if info.filename.endswith('/'):
                 app = None
             else:
-                if info.filename.endswith('/'):
-                    app = None
-                else:
-                    content_type, content_encoding = mimetypes.guess_type(info.filename)
-                    app = DataApp(
-                        body = self.archive.read(path),
-                        content_type = content_type,
-                        content_encoding = content_encoding,
-                        last_modified = datetime(*info.date_time),
-                        expires = self.expires,
-                    )
-            return self.cached_apps.setdefault(path, app)
+                content_type, content_encoding = mimetypes.guess_type(info.filename)
+                app = DataApp(
+                    body = self.archive.read(path),
+                    content_type = content_type,
+                    content_encoding = content_encoding,
+                    last_modified = datetime(*info.date_time),
+                    expires = self.expires,
+                )
+        return app
 
 
 class PkgResourcesApp(object):
@@ -211,24 +190,20 @@ class PkgResourcesApp(object):
         if prefix and not prefix.endswith('/'):
             prefix += '/'
         self.prefix = prefix
-        self.cached_apps = {}
 
     @wsgify
     def __call__(self, req):
         path_info = req.path_info.lstrip('/')
-        try:
-            return self.cached_apps[path_info]
-        except KeyError:
-            path = self.prefix + path_info
-            if resource_exists(self.module, path) and not resource_isdir(self.module, path):
-                data = resource_string(self.module, path)
-                content_type, content_encoding = mimetypes.guess_type(path_info)
-                app = DataApp(data,
-                    content_type=content_type,
-                    content_encoding = content_encoding,
-                )
-                app.md5_etag(set_content_md5=True)
-            else:
-                app = None
-            return self.cached_apps.setdefault(path_info, app)
+        path = self.prefix + path_info
+        if resource_exists(self.module, path) and not resource_isdir(self.module, path):
+            data = resource_string(self.module, path)
+            content_type, content_encoding = mimetypes.guess_type(path_info)
+            app = DataApp(data,
+                content_type=content_type,
+                content_encoding = content_encoding,
+            )
+            app.md5_etag(set_content_md5=True)
+        else:
+            app = None
+        return app
 
