@@ -3,6 +3,7 @@ from os.path import getmtime
 import tempfile
 from time import gmtime
 import os
+import shutil
 import string
 import unittest
 
@@ -11,6 +12,7 @@ from nose.tools import eq_
 from webob import static
 from webob.compat import bytes_
 from webob.request import Request, environ_from_url
+from webob.response import Response
 
 
 def test_dataapp():
@@ -115,3 +117,73 @@ class TestFileIter(unittest.TestCase):
         fi = static.FileIter(fp)
         self.assertRaises(StopIteration, next, iter(fi))
 
+
+class TestDirectoryApp(unittest.TestCase):
+    def setUp(self):
+        self.test_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.test_dir)
+
+    def _get_response(self, app, path='/', **kw):
+        return Request(environ_from_url(path), **kw).\
+                get_response(app)
+
+    def _create_file(self, content, *paths):
+        path = os.path.join(self.test_dir, *paths)
+        with open(path, 'wb') as fp:
+            fp.write(content)
+        return path
+
+    def test_empty_directory(self):
+        app = static.DirectoryApp(self.test_dir)
+        self.assertEqual(404, self._get_response(app).status_int)
+        self.assertEqual(404, self._get_response(app, '/foo').status_int)
+
+    def test_serve_file(self):
+        app = static.DirectoryApp(self.test_dir)
+        self._create_file(bytes_('abcde'), 'bar')
+        self.assertEqual(404, self._get_response(app).status_int)
+        self.assertEqual(404, self._get_response(app, '/foo').status_int)
+
+        resp = self._get_response(app, '/bar')
+        self.assertEqual(200, resp.status_int)
+        self.assertEqual(bytes_('abcde'), resp.body)
+
+    def test_dont_serve_file_in_parent_directory(self):
+        # We'll have:
+        #   /TEST_DIR/
+        #   /TEST_DIR/bar
+        #   /TEST_DIR/foo/   <- serve this directory
+        self._create_file(bytes_('abcde'), 'bar')
+        serve_path = os.path.join(self.test_dir, 'foo')
+        os.mkdir(serve_path)
+        app = static.DirectoryApp(serve_path)
+
+        # The file exists, but is outside the served dir.
+        self.assertEqual(403, self._get_response(app, '/../bar').status_int)
+
+    def test_file_app_arguments(self):
+        app = static.DirectoryApp(self.test_dir, content_type='xxx/yyy')
+        self._create_file(bytes_('abcde'), 'bar')
+
+        resp = self._get_response(app, '/bar')
+        self.assertEqual(200, resp.status_int)
+        self.assertEqual('xxx/yyy', resp.content_type)
+
+    def test_file_app_factory(self):
+        def make_fileapp(*args, **kwargs):
+            make_fileapp.called = True
+            return Response()
+        make_fileapp.called = False
+
+        app = static.DirectoryApp(self.test_dir)
+        app.make_fileapp = make_fileapp
+        self._create_file(bytes_('abcde'), 'bar')
+
+        self._get_response(app, '/bar')
+        self.assertTrue(make_fileapp.called)
+
+    def test_must_serve_directory(self):
+        serve_path = self._create_file(bytes_('abcde'), self.test_dir, 'bar')
+        self.assertRaises(AssertionError, static.DirectoryApp, serve_path)
