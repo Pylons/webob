@@ -5,7 +5,9 @@ from time import gmtime
 import os
 import shutil
 import string
+import tarfile
 import unittest
+import zipfile
 
 from nose.tools import eq_
 
@@ -187,3 +189,85 @@ class TestDirectoryApp(unittest.TestCase):
     def test_must_serve_directory(self):
         serve_path = self._create_file(bytes_('abcde'), self.test_dir, 'bar')
         self.assertRaises(AssertionError, static.DirectoryApp, serve_path)
+
+
+class TestArchivedFilesApp(unittest.TestCase):
+    def setUp(self):
+        fp = tempfile.NamedTemporaryFile(delete=False)
+        self.archive_name = fp.name
+        fp.close()
+
+        # /DIR_ARCHIVE/
+        # /DIR_ARCHIVE/foo      <- abcde
+        # /DIR_ARCHIVE/bar/
+        # /DIR_ARCHIVE/bar/baz  <- fgh
+        self.dir_archive = tempfile.mkdtemp()
+        with open(os.path.join(self.dir_archive, 'foo'), 'w') as fp:
+            fp.write('abcde')
+        os.mkdir(os.path.join(self.dir_archive, 'bar'))
+        with open(os.path.join(self.dir_archive, 'bar', 'baz'), 'w') as fp:
+            fp.write('fgh')
+
+    def tearDown(self):
+        os.unlink(self.archive_name)
+        shutil.rmtree(self.dir_archive)
+
+    def _get_response(self, app, path='/', **kw):
+        return Request(environ_from_url(path), **kw).\
+                get_response(app)
+
+    def _create_archive(self, kind):
+        # We change the current working directory to add files so that they are
+        # not prefixed by the full temporary directory name.
+        old_cwd = os.getcwd()
+        if kind == 'zip':
+            os.chdir(self.dir_archive)
+            with zipfile.ZipFile(self.archive_name, 'w') as fp:
+                fp.write('foo')
+                fp.write('bar')
+                fp.write(os.path.join('bar', 'baz'))
+        elif kind == 'tar':
+            os.chdir(self.dir_archive)
+            with tarfile.open(self.archive_name, 'w') as fp:
+                # We don't use fp.add('.') because it creates the archive with
+                # paths inside, equal to './', './foo', which causes problem  to
+                # extract the files after.
+                fp.add('foo')
+                fp.add('bar') # Add directory recursively
+        else:
+            assert False, "unsupported archive type %r" % kind
+
+        os.chdir(old_cwd)
+
+    def _test_read_archive_content(self, kind):
+        self._create_archive(kind)
+        app = static.ArchivedFilesApp(self.archive_name)
+
+        resp1 = self._get_response(app, '/foo')
+        self.assertEqual(200, resp1.status_int)
+        self.assertEqual(bytes_('abcde'), resp1.body)
+
+        # Unknow file
+        resp2 = self._get_response(app, '/unknown')
+        self.assertEqual(200, resp2.status_int)
+        self.assertEqual(bytes_(''), resp2.body)
+
+        # Directory
+        resp3 = self._get_response(app, '/bar')
+        self.assertEqual(200, resp3.status_int)
+        self.assertEqual(bytes_(''), resp3.body)
+
+        # File in subdirectory
+        resp4 = self._get_response(app, '/bar/baz')
+        self.assertEqual(200, resp4.status_int)
+        self.assertEqual(bytes_('fgh'), resp4.body)
+
+    def test_zip_archive(self):
+        self._test_read_archive_content("zip")
+
+    def test_tar_archive(self):
+        self._test_read_archive_content("tar")
+
+    def test_unknown_archive(self):
+        self.assertRaises(AssertionError,
+                          static.ArchivedFilesApp, self.archive_name)

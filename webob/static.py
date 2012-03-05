@@ -146,15 +146,69 @@ class DirectoryApp(object):
             return self.make_fileapp(path)
 
 
+class ZipFile(object):
+    """Small wrapper to provide a uniform interface to archive (zip) objects"""
+
+    def __init__(self, filename):
+        self.archive = zipfile.ZipFile(filename)
+
+    def get_info(self, path):
+        class ZipInfo(object):
+            def __init__(self, info):
+                self.info = info
+
+            def isdir(self):
+                return self.info.filename.endswith('/')
+
+            @property
+            def filename(self):
+                return self.info.filename
+
+            @property
+            def date_time(self):
+                return self.info.date_time
+
+        return ZipInfo(self.archive.getinfo(path))
+
+    def read(self, name):
+        return self.archive.read(name)
+
+
+class TarFile(object):
+    """Small wrapper to provide a uniform interface to archive (tar) objects"""
+    def __init__(self, filename):
+        self.archive = tarfile.TarFile(filename)
+
+    def get_info(self, path):
+        class TarInfo(object):
+            def __init__(self, info):
+                self.info = info
+
+            def isdir(self):
+                return self.info.isdir()
+
+            @property
+            def filename(self):
+                return self.info.name
+
+            @property
+            def date_time(self):
+                return datetime.fromtimestamp(self.info.mtime).timetuple()[:6]
+        return TarInfo(self.archive.getmember(path))
+
+    def read(self, name):
+        return self.archive.extractfile(name).read()
+
+
 class ArchivedFilesApp(object):
     """
         An application that serves files from a zip or tar archive via DataApps.
     """
     def __init__(self, filepath, expires=None):
         if zipfile.is_zipfile(filepath):
-            self.archive = zipfile.ZipFile(filepath, 'r')
+            self.archive = ZipFile(filepath)
         elif tarfile.is_tarfile(filepath):
-            self.archive = tarfile.TarFileCompat(filepath, 'r')
+            self.archive = TarFile(filepath)
         else:
             raise AssertionError("filepath '%s' is not a zip or tar " % filepath)
         self.expires = expires
@@ -163,11 +217,11 @@ class ArchivedFilesApp(object):
     def __call__(self, req):
         path = req.path_info.lstrip('/')
         try:
-            info = self.archive.getinfo(path)
+            info = self.archive.get_info(path)
         except KeyError:
             app = None
         else:
-            if info.filename.endswith('/'):
+            if info.isdir():
                 app = None
             else:
                 content_type, content_encoding = mimetypes.guess_type(info.filename)
