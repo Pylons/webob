@@ -71,22 +71,47 @@ class TestFileApp(unittest.TestCase):
     def tearDown(self):
         os.unlink(self.tempfile)
 
+    def _get_response(self, app, **kw):
+        return Request(environ_from_url('/'), **kw).\
+                get_response(app)
+
     def test_fileapp(self):
         app = static.FileApp(self.tempfile)
-        req1 = Request(environ_from_url('/'))
-        resp1 = req1.get_response(app)
+        resp1 = self._get_response(app)
         eq_(resp1.content_type, 'text/x-python')
         eq_(resp1.charset, 'UTF-8')
         eq_(resp1.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
 
         app.update(force=True)
-        resp2 = req1.get_response(app)
+        resp2 = self._get_response(app)
         eq_(resp2.content_type, 'text/x-python')
         eq_(resp2.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
 
-        req3 = Request(environ_from_url('/'), range=(7, 11))
-        resp3 = req3.get_response(app)
+        resp3 = self._get_response(app, range=(7, 11))
         eq_(resp3.status_int, 206)
         eq_(tuple(resp3.content_range)[:2], (7, 11))
         eq_(resp3.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
         eq_(resp3.body, b'this')
+    def test_unexisting_file(self):
+        app = static.FileApp('/tmp/this/doesnt/exist')
+        self.assertEqual(404, self._get_response(app).status_int)
+
+    def test_allowed_methods(self):
+        app = static.FileApp(self.tempfile)
+
+        # Alias
+        resp = lambda method: self._get_response(app, method=method)
+
+        self.assertEqual(200, resp(method='GET').status_int)
+        self.assertEqual(200, resp(method='HEAD').status_int)
+        self.assertEqual(405, resp(method='POST').status_int)
+        # Actually any other method is not allowed
+        self.assertEqual(405, resp(method='xxx').status_int)
+
+
+class TestFileIter(unittest.TestCase):
+    def test_empty_file(self):
+        fp = tempfile.NamedTemporaryFile()
+        fi = static.FileIter(fp)
+        self.assertRaises(StopIteration, next, iter(fi))
+
