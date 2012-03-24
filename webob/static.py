@@ -59,6 +59,18 @@ class FileIter(object):
         self.file = file
 
     def app_iter_range(self, seek=None, limit=None, block_size=1<<16):
+        """Iter over the content of the file.
+
+        You can set the `seek` parameter to read the file starting from a
+        specific position.
+
+        You can set the `limit` parameter to read the file up to specific
+        position.
+
+        Finally, you can change the number of bytes read at once by setting the
+        `block_size` parameter.
+        """
+
         if seek:
             self.file.seek(seek)
             if limit:

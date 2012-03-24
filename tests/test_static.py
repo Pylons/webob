@@ -1,3 +1,4 @@
+from io import BytesIO
 from os.path import getmtime
 import tempfile
 from time import gmtime
@@ -92,9 +93,48 @@ class TestFileApp(unittest.TestCase):
 
 class TestFileIter(unittest.TestCase):
     def test_empty_file(self):
-        fp = tempfile.NamedTemporaryFile()
+        fp = BytesIO()
         fi = static.FileIter(fp)
         self.assertRaises(StopIteration, next, iter(fi))
+
+    def test_seek(self):
+        fp = BytesIO(bytes_("0123456789"))
+        i = static.FileIter(fp).app_iter_range(seek=4)
+
+        self.assertEqual(bytes_("456789"), next(i))
+        self.assertRaises(StopIteration, next, i)
+
+    def test_limit(self):
+        fp = BytesIO(bytes_("0123456789"))
+        i = static.FileIter(fp).app_iter_range(limit=4)
+
+        self.assertEqual(bytes_("0123"), next(i))
+        self.assertRaises(StopIteration, next, i)
+
+    def test_limit_and_seek(self):
+        fp = BytesIO(bytes_("0123456789"))
+        i = static.FileIter(fp).app_iter_range(limit=4, seek=1)
+
+        self.assertEqual(bytes_("123"), next(i))
+        self.assertRaises(StopIteration, next, i)
+
+    def test_multiple_reads(self):
+        fp = BytesIO(bytes_("012"))
+        i = static.FileIter(fp).app_iter_range(block_size=1)
+
+        self.assertEqual(bytes_("0"), next(i))
+        self.assertEqual(bytes_("1"), next(i))
+        self.assertEqual(bytes_("2"), next(i))
+        self.assertRaises(StopIteration, next, i)
+
+    def test_seek_bigger_than_limit(self):
+        fp = BytesIO(bytes_("0123456789"))
+        i = static.FileIter(fp).app_iter_range(limit=1, seek=2)
+
+        # XXX: this should not return anything actually, since we are starting
+        # to read after the place we wanted to stop.
+        self.assertEqual(bytes_("23456789"), next(i))
+        self.assertRaises(StopIteration, next, i)
 
 
 class TestDirectoryApp(unittest.TestCase):
