@@ -107,6 +107,7 @@ class TestFileApp(unittest.TestCase):
         eq_(tuple(resp3.content_range)[:2], (7, 11))
         eq_(resp3.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
         eq_(resp3.body, b'this')
+
     def test_unexisting_file(self):
         app = static.FileApp('/tmp/this/doesnt/exist')
         self.assertEqual(404, get_response(app).status_int)
@@ -122,6 +123,27 @@ class TestFileApp(unittest.TestCase):
         self.assertEqual(405, resp(method='POST').status_int)
         # Actually any other method is not allowed
         self.assertEqual(405, resp(method='xxx').status_int)
+
+    def test_exception_while_opening_file(self):
+        # Mock the built-in ``open()`` function to allow finner control about
+        # what we are testing.
+        def open_ioerror(*args, **kwargs):
+            raise IOError()
+
+        def open_oserror(*args, **kwargs):
+            raise OSError()
+
+        app = static.FileApp(self.tempfile)
+        old_open = __builtins__['open']
+
+        try:
+            __builtins__['open'] = open_ioerror
+            self.assertEqual(403, get_response(app).status_int)
+
+            __builtins__['open'] = open_oserror
+            self.assertEqual(403, get_response(app).status_int)
+        finally:
+            __builtins__['open'] = old_open
 
 
 class TestFileIter(unittest.TestCase):
