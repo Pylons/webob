@@ -267,11 +267,13 @@ class TestArchivedFilesApp(unittest.TestCase):
 
         # Unknow file
         resp2 = get_response(app, '/unknown')
+        # XXX: this seems wrong, it should return 404
         self.assertEqual(200, resp2.status_int)
         self.assertEqual(bytes_(''), resp2.body)
 
         # Directory
         resp3 = get_response(app, '/bar')
+        # XXX: this seems wrong, it should return 404 or 405
         self.assertEqual(200, resp3.status_int)
         self.assertEqual(bytes_(''), resp3.body)
 
