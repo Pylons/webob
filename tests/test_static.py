@@ -1,16 +1,9 @@
-from datetime import date, datetime
 from os.path import getmtime
 import tempfile
 from time import gmtime
 import os
 import shutil
-import string
-import sys
-import tarfile
 import unittest
-import zipfile
-
-from nose.tools import eq_
 
 from webob import static
 from webob.compat import bytes_
@@ -32,54 +25,6 @@ def create_file(content, *paths):
     return path
 
 
-def test_dataapp():
-    def exec_app(app, *args, **kw):
-        req = Request(environ_from_url('/'), *args, **kw)
-        resp = req.get_response(app)
-        if req.method == 'HEAD':
-            resp._app_iter = ()
-        return resp
-
-    def _check_foo(r, status, body):
-        eq_(r.status_int, status)
-        eq_(r.accept_ranges, 'bytes')
-        eq_(r.content_type, 'application/octet-stream')
-        eq_(r.content_length, 3)
-        eq_(r.body, bytes_(body))
-
-    app = static.DataApp(b'foo')
-    _check_foo(exec_app(app), 200, 'foo')
-    _check_foo(exec_app(app, method='HEAD'), 200, '')
-    eq_(exec_app(app, method='POST').status_int, 405)
-
-
-def test_dataapp_last_modified():
-    app = static.DataApp(b'data', last_modified=date(2005,1,1))
-
-    req1 = Request(environ_from_url('/'), if_modified_since=date(2000,1,1))
-    resp1 = req1.get_response(app)
-    eq_(resp1.status_int, 200)
-    eq_(resp1.content_length, 4)
-
-    req2 = Request(environ_from_url('/'), if_modified_since=date(2010,1,1))
-    resp2 = req2.get_response(app)
-    eq_(resp2.status_int, 304)
-    eq_(resp2.content_length, None)
-    eq_(resp2.body, b'')
-
-    app.body = b'update'
-
-    resp3 = req1.get_response(app)
-    eq_(resp3.status_int, 200)
-    eq_(resp3.content_length, 6)
-    eq_(resp3.body, b'update')
-
-    resp4 = req2.get_response(app)
-    eq_(resp4.status_int, 200)
-    eq_(resp4.content_length, 6)
-    eq_(resp4.body, b'update')
-
-
 class TestFileApp(unittest.TestCase):
     def setUp(self):
         fp = tempfile.NamedTemporaryFile(suffix=".py", delete=False)
@@ -93,20 +38,20 @@ class TestFileApp(unittest.TestCase):
     def test_fileapp(self):
         app = static.FileApp(self.tempfile)
         resp1 = get_response(app)
-        eq_(resp1.content_type, 'text/x-python')
-        eq_(resp1.charset, 'UTF-8')
-        eq_(resp1.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
+        self.assertEqual(resp1.content_type, 'text/x-python')
+        self.assertEqual(resp1.charset, 'UTF-8')
+        self.assertEqual(resp1.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
 
         app.update(force=True)
         resp2 = get_response(app)
-        eq_(resp2.content_type, 'text/x-python')
-        eq_(resp2.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
+        self.assertEqual(resp2.content_type, 'text/x-python')
+        self.assertEqual(resp2.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
 
         resp3 = get_response(app, range=(7, 11))
-        eq_(resp3.status_int, 206)
-        eq_(tuple(resp3.content_range)[:2], (7, 11))
-        eq_(resp3.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
-        eq_(resp3.body, b'this')
+        self.assertEqual(resp3.status_int, 206)
+        self.assertEqual(tuple(resp3.content_range)[:2], (7, 11))
+        self.assertEqual(resp3.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
+        self.assertEqual(resp3.body, bytes_('this'))
 
     def test_unexisting_file(self):
         app = static.FileApp('/tmp/this/doesnt/exist')
@@ -212,144 +157,3 @@ class TestDirectoryApp(unittest.TestCase):
     def test_must_serve_directory(self):
         serve_path = create_file('abcde', self.test_dir, 'bar')
         self.assertRaises(AssertionError, static.DirectoryApp, serve_path)
-
-
-class TestArchivedFilesApp(unittest.TestCase):
-    def setUp(self):
-        fp = tempfile.NamedTemporaryFile(delete=False)
-        self.archive_name = fp.name
-        fp.close()
-
-        # /DIR_ARCHIVE/
-        # /DIR_ARCHIVE/foo      <- abcde
-        # /DIR_ARCHIVE/bar/
-        # /DIR_ARCHIVE/bar/baz  <- fgh
-        self.dir_archive = tempfile.mkdtemp()
-        create_file('abcde', self.dir_archive, 'foo')
-
-        os.mkdir(os.path.join(self.dir_archive, 'bar'))
-        create_file('fgh', self.dir_archive, 'bar', 'baz')
-
-    def tearDown(self):
-        os.unlink(self.archive_name)
-        shutil.rmtree(self.dir_archive)
-
-    def _create_archive(self, kind):
-        # We change the current working directory to add files so that they are
-        # not prefixed by the full temporary directory name.
-        old_cwd = os.getcwd()
-        if kind == 'zip':
-            os.chdir(self.dir_archive)
-            with zipfile.ZipFile(self.archive_name, 'w') as fp:
-                fp.write('foo')
-                fp.write('bar')
-                fp.write(os.path.join('bar', 'baz'))
-        elif kind == 'tar':
-            os.chdir(self.dir_archive)
-            with tarfile.open(self.archive_name, 'w') as fp:
-                # We don't use fp.add('.') because it creates the archive with
-                # paths inside, equal to './', './foo', which causes problem  to
-                # extract the files after.
-                fp.add('foo')
-                fp.add('bar') # Add directory recursively
-        else:
-            assert False, "unsupported archive type %r" % kind
-
-        os.chdir(old_cwd)
-
-    def _test_read_archive_content(self, kind):
-        self._create_archive(kind)
-        app = static.ArchivedFilesApp(self.archive_name)
-
-        resp1 = get_response(app, '/foo')
-        self.assertEqual(200, resp1.status_int)
-        self.assertEqual(bytes_('abcde'), resp1.body)
-
-        # Unknow file
-        resp2 = get_response(app, '/unknown')
-        # XXX: this seems wrong, it should return 404
-        self.assertEqual(200, resp2.status_int)
-        self.assertEqual(bytes_(''), resp2.body)
-
-        # Directory
-        resp3 = get_response(app, '/bar')
-        # XXX: this seems wrong, it should return 404 or 405
-        self.assertEqual(200, resp3.status_int)
-        self.assertEqual(bytes_(''), resp3.body)
-
-        # File in subdirectory
-        resp4 = get_response(app, '/bar/baz')
-        self.assertEqual(200, resp4.status_int)
-        self.assertEqual(bytes_('fgh'), resp4.body)
-
-    def test_zip_archive(self):
-        self._test_read_archive_content("zip")
-
-    def test_tar_archive(self):
-        self._test_read_archive_content("tar")
-
-    def test_unknown_archive(self):
-        self.assertRaises(AssertionError,
-                          static.ArchivedFilesApp, self.archive_name)
-
-
-class TestPkgResourcesApp(unittest.TestCase):
-
-    test_mod = 'webob_static_testmod'
-
-    def setUp(self):
-        self.dir_archive = tempfile.mkdtemp()
-        mod_dir = os.path.join(self.dir_archive, self.test_mod)
-        os.mkdir(mod_dir)
-        os.mkdir(os.path.join(mod_dir, 'plop'))
-
-        create_file("", mod_dir, '__init__.py')
-        create_file("jpeg file", mod_dir, 'foo.jpg', )
-        create_file("text file", mod_dir, 'plop', 'bar.txt')
-
-        sys.path.insert(0, self.dir_archive)
-
-    def tearDown(self):
-        sys.path.remove(self.dir_archive)
-        # pkg_resources access sys.modules to import the module. Since we change
-        # the directory for each test, we need to clear the cached reference or
-        # it will always try to load the module from the first directory used.
-        sys.modules.pop(self.test_mod)
-        shutil.rmtree(self.dir_archive)
-
-    def test_serve_files_from_module(self):
-        app = static.PkgResourcesApp(self.test_mod)
-
-        rep = get_response(app, '/foo.jpg')
-        self.assertEqual(200, rep.status_int)
-        self.assertEqual(bytes_('jpeg file'), rep.body)
-
-        rep = get_response(app, '/plop/bar.txt')
-        self.assertEqual(200, rep.status_int)
-        self.assertEqual(bytes_('text file'), rep.body)
-
-    def test_serve_missing_file(self):
-        app = static.PkgResourcesApp(self.test_mod)
-        rep = get_response(app, '/non-existent-file')
-        # XXX: this seems wrong, it should return 404
-        self.assertEqual(200, rep.status_int)
-        self.assertEqual(bytes_(''), rep.body)
-
-    def test_serve_directory(self):
-        app = static.PkgResourcesApp(self.test_mod)
-        rep = get_response(app, '/plop/')
-        # XXX: this seems wrong, it should return 404 or 405
-        self.assertEqual(200, rep.status_int)
-        self.assertEqual(bytes_(''), rep.body)
-
-    def test_serve_with_prefix(self):
-        app = static.PkgResourcesApp(self.test_mod, 'plop')
-
-        rep = get_response(app, '/foo.jpg')
-        # XXX: this seems wrong, it should return 404
-        self.assertEqual(200, rep.status_int)
-        self.assertEqual(bytes_(''), rep.body)
-
-        rep = get_response(app, '/bar.txt')
-        self.assertEqual(200, rep.status_int)
-        self.assertEqual(bytes_('text file'), rep.body)
