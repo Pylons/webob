@@ -15,9 +15,9 @@ mimetypes.add_type('image/x-icon', '.ico') # not among defaults
 
 
 class FileApp(object):
-    """
-        An application that will send the file at the given filename.
-        Adds a mime type based on ``mimetypes.guess_type()``.
+    """An application that will send the file at the given filename.
+
+    Adds a mime type based on `mimetypes.guess_type()`.
     """
 
     def __init__(self, filename, **kw):
@@ -88,10 +88,12 @@ class FileIter(object):
 
 
 class DirectoryApp(object):
-    """
-        An application that dispatches requests to corresponding FileApps based on PATH_INFO.
-        This app double-checks not to serve any files that are not in a subdirectory.
-        To customize FileApp instances creation override `make_fileapp` method.
+    """An application that dispatches requests to corresponding `FileApp`s based
+    on PATH_INFO.
+
+    This app double-checks not to serve any files that are not in a
+    subdirectory.  To customize `FileApp` instances creation, override
+    `make_fileapp` method.
     """
 
     def __init__(self, path, **kw):
