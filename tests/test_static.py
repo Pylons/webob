@@ -42,7 +42,6 @@ class TestFileApp(unittest.TestCase):
         self.assertEqual(resp1.charset, 'UTF-8')
         self.assertEqual(resp1.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
 
-        app.update(force=True)
         resp2 = get_response(app)
         self.assertEqual(resp2.content_type, 'text/x-python')
         self.assertEqual(resp2.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))

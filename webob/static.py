@@ -27,36 +27,28 @@ class FileApp(object):
         kw.setdefault('content_encoding', content_encoding)
         kw.setdefault('accept_ranges', 'bytes')
         self.kw = kw
-        self.last_modified = None
-
-    def update(self, force=False):
-        try:
-            stat = os.stat(self.filename)
-        except (IOError, OSError):
-            return
-        if stat.st_mtime != self.last_modified or force:
-            self.last_modified = stat.st_mtime
-            self.content_length = stat.st_size
 
     @wsgify
     def __call__(self, req):
         if req.method not in ('GET', 'HEAD'):
             return exc.HTTPMethodNotAllowed("You cannot %s a file" %
                                             req.method)
-        force = (req.cache_control.max_age == 0)
-        self.update(force) # RFC 2616 13.2.6
-        if not os.path.exists(self.filename):
-            return exc.HTTPNotFound(comment=self.filename)
+        try:
+            stat = os.stat(self.filename)
+        except (IOError, OSError) as e:
+            msg = "Can't open %r: %s" % (self.filename, e)
+            return exc.HTTPNotFound(comment=msg)
 
         try:
             file = open(self.filename, 'rb')
         except (IOError, OSError) as e:
             msg = "You are not permitted to view this file (%s)" % e
             return exc.HTTPForbidden(msg)
+
         return Response(
             app_iter = FileIter(file),
-            content_length = self.content_length,
-            last_modified = self.last_modified,
+            content_length = stat.st_size,
+            last_modified = stat.st_mtime,
             #@@ etag
             **self.kw
         ).conditional_response_app
