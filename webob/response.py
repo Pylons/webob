@@ -7,6 +7,10 @@ from hashlib import md5
 import re
 import struct
 import zlib
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 from webob.byterange import ContentRange
 
@@ -83,6 +87,14 @@ class Response(object):
     def __init__(self, body=None, status=None, headerlist=None, app_iter=None,
                  content_type=None, conditional_response=None,
                  **kw):
+        if app_iter is None and body is None and ('json_body' in kw or 'json' in kw):
+            if 'json_body' in kw:
+                json_body = kw.pop('json_body')
+            else:
+                json_body = kw.pop('json')
+            body = json.dumps(json_body, separators=(',', ':'))
+            if content_type is None:
+                content_type = 'application/json'
         if app_iter is None:
             if body is None:
                 body = b''
@@ -109,8 +121,9 @@ class Response(object):
                 and (content_type == 'text/html'
                     or content_type.startswith('text/')
                     or content_type.startswith('application/xml')
+                    or content_type.startswith('application/json')
                     or (content_type.startswith('application/')
-                         and content_type.endswith('+xml')))):
+                         and (content_type.endswith('+xml') or content_type.endswith('+json'))))):
                 charset = self.default_charset
         if content_type and charset:
             content_type += '; charset=' + charset
@@ -367,6 +380,19 @@ class Response(object):
 #         #self.content_length = None
 
     body = property(_body__get, _body__set, _body__set)
+
+    def _json_body__get(self):
+        """Access the body of the response as JSON"""
+        # Note: UTF-8 is a content-type specific default for JSON:
+        return json.loads(self.body.decode(self.charset or 'UTF-8'))
+
+    def _json_body__set(self, value):
+        self.body = json.dumps(value, separators=(',', ':')).encode(self.charset or 'UTF-8')
+
+    def _json_body__del(self):
+        del self.body
+
+    json = json_body = property(_json_body__get, _json_body__set, _json_body__del)
 
 
     #

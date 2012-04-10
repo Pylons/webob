@@ -692,9 +692,17 @@ class BaseRequest(object):
         self.body = b''
     body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
 
-    @property
-    def json_body(self):
+    def _json_body__get(self):
+        """Access the body of the request as JSON"""
         return json.loads(self.body.decode(self.charset))
+
+    def _json_body__set(self, value):
+        self.body = json.dumps(value, separators=(',', ':')).encode(self.charset)
+
+    def _json_body__del(self):
+        del self.body
+
+    json = json_body = property(_json_body__get, _json_body__set, _json_body__del)
 
     @property
     def POST(self):
@@ -1312,7 +1320,7 @@ class BaseRequest(object):
 class LegacyRequest(BaseRequest):
     uscript_name = upath_property('SCRIPT_NAME')
     upath_info = upath_property('PATH_INFO')
-    
+
     def encget(self, key, default=NoDefault, encattr=None):
         val = self.environ.get(key, default)
         if val is NoDefault:

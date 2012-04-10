@@ -1008,3 +1008,10 @@ def test_response_set_body_file2():
     r = Response(body_file=file)
     assert r.body == data
 
+def test_response_json_body():
+    r = Response(json_body={'a': 1})
+    assert r.body == b'{"a":1}', repr(r.body)
+    assert r.content_type == 'application/json'
+    r = Response()
+    r.json_body = {"b": 1}
+    assert r.content_type == 'text/html'

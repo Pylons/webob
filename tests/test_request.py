@@ -21,7 +21,7 @@ class TestRequestCommon(unittest.TestCase):
     def _getTargetClass(self):
         from webob.request import Request
         return Request
-        
+
     def _makeOne(self, *arg, **kw):
         cls = self._getTargetClass()
         return cls(*arg, **kw)
@@ -869,13 +869,13 @@ class TestRequestCommon(unittest.TestCase):
             self.assertEqual(req.as_string(skip_body=337), req.as_string())
             body = req.as_string(337-1).split(b'\r\n\r\n', 1)[1]
             self.assertEqual(body, b'<body skipped (len=337)>')
-    
+
 class TestBaseRequest(unittest.TestCase):
     # tests of methods of a base request which are encoding-specific
     def _getTargetClass(self):
         from webob.request import BaseRequest
         return BaseRequest
-        
+
     def _makeOne(self, *arg, **kw):
         cls = self._getTargetClass()
         return cls(*arg, **kw)
@@ -1519,6 +1519,8 @@ class TestBaseRequest(unittest.TestCase):
         inst = self._makeOne({})
         inst.body = b'{"a":"1"}'
         self.assertEqual(inst.json_body, {'a':'1'})
+        inst.json_body = {'a': '2'}
+        self.assertEqual(inst.body, b'{"a":"2"}')
 
     def test_host_get(self):
         inst = self._makeOne({'HTTP_HOST':'example.com'})
@@ -1537,7 +1539,7 @@ class TestLegacyRequest(unittest.TestCase):
     def _getTargetClass(self):
         from webob.request import LegacyRequest
         return LegacyRequest
-        
+
     def _makeOne(self, *arg, **kw):
         cls = self._getTargetClass()
         return cls(*arg, **kw)
@@ -2200,7 +2202,7 @@ class TestRequestConstructorWarnings(unittest.TestCase):
     def _getTargetClass(self):
         from webob.request import Request
         return Request
-        
+
     def _makeOne(self, *arg, **kw):
         cls = self._getTargetClass()
         return cls(*arg, **kw)
@@ -2256,7 +2258,7 @@ class TestRequest_functional(unittest.TestCase):
     def _getTargetClass(self):
         from webob.request import Request
         return Request
-    
+
     def _makeOne(self, *arg, **kw):
         cls = self._getTargetClass()
         return cls(*arg, **kw)
@@ -3441,4 +3443,3 @@ class UnseekableInput(object):
 class UnseekableInputWithSeek(UnseekableInput):
     def seek(self, pos, rel=0):
         raise IOError("Invalid seek!")
-
