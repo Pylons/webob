@@ -73,17 +73,19 @@ class FileIter(object):
 
         if seek:
             self.file.seek(seek)
-            if limit:
+            if limit is not None:
                 limit -= seek
         try:
             while True:
-                data = self.file.read(min(block_size, limit) if limit else block_size)
+                data = self.file.read(min(block_size, limit)
+                                      if limit is not None
+                                      else block_size)
                 if not data:
                     return
                 yield data
-                if limit:
+                if limit is not None:
                     limit -= len(data)
-                    if not limit:
+                    if limit <= 0:
                         return
         finally:
             self.file.close()

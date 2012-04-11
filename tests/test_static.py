@@ -136,6 +136,13 @@ class TestFileIter(unittest.TestCase):
         self.assertEqual(bytes_("23456789"), next(i))
         self.assertRaises(StopIteration, next, i)
 
+    def test_limit_is_zero(self):
+        fp = BytesIO(bytes_("0123456789"))
+        i = static.FileIter(fp).app_iter_range(limit=0)
+
+        self.assertRaises(StopIteration, next, i)
+
+
 
 class TestDirectoryApp(unittest.TestCase):
     def setUp(self):
