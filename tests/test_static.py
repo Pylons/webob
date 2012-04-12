@@ -79,16 +79,12 @@ class TestFileApp(unittest.TestCase):
             raise OSError()
 
         app = static.FileApp(self.tempfile)
-        old_open = __builtins__['open']
 
-        try:
-            __builtins__['open'] = open_ioerror
-            self.assertEqual(403, get_response(app).status_int)
+        app._open = open_ioerror
+        self.assertEqual(403, get_response(app).status_int)
 
-            __builtins__['open'] = open_oserror
-            self.assertEqual(403, get_response(app).status_int)
-        finally:
-            __builtins__['open'] = old_open
+        app._open = open_oserror
+        self.assertEqual(403, get_response(app).status_int)
 
 
 class TestFileIter(unittest.TestCase):
