@@ -27,6 +27,8 @@ class FileApp(object):
         kw.setdefault('content_encoding', content_encoding)
         kw.setdefault('accept_ranges', 'bytes')
         self.kw = kw
+        # Used for testing purpose
+        self._open = open
 
     @wsgify
     def __call__(self, req):
@@ -40,7 +42,7 @@ class FileApp(object):
             return exc.HTTPNotFound(comment=msg)
 
         try:
-            file = open(self.filename, 'rb')
+            file = self._open(self.filename, 'rb')
         except (IOError, OSError) as e:
             msg = "You are not permitted to view this file (%s)" % e
             return exc.HTTPForbidden(msg)
