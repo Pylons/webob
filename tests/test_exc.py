@@ -69,7 +69,7 @@ def test_HTTPException():
 def test_exception_with_unicode_data():
     req = Request.blank('/', method='POST')
     res = req.get_response(method_not_allowed_app)
-    assert res.status_int == 405
+    assert res.status_code == 405
 
 def test_WSGIHTTPException_headers():
     exc = WSGIHTTPException(headers=[('Set-Cookie', 'a=1'),

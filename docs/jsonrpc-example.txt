@@ -481,8 +481,8 @@ Here's the code to do the call:
             req.content_type = 'application/json'
             req.body = dumps(json)
             resp = req.get_response(self.parent.proxy)
-            if resp.status_int != 200 and not (
-                resp.status_int == 500
+            if resp.status_code != 200 and not (
+                resp.status_code == 500
                 and resp.content_type == 'application/json'):
                 raise ProxyError(
                     "Error from JSON-RPC client %s: %s"
@@ -651,4 +651,3 @@ Many of these techniques would be better used with a `RESTful
 <http://en.wikipedia.org/wiki/Representational_State_Transfer>`_
 service, so do think about that direction if you are implementing your
 own protocol.
-
