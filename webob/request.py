@@ -1269,7 +1269,7 @@ class BaseRequest(object):
     # Will be filled in later:
     ResponseClass = None
 
-    def get_response(self, application, catch_exc_info=False):
+    def send(self, application=None, catch_exc_info=False):
         """
         Like ``.call_application(application)``, except returns a
         response object with ``.status``, ``.headers``, and ``.body``
@@ -1277,7 +1277,12 @@ class BaseRequest(object):
 
         This will use ``self.ResponseClass`` to figure out the class
         of the response object to return.
+
+        If ``application`` is not given, this will send the request to
+        ``self.make_default_send_app()``
         """
+        if application is None:
+            application = self.make_default_send_app()
         if catch_exc_info:
             status, headers, app_iter, exc_info = self.call_application(
                 application, catch_exc_info=True)
@@ -1287,6 +1292,17 @@ class BaseRequest(object):
                 application, catch_exc_info=False)
         return self.ResponseClass(
             status=status, headerlist=list(headers), app_iter=app_iter)
+
+    get_response = send
+
+    def make_default_send_app(self):
+        global _client
+        try:
+            client = _client
+        except NameError:
+            from webob import client
+            _client = client
+        return client.send_request_app
 
     @classmethod
     def blank(cls, path, environ=None, base_url=None,

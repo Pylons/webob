@@ -65,6 +65,18 @@ News
 * Add ``Request.text``, the unicode version of the request body
   (similar to ``Response.text``).
 
+* Add ``webob.client`` which contains the WSGI application
+  ``send_request_app``.  All requests sent to this application are
+  turned into HTTP requests.
+
+* Renamed ``Request.get_response(app)`` to ``Request.send(app)``.  The
+  ``.get_response()`` name is still available.
+
+* Use ``send_request_app`` as the default application for
+  ``Request.send()``, so you can do:
+
+    resp = Request.blank("http://python.org").send()
+
 1.2b2
 ------
 
