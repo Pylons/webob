@@ -62,6 +62,9 @@ News
   ``.status_int`` name is still available and will be supported
   indefinitely).
 
+* Add ``Request.text``, the unicode version of the request body
+  (similar to ``Response.text``).
+
 1.2b2
 ------
 

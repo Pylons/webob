@@ -704,6 +704,32 @@ class BaseRequest(object):
 
     json = json_body = property(_json_body__get, _json_body__set, _json_body__del)
 
+    def _text__get(self):
+        """
+        Get/set the text value of the body
+        """
+        if not self.charset:
+            raise AttributeError(
+                "You cannot access Request.text unless charset is set")
+        body = self.body
+        return body.decode(self.charset)
+
+    def _text__set(self, value):
+        if not self.charset:
+            raise AttributeError(
+                "You cannot access Response.text unless charset is set")
+        if not isinstance(value, text_type):
+            raise TypeError(
+                "You can only set Request.text to a unicode string "
+                "(not %s)" % type(value))
+        self.body = value.encode(self.charset)
+
+    def _text__del(self):
+        del self.body
+
+    text = property(_text__get, _text__set, _text__del, doc=_text__get.__doc__)
+
+
     @property
     def POST(self):
         """
