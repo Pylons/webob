@@ -704,6 +704,32 @@ class BaseRequest(object):
 
     json = json_body = property(_json_body__get, _json_body__set, _json_body__del)
 
+    def _text__get(self):
+        """
+        Get/set the text value of the body
+        """
+        if not self.charset:
+            raise AttributeError(
+                "You cannot access Request.text unless charset is set")
+        body = self.body
+        return body.decode(self.charset)
+
+    def _text__set(self, value):
+        if not self.charset:
+            raise AttributeError(
+                "You cannot access Response.text unless charset is set")
+        if not isinstance(value, text_type):
+            raise TypeError(
+                "You can only set Request.text to a unicode string "
+                "(not %s)" % type(value))
+        self.body = value.encode(self.charset)
+
+    def _text__del(self):
+        del self.body
+
+    text = property(_text__get, _text__set, _text__del, doc=_text__get.__doc__)
+
+
     @property
     def POST(self):
         """
@@ -1243,7 +1269,7 @@ class BaseRequest(object):
     # Will be filled in later:
     ResponseClass = None
 
-    def get_response(self, application, catch_exc_info=False):
+    def send(self, application=None, catch_exc_info=False):
         """
         Like ``.call_application(application)``, except returns a
         response object with ``.status``, ``.headers``, and ``.body``
@@ -1251,7 +1277,12 @@ class BaseRequest(object):
 
         This will use ``self.ResponseClass`` to figure out the class
         of the response object to return.
+
+        If ``application`` is not given, this will send the request to
+        ``self.make_default_send_app()``
         """
+        if application is None:
+            application = self.make_default_send_app()
         if catch_exc_info:
             status, headers, app_iter, exc_info = self.call_application(
                 application, catch_exc_info=True)
@@ -1261,6 +1292,17 @@ class BaseRequest(object):
                 application, catch_exc_info=False)
         return self.ResponseClass(
             status=status, headerlist=list(headers), app_iter=app_iter)
+
+    get_response = send
+
+    def make_default_send_app(self):
+        global _client
+        try:
+            client = _client
+        except NameError:
+            from webob import client
+            _client = client
+        return client.send_request_app
 
     @classmethod
     def blank(cls, path, environ=None, base_url=None,
