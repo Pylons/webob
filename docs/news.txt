@@ -1,6 +1,33 @@
 News
 ====
 
+1.2b4
+------------
+
+* Add ``Response.json`` and ``Request.json`` which reads and sets the
+  body using a JSON encoding (previously only the readable attribute
+  ``Request.json_body`` existed).  ``Request.json_body`` is still
+  available as an alias.
+
+* Rename ``Response.status_int`` to ``Response.status_code`` (the
+  ``.status_int`` name is still available and will be supported
+  indefinitely).
+
+* Add ``Request.text``, the unicode version of the request body
+  (similar to ``Response.text``).
+
+* Add ``webob.client`` which contains the WSGI application
+  ``send_request_app``.  All requests sent to this application are
+  turned into HTTP requests.
+
+* Renamed ``Request.get_response(app)`` to ``Request.send(app)``.  The
+  ``.get_response()`` name is still available.
+
+* Use ``send_request_app`` as the default application for
+  ``Request.send()``, so you can do:
+
+    resp = Request.blank("http://python.org").send()
+
 1.2b3
 ------------
 
@@ -52,30 +79,6 @@ News
 * Fix ``webob.response._request_uri`` internal function to generate sensible
   request URI under Python 3.  This fixed a problem under Python 3 if you
   were using non-absolute Location headers in responses.
-
-* Add ``Response.json`` and ``Request.json`` which reads and sets the
-  body using a JSON encoding (previously only the readable attribute
-  ``Request.json_body`` existed).  ``Request.json_body`` is still
-  available as an alias.
-
-* Rename ``Response.status_int`` to ``Response.status_code`` (the
-  ``.status_int`` name is still available and will be supported
-  indefinitely).
-
-* Add ``Request.text``, the unicode version of the request body
-  (similar to ``Response.text``).
-
-* Add ``webob.client`` which contains the WSGI application
-  ``send_request_app``.  All requests sent to this application are
-  turned into HTTP requests.
-
-* Renamed ``Request.get_response(app)`` to ``Request.send(app)``.  The
-  ``.get_response()`` name is still available.
-
-* Use ``send_request_app`` as the default application for
-  ``Request.send()``, so you can do:
-
-    resp = Request.blank("http://python.org").send()
 
 1.2b2
 ------
