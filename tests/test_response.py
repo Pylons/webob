@@ -19,13 +19,13 @@ def test_response():
     req = BaseRequest.blank('/')
     res = req.get_response(simple_app)
     assert res.status == '200 OK'
-    assert res.status_int == 200
+    assert res.status_code == 200
     assert res.body == "OK"
     assert res.charset == 'utf8'
     assert res.content_type == 'text/html'
     res.status = 404
     assert res.status == '404 Not Found'
-    assert res.status_int == 404
+    assert res.status_code == 404
     res.body = b'Not OK'
     assert b''.join(res.app_iter) == b'Not OK'
     res.charset = 'iso8859-1'
@@ -58,35 +58,35 @@ def test_set_response_status_binary():
     req = BaseRequest.blank('/')
     res = req.get_response(simple_app)
     res.status == b'200 OK'
-    assert res.status_int == 200
+    assert res.status_code == 200
     assert res.status == '200 OK'
 
 def test_set_response_status_str_no_reason():
     req = BaseRequest.blank('/')
     res = req.get_response(simple_app)
     res.status = '200'
-    assert res.status_int == 200
+    assert res.status_code == 200
     assert res.status == '200 OK'
 
 def test_set_response_status_str_generic_reason():
     req = BaseRequest.blank('/')
     res = req.get_response(simple_app)
     res.status = '299'
-    assert res.status_int == 299
+    assert res.status_code == 299
     assert res.status == '299 Success'
 
-def test_set_response_status_int():
+def test_set_response_status_code():
     req = BaseRequest.blank('/')
     res = req.get_response(simple_app)
-    res.status_int = 200
-    assert res.status_int == 200
+    res.status_code = 200
+    assert res.status_code == 200
     assert res.status == '200 OK'
 
-def test_set_response_status_int_generic_reason():
+def test_set_response_status_code_generic_reason():
     req = BaseRequest.blank('/')
     res = req.get_response(simple_app)
-    res.status_int = 299
-    assert res.status_int == 299
+    res.status_code = 299
+    assert res.status_code == 299
     assert res.status == '299 Success'
 
 def test_content_type():
@@ -155,7 +155,7 @@ def test_HEAD_closes():
     req.method = 'HEAD'
     app_iter = io.BytesIO(b'foo')
     res = req.get_response(Response(app_iter=app_iter))
-    eq_(res.status_int, 200)
+    eq_(res.status_code, 200)
     eq_(res.body, b'')
     ok_(app_iter.closed)
 
@@ -184,14 +184,14 @@ def test_conditional_response_if_none_match_false():
     resp = Response(app_iter=['foo\n'],
             conditional_response=True, etag='bar')
     resp = req.get_response(resp)
-    eq_(resp.status_int, 200)
+    eq_(resp.status_code, 200)
 
 def test_conditional_response_if_none_match_true():
     req = Request.blank('/', if_none_match='foo')
     resp = Response(app_iter=['foo\n'],
             conditional_response=True, etag='foo')
     resp = req.get_response(resp)
-    eq_(resp.status_int, 304)
+    eq_(resp.status_code, 304)
 
 def test_conditional_response_if_none_match_weak():
     req = Request.blank('/', headers={'if-none-match': '"bar"'})
@@ -200,11 +200,11 @@ def test_conditional_response_if_none_match_weak():
     resp_weak = Response(app_iter=['foo\n'], conditional_response=True, headers={'etag': 'W/"bar"'})
     for rq in [req, req_weak]:
         for rp in [resp, resp_weak]:
-            rq.get_response(rp).status_int == 304
+            rq.get_response(rp).status_code == 304
 
     r2 = Response(app_iter=['foo\n'], conditional_response=True, headers={'etag': '"foo"'})
     r2_weak = Response(app_iter=['foo\n'], conditional_response=True, headers={'etag': 'W/"foo"'})
-    req_weak.get_response(r2).status_int == 200
+    req_weak.get_response(r2).status_code == 200
     req.get_response(r2_weak) == 200
 
 
@@ -214,7 +214,7 @@ def test_conditional_response_if_modified_since_false():
     resp = Response(app_iter=['foo\n'], conditional_response=True,
             last_modified=req.if_modified_since-timedelta(seconds=1))
     resp = req.get_response(resp)
-    eq_(resp.status_int, 304)
+    eq_(resp.status_code, 304)
 
 def test_conditional_response_if_modified_since_true():
     from datetime import datetime, timedelta
@@ -222,14 +222,14 @@ def test_conditional_response_if_modified_since_true():
     resp = Response(app_iter=['foo\n'], conditional_response=True,
             last_modified=req.if_modified_since+timedelta(seconds=1))
     resp = req.get_response(resp)
-    eq_(resp.status_int, 200)
+    eq_(resp.status_code, 200)
 
 def test_conditional_response_range_not_satisfiable_response():
     req = Request.blank('/', range='bytes=100-200')
     resp = Response(app_iter=['foo\n'], content_length=4,
             conditional_response=True)
     resp = req.get_response(resp)
-    eq_(resp.status_int, 416)
+    eq_(resp.status_code, 416)
     eq_(resp.content_range.start, None)
     eq_(resp.content_range.stop, None)
     eq_(resp.content_range.length, 4)
@@ -240,7 +240,7 @@ def test_HEAD_conditional_response_range_not_satisfiable_response():
     resp = Response(app_iter=['foo\n'], content_length=4,
             conditional_response=True)
     resp = req.get_response(resp)
-    eq_(resp.status_int, 416)
+    eq_(resp.status_code, 416)
     eq_(resp.content_range.start, None)
     eq_(resp.content_range.stop, None)
     eq_(resp.content_range.length, 4)
@@ -301,13 +301,13 @@ def test_content_length():
 
     req_head = Request.blank('/', method='HEAD')
     r1 = req_head.get_response(r0)
-    eq_(r1.status_int, 200)
+    eq_(r1.status_code, 200)
     eq_(r1.body, b'')
     eq_(r1.content_length, 10)
 
     req_get = Request.blank('/')
     r2 = req_get.get_response(r0)
-    eq_(r2.status_int, 200)
+    eq_(r2.status_code, 200)
     eq_(r2.body, b'x'*10)
     eq_(r2.content_length, 10)
 
@@ -324,7 +324,7 @@ def test_content_length():
     req_range = Request.blank('/', range=(0,5))
     r0.conditional_response = True
     r5 = req_range.get_response(r0)
-    eq_(r5.status_int, 206)
+    eq_(r5.status_code, 206)
     eq_(r5.body, b'xxxxx')
     eq_(r5.content_length, 5)
 
@@ -835,10 +835,12 @@ def test_cache_expires_set():
     eq_(repr(res.cache_control),
         "<CacheControl 'max-age=0, must-revalidate, no-cache, no-store'>")
 
-def test_status_int_set():
+def test_status_code_set():
     res = Response()
-    res.status_int = 400
+    res.status_code = 400
     eq_(res._status, '400 Bad Request')
+    res.status_int = 404
+    eq_(res._status, '404 Not Found')
 
 def test_cache_control_set_dict():
     res = Response()

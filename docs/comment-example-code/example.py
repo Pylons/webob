@@ -5,7 +5,7 @@ import re
 from cPickle import load, dump
 from webob import Request, Response, html_escape
 from webob import exc
-    
+
 class Commenter(object):
 
     def __init__(self, app, storage_dir):
@@ -21,7 +21,7 @@ class Commenter(object):
         # This is the base path of *this* middleware:
         base_url = req.application_url
         resp = req.get_response(self.app)
-        if resp.content_type != 'text/html' or resp.status_int != 200:
+        if resp.content_type != 'text/html' or resp.status_code != 200:
             # Not an HTML response, we don't want to
             # do anything to it
             return resp(environ, start_response)
@@ -145,6 +145,3 @@ if __name__ == '__main__':
         httpd.serve_forever()
     except KeyboardInterrupt:
         print '^C'
-
-    
-    

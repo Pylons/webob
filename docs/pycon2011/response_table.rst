@@ -12,16 +12,16 @@ WEBOB NAME                         write  read  WERKZEUG NAME                   
 default_content_type                 x      x   default_mimetype                   wb default: "text/html", wz: "text/plain"
 default_charset                      b      b  	                                   wz uses class var default for charset
 charset                              x      x   charset
-unicode_errors                       b      b   
+unicode_errors                       b      b
 default_conditional_response         b      b
 from_file() (classmethod)            b      b
 copy                                 b      b
 status (string)                      x      x   status
-status_int                           x      x   status_code
+status_code                          x      x   status_code
                                             z   default_status
 headers                              b      b
-body                                 b      b   
-unicode_body                         x      x   data 
+body                                 b      b
+unicode_body                         x      x   data
 body_file                                   b                                      File-like obj returned is writeable
 app_iter                             b      x   get_app_iter()
                                             z   iter_encoded()

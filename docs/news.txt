@@ -44,7 +44,7 @@ News
   SCRIPT_NAME from its WSGI-encoded values. If ``webob.url_encoding`` is not
   set in the environ and ``url_encoding`` is not passed to the Request
   constructor, the default value ``utf-8`` will be used to decode the
-  PATH_INFO and SCRIPT_NAME.  
+  PATH_INFO and SCRIPT_NAME.
 
   Note that passing ``url_encoding`` will cause the WSGI environment variable
   ``webob.url_encoding`` to be set.
@@ -52,6 +52,15 @@ News
 * Fix ``webob.response._request_uri`` internal function to generate sensible
   request URI under Python 3.  This fixed a problem under Python 3 if you
   were using non-absolute Location headers in responses.
+
+* Add ``Response.json`` and ``Request.json`` which reads and sets the
+  body using a JSON encoding (previously only the readable attribute
+  ``Request.json_body`` existed).  ``Request.json_body`` is still
+  available as an alias.
+
+* Rename ``Response.status_int`` to ``Response.status_code`` (the
+  ``.status_int`` name is still available and will be supported
+  indefinitely).
 
 1.2b2
 ------
