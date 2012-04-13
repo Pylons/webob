@@ -234,7 +234,7 @@ class Response(object):
         return '\n'.join(parts)
 
     #
-    # status, status_int
+    # status, status_code/status_int
     #
 
     def _status__get(self):
@@ -245,7 +245,7 @@ class Response(object):
 
     def _status__set(self, value):
         if isinstance(value, int):
-            self.status_int = value
+            self.status_code = value
             return
         if PY3: # pragma: no cover
             if isinstance(value, bytes):
@@ -265,19 +265,20 @@ class Response(object):
 
     status = property(_status__get, _status__set, doc=_status__get.__doc__)
 
-    def _status_int__get(self):
+    def _status_code__get(self):
         """
         The status as an integer
         """
         return int(self._status.split()[0])
-    def _status_int__set(self, code):
-         try:
+
+    def _status_code__set(self, code):
+        try:
             self._status = '%d %s' % (code, status_reasons[code])
-         except KeyError:
+        except KeyError:
             self._status = '%d %s' % (code, status_generic_reasons[code // 100])
 
-    status_int = property(_status_int__get, _status_int__set,
-                          doc=_status_int__get.__doc__)
+    status_code = status_int = property(_status_code__get, _status_code__set,
+                           doc=_status_code__get.__doc__)
 
 
     #
@@ -992,7 +993,7 @@ class Response(object):
         if (req.range and self in req.if_range
             and self.content_range is None
             and method in ('HEAD', 'GET')
-            and self.status_int == 200
+            and self.status_code == 200
             and self.content_length is not None
         ):
             content_range = req.range.content_range(self.content_length)

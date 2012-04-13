@@ -138,7 +138,7 @@ Ordering:
 
 ``lists()``:
     Is ``d.dict_of_lists()``
- 
+
 The MultiDict object has a ``d.getone(key)`` method, that raises
 KeyError if there is not exactly one key.  There is a method
 ``d.mixed()`` which returns a version where values are lists *if*
@@ -388,7 +388,7 @@ Response
 response:
     In ``res.body`` (settable as ``res.body`` or ``res.app_iter``)
 status:
-    In ``res.status_int``
+    In ``res.status_code``
 mimetype:
     In ``res.content_type``
 
@@ -411,7 +411,7 @@ Request
     ``req.remote_user`` gives the username, but there is no standard
     place for a user *object*.
 
-``publication``, ``setPublication()``, 
+``publication``, ``setPublication()``,
     These are associated with the object publishing system in Zope.
     This kind of publishing system is outside the scope of WebOb.
 
@@ -441,7 +441,7 @@ Request
 
 ``debug``:
     There is no standard debug flag for WebOb.
-    
+
 ``__getitem__(key)``, ``get(key)``, etc:
     These treat the request like a dictionary, which WebOb does not
     do.  They seem to take values from the environment, not
@@ -458,7 +458,7 @@ Request
     Creates a new request that can be used to retry a request.
     Similar to ``req.copy()``.
 
-``close()``, ``hold(obj)``: 
+``close()``, ``hold(obj)``:
     This closes resources associated with the request, including any
     "held" objects.  There's nothing similar.
 
@@ -493,7 +493,7 @@ Response
     Is ``res.headers.get(name)``.
 
 ``getStatus()``:
-    Is ``res.status_int`` (or ``res.status`` to include reason)
+    Is ``res.status_code`` (or ``res.status`` to include reason)
 
 ``addHeader(name, value)``:
     Is ``res.headers.add(name, value)`` (in Zope and WebOb, this does
@@ -541,7 +541,7 @@ mod_python
 ==========
 
 Some key attributes from the `mod_python
-<http://modpython.org/live/current/doc-html/pyapi-mprequest-mem.html>`_ 
+<http://modpython.org/live/current/doc-html/pyapi-mprequest-mem.html>`_
 request object.
 
 Request
@@ -549,7 +549,7 @@ Request
 
 ``req.uri``:
     In ``req.path``.
-   
+
 ``req.user``:
     In ``req.remote_user``.
 
@@ -571,7 +571,7 @@ Response
     exc = HTTPTemporaryRedirect(location=url)
     return exc(environ, start_response)
 
-``req.content_type = "application/x-csv"`` and 
+``req.content_type = "application/x-csv"`` and
 ``req.headers_out.add('Content-Disposition', 'attachment;filename=somefile.csv')``:
 
 .. code-block:: python
@@ -695,4 +695,3 @@ this is ``resp.status = code``.
 
 The body in PHP is sent implicitly through the rendering of the PHP
 body (or with ``echo`` or any other functions that send output).
-

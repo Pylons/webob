@@ -109,8 +109,8 @@ class _Method(object):
         req.content_type = 'application/json'
         req.body = dumps(json)
         resp = req.get_response(self.parent.proxy)
-        if resp.status_int != 200 and not (
-            resp.status_int == 500
+        if resp.status_code != 200 and not (
+            resp.status_code == 500
             and resp.content_type == 'application/json'):
             raise ProxyError(
                 "Error from JSON-RPC client %s: %s"

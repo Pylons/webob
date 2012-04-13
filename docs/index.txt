@@ -185,7 +185,7 @@ WSGI):
 
 ``response.status``:
     The response code plus message, like ``'200 OK'``.  To set the
-    code without the reason, use ``response.status_int = 200``.
+    code without the reason, use ``response.status_code = 200``.
 
 ``response.headerlist``:
     A list of all the headers, like ``[('Content-Type',

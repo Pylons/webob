@@ -566,7 +566,7 @@ You can set any of these attributes, e.g.:
     >>> res.status = 404
     >>> res.status
     '404 Not Found'
-    >>> res.status_int
+    >>> res.status_code
     404
     >>> res.headerlist = [('Content-type', 'text/html')]
     >>> res.body = 'test'
