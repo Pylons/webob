@@ -2,6 +2,7 @@ from wsgiref.simple_server import make_server, WSGIRequestHandler
 import threading
 from webob import Request, Response
 from webob.dec import wsgify
+from webob.client import SendRequest
 
 base_url = 'http://127.0.0.1:28594'
 
@@ -32,14 +33,15 @@ def simple_app(req):
     return Response(json=data)
 
 
-def test_client():
+def test_client(client_app=None):
     req = Request.blank(base_url)
     resp = req.send()
     assert resp.status_code == 502, resp.status
-    start_server(simple_app)
+    t = start_server(simple_app)
     req = Request.blank(base_url, method='POST', content_type='application/json',
                         json={'test': 1})
     resp = req.send()
+    t.join()
     assert resp.status_code == 200, resp.status
     assert resp.json['headers']['Content-Type'] == 'application/json'
     assert resp.json['method'] == 'POST'
@@ -53,8 +55,17 @@ def cookie_app(req):
     return resp
 
 
-def test_client_cookies():
+def test_client_cookies(client_app=None):
     req = Request.blank(base_url)
-    start_server(cookie_app)
-    resp = req.send()
+    t = start_server(cookie_app)
+    resp = req.send(client_app)
+    t.join()
     assert resp.headers.getall('Set-Cookie') == ['a=b', 'c=d']
+
+
+def test_client_urllib3():
+    try:
+        import urllib3
+    except:
+        return
+    test_client(SendRequest.with_urllib3())
