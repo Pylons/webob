@@ -7,8 +7,18 @@ from webob.client import SendRequest
 
 
 class SilentRequestHandler(WSGIRequestHandler):
-    def log_message(self, format, *args):
+    def log_message(self, *args):
         pass
+
+    def handle_error(self, *args, **kw):
+        pass
+
+    # These errors seem to happen during the test, but we don't really care about them:
+    def handle(self, *args, **kw):
+        try:
+            WSGIRequestHandler.handle(self, *args, **kw)
+        except:
+            pass
 
 
 def start_server(app, requests=1, interface='127.0.0.1', port=0):
