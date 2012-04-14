@@ -58,10 +58,10 @@ def test_client(client_app=None):
     assert resp.status_code == 200
     t.join()
     req = Request.blank(url)
-    resp = req.send()
+    resp = req.send(client_app)
     assert resp.status_code == 502, resp.status
     req = Request.blank('http://laksjdfkajwoeifknslkasdflkjasdflaksjdf.eu')
-    resp = req.send()
+    resp = req.send(client_app)
     assert resp.status_code == 502
 
 

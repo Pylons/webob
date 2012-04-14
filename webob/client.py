@@ -109,7 +109,7 @@ class SendRequest:
                     "Name or service not known (bad domain name: %s)"
                     % environ['SERVER_NAME'])
                 return resp(environ, start_response)
-            elif e.args[0] == 61:
+            elif e.args[0] in (61, 111):
                 # Connection refused
                 resp = exc.HTTPBadGateway(
                     "Connection refused")
