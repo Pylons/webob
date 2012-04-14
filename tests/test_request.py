@@ -426,7 +426,7 @@ class TestRequestCommon(unittest.TestCase):
         req = self._makeOne(environ)
         self.assertEqual(req.body, b'test')
         self.assertEqual(req.text, 'test')
-        req.text = '\u1000'
+        req.text = text_('\u1000')
         self.assertEqual(req.body, '\u1000'.encode(req.charset))
         del req.text
         self.assertEqual(req.body, b'')
