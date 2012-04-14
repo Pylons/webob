@@ -1017,3 +1017,5 @@ def test_response_json_body():
     r = Response()
     r.json_body = {"b": 1}
     assert r.content_type == 'text/html'
+    del r.json_body
+    assert r.body == b''

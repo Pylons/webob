@@ -403,6 +403,37 @@ class TestRequestCommon(unittest.TestCase):
         self.assertEqual(req.content_length, 0)
         self.assertTrue(req.is_body_seekable)
 
+    # JSON
+
+    def test_json_body(self):
+        body = b'{"a":1}'
+        INPUT = BytesIO(body)
+        environ = {'wsgi.input': INPUT, 'CONTENT_LENGTH': str(len(body))}
+        req = self._makeOne(environ)
+        self.assertEqual(req.json, {"a": 1})
+        self.assertEqual(req.json_body, {"a": 1})
+        req.json = {"b": 2}
+        self.assertEqual(req.body, b'{"b":2}')
+        del req.json
+        self.assertEqual(req.body, b'')
+
+    # .text
+
+    def test_text_body(self):
+        body = b'test'
+        INPUT = BytesIO(body)
+        environ = {'wsgi.input': INPUT, 'CONTENT_LENGTH': str(len(body))}
+        req = self._makeOne(environ)
+        self.assertEqual(req.body, b'test')
+        self.assertEqual(req.text, 'test')
+        req.text = '\u1000'
+        self.assertEqual(req.body, '\u1000'.encode(req.charset))
+        del req.text
+        self.assertEqual(req.body, b'')
+        def set_bad_text():
+            req.text = 1
+        self.assertRaises(TypeError, set_bad_text)
+
     # POST
     def test_POST_not_POST_or_PUT(self):
         from webob.multidict import NoVars
