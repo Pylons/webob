@@ -1,4 +1,5 @@
 import sys
+import re
 try:
     import httplib
 except ImportError:
@@ -96,8 +97,13 @@ class SendRequest:
         try:
             conn.request(environ['REQUEST_METHOD'],
                          path, body, headers)
-        except socket.error as e:
-            if e.args[0] == -2:
+            res = conn.getresponse()
+        except socket.timeout:
+            resp = exc.HTTPGatewayTimeout()
+            return resp(environ, start_response)
+        except (socket.error, socket.gaierror) as e:
+            if ((isinstance(e, socket.error) and e.args[0] == -2) or
+                (isinstance(e, socket.gaierror) and e.args[0] == 8)):
                 # Name or service not known
                 resp = exc.HTTPBadGateway(
                     "Name or service not known (bad domain name: %s)"
@@ -109,7 +115,6 @@ class SendRequest:
                     "Connection refused")
                 return resp(environ, start_response)
             raise
-        res = conn.getresponse()
         headers_out = self.parse_headers(res.msg)
         status = '%s %s' % (res.status, res.reason)
         start_response(status, headers_out)
@@ -127,6 +132,8 @@ class SendRequest:
     filtered_headers = (
         'transfer-encoding',
     )
+
+    MULTILINE_RE = re.compile(r'\r?\n\s*')
 
     def parse_headers(self, message):
         """
@@ -158,6 +165,9 @@ class SendRequest:
                 except:
                     raise ValueError("Invalid header: %r" % (full_header,))
             value = value.strip()
+            if '\n' in value or '\r\n' in value:
+                # Python 3 has multiline values for continuations, Python 2 has two items in headers
+                value = self.MULTILINE_RE.sub(', ', value)
             if header.lower() not in self.filtered_headers:
                 headers_out.append((header, value))
         return headers_out
