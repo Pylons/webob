@@ -5,6 +5,14 @@ This document shows how you can make a static-file-serving application
 using WebOb.  We'll quickly build this up from minimal functionality
 to a high-quality file serving application.
 
+.. note:: Starting from 1.2b4, WebOb ships with a :mod:`webob.static` module
+    which implements a :class:`webob.static.FileApp` WSGI application similar to the
+    one described below.
+
+    This document stays as a didactic example how to serve files with WebOb, but
+    you should consider using applications from :mod:`webob.static` in
+    production.
+
 .. comment:
 
    >>> import webob, os
