@@ -13,6 +13,8 @@ mimetypes._winreg = None # do not load mimetypes from windows registry
 mimetypes.add_type('text/javascript', '.js') # stdlib default is application/x-javascript
 mimetypes.add_type('image/x-icon', '.ico') # not among defaults
 
+BLOCK_SIZE = 1<<16
+
 
 class FileApp(object):
     """An application that will send the file at the given filename.
@@ -47,8 +49,13 @@ class FileApp(object):
             msg = "You are not permitted to view this file (%s)" % e
             return exc.HTTPForbidden(msg)
 
+        if 'wsgi.file_wrapper' in req.environ:
+            app_iter = req.environ['wsgi.file_wrapper'](file, BLOCK_SIZE)
+        else:
+            app_iter = FileIter(file)
+
         return Response(
-            app_iter = FileIter(file),
+            app_iter = app_iter,
             content_length = stat.st_size,
             last_modified = stat.st_mtime,
             #@@ etag
@@ -60,7 +67,7 @@ class FileIter(object):
     def __init__(self, file):
         self.file = file
 
-    def app_iter_range(self, seek=None, limit=None, block_size=1<<16):
+    def app_iter_range(self, seek=None, limit=None, block_size=None):
         """Iter over the content of the file.
 
         You can set the `seek` parameter to read the file starting from a
@@ -72,6 +79,9 @@ class FileIter(object):
         Finally, you can change the number of bytes read at once by setting the
         `block_size` parameter.
         """
+
+        if block_size is None:
+            block_size = BLOCK_SIZE
 
         if seek:
             self.file.seek(seek)
