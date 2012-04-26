@@ -2,6 +2,10 @@ from setuptools import setup
 
 version = '1.2b3'
 
+testing_extras = ['nose']
+
+docs_extras = ['Sphinx']
+
 setup(
     name='WebOb',
     version=version,
@@ -47,4 +51,8 @@ You may install the `in-development version of WebOb
     zip_safe=True,
     test_suite='nose.collector',
     tests_require=['nose'],
+    extras_require = {
+        'testing':testing_extras,
+        'docs':docs_extras,
+        },
 )

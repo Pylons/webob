@@ -30,12 +30,16 @@ News
 
     resp = Request.blank("http://python.org").send()
 
-* Add ``webob.static`` which contains two new WSGI applications, ``FileApp`` to
-  serve one static file and ``DirectoryApp`` to serve the content of a
-  directory. They should provide a reusable implementation of :doc:`file-example`.
-  It also comes with support for ``wsgi.file_wrapper``.
+* Add ``webob.static`` which contains two new WSGI applications,
+  ``FileApp`` to serve one static file and ``DirectoryApp`` to serve the
+  content of a directory. They should provide a reusable implementation of
+  :doc:`file-example`.  It also comes with support for ``wsgi.file_wrapper``.
 
-  The implementation has been imported and simplified from :mod:`PasteOb.static`.
+  The implementation has been imported and simplified from
+  :mod:`PasteOb.static`.
+
+* Add ``dev`` and ``docs`` setup.py aliases (to install development and docs
+  dependencies respectively, e.g. "python setup.py dev").
 
 
 1.2b3

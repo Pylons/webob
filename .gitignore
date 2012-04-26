@@ -19,6 +19,5 @@ Session.vim
 .tox/
 coverage.xml
 nosetests.xml
-env32/
-
+env*/
 _website/
