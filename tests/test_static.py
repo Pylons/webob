@@ -86,6 +86,21 @@ class TestFileApp(unittest.TestCase):
         app._open = open_oserror
         self.assertEqual(403, get_response(app).status_code)
 
+    def test_use_wsgi_filewrapper(self):
+        class TestWrapper(object):
+            def __init__(self, file, block_size):
+                self.file = file
+                self.block_size = block_size
+
+        environ = environ_from_url('/')
+        environ['wsgi.file_wrapper'] = TestWrapper
+        app = static.FileApp(self.tempfile)
+        app_iter = Request(environ).get_response(app).app_iter
+
+        self.assertTrue(isinstance(app_iter, TestWrapper))
+        self.assertEqual(bytes_('import this\n'), app_iter.file.read())
+        self.assertEqual(static.BLOCK_SIZE, app_iter.block_size)
+
 
 class TestFileIter(unittest.TestCase):
     def test_empty_file(self):
