@@ -1,8 +1,10 @@
 import time
+import urllib
 from webob import Request, Response
 from webob.dec import wsgify
 from webob.client import SendRequest
 from .test_in_wsgiref import serve
+from nose.tools import assert_raises
 
 
 @wsgify
@@ -27,15 +29,61 @@ def test_client(client_app=None):
         del req.environ['SERVER_PORT']
         resp = req.send(client_app)
         assert resp.status_code == 200, resp.status
+        req = Request.blank(server.url)
+        del req.environ['SERVER_NAME']
+        del req.environ['SERVER_PORT']
+        assert req.send(client_app).status_code == 200
+        req.headers['Host'] = server.url.lstrip('http://')
+        del req.environ['SERVER_NAME']
+        del req.environ['SERVER_PORT']
+        resp = req.send(client_app)
+        assert resp.status_code == 200, resp.status
+        del req.environ['SERVER_NAME']
+        del req.environ['SERVER_PORT']
+        del req.headers['Host']
+        assert req.environ.get('SERVER_NAME') is None
+        assert req.environ.get('SERVER_PORT') is None
+        assert req.environ.get('HTTP_HOST') is None
+        assert_raises(ValueError, req.send, client_app)
+        req = Request.blank(server.url)
+        req.environ['CONTENT_LENGTH'] = 'not a number'
+        assert req.send(client_app).status_code == 200
+
+
+def no_length_app(environ, start_response):
+    start_response('200 OK', [('Content-type', 'text/plain')])
+    return [b'ok']
+
+
+def test_no_content_length(client_app=None):
+    with serve(no_length_app) as server:
+        req = Request.blank(server.url)
+        resp = req.send(client_app)
+        assert resp.status_code == 200, resp.status
+
+
+def test_bad_server(client_app=None):
     req = Request.blank('http://localhost:1')
     resp = req.send(client_app)
     assert resp.status_code == 502, resp.status
-    ## This reasonable and valid test doesn't work on some machines, where invalid DNS
-    ## requests are intercepted by ISPs and turned into succeeding requests.
-    if False:
+    req = Request.blank('https://browserid.org')
+    resp = req.send(client_app)
+    assert resp.status_code == 200, resp.status
+    bad_url = 'http://laksjdfkajwoeifknslkasdflkjasdflaksjdf.eu'
+    try:
+        urllib.urlopen(bad_url).read()
+    except:
+        # It *should* fail, so we can run the test:
         req = Request.blank('http://laksjdfkajwoeifknslkasdflkjasdflaksjdf.eu')
         resp = req.send(client_app)
         assert resp.status_code == 502, resp.status
+    else:
+        # The system is setup so we can't run this test
+        # (probably an ISP that is catching bad DNS calls)
+        pass
+    req = Request.blank('http://something')
+    req.scheme = 'url'
+    assert_raises(ValueError, req.send, client_app)
 
 
 @wsgify
@@ -79,5 +127,8 @@ def test_client_urllib3():
         import urllib3
     except:
         return
-    test_client(SendRequest.with_urllib3())
-    test_client_slow(SendRequest.with_urllib3())
+    client_app = SendRequest.with_urllib3()
+    test_client(client_app)
+    test_no_content_length(client_app)
+    test_bad_server(client_app)
+    test_client_slow(client_app)
