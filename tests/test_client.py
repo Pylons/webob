@@ -59,6 +59,11 @@ def slow_app(req):
 
 
 def test_client_slow(client_app=None):
+    if client_app is None:
+        client_app = SendRequest()
+    if not client_app._timeout_supported(client_app.HTTPConnection):
+        # timeout isn't supported
+        return
     with serve(slow_app) as server:
         req = Request.blank(server.url)
         req.environ['webob.client.timeout'] = 0.1

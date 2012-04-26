@@ -67,7 +67,7 @@ class SendRequest:
             environ['SERVER_NAME'] = host
             environ['SERVER_PORT'] = port
         kw = {}
-        if sys.version_info >= (2, 7) and 'webob.client.timeout' in environ:
+        if 'webob.client.timeout' in environ and self._timeout_supported(ConnClass):
             kw['timeout'] = environ['webob.client.timeout']
         conn = ConnClass('%(SERVER_NAME)s:%(SERVER_PORT)s' % environ, **kw)
         headers = {}
@@ -171,6 +171,11 @@ class SendRequest:
             if header.lower() not in self.filtered_headers:
                 headers_out.append((header, value))
         return headers_out
+
+    def _timeout_supported(self, ConnClass):
+        if sys.version_info < (2, 7) and ConnClass in (httplib.HTTPConnection, httplib.HTTPSConnection):
+            return False
+        return True
 
 
 send_request_app = SendRequest()
