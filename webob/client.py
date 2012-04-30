@@ -7,6 +7,8 @@ except ImportError:
 from webob.compat import url_quote
 import socket
 from webob import exc
+from webob.compat import PY3
+
 
 __all__ = ['send_request_app', 'SendRequest']
 
@@ -140,15 +142,15 @@ class SendRequest:
         Turn a Message object into a list of WSGI-style headers.
         """
         headers_out = []
-        if sys.version_info > (3, 0):
+        if PY3:  # pragma: no cover
             headers = message._headers
-        else:
+        else:  # pragma: no cover
             headers = message.headers
         for full_header in headers:
             if not full_header:
                 # Shouldn't happen, but we'll just ignore
                 continue
-            if full_header[0].isspace():
+            if full_header[0].isspace():  # pragma: no cover
                 # Continuation line, add to the last header
                 if not headers_out:
                     raise ValueError(
@@ -157,15 +159,15 @@ class SendRequest:
                 value = last_value + ', ' + full_header.strip()
                 headers_out.append((last_header, value))
                 continue
-            if isinstance(full_header, tuple):
+            if isinstance(full_header, tuple):  # pragma: no cover
                 header, value = full_header
-            else:
+            else:  # pragma: no cover
                 try:
                     header, value = full_header.split(':', 1)
                 except:
                     raise ValueError("Invalid header: %r" % (full_header,))
             value = value.strip()
-            if '\n' in value or '\r\n' in value:
+            if '\n' in value or '\r\n' in value:  # pragma: no cover
                 # Python 3 has multiline values for continuations, Python 2 has two items in headers
                 value = self.MULTILINE_RE.sub(', ', value)
             if header.lower() not in self.filtered_headers:
