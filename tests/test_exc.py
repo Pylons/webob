@@ -7,6 +7,7 @@ from webob.exc import WSGIHTTPException
 from webob.exc import _HTTPMove
 from webob.exc import HTTPMethodNotAllowed
 from webob.exc import HTTPExceptionMiddleware
+from webob.exc import status_map
 
 from nose.tools import eq_, ok_, assert_equal, assert_raises
 
@@ -207,6 +208,43 @@ def test_WSGIHTTPException_exception_no_newstyle():
     from webob import exc
     exc.newstyle_exceptions = False
     assert_equal( excep(environ,start_response), [] )
+
+def test_HTTPOk_head_of_proxied_head():
+    # first set up a response to a HEAD request
+    HELLO_WORLD = "Hi!\n"
+    CONTENT_TYPE = "application/hello"
+    def head_app(environ, start_response):
+        """An application object that understands HEAD"""
+        status = '200 OK'
+        response_headers = [('Content-Type', CONTENT_TYPE),
+                            ('Content-Length', len(HELLO_WORLD))]
+        start_response(status, response_headers)
+
+        if environ['REQUEST_METHOD'] == 'HEAD':
+            return []
+        else:
+            return [HELLO_WORLD]
+
+    def verify_response(resp, description):
+        assert_equal(resp.content_type, CONTENT_TYPE, description)
+        assert_equal(resp.content_length, len(HELLO_WORLD), description)
+        assert_equal(resp.body, '', description)
+
+    req = Request.blank('/', method='HEAD')
+    resp1 = req.get_response(head_app)
+    verify_response(resp1, "first response")
+
+    # Copy the response like a proxy server would.
+    # Copying an empty body has set content_length
+    # so copy the headers only afterwards.
+    resp2 = status_map[resp1.status_int](request=req)
+    resp2.body = resp1.body
+    resp2.headerlist = resp1.headerlist
+    verify_response(resp2, "copied response")
+
+    # evaluate it again
+    resp3 = req.get_response(resp2)
+    verify_response(resp3, "evaluated copy")
 
 def test_HTTPMove():
     def start_response(status, headers, exc_info=None):
