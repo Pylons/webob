@@ -327,11 +327,12 @@ ${body}''')
         return resp(environ, start_response)
 
     def __call__(self, environ, start_response):
-        if self.body or self.empty_body:
+        is_head = environ['REQUEST_METHOD'] == 'HEAD'
+        if self.body or self.empty_body or is_head:
             app_iter = Response.__call__(self, environ, start_response)
         else:
             app_iter = self.generate_response(environ, start_response)
-        if environ['REQUEST_METHOD'] == 'HEAD':
+        if is_head:
             app_iter = []
         return app_iter
 
