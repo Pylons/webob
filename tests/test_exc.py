@@ -237,7 +237,7 @@ def test_HTTPOk_head_of_proxied_head():
     # Copy the response like a proxy server would.
     # Copying an empty body has set content_length
     # so copy the headers only afterwards.
-    resp2 = status_map[resp1.status_code](request=req)
+    resp2 = status_map[resp1.status_int](request=req)
     resp2.body = resp1.body
     resp2.headerlist = resp1.headerlist
     verify_response(resp2, "copied response")
