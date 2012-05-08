@@ -694,7 +694,75 @@ class Response(object):
                    path='/', domain=None, secure=False, httponly=False,
                    comment=None, expires=None, overwrite=False):
         """
-        Set (add) a cookie for the response
+        Set (add) a cookie for the response.
+
+        Arguments are:
+
+        ``key``
+
+           The cookie name.
+
+        ``value``
+
+           The cookie value, which should be a string or ``None``.  If
+           ``value`` is ``None``, it's equivalent to calling the
+           :meth:`webob.response.Response.unset_cookie` method for this
+           cookie key (it effectively deletes the cookie on the client).
+
+        ``max_age``
+
+           An integer representing a number of seconds or ``None``.  If this
+           value is an integer, it is used as the ``Max-Age`` of the
+           generated cookie.  If ``expires`` is not passed and this value is
+           an integer, the ``max_age`` value will also influence the
+           ``Expires`` value of the cookie (``Expires`` will be set to now +
+           max_age).  If this value is ``None``, the cookie will not have a
+           ``Max-Age`` value (unless ``expires`` is also sent).
+
+        ``path``
+
+           A string representing the cookie ``Path`` value.  It defaults to
+           ``/``.
+
+        ``domain``
+
+           A string representing the cookie ``Domain``, or ``None``.  If
+           domain is ``None``, no ``Domain`` value will be sent in the
+           cookie.
+
+        ``secure``
+
+           A boolean.  If it's ``True``, the ``secure`` flag will be sent in
+           the cookie, if it's ``False``, the ``secure`` flag will not be
+           sent in the cookie.
+
+        ``secure``
+
+           A boolean.  If it's ``True``, the ``HttpOnly`` flag will be sent
+           in the cookie, if it's ``False``, the ``HttpOnly`` flag will not
+           be sent in the cookie.
+
+        ``comment``
+
+           A string representing the cookie ``Comment`` value, or ``None``.
+           If ``comment`` is ``None``, no ``Comment`` value will be sent in
+           the cookie.
+
+        ``expires``
+
+           A ``datetime.timedelta`` object representing an amount of time or
+           the value ``None``.  A non-``None`` value is used to generate the
+           ``Expires`` value of the generated cookie.  If ``max_age`` is not
+           passed, but this value is not ``None``, it will influence the
+           ``Max-Age`` header (``Max-Age`` will be 'expires_value -
+           datetime.utcnow()').  If this value is ``None``, the ``Expires``
+           cookie value will be unset (unless ``max_age`` is also passed).
+
+        ``overwrite``
+
+           If this key is ``True``, before setting the cookie, unset any
+           existing cookie.
+
         """
         if overwrite:
             self.unset_cookie(key, strict=False)
