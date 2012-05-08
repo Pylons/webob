@@ -228,7 +228,7 @@ def test_HTTPOk_head_of_proxied_head():
     def verify_response(resp, description):
         assert_equal(resp.content_type, CONTENT_TYPE, description)
         assert_equal(resp.content_length, len(HELLO_WORLD), description)
-        assert_equal(resp.body, '', description)
+        assert_equal(resp.body, b'', description)
 
     req = Request.blank('/', method='HEAD')
     resp1 = req.get_response(head_app)
