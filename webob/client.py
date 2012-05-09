@@ -1,8 +1,9 @@
+import errno
 import sys
 import re
 try:
     import httplib
-except ImportError:
+except ImportError: # pragma: no cover
     import http.client as httplib
 from webob.compat import url_quote
 import socket
@@ -29,10 +30,7 @@ class SendRequest:
     Does not add X-Forwarded-For or other standard headers
 
     If you use ``send_request_app`` then simple ``httplib``
-    connections will be used.  If you use
-    ``SendRequest.with_urllib()`` you will get an application that
-    uses urllib3's connection classes, that include pooling and HTTPS
-    certificate verification.
+    connections will be used.  
     """
 
     def __init__(self, HTTPConnection=httplib.HTTPConnection,
@@ -40,17 +38,12 @@ class SendRequest:
         self.HTTPConnection = HTTPConnection
         self.HTTPSConnection = HTTPSConnection
 
-    @classmethod
-    def with_urllib3(cls):
-        from urllib3 import HTTPConnectionPool, HTTPSConnectionPool
-        return cls(HTTPConnectionPool, HTTPSConnectionPool)
-
     def __call__(self, environ, start_response):
         scheme = environ['wsgi.url_scheme']
         if scheme == 'http':
-            ConnClass = httplib.HTTPConnection
+            ConnClass = self.HTTPConnection
         elif scheme == 'https':
-            ConnClass = httplib.HTTPSConnection
+            ConnClass = self.HTTPSConnection
         else:
             raise ValueError(
                 "Unknown scheme: %r" % scheme)
@@ -69,7 +62,8 @@ class SendRequest:
             environ['SERVER_NAME'] = host
             environ['SERVER_PORT'] = port
         kw = {}
-        if 'webob.client.timeout' in environ and self._timeout_supported(ConnClass):
+        if ('webob.client.timeout' in environ and
+            self._timeout_supported(ConnClass) ):
             kw['timeout'] = environ['webob.client.timeout']
         conn = ConnClass('%(SERVER_NAME)s:%(SERVER_PORT)s' % environ, **kw)
         headers = {}
@@ -111,7 +105,7 @@ class SendRequest:
                     "Name or service not known (bad domain name: %s)"
                     % environ['SERVER_NAME'])
                 return resp(environ, start_response)
-            elif e.args[0] in (61, 111):
+            elif e.args[0] in (errno.ENODATA, errno.ECONNREFUSED):
                 # Connection refused
                 resp = exc.HTTPBadGateway(
                     "Connection refused")
@@ -147,7 +141,7 @@ class SendRequest:
         else:  # pragma: no cover
             headers = message.headers
         for full_header in headers:
-            if not full_header:
+            if not full_header: # pragma: no cover
                 # Shouldn't happen, but we'll just ignore
                 continue
             if full_header[0].isspace():  # pragma: no cover
@@ -168,14 +162,16 @@ class SendRequest:
                     raise ValueError("Invalid header: %r" % (full_header,))
             value = value.strip()
             if '\n' in value or '\r\n' in value:  # pragma: no cover
-                # Python 3 has multiline values for continuations, Python 2 has two items in headers
+                # Python 3 has multiline values for continuations, Python 2
+                # has two items in headers
                 value = self.MULTILINE_RE.sub(', ', value)
             if header.lower() not in self.filtered_headers:
                 headers_out.append((header, value))
         return headers_out
 
     def _timeout_supported(self, ConnClass):
-        if sys.version_info < (2, 7) and ConnClass in (httplib.HTTPConnection, httplib.HTTPSConnection):
+        if sys.version_info < (2, 7) and ConnClass in (
+            httplib.HTTPConnection, httplib.HTTPSConnection):
             return False
         return True
 

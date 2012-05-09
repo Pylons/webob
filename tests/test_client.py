@@ -1,134 +1,238 @@
-import time
-import urllib
-from webob import Request, Response
-from webob.dec import wsgify
-from webob.client import SendRequest
-from .test_in_wsgiref import serve
-from nose.tools import assert_raises
+import unittest
+import io
+import socket
 
+class TestSendRequest(unittest.TestCase):
+    def _getTargetClass(self):
+        from webob.client import SendRequest
+        return SendRequest
+        
+    def _makeOne(self, **kw):
+        cls = self._getTargetClass()
+        return cls(**kw)
 
-@wsgify
-def simple_app(req):
-    data = {'headers': dict(req.headers),
-            'body': req.text,
-            'method': req.method,
+    def _makeEnviron(self, extra=None):
+        environ = {
+            'wsgi.url_scheme':'http',
+            'SERVER_NAME':'localhost',
+            'HTTP_HOST':'localhost:80',
+            'SERVER_PORT':'80',
+            'wsgi.input':io.BytesIO(),
+            'CONTENT_LENGTH':0,
+            'REQUEST_METHOD':'GET',
             }
-    return Response(json=data)
+        if extra is not None:
+            environ.update(extra)
+        return environ
 
+    def test___call___unknown_scheme(self):
+        environ = self._makeEnviron({'wsgi.url_scheme':'abc'})
+        inst = self._makeOne()
+        self.assertRaises(ValueError, inst, environ, None)
+            
+    def test___call___gardenpath(self):
+        environ = self._makeEnviron()
+        response = DummyResponse('msg')
+        conn_factory = DummyConnectionFactory(response)
+        inst = self._makeOne(HTTPConnection=conn_factory)
+        def start_response(status, headers):
+            self.assertEqual(status, '200 OK')
+            self.assertEqual(headers, [])
+            inst.start_response_called = True
+        iterable = inst(environ, start_response)
+        self.assertTrue(inst.start_response_called)
+        self.assertEqual(list(iterable), [b'foo'])
 
-def test_client(client_app=None):
-    with serve(simple_app) as server:
-        req = Request.blank(server.url, method='POST', content_type='application/json',
-                            json={'test': 1})
-        resp = req.send(client_app)
-        assert resp.status_code == 200, resp.status
-        assert resp.json['headers']['Content-Type'] == 'application/json'
-        assert resp.json['method'] == 'POST'
-        # Test that these values get filled in:
-        del req.environ['SERVER_NAME']
-        del req.environ['SERVER_PORT']
-        resp = req.send(client_app)
-        assert resp.status_code == 200, resp.status
-        req = Request.blank(server.url)
-        del req.environ['SERVER_NAME']
-        del req.environ['SERVER_PORT']
-        assert req.send(client_app).status_code == 200
-        req.headers['Host'] = server.url.lstrip('http://')
-        del req.environ['SERVER_NAME']
-        del req.environ['SERVER_PORT']
-        resp = req.send(client_app)
-        assert resp.status_code == 200, resp.status
-        del req.environ['SERVER_NAME']
-        del req.environ['SERVER_PORT']
-        del req.headers['Host']
-        assert req.environ.get('SERVER_NAME') is None
-        assert req.environ.get('SERVER_PORT') is None
-        assert req.environ.get('HTTP_HOST') is None
-        assert_raises(ValueError, req.send, client_app)
-        req = Request.blank(server.url)
-        req.environ['CONTENT_LENGTH'] = 'not a number'
-        assert req.send(client_app).status_code == 200
+    def test___call___no_servername_no_http_host(self):
+        environ = self._makeEnviron()
+        del environ['SERVER_NAME']
+        del environ['HTTP_HOST']
+        response = DummyResponse('msg')
+        conn_factory = DummyConnectionFactory(response)
+        inst = self._makeOne(HTTPConnection=conn_factory)
+        self.assertRaises(ValueError, inst, environ, None)
 
+    def test___call___no_servername_colon_not_in_host_http(self):
+        environ = self._makeEnviron()
+        del environ['SERVER_NAME']
+        environ['HTTP_HOST'] = 'localhost'
+        response = DummyResponse('msg')
+        conn_factory = DummyConnectionFactory(response)
+        inst = self._makeOne(HTTPConnection=conn_factory)
+        def start_response(status, headers):
+            self.assertEqual(status, '200 OK')
+            self.assertEqual(headers, [])
+            inst.start_response_called = True
+        iterable = inst(environ, start_response)
+        self.assertTrue(inst.start_response_called)
+        self.assertEqual(list(iterable), [b'foo'])
+        self.assertEqual(environ['SERVER_NAME'], 'localhost')
+        self.assertEqual(environ['SERVER_PORT'], '80')
 
-def no_length_app(environ, start_response):
-    start_response('200 OK', [('Content-type', 'text/plain')])
-    return [b'ok']
+    def test___call___no_servername_colon_not_in_host_https(self):
+        environ = self._makeEnviron()
+        del environ['SERVER_NAME']
+        environ['HTTP_HOST'] = 'localhost'
+        environ['wsgi.url_scheme'] = 'https'
+        response = DummyResponse('msg')
+        conn_factory = DummyConnectionFactory(response)
+        inst = self._makeOne(HTTPSConnection=conn_factory)
+        def start_response(status, headers):
+            self.assertEqual(status, '200 OK')
+            self.assertEqual(headers, [])
+            inst.start_response_called = True
+        iterable = inst(environ, start_response)
+        self.assertTrue(inst.start_response_called)
+        self.assertEqual(list(iterable), [b'foo'])
+        self.assertEqual(environ['SERVER_NAME'], 'localhost')
+        self.assertEqual(environ['SERVER_PORT'], '443')
 
+    def test___call___no_content_length(self):
+        environ = self._makeEnviron()
+        del environ['CONTENT_LENGTH']
+        response = DummyResponse('msg')
+        conn_factory = DummyConnectionFactory(response)
+        inst = self._makeOne(HTTPConnection=conn_factory)
+        def start_response(status, headers):
+            self.assertEqual(status, '200 OK')
+            self.assertEqual(headers, [])
+            inst.start_response_called = True
+        iterable = inst(environ, start_response)
+        self.assertTrue(inst.start_response_called)
+        self.assertEqual(list(iterable), [b'foo'])
 
-def test_no_content_length(client_app=None):
-    with serve(no_length_app) as server:
-        req = Request.blank(server.url)
-        resp = req.send(client_app)
-        assert resp.status_code == 200, resp.status
+    def test___call___with_webob_client_timeout_and_timeout_supported(self):
+        environ = self._makeEnviron()
+        environ['webob.client.timeout'] = 10
+        response = DummyResponse('msg')
+        conn_factory = DummyConnectionFactory(response)
+        inst = self._makeOne(HTTPConnection=conn_factory)
+        def start_response(status, headers):
+            self.assertEqual(status, '200 OK')
+            self.assertEqual(headers, [])
+            inst.start_response_called = True
+        iterable = inst(environ, start_response)
+        self.assertTrue(inst.start_response_called)
+        self.assertEqual(list(iterable), [b'foo'])
+        self.assertEqual(conn_factory.kw, {'timeout':10})
 
+    def test___call___bad_content_length(self):
+        environ = self._makeEnviron({'CONTENT_LENGTH':'abc'})
+        response = DummyResponse('msg')
+        conn_factory = DummyConnectionFactory(response)
+        inst = self._makeOne(HTTPConnection=conn_factory)
+        def start_response(status, headers):
+            self.assertEqual(status, '200 OK')
+            self.assertEqual(headers, [])
+            inst.start_response_called = True
+        iterable = inst(environ, start_response)
+        self.assertTrue(inst.start_response_called)
+        self.assertEqual(list(iterable), [b'foo'])
 
-def test_bad_server(client_app=None):
-    req = Request.blank('http://localhost:1')
-    resp = req.send(client_app)
-    assert resp.status_code == 502, resp.status
-    req = Request.blank('https://browserid.org')
-    resp = req.send(client_app)
-    assert resp.status_code == 200, resp.status
-    bad_url = 'http://laksjdfkajwoeifknslkasdflkjasdflaksjdf.eu'
-    try:
-        urllib.urlopen(bad_url).read()
-    except:
-        # It *should* fail, so we can run the test:
-        req = Request.blank('http://laksjdfkajwoeifknslkasdflkjasdflaksjdf.eu')
-        resp = req.send(client_app)
-        assert resp.status_code == 502, resp.status
-    else:
-        # The system is setup so we can't run this test
-        # (probably an ISP that is catching bad DNS calls)
-        pass
-    req = Request.blank('http://something')
-    req.scheme = 'url'
-    assert_raises(ValueError, req.send, client_app)
+    def test___call___with_socket_timeout(self):
+        environ = self._makeEnviron()
+        response = socket.timeout()
+        response.msg = 'msg'
+        conn_factory = DummyConnectionFactory(response)
+        inst = self._makeOne(HTTPConnection=conn_factory)
+        def start_response(status, headers):
+            self.assertEqual(status, '504 Gateway Timeout')
+            inst.start_response_called = True
+        iterable = inst(environ, start_response)
+        self.assertTrue(inst.start_response_called)
+        self.assertTrue(list(iterable)[0].startswith(b'504'))
 
+    def test___call___with_socket_error_neg2(self):
+        environ = self._makeEnviron()
+        response = socket.error(-2)
+        conn_factory = DummyConnectionFactory(response)
+        inst = self._makeOne(HTTPConnection=conn_factory)
+        def start_response(status, headers):
+            self.assertEqual(status, '502 Bad Gateway')
+            inst.start_response_called = True
+        iterable = inst(environ, start_response)
+        self.assertTrue(inst.start_response_called)
+        self.assertTrue(list(iterable)[0].startswith(b'502'))
 
-@wsgify
-def cookie_app(req):
-    resp = Response('test')
-    resp.headers.add('Set-Cookie', 'a=b')
-    resp.headers.add('Set-Cookie', 'c=d')
-    resp.headerlist.append(('X-Crazy', 'value\r\n  continuation'))
-    return resp
+    def test___call___with_socket_error_ENODATA(self):
+        import errno
+        environ = self._makeEnviron()
+        response = socket.error(errno.ENODATA)
+        conn_factory = DummyConnectionFactory(response)
+        inst = self._makeOne(HTTPConnection=conn_factory)
+        def start_response(status, headers):
+            self.assertEqual(status, '502 Bad Gateway')
+            inst.start_response_called = True
+        iterable = inst(environ, start_response)
+        self.assertTrue(inst.start_response_called)
+        self.assertTrue(list(iterable)[0].startswith(b'502'))
 
+    def test___call___with_socket_error_unknown(self):
+        environ = self._makeEnviron()
+        response = socket.error('nope')
+        conn_factory = DummyConnectionFactory(response)
+        inst = self._makeOne(HTTPConnection=conn_factory)
+        def start_response(status, headers):
+            self.assertEqual(status, '502 Bad Gateway')
+            inst.start_response_called = True
+        self.assertRaises(socket.error, inst, environ, start_response)
 
-def test_client_cookies(client_app=None):
-    with serve(cookie_app) as server:
-        req = Request.blank(server.url + '/?test')
-        resp = req.send(client_app)
-        assert resp.headers.getall('Set-Cookie') == ['a=b', 'c=d']
-        assert resp.headers['X-Crazy'] == 'value, continuation', repr(resp.headers['X-Crazy'])
+    def test___call___nolength(self):
+        environ = self._makeEnviron()
+        response = DummyResponse('msg', None)
+        conn_factory = DummyConnectionFactory(response)
+        inst = self._makeOne(HTTPConnection=conn_factory)
+        def start_response(status, headers):
+            self.assertEqual(status, '200 OK')
+            self.assertEqual(headers, [])
+            inst.start_response_called = True
+        iterable = inst(environ, start_response)
+        self.assertTrue(inst.start_response_called)
+        self.assertEqual(list(iterable), [b'foo'])
+        self.assertEqual(response.length, None)
 
+class DummyMessage(object):
+    def __init__(self, msg):
+        self.msg = msg
+        self.headers = self._headers = {}
 
-@wsgify
-def slow_app(req):
-    time.sleep(2)
-    return Response('ok')
+class DummyResponse(object):
+    def __init__(self, msg, headerval='10'):
+        self.msg = DummyMessage(msg)
+        self.status = '200'
+        self.reason = 'OK'
+        self.headerval = headerval
 
+    def getheader(self, name):
+        return self.headerval
 
-def test_client_slow(client_app=None):
-    if client_app is None:
-        client_app = SendRequest()
-    if not client_app._timeout_supported(client_app.HTTPConnection):
-        # timeout isn't supported
-        return
-    with serve(slow_app) as server:
-        req = Request.blank(server.url)
-        req.environ['webob.client.timeout'] = 0.1
-        resp = req.send(client_app)
-        assert resp.status_code == 504, resp.status
+    def read(self, length=None):
+        self.length = length
+        return b'foo'
+        
+class DummyConnectionFactory(object):
+    def __init__(self, result=None):
+        self.result = result
+        self.closed = False
 
+    def __call__(self, hostport, **kw):
+        self.hostport = hostport
+        self.kw = kw
+        self.request = DummyRequestFactory(hostport, **kw)
+        return self
 
-def test_client_urllib3():
-    try:
-        import urllib3
-    except:
-        return
-    client_app = SendRequest.with_urllib3()
-    test_client(client_app)
-    test_no_content_length(client_app)
-    test_bad_server(client_app)
-    test_client_slow(client_app)
+    def getresponse(self):
+        if isinstance(self.result, Exception):
+            raise self.result
+        return self.result
+
+    def close(self):
+        self.closed = True
+    
+class DummyRequestFactory(object):
+    def __init__(self, hostport, **kw):
+        self.hostport = hostport
+        self.kw = kw
+
+    def __call__(self, method, path, body, headers):
+        return self
