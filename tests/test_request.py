@@ -442,6 +442,14 @@ class TestRequestCommon(unittest.TestCase):
         req._charset = ''
         self.assertRaises(AttributeError, getattr, req, 'text')
 
+    def test__text_set_without_charset(self):
+        body = b'test'
+        INPUT = BytesIO(body)
+        environ = {'wsgi.input': INPUT, 'CONTENT_LENGTH': str(len(body))}
+        req = self._makeOne(environ)
+        req._charset = ''
+        self.assertRaises(AttributeError, setattr, req, 'text', 'abc')
+
     # POST
     def test_POST_not_POST_or_PUT(self):
         from webob.multidict import NoVars
