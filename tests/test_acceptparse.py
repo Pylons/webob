@@ -139,6 +139,16 @@ def test_best_match_with_one_lower_q():
     assert accept.best_match(['text/html', 'foo/bar']) == 'foo/bar'
 
 
+def test_best_match_with_complex_q():
+    accept = Accept('text/html, foo/bar;q=0.55, baz/gort;q=0.59')
+    assert accept.best_match(['text/html', 'foo/bar']) == 'text/html'
+    accept = Accept('text/html;q=0.5, foo/bar;q=0.586, baz/gort;q=0.5966')
+    assert "baz/gort;q=0.597" in str(accept)
+    assert "foo/bar;q=0.586" in str(accept)
+    assert "text/html;q=0.5" in str(accept)
+    assert accept.best_match(['text/html', 'baz/gort']) == 'baz/gort'
+
+
 def test_accept_match():
     for mask in ['*', 'text/html', 'TEXT/HTML']:
         assert 'text/html' in Accept(mask)
