@@ -30,7 +30,7 @@ class SendRequest:
     Does not add X-Forwarded-For or other standard headers
 
     If you use ``send_request_app`` then simple ``httplib``
-    connections will be used.  
+    connections will be used.
     """
 
     def __init__(self, HTTPConnection=httplib.HTTPConnection,
@@ -105,7 +105,7 @@ class SendRequest:
                     "Name or service not known (bad domain name: %s)"
                     % environ['SERVER_NAME'])
                 return resp(environ, start_response)
-            elif e.args[0] in (errno.ENODATA, errno.ECONNREFUSED):
+            elif e.args[0] in (getattr(errno, 'ENODATA', object()), errno.ECONNREFUSED):
                 # Connection refused
                 resp = exc.HTTPBadGateway(
                     "Connection refused")

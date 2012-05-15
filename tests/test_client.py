@@ -6,7 +6,7 @@ class TestSendRequest(unittest.TestCase):
     def _getTargetClass(self):
         from webob.client import SendRequest
         return SendRequest
-        
+
     def _makeOne(self, **kw):
         cls = self._getTargetClass()
         return cls(**kw)
@@ -29,7 +29,7 @@ class TestSendRequest(unittest.TestCase):
         environ = self._makeEnviron({'wsgi.url_scheme':'abc'})
         inst = self._makeOne()
         self.assertRaises(ValueError, inst, environ, None)
-            
+
     def test___call___gardenpath(self):
         environ = self._makeEnviron()
         response = DummyResponse('msg')
@@ -157,6 +157,9 @@ class TestSendRequest(unittest.TestCase):
     def test___call___with_socket_error_ENODATA(self):
         import errno
         environ = self._makeEnviron()
+        if not hasattr(errno, 'ENODATA'):
+            # no ENODATA on win
+            return
         response = socket.error(errno.ENODATA)
         conn_factory = DummyConnectionFactory(response)
         inst = self._makeOne(HTTPConnection=conn_factory)
@@ -209,7 +212,7 @@ class DummyResponse(object):
     def read(self, length=None):
         self.length = length
         return b'foo'
-        
+
 class DummyConnectionFactory(object):
     def __init__(self, result=None):
         self.result = result
@@ -228,7 +231,7 @@ class DummyConnectionFactory(object):
 
     def close(self):
         self.closed = True
-    
+
 class DummyRequestFactory(object):
     def __init__(self, hostport, **kw):
         self.hostport = hostport
