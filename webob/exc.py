@@ -56,6 +56,9 @@ Exception
         * 415 - HTTPUnsupportedMediaType
         * 416 - HTTPRequestRangeNotSatisfiable
         * 417 - HTTPExpectationFailed
+        * 428 - HTTPPreconditionRequired
+        * 429 - HTTPTooManyRequests
+        * 431 - HTTPRequestHeaderFieldsTooLarge
       HTTPServerError
         * 500 - HTTPInternalServerError
         * 501 - HTTPNotImplemented
@@ -63,6 +66,7 @@ Exception
         * 503 - HTTPServiceUnavailable
         * 504 - HTTPGatewayTimeout
         * 505 - HTTPVersionNotSupported
+        * 511 - HTTPNetworkAuthenticationRequired
 
 Subclass usage notes:
 ---------------------
@@ -910,6 +914,52 @@ class HTTPFailedDependency(HTTPClientError):
         'The method could not be performed because the requested '
         'action dependended on another action and that action failed')
 
+class HTTPPreconditionRequired(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+
+    This indicates that the origin server requires the request to be
+    conditional.  From RFC 6585, "Additional HTTP Status Codes".
+
+    code: 428, title: Precondition Required
+    """
+    code = 428
+    title = 'Precondition Required'
+    explanation = ('This request is required to be conditional')
+
+class HTTPTooManyRequests(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+
+    This indicates that the client has sent too many requests in a
+    given amount of time.  Useful for rate limiting.
+
+    From RFC 6585, "Additional HTTP Status Codes".
+
+    code: 429, title: Too Many Requests
+    """
+    code = 429
+    title = 'Too Many Requests'
+    explanation = (
+        'The client has sent too many requests in a given amount of time')
+
+class HTTPRequestHeaderFieldsTooLarge(HTTPClientError):
+    """
+    subclass of :class:`~HTTPClientError`
+
+    This indicates that the server is unwilling to process the request
+    because its header fields are too large. The request may be resubmitted
+    after reducing the size of the request header fields.
+
+    From RFC 6585, "Additional HTTP Status Codes".
+
+    code: 431, title: Request Header Fields Too Large
+    """
+    code = 431
+    title = 'Request Header Fields Too Large'
+    explanation = (
+        'The request header fields were too large')
+
 ############################################################
 ## 5xx Server Error
 ############################################################
@@ -1023,6 +1073,19 @@ class HTTPInsufficientStorage(HTTPServerError):
     code = 507
     title = 'Insufficient Storage'
     explanation = ('There was not enough space to save the resource')
+
+class HTTPNetworkAuthenticationRequired(HTTPServerError):
+    """
+    subclass of :class:`~HTTPServerError`
+
+    This indicates that the client needs to authenticate to gain
+    network access.  From RFC 6585, "Additional HTTP Status Codes".
+
+    code: 511, title: Network Authentication Required
+    """
+    code = 511
+    title = 'Network Authentication Required'
+    explanation = ('Network authentication is required')
 
 class HTTPExceptionMiddleware(object):
     """
