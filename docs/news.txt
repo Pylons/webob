@@ -1,7 +1,7 @@
 News
 ====
 
-1.2b4
+1.2rc1
 ------------
 
 * Add ``Response.json`` and ``Request.json`` which reads and sets the
