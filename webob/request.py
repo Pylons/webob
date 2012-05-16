@@ -5,7 +5,10 @@ import os
 import re
 import sys
 import tempfile
-import json
+try:
+    import simplejson as json
+except ImportError:
+    import json
 import warnings
 
 from webob.acceptparse import (
