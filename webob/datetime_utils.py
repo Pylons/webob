@@ -17,6 +17,7 @@ import time
 
 from webob.compat import (
     integer_types,
+    long,
     native_,
     text_type,
     )
