@@ -17,6 +17,7 @@ else:
     integer_types = (int, long)
     class_types = (type, types.ClassType)
     text_type = unicode
+    long = long
 
 # TODO check if errors is ever used
 
