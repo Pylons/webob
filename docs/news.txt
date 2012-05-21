@@ -18,9 +18,7 @@ News
 
 * Add ``webob.client`` which contains the WSGI application
   ``send_request_app`` and ``SendRequest``.  All requests sent to this
-  application are turned into HTTP requests.  You can also use
-  ``SendRequest.with_urllib3()`` to use `urllib3
-  <http://pypi.python.org/pypi/urllib3>`_ for connections.
+  application are turned into HTTP requests.
 
 * Renamed ``Request.get_response(app)`` to ``Request.send(app)``.  The
   ``.get_response()`` name is still available.
@@ -28,11 +26,11 @@ News
 * Use ``send_request_app`` as the default application for
   ``Request.send()``, so you can do:
 
-    resp = Request.blank("http://python.org").send()
+    ``resp = Request.blank("http://python.org").send()``
 
-* Add ``webob.static`` which contains two new WSGI applications,
-  ``FileApp`` to serve one static file and ``DirectoryApp`` to serve the
-  content of a directory. They should provide a reusable implementation of
+* Add ``webob.static`` which contains two new WSGI applications, ``FileApp``
+  to serve one static file and ``DirectoryApp`` to serve the content
+  of a directory. They should provide a reusable implementation of
   :doc:`file-example`.  It also comes with support for ``wsgi.file_wrapper``.
 
   The implementation has been imported and simplified from
