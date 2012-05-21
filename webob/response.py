@@ -736,7 +736,7 @@ class Response(object):
            the cookie, if it's ``False``, the ``secure`` flag will not be
            sent in the cookie.
 
-        ``secure``
+        ``httponly``
 
            A boolean.  If it's ``True``, the ``HttpOnly`` flag will be sent
            in the cookie, if it's ``False``, the ``HttpOnly`` flag will not
