@@ -13,7 +13,6 @@ from webob.compat import PY3
 
 __all__ = ['send_request_app', 'SendRequest']
 
-
 class SendRequest:
     """
     Sends the request, as described by the environ, over actual HTTP.
@@ -105,10 +104,9 @@ class SendRequest:
                     "Name or service not known (bad domain name: %s)"
                     % environ['SERVER_NAME'])
                 return resp(environ, start_response)
-            elif e.args[0] in (getattr(errno, 'ENODATA', object()), errno.ECONNREFUSED):
+            elif e.args[0] in _e_refused: # pragma: no cover
                 # Connection refused
-                resp = exc.HTTPBadGateway(
-                    "Connection refused")
+                resp = exc.HTTPBadGateway("Connection refused")
                 return resp(environ, start_response)
             raise
         headers_out = self.parse_headers(res.msg)
@@ -171,9 +169,14 @@ class SendRequest:
 
     def _timeout_supported(self, ConnClass):
         if sys.version_info < (2, 7) and ConnClass in (
-            httplib.HTTPConnection, httplib.HTTPSConnection):
+            httplib.HTTPConnection, httplib.HTTPSConnection): # pragma: no cover
             return False
         return True
 
 
 send_request_app = SendRequest()
+
+_e_refused = (errno.ECONNREFUSED,)
+if hasattr(errno, 'ENODATA'): # pragma: no cover
+    _e_refused += errno.ENODATA
+
