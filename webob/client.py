@@ -178,5 +178,5 @@ send_request_app = SendRequest()
 
 _e_refused = (errno.ECONNREFUSED,)
 if hasattr(errno, 'ENODATA'): # pragma: no cover
-    _e_refused += errno.ENODATA
+    _e_refused += (errno.ENODATA,)
 
