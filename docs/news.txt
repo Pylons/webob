@@ -1,6 +1,17 @@
 News
 ====
 
+1.2
+------------
+
+* Fix :mod:`webob.client` handling  of connection-refused on Windows.
+
+* Use ``simplejson`` in :mod:`webob.request` if present.
+
+* Fix ``resp.retry_after = <long>`` interpreting value as a UNIX timestamp
+  (should interpret as time delta in seconds).
+
+
 1.2rc1
 ------------
 
