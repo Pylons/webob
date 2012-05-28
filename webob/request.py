@@ -5,6 +5,7 @@ import os
 import re
 import sys
 import tempfile
+import mimetypes
 try:
     import simplejson as json
 except ImportError:
@@ -1618,15 +1619,24 @@ def _encode_multipart(vars, content_type, fout=None):
             filename, value = value
             if hasattr(value, 'read'):
                 value = value.read()
+
         if filename is not None:
             wt('; filename="%s"' % filename)
+            mime_type = mimetypes.guess_type(filename)[0]
+        else:
+            mime_type = None
+
         w(CRLF)
+
         # TODO: should handle value.disposition_options
         if getattr(value, 'type', None):
             wt('Content-type: %s' % value.type)
             if value.type_options:
                 for ct_name, ct_value in sorted(value.type_options.items()):
                     wt('; %s="%s"' % (ct_name, ct_value))
+            w(CRLF)
+        elif mime_type:
+            wt('Content-type: %s' % mime_type)
             w(CRLF)
         w(CRLF)
         if hasattr(value, 'value'):
