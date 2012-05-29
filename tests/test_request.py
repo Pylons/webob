@@ -3400,6 +3400,13 @@ class Test_environ_from_url(unittest.TestCase):
         self.assertEqual(request.path_info, expected)
         self.assertEqual(request.upath_info, expected)
 
+    def test_fileupload_mime_type_detection(self):
+        from webob.request import Request
+        request = Request.blank("/", POST=dict(file1=("foo.jpg", "xxx"),
+                                               file2=("bar.mp3", "xxx")))
+        self.assert_("audio/mpeg" in request.body, str(request))
+        self.assert_("image/jpeg" in request.body, str(request))
+
 def simpleapp(environ, start_response):
     from webob.request import Request
     status = '200 OK'
