@@ -88,6 +88,9 @@ class BaseDictTests(object):
         self.assertTrue('e' in d)
 
     def test_add(self):
+        d = multidict.MultiDict({'a': '1'}) 
+        d.add('a', '2')
+        self.assertEquals(list(d.getall('a')), ['1', '2'])
         d = self._get_instance()
         d.add('b', '3')
         self.assertEqual(list(d.getall('b')), ['1', '3'])
