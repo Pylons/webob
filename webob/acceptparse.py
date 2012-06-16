@@ -246,9 +246,10 @@ class AcceptCharset(Accept):
     def parse(value):
         latin1_found = False
         for m, q in Accept.parse(value):
-            if m == '*' or m == 'iso-8859-1':
+            _m = m.lower()
+            if _m == '*' or _m == 'iso-8859-1':
                 latin1_found = True
-            yield m, q
+            yield _m, q
         if not latin1_found:
             yield ('iso-8859-1', 1)
 
@@ -273,12 +274,12 @@ class MIMEAccept(Accept):
     def parse(value):
         for mask, q in Accept.parse(value):
             try:
-                mask_major, mask_minor = mask.split('/')
+                mask_major, mask_minor = map(lambda x: x.lower(), mask.split('/'))
             except ValueError:
                 continue
             if mask_major == '*' and mask_minor != '*':
                 continue
-            yield (mask, q)
+            yield ("%s/%s" % (mask_major, mask_minor), q)
 
     def accept_html(self):
         """
@@ -297,13 +298,13 @@ class MIMEAccept(Accept):
         """
         _check_offer(offer)
         if '*' not in mask:
-            return offer == mask
+            return offer.lower() == mask.lower()
         elif mask == '*/*':
             return True
         else:
             assert mask.endswith('/*')
-            mask_major = mask[:-2]
-            offer_major = offer.split('/', 1)[0]
+            mask_major = mask[:-2].lower()
+            offer_major = offer.split('/', 1)[0].lower()
             return offer_major == mask_major
 
 
