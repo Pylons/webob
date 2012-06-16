@@ -96,7 +96,7 @@ There are also variables to access the variables and body:
     >>> req.body_file = StringIO(body)
     >>> req.environ['CONTENT_LENGTH'] = str(len(body))
     >>> req.POST
-    UnicodeMultiDict([(u'var1', u'value1'), (u'var2', u'value2'), (u'rep', u'1'), (u'rep', u'2')])
+    MultiDict([(u'var1', u'value1'), (u'var2', u'value2'), (u'rep', u'1'), (u'rep', u'2')])
 
 Note that the variables are there for GET requests and non-form requests,
 but they are empty and read-only:
@@ -112,7 +112,7 @@ but they are empty and read-only:
     KeyError: 'Cannot add variables: Not a form request'
     >>> req.method = 'POST'
     >>> req.POST
-    UnicodeMultiDict([])
+    MultiDict([])
     >>> req.content_type = 'text/xml'
     >>> req.body_file = StringIO('<xml></xml>')
     >>> req.POST
@@ -124,7 +124,7 @@ You can also get access to the query string variables, of course:
 
     >>> req = Request.blank('/?a=b&d=e&d=f')
     >>> req.GET
-    UnicodeMultiDict([(u'a', u'b'), (u'd', u'e'), (u'd', u'f')])
+    MultiDict([(u'a', u'b'), (u'd', u'e'), (u'd', u'f')])
     >>> req.GET['d']
     u'f'
     >>> req.GET.getall('d')
@@ -345,7 +345,7 @@ Some updating of the query string:
 
     >>> req = Request.blank('http://localhost/foo?a=b')
     >>> req.GET
-    UnicodeMultiDict([(u'a', u'b')])
+    MultiDict([(u'a', u'b')])
     >>> req.GET['c'] = 'd'
     >>> req.query_string
     'a=b&c=d'
@@ -368,7 +368,7 @@ And for dealing with file uploads:
     ... --foobar--
     ... '''
     >>> req.POST
-    UnicodeMultiDict([(u'a', u'b'), (u'upload', FieldStorage(u'upload', u'test.html'))])
+    MultiDict([(u'a', u'b'), (u'upload', FieldStorage(u'upload', u'test.html'))])
     >>> print req.body.replace('\r', '') # doctest: +REPORT_UDIFF
     --foobar
     Content-Disposition: form-data; name="a"

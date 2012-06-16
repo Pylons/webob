@@ -74,8 +74,6 @@ Misc Functions and Internals
 .. automodule:: webob.multidict
 .. autoclass:: MultiDict
    :members:
-.. autoclass:: UnicodeMultiDict
-   :members:
 .. autoclass:: NestedMultiDict
    :members:
 .. autoclass:: NoVars
