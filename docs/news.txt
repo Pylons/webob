@@ -1,6 +1,12 @@
 News
 ====
 
+git head
+------------
+
+* Add index page (e.g., ``index.html``) support for
+  :class:`webob.static.DirectoryApp`.
+
 1.2
 ------------
 
