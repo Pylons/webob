@@ -118,7 +118,9 @@ class DirectoryApp(object):
         self.path = os.path.abspath(path)
         if not self.path.endswith(os.path.sep):
             self.path += os.path.sep
-        assert os.path.isdir(self.path)
+        if not os.path.isdir(self.path):
+            raise IOError(
+                "Path does not exist or is not directory: %r" % self.path)
         self.fileapp_kw = kw
 
     def make_fileapp(self, path):
