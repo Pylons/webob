@@ -138,6 +138,12 @@ class BaseRequest(object):
                 "req.decode(charset)``" % charset
 
             )
+
+        #uWSGI incorrectly handles script name. ('/' when is should
+        #be ''.)  This fixes that.
+        if environ.get('SCRIPT_NAME', '')=='/':
+            environ['SCRIPT_NAME'] = ''
+
         d = self.__dict__
         d['environ'] = environ
         if kw:
