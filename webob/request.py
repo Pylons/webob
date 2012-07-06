@@ -141,7 +141,8 @@ class BaseRequest(object):
 
         #uWSGI incorrectly handles script name. ('/' when is should
         #be ''.)  This fixes that.
-        if environ.get('SCRIPT_NAME', '')=='/':
+        if ('uwsgi.version' in environ and
+                environ.get('SCRIPT_NAME', '')=='/'):
             environ['SCRIPT_NAME'] = ''
 
         d = self.__dict__
