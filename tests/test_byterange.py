@@ -14,6 +14,7 @@ def test_not_satisfiable():
 
 def test_range_parse():
     assert isinstance(Range.parse('bytes=0-99'), Range)
+    assert isinstance(Range.parse('BYTES=0-99'), Range)
     assert isinstance(Range.parse('bytes = 0-99'), Range)
     assert isinstance(Range.parse('bytes=0 - 102'), Range)
     assert Range.parse('bytes=10-5') is None
