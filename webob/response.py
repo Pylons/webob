@@ -933,8 +933,10 @@ class Response(object):
                 self.last_modified = datetime.utcnow()
             self.pragma = 'no-cache'
         else:
+            cache_control.properties.clear()
             cache_control.max_age = seconds
             self.expires = datetime.utcnow() + timedelta(seconds=seconds)
+            self.pragma = None
         for name, value in kw.items():
             setattr(cache_control, name, value)
 

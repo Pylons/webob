@@ -1019,3 +1019,13 @@ def test_response_json_body():
     assert r.content_type == 'text/html'
     del r.json_body
     assert r.body == b''
+
+def test_cache_expires_set_zero_then_nonzero():
+    res = Response()
+    res.cache_expires(seconds=0)
+    res.cache_expires(seconds=1)
+    eq_(res.pragma, None)
+    ok_(not res.cache_control.no_cache)
+    ok_(not res.cache_control.no_store)
+    ok_(not res.cache_control.must_revalidate)
+    eq_(res.cache_control.max_age, 1)
