@@ -176,7 +176,7 @@ class TestValueProp(unittest.TestCase):
     def test_set_type_true(self):
         dummy = self.make_one()()
         dummy.prop = True
-        self.assertEquals(dummy.prop, None)
+        self.assertEqual(dummy.prop, None)
 
     def test_set_on_instance_w_default(self):
         dummy = self.make_one()()
@@ -232,35 +232,35 @@ class TestCacheControl(unittest.TestCase):
 
     def test_ctor(self):
         cc = self.make_one({'a':1}, 'typ')
-        self.assertEquals(cc.properties, {'a':1})
-        self.assertEquals(cc.type, 'typ')
+        self.assertEqual(cc.properties, {'a':1})
+        self.assertEqual(cc.type, 'typ')
 
     def test_parse(self):
         from webob.cachecontrol import CacheControl
         cc = CacheControl.parse("public, max-age=315360000")
-        self.assertEquals(type(cc), CacheControl)
-        self.assertEquals(cc.max_age, 315360000)
-        self.assertEquals(cc.public, True)
+        self.assertEqual(type(cc), CacheControl)
+        self.assertEqual(cc.max_age, 315360000)
+        self.assertEqual(cc.public, True)
 
     def test_parse_updates_to(self):
         from webob.cachecontrol import CacheControl
         def foo(arg): return { 'a' : 1 }
         cc = CacheControl.parse("public, max-age=315360000", updates_to=foo)
-        self.assertEquals(type(cc), CacheControl)
-        self.assertEquals(cc.max_age, 315360000)
+        self.assertEqual(type(cc), CacheControl)
+        self.assertEqual(cc.max_age, 315360000)
 
     def test_parse_valueerror_int(self):
         from webob.cachecontrol import CacheControl
         def foo(arg): return { 'a' : 1 }
         cc = CacheControl.parse("public, max-age=abc")
-        self.assertEquals(type(cc), CacheControl)
-        self.assertEquals(cc.max_age, 'abc')
+        self.assertEqual(type(cc), CacheControl)
+        self.assertEqual(cc.max_age, 'abc')
 
     def test_repr(self):
         cc = self.make_one({'a':'1'}, 'typ')
         result = repr(cc)
         self.assertEqual(result, "<CacheControl 'a=1'>")
-        
-        
-        
+
+
+
 

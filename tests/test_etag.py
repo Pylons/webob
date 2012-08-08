@@ -19,42 +19,42 @@ class etag_propertyTests(unittest.TestCase):
     def test_fget_missing_key(self):
         ep = etag_property("KEY", "DEFAULT", "RFC_SECTION")
         req = self._makeDummyRequest(environ={})
-        self.assertEquals(ep.fget(req), "DEFAULT")
+        self.assertEqual(ep.fget(req), "DEFAULT")
 
     def test_fget_found_key(self):
         ep = etag_property("KEY", "DEFAULT", "RFC_SECTION")
         req = self._makeDummyRequest(environ={'KEY':'"VALUE"'})
         res = ep.fget(req)
-        self.assertEquals(res.etags, ['VALUE'])
+        self.assertEqual(res.etags, ['VALUE'])
 
     def test_fget_star_key(self):
         ep = etag_property("KEY", "DEFAULT", "RFC_SECTION")
         req = self._makeDummyRequest(environ={'KEY':'*'})
         res = ep.fget(req)
         import webob.etag
-        self.assertEquals(type(res), webob.etag._AnyETag)
-        self.assertEquals(res.__dict__, {})
+        self.assertEqual(type(res), webob.etag._AnyETag)
+        self.assertEqual(res.__dict__, {})
 
     def test_fset_None(self):
         ep = etag_property("KEY", "DEFAULT", "RFC_SECTION")
         req = self._makeDummyRequest(environ={'KEY':'*'})
         res = ep.fset(req, None)
-        self.assertEquals(res, None)
+        self.assertEqual(res, None)
 
     def test_fset_not_None(self):
         ep = etag_property("KEY", "DEFAULT", "RFC_SECTION")
         req = self._makeDummyRequest(environ={'KEY':'OLDVAL'})
         res = ep.fset(req, "NEWVAL")
-        self.assertEquals(res, None)
-        self.assertEquals(req.environ['KEY'], 'NEWVAL')
+        self.assertEqual(res, None)
+        self.assertEqual(req.environ['KEY'], 'NEWVAL')
 
     def test_fedl(self):
         ep = etag_property("KEY", "DEFAULT", "RFC_SECTION")
         req = self._makeDummyRequest(environ={'KEY':'VAL', 'QUAY':'VALYOU'})
         res = ep.fdel(req)
-        self.assertEquals(res, None)
+        self.assertEqual(res, None)
         self.assertFalse('KEY' in req.environ)
-        self.assertEquals(req.environ['QUAY'], 'VALYOU')
+        self.assertEqual(req.environ['QUAY'], 'VALYOU')
 
 class AnyETagTests(unittest.TestCase):
     def _getTargetClass(self):
