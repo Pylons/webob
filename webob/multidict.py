@@ -61,11 +61,12 @@ class MultiDict(MutableMapping):
         """
         obj = cls()
         # fs.list can be None when there's nothing to parse
-        if PY3: # pragma: no cover
-            decode = lambda b: b
-        else:
-            decode = lambda b: b.decode('utf8')
         for field in fs.list or ():
+            charset = field.type_options.get('charset', 'utf8')
+            if PY3: # pragma: no cover
+                decode = lambda b: b
+            else:
+                decode = lambda b: b.decode(charset)
             field.name = decode(field.name)
             if field.filename:
                 field.filename = decode(field.filename)

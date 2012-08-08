@@ -151,6 +151,30 @@ class BaseDictTests(object):
         fs = DummyFieldStorage('a', '1')
         self.assertEqual(d.from_fieldstorage(fs), MultiDict({'a':'1'}))
 
+    def test_from_fieldstorage_with_charset(self):
+        from cgi import FieldStorage
+        from webob.request import BaseRequest, FakeCGIBody
+        from webob.multidict import MultiDict
+        multipart_type = 'multipart/form-data; boundary=foobar'
+        from io import BytesIO
+        body = (
+            b'--foobar\r\n'
+            b'Content-Disposition: form-data; name="title"\r\n'
+            b'Content-type: text/plain; charset="ISO-2022-JP"\r\n'
+            b'\r\n'
+            b'\x1b$B$3$s$K$A$O\x1b(B'
+            b'\r\n'
+            b'--foobar--')
+        multipart_body = BytesIO(body)
+        environ = BaseRequest.blank('/').environ
+        environ.update(CONTENT_TYPE=multipart_type)
+        environ.update(REQUEST_METHOD='POST')
+        environ.update(CONTENT_LENGTH=len(body))
+        fs = FieldStorage(multipart_body, environ=environ)
+        vars = MultiDict.from_fieldstorage(fs)
+        self.assertEqual(vars['title'].encode('utf8'),
+                         u'こんにちは'.encode('utf8'))
+
 class MultiDictTestCase(BaseDictTests, unittest.TestCase):
     klass = multidict.MultiDict
 
@@ -366,6 +390,7 @@ class DummyField(object):
         self.name = name
         self.value = value
         self.filename = filename
+        self.type_options = {}
 
 class DummyFieldStorage(object):
     def __init__(self, name, value, filename=None):
