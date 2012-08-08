@@ -3402,10 +3402,14 @@ class Test_environ_from_url(unittest.TestCase):
 
     def test_fileupload_mime_type_detection(self):
         from webob.request import Request
-        request = Request.blank("/", POST=dict(file1=("foo.jpg", "xxx"),
+        # sometimes on win the detected mime type for .jpg will be image/pjpeg for ex.
+        # so we use a non-standard extesion to avoid that
+        import mimetypes
+        mimetypes.add_type('application/x-foo', '.foo')
+        request = Request.blank("/", POST=dict(file1=("foo.foo", "xxx"),
                                                file2=("bar.mp3", "xxx")))
         self.assert_("audio/mpeg" in request.body.decode('ascii'), str(request))
-        self.assert_("image/jpeg" in request.body.decode('ascii'), str(request))
+        self.assert_('application/x-foo' in request.body.decode('ascii'), str(request))
 
 def simpleapp(environ, start_response):
     from webob.request import Request
