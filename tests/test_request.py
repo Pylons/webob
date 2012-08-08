@@ -3230,7 +3230,7 @@ class FakeCGIBodyTests(unittest.TestCase):
         body = (
             b'--foobar\r\n'
             b'Content-Disposition: form-data; name="bananas"; filename="bananas.txt"\r\n'
-            b'Content-type: text/plain; charset="utf-9"\r\n'
+            b'Content-type: text/plain; charset="utf-7"\r\n'
             b'\r\n'
             b"these are the contents of the file 'bananas.txt'\r\n"
             b'\r\n'
