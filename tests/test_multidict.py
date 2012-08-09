@@ -172,7 +172,8 @@ class BaseDictTests(object):
         environ.update(CONTENT_LENGTH=len(body))
         fs = FieldStorage(multipart_body, environ=environ)
         vars = MultiDict.from_fieldstorage(fs)
-        self.assertEqual(vars['title'], text_('こんにちは', 'utf8'))
+        self.assertEqual(vars['title'].encode('utf8'),
+                         text_('こんにちは', 'utf8').encode('utf8'))
 
 class MultiDictTestCase(BaseDictTests, unittest.TestCase):
     klass = multidict.MultiDict
