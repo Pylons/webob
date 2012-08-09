@@ -88,9 +88,9 @@ class BaseDictTests(object):
         self.assertTrue('e' in d)
 
     def test_add(self):
-        d = multidict.MultiDict({'a': '1'}) 
+        d = multidict.MultiDict({'a': '1'})
         d.add('a', '2')
-        self.assertEquals(list(d.getall('a')), ['1', '2'])
+        self.assertEqual(list(d.getall('a')), ['1', '2'])
         d = self._get_instance()
         d.add('b', '3')
         self.assertEqual(list(d.getall('b')), ['1', '3'])
@@ -172,8 +172,7 @@ class BaseDictTests(object):
         environ.update(CONTENT_LENGTH=len(body))
         fs = FieldStorage(multipart_body, environ=environ)
         vars = MultiDict.from_fieldstorage(fs)
-        self.assertEqual(vars['title'].encode('utf8'),
-                         u'こんにちは'.encode('utf8'))
+        self.assertEqual(vars['title'], text_('こんにちは', 'utf8'))
 
 class MultiDictTestCase(BaseDictTests, unittest.TestCase):
     klass = multidict.MultiDict
