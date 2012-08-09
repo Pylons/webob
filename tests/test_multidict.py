@@ -153,7 +153,7 @@ class BaseDictTests(object):
 
     def test_from_fieldstorage_with_charset(self):
         from cgi import FieldStorage
-        from webob.request import BaseRequest, FakeCGIBody
+        from webob.request import BaseRequest
         from webob.multidict import MultiDict
         multipart_type = 'multipart/form-data; boundary=foobar'
         from io import BytesIO
@@ -172,7 +172,8 @@ class BaseDictTests(object):
         environ.update(CONTENT_LENGTH=len(body))
         fs = FieldStorage(multipart_body, environ=environ)
         vars = MultiDict.from_fieldstorage(fs)
-        self.assertEqual(vars['title'], text_('こんにちは', 'utf8'))
+        self.assertEqual(vars['title'].encode('utf8'),
+                         text_('こんにちは', 'utf8').encode('utf8'))
 
 class MultiDictTestCase(BaseDictTests, unittest.TestCase):
     klass = multidict.MultiDict
