@@ -3413,7 +3413,8 @@ class TestRequestMultipart(unittest.TestCase):
     def test_multipart_with_charset(self):
         from webob.request import Request
         req = Request.from_string(_test_req_multipart_charset)
-        self.assertEqual(req.POST['title'], text_('こんにちは', 'utf-8'))
+        self.assertEqual(req.POST['title'].encode('utf8'),
+                         text_('こんにちは', 'utf-8').encode('utf8'))
 
 def simpleapp(environ, start_response):
     from webob.request import Request
