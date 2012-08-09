@@ -153,7 +153,7 @@ class BaseDictTests(object):
 
     def test_from_fieldstorage_with_charset(self):
         from cgi import FieldStorage
-        from webob.request import BaseRequest, FakeCGIBody
+        from webob.request import BaseRequest
         from webob.multidict import MultiDict
         multipart_type = 'multipart/form-data; boundary=foobar'
         from io import BytesIO
