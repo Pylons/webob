@@ -1,6 +1,15 @@
 News
 ====
 
+1.2.2
+------------
+
+* Fix multiple calls to ``cache_expires()`` not fully overriding the
+  previously set headers.
+
+* Fix parsing of form submissions where fields have different encodings.
+
+
 1.2.1
 ------------
 
