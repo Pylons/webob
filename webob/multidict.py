@@ -77,10 +77,8 @@ class MultiDict(MutableMapping):
                 obj.add(field.name, field)
             else:
                 value = field.value
-                print "field", value
                 if transfer_encoding in ['base64', 'quoted-printable']:
                     value = value.decode(transfer_encoding)
-                print "field after transfer_encoding decode", value
                 obj.add(field.name, decode(value))
         return obj
 
