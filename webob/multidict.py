@@ -63,6 +63,7 @@ class MultiDict(MutableMapping):
         # fs.list can be None when there's nothing to parse
         for field in fs.list or ():
             charset = field.type_options.get('charset', 'utf8')
+            transfer_encoding = field.headers.get('Content-Transfer-Encoding', None)
             if PY3: # pragma: no cover
                 if charset == 'utf8':
                     decode = lambda b: b
@@ -75,7 +76,10 @@ class MultiDict(MutableMapping):
                 field.filename = decode(field.filename)
                 obj.add(field.name, field)
             else:
-                obj.add(field.name, decode(field.value))
+                value = field.value
+                if transfer_encoding in ['base64', 'quoted-printable']:
+                    value = value.decode(transfer_encoding)
+                obj.add(field.name, decode(value))
         return obj
 
     def __getitem__(self, key):
