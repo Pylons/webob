@@ -6,6 +6,7 @@ Gives a multi-value dictionary object (MultiDict) plus several wrappers
 """
 from collections import MutableMapping
 
+import binascii
 import warnings
 
 from webob.compat import (
@@ -64,6 +65,10 @@ class MultiDict(MutableMapping):
         for field in fs.list or ():
             charset = field.type_options.get('charset', 'utf8')
             transfer_encoding = field.headers.get('Content-Transfer-Encoding', None)
+            supported_tranfer_encoding = {
+                'base64' : binascii.a2b_base64,
+                'quoted-printable' : binascii.a2b_qp
+                }
             if PY3: # pragma: no cover
                 if charset == 'utf8':
                     decode = lambda b: b
@@ -71,14 +76,19 @@ class MultiDict(MutableMapping):
                     decode = lambda b: b.encode('utf8').decode(charset)
             else:
                 decode = lambda b: b.decode(charset)
-            field.name = decode(field.name)
             if field.filename:
                 field.filename = decode(field.filename)
                 obj.add(field.name, field)
             else:
                 value = field.value
-                if transfer_encoding in ['base64', 'quoted-printable']:
-                    value = value.decode(transfer_encoding)
+                if transfer_encoding in supported_tranfer_encoding:
+                  if PY3:
+                      # binascii accepts bytes
+                      value = value.encode('utf8')
+                  value = supported_tranfer_encoding[transfer_encoding](value)
+                  if PY3:
+                      # binascii returns bytes
+                      value = value.decode('utf8')
                 obj.add(field.name, decode(value))
         return obj
 
