@@ -175,7 +175,7 @@ class BaseDictTests(object):
         self.assertEqual(vars['title'].encode('utf8'),
                          text_('こんにちは', 'utf8').encode('utf8'))
 
-    def test_from_fieldstorage_with_content_tranfer_encoding(self):
+    def test_from_fieldstorage_with_base64_encoding(self):
         from cgi import FieldStorage
         from webob.request import BaseRequest
         from webob.multidict import MultiDict
@@ -199,6 +199,32 @@ class BaseDictTests(object):
         vars = MultiDict.from_fieldstorage(fs)
         self.assertEqual(vars['title'].encode('utf8'),
                          text_('こんにちは', 'utf8').encode('utf8'))
+
+    def test_from_fieldstorage_with_quoted_printable_encoding(self):
+        from cgi import FieldStorage
+        from webob.request import BaseRequest
+        from webob.multidict import MultiDict
+        multipart_type = 'multipart/form-data; boundary=foobar'
+        from io import BytesIO
+        body = (
+            b'--foobar\r\n'
+            b'Content-Disposition: form-data; name="title"\r\n'
+            b'Content-type: text/plain; charset="ISO-2022-JP"\r\n'
+            b'Content-Transfer-Encoding: quoted-printable\r\n'
+            b'\r\n'
+            b'=1B$B$3$s$K$A$O=1B(B'
+            b'\r\n'
+            b'--foobar--')
+        multipart_body = BytesIO(body)
+        environ = BaseRequest.blank('/').environ
+        environ.update(CONTENT_TYPE=multipart_type)
+        environ.update(REQUEST_METHOD='POST')
+        environ.update(CONTENT_LENGTH=len(body))
+        fs = FieldStorage(multipart_body, environ=environ)
+        vars = MultiDict.from_fieldstorage(fs)
+        self.assertEqual(vars['title'].encode('utf8'),
+                         text_('こんにちは', 'utf8').encode('utf8'))
+
 
 class MultiDictTestCase(BaseDictTests, unittest.TestCase):
     klass = multidict.MultiDict
