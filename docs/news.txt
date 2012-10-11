@@ -7,6 +7,12 @@ tip
 * Maintainership transferred to `Pylons Project <http://www.pylonsproject.org/>`
 
 
+1.2.3
+------------
+
+* Fix parsing of form submissions where fields have
+  transfer-content-encoding headers.
+
 1.2.2
 ------------
 
