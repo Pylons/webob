@@ -82,11 +82,11 @@ class MultiDict(MutableMapping):
             else:
                 value = field.value
                 if transfer_encoding in supported_tranfer_encoding:
-                    if PY3:
+                    if PY3: # pragma: no cover
                         # binascii accepts bytes
                         value = value.encode('utf8')
                     value = supported_tranfer_encoding[transfer_encoding](value)
-                    if PY3:
+                    if PY3: # pragma: no cover
                         # binascii returns bytes
                         value = value.decode('utf8')
                 obj.add(field.name, decode(value))
