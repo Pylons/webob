@@ -2,7 +2,7 @@ from setuptools import setup
 
 version = '1.2.2'
 
-testing_extras = ['nose']
+testing_extras = ['nose', 'coverage']
 
 docs_extras = ['Sphinx']
 
