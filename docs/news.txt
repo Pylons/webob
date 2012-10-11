@@ -6,7 +6,6 @@ News
 
 * Maintainership transferred to `Pylons Project <http://www.pylonsproject.org/>`
 
-
 * Fix parsing of form submissions where fields have
   transfer-content-encoding headers.
 
