@@ -110,6 +110,9 @@ status_reasons = {
     423: 'Locked',
     424: 'Failed Dependency',
     426: 'Upgrade Required',
+    428: 'Precondition Required',
+    429: 'Too Many Requests',
+    431: 'Request Header Fields Too Large',
 
     # Server Error
     500: 'Internal Server Error',
@@ -120,6 +123,7 @@ status_reasons = {
     505: 'HTTP Version Not Supported',
     507: 'Insufficient Storage',
     510: 'Not Extended',
+    511: 'Network Authentication Required',
 }
 
 # generic class responses as per RFC2616
