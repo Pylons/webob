@@ -1,6 +1,12 @@
 News
 ====
 
+Next release
+------------
+
+- Added status codes 428, 429, 431 and 511 to ``util.status_reasons`` (they
+  were already present in a previous release as ``webob.exc`` exceptions).
+
 1.2.3
 ------------
 
