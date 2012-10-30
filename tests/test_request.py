@@ -2662,7 +2662,7 @@ class TestRequest_functional(unittest.TestCase):
             self.assertTrue(i in r.headers and
                 'HTTP_'+i.upper().replace('-', '_') in r.environ)
         r.headers = {'Server':'Apache'}
-        self.assertEqual(list(r.environ.keys()), ['a',  'HTTP_SERVER'])
+        self.assertEqual(set(r.environ.keys()), set(['a',  'HTTP_SERVER']))
 
     def test_host_url(self):
         # Request has a read only property host_url that combines several
