@@ -7,6 +7,10 @@ Next release
 - Added status codes 428, 429, 431 and 511 to ``util.status_reasons`` (they
   were already present in a previous release as ``webob.exc`` exceptions).
 
+- MIMEAccept happily parsed malformed wildcard strings like "image/pn*" at
+  parse time, but then threw an AssertionError during matching.  See
+  https://github.com/Pylons/webob/pull/83 .
+
 1.2.3
 ------------
 
