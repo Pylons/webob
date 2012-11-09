@@ -279,6 +279,10 @@ class MIMEAccept(Accept):
                 continue
             if mask_major == '*' and mask_minor != '*':
                 continue
+            if mask_major != "*" and "*" in mask_major:
+                continue
+            if mask_minor != "*" and "*" in mask_minor:
+                continue
             yield ("%s/%s" % (mask_major, mask_minor), q)
 
     def accept_html(self):
