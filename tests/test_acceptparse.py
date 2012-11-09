@@ -254,6 +254,8 @@ def test_mime_init():
     assert mimeaccept._parsed == []
     mimeaccept = MIMEAccept('image/pn*')
     assert mimeaccept._parsed == []
+    mimeaccept = MIMEAccept('imag*/png')
+    assert mimeaccept._parsed == []
     mimeaccept = MIMEAccept('image/*')
     assert mimeaccept._parsed == [('image/*', 1)]
 
