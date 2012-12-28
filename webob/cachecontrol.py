@@ -226,4 +226,3 @@ def serialize_cache_control(properties):
             value = '"%s"' % value
         parts.append('%s=%s' % (name, value))
     return ', '.join(parts)
-

@@ -62,7 +62,7 @@ def test_ResponseHeaders_mixed():
     result = d.mixed()
     eq_(result, {'a':[1,2], 'b':1})
 
-def test_ResponseHeaders_setitem_scalar_replaces_seq(): 
+def test_ResponseHeaders_setitem_scalar_replaces_seq():
     d = headers.ResponseHeaders()
     d.add('a', 2)
     d['a'] = 1
