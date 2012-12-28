@@ -46,4 +46,3 @@ class bytes_Tests(unittest.TestCase):
         result = self._callFUT(val, 'utf-8')
         self.assertTrue(isinstance(result, bytes))
         self.assertEqual(result, b'La Pe\xc3\xb1a')
-

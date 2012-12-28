@@ -721,7 +721,8 @@ class _TestEnvironDecoder(object):
                              b'\xc3\xab'.decode('latin-1'))
         else:
             self.assertEqual(req.environ['HTTP_X_AKEY'], b'\xc3\xab')
-        
+
+
 class TestEnvironDecoder(unittest.TestCase, _TestEnvironDecoder):
     def _makeRequest(self):
         from webob.request import BaseRequest
@@ -758,4 +759,3 @@ class TestEnvironDecoderLegacy(unittest.TestCase, _TestEnvironDecoder):
         req = self._makeRequest()
         desc = self._callFUT('akey', default=b'the_default')
         self.assertEqual(desc.fget(req).__class__, bytes)
-
