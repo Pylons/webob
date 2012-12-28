@@ -114,4 +114,3 @@ def serialize_date_delta(value):
         return str(int(value))
     else:
         return serialize_date(value)
-

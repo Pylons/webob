@@ -325,9 +325,3 @@ class TestRequestCookies(unittest.TestCase):
         self.assertTrue(r.startswith(
             '<RequestCookies (dict-like) with values '))
         self.assertTrue(r.endswith('>'))
-
-
-
-
-
-

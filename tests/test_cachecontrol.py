@@ -260,7 +260,3 @@ class TestCacheControl(unittest.TestCase):
         cc = self.make_one({'a':'1'}, 'typ')
         result = repr(cc)
         self.assertEqual(result, "<CacheControl 'a=1'>")
-
-
-
-

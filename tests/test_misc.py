@@ -132,5 +132,3 @@ def test_multidict_init():
 
     # TypeError: MultiDict.view_list(obj) takes only actual list objects, not None
     assert_raises(TypeError, MultiDict.view_list, None)
-
-

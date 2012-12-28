@@ -91,7 +91,7 @@ class RequestCookies(collections.MutableMapping):
         if not _valid_cookie_name(bytes_cookie_name):
             raise TypeError('cookie name must be valid according to RFC 2109')
         return name
-            
+
     def __setitem__(self, name, value):
         name = self._valid_cookie_name(name)
         if not isinstance(value, string_types):
@@ -149,7 +149,8 @@ class RequestCookies(collections.MutableMapping):
 
     def __repr__(self):
         return '<RequestCookies (dict-like) with values %r>' % (self._cache,)
-    
+
+
 class Cookie(dict):
     def __init__(self, input=None):
         if input:
