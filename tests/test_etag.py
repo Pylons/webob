@@ -169,4 +169,3 @@ class IfRangeTests(unittest.TestCase):
             repr(ir),
             'IfRangeDate(datetime.datetime(2001, 11, 9, 1, 8, 47, tzinfo=UTC))'
         )
-
