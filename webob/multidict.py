@@ -6,6 +6,7 @@ Gives a multi-value dictionary object (MultiDict) plus several wrappers
 """
 from collections import MutableMapping
 
+import binascii
 import warnings
 
 from webob.compat import (
@@ -32,7 +33,7 @@ class MultiDict(MutableMapping):
             if hasattr(args[0], 'iteritems'):
                 items = list(args[0].iteritems())
             elif hasattr(args[0], 'items'):
-                items = args[0].items()
+                items = list(args[0].items())
             else:
                 items = list(args[0])
             self._items = items
@@ -61,17 +62,34 @@ class MultiDict(MutableMapping):
         """
         obj = cls()
         # fs.list can be None when there's nothing to parse
-        if PY3: # pragma: no cover
-            decode = lambda b: b
-        else:
-            decode = lambda b: b.decode('utf8')
         for field in fs.list or ():
-            field.name = decode(field.name)
+            charset = field.type_options.get('charset', 'utf8')
+            transfer_encoding = field.headers.get('Content-Transfer-Encoding', None)
+            supported_tranfer_encoding = {
+                'base64' : binascii.a2b_base64,
+                'quoted-printable' : binascii.a2b_qp
+                }
+            if PY3: # pragma: no cover
+                if charset == 'utf8':
+                    decode = lambda b: b
+                else:
+                    decode = lambda b: b.encode('utf8').decode(charset)
+            else:
+                decode = lambda b: b.decode(charset)
             if field.filename:
                 field.filename = decode(field.filename)
                 obj.add(field.name, field)
             else:
-                obj.add(field.name, decode(field.value))
+                value = field.value
+                if transfer_encoding in supported_tranfer_encoding:
+                    if PY3: # pragma: no cover
+                        # binascii accepts bytes
+                        value = value.encode('utf8')
+                    value = supported_tranfer_encoding[transfer_encoding](value)
+                    if PY3: # pragma: no cover
+                        # binascii returns bytes
+                        value = value.decode('utf8')
+                obj.add(field.name, decode(value))
         return obj
 
     def __getitem__(self, key):
@@ -97,11 +115,7 @@ class MultiDict(MutableMapping):
         """
         Return a list of all values matching the key (may be an empty list)
         """
-        result = []
-        for k, v in self._items:
-            if key == k:
-                result.append(v)
-        return result
+        return [v for k, v in self._items if k == key]
 
     def getone(self, key):
         """

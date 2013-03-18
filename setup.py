@@ -1,8 +1,8 @@
 from setuptools import setup
 
-version = '1.2'
+version = '1.2.3'
 
-testing_extras = ['nose']
+testing_extras = ['nose', 'coverage']
 
 docs_extras = ['Sphinx']
 
@@ -43,8 +43,7 @@ You may install the `in-development version of WebOb
     keywords='wsgi request web http',
     author='Ian Bicking',
     author_email='ianb@colorstudy.com',
-    maintainer='Sergey Schetinin',
-    maintainer_email='sergey@maluke.com',
+    maintainer='Pylons Project',
     url='http://webob.org/',
     license='MIT',
     packages=['webob'],

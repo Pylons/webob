@@ -22,6 +22,15 @@ def test_init_accept_accept_charset():
                               ('unicode-1-1', 0.80000000000000004),
                               ('iso-8859-1', 1)]
 
+def test_init_accept_accept_charset_mixedcase():
+    """3.4 Character Sets
+           [...]
+           HTTP character sets are identified by case-insensitive tokens."""
+    accept = AcceptCharset('ISO-8859-5, UNICODE-1-1;q=0.8')
+    assert accept._parsed == [('iso-8859-5', 1),
+                              ('unicode-1-1', 0.80000000000000004),
+                              ('iso-8859-1', 1)]
+
 def test_init_accept_accept_charset_with_iso_8859_1():
     accept = Accept('iso-8859-1')
     assert accept._parsed == [('iso-8859-1', 1)]
@@ -243,6 +252,10 @@ def test_mime_init():
     assert mimeaccept._parsed == [('*/*', 1)]
     mimeaccept = MIMEAccept('*/png')
     assert mimeaccept._parsed == []
+    mimeaccept = MIMEAccept('image/pn*')
+    assert mimeaccept._parsed == []
+    mimeaccept = MIMEAccept('imag*/png')
+    assert mimeaccept._parsed == []
     mimeaccept = MIMEAccept('image/*')
     assert mimeaccept._parsed == [('image/*', 1)]
 
@@ -263,6 +276,26 @@ def test_match():
 def test_accept_json():
     mimeaccept = MIMEAccept('text/html, *; q=.2, */*; q=.2')
     assert mimeaccept.best_match(['application/json']) == 'application/json'
+
+def test_accept_mixedcase():
+    """3.7 Media Types
+           [...]
+           The type, subtype, and parameter attribute names are case-
+           insensitive."""
+    mimeaccept = MIMEAccept('text/HtMl')
+    assert mimeaccept.accept_html()
+
+def test_match_mixedcase():
+    mimeaccept = MIMEAccept('image/jpg; q=.2, Image/pNg; Q=.4, image/*; q=.05')
+    assert mimeaccept.best_match(['Image/JpG']) == 'Image/JpG'
+    assert mimeaccept.best_match(['image/Tiff']) == 'image/Tiff'
+    assert mimeaccept.best_match(['image/Tiff', 'image/PnG', 'image/jpg']) == 'image/PnG'
+
+def test_match_uppercase_q():
+    """The relative-quality-factor "q" parameter is defined as an exact string
+       in "14.1 Accept" BNF grammar"""
+    mimeaccept = MIMEAccept('image/jpg; q=.4, Image/pNg; Q=.2, image/*; q=.05')
+    assert mimeaccept._parsed == [('image/jpg', 0.4), ('image/png', 1), ('image/*', 0.05)]
 
 # property tests
 

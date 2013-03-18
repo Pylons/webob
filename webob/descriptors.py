@@ -336,4 +336,3 @@ def serialize_auth(val):
         assert isinstance(params, str)
         return '%s %s' % (authtype, params)
     return val
-

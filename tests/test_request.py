@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import collections
 import sys
 import unittest
@@ -2673,7 +2675,7 @@ class TestRequest_functional(unittest.TestCase):
             self.assertTrue(i in r.headers and
                 'HTTP_'+i.upper().replace('-', '_') in r.environ)
         r.headers = {'Server':'Apache'}
-        self.assertEqual(list(r.environ.keys()), ['a',  'HTTP_SERVER'])
+        self.assertEqual(set(r.environ.keys()), set(['a',  'HTTP_SERVER']))
 
     def test_host_url(self):
         # Request has a read only property host_url that combines several
@@ -3243,7 +3245,7 @@ class FakeCGIBodyTests(unittest.TestCase):
         body = (
             b'--foobar\r\n'
             b'Content-Disposition: form-data; name="bananas"; filename="bananas.txt"\r\n'
-            b'Content-type: text/plain; charset="utf-9"\r\n'
+            b'Content-type: text/plain; charset="utf-7"\r\n'
             b'\r\n'
             b"these are the contents of the file 'bananas.txt'\r\n"
             b'\r\n'
@@ -3415,10 +3417,21 @@ class Test_environ_from_url(unittest.TestCase):
 
     def test_fileupload_mime_type_detection(self):
         from webob.request import Request
-        request = Request.blank("/", POST=dict(file1=("foo.jpg", "xxx"),
+        # sometimes on win the detected mime type for .jpg will be image/pjpeg for ex.
+        # so we use a non-standard extesion to avoid that
+        import mimetypes
+        mimetypes.add_type('application/x-foo', '.foo')
+        request = Request.blank("/", POST=dict(file1=("foo.foo", "xxx"),
                                                file2=("bar.mp3", "xxx")))
-        self.assert_("audio/mpeg" in request.body, str(request))
-        self.assert_("image/jpeg" in request.body, str(request))
+        self.assert_("audio/mpeg" in request.body.decode('ascii'), str(request))
+        self.assert_('application/x-foo' in request.body.decode('ascii'), str(request))
+
+class TestRequestMultipart(unittest.TestCase):
+    def test_multipart_with_charset(self):
+        from webob.request import Request
+        req = Request.from_string(_test_req_multipart_charset)
+        self.assertEqual(req.POST['title'].encode('utf8'),
+                         text_('こんにちは', 'utf-8').encode('utf8'))
 
 def simpleapp(environ, start_response):
     from webob.request import Request
@@ -3489,8 +3502,45 @@ Content-Length: 0
 
 """
 
+_test_req_multipart_charset = b"""
+POST /upload/ HTTP/1.1
+Host: foo.com
+User-Agent: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.13) Gecko/20101206 Ubuntu/10.04 (lucid) Firefox/3.6.13
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-US,en;q=0.8,ja;q=0.6
+Accept-Encoding: gzip,deflate
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+Content-Type: multipart/form-data; boundary=000e0ce0b196b4ee6804c6c8af94
+Content-Length: 926
+
+--000e0ce0b196b4ee6804c6c8af94
+Content-Type: text/plain; charset=ISO-2022-JP
+Content-Disposition: form-data; name=title
+Content-Transfer-Encoding: 7bit
+
+\x1b$B$3$s$K$A$O\x1b(B
+--000e0ce0b196b4ee6804c6c8af94
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Disposition: form-data; name=submit
+
+Submit
+--000e0ce0b196b4ee6804c6c8af94
+Content-Type: message/external-body; charset=ISO-8859-1; blob-key=AMIfv94TgpPBtKTL3a0U9Qh1QCX7OWSsmdkIoD2ws45kP9zQAGTOfGNz4U18j7CVXzODk85WtiL5gZUFklTGY3y4G0Jz3KTPtJBOFDvQHQew7YUymRIpgUXgENS_fSEmInAIQdpSc2E78MRBVEZY392uhph3r-In96t8Z58WIRc-Yikx1bnarWo
+Content-Disposition: form-data; name=file; filename="photo.jpg"
+
+Content-Type: image/jpeg
+Content-Length: 38491
+X-AppEngine-Upload-Creation: 2012-08-08 15:32:29.035959
+Content-MD5: ZjRmNGRhYmNhZTkyNzcyOWQ5ZGUwNDgzOWFkNDAxN2Y=
+Content-Disposition: form-data; name=file; filename="photo.jpg"
+
+
+--000e0ce0b196b4ee6804c6c8af94--"""
+
+
 _test_req = _norm_req(_test_req)
 _test_req2 = _norm_req(_test_req2) + b'\r\n'
+_test_req_multipart_charset = _norm_req(_test_req_multipart_charset)
 
 class UnseekableInput(object):
     def __init__(self, data):

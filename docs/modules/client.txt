@@ -9,4 +9,4 @@ Client
 .. autoclass:: SendRequest
    :members:
 
-.. autoclass:: send_request
+.. autoclass:: send_request_app

@@ -199,7 +199,7 @@ Some examples:
 
     >>> req = Request.blank('/test?check=a&check=b&name=Bob')
     >>> req.GET
-    UnicodeMultiDict([(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob')])
+    MultiDict([(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob')])
     >>> req.GET['check']
     u'b'
     >>> req.GET.getall('check')
@@ -219,7 +219,7 @@ POST.  Until we do that, the variables are boring:
     >>> req.method = 'POST'
     >>> req.body = 'name=Joe&email=joe@example.com'
     >>> req.POST
-    UnicodeMultiDict([(u'name', u'Joe'), (u'email', u'joe@example.com')])
+    MultiDict([(u'name', u'Joe'), (u'email', u'joe@example.com')])
     >>> req.POST['name']
     u'Joe'
 
@@ -255,9 +255,9 @@ Content-Type.
     >>> req.environ['CONTENT_LENGTH'] = str(len(req.body))
     >>> req.environ['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
     >>> req.GET
-    UnicodeMultiDict([(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob')])
+    MultiDict([(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob')])
     >>> req.POST
-    UnicodeMultiDict([(u'var1', u'value1'), (u'var2', u'value2'), (u'rep', u'1'), (u'rep', u'2')])
+    MultiDict([(u'var1', u'value1'), (u'var2', u'value2'), (u'rep', u'1'), (u'rep', u'2')])
 
 Unicode Variables
 ~~~~~~~~~~~~~~~~~
@@ -274,7 +274,7 @@ all the variables:
 
     >>> req.charset = 'utf8'
     >>> req.GET
-    UnicodeMultiDict([(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob')])
+    MultiDict([(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob')])
 
 Cookies
 -------
@@ -286,7 +286,7 @@ they will be decoded into Unicode strings if you set the charset.
 
     >>> req.headers['Cookie'] = 'test=value'
     >>> req.cookies
-    UnicodeMultiDict([(u'test', u'value')])
+    MultiDict([(u'test', u'value')])
 
 Modifying the request
 ---------------------

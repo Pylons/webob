@@ -1,6 +1,48 @@
 News
 ====
 
+Next release
+------------
+
+- Added status codes 428, 429, 431 and 511 to ``util.status_reasons`` (they
+  were already present in a previous release as ``webob.exc`` exceptions).
+
+- MIMEAccept happily parsed malformed wildcard strings like "image/pn*" at
+  parse time, but then threw an AssertionError during matching.  See
+  https://github.com/Pylons/webob/pull/83 .
+
+1.2.3
+------------
+
+* Maintainership transferred to `Pylons Project <http://www.pylonsproject.org/>`
+
+* Fix parsing of form submissions where fields have
+  transfer-content-encoding headers.
+
+1.2.2
+------------
+
+* Fix multiple calls to ``cache_expires()`` not fully overriding the
+  previously set headers.
+
+* Fix parsing of form submissions where fields have different encodings.
+
+
+1.2.1
+------------
+
+* Add index page (e.g., ``index.html``) support for
+  :class:`webob.static.DirectoryApp`.
+
+* Detect mime-type when creating a test request with file uploads
+  (``Request.blank("/", POST=dict(file1=("foo.jpg", "xxx")))``)
+
+* Relax parsing of ``Accept`` and ``Range`` headers to allow
+  uppercase and extra whitespace.
+
+* Fix docs references to some deprecated classes.
+
+
 1.2
 ------------
 
