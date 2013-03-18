@@ -827,7 +827,12 @@ class TestRequestCommon(unittest.TestCase):
                           '/', content_type='application/json', POST={})
 
     def test_blank__post_urlencoded(self):
-        request = self._blankOne('/', POST={'first':1, 'second':2})
+        from webob.multidict import MultiDict
+        POST = MultiDict()
+        POST["first"] = 1
+        POST["second"] = 2
+
+        request = self._blankOne('/', POST=POST)
         self.assertEqual(request.method, 'POST')
         self.assertEqual(request.content_type,
                          'application/x-www-form-urlencoded')
@@ -835,9 +840,15 @@ class TestRequestCommon(unittest.TestCase):
         self.assertEqual(request.content_length, 16)
 
     def test_blank__post_multipart(self):
-        request = self._blankOne(
-            '/', POST={'first':'1', 'second':'2'},
-            content_type='multipart/form-data; boundary=boundary')
+        from webob.multidict import MultiDict
+        POST = MultiDict()
+        POST["first"] = "1"
+        POST["second"] = "2"
+
+
+        request = self._blankOne('/', 
+                                 POST=POST,
+                                 content_type='multipart/form-data; boundary=boundary')
         self.assertEqual(request.method, 'POST')
         self.assertEqual(request.content_type, 'multipart/form-data')
         expected = (
@@ -854,9 +865,11 @@ class TestRequestCommon(unittest.TestCase):
     def test_blank__post_files(self):
         import cgi
         from webob.request import _get_multipart_boundary
-        POST = {'first':('filename1', BytesIO(b'1')),
-                       'second':('filename2', '2'),
-                       'third': '3'}
+        from webob.multidict import MultiDict
+        POST = MultiDict()
+        POST["first"] = ('filename1', BytesIO(b'1'))
+        POST["second"] = ('filename2', '2')
+        POST["third"] = "3"
         request = self._blankOne('/', POST=POST)
         self.assertEqual(request.method, 'POST')
         self.assertEqual(request.content_type, 'multipart/form-data')
