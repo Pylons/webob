@@ -967,7 +967,7 @@ def test_encode_content_gzip_buffer_coverage():
     res.app_iter = io.BytesIO(DATA)
     res.encode_content('gzip')
     result = list(res.app_iter)
-    assert len(result) < DATA
+    assert len("".join(result)) < DATA
 
 def test_decode_content_identity():
     res = Response()
