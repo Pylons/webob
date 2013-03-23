@@ -1455,7 +1455,8 @@ def environ_add_POST(env, data, content_type=None):
         env['REQUEST_METHOD'] = 'POST'
     has_files = False
     if hasattr(data, 'items'):
-        for k, v in data.items():
+        data = list(data.items())
+        for k, v in data:
             if isinstance(v, (tuple, list)):
                 has_files = True
                 break
@@ -1466,7 +1467,7 @@ def environ_add_POST(env, data, content_type=None):
             content_type = 'application/x-www-form-urlencoded'
     if content_type.startswith('multipart/form-data'):
         if not isinstance(data, bytes):
-            content_type, data = _encode_multipart(data.items(), content_type)
+            content_type, data = _encode_multipart(data, content_type)
     elif content_type.startswith('application/x-www-form-urlencoded'):
         if has_files:
             raise ValueError('Submiting files is not allowed for'
