@@ -11,6 +11,9 @@ Next release
   parse time, but then threw an AssertionError during matching.  See
   https://github.com/Pylons/webob/pull/83 .
 
+- Preserve document ordering of GET and POST request data when POST data passed
+  to Request.blank is a MultiDict.  See https://github.com/Pylons/webob/pull/96
+
 1.2.3
 ------------
 
