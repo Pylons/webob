@@ -941,7 +941,6 @@ def test_encode_content_gzip_notyet_gzipped():
     eq_(res.content_length, 23)
     eq_(res.app_iter, [
         b'\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff',
-        b'',
         b'K\xcb\xcf\x07\x00',
         b'!es\x8c\x03\x00\x00\x00'
         ])
@@ -954,10 +953,21 @@ def test_encode_content_gzip_notyet_gzipped_lazy():
     eq_(res.content_length, None)
     eq_(list(res.app_iter), [
         b'\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff',
-        b'',
         b'K\xcb\xcf\x07\x00',
         b'!es\x8c\x03\x00\x00\x00'
         ])
+
+def test_encode_content_gzip_buffer_coverage():
+    """this test is to provide 100% coverage of
+    response.Response.encode_content was necessary in order to get
+    pull request https://github.com/Pylons/webob/pull/85 into upstream
+    """
+    res = Response()
+    DATA = b"abcdefghijklmnopqrstuvwxyz0123456789" * 1000000
+    res.app_iter = io.BytesIO(DATA)
+    res.encode_content('gzip')
+    result = list(res.app_iter)
+    assert len("".join(result)) < len(DATA)
 
 def test_decode_content_identity():
     res = Response()

@@ -1277,8 +1277,18 @@ def gzip_app_iter(app_iter):
     for item in app_iter:
         size += len(item)
         crc = zlib.crc32(item, crc) & 0xffffffff
-        yield compress.compress(item)
-    yield compress.flush()
+
+        # The compress function may return zero length bytes if the input is
+        # small enough; it buffers the input for the next iteration or for a
+        # flush.
+        result = compress.compress(item)
+        if result:
+            yield result
+
+    # Similarly, flush may also not yield a value.
+    result = compress.flush()
+    if result:
+        yield result
     yield struct.pack("<2L", crc, size & 0xffffffff)
 
 def _error_unicode_in_app_iter(app_iter, body):
