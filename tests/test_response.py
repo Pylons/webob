@@ -941,7 +941,6 @@ def test_encode_content_gzip_notyet_gzipped():
     eq_(res.content_length, 23)
     eq_(res.app_iter, [
         b'\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff',
-        b'',
         b'K\xcb\xcf\x07\x00',
         b'!es\x8c\x03\x00\x00\x00'
         ])
@@ -954,7 +953,6 @@ def test_encode_content_gzip_notyet_gzipped_lazy():
     eq_(res.content_length, None)
     eq_(list(res.app_iter), [
         b'\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff',
-        b'',
         b'K\xcb\xcf\x07\x00',
         b'!es\x8c\x03\x00\x00\x00'
         ])
