@@ -56,7 +56,7 @@ class DecoratorTests(unittest.TestCase):
         def test_app(req):
             raise HTTPBadRequest
         resp = self._testit(test_app, '/a url')
-        self.assert_(resp.body.startswith(b'400 Bad Request'))
+        self.assertTrue(resp.body.startswith(b'400 Bad Request'))
         self.assertEqual(resp.content_type, 'text/plain')
         self.assertEqual(resp.charset, 'UTF-8')
 
@@ -69,7 +69,7 @@ class DecoratorTests(unittest.TestCase):
         test_app = wsgify(TestApp())
         resp = self._testit(test_app, '/a url')
         self.assertEqual(resp.body, b'nothing to see here')
-        self.assert_(test_app.__get__(test_app) is test_app)
+        self.assertTrue(test_app.__get__(test_app) is test_app)
 
     def test_wsgify_app_returns_unicode(self):
         def test_app(req):
@@ -134,7 +134,7 @@ class DecoratorTests(unittest.TestCase):
         def test_app(req):
             return Response('whoa')
         wrapped_test_app = wsgify(test_app)
-        self.assert_(wrapped_test_app.undecorated is test_app)
+        self.assertTrue(wrapped_test_app.undecorated is test_app)
 
     def test_wsgify_custom_request(self):
         resp_str = 'hey, this is a test: %s'
@@ -157,9 +157,9 @@ class DecoratorTests(unittest.TestCase):
             req.urlvars.update(vars)
             return app(req)
         from webob.dec import _MiddlewareFactory
-        self.assert_(set_urlvar.__class__ is _MiddlewareFactory)
+        self.assertTrue(set_urlvar.__class__ is _MiddlewareFactory)
         r = repr(set_urlvar)
-        self.assert_('set_urlvar' in r)
+        self.assertTrue('set_urlvar' in r)
         @wsgify
         def show_vars(req):
             return resp_str % (sorted(req.urlvars.items()))
@@ -176,18 +176,18 @@ class DecoratorTests(unittest.TestCase):
             return Response('Say wha!?')
         unbound = wsgify.middleware(None, test_app, some='thing')
         from webob.dec import _UnboundMiddleware
-        self.assert_(unbound.__class__ is _UnboundMiddleware)
+        self.assertTrue(unbound.__class__ is _UnboundMiddleware)
         self.assertEqual(unbound.kw, dict(some='thing'))
         @unbound
         def middle(req, app, **kw):
             return app(req)
-        self.assert_(middle.__class__ is wsgify)
+        self.assertTrue(middle.__class__ is wsgify)
         self.assertTrue('test_app' in repr(unbound))
 
     def test_unbound_middleware_no_app(self):
         unbound = wsgify.middleware(None, None)
         from webob.dec import _UnboundMiddleware
-        self.assert_(unbound.__class__ is _UnboundMiddleware)
+        self.assertTrue(unbound.__class__ is _UnboundMiddleware)
         self.assertEqual(unbound.kw, dict())
 
     def test_classapp(self):

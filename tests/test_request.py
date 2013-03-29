@@ -3423,8 +3423,8 @@ class Test_environ_from_url(unittest.TestCase):
         mimetypes.add_type('application/x-foo', '.foo')
         request = Request.blank("/", POST=dict(file1=("foo.foo", "xxx"),
                                                file2=("bar.mp3", "xxx")))
-        self.assert_("audio/mpeg" in request.body.decode('ascii'), str(request))
-        self.assert_('application/x-foo' in request.body.decode('ascii'), str(request))
+        self.assertTrue("audio/mpeg" in request.body.decode('ascii'), str(request))
+        self.assertTrue('application/x-foo' in request.body.decode('ascii'), str(request))
 
 class TestRequestMultipart(unittest.TestCase):
     def test_multipart_with_charset(self):
