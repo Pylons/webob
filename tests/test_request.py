@@ -33,7 +33,8 @@ class TestRequestCommon(unittest.TestCase):
         return cls.blank(*arg, **kw)
 
     def test_ctor_environ_getter_raises_WTF(self):
-        self.assertRaises(TypeError, self._makeOne, {}, environ_getter=object())
+        self.assertRaises(TypeError,
+                          self._makeOne, {}, environ_getter=object())
 
     def test_ctor_wo_environ_raises_WTF(self):
         self.assertRaises(TypeError, self._makeOne, None)
@@ -96,7 +97,8 @@ class TestRequestCommon(unittest.TestCase):
 
     def test_body_file_setter_w_bytes(self):
         req = self._blankOne('/')
-        self.assertRaises(DeprecationWarning, setattr, req, 'body_file', b'foo')
+        self.assertRaises(DeprecationWarning,
+                          setattr, req, 'body_file', b'foo')
 
     def test_body_file_setter_non_bytes(self):
         BEFORE = BytesIO(b'before')
@@ -483,7 +485,8 @@ class TestRequestCommon(unittest.TestCase):
         req = self._makeOne(environ)
         result = req.POST
         self.assertTrue(isinstance(result, NoVars))
-        self.assertTrue(result.reason.startswith('Not an HTML form submission'))
+        self.assertTrue(result.reason.startswith(
+                                        'Not an HTML form submission'))
 
     def test_PUT_bad_content_type(self):
         from webob.multidict import NoVars
@@ -496,7 +499,8 @@ class TestRequestCommon(unittest.TestCase):
         req = self._makeOne(environ)
         result = req.POST
         self.assertTrue(isinstance(result, NoVars))
-        self.assertTrue(result.reason.startswith('Not an HTML form submission'))
+        self.assertTrue(result.reason.startswith(
+                                        'Not an HTML form submission'))
 
     def test_POST_multipart(self):
         BODY_TEXT = (
@@ -731,7 +735,7 @@ class TestRequestCommon(unittest.TestCase):
         self.assertEqual(headers, [('content-type', 'text/plain')])
         self.assertEqual(''.join(output), '...\n')
 
-    def test_call_application_closes_iterable_when_mixed_with_write_calls(self):
+    def test_call_application_closes_iterable_when_mixed_w_write_calls(self):
         environ = {
             'test._call_application_called_close': False
         }
@@ -757,7 +761,8 @@ class TestRequestCommon(unittest.TestCase):
                 raise RuntimeError('OH NOES')
             except:
                 exc_info = sys.exc_info()
-            start_response('200 OK', [('content-type', 'text/plain')], exc_info)
+            start_response('200 OK',
+                           [('content-type', 'text/plain')], exc_info)
             return ['...\n']
         self.assertRaises(RuntimeError, req.call_application, application)
 
@@ -769,7 +774,8 @@ class TestRequestCommon(unittest.TestCase):
                 raise RuntimeError('OH NOES')
             except:
                 exc_info = sys.exc_info()
-            start_response('200 OK', [('content-type', 'text/plain')], exc_info)
+            start_response('200 OK',
+                           [('content-type', 'text/plain')], exc_info)
             return ['...\n']
         status, headers, output, exc_info = req.call_application(
             application, True)
@@ -850,7 +856,8 @@ class TestRequestCommon(unittest.TestCase):
 
         request = self._blankOne('/', 
                                  POST=POST,
-                                 content_type='multipart/form-data; boundary=boundary')
+                                 content_type='multipart/form-data; '
+                                              'boundary=boundary')
         self.assertEqual(request.method, 'POST')
         self.assertEqual(request.content_type, 'multipart/form-data')
         expected = (
@@ -880,10 +887,12 @@ class TestRequestCommon(unittest.TestCase):
         body_norm = request.body.replace(boundary, b'boundary')
         expected = (
             b'--boundary\r\n'
-            b'Content-Disposition: form-data; name="first"; filename="filename1"\r\n\r\n'
+            b'Content-Disposition: form-data; name="first"; '
+                    b'filename="filename1"\r\n\r\n'
             b'1\r\n'
             b'--boundary\r\n'
-            b'Content-Disposition: form-data; name="second"; filename="filename2"\r\n\r\n'
+            b'Content-Disposition: form-data; name="second"; '
+                    b'filename="filename2"\r\n\r\n'
             b'2\r\n'
             b'--boundary\r\n'
             b'Content-Disposition: form-data; name="third"\r\n\r\n'
@@ -3244,7 +3253,8 @@ class FakeCGIBodyTests(unittest.TestCase):
         from io import BytesIO
         body = (
             b'--foobar\r\n'
-            b'Content-Disposition: form-data; name="bananas"; filename="bananas.txt"\r\n'
+            b'Content-Disposition: form-data; name="bananas"; '
+                    b'filename="bananas.txt"\r\n'
             b'Content-type: text/plain; charset="utf-7"\r\n'
             b'\r\n'
             b"these are the contents of the file 'bananas.txt'\r\n"
@@ -3417,14 +3427,16 @@ class Test_environ_from_url(unittest.TestCase):
 
     def test_fileupload_mime_type_detection(self):
         from webob.request import Request
-        # sometimes on win the detected mime type for .jpg will be image/pjpeg for ex.
-        # so we use a non-standard extesion to avoid that
+        # sometimes on win the detected mime type for .jpg will be
+        # image/pjpeg for ex. so use a non-standard extesion to avoid that
         import mimetypes
         mimetypes.add_type('application/x-foo', '.foo')
         request = Request.blank("/", POST=dict(file1=("foo.foo", "xxx"),
                                                file2=("bar.mp3", "xxx")))
-        self.assertTrue("audio/mpeg" in request.body.decode('ascii'), str(request))
-        self.assertTrue('application/x-foo' in request.body.decode('ascii'), str(request))
+        self.assertTrue("audio/mpeg" in request.body.decode('ascii'),
+                        str(request))
+        self.assertTrue('application/x-foo' in request.body.decode('ascii'),
+                        str(request))
 
 class TestRequestMultipart(unittest.TestCase):
     def test_multipart_with_charset(self):
