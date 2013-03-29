@@ -958,10 +958,9 @@ def test_encode_content_gzip_notyet_gzipped_lazy():
         ])
 
 def test_encode_content_gzip_buffer_coverage():
-    """this test is to provide 100% coverage of
-    response.Response.encode_content was necessary in order to get
-    pull request https://github.com/Pylons/webob/pull/85 into upstream
-    """
+    #this test is to provide 100% coverage of
+    #.Response.encode_content was necessary in order to get
+    # request https://github.com/Pylons/webob/pull/85 into upstream
     res = Response()
     DATA = b"abcdefghijklmnopqrstuvwxyz0123456789" * 1000000
     res.app_iter = io.BytesIO(DATA)
