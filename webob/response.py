@@ -276,6 +276,11 @@ class Response(object):
             self._status = '%d %s' % (code, status_reasons[code])
         except KeyError:
             self._status = '%d %s' % (code, status_generic_reasons[code // 100])
+        # responses with status == 204 must not include a message body,
+        # so probably should not have a Content-Type header as well
+        if code in [204, 205, 304]:
+            del self.content_type
+            del self.content_length
 
     status_code = status_int = property(_status_code__get, _status_code__set,
                            doc=_status_code__get.__doc__)
