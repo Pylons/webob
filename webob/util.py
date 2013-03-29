@@ -112,6 +112,7 @@ status_reasons = {
     426: 'Upgrade Required',
     428: 'Precondition Required',
     429: 'Too Many Requests',
+    451: 'Unavailable for Legal Reasons',
     431: 'Request Header Fields Too Large',
 
     # Server Error
