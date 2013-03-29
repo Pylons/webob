@@ -4,6 +4,9 @@ News
 Next release
 ------------
 
+- Added support for draft status code 451 ("Unavailable for Legal Reasons").
+  See http://tools.ietf.org/html/draft-tbray-http-legally-restricted-status-00
+
 - Added status codes 428, 429, 431 and 511 to ``util.status_reasons`` (they
   were already present in a previous release as ``webob.exc`` exceptions).
 
