@@ -277,7 +277,8 @@ class Response(object):
         except KeyError:
             self._status = '%d %s' % (code, status_generic_reasons[code // 100])
         # responses with status == 204 must not include a message body,
-        # so probably should not have a Content-Type header as well
+        # so probably should not have a Content-Type header as well.
+        # this mimics the "empty_body = True" behavior from webob.exc
         if code in [204, 205, 304]:
             del self.content_type
             del self.content_length
