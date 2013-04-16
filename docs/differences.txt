@@ -358,10 +358,8 @@ Request
 Werkzeug
 ========
 
-Probably not that many people know about this library, which is a
-offshoot of `Pocoo <http://pocoo.org>`_, and used to go by another
-name (Columbrid?)  This library is based around WSGI, similar to Paste
-and Yaro.
+An offshoot of `Pocoo <http://pocoo.org>`_,
+this library is based around WSGI, similar to Paste and Yaro.
 
 This is taken from the `wrapper documentation
 <http://werkzeug.pocoo.org/documentation/wrappers>`_.
