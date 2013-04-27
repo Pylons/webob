@@ -191,7 +191,7 @@ def _parse_cookie(data):
     if PY3: # pragma: no cover
         data = data.encode('latin-1')
     for key, val in _rx_cookie.findall(data):
-        yield key, _unquote(val)
+        yield key, val
 
 def parse_cookie(data):
     """
