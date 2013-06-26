@@ -160,7 +160,7 @@ class Page(object):
         if not self.exists:
             return None
         else:
-            return os.stat(self.filename).st_mtime
+            return int(os.stat(self.filename).st_mtime)
 
     def set(self, title, content):
         dir = os.path.dirname(self.filename)
