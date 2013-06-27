@@ -188,6 +188,9 @@ def serialize_list(value):
 
 
 
+def converter_list(prop):
+    return converter(prop, parse_list, serialize_list, 'list')
+
 def converter_date(prop):
     return converter(prop, parse_date, serialize_date, 'HTTP date')
 

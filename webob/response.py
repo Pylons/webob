@@ -541,7 +541,7 @@ class Response(object):
         return parse_etag_response(self._etag_raw, strong=True)
 
     location = header_getter('Location', '14.30')
-    pragma = header_getter('Pragma', '14.32')
+    pragma = list_header('Pragma', '14.32')
     age = converter(
         header_getter('Age', '14.6'),
         parse_int_safe, serialize_int, 'int')

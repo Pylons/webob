@@ -358,6 +358,22 @@ def test_converter_date_docstring():
     assert 'http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.8' in desc.__doc__
     assert '``Date`` header' in desc.__doc__
 
+def test_converter_list():
+    import datetime
+    from webob.descriptors import converter_list
+    from webob.descriptors import environ_getter
+    req = Request.blank('/')
+    desc = converter_list(environ_getter(
+        "HTTP_PRAGMA", "no-cache, a, b, c", "14.32"))
+    eq_(desc.fget(req), ("no-cache", "a", "b", "c"))
+
+def test_converter_list_docstring():
+    from webob.descriptors import converter_list
+    from webob.descriptors import environ_getter
+    desc = converter_list(environ_getter(
+        "HTTP_PRAGMA", "a, b, c", "14.32"))
+    assert 'http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.32' in desc.__doc__
+    assert '``Pragma`` header' in desc.__doc__
 
 def test_date_header_fget_none():
     from webob import Response

@@ -48,6 +48,7 @@ from webob.descriptors import (
     SCHEME_RE,
     converter,
     converter_date,
+    converter_list,
     environ_getter,
     environ_decoder,
     parse_auth,
@@ -1084,7 +1085,7 @@ class BaseRequest(object):
         environ_getter('HTTP_MAX_FORWARDS', None, '14.31'),
         parse_int, serialize_int, 'int')
 
-    pragma = environ_getter('HTTP_PRAGMA', None, '14.32')
+    pragma = converter_list(environ_getter('HTTP_PRAGMA', None, '14.32'))
 
     range = converter(
         environ_getter('HTTP_RANGE', None, '14.35'),
