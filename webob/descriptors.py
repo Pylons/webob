@@ -303,7 +303,9 @@ def serialize_content_range(value):
         return None
     return value
 
-
+def converter_content_range(prop):
+    return converter(prop, parse_content_range, serialize_content_range,
+                     'ContentRange object')
 
 
 _rx_auth_param = re.compile(r'([a-z]+)=(".*?"|[^,]*)(?:\Z|, *)')

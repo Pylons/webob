@@ -49,6 +49,7 @@ from webob.descriptors import (
     converter,
     converter_date,
     converter_list,
+    converter_content_range,
     environ_getter,
     environ_decoder,
     parse_auth,
@@ -359,6 +360,10 @@ class BaseRequest(object):
                             _content_type__set,
                             _content_type__set,
                             _content_type__get.__doc__)
+    content_language = converter_list(
+        environ_getter('HTTP_CONTENT_LANGUAGE', None, '14.12'))
+    content_range = converter_content_range(
+        environ_getter('HTTP_CONTENT_RANGE', None, '14.16'))
 
     _headers = None
 

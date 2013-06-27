@@ -367,6 +367,15 @@ def test_converter_list():
         "HTTP_PRAGMA", "no-cache, a, b, c", "14.32"))
     eq_(desc.fget(req), ("no-cache", "a", "b", "c"))
 
+def test_converter_list_none():
+    import datetime
+    from webob.descriptors import converter_list
+    from webob.descriptors import environ_getter
+    req = Request.blank('/')
+    desc = converter_list(environ_getter(
+        "HTTP_PRAGMA", None, "14.32"))
+    eq_(desc.fget(req), None)
+
 def test_converter_list_docstring():
     from webob.descriptors import converter_list
     from webob.descriptors import environ_getter
@@ -563,6 +572,46 @@ def test_serialize_content_range_asterisk():
 def test_serialize_content_range_defined():
     from webob.descriptors import serialize_content_range
     eq_(serialize_content_range((0, 500, 1234)), 'bytes 0-499/1234')
+
+def test_converter_content_range():
+    import datetime
+    from webob.descriptors import converter_content_range
+    from webob.descriptors import environ_getter
+    req = Request.blank('/')
+    desc = converter_content_range(environ_getter(
+        "HTTP_CONTENT_RANGE", "bytes 0-499/1234", "14.16"))
+    range = desc.fget(req)
+    eq_(range.start, 0)
+    eq_(range.stop, 500)
+    eq_(range.length, 1234)
+
+def test_converter_content_range_invalid():
+    import datetime
+    from webob.descriptors import converter_content_range
+    from webob.descriptors import environ_getter
+    req = Request.blank('/')
+    desc = converter_content_range(environ_getter(
+        "HTTP_CONTENT_RANGE", "test", "14.16"))
+    range = desc.fget(req)
+    eq_(range, None)
+
+def test_converter_content_range_none():
+    import datetime
+    from webob.descriptors import converter_content_range
+    from webob.descriptors import environ_getter
+    req = Request.blank('/')
+    desc = converter_content_range(environ_getter(
+        "HTTP_CONTENT_RANGE", None, "14.16"))
+    range = desc.fget(req)
+    eq_(range, None)
+
+def test_converter_content_range_docstring():
+    from webob.descriptors import converter_content_range
+    from webob.descriptors import environ_getter
+    desc = converter_content_range(environ_getter(
+        "HTTP_CONTENT_RANGE", "bytes 0-499/1234", "14.16"))
+    assert 'http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.16' in desc.__doc__
+    assert '``Content-Range`` header' in desc.__doc__
 
 def test_parse_auth_params_leading_capital_letter():
     from webob.descriptors import parse_auth_params
