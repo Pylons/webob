@@ -1097,6 +1097,16 @@ class TestBaseRequest(unittest.TestCase):
         self.assertEqual(req.content_type, '')
         self.assertTrue('CONTENT_TYPE' not in environ)
 
+    # content_encoding
+    # content_language
+    # content_md5
+    # content_range
+    # expect 
+    # expires
+    # from_email
+    # via
+    # warning
+
     def test_headers_getter(self):
         CONTENT_TYPE = 'application/xml+foobar;charset="utf8"'
         environ = {'CONTENT_TYPE': CONTENT_TYPE,

@@ -43,16 +43,15 @@ from webob.descriptors import (
     CHARSET_RE,
     SCHEME_RE,
     converter,
+    converter_content_range,
     date_header,
     header_getter,
     list_header,
     parse_auth,
-    parse_content_range,
     parse_etag_response,
     parse_int,
     parse_int_safe,
     serialize_auth,
-    serialize_content_range,
     serialize_etag_response,
     serialize_int,
     )
@@ -523,9 +522,8 @@ class Response(object):
     content_disposition = header_getter('Content-Disposition', '19.5.1')
 
     accept_ranges = header_getter('Accept-Ranges', '14.5')
-    content_range = converter(
-        header_getter('Content-Range', '14.16'),
-        parse_content_range, serialize_content_range, 'ContentRange object')
+    content_range = converter_content_range(
+        header_getter('Content-Range', '14.16'))
 
     date = date_header('Date', '14.18')
     expires = date_header('Expires', '14.21')
@@ -541,7 +539,7 @@ class Response(object):
         return parse_etag_response(self._etag_raw, strong=True)
 
     location = header_getter('Location', '14.30')
-    pragma = header_getter('Pragma', '14.32')
+    pragma = list_header('Pragma', '14.32')
     age = converter(
         header_getter('Age', '14.6'),
         parse_int_safe, serialize_int, 'int')
