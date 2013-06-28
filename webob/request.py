@@ -360,10 +360,22 @@ class BaseRequest(object):
                             _content_type__set,
                             _content_type__set,
                             _content_type__get.__doc__)
+    content_encoding = converter_list(
+        environ_getter('HTTP_CONTENT_ENCODING', None, '14.11'))
     content_language = converter_list(
         environ_getter('HTTP_CONTENT_LANGUAGE', None, '14.12'))
+    content_md5 = environ_getter('HTTP_CONTENT_MD5', None, '14.15')
     content_range = converter_content_range(
         environ_getter('HTTP_CONTENT_RANGE', None, '14.16'))
+    # As per PEP 3333, this header is handled by the WSGI server. It is exposed
+    # here for logging and testing.
+    expect = environ_getter('HTTP_EXPECT', None, '14.20')
+    expires = converter_date(environ_getter('HTTP_EXPIRES', None, '14.21'))
+    # Used primarily for logging purposes. No validation is performed on the
+    # header to ensure that it is an email.
+    from_email = environ_getter('HTTP_EXPECT', None, '14.22')
+    via = environ_getter('HTTP_VIA', None, '14.20')
+    warning = environ_getter('HTTP_WARNING', None, '14.20')
 
     _headers = None
 
