@@ -373,7 +373,7 @@ class BaseRequest(object):
     expires = converter_date(environ_getter('HTTP_EXPIRES', None, '14.21'))
     # Used primarily for logging purposes. No validation is performed on the
     # header to ensure that it is an email.
-    from_email = environ_getter('HTTP_EXPECT', None, '14.22')
+    from_email = environ_getter('HTTP_FROM', None, '14.22')
     via = environ_getter('HTTP_VIA', None, '14.20')
     warning = environ_getter('HTTP_WARNING', None, '14.20')
 
