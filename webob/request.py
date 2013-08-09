@@ -92,7 +92,7 @@ PATH_SAFE = '/:@&+$,'
 http_method_probably_has_body = dict.fromkeys(
     ('GET', 'HEAD', 'DELETE', 'TRACE'), False)
 http_method_probably_has_body.update(
-    dict.fromkeys(('POST', 'PUT'), True))
+    dict.fromkeys(('POST', 'PUT', 'PATCH'), True))
 
 _LATIN_ENCODINGS = (
     'ascii', 'latin-1', 'latin', 'latin_1', 'l1', 'latin1',
@@ -740,11 +740,11 @@ class BaseRequest(object):
         Return a MultiDict containing all the variables from a form
         request. Returns an empty dict-like object for non-form requests.
 
-        Form requests are typically POST requests, however PUT requests with
-        an appropriate Content-Type are also supported.
+        Form requests are typically POST requests, however PUT & PATCH requests
+        with an appropriate Content-Type are also supported.
         """
         env = self.environ
-        if self.method not in ('POST', 'PUT'):
+        if self.method not in ('POST', 'PUT', 'PATCH'):
             return NoVars('Not a form request')
         if 'webob._parsed_post_vars' in env:
             vars, body_file = env['webob._parsed_post_vars']

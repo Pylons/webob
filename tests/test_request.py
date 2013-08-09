@@ -618,6 +618,10 @@ class TestRequestCommon(unittest.TestCase):
         req = self._blankOne('/', environ={'REQUEST_METHOD':'POST'})
         self.assertTrue(req.is_body_readable)
 
+    def test_is_body_readable_PATCH(self):
+        req = self._blankOne('/', environ={'REQUEST_METHOD':'PATCH'})
+        self.assertTrue(req.is_body_readable)
+
     def test_is_body_readable_GET(self):
         req = self._blankOne('/', environ={'REQUEST_METHOD':'GET'})
         self.assertFalse(req.is_body_readable)
@@ -3192,6 +3196,24 @@ class TestRequest_functional(unittest.TestCase):
         req.if_match = 'other-token'
         # Not OK, should return 412 Precondition Failed:
         self.assertTrue(not server_token in req.if_match)
+
+    def test_request_patch(self):
+        from webob.multidict import MultiDict
+        from webob.multidict import GetDict
+        req = self._blankOne('/test?check=a&check=b&name=Bob')
+        req.method = 'PATCH'
+        req.body = b'var1=value1&var2=value2&rep=1&rep=2'
+        req.environ['CONTENT_LENGTH'] = str(len(req.body))
+        req.environ['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
+        GET = GetDict([('check', 'a'),
+                      ('check', 'b'),
+                      ('name', 'Bob')], {})
+        self.assertEqual(req.GET, GET)
+        self.assertEqual(req.POST, MultiDict(
+                                [('var1', 'value1'),
+                                 ('var2', 'value2'),
+                                 ('rep', '1'),
+                                 ('rep', '2')]))
 
     def test_call_WSGI_app(self):
         req = self._blankOne('/')
