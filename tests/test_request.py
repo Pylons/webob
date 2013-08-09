@@ -3197,13 +3197,7 @@ class TestRequest_functional(unittest.TestCase):
         # Not OK, should return 412 Precondition Failed:
         self.assertTrue(not server_token in req.if_match)
 
-    def test_request_post(self):
-        from datetime import datetime
-        from webob import Response
-        from webob import UTC
-        from webob.acceptparse import MIMEAccept
-        from webob.byterange import Range
-        from webob.etag import ETagMatcher
+    def test_request_patch(self):
         from webob.multidict import MultiDict
         from webob.multidict import GetDict
         req = self._blankOne('/test?check=a&check=b&name=Bob')
