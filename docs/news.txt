@@ -17,6 +17,9 @@ Next release
 - Preserve document ordering of GET and POST request data when POST data passed
   to Request.blank is a MultiDict.  See https://github.com/Pylons/webob/pull/96
 
+- Allow query strings attached to PATCH requests to populate request.params.
+  See https://github.com/Pylons/webob/pull/106
+
 1.2.3
 ------------
 
