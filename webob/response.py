@@ -1151,6 +1151,11 @@ class ResponseBodyFile(object):
     def flush(self):
         pass
 
+    def tell(self):
+        if self.response._app_iter is None:
+            return 0
+        return sum([len(str(chunk)) for chunk in self.response._app_iter])
+
 
 
 class AppIterRange(object):

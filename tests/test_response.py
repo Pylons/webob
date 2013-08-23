@@ -465,6 +465,16 @@ def test_response_file_body_writelines():
     rbo.flush() # noop
     eq_(res.app_iter, [b'foo', b'bar', b'baz'])
 
+def test_response_file_body_tell():
+    import zipfile
+    from webob.response import ResponseBodyFile
+    rbo = ResponseBodyFile(Response())
+    eq_(rbo.tell(), 0)
+    writer = zipfile.ZipFile(rbo, 'w')
+    writer.writestr('zinfo_or_arcname', b'foo')
+    writer.close()
+    eq_(rbo.tell(), 133)
+
 def test_response_write_non_str():
     res = Response()
     assert_raises(TypeError, res.write, object())
