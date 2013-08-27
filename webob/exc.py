@@ -193,8 +193,17 @@ def no_escape(value):
         if isinstance(value, bytes):
             value = text_(value, 'utf-8')
         else:
-            value = text_type(value)
+            try:
+                value = text_type(value)
+            except:
+                value = text_type(object.__repr__(value).replace('<', '[').replace('>', ']'))
     return value
+
+def safe_html_escape(value):
+    try:
+        return html_escape(value)
+    except UnicodeEncodeError:
+        return html_escape(object.__repr__(value))
 
 def strip_tags(value):
     value = value.replace('\n', ' ')
@@ -294,7 +303,7 @@ ${body}''')
                                                   body=body)
 
     def html_body(self, environ):
-        body = self._make_body(environ, html_escape)
+        body = self._make_body(environ, safe_html_escape)
         return self.html_template_obj.substitute(status=self.status,
                                                  body=body)
 
