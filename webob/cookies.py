@@ -199,7 +199,8 @@ def make_cookie(name, value, max_age=None, expires=None, path='/',
     ``value``
 
        The payload as a string or bytestring. If the payload is a string
-       it will be utf-8 encoded.
+       it will be utf-8 encoded. If it is ``None`` then ``max_age`` and
+       ``expires`` will be ignored and the cookie will be for deletion.
 
     ``max_age``
 
@@ -250,6 +251,10 @@ def make_cookie(name, value, max_age=None, expires=None, path='/',
        If ``comment`` is ``None``, no ``Comment`` value will be sent in
        the cookie.
     """
+    if value is None:
+        value = ''
+        max_age = 0
+        expires = timedelta(days=-5)
     morsel = Morsel(bytes_(name), bytes_(value))
     if domain:
         morsel.domain = bytes_(domain)
