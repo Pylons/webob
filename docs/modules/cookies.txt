@@ -6,4 +6,4 @@
 Cookies
 ------
 
-.. autofunc:: serialize_cookie
+.. autofunc:: make_cookie
