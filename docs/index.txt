@@ -5,6 +5,7 @@ WebOb
 
    reference
    modules/webob
+   modules/cookies
    modules/dec
    modules/static
    differences

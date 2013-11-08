@@ -22,6 +22,9 @@ Next release
 
 - Added Pyton 3.3 trove classifier.
 
+- Add the ``webob.cookies.make_cookie`` API for creating cookies without
+  requiring a ``webob.response.Response`` object.
+
 1.2.3
 ------------
 

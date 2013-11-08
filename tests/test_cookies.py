@@ -146,6 +146,15 @@ def test_morsel_repr():
     result = repr(v)
     eq_(result, "<Morsel: a='b'>")
 
+def test_make_cookie():
+    v = cookies.make_cookie(
+        'a', 'b', max_age=5, expires='Tue, 04-Jan-2011 13:43:50 GMT',
+        path='/foo', domain='example.com', secure=True, httponly=True,
+        comment='hello world')
+    eq_(v, 'a=b; Comment="hello world"; Domain=example.com; '
+           'Max-Age=5; Path=/foo; expires=Tue, 04-Jan-2011 13:43:50 GMT; '
+           'secure; HttpOnly')
+
 class TestRequestCookies(unittest.TestCase):
     def _makeOne(self, environ):
         from webob.cookies import RequestCookies

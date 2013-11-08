@@ -1,0 +1,9 @@
+:mod:`webob.cookies` -- Cookie handling
+=======================================
+
+.. automodule:: webob.cookies
+
+Cookies
+------
+
+.. autofunc:: serialize_cookie
