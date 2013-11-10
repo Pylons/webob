@@ -155,6 +155,30 @@ def test_make_cookie():
                 'Max-Age=5; Path=/foo; expires=Tue, 04-Jan-2011 13:43:50 GMT; '
                 'secure; HttpOnly')
 
+def test_make_cookie_max_age():
+    cookie = cookies.make_cookie(
+            'a', 'b', max_age=50)
+
+    eq_('Max-Age=50;' in cookie, True)
+    eq_('expires=' in cookie, True)
+
+def test_make_cookie_expires():
+    from datetime import (datetime, timedelta)
+
+    cookie = cookies.make_cookie(
+            'a', 'b', expires=datetime.utcnow() + timedelta(seconds=600)
+            )
+
+    eq_('expires=' in cookie, True)
+    eq_('Max-Age=' in cookie, True)
+
+def test_make_cookie_expires_maxage():
+    cookie = cookies.make_cookie(
+            'a', 'b', max_age=object())
+
+    eq_('expires=' not in cookie, True)
+    eq_('Max-Age=' not in cookie, True)
+
 def test_make_cookie_for_deletion():
     cookie = cookies.make_cookie(
         'a', None, max_age=5, path='/abc', domain='example.com',
