@@ -255,6 +255,22 @@ def make_cookie(name, value, max_age=None, expires=None, path='/',
         value = ''
         max_age = 0
         expires = timedelta(days=-5)
+
+    # We need to set the expiration based upon max_age
+    elif expires is None and max_age is not None:
+        try:
+            max_age = timedelta(seconds=int(max_age))
+        except:
+            max_age = None
+
+        if isinstance(max_age, timedelta):
+            expires = datetime.utcnow() + max_age
+
+    # We need to set the max age based upon the expiration
+    elif max_age is None and expires is not None:
+        if isinstance(expires, datetime):
+            max_age = expires - datetime.utcnow()
+
     morsel = Morsel(bytes_(name), bytes_(value))
     if domain:
         morsel.domain = bytes_(domain)
