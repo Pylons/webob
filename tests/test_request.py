@@ -1539,6 +1539,16 @@ class TestBaseRequest(unittest.TestCase):
         req = self._makeOne(environ)
         del req.host # doesn't raise
 
+    def test_domain_nocolon(self):
+        environ = {'HTTP_HOST':'example.com'}
+        req = self._makeOne(environ)
+        self.assertEqual(req.domain, 'example.com')
+
+    def test_domain_withcolon(self):
+        environ = {'HTTP_HOST':'example.com:8888'}
+        req = self._makeOne(environ)
+        self.assertEqual(req.domain, 'example.com')
+        
     def test_encget_raises_without_default(self):
         inst = self._makeOne({})
         self.assertRaises(KeyError, inst.encget, 'a')

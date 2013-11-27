@@ -22,6 +22,11 @@ Next release
 
 - Added Pyton 3.3 trove classifier.
 
+- Added a read-only ``domain`` property to ``BaseRequest``.  This property
+  returns the domain portion of the host value.  For example, if the
+  environment contains an ``HTTP_HOST`` value of ``foo.example.com:8000``,
+  ``request.domain`` will return ``foo.example.com``.
+
 1.2.3
 ------------
 

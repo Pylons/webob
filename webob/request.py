@@ -668,6 +668,30 @@ class BaseRequest(object):
             del self.environ['HTTP_HOST']
     host = property(_host__get, _host__set, _host__del, doc=_host__get.__doc__)
 
+    @property
+    def domain(self):
+        """ Returns the domain portion of the host value.  Equivalent to:
+
+        .. code-block:: python
+
+           domain = request.host
+           if ':' in domain:
+               domain = domain.split(':', 1)[0]
+
+        This will be equivalent to the domain portion of the ``HTTP_HOST``
+        value in the environment if it exists, or the ``SERVER_NAME`` value in
+        the environment if it doesn't.  For example, if the environment
+        contains an ``HTTP_HOST`` value of ``foo.example.com:8000``,
+        ``request.domain`` will return ``foo.example.com``.
+
+        Note that this value cannot be *set* on the request.  To set the host
+        value use :meth:`webob.request.Request.host` instead.
+        """
+        domain = self.host
+        if ':' in domain:
+             domain = domain.split(':', 1)[0]
+        return domain
+
     def _body__get(self):
         """
         Return the content of the request body.
