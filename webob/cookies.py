@@ -369,3 +369,103 @@ def _valid_cookie_name(key):
         or key[0] == _b_dollar_sign
         or key.lower() in _c_keys
     )
+
+
+class JsonSerializer(object):
+    def dumps(self, appstruct):
+        return json.dumps(appstruct)
+
+    def loads(self, cstruct):
+        return json.loads(cstruct)
+
+
+class SignedSerializer(object):
+    """
+    A helper to cryptographically sign arbitrary content using HMAC.
+
+    The serializer accepts arbitrary functions for performing the actual
+    serialization and deserialization.
+
+    ``secret``
+      A string which is used to sign the cookie. The secret should be at
+      least as long as the block size of the selected hash algorithm. For
+      ``sha512`` this would mean a 128 bit (64 character) secret.  It should
+      be unique within the set of secret values provided to Pyramid for
+      its various subsystems (see :ref:`admonishment_against_secret_sharing`).
+
+    ``salt``
+      A namespace to avoid collisions between different uses of a shared
+      secret. Reusing a secret for different parts of an application is
+      strongly discouraged (see :ref:`admonishment_against_secret_sharing`).
+
+    ``hashalg``
+      The HMAC digest algorithm to use for signing. The algorithm must be
+      supported by the :mod:`hashlib` library. Default: ``'sha512'``.
+
+    ``serialize``
+      A callable accepting a Python object and returning a bytestring. A
+      ``ValueError`` should be raised for malformed inputs.
+      Default: ``None`, which will use :func:`pickle.dumps`.
+
+    ``deserialize``
+      A callable accepting a bytestring and returning a Python object. A
+      ``ValueError`` should be raised for malformed inputs.
+      Default: ``None`, which will use :func:`pickle.loads`.
+    """
+    _default_serializer = JsonSerializer()
+
+    def __init__(self,
+                 secret,
+                 salt,
+                 hashalg='sha512',
+                 serialize=None,
+                 deserialize=None,
+                 ):
+        self.salt = salt
+        self.secret = secret
+        self.hashalg = hashalg
+
+        self.salted_secret = bytes_(salt or '') + bytes_(secret)
+
+        self.digestmod = lambda string=b'': hashlib.new(self.hashalg, string)
+        self.digest_size = self.digestmod().digest_size
+
+        if serialize is None:
+            serialize = self._default_serializer.dumps
+        if deserialize is None:
+            deserialize = self._default_serializer.loads
+
+        self.serialize = serialize
+        self.deserialize = deserialize
+
+    def dumps(self, appstruct):
+        """
+        Given an ``appstruct``, serialize and sign the data.
+
+        Returns a bytestring.
+        """
+        cstruct = bytes_(self.serialize(appstruct))
+        sig = hmac.new(self.salted_secret, cstruct, self.digestmod).digest()
+        return base64.urlsafe_b64encode(sig + cstruct).rstrip(b'=')
+
+    def loads(self, bstruct):
+        """
+        Given a ``bstruct``, verify the signature and then deserialize.
+
+        A ``ValueError` will be raised if the signature fails to validate.
+        """
+        try:
+            b64padding = b'=' * (-len(bstruct) % 4)
+            fstruct = base64.urlsafe_b64decode(bytes_(bstruct) + b64padding)
+        except (binascii.Error, TypeError) as e:
+            raise ValueError('Badly formed base64 data: %s' % e)
+
+        cstruct = fstruct[self.digest_size:]
+        expected_sig = fstruct[:self.digest_size]
+
+        sig = hmac.new(self.salted_secret, bytes_(cstruct), self.digestmod).digest()
+
+        if strings_differ(sig, expected_sig):
+            raise ValueError('Invalid signature')
+
+        return self.deserialize(native_(cstruct))
