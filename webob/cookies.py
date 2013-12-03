@@ -1,5 +1,10 @@
 import collections
 
+import base64
+import binascii
+import hashlib
+import hmac
+import json
 from datetime import (
     date,
     datetime,
@@ -17,6 +22,8 @@ from webob.compat import (
     native_,
     string_types,
     )
+
+from webob.util import strings_differ
 
 __all__ = ['Cookie']
 
@@ -369,3 +376,430 @@ def _valid_cookie_name(key):
         or key[0] == _b_dollar_sign
         or key.lower() in _c_keys
     )
+
+
+def make_cookie(name, value, max_age=None, path='/', domain=None,
+                secure=False, httponly=False, comment=None):
+    # We are deleting the cookie, override max_age and expires
+    if value is None:
+        value = b''
+        max_age = 0
+        expires = -5 * 60 * 60 * 24
+
+    # Convert max_age to seconds
+    elif isinstance(max_age, timedelta):
+        max_age = (max_age.days * 60 * 60 * 24) + max_age.seconds
+        expires = max_age
+    else:
+        expires = max_age
+
+    morsel = Morsel(name, native_(value))
+
+    if domain is not None:
+        morsel.domain = bytes_(domain)
+    if path is not None:
+        morsel.path = bytes_(path)
+    if httponly:
+        morsel.httponly = True
+    if secure:
+        morsel.secure = True
+    if max_age is not None:
+        morsel.max_age = max_age
+    if expires is not None:
+        morsel.expires = expires
+    if comment is not None:
+        morsel.comment = bytes_(comment)
+    return morsel.serialize()
+
+
+class JsonSerializer(object):
+    def dumps(self, appstruct):
+        return json.dumps(appstruct)
+
+    def loads(self, cstruct):
+        return json.loads(cstruct)
+
+
+class SignedSerializer(object):
+    """
+    A helper to cryptographically sign arbitrary content using HMAC.
+
+    The serializer accepts arbitrary functions for performing the actual
+    serialization and deserialization.
+
+    ``secret``
+      A string which is used to sign the cookie. The secret should be at
+      least as long as the block size of the selected hash algorithm. For
+      ``sha512`` this would mean a 128 bit (64 character) secret.  It should
+      be unique within the set of secret values provided to Pyramid for
+      its various subsystems (see :ref:`admonishment_against_secret_sharing`).
+
+    ``salt``
+      A namespace to avoid collisions between different uses of a shared
+      secret. Reusing a secret for different parts of an application is
+      strongly discouraged (see :ref:`admonishment_against_secret_sharing`).
+
+    ``hashalg``
+      The HMAC digest algorithm to use for signing. The algorithm must be
+      supported by the :mod:`hashlib` library. Default: ``'sha512'``.
+
+    ``serialize``
+      A callable accepting a Python object and returning a bytestring. A
+      ``ValueError`` should be raised for malformed inputs.
+      Default: ``None`, which will use :func:`pickle.dumps`.
+
+    ``deserialize``
+      A callable accepting a bytestring and returning a Python object. A
+      ``ValueError`` should be raised for malformed inputs.
+      Default: ``None`, which will use :func:`pickle.loads`.
+    """
+    _default_serializer = JsonSerializer()
+
+    def __init__(self,
+                 secret,
+                 salt,
+                 hashalg='sha512',
+                 serialize=None,
+                 deserialize=None,
+                 ):
+        self.salt = salt
+        self.secret = secret
+        self.hashalg = hashalg
+
+        self.salted_secret = bytes_(salt or '') + bytes_(secret)
+
+        self.digestmod = lambda string=b'': hashlib.new(self.hashalg, string)
+        self.digest_size = self.digestmod().digest_size
+
+        if serialize is None:
+            serialize = self._default_serializer.dumps
+        if deserialize is None:
+            deserialize = self._default_serializer.loads
+
+        self.serialize = serialize
+        self.deserialize = deserialize
+
+    def dumps(self, appstruct):
+        """
+        Given an ``appstruct``, serialize and sign the data.
+
+        Returns a bytestring.
+        """
+        cstruct = bytes_(self.serialize(appstruct))
+        sig = hmac.new(self.salted_secret, cstruct, self.digestmod).digest()
+        return base64.urlsafe_b64encode(sig + cstruct).rstrip(b'=')
+
+    def loads(self, bstruct):
+        """
+        Given a ``bstruct``, verify the signature and then deserialize.
+
+        A ``ValueError` will be raised if the signature fails to validate.
+        """
+        try:
+            b64padding = b'=' * (-len(bstruct) % 4)
+            fstruct = base64.urlsafe_b64decode(bytes_(bstruct) + b64padding)
+        except (binascii.Error, TypeError) as e:
+            raise ValueError('Badly formed base64 data: %s' % e)
+
+        cstruct = fstruct[self.digest_size:]
+        expected_sig = fstruct[:self.digest_size]
+
+        sig = hmac.new(self.salted_secret, bytes_(cstruct), self.digestmod).digest()
+
+        if strings_differ(sig, expected_sig):
+            raise ValueError('Invalid signature')
+
+        return self.deserialize(native_(cstruct))
+
+
+_default = object()
+
+class CookieProfile(object):
+    """
+    A helper class that helps bring some sanity to the insanity that is cookie
+    handling.
+
+    The helper is capable of generating multiple cookies if necessary to
+    support subdomains and parent domains.
+
+    ``cookie_name``
+      The name of the cookie used for sessioning. Default: ``'session'``.
+
+    ``max_age``
+      The maximum age of the cookie used for sessioning (in seconds).
+      Default: ``None`` (browser scope).
+
+    ``secure``
+      The 'secure' flag of the session cookie. Default: ``False``.
+
+    ``httponly``
+      Hide the cookie from Javascript by setting the 'HttpOnly' flag of the
+      session cookie. Default: ``False``.
+
+    ``path``
+      The path used for the session cookie. Default: ``'/'``.
+
+    ``domains``
+      The domain(s) used for the session cookie. Default: ``None`` (no domain).
+      Can be passed an iterable containing multiple domains, this will set
+      multiple cookies one for each domain.
+
+    ``serialize``
+      A callable accepting a Python object and returning a bytestring. A
+      ``ValueError`` should be raised for malformed inputs.
+      Default: ``None`, which will use :func:`pickle.dumps`.
+
+    ``deserialize``
+      A callable accepting a bytestring and returning a Python object. A
+      ``ValueError`` should be raised for malformed inputs.
+      Default: ``None`, which will use :func:`pickle.loads`.
+
+    """
+
+    _default_serializer = JsonSerializer()
+
+    def __init__(self,
+                 cookie_name,
+                 secure=False,
+                 max_age=None,
+                 httponly=None,
+                 path='/',
+                 domains=None,
+                 serialize=None,
+                 deserialize=None):
+        self.cookie_name = cookie_name
+        self.secure = secure
+        self.max_age = max_age
+        self.httponly = httponly
+        self.path = path
+        self.domains = domains
+
+        if serialize is None:
+            serialize = self._default_serializer.dumps
+        if deserialize is None:
+            deserialize = self._default_serializer.loads
+
+        self.serialize = serialize
+        self.deserialize = deserialize
+
+        self.request = None
+
+    def __call__(self, request):
+        """ Bind a request to a copy of this instance and return it"""
+
+        return self.bind(request)
+
+    def bind(self, request):
+        """ Bind a request to a copy of this instance and return it"""
+
+        selfish = CookieProfile(self.cookie_name, self.secure, self.max_age, self.httponly, self.path, self.domains, self.serialize, self.deserialize)
+        selfish.request = request
+
+        return selfish
+
+    def get_value(self):
+        """ Looks for a cookie by name, and returns its value
+
+        Looks for the cookie in the cookies jar, and if it can find it it will
+        attempt to deserialize it. Throws a ValueError if it fails due to an
+        error, or returns None if there is no cookie.
+        """
+
+        # Not sure if we want to handle this case or not ...
+        if not self.request:
+            raise ValueError
+
+        cookie = self.request.cookies.get(self.cookie_name)
+
+        if cookie:
+            return self.deserialize(bytes_(cookie))
+
+    def set_cookies(self, response, value, domains=_default, max_age=_default, path=_default, secure=_default, httponly=_default):
+        """ Set the cookies on a response."""
+        cookies = self.get_headers(value, domains=domains, max_age=max_age, path=path, secure=secure, httponly=httponly)
+        response.headerlist.extend(cookies)
+        return response
+
+    def get_headers(self, value, domains=_default, max_age=_default, path=_default, secure=_default, httponly=_default):
+        """ Retrieve raw headers for setting cookies.
+
+        Returns a list of headers that should be set for the cookies to
+        be correctly tracked.
+        """
+        if value is None:
+            max_age = 0
+            bstruct = None
+        else:
+            bstruct = self.serialize(value)
+
+        return self._get_cookies(bstruct, domains=domains, max_age=max_age, path=path, secure=secure, httponly=httponly)
+
+    def _get_cookies(self, value, domains, max_age, path, secure, httponly):
+        """Internal function
+
+        This returns a list of cookies that are valid HTTP Headers.
+
+        :environ: The request environment
+        :value: The value to store in the cookie
+        :domains: The domains, overrides any set in the CookieProfile
+        :max_age: The max_age, overrides any set in the CookieProfile
+        :path: The path, overrides any set in the CookieProfile
+        :secure: Set this cookie to secure, overrides any set in CookieProfile
+        :httponly: Set this cookie to HttpOnly, overrides any set in CookieProfile
+
+        """
+
+        # If the user doesn't provide values, grab the defaults
+        if domains is _default:
+            domains = self.domains
+
+        if max_age is _default:
+            max_age = self.max_age
+
+        if path is _default:
+            path = self.path
+
+        if secure is _default:
+            secure = self.secure
+
+        if httponly is _default:
+            httponly = self.httponly
+
+        # Length selected based upon http://browsercookielimits.x64.me
+        if value is not None and len(value) > 4093:
+            raise ValueError(
+                'Cookie value is too long to store (%s bytes)' %
+                len(value)
+            )
+
+        cookies = []
+
+        if not domains:
+            cookievalue = make_cookie(
+                    self.cookie_name,
+                    value, path=path,
+                    max_age=max_age,
+                    httponly=httponly,
+                    secure=secure
+            )
+            cookies.append(('Set-Cookie', cookievalue))
+
+        else:
+            for domain in domains:
+                cookievalue = make_cookie(
+                    self.cookie_name,
+                    value,
+                    path=path,
+                    domain=domain,
+                    max_age=max_age,
+                    httponly=httponly,
+                    secure=secure,
+                )
+                cookies.append(('Set-Cookie', cookievalue))
+
+        return cookies
+
+
+class SignedCookieProfile(CookieProfile):
+    """
+    A helper for generating cookies that are signed to prevent tampering.
+
+    By default this will create a single cookie, given a value it will
+    serialize it, then use HMAC to cryptographically sign the data. Finally
+    the result is base64-encoded for transport. This way a remote user can
+    not tamper with the value without uncovering the secret/salt used.
+
+    ``secret``
+      A string which is used to sign the cookie. The secret should be at
+      least as long as the block size of the selected hash algorithm. For
+      ``sha512`` this would mean a 128 bit (64 character) secret.  It should
+      be unique within the set of secret values provided to Pyramid for
+      its various subsystems (see :ref:`admonishment_against_secret_sharing`).
+
+    ``salt``
+      A namespace to avoid collisions between different uses of a shared
+      secret. Reusing a secret for different parts of an application is
+      strongly discouraged (see :ref:`admonishment_against_secret_sharing`).
+
+    ``hashalg``
+      The HMAC digest algorithm to use for signing. The algorithm must be
+      supported by the :mod:`hashlib` library. Default: ``'sha512'``.
+
+    ``cookie_name``
+      The name of the cookie used for sessioning. Default: ``'session'``.
+
+    ``max_age``
+      The maximum age of the cookie used for sessioning (in seconds).
+      Default: ``None`` (browser scope).
+
+    ``secure``
+      The 'secure' flag of the session cookie. Default: ``False``.
+
+    ``httponly``
+      Hide the cookie from Javascript by setting the 'HttpOnly' flag of the
+      session cookie. Default: ``False``.
+
+    ``path``
+      The path used for the session cookie. Default: ``'/'``.
+
+    ``domains``
+      The domain(s) used for the session cookie. Default: ``None`` (no domain).
+      Can be passed an iterable containing multiple domains, this will set
+      multiple cookies one for each domain.
+
+    ``serialize``
+      A callable accepting a Python object and returning a bytestring. A
+      ``ValueError`` should be raised for malformed inputs.
+      Default: ``None`, which will use :func:`pickle.dumps`.
+
+    ``deserialize``
+      A callable accepting a bytestring and returning a Python object. A
+      ``ValueError`` should be raised for malformed inputs.
+      Default: ``None`, which will use :func:`pickle.loads`.
+
+    """
+    def __init__(self,
+                 secret,
+                 salt,
+                 cookie_name,
+                 secure=False,
+                 max_age=None,
+                 httponly=False,
+                 path="/",
+                 domains=None,
+                 hashalg='sha512',
+                 serialize=None,
+                 deserialize=None,
+                 ):
+        self.secret = secret
+        self.salt = salt
+        self.hashalg = hashalg
+
+        if serialize is None:
+            serialize = self._default_serializer.dumps
+        if deserialize is None:
+            deserialize = self._default_serializer.loads
+
+        serializer = SignedSerializer(secret,
+                                      salt,
+                                      hashalg,
+                                      serialize=serialize,
+                                      deserialize=deserialize)
+        CookieProfile.__init__(self,
+                              cookie_name,
+                              secure=secure,
+                              max_age=max_age,
+                              httponly=httponly,
+                              path=path,
+                              domains=domains,
+                              serialize=serializer.dumps,
+                              deserialize=serializer.loads)
+
+    def bind(self, request):
+        """ Bind a request to a copy of this instance and return it"""
+
+        selfish = SignedCookieProfile(self.secret, self.salt, self.cookie_name, self.secure, self.max_age, self.httponly, self.path, self.domains, self.hashalg, self.serialize, self.deserialize)
+        selfish.request = request
+
+        return selfish
+

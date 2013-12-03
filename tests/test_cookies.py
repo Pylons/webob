@@ -146,6 +146,11 @@ def test_morsel_repr():
     result = repr(v)
     eq_(result, "<Morsel: a='b'>")
 
+def test_strings_differ():
+    from webob.util import strings_differ
+
+    eq_(strings_differ('test1', 'test'), True)
+
 class TestRequestCookies(unittest.TestCase):
     def _makeOne(self, environ):
         from webob.cookies import RequestCookies
@@ -325,3 +330,256 @@ class TestRequestCookies(unittest.TestCase):
         self.assertTrue(r.startswith(
             '<RequestCookies (dict-like) with values '))
         self.assertTrue(r.endswith('>'))
+
+
+class CookieMakeCookie(unittest.TestCase):
+    def makeOne(self, name, value, **kw):
+        from webob.cookies import make_cookie
+        return make_cookie(name, value, **kw)
+
+    def test_make_cookie_max_age(self):
+        cookie = self.makeOne('test_cookie', 'value', max_age=500)
+
+        self.assertTrue('test_cookie=value' in cookie)
+        self.assertTrue('Max-Age=500;' in cookie)
+        self.assertTrue('expires' in cookie)
+
+    def test_make_cookie_max_age_timedelta(self):
+        from datetime import timedelta
+        cookie = self.makeOne('test_cookie', 'value',
+                              max_age=timedelta(seconds=500))
+
+        self.assertTrue('test_cookie=value' in cookie)
+        self.assertTrue('Max-Age=500;' in cookie)
+        self.assertTrue('expires' in cookie)
+
+    def test_make_cookie_comment(self):
+        cookie = self.makeOne('test_cookie', 'value', comment='lolwhy')
+
+        self.assertTrue('test_cookie=value' in cookie)
+        self.assertTrue('Comment=lolwhy' in cookie)
+
+class CommonCookieProfile(unittest.TestCase):
+    def makeDummyRequest(self, **kw):
+        class Dummy(object):
+            def __init__(self, **kwargs):
+                self.__dict__.update(**kwargs)
+        d = Dummy(**kw)
+        d.response = Dummy()
+        d.response.headerlist = list()
+        return d
+
+    def makeOneRequest(self):
+        request = self.makeDummyRequest(environ=dict())
+        request.environ['HTTP_HOST'] = 'www.example.net'
+        request.cookies = dict()
+
+        return request
+
+
+class CookieProfileTest(CommonCookieProfile):
+    def makeOne(self, name='uns', **kw):
+        if 'request' in kw:
+            request = kw['request']
+            del kw['request']
+        else:
+            request = self.makeOneRequest()
+
+        from webob.cookies import CookieProfile
+        return CookieProfile(name, **kw)(request)
+
+    def test_cookie_creation(self):
+        cookie = self.makeOne()
+
+        from webob.cookies import CookieProfile
+        self.assertTrue(isinstance(cookie, CookieProfile))
+
+    def test_cookie_name(self):
+        cookie = self.makeOne()
+
+        cookie_list = cookie.get_headers("test")
+
+        for cookie in cookie_list:
+            self.assertTrue(cookie[1].startswith('uns'))
+            self.assertFalse('uns="";' in cookie[1])
+
+    def test_cookie_no_request(self):
+        from webob.cookies import CookieProfile
+        cookie = CookieProfile('uns')
+
+        self.assertRaises(ValueError, cookie.get_value)
+
+class SignedCookieProfileTest(CommonCookieProfile):
+    def makeOne(self, secret='seekrit', salt='salty', name='uns', **kw):
+        if 'request' in kw:
+            request = kw['request']
+            del kw['request']
+        else:
+            request = self.makeOneRequest()
+
+        from webob.cookies import SignedCookieProfile as CookieProfile
+        return CookieProfile(secret, salt, name, **kw)(request)
+
+
+    def test_cookie_name(self):
+        cookie = self.makeOne()
+
+        cookie_list = cookie.get_headers("test")
+
+        for cookie in cookie_list:
+            self.assertTrue(cookie[1].startswith('uns'))
+            self.assertFalse('uns="";' in cookie[1])
+
+    def test_cookie_expire(self):
+        cookie = self.makeOne()
+
+        cookie_list = cookie.get_headers(None, max_age=0)
+
+        for cookie in cookie_list:
+            self.assertTrue('Max-Age=0;' in cookie[1])
+
+    def test_cookie_max_age(self):
+        cookie = self.makeOne()
+
+        cookie_list = cookie.get_headers("test", max_age=60)
+
+        for cookie in cookie_list:
+            self.assertTrue('Max-Age=60;' in cookie[1])
+            self.assertTrue('expires=' in cookie[1])
+
+    def test_cookie_raw(self):
+        cookie = self.makeOne()
+
+        cookie_list = cookie.get_headers("test")
+
+        self.assertTrue(isinstance(cookie_list, list))
+
+    def test_set_cookie(self):
+        request = self.makeOneRequest()
+        cookie = self.makeOne(request=request)
+
+        ret = cookie.set_cookies(request.response, "test")
+
+        self.assertEqual(ret, request.response)
+
+    def test_no_cookie(self):
+        cookie = self.makeOne()
+
+        ret = cookie.get_value()
+
+        self.assertEqual(None, ret)
+
+    def test_with_cookies(self):
+        request = self.makeOneRequest()
+        request.cookies['uns'] = (
+            "prg7uAnrKJBOz0U2lA2n8QtVeQva-8uB6rDjwP0SmtCOatwdjwAH0ycJOv7ASLN"
+            "FAoVf_ptbKtZdj30LtS9y9kZMSW9Fd1pjS0c2SVRRU3FiWWNVTm5QbGp3T2NHTn"
+            "MyNUpSVkNTb1pjeF91WC1PQTFBaHNzQS1DTmVWS3BXa3NRYTBrdE1odVFEZGp6b"
+            "UR3Z3picHRpSjBaWE4wSWc"
+            )
+        cookie = self.makeOne(request=request)
+
+        ret = cookie.get_value()
+
+        self.assertEqual(ret, "test")
+
+    def test_with_bad_cookie_invalid_base64(self):
+        request = self.makeOneRequest()
+        request.cookies['uns'] = (
+            "gAJVBHRlc3RxAS4KjKfwGmCkliC4ba99rWUdpy_{}riHzK7MQFPsbSgYTgALHa"
+            "SHrRkd3lyE8c4w5ruxAKOyj2h5oF69Ix7ERZv_")
+        cookie = self.makeOne(request=request)
+
+        self.assertRaises(ValueError, cookie.get_value)
+
+    def test_with_bad_cookie_invalid_signature(self):
+        request = self.makeOneRequest()
+        request.cookies['uns'] = (
+            "InRlc3QiFLIoEwZcKG6ITQSqbYcUNnPljwOcGNs25JRVCSoZcx/uX+OA1AhssA"
+            "+CNeVKpWksQa0ktMhuQDdjzmDwgzbptg==")
+        cookie = self.makeOne(secret='sekrit!', request=request)
+
+        self.assertRaises(ValueError, cookie.get_value)
+
+    def test_with_domain(self):
+        cookie = self.makeOne(domains=("testing.example.net",))
+        ret = cookie.get_headers("test")
+
+        passed = False
+
+        for cookie in ret:
+            if 'Domain=testing.example.net' in cookie[1]:
+                passed = True
+
+        self.assertTrue(passed)
+        self.assertEqual(len(ret), 1)
+
+    def test_with_domains(self):
+        cookie = self.makeOne(domains=("testing.example.net", "testing2.example.net"))
+        ret = cookie.get_headers("test")
+
+        passed = 0
+
+        for cookie in ret:
+            if 'Domain=testing.example.net' in cookie[1]:
+                passed += 1
+            if 'Domain=testing2.example.net' in cookie[1]:
+                passed += 1
+
+        self.assertEqual(passed, 2)
+        self.assertEqual(len(ret), 2)
+
+    def test_flag_secure(self):
+        cookie = self.makeOne(secure=True)
+        ret = cookie.get_headers("test")
+
+        for cookie in ret:
+            self.assertTrue('; secure' in cookie[1])
+
+    def test_flag_http_only(self):
+        cookie = self.makeOne(httponly=True)
+        ret = cookie.get_headers("test")
+
+        for cookie in ret:
+            self.assertTrue('; HttpOnly' in cookie[1])
+
+    def test_cookie_length(self):
+        cookie = self.makeOne()
+
+        longstring = 'a' * 4096
+        self.assertRaises(ValueError, cookie.get_headers, longstring)
+
+    def test_very_long_key(self):
+        longstring = 'a' * 1024
+        cookie = self.makeOne(secret=longstring)
+
+        ret = cookie.get_headers("test")
+
+def serialize(secret, salt, data):
+    import hmac
+    import base64
+    import json
+    from hashlib import sha1
+    from webob.compat import bytes_
+    from webob.compat import native_
+    from hashlib import sha1
+    salted_secret = bytes_(salt or '') + bytes_(secret)
+    cstruct = bytes_(json.dumps(data))
+    sig = hmac.new(salted_secret, cstruct, sha1).digest()
+    return base64.urlsafe_b64encode(sig + cstruct).rstrip(b'=')
+
+class SignedSerializerTest(unittest.TestCase):
+    def makeOne(self, secret, salt, hashalg='sha1', **kw):
+        from webob.cookies import SignedSerializer
+        return SignedSerializer(secret, salt, hashalg=hashalg, **kw)
+
+    def test_serialize(self):
+        ser = self.makeOne('seekrit', 'salty')
+
+        self.assertEqual(ser.dumps('test'), serialize('seekrit', 'salty', 'test'))
+
+    def test_deserialize(self):
+        ser = self.makeOne('seekrit', 'salty')
+
+        self.assertEqual(ser.loads(serialize('seekrit', 'salty', 'test')), 'test')
+
