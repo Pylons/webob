@@ -2,6 +2,8 @@ import collections
 
 import base64
 import binascii
+import hashlib
+import hmac
 import json
 from datetime import (
     date,
@@ -20,6 +22,8 @@ from webob.compat import (
     native_,
     string_types,
     )
+
+from webob.util import strings_differ
 
 __all__ = ['Cookie']
 
@@ -694,3 +698,108 @@ class CookieProfile(object):
                 cookies.append(('Set-Cookie', cookievalue))
 
         return cookies
+
+
+class SignedCookieProfile(CookieProfile):
+    """
+    A helper for generating cookies that are signed to prevent tampering.
+
+    By default this will create a single cookie, given a value it will
+    serialize it, then use HMAC to cryptographically sign the data. Finally
+    the result is base64-encoded for transport. This way a remote user can
+    not tamper with the value without uncovering the secret/salt used.
+
+    ``secret``
+      A string which is used to sign the cookie. The secret should be at
+      least as long as the block size of the selected hash algorithm. For
+      ``sha512`` this would mean a 128 bit (64 character) secret.  It should
+      be unique within the set of secret values provided to Pyramid for
+      its various subsystems (see :ref:`admonishment_against_secret_sharing`).
+
+    ``salt``
+      A namespace to avoid collisions between different uses of a shared
+      secret. Reusing a secret for different parts of an application is
+      strongly discouraged (see :ref:`admonishment_against_secret_sharing`).
+
+    ``hashalg``
+      The HMAC digest algorithm to use for signing. The algorithm must be
+      supported by the :mod:`hashlib` library. Default: ``'sha512'``.
+
+    ``cookie_name``
+      The name of the cookie used for sessioning. Default: ``'session'``.
+
+    ``max_age``
+      The maximum age of the cookie used for sessioning (in seconds).
+      Default: ``None`` (browser scope).
+
+    ``secure``
+      The 'secure' flag of the session cookie. Default: ``False``.
+
+    ``httponly``
+      Hide the cookie from Javascript by setting the 'HttpOnly' flag of the
+      session cookie. Default: ``False``.
+
+    ``path``
+      The path used for the session cookie. Default: ``'/'``.
+
+    ``domains``
+      The domain(s) used for the session cookie. Default: ``None`` (no domain).
+      Can be passed an iterable containing multiple domains, this will set
+      multiple cookies one for each domain.
+
+    ``serialize``
+      A callable accepting a Python object and returning a bytestring. A
+      ``ValueError`` should be raised for malformed inputs.
+      Default: ``None`, which will use :func:`pickle.dumps`.
+
+    ``deserialize``
+      A callable accepting a bytestring and returning a Python object. A
+      ``ValueError`` should be raised for malformed inputs.
+      Default: ``None`, which will use :func:`pickle.loads`.
+
+    """
+    def __init__(self,
+                 secret,
+                 salt,
+                 cookie_name,
+                 secure=False,
+                 max_age=None,
+                 httponly=False,
+                 path="/",
+                 domains=None,
+                 hashalg='sha512',
+                 serialize=None,
+                 deserialize=None,
+                 ):
+        self.secret = secret
+        self.salt = salt
+        self.hashalg = hashalg
+
+        if serialize is None:
+            serialize = self._default_serializer.dumps
+        if deserialize is None:
+            deserialize = self._default_serializer.loads
+
+        serializer = SignedSerializer(secret,
+                                      salt,
+                                      hashalg,
+                                      serialize=serialize,
+                                      deserialize=deserialize)
+        CookieProfile.__init__(self,
+                              cookie_name,
+                              secure=secure,
+                              max_age=max_age,
+                              httponly=httponly,
+                              path=path,
+                              domains=domains,
+                              serialize=serializer.dumps,
+                              deserialize=serializer.loads)
+
+    def bind(self, request):
+        """ Bind a request to a copy of this instance and return it"""
+
+        selfish = SignedCookieProfile(self.secret, self.salt, self.cookie_name, self.secure, self.max_age, self.httponly, self.path, self.domains, self.hashalg, self.serialize, self.deserialize)
+        selfish.request = request
+
+        return selfish
+
