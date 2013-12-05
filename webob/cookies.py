@@ -432,14 +432,11 @@ class SignedSerializer(object):
     ``secret``
       A string which is used to sign the cookie. The secret should be at
       least as long as the block size of the selected hash algorithm. For
-      ``sha512`` this would mean a 128 bit (64 character) secret.  It should
-      be unique within the set of secret values provided to Pyramid for
-      its various subsystems (see :ref:`admonishment_against_secret_sharing`).
+      ``sha512`` this would mean a 128 bit (64 character) secret.
 
     ``salt``
       A namespace to avoid collisions between different uses of a shared
-      secret. Reusing a secret for different parts of an application is
-      strongly discouraged (see :ref:`admonishment_against_secret_sharing`).
+      secret.
 
     ``hashalg``
       The HMAC digest algorithm to use for signing. The algorithm must be
@@ -489,7 +486,7 @@ class SignedSerializer(object):
         Given a ``bstruct`` (a bytestring), verify the signature and then
         deserialize and return the deserialized value.
 
-        A ``ValueError` will be raised if the signature fails to validate.
+        A ``ValueError`` will be raised if the signature fails to validate.
         """
         try:
             b64padding = b'=' * (-len(bstruct) % 4)
@@ -600,9 +597,8 @@ class CookieProfile(object):
         error, or returns None if there is no cookie.
         """
 
-        # Not sure if we want to handle this case or not ...
         if not self.request:
-            raise ValueError
+            raise ValueError('No request bound to cookie profile')
 
         cookie = self.request.cookies.get(self.cookie_name)
 
@@ -723,14 +719,11 @@ class SignedCookieProfile(CookieProfile):
     ``secret``
       A string which is used to sign the cookie. The secret should be at
       least as long as the block size of the selected hash algorithm. For
-      ``sha512`` this would mean a 128 bit (64 character) secret.  It should
-      be unique within the set of secret values provided to Pyramid for
-      its various subsystems (see :ref:`admonishment_against_secret_sharing`).
+      ``sha512`` this would mean a 128 bit (64 character) secret.
 
     ``salt``
       A namespace to avoid collisions between different uses of a shared
-      secret. Reusing a secret for different parts of an application is
-      strongly discouraged (see :ref:`admonishment_against_secret_sharing`).
+      secret. 
 
     ``hashalg``
       The HMAC digest algorithm to use for signing. The algorithm must be
