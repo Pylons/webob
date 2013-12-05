@@ -27,6 +27,12 @@ Next release
   environment contains an ``HTTP_HOST`` value of ``foo.example.com:8000``,
   ``request.domain`` will return ``foo.example.com``.
 
+- Added five new APIs: ``webob.cookies.CookieProfile``,
+  ``webob.cookies.SignedCookieProfile``, ``webob.cookies.JSONSerializer`` and
+  ``webob.cookies.SignedSerializer``, and ``webob.cookies.make_cookie``.  These
+  APIs are convenience APIs for generating and parsing cookie headers as well
+  as dealing with signing cookies.
+
 1.2.3
 ------------
 

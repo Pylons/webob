@@ -25,7 +25,8 @@ from webob.compat import (
 
 from webob.util import strings_differ
 
-__all__ = ['Cookie']
+__all__ = ['Cookie', 'CookieProfile', 'SignedCookieProfile', 'SignedSerializer',
+           'JSONSerializer', 'make_cookie']
 
 _marker = object()
 
@@ -238,10 +239,9 @@ def serialize_cookie_date(v):
 class Morsel(dict):
     __slots__ = ('name', 'value')
     def __init__(self, name, value):
-        assert _valid_cookie_name(name)
-        assert isinstance(value, bytes)
-        self.name = name
-        self.value = value
+        self.name = bytes_(name, encoding='ascii')
+        self.value = bytes_(value, encoding='ascii')
+        assert _valid_cookie_name(self.name)
         self.update(dict.fromkeys(_c_keys, None))
 
     path = cookie_property(b'path')
@@ -380,6 +380,9 @@ def _valid_cookie_name(key):
 
 def make_cookie(name, value, max_age=None, path='/', domain=None,
                 secure=False, httponly=False, comment=None):
+    """ Generate a cookie value.  If ``value`` is None, generate a cookie value
+    with an expiration date in the past"""
+    
     # We are deleting the cookie, override max_age and expires
     if value is None:
         value = b''
@@ -393,7 +396,7 @@ def make_cookie(name, value, max_age=None, path='/', domain=None,
     else:
         expires = max_age
 
-    morsel = Morsel(name, native_(value))
+    morsel = Morsel(name, value)
 
     if domain is not None:
         morsel.domain = bytes_(domain)
@@ -411,14 +414,13 @@ def make_cookie(name, value, max_age=None, path='/', domain=None,
         morsel.comment = bytes_(comment)
     return morsel.serialize()
 
-
-class JsonSerializer(object):
+class JSONSerializer(object):
+    """ A serializer which uses `json.dumps`` and ``json.loads``"""
     def dumps(self, appstruct):
-        return json.dumps(appstruct)
+        return bytes_(json.dumps(appstruct), encoding='utf-8')
 
-    def loads(self, cstruct):
-        return json.loads(cstruct)
-
+    def loads(self, bstruct):
+        return json.loads(text_(bstruct, encoding='utf-8'))
 
 class SignedSerializer(object):
     """
@@ -443,24 +445,20 @@ class SignedSerializer(object):
       The HMAC digest algorithm to use for signing. The algorithm must be
       supported by the :mod:`hashlib` library. Default: ``'sha512'``.
 
-    ``serialize``
-      A callable accepting a Python object and returning a bytestring. A
-      ``ValueError`` should be raised for malformed inputs.
-      Default: ``None`, which will use :func:`pickle.dumps`.
+    ``serializer``
+      An object with two methods: `loads`` and ``dumps``.  The ``loads`` method
+      should accept bytes and return a Python object.  The ``dumps`` method
+      should accept a Python object and return bytes.  A ``ValueError`` should
+      be raised for malformed inputs.  Default: ``None`, which will use a
+      derivation of :func:`json.dumps` and ``json.loads``.
 
-    ``deserialize``
-      A callable accepting a bytestring and returning a Python object. A
-      ``ValueError`` should be raised for malformed inputs.
-      Default: ``None`, which will use :func:`pickle.loads`.
     """
-    _default_serializer = JsonSerializer()
 
     def __init__(self,
                  secret,
                  salt,
                  hashalg='sha512',
-                 serialize=None,
-                 deserialize=None,
+                 serializer=None,
                  ):
         self.salt = salt
         self.secret = secret
@@ -471,13 +469,10 @@ class SignedSerializer(object):
         self.digestmod = lambda string=b'': hashlib.new(self.hashalg, string)
         self.digest_size = self.digestmod().digest_size
 
-        if serialize is None:
-            serialize = self._default_serializer.dumps
-        if deserialize is None:
-            deserialize = self._default_serializer.loads
+        if serializer is None:
+            serializer = JSONSerializer()
 
-        self.serialize = serialize
-        self.deserialize = deserialize
+        self.serializer = serializer
 
     def dumps(self, appstruct):
         """
@@ -485,13 +480,14 @@ class SignedSerializer(object):
 
         Returns a bytestring.
         """
-        cstruct = bytes_(self.serialize(appstruct))
+        cstruct = self.serializer.dumps(appstruct) # will be bytes
         sig = hmac.new(self.salted_secret, cstruct, self.digestmod).digest()
         return base64.urlsafe_b64encode(sig + cstruct).rstrip(b'=')
 
     def loads(self, bstruct):
         """
-        Given a ``bstruct``, verify the signature and then deserialize.
+        Given a ``bstruct`` (a bytestring), verify the signature and then
+        deserialize and return the deserialized value.
 
         A ``ValueError` will be raised if the signature fails to validate.
         """
@@ -504,12 +500,13 @@ class SignedSerializer(object):
         cstruct = fstruct[self.digest_size:]
         expected_sig = fstruct[:self.digest_size]
 
-        sig = hmac.new(self.salted_secret, bytes_(cstruct), self.digestmod).digest()
+        sig = hmac.new(
+            self.salted_secret, bytes_(cstruct), self.digestmod).digest()
 
         if strings_differ(sig, expected_sig):
             raise ValueError('Invalid signature')
 
-        return self.deserialize(native_(cstruct))
+        return self.serializer.loads(native_(cstruct))
 
 
 _default = object()
@@ -544,19 +541,14 @@ class CookieProfile(object):
       Can be passed an iterable containing multiple domains, this will set
       multiple cookies one for each domain.
 
-    ``serialize``
-      A callable accepting a Python object and returning a bytestring. A
-      ``ValueError`` should be raised for malformed inputs.
-      Default: ``None`, which will use :func:`pickle.dumps`.
-
-    ``deserialize``
-      A callable accepting a bytestring and returning a Python object. A
-      ``ValueError`` should be raised for malformed inputs.
-      Default: ``None`, which will use :func:`pickle.loads`.
+    ``serializer``
+      An object with two methods: `loads`` and ``dumps``.  The ``loads`` method
+      should accept a bytestring and return a Python object.  The ``dumps``
+      method should accept a Python object and return bytes.  A ``ValueError``
+      should be raised for malformed inputs.  Default: ``None`, which will use
+      a derivation of :func:`json.dumps` and ``json.loads``.
 
     """
-
-    _default_serializer = JsonSerializer()
 
     def __init__(self,
                  cookie_name,
@@ -565,8 +557,8 @@ class CookieProfile(object):
                  httponly=None,
                  path='/',
                  domains=None,
-                 serialize=None,
-                 deserialize=None):
+                 serializer=None
+                 ):
         self.cookie_name = cookie_name
         self.secure = secure
         self.max_age = max_age
@@ -574,14 +566,10 @@ class CookieProfile(object):
         self.path = path
         self.domains = domains
 
-        if serialize is None:
-            serialize = self._default_serializer.dumps
-        if deserialize is None:
-            deserialize = self._default_serializer.loads
+        if serializer is None:
+            serializer = JSONSerializer()
 
-        self.serialize = serialize
-        self.deserialize = deserialize
-
+        self.serializer = serializer
         self.request = None
 
     def __call__(self, request):
@@ -592,9 +580,16 @@ class CookieProfile(object):
     def bind(self, request):
         """ Bind a request to a copy of this instance and return it"""
 
-        selfish = CookieProfile(self.cookie_name, self.secure, self.max_age, self.httponly, self.path, self.domains, self.serialize, self.deserialize)
+        selfish = CookieProfile(
+            self.cookie_name,
+            self.secure,
+            self.max_age,
+            self.httponly,
+            self.path,
+            self.domains,
+            self.serializer,
+            )
         selfish.request = request
-
         return selfish
 
     def get_value(self):
@@ -612,15 +607,24 @@ class CookieProfile(object):
         cookie = self.request.cookies.get(self.cookie_name)
 
         if cookie:
-            return self.deserialize(bytes_(cookie))
+            return self.serializer.loads(bytes_(cookie))
 
-    def set_cookies(self, response, value, domains=_default, max_age=_default, path=_default, secure=_default, httponly=_default):
+    def set_cookies(self, response, value, domains=_default, max_age=_default,
+                    path=_default, secure=_default, httponly=_default):
         """ Set the cookies on a response."""
-        cookies = self.get_headers(value, domains=domains, max_age=max_age, path=path, secure=secure, httponly=httponly)
+        cookies = self.get_headers(
+            value,
+            domains=domains,
+            max_age=max_age,
+            path=path,
+            secure=secure,
+            httponly=httponly
+            )
         response.headerlist.extend(cookies)
         return response
 
-    def get_headers(self, value, domains=_default, max_age=_default, path=_default, secure=_default, httponly=_default):
+    def get_headers(self, value, domains=_default, max_age=_default,
+                    path=_default, secure=_default, httponly=_default):
         """ Retrieve raw headers for setting cookies.
 
         Returns a list of headers that should be set for the cookies to
@@ -630,9 +634,16 @@ class CookieProfile(object):
             max_age = 0
             bstruct = None
         else:
-            bstruct = self.serialize(value)
+            bstruct = self.serializer.dumps(value)
 
-        return self._get_cookies(bstruct, domains=domains, max_age=max_age, path=path, secure=secure, httponly=httponly)
+        return self._get_cookies(
+            bstruct,
+            domains=domains,
+            max_age=max_age,
+            path=path,
+            secure=secure,
+            httponly=httponly
+            )
 
     def _get_cookies(self, value, domains, max_age, path, secure, httponly):
         """Internal function
@@ -747,16 +758,12 @@ class SignedCookieProfile(CookieProfile):
       Can be passed an iterable containing multiple domains, this will set
       multiple cookies one for each domain.
 
-    ``serialize``
-      A callable accepting a Python object and returning a bytestring. A
-      ``ValueError`` should be raised for malformed inputs.
-      Default: ``None`, which will use :func:`pickle.dumps`.
-
-    ``deserialize``
-      A callable accepting a bytestring and returning a Python object. A
-      ``ValueError`` should be raised for malformed inputs.
-      Default: ``None`, which will use :func:`pickle.loads`.
-
+    ``serializer``
+      An object with two methods: `loads`` and ``dumps``.  The ``loads`` method
+      should accept bytes and return a Python object.  The ``dumps`` method
+      should accept a Python object and return bytes.  A ``ValueError`` should
+      be raised for malformed inputs.  Default: ``None`, which will use a
+      derivation of :func:`json.dumps` and ``json.loads``.
     """
     def __init__(self,
                  secret,
@@ -768,38 +775,44 @@ class SignedCookieProfile(CookieProfile):
                  path="/",
                  domains=None,
                  hashalg='sha512',
-                 serialize=None,
-                 deserialize=None,
+                 serializer=None,
                  ):
         self.secret = secret
         self.salt = salt
         self.hashalg = hashalg
 
-        if serialize is None:
-            serialize = self._default_serializer.dumps
-        if deserialize is None:
-            deserialize = self._default_serializer.loads
-
-        serializer = SignedSerializer(secret,
-                                      salt,
-                                      hashalg,
-                                      serialize=serialize,
-                                      deserialize=deserialize)
-        CookieProfile.__init__(self,
-                              cookie_name,
-                              secure=secure,
-                              max_age=max_age,
-                              httponly=httponly,
-                              path=path,
-                              domains=domains,
-                              serialize=serializer.dumps,
-                              deserialize=serializer.loads)
+        signed_serializer = SignedSerializer(
+            secret,
+            salt,
+            hashalg,
+            serializer=serializer,
+            )
+        CookieProfile.__init__(
+            self,
+            cookie_name,
+            secure=secure,
+            max_age=max_age,
+            httponly=httponly,
+            path=path,
+            domains=domains,
+            serializer=signed_serializer,
+            )
 
     def bind(self, request):
         """ Bind a request to a copy of this instance and return it"""
 
-        selfish = SignedCookieProfile(self.secret, self.salt, self.cookie_name, self.secure, self.max_age, self.httponly, self.path, self.domains, self.hashalg, self.serialize, self.deserialize)
+        selfish = SignedCookieProfile(
+            self.secret,
+            self.salt,
+            self.cookie_name,
+            self.secure,
+            self.max_age,
+            self.httponly,
+            self.path,
+            self.domains,
+            self.hashalg,
+            self.serializer,
+            )
         selfish.request = request
-
         return selfish
 

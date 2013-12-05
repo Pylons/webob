@@ -515,7 +515,9 @@ class SignedCookieProfileTest(CommonCookieProfile):
         self.assertEqual(len(ret), 1)
 
     def test_with_domains(self):
-        cookie = self.makeOne(domains=("testing.example.net", "testing2.example.net"))
+        cookie = self.makeOne(
+            domains=("testing.example.net", "testing2.example.net")
+            )
         ret = cookie.get_headers("test")
 
         passed = 0
