@@ -503,7 +503,7 @@ class SignedSerializer(object):
         if strings_differ(sig, expected_sig):
             raise ValueError('Invalid signature')
 
-        return self.serializer.loads(native_(cstruct))
+        return self.serializer.loads(cstruct)
 
 
 _default = object()
