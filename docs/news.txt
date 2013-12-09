@@ -20,7 +20,7 @@ Next release
 - Allow query strings attached to PATCH requests to populate request.params.
   See https://github.com/Pylons/webob/pull/106
 
-- Added Pyton 3.3 trove classifier.
+- Added Python 3.3 trove classifier.
 
 - Added a read-only ``domain`` property to ``BaseRequest``.  This property
   returns the domain portion of the host value.  For example, if the
