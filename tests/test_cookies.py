@@ -93,15 +93,29 @@ def test_ch_unquote():
     eq_(cookies._unquote(b'hello world'), b'hello world')
     eq_(cookies._unquote(b'"hello world"'), b'hello world')
     eq_(cookies._value_quote(b'hello world'), b'"hello world"')
-    # quotation mark is escaped w/ backslash
+    # quotation mark escaped w/ backslash is unquoted correctly (support
+    # pre webob 1.3 cookies)
     eq_(cookies._unquote(b'"\\""'), b'"')
-    eq_(cookies._value_quote(b'"'), b'"\\""')
+    # we also are able to unquote the newer \\042 serialization of quotation
+    # mark
+    eq_(cookies._unquote(b'"\\042"'), b'"')
+    # but when we generate a new cookie, quote using normal octal quoting
+    # rules
+    eq_(cookies._value_quote(b'"'), b'"\\042"')
+    # backslash escaped w/ backslash is unquoted correctly (support
+    # pre webob 1.3 cookies)
+    eq_(cookies._unquote(b'"\\\\"'), b'\\')
+    # we also are able to unquote the newer \\134 serialization of backslash
+    eq_(cookies._unquote(b'"\\134"'), b'\\')
+    # but when we generate a new cookie, quote using normal octal quoting
+    # rules
+    eq_(cookies._value_quote(b'\\'), b'"\\134"')
     # misc byte escaped as octal
     eq_(cookies._unquote(b'"\\377"'), b'\xff')
     eq_(cookies._value_quote(b'\xff'), b'"\\377"')
     # combination
     eq_(cookies._unquote(b'"a\\"\\377"'), b'a"\xff')
-    eq_(cookies._value_quote(b'a"\xff'), b'"a\\"\\377"')
+    eq_(cookies._value_quote(b'a"\xff'), b'"a\\042\\377"')
 
 def test_cookie_invalid_name():
     c = cookies.Cookie()
@@ -130,10 +144,10 @@ def test_serialize_max_age_str():
     result = cookies.serialize_max_age(val)
     eq_(result, b'86400')
 
-def test_escape_comma():
+def test_escape_comma_semi_dquote():
     c = cookies.Cookie()
     c['x'] = b'";,"'
-    eq_(c.serialize(True), r'x="\"\073\054\""')
+    eq_(c.serialize(True), r'x="\042\073\054\042"')
 
 def test_parse_qmark_in_val():
     v = r'x="\"\073\054\""; expires=Sun, 12-Jun-2011 23:16:01 GMT'

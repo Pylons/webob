@@ -43,6 +43,13 @@ Next release
 - Cookie names are now restricted to the set of characters expected by RFC
   6265.  Previously they could contain unsupported characters such as ``/``.
 
+- Older versions of Webob escaped the doublequote to ``\"`` and the backslash
+  to ``\\`` when quoting cookie values.  Now, instead, cookie serialization
+  generates ``\042`` for the doublequote and ``\134`` for the backslash. This
+  is what is expected as per RFC 6265.  Note that old cookie values that do
+  have the older style quoting in them will still be unquoted correctly,
+  however.
+
 1.2.3
 ------------
 
