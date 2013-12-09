@@ -92,16 +92,16 @@ def test_ch_unquote():
     eq_(cookies._unquote(b'"hello world'), b'"hello world')
     eq_(cookies._unquote(b'hello world'), b'hello world')
     eq_(cookies._unquote(b'"hello world"'), b'hello world')
-    eq_(cookies._quote(b'hello world'), b'"hello world"')
+    eq_(cookies._value_quote(b'hello world'), b'"hello world"')
     # quotation mark is escaped w/ backslash
     eq_(cookies._unquote(b'"\\""'), b'"')
-    eq_(cookies._quote(b'"'), b'"\\""')
+    eq_(cookies._value_quote(b'"'), b'"\\""')
     # misc byte escaped as octal
     eq_(cookies._unquote(b'"\\377"'), b'\xff')
-    eq_(cookies._quote(b'\xff'), b'"\\377"')
+    eq_(cookies._value_quote(b'\xff'), b'"\\377"')
     # combination
     eq_(cookies._unquote(b'"a\\"\\377"'), b'a"\xff')
-    eq_(cookies._quote(b'a"\xff'), b'"a\\"\\377"')
+    eq_(cookies._value_quote(b'a"\xff'), b'"a\\"\\377"')
 
 def test_cookie_invalid_name():
     c = cookies.Cookie()
@@ -359,6 +359,12 @@ class CookieMakeCookie(unittest.TestCase):
         self.assertTrue('test_cookie=value' in cookie)
         self.assertTrue('Comment=lolwhy' in cookie)
 
+    def test_make_cookie_path(self):
+        cookie = self.makeOne('test_cookie', 'value', path='/foo/bar/baz')
+
+        self.assertTrue('test_cookie=value' in cookie)
+        self.assertTrue('Path=/foo/bar/baz' in cookie)
+        
 class CommonCookieProfile(unittest.TestCase):
     def makeDummyRequest(self, **kw):
         class Dummy(object):
@@ -555,7 +561,7 @@ class SignedCookieProfileTest(CommonCookieProfile):
         longstring = 'a' * 1024
         cookie = self.makeOne(secret=longstring)
 
-        ret = cookie.get_headers("test")
+        cookie.get_headers("test")
 
 def serialize(secret, salt, data):
     import hmac
@@ -563,8 +569,6 @@ def serialize(secret, salt, data):
     import json
     from hashlib import sha1
     from webob.compat import bytes_
-    from webob.compat import native_
-    from hashlib import sha1
     salted_secret = bytes_(salt or '') + bytes_(secret)
     cstruct = bytes_(json.dumps(data))
     sig = hmac.new(salted_secret, cstruct, sha1).digest()
@@ -578,10 +582,16 @@ class SignedSerializerTest(unittest.TestCase):
     def test_serialize(self):
         ser = self.makeOne('seekrit', 'salty')
 
-        self.assertEqual(ser.dumps('test'), serialize('seekrit', 'salty', 'test'))
+        self.assertEqual(
+            ser.dumps('test'),
+            serialize('seekrit', 'salty', 'test')
+            )
 
     def test_deserialize(self):
         ser = self.makeOne('seekrit', 'salty')
 
-        self.assertEqual(ser.loads(serialize('seekrit', 'salty', 'test')), 'test')
+        self.assertEqual(
+            ser.loads(serialize('seekrit', 'salty', 'test')),
+            'test'
+            )
 

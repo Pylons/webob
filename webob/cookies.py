@@ -59,7 +59,7 @@ class RequestCookies(collections.MutableMapping):
         if value is None:
             replacement = None
         else:
-            bytes_val = _quote(bytes_(value, 'utf-8'))
+            bytes_val = _value_quote(bytes_(value, 'utf-8'))
             replacement = bytes_name + b'=' + bytes_val
         matches = _rx_cookie.finditer(header)
         found = False
@@ -97,7 +97,7 @@ class RequestCookies(collections.MutableMapping):
         except UnicodeEncodeError:
             raise TypeError('cookie name must be encodable to ascii')
         if not _valid_cookie_name(bytes_cookie_name):
-            raise TypeError('cookie name must be valid according to RFC 2109')
+            raise TypeError('cookie name must be valid according to RFC 6265')
         return name
 
     def __setitem__(self, name, value):
@@ -260,12 +260,15 @@ class Morsel(dict):
     def serialize(self, full=True):
         result = []
         add = result.append
-        add(self.name + b'=' + _quote(self.value))
+        add(self.name + b'=' + _value_quote(self.value))
         if full:
             for k in _c_valkeys:
                 v = self[k]
                 if v:
-                    add(_c_renames[k]+b'='+_quote(v))
+                    info = _c_renames[k]
+                    name = info['name']
+                    quoter = info['quoter']
+                    add(name + b'=' + quoter(v))
             expires = self[b'expires']
             if expires:
                 add(b'expires=' + expires)
@@ -282,19 +285,6 @@ class Morsel(dict):
             native_(self.name),
             native_(self.value)
         )
-
-_c_renames = {
-    b"path" : b"Path",
-    b"comment" : b"Comment",
-    b"domain" : b"Domain",
-    b"max-age" : b"Max-Age",
-}
-_c_valkeys = sorted(_c_renames)
-_c_keys = set(_c_renames)
-_c_keys.update([b'expires', b'secure', b'httponly'])
-
-
-
 
 #
 # parsing
@@ -321,8 +311,8 @@ _ch_unquote_map = dict((bytes_('%03o' % i), _bchr(i))
 )
 _ch_unquote_map.update((v, v) for v in list(_ch_unquote_map.values()))
 
-_b_dollar_sign = 36 if PY3 else '$'
-_b_quote_mark = 34 if PY3 else '"'
+_b_dollar_sign = ord('$') if PY3 else '$'
+_b_quote_mark = ord('"') if PY3 else '"'
 
 def _unquote(v):
     #assert isinstance(v, bytes)
@@ -339,12 +329,24 @@ def _ch_unquote(m):
 #
 
 # these chars can be in cookie value w/o causing it to be quoted
-_no_escape_special_chars = "!#$%&'*+-.^_`|~/"
+# see http://tools.ietf.org/html/rfc6265#section-4.1.1
+# and https://github.com/Pylons/webob/pull/104#issuecomment-28044314
+
+# allowed in cookie values without quoting:
+# <space> (0x21), "#$%&'()*+" (0x25-0x2B), "-./0123456789:" (0x2D-0x3A),
+# "<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[" (0x3C-0x5B),
+# "]^_`abcdefghijklmnopqrstuvwxyz{|}~" (0x5D-0x7E)
+
+_no_escape_special_chars = "!#$%&'()*+-./<=>?@[]^_`{|}~"
 _no_escape_chars = (string.ascii_letters + string.digits +
                     _no_escape_special_chars)
 _no_escape_bytes = bytes_(_no_escape_chars)
-# these chars never need to be quoted
+
+# these chars should not be quoted themselves but if they are present they
+# should cause the cookie value to be surrounded by quotes (voodoo inherited
+# by old webob code without any comments)
 _escape_noop_chars = _no_escape_chars + ': '
+
 # this is a map used to escape the values
 _escape_map = dict((chr(i), '\\%03o' % i) for i in range(256))
 _escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
@@ -352,7 +354,9 @@ _escape_map['"'] = r'\"'
 _escape_map['\\'] = r'\\'
 if PY3: # pragma: no cover
     # convert to {int -> bytes}
-    _escape_map = dict((ord(k), bytes_(v, 'ascii')) for k, v in _escape_map.items())
+    _escape_map = dict(
+        (ord(k), bytes_(v, 'ascii')) for k, v in _escape_map.items()
+        )
 _escape_char = _escape_map.__getitem__
 
 weekdays = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
@@ -361,21 +365,41 @@ months = (None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
 
 _notrans_binary = b' '*256
 
-def _needs_quoting(v):
+# these are the characters accepted in cookie *names*
+_valid_token_chars = string.ascii_letters + string.digits + "!#$%&'*+,-.^_`|~"
+_valid_token_bytes = bytes_(_valid_token_chars)
+
+def _value_needs_quoting(v):
     return v.translate(_notrans_binary, _no_escape_bytes)
 
-def _quote(v):
+def _value_quote(v):
     #assert isinstance(v, bytes)
-    if _needs_quoting(v):
+    if _value_needs_quoting(v):
         return b'"' + b''.join(map(_escape_char, v)) + b'"'
     return v
 
 def _valid_cookie_name(key):
     return isinstance(key, bytes) and not (
-        _needs_quoting(key)
+        key.translate(_notrans_binary, _valid_token_bytes)
         or key[0] == _b_dollar_sign
         or key.lower() in _c_keys
     )
+
+def _path_quote(v):
+    return b''.join(map(_escape_char, v))
+
+_domain_quote = _path_quote
+_max_age_quote = _path_quote
+
+_c_renames = {
+    b"path" : {'name':b"Path", 'quoter':_path_quote},
+    b"comment" : {'name':b"Comment", 'quoter':_value_quote},
+    b"domain" : {'name':b"Domain", 'quoter':_domain_quote},
+    b"max-age" : {'name':b"Max-Age", 'quoter':_max_age_quote},
+    }
+_c_valkeys = sorted(_c_renames)
+_c_keys = set(_c_renames)
+_c_keys.update([b'expires', b'secure', b'httponly'])
 
 
 def make_cookie(name, value, max_age=None, path='/', domain=None,
@@ -386,8 +410,12 @@ def make_cookie(name, value, max_age=None, path='/', domain=None,
     # We are deleting the cookie, override max_age and expires
     if value is None:
         value = b''
+        # Note that the max-age value of zero is technically contraspec;
+        # RFC6265 says that max-age cannot be zero.  However, all browsers
+        # appear to support this to mean "delete immediately".
+        # http://www.timwilson.id.au/news-three-critical-problems-with-rfc6265.html
         max_age = 0
-        expires = -5 * 60 * 60 * 24
+        expires = 'Wed, 31-Dec-97 23:59:59 GMT'
 
     # Convert max_age to seconds
     elif isinstance(max_age, timedelta):
@@ -590,11 +618,13 @@ class CookieProfile(object):
         return selfish
 
     def get_value(self):
-        """ Looks for a cookie by name, and returns its value
+        """ Looks for a cookie by name in the currently bound request, and
+        returns its value.  If the cookie profile is not bound to a request,
+        this method will raise a :exc:`ValueError`.
 
         Looks for the cookie in the cookies jar, and if it can find it it will
         attempt to deserialize it. Throws a ValueError if it fails due to an
-        error, or returns None if there is no cookie.
+        error, or returns ``None`` if there is no cookie.
         """
 
         if not self.request:
@@ -684,7 +714,8 @@ class CookieProfile(object):
         if not domains:
             cookievalue = make_cookie(
                     self.cookie_name,
-                    value, path=path,
+                    value,
+                    path=path,
                     max_age=max_age,
                     httponly=httponly,
                     secure=secure

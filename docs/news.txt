@@ -33,6 +33,16 @@ Next release
   APIs are convenience APIs for generating and parsing cookie headers as well
   as dealing with signing cookies.
 
+- Cookies generated via webob.cookies quoted characters in cookie values that
+  did not need to be quoted per RFC 6265.  The following characters are no
+  longer quoted in cookie values: ``~/=<>()[]{}?@`` .  The full set of
+  non-letter-or-digit unquoted cookie value characters is now
+  ``!#$%&'*+-.^_`|~/: =<>()[]{}?@``.  See
+  http://tools.ietf.org/html/rfc6265#section-4.1.1 for more information.
+
+- Cookie names are now restricted to the set of characters expected by RFC
+  6265.  Previously they could contain unsupported characters such as ``/``.
+
 1.2.3
 ------------
 
