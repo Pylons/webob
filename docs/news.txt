@@ -1,26 +1,11 @@
 News
 ====
 
-Next release
-------------
+1.3 (2013-12-10)
+----------------
 
-- Added support for draft status code 451 ("Unavailable for Legal Reasons").
-  See http://tools.ietf.org/html/draft-tbray-http-legally-restricted-status-00
-
-- Added status codes 428, 429, 431 and 511 to ``util.status_reasons`` (they
-  were already present in a previous release as ``webob.exc`` exceptions).
-
-- MIMEAccept happily parsed malformed wildcard strings like "image/pn*" at
-  parse time, but then threw an AssertionError during matching.  See
-  https://github.com/Pylons/webob/pull/83 .
-
-- Preserve document ordering of GET and POST request data when POST data passed
-  to Request.blank is a MultiDict.  See https://github.com/Pylons/webob/pull/96
-
-- Allow query strings attached to PATCH requests to populate request.params.
-  See https://github.com/Pylons/webob/pull/106
-
-- Added Python 3.3 trove classifier.
+Features
+~~~~~~~~
 
 - Added a read-only ``domain`` property to ``BaseRequest``.  This property
   returns the domain portion of the host value.  For example, if the
@@ -49,6 +34,27 @@ Next release
   is what is expected as per RFC 6265.  Note that old cookie values that do
   have the older style quoting in them will still be unquoted correctly,
   however.
+
+- Added support for draft status code 451 ("Unavailable for Legal Reasons").
+  See http://tools.ietf.org/html/draft-tbray-http-legally-restricted-status-00
+
+- Added status codes 428, 429, 431 and 511 to ``util.status_reasons`` (they
+  were already present in a previous release as ``webob.exc`` exceptions).
+
+Bug Fixes
+~~~~~~~~~
+
+- MIMEAccept happily parsed malformed wildcard strings like "image/pn*" at
+  parse time, but then threw an AssertionError during matching.  See
+  https://github.com/Pylons/webob/pull/83 .
+
+- Preserve document ordering of GET and POST request data when POST data passed
+  to Request.blank is a MultiDict.  See https://github.com/Pylons/webob/pull/96
+
+- Allow query strings attached to PATCH requests to populate request.params.
+  See https://github.com/Pylons/webob/pull/106
+
+- Added Python 3.3 trove classifier.
 
 1.2.3
 ------------
