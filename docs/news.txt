@@ -1,6 +1,15 @@
 News
 ====
 
+Unreleased
+----------
+
+Bug Fixes
+~~~~~~~~~
+
+- Squash a ValueError when SignedSerializer fails. We simply return None as if
+  the cookie was never set in the first place.
+
 1.3 (2013-12-10)
 ----------------
 

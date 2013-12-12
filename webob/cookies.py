@@ -631,7 +631,10 @@ class CookieProfile(object):
         cookie = self.request.cookies.get(self.cookie_name)
 
         if cookie:
-            return self.serializer.loads(bytes_(cookie))
+            try:
+                return self.serializer.loads(bytes_(cookie))
+            except:
+                return None
 
     def set_cookies(self, response, value, domains=_default, max_age=_default,
                     path=_default, secure=_default, httponly=_default):
