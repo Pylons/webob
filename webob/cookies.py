@@ -633,7 +633,7 @@ class CookieProfile(object):
         if cookie:
             try:
                 return self.serializer.loads(bytes_(cookie))
-            except ValueError:
+            except:
                 return None
 
     def set_cookies(self, response, value, domains=_default, max_age=_default,
