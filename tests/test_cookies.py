@@ -492,13 +492,10 @@ class SignedCookieProfileTest(CommonCookieProfile):
     def test_with_cookies(self):
         request = self.makeOneRequest()
         request.cookies['uns'] = (
-            "prg7uAnrKJBOz0U2lA2n8QtVeQva-8uB6rDjwP0SmtCOatwdjwAH0ycJOv7ASLN"
-            "FAoVf_ptbKtZdj30LtS9y9kZMSW9Fd1pjS0c2SVRRU3FiWWNVTm5QbGp3T2NHTn"
-            "MyNUpSVkNTb1pjeF91WC1PQTFBaHNzQS1DTmVWS3BXa3NRYTBrdE1odVFEZGp6b"
-            "UR3Z3picHRpSjBaWE4wSWc"
+            'FLIoEwZcKG6ITQSqbYcUNnPljwOcGNs25JRVCSoZcx_uX-OA1AhssA-CNeVKpWksQ'
+            'a0ktMhuQDdjzmDwgzbptiJ0ZXN0Ig'
             )
         cookie = self.makeOne(request=request)
-
         ret = cookie.get_value()
 
         self.assertEqual(ret, "test")

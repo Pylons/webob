@@ -446,6 +446,8 @@ class JSONSerializer(object):
         return bytes_(json.dumps(appstruct), encoding='utf-8')
 
     def loads(self, bstruct):
+        # NB: json.loads raises ValueError if no json object can be decoded
+        # so we don't have to do it explicitly here.
         return json.loads(text_(bstruct, encoding='utf-8'))
 
 class SignedSerializer(object):
