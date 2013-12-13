@@ -802,12 +802,13 @@ class SignedCookieProfile(CookieProfile):
         self.secret = secret
         self.salt = salt
         self.hashalg = hashalg
+        self.original_serializer = serializer
 
         signed_serializer = SignedSerializer(
             secret,
             salt,
             hashalg,
-            serializer=serializer,
+            serializer=self.original_serializer,
             )
         CookieProfile.__init__(
             self,
@@ -833,7 +834,7 @@ class SignedCookieProfile(CookieProfile):
             self.path,
             self.domains,
             self.hashalg,
-            self.serializer,
+            self.original_serializer,
             )
         selfish.request = request
         return selfish
