@@ -378,7 +378,7 @@ class CookieMakeCookie(unittest.TestCase):
 
         self.assertTrue('test_cookie=value' in cookie)
         self.assertTrue('Path=/foo/bar/baz' in cookie)
-        
+
 class CommonCookieProfile(unittest.TestCase):
     def makeDummyRequest(self, **kw):
         class Dummy(object):
@@ -428,6 +428,13 @@ class CookieProfileTest(CommonCookieProfile):
         cookie = CookieProfile('uns')
 
         self.assertRaises(ValueError, cookie.get_value)
+
+    def test_get_value_serializer_raises_value_error(self):
+        class RaisingSerializer(object):
+            def loads(self, val):
+                raise ValueError('foo')
+        cookie = self.makeOne(serializer=RaisingSerializer())
+        self.assertEqual(cookie.get_value(), None)
 
 class SignedCookieProfileTest(CommonCookieProfile):
     def makeOne(self, secret='seekrit', salt='salty', name='uns', **kw):
@@ -507,7 +514,9 @@ class SignedCookieProfileTest(CommonCookieProfile):
             "SHrRkd3lyE8c4w5ruxAKOyj2h5oF69Ix7ERZv_")
         cookie = self.makeOne(request=request)
 
-        self.assertRaises(ValueError, cookie.get_value)
+        val = cookie.get_value()
+
+        self.assertEqual(val, None)
 
     def test_with_bad_cookie_invalid_signature(self):
         request = self.makeOneRequest()
@@ -516,7 +525,9 @@ class SignedCookieProfileTest(CommonCookieProfile):
             "+CNeVKpWksQa0ktMhuQDdjzmDwgzbptg==")
         cookie = self.makeOne(secret='sekrit!', request=request)
 
-        self.assertRaises(ValueError, cookie.get_value)
+        val = cookie.get_value()
+
+        self.assertEqual(val, None)
 
     def test_with_domain(self):
         cookie = self.makeOne(domains=("testing.example.net",))

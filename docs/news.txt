@@ -4,10 +4,21 @@ News
 Unreleased
 ----------
 
+Bug Fixes
+~~~~~~~~~
+
 - Fix a bug in SignedCookieProfile whereby we didn't keep the original
   serializer around, this would cause us to have SignedSerializer be added on
   top of a SignedSerializer which would cause it to be run twice when
   attempting to verify a cookie.  See https://github.com/Pylons/webob/pull/127
+
+Backwards Incompatibilities
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- When ``CookieProfile.get_value`` and ``SignedCookieProfile.get_value`` fails
+  to deserialize a badly encoded value, we now return ``None`` as if the cookie
+  was never set in the first place instead of allowing a ``ValueError`` to be
+  raised to the calling code.  See https://github.com/Pylons/webob/pull/126
 
 1.3 (2013-12-10)
 ----------------

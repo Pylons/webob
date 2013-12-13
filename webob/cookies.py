@@ -623,8 +623,8 @@ class CookieProfile(object):
         this method will raise a :exc:`ValueError`.
 
         Looks for the cookie in the cookies jar, and if it can find it it will
-        attempt to deserialize it. Throws a ValueError if it fails due to an
-        error, or returns ``None`` if there is no cookie.
+        attempt to deserialize it.  Returns ``None`` if there is no cookie or
+        if the value in the cookie cannot be successfully deserialized.
         """
 
         if not self.request:
@@ -632,8 +632,11 @@ class CookieProfile(object):
 
         cookie = self.request.cookies.get(self.cookie_name)
 
-        if cookie:
-            return self.serializer.loads(bytes_(cookie))
+        if cookie is not None:
+            try:
+                return self.serializer.loads(bytes_(cookie))
+            except ValueError:
+                return None
 
     def set_cookies(self, response, value, domains=_default, max_age=_default,
                     path=_default, secure=_default, httponly=_default):
