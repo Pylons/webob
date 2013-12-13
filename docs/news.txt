@@ -1,6 +1,14 @@
 News
 ====
 
+Unreleased
+----------
+
+- Fix a bug in SignedCookieProfile whereby we didn't keep the original
+  serializer around, this would cause us to have SignedSerializer be added on
+  top of a SignedSerializer which would cause it to be run twice when
+  attempting to verify a cookie. This off course will not work.
+
 1.3 (2013-12-10)
 ----------------
 
