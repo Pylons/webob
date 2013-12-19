@@ -570,8 +570,8 @@ class CookieProfile(object):
       An object with two methods: ``loads`` and ``dumps``.  The ``loads`` method
       should accept a bytestring and return a Python object.  The ``dumps``
       method should accept a Python object and return bytes.  A ``ValueError``
-      should be raised for malformed inputs.  Default: ``None`, which will use
-      a derivation of :func:`json.dumps` and ``json.loads``.
+      should be raised for malformed inputs.  Default: ``None``, which will use
+      a derivation of :func:`json.dumps` and :func:`json.loads`.
 
     """
 
