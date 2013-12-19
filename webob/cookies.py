@@ -567,7 +567,7 @@ class CookieProfile(object):
       multiple cookies one for each domain.
 
     ``serializer``
-      An object with two methods: `loads`` and ``dumps``.  The ``loads`` method
+      An object with two methods: ``loads`` and ``dumps``.  The ``loads`` method
       should accept a bytestring and return a Python object.  The ``dumps``
       method should accept a Python object and return bytes.  A ``ValueError``
       should be raised for malformed inputs.  Default: ``None`, which will use
