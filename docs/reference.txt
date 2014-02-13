@@ -13,7 +13,7 @@ Introduction
 This document covers all the details of the Request and Response
 objects.  It is written to be testable with `doctest
 <http://python.org/doc/current/lib/module-doctest.html>`_ -- this
-effects the flavor of the documentation, perhaps to its detriment.
+affects the flavor of the documentation, perhaps to its detriment.
 But it also means you can feel confident that the documentation is
 correct.
 
@@ -267,7 +267,7 @@ set is indicated.  A client can indicate the character set with
 ``Content-Type: application/x-www-form-urlencoded; charset=utf8``, but
 very few clients actually do this (sometimes XMLHttpRequest requests
 will do this, as JSON is always UTF8 even when a page is served with a
-different character set).  You can force a charset, which will effect
+different character set).  You can force a charset, which will affect
 all the variables:
 
 .. code-block:: python
