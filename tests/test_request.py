@@ -421,6 +421,18 @@ class TestRequestCommon(unittest.TestCase):
         del req.json
         self.assertEqual(req.body, b'')
 
+    def test_json_body_array(self):
+        body = b'[{"a":1}, {"b":2}]'
+        INPUT = BytesIO(body)
+        environ = {'wsgi.input': INPUT, 'CONTENT_LENGTH': str(len(body))}
+        req = self._makeOne(environ)
+        self.assertEqual(req.json, [{"a": 1}, {"b": 2}])
+        self.assertEqual(req.json_body, [{"a": 1}, {"b": 2}])
+        req.json = [{"b": 2}]
+        self.assertEqual(req.body, b'[{"b":2}]')
+        del req.json
+        self.assertEqual(req.body, b'')
+
     # .text
 
     def test_text_body(self):
