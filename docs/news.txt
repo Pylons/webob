@@ -7,9 +7,9 @@ News
 Bug Fixes
 ~~~~~~~~~
 
-- Fix a bug in SignedCookieProfile whereby we didn't keep the original
-  serializer around, this would cause us to have SignedSerializer be added on
-  top of a SignedSerializer which would cause it to be run twice when
+- Fix a bug in ``SignedCookieProfile`` whereby we didn't keep the original
+  serializer around, this would cause us to have ``SignedSerializer`` be added on
+  top of a ``SignedSerializer`` which would cause it to be run twice when
   attempting to verify a cookie.  See https://github.com/Pylons/webob/pull/127
 
 Backwards Incompatibilities
