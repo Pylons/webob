@@ -489,7 +489,12 @@ class SignedSerializer(object):
         self.secret = secret
         self.hashalg = hashalg
 
-        self.salted_secret = bytes_(salt or '') + bytes_(secret)
+        try:
+            # bwcompat with webob <= 1.3.1, leave latin-1 as the default
+            self.salted_secret = bytes_(salt or '') + bytes_(secret)
+        except UnicodeEncodeError:
+            self.salted_secret = (
+                bytes_(salt or '', 'utf-8') + bytes_(secret, 'utf-8'))
 
         self.digestmod = lambda string=b'': hashlib.new(self.hashalg, string)
         self.digest_size = self.digestmod().digest_size

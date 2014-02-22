@@ -591,7 +591,7 @@ def serialize(secret, salt, data):
     import json
     from hashlib import sha1
     from webob.compat import bytes_
-    salted_secret = bytes_(salt or '') + bytes_(secret)
+    salted_secret = bytes_(salt or '', 'utf-8') + bytes_(secret, 'utf-8')
     cstruct = bytes_(json.dumps(data))
     sig = hmac.new(salted_secret, cstruct, sha1).digest()
     return base64.urlsafe_b64encode(sig + cstruct).rstrip(b'=')
