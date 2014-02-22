@@ -167,8 +167,8 @@ values if the request encoding/charset is provided.  The client *can*
 indicate the charset with something like ``Content-Type:
 application/x-www-form-urlencoded; charset=utf8``, but browsers seldom
 set this.  You can set the charset with ``req.charset = 'utf8'``, or
-during instantiation with ``Request(environ, charset='utf8').  If you
-subclass ``Request`` you can also set ``charset`` as a class-level
+during instantiation with ``Request(environ, charset='utf8')``.  If
+you subclass ``Request`` you can also set ``charset`` as a class-level
 attribute.
 
 If it is set, then ``req.POST``, ``req.GET``, ``req.params``, and
