@@ -591,7 +591,7 @@ def serialize(secret, salt, data):
     import json
     from hashlib import sha1
     from webob.compat import bytes_
-    salted_secret = bytes_(salt or '') + bytes_(secret)
+    salted_secret = bytes_(salt or '', 'utf-8') + bytes_(secret, 'utf-8')
     cstruct = bytes_(json.dumps(data))
     sig = hmac.new(salted_secret, cstruct, sha1).digest()
     return base64.urlsafe_b64encode(sig + cstruct).rstrip(b'=')
@@ -617,3 +617,40 @@ class SignedSerializerTest(unittest.TestCase):
             'test'
             )
 
+    def test_with_highorder_secret(self):
+        secret = b'\xce\xb1\xce\xb2\xce\xb3\xce\xb4'.decode('utf-8')
+        ser = self.makeOne(secret, 'salty')
+
+        self.assertEqual(
+            ser.loads(serialize(secret, 'salty', 'test')),
+            'test'
+            )
+
+    def test_with_highorder_salt(self):
+        salt = b'\xce\xb1\xce\xb2\xce\xb3\xce\xb4'.decode('utf-8')
+        ser = self.makeOne('secret', salt)
+
+        self.assertEqual(
+            ser.loads(serialize('secret', salt, 'test')),
+            'test'
+            )
+
+    # bw-compat with webob <= 1.3.1 where secrets were encoded with latin-1
+    def test_with_latin1_secret(self):
+        secret = b'La Pe\xc3\xb1a'
+        ser = self.makeOne(secret.decode('latin-1'), 'salty')
+
+        self.assertEqual(
+            ser.loads(serialize(secret, 'salty', 'test')),
+            'test'
+            )
+
+    # bw-compat with webob <= 1.3.1 where salts were encoded with latin-1
+    def test_with_latin1_salt(self):
+        salt = b'La Pe\xc3\xb1a'
+        ser = self.makeOne('secret', salt.decode('latin-1'))
+
+        self.assertEqual(
+            ser.loads(serialize('secret', salt, 'test')),
+            'test'
+            )
