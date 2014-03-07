@@ -367,6 +367,46 @@ class MIMEAccept(Accept):
             )
         )
 
+    def __iter__(self):
+        for (type,subtype,params),q in sorted(
+            self._parsed_nonzero,
+            key=lambda i: i[1],
+            reverse=True
+        ):
+            yield '%s/%s'%(type,subtype)
+
+    @staticmethod
+    def format_media_range(range):
+        (type,subtype,params),q = range
+        q_part = '' if q ==1 else ';q=%0.*f'%(min(len(str(q).split('.')[-1]), 3), q)
+        params_part = ''.join([';%s=%s'%(k,v) for k,v in params.iteritems()]) # TODO Quoting/escaping value
+        s = '%s/%s%s%s' % (type, subtype, params_part, q_part)
+        return s
+
+    def __str__(self):
+        return ', '.join(map(MIMEAccept.format_media_range, self._parsed))
+
+    def __contains__(self, offer):
+        """
+        Returns true if the given object is listed in the accepted
+        types.
+        """
+        for mask, quality in self._parsed_nonzero:
+            if self._match(mask, offer):
+                return True
+
+    def quality(self, offer, modifier=1):
+        """
+        Return the quality of the given offer.  Returns None if there
+        is no match (not 0).
+        """
+        bestq = 0
+        for mask, q in self._parsed:
+            if self._match(mask, offer):
+                bestq = max(bestq, q * modifier)
+        return bestq or None
+
+
 class MIMENilAccept(NilAccept):
     MasterClass = MIMEAccept
 
