@@ -273,7 +273,7 @@ class MIMEAccept(Accept):
     """
 
     @staticmethod
-    def parse_media_type_parameter(value):
+    def parse_media_range_parameter(value):
         """
         Parse a media type parameter, like:
 
@@ -292,7 +292,7 @@ class MIMEAccept(Accept):
         return k,v
 
     @staticmethod
-    def parse_media_type(value):
+    def parse_media_range(value):
         """
         Parse a single media type string.  The format is like:
 
@@ -305,7 +305,7 @@ class MIMEAccept(Accept):
         Returns None if the media type is invalid, for each it contains invalid
         uses of wildcards or doesn't have a two-part content-type.
         """
-        # TODO Doesn't account for ; in a quoted-string in a media type parameter
+        # TODO Doesn't account for ; in a quoted-string in a media range parameter
         split_type = map(str.strip, value.split(';'))
         content_type, parameters = split_type[0].lower(), split_type[1:]
         if content_type == '*/*':
@@ -321,7 +321,7 @@ class MIMEAccept(Accept):
         if len(subtype) > 1 and '*' in subtype: raise ValueError('Invalid type')
         params = {}
         q = 1
-        for k,v in map(MIMEAccept.parse_media_type_parameter,parameters):
+        for k,v in map(MIMEAccept.parse_media_range_parameter,parameters):
             if k == 'q':
                 q = float(v)
                 break # Ignore accept-extensions that come after q
@@ -332,7 +332,8 @@ class MIMEAccept(Accept):
 
     @staticmethod
     def parse(value):
-        return filter(None, map(MIMEAccept.parse_media_type, value.split(',')))
+        # TODO Doesn't account for , in a quoted-string in a media range parameter
+        return filter(None, map(MIMEAccept.parse_media_range, value.split(',')))
 
     def accept_html(self):
         """
@@ -350,9 +351,9 @@ class MIMEAccept(Accept):
             Check if the offer is covered by the mask
         """
         _check_offer(offer)
-        ((offer_type, offer_subtype, offer_params), offer_q) = MIMEAccept.parse_media_type(offer)
+        ((offer_type, offer_subtype, offer_params), offer_q) = MIMEAccept.parse_media_range(offer)
         if isinstance(mask, string_types):
-            mask = MIMEAccept.parse_media_type(mask)
+            mask = MIMEAccept.parse_media_range(mask)
             if mask is None: return False
             mask = mask[0]
         (mask_type, mask_subtype, mask_params) = mask
