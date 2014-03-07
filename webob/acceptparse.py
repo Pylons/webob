@@ -10,6 +10,7 @@ exists, but this ignores them.
 """
 
 import re
+from webob.compat import string_types
 
 from webob.headers import _trans_name as header_to_key
 from webob.util import (
@@ -45,7 +46,7 @@ class Accept(object):
         """
         Parse ``Accept-*`` style header.
 
-        Return iterator of ``(value, quality)`` pairs.
+        Return iterator of ``(type, subtype, quality, params)`` tuples.
         ``quality`` defaults to 1.
         """
         for match in part_re.finditer(','+value):
@@ -270,20 +271,68 @@ class MIMEAccept(Accept):
 
         This class knows about mime wildcards, like ``image/*``
     """
+
+    @staticmethod
+    def parse_media_type_parameter(value):
+        """
+        Parse a media type parameter, like:
+
+        parameter := attribute "=" value
+        attribute := token
+        value := token / quoted-string
+        quoted-string = <"> *(qtext/quoted-pair) <">
+        qtext       =  <any CHAR excepting <">,
+        quoted-pair =  "\" CHAR
+
+        Returns a pair of key, value.  Keys are lower-cased.
+        """
+        k,v = map(str.strip, value.split('=', 1))
+        if v[0] == '"' and v[-1] == '"':
+            v = re.sub(r'\\(.)', r'\1', v[1:-1])
+        return k,v
+
+    @staticmethod
+    def parse_media_type(value):
+        """
+        Parse a single media type string.  The format is like:
+
+        `type "/" subtype *(";" parameter) [";" "q" "=" float] *(";" accept-extension)`
+
+        Returns a list of tuples, (type, subtype, quality, parameters)
+
+        Type and subtype are lower-cased.  Accept extensions are thrown away.
+
+        Returns None if the media type is invalid, for each it contains invalid
+        uses of wildcards or doesn't have a two-part content-type.
+        """
+        # TODO Doesn't account for ; in a quoted-string in a media type parameter
+        split_type = map(str.strip, value.split(';'))
+        content_type, parameters = split_type[0].lower(), split_type[1:]
+        if content_type == '*/*':
+            type = subtype = '*'
+        elif content_type.endswith('/*'):
+            type = content_type[:-2]
+            if '*' in type: return None # Can only use */* or type/* wildcards
+            subtype = '*'
+        elif '*' in content_type: return None # Can only use */* or type/* wildcards
+        else:
+            try: type, subtype = content_type.split('/', 1)
+            except ValueError: return None # No slash to split on
+        if len(subtype) > 1 and '*' in subtype: raise ValueError('Invalid type')
+        params = {}
+        q = 1
+        for k,v in map(MIMEAccept.parse_media_type_parameter,parameters):
+            if k == 'q':
+                q = float(v)
+                break # Ignore accept-extensions that come after q
+            else:
+                params[k.lower()] = v
+        return (type, subtype, params), q
+
+
     @staticmethod
     def parse(value):
-        for mask, q in Accept.parse(value):
-            try:
-                mask_major, mask_minor = map(lambda x: x.lower(), mask.split('/'))
-            except ValueError:
-                continue
-            if mask_major == '*' and mask_minor != '*':
-                continue
-            if mask_major != "*" and "*" in mask_major:
-                continue
-            if mask_minor != "*" and "*" in mask_minor:
-                continue
-            yield ("%s/%s" % (mask_major, mask_minor), q)
+        return filter(None, map(MIMEAccept.parse_media_type, value.split(',')))
 
     def accept_html(self):
         """
@@ -301,16 +350,21 @@ class MIMEAccept(Accept):
             Check if the offer is covered by the mask
         """
         _check_offer(offer)
-        if '*' not in mask:
-            return offer.lower() == mask.lower()
-        elif mask == '*/*':
-            return True
-        else:
-            assert mask.endswith('/*')
-            mask_major = mask[:-2].lower()
-            offer_major = offer.split('/', 1)[0].lower()
-            return offer_major == mask_major
-
+        ((offer_type, offer_subtype, offer_params), offer_q) = MIMEAccept.parse_media_type(offer)
+        if isinstance(mask, string_types):
+            mask = MIMEAccept.parse_media_type(mask)
+            if mask is None: return False
+            mask = mask[0]
+        (mask_type, mask_subtype, mask_params) = mask
+        return (
+            mask_type == '*' or (
+                mask_type == offer_type and
+                mask_subtype == '*' or (
+                    mask_subtype == offer_subtype and
+                    offer_params == mask_params
+                )
+            )
+        )
 
 class MIMENilAccept(NilAccept):
     MasterClass = MIMEAccept
