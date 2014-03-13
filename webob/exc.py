@@ -184,6 +184,12 @@ tag_re = re.compile(r'<.*?>', re.S)
 br_re = re.compile(r'<br.*?>', re.I|re.S)
 comment_re = re.compile(r'<!--|-->')
 
+def lazify(func):
+    class _lazyfied(object):
+        def __init__(self, s): self._s = s
+        def __str__(self): return func(self._s)
+    return _lazyfied
+
 def no_escape(value):
     if value is None:
         return ''
@@ -277,6 +283,7 @@ ${body}''')
         return self.detail or self.explanation
 
     def _make_body(self, environ, escape):
+        escape = lazify(escape)
         args = {
             'explanation': escape(self.explanation),
             'detail': escape(self.detail or ''),
