@@ -136,22 +136,26 @@ status_generic_reasons = {
     5: 'Unknown Server Error',
 }
 
-def strings_differ(string1, string2):
-    """Check whether two strings differ while avoiding timing attacks.
+try:
+    # py3.3+ have native comparison support
+    from hmac import compare_digest as strings_differ
+except ImportError:
+    def strings_differ(string1, string2):
+        """Check whether two strings differ while avoiding timing attacks.
 
-    This function returns True if the given strings differ and False
-    if they are equal.  It's careful not to leak information about *where*
-    they differ as a result of its running time, which can be very important
-    to avoid certain timing-related crypto attacks:
+        This function returns True if the given strings differ and False
+        if they are equal.  It's careful not to leak information about *where*
+        they differ as a result of its running time, which can be very important
+        to avoid certain timing-related crypto attacks:
 
-        http://seb.dbzteam.org/crypto/python-oauth-timing-hmac.pdf
+            http://seb.dbzteam.org/crypto/python-oauth-timing-hmac.pdf
 
-    """
-    if len(string1) != len(string2):
-        return True
+        """
+        if len(string1) != len(string2):
+            return True
 
-    invalid_bits = 0
-    for a, b in zip(string1, string2):
-        invalid_bits += a != b
+        invalid_bits = 0
+        for a, b in zip(string1, string2):
+            invalid_bits += a != b
 
-    return invalid_bits != 0
+        return invalid_bits != 0
