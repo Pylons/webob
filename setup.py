@@ -1,5 +1,6 @@
 from setuptools import setup
 
+# Also bump __version__ in webob/__init__.py
 version = '1.3.1'
 
 testing_extras = ['nose', 'coverage']
