@@ -1165,12 +1165,12 @@ class BaseRequest(object):
         return b'\r\n'.join(parts)
 
     def as_string(self, skip_body=False):
+        # TODO: Remove in 1.4
         warn_deprecation(
             "Please use req.as_bytes",
             '1.3',
             self._setattr_stacklevel
             )
-        return self.as_bytes(skip_body=skip_body)
 
     def as_text(self):
         bytes = self.as_bytes()
@@ -1192,12 +1192,12 @@ class BaseRequest(object):
 
     @classmethod
     def from_string(cls, b):
+        # TODO: Remove in 1.4
         warn_deprecation(
             "Please use req.from_bytes",
             '1.3',
             cls._setattr_stacklevel
             )
-        return cls.from_bytes(b)
 
     @classmethod
     def from_text(cls, s):
