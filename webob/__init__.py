@@ -10,4 +10,6 @@ __all__ = [
 
 BaseRequest.ResponseClass = Response
 
-from webob.version import version as __version__
+import pkg_resources
+
+__version__ = pkg_resources.get_distribution("webob").version
