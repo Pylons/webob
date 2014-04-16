@@ -1571,7 +1571,7 @@ class TestBaseRequest(unittest.TestCase):
         environ = {'HTTP_HOST':'example.com:8888'}
         req = self._makeOne(environ)
         self.assertEqual(req.domain, 'example.com')
-        
+
     def test_encget_raises_without_default(self):
         inst = self._makeOne({})
         self.assertRaises(KeyError, inst.encget, 'a')
@@ -3496,7 +3496,7 @@ class Test_environ_from_url(unittest.TestCase):
 class TestRequestMultipart(unittest.TestCase):
     def test_multipart_with_charset(self):
         from webob.request import Request
-        req = Request.from_string(_test_req_multipart_charset)
+        req = Request.from_bytes(_test_req_multipart_charset)
         self.assertEqual(req.POST['title'].encode('utf8'),
                          text_('こんにちは', 'utf-8').encode('utf8'))
 
