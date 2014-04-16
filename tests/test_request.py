@@ -511,7 +511,7 @@ class TestRequestCommon(unittest.TestCase):
         req = self._makeOne(environ)
         result = req.POST
         self.assertEqual(result['var1'], 'value1')
-        
+
     def test_PUT_bad_content_type(self):
         from webob.multidict import NoVars
         data = b'input'
@@ -882,7 +882,7 @@ class TestRequestCommon(unittest.TestCase):
         POST["second"] = "2"
 
 
-        request = self._blankOne('/', 
+        request = self._blankOne('/',
                                  POST=POST,
                                  content_type='multipart/form-data; '
                                               'boundary=boundary')
@@ -959,15 +959,14 @@ class TestRequestCommon(unittest.TestCase):
         body = req.as_bytes(337-1).split(b'\r\n\r\n', 1)[1]
         self.assertEqual(body, b'<body skipped (len=337)>')
 
-    def test_as_string_skip_body(self):
-        with warnings.catch_warnings(record=True):
-            cls = self._getTargetClass()
-            req = cls.from_string(_test_req)
-            body = req.as_string(skip_body=True)
-            self.assertEqual(body.count(b'\r\n\r\n'), 0)
-            self.assertEqual(req.as_string(skip_body=337), req.as_string())
-            body = req.as_string(337-1).split(b'\r\n\r\n', 1)[1]
-            self.assertEqual(body, b'<body skipped (len=337)>')
+    def test_from_string_deprecated(self):
+        cls = self._getTargetClass()
+        self.assertRaises(DeprecationWarning, cls.from_string, _test_req)
+
+    def test_as_string_deprecated(self):
+        cls = self._getTargetClass()
+        req = cls.from_bytes(_test_req)
+        self.assertRaises(DeprecationWarning, req.as_string)
 
 class TestBaseRequest(unittest.TestCase):
     # tests of methods of a base request which are encoding-specific
