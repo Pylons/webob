@@ -162,7 +162,7 @@ def strings_differ(string1, string2):
         left = string2
     right = string2
 
-    if compare_digest is not None:
+    if compare_digest is not None: # pragma: nocover (Python 3.3+ only)
         invalid_bits += not compare_digest(left, right)
     else:
         for a, b in zip(left, right):
