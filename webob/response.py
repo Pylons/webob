@@ -231,7 +231,7 @@ class Response(object):
         parts += map('%s: %s'.__mod__, self.headerlist)
         if not skip_body and self.body:
             parts += ['', self.text if PY3 else self.body]
-        return '\n'.join(parts)
+        return '\r\n'.join(parts)
 
     #
     # status, status_code/status_int
