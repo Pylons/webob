@@ -59,10 +59,6 @@ def test_HTTPException():
     start_response = object()
     exc = HTTPException('testing', _response)
     ok_(exc.wsgi_response is _response)
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        assert(exc.exception is exc)
-        assert(len(w) == 1)
     result = exc(environ, start_response)
     ok_(result is result)
     assert_equal(_called, [(environ, start_response)])
