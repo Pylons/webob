@@ -1,6 +1,9 @@
 from setuptools import setup
 
-version = '1.3.1'
+# Bump version number in webob/version.py
+with open("webob/version.py") as f:
+    code = compile(f.read(), "webob/version.py", 'exec')
+    exec(code)
 
 testing_extras = ['nose', 'coverage']
 
