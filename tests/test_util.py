@@ -39,7 +39,7 @@ class Test_warn_deprecation(unittest.TestCase):
         self.assertEqual(len(self.warnings), 0)
 
     def test_warn_deprecation(self):
-        from webob import __version__ as v
+        v = '1.3.0'
         from webob.util import warn_deprecation
         self.assertRaises(DeprecationWarning, warn_deprecation, 'foo', v[:3], 1)
 
