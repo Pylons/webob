@@ -2935,6 +2935,22 @@ class TestRequest_functional(unittest.TestCase):
         self.assertEqual(req2.as_bytes(), _test_req2.rstrip())
         self.assertRaises(ValueError, cls.from_bytes, _test_req2 + b'xx')
 
+    def test_from_file_patch_method(self):
+        # PATCH body should not be discarded by from_file.
+        cls = self._getTargetClass()
+        val_file = BytesIO(
+            b"PATCH /webob/ HTTP/1.1\n"
+            b"Host: pythonpaste.org\n"
+            b"Content-Type: text/plain\n"
+            b"\n"
+            b"hello there\n"
+        )
+        req = cls.from_file(val_file)
+        self.assertTrue(isinstance(req, cls))
+        self.assertTrue(not repr(req).endswith('(invalid WSGI environ)>'))
+        self.assertEqual(12, req.content_length)
+        self.assertEqual(b"hello there\n", req.body)
+
     def test_blank(self):
         # BaseRequest.blank class method
         self.assertRaises(ValueError, self._blankOne,

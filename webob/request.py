@@ -1248,7 +1248,7 @@ class BaseRequest(object):
             if hname in r.headers:
                 hval = r.headers[hname] + ', ' + hval
             r.headers[hname] = hval
-        if r.method in ('PUT', 'POST'):
+        if http_method_probably_has_body.get(r.method):
             clen = r.content_length
             if clen is None:
                 body = fp.read()
