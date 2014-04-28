@@ -1,3 +1,5 @@
+import pkg_resources
+
 from webob.datetime_utils import *
 from webob.request import *
 from webob.response import *
@@ -10,4 +12,4 @@ __all__ = [
 
 BaseRequest.ResponseClass = Response
 
-__version__ = '1.2.3'
+__version__ = pkg_resources.get_distribution("webob").version
