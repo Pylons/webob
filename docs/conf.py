@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
+import pkg_resources
 
-from webob import __version__
+version = release = pkg_resources.get_distribution('webob').version
 
 extensions = ['sphinx.ext.autodoc']
 
@@ -9,7 +10,6 @@ master_doc = 'index' # The master toctree document.
 
 project = 'WebOb'
 copyright = '2011, Ian Bicking and contributors'
-version = release = __version__
 exclude_patterns = ['jsonrpc-example-code/*']
 
 modindex_common_prefix = ['webob.']
