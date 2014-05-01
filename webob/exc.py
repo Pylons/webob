@@ -212,15 +212,6 @@ class HTTPException(Exception):
     def __call__(self, environ, start_response):
         return self.wsgi_response(environ, start_response)
 
-    # TODO: remove in version 1.3
-    @property
-    def exception(self):
-        warn_deprecation(
-            "As of WebOb 1.2, raise the HTTPException instance directly "
-            "instead of raising the result of 'HTTPException.exception'",
-            '1.3', 2)
-        return self
-
 class WSGIHTTPException(Response, HTTPException):
 
     ## You should set in subclasses:

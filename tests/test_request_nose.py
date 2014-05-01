@@ -98,10 +98,6 @@ def test_request_wrong_clen(is_seekable=False):
 def test_request_wrong_clen_seekable():
     test_request_wrong_clen(is_seekable=True)
 
-def test_webob_version():
-    import webob
-    assert isinstance(webob.__version__, str)
-
 class _Helper_test_request_wrong_clen(object):
     def __init__(self, f):
         self.f = f
