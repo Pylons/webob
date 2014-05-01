@@ -4,6 +4,12 @@ News
 unreleased
 ----------
 
+Features
+~~~~~~~~
+
+- Remove webob.__version__, the version number had not been kept in sync with
+  the official pkg version.
+
 Bug Fixes
 ~~~~~~~~~
 

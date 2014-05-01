@@ -45,11 +45,13 @@ def header_docstring(header, rfc_section):
         header, rfc_section, link)
 
 
-def warn_deprecation(text, version, stacklevel): # pragma: no cover
+def warn_deprecation(text, version, stacklevel):
     # version specifies when to start raising exceptions instead of warnings
     if version == '1.2':
         raise DeprecationWarning(text)
     elif version == '1.3':
+        raise DeprecationWarning(text)
+    elif version == '1.4':
         cls = DeprecationWarning
     else:
         cls = DeprecationWarning
