@@ -1218,7 +1218,7 @@ class EmptyResponse(object):
     """
 
     def __init__(self, app_iter=None):
-        if app_iter and hasattr(app_iter, 'close'):
+        if app_iter is not None and hasattr(app_iter, 'close'):
             self.close = app_iter.close
 
     def __iter__(self):

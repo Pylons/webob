@@ -13,6 +13,10 @@ Features
 Bug Fixes
 ~~~~~~~~~
 
+- Fix a bug in ``EmptyResponse`` that prevents it from setting self.close as
+  appropriate due to testing truthiness of object rather than if it is
+  something other than None
+
 - Fix a bug in ``SignedSerializer`` preventing secrets from containing
   higher-order characters. See https://github.com/Pylons/webob/issues/136
 
