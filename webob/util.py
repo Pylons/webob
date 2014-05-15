@@ -47,18 +47,10 @@ def header_docstring(header, rfc_section):
 
 def warn_deprecation(text, version, stacklevel):
     # version specifies when to start raising exceptions instead of warnings
-    if version == '1.2':
+    if version in ('1.2', '1.3', '1.4'):
         raise DeprecationWarning(text)
-    elif version == '1.3':
-        raise DeprecationWarning(text)
-    elif version == '1.4':
-        cls = DeprecationWarning
     else:
         cls = DeprecationWarning
-        warnings.warn("Unknown warn_deprecation version arg: %r" % version,
-            RuntimeWarning,
-            stacklevel=1
-        )
     warnings.warn(text, cls, stacklevel=stacklevel+1)
 
 status_reasons = {
