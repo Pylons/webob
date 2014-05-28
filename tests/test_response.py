@@ -409,6 +409,12 @@ def test_file_bad_header():
     file_w_bh = io.BytesIO(b'200 OK\nBad Header')
     assert_raises(ValueError, Response.from_file, file_w_bh)
 
+def test_from_file_not_unicode_headers():
+    inp = io.BytesIO(
+        b'200 OK\n\tContent-Type: text/html; charset=UTF-8')
+    res = Response.from_file(inp)
+    eq_(res.headerlist[0][0].__class__, str)
+
 def test_set_status():
     res = Response()
     res.status = "200"

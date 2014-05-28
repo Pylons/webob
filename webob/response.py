@@ -184,10 +184,10 @@ class Response(object):
             except ValueError:
                 raise ValueError('Bad header line: %r' % line)
             value = value.strip()
-            if not is_text:
-                header_name = header_name.decode('utf-8')
-                value = value.decode('utf-8')
-            headerlist.append((header_name, value))
+            headerlist.append((
+                native_(header_name, 'latin-1'),
+                native_(value, 'latin-1')
+            ))
         r = cls(
             status=status,
             headerlist=headerlist,
