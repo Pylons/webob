@@ -2444,7 +2444,6 @@ class TestRequest_functional(unittest.TestCase):
         self.assertTrue(not self._blankOne('/', headers={'Accept': ''}).accept)
         req = self._blankOne('/', headers={'Accept':'text/plain'})
         self.assertTrue(req.accept)
-        self.assertRaises(ValueError, req.accept.best_match, ['*/*'])
         req = self._blankOne('/', accept=['*/*','text/*'])
         self.assertEqual(
             req.accept.best_match(['application/x-foo', 'text/plain']),

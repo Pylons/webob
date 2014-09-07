@@ -271,7 +271,66 @@ def test_match():
     assert mimeaccept._match('image/*', 'image/jpg')
     assert mimeaccept._match('*/*', 'image/jpg')
     assert not mimeaccept._match('text/html', 'image/jpg')
-    assert_raises(ValueError, mimeaccept._match, 'image/jpg', '*/*')
+
+    mismatches = [
+        ('B/b', 'A/a'),
+        ('B/b', 'B/a'),
+        ('B/b', 'A/b'),
+        ('A/a', 'B/b'),
+        ('B/a', 'B/b'),
+        ('A/b', 'B/b')
+    ]
+    for mask, offer in mismatches:
+        assert not mimeaccept._match(mask, offer)
+
+
+def test_wildcard_matching():
+    """
+    Wildcard matching forces the match to take place against the type
+    or subtype of the mask and offer (depending on where the wildcard
+    matches)
+    """
+    mimeaccept = MIMEAccept('type/subtype')
+    matches = [
+        ('*/*', '*/*'),
+        ('*/*', 'A/*'),
+        ('*/*', '*/a'),
+        ('*/*', 'A/a'),
+        ('A/*', '*/*'),
+        ('A/*', 'A/*'),
+        ('A/*', '*/a'),
+        ('A/*', 'A/a'),
+        ('*/a', '*/*'),
+        ('*/a', 'A/*'),
+        ('*/a', '*/a'),
+        ('*/a', 'A/a'),
+        ('A/a', '*/*'),
+        ('A/a', 'A/*'),
+        ('A/a', '*/a'),
+        ('A/a', 'A/a'),
+        # Offers might not contain a subtype
+        ('*/*', '*'),
+        ('A/*', '*'),
+        ('*/a', '*')]
+    for mask, offer in matches:
+        assert mimeaccept._match(mask, offer)
+
+
+    mismatches = [
+        ('B/b', 'A/*'),
+        ('B/*', 'A/a'),
+        ('B/*', 'A/*'),
+        ('*/b', '*/a')]
+    for mask, offer in mismatches:
+        assert not mimeaccept._match(mask, offer)
+
+def test_mimeaccept_contains():
+    mimeaccept = MIMEAccept('A/a, B/b, C/c')
+    assert 'A/a' in mimeaccept
+    assert 'A/*' in mimeaccept
+    assert '*/a' in mimeaccept
+    assert not 'A/b' in mimeaccept
+    assert not 'B/a' in mimeaccept
 
 def test_accept_json():
     mimeaccept = MIMEAccept('text/html, *; q=.2, */*; q=.2')
