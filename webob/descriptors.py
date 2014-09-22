@@ -303,7 +303,7 @@ def serialize_content_range(value):
 
 
 
-_rx_auth_param = re.compile(r'([a-z]+)=(".*?"|[^,]*)(?:\Z|, *)')
+_rx_auth_param = re.compile(r'([a-z]+)[ \t]*=[ \t]*(".*?"|[^,]*?)[ \t]*(?:\Z|, *)')
 
 def parse_auth_params(params):
     r = {}

@@ -576,6 +576,10 @@ def test_parse_auth_params_truncate_on_comma():
 def test_parse_auth_params_emptystr():
     from webob.descriptors import parse_auth_params
     eq_(parse_auth_params(''), {})
+    
+def test_parse_auth_params_bad_whitespace():
+    from webob.descriptors import parse_auth_params
+    eq_(parse_auth_params('a= "2 ", b =3, c=4 '), {'a': '2 ', 'b': '3', 'c': '4'})
 
 def test_authorization2():
     from webob.descriptors import parse_auth_params
