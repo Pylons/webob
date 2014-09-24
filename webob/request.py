@@ -656,8 +656,13 @@ class BaseRequest(object):
         return self.environ.get('HTTP_X_REQUESTED_WITH', '') == 'XMLHttpRequest'
 
     def _host__get(self):
-        """Host name provided in HTTP_HOST, with fall-back to SERVER_NAME"""
-        if 'HTTP_HOST' in self.environ:
+        """
+        Host name provided in HTTP_X_FORWARDED_HOST or HTTP_HOST, with
+        fall-back to SERVER_NAME
+        """
+        if 'HTTP_X_FORWARDED_HOST' in self.environ:
+            return self.environ['HTTP_X_FORWARDED_HOST']
+        elif 'HTTP_HOST' in self.environ:
             return self.environ['HTTP_HOST']
         else:
             return '%(SERVER_NAME)s:%(SERVER_PORT)s' % self.environ
