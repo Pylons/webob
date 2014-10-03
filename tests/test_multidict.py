@@ -334,47 +334,34 @@ class TestGetDict(BaseDictTests, unittest.TestCase):
         d.extend(test = 'a')
         self.assertEqual(d['test'], 'a')
 
-    def test_listextend(self):
-        class Other:
+    def test_extend_from_items(self):
+        values = {'a': '1', 'b': '2', 'c': '3'}
+        class MappingWithItems:
             def items(self):
-                return [text_('\xe9'), 'e', 'f', 1]
+                return values.items()
 
-        other = Other()
         d = self._get_instance()
-        d.extend(other)
+        d.extend(MappingWithItems())
+        self.assertTrue(set(values.items()).issubset(d._items))
 
-        _list = [text_('\xe9'), 'e', r'f', 1]
-        for v in _list:
-            self.assertTrue(v in d._items)
-
-    def test_dictextend(self):
-        class Other:
+    def test_extend_from_keys(self):
+        values = {'a': '1', 'b': '2', 'c': '3'}
+        class MappingWithoutItems:
             def __getitem__(self, item):
-                return {'a':1, 'b':2, 'c':3}.get(item)
-
+                return values[item]
             def keys(self):
-                return ['a', 'b', 'c']
+                return values.keys()
 
-        other = Other()
         d = self._get_instance()
-        d.extend(other)
+        d.extend(MappingWithoutItems())
+        self.assertTrue(set(values.items()).issubset(d._items))
 
-        _list = [('a', 1), ('b', 2), ('c', 3)]
-        for v in _list:
-            self.assertTrue(v in d._items)
-
-    def test_otherextend(self):
-        class Other(object):
-            def __iter__(self):
-                return iter([('a', 1)])
-
-        other = Other()
+    def test_extend_from_iterable(self):
+        items = [('a', '1')]
         d = self._get_instance()
-        d.extend(other)
 
-        _list = [('a', 1)]
-        for v in _list:
-            self.assertTrue(v in d._items)
+        d.extend(iter(items))
+        self.assertTrue(set(items).issubset(d._items))
 
     def test_repr_with_password(self):
         d = self._get_instance(password='pwd')
