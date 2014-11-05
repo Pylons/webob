@@ -222,7 +222,7 @@ class wsgify(object):
         Use this like::
 
             @wsgify.middleware
-            def restrict_ip(app, req, ips):
+            def restrict_ip(req, app, ips):
                 if req.remote_addr not in ips:
                     raise webob.exc.HTTPForbidden('Bad IP: %s' % req.remote_addr)
                 return app
@@ -236,7 +236,7 @@ class wsgify(object):
         Or if you want to write output-rewriting middleware::
 
             @wsgify.middleware
-            def all_caps(app, req):
+            def all_caps(req, app):
                 resp = req.get_response(app)
                 resp.body = resp.body.upper()
                 return resp
