@@ -34,7 +34,6 @@ Exception
       * 303 - HTTPSeeOther
       * 304 - HTTPNotModified
       * 305 - HTTPUseProxy
-      * 306 - Unused (not implemented, obviously)
       * 307 - HTTPTemporaryRedirect
     HTTPError
       HTTPClientError
@@ -56,9 +55,13 @@ Exception
         * 415 - HTTPUnsupportedMediaType
         * 416 - HTTPRequestRangeNotSatisfiable
         * 417 - HTTPExpectationFailed
+        * 422 - HTTPUnprocessableEntity
+        * 423 - HTTPLocked
+        * 424 - HTTPFailedDependency
         * 428 - HTTPPreconditionRequired
         * 429 - HTTPTooManyRequests
         * 431 - HTTPRequestHeaderFieldsTooLarge
+        * 451 - HTTPUnavailableForLegalReasons
       HTTPServerError
         * 500 - HTTPInternalServerError
         * 501 - HTTPNotImplemented
@@ -608,6 +611,8 @@ class HTTPClientError(HTTPError):
     in-error.  This is an expected problem, and thus is not considered
     a bug.  A server-side traceback is not warranted.  Unless specialized,
     this is a '400 Bad Request'
+
+    code: 400, title: Bad Request
     """
     code = 400
     title = 'Bad Request'
@@ -866,7 +871,7 @@ class HTTPUnprocessableEntity(HTTPClientError):
     subclass of :class:`~HTTPClientError`
 
     This indicates that the server is unable to process the contained
-    instructions. Only for WebDAV.
+    instructions.
 
     code: 422, title: Unprocessable Entity
     """
@@ -879,7 +884,7 @@ class HTTPLocked(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
 
-    This indicates that the resource is locked. Only for WebDAV
+    This indicates that the resource is locked.
 
     code: 423, title: Locked
     """
@@ -894,7 +899,6 @@ class HTTPFailedDependency(HTTPClientError):
 
     This indicates that the method could not be performed because the
     requested action depended on another action and that action failed.
-    Only for WebDAV.
 
     code: 424, title: Failed Dependency
     """
