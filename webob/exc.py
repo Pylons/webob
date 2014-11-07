@@ -34,7 +34,6 @@ Exception
       * 303 - HTTPSeeOther
       * 304 - HTTPNotModified
       * 305 - HTTPUseProxy
-      * 306 - Unused (not implemented, obviously)
       * 307 - HTTPTemporaryRedirect
     HTTPError
       HTTPClientError
@@ -56,9 +55,13 @@ Exception
         * 415 - HTTPUnsupportedMediaType
         * 416 - HTTPRequestRangeNotSatisfiable
         * 417 - HTTPExpectationFailed
+        * 422 - HTTPUnprocessableEntity
+        * 423 - HTTPLocked
+        * 424 - HTTPFailedDependency
         * 428 - HTTPPreconditionRequired
         * 429 - HTTPTooManyRequests
         * 431 - HTTPRequestHeaderFieldsTooLarge
+        * 451 - HTTPUnavailableForLegalReasons
       HTTPServerError
         * 500 - HTTPInternalServerError
         * 501 - HTTPNotImplemented
@@ -608,6 +611,8 @@ class HTTPClientError(HTTPError):
     in-error.  This is an expected problem, and thus is not considered
     a bug.  A server-side traceback is not warranted.  Unless specialized,
     this is a '400 Bad Request'
+
+    code: 400, title: Bad Request
     """
     code = 400
     title = 'Bad Request'
