@@ -143,8 +143,8 @@ is mounted at ``http://localhost/app-root``.
 Methods
 -------
 
-There are `several methods <class-webob.Request.html#__init__>`_ but
-only a few you'll use often:
+There are several methods in :class:`webob.Request` but only a few you'll use
+often:
 
 ``Request.blank(base_url)``:
     Creates a new request with blank information, based at the given
