@@ -750,13 +750,14 @@ class Response(object):
 
         ``expires``
 
-           A ``datetime.timedelta`` object representing an amount of time or
-           the value ``None``.  A non-``None`` value is used to generate the
-           ``Expires`` value of the generated cookie.  If ``max_age`` is not
-           passed, but this value is not ``None``, it will influence the
-           ``Max-Age`` header (``Max-Age`` will be 'expires_value -
-           datetime.utcnow()').  If this value is ``None``, the ``Expires``
-           cookie value will be unset (unless ``max_age`` is also passed).
+           A ``datetime.timedelta`` object representing an amount of time,
+           ``datetime.datetime`` or ``None``. A non-``None`` value is used to
+           generate the ``Expires`` value of the generated cookie. If
+           ``max_age`` is not passed, but this value is not ``None``, it will
+           influence the ``Max-Age`` header. If this value is ``None``, the
+           ``Expires`` cookie value will be unset (unless ``max_age`` is set).
+           If ``max_age`` is set, it will be used to generate the ``expires``
+           and this value is ignored.
 
         ``overwrite``
 
