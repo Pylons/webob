@@ -121,6 +121,11 @@ def test_cookies():
         ]
     )
 
+def test_unicode_cookies():
+    res = Response()
+    assert_raises(UnicodeEncodeError, Response.set_cookie, res, 'x',
+            text_(b'\N{BLACK SQUARE}', 'unicode_escape'))
+
 def test_http_only_cookie():
     req = Request.blank('/')
     res = req.get_response(Response('blah'))
@@ -696,12 +701,6 @@ def test_set_cookie_expires_is_timedelta_and_max_age_is_None():
     eq_(val[1], 'Path=/')
     eq_(val[2], 'a=1')
     assert val[3].startswith('expires')
-
-def test_set_cookie_value_is_unicode():
-    res = Response()
-    val = text_(b'La Pe\xc3\xb1a', 'utf-8')
-    res.set_cookie('a', val)
-    eq_(res.headerlist[-1], ('Set-Cookie', 'a="La Pe\\303\\261a"; Path=/'))
 
 def test_delete_cookie():
     res = Response()
