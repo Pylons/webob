@@ -712,13 +712,14 @@ class Response(object):
 
         ``max_age``
 
-           An integer representing a number of seconds or ``None``.  If this
-           value is an integer, it is used as the ``Max-Age`` of the
-           generated cookie.  If ``expires`` is not passed and this value is
-           an integer, the ``max_age`` value will also influence the
-           ``Expires`` value of the cookie (``Expires`` will be set to now +
-           max_age).  If this value is ``None``, the cookie will not have a
-           ``Max-Age`` value (unless ``expires`` is also sent).
+           An integer representing a number of seconds, ``datetime.timedelta``,
+           or ``None``. This value is used as the ``Max-Age`` of the generated
+           cookie.  If ``expires`` is not passed and this value is not
+           ``None``, the ``max_age`` value will also influence the ``Expires``
+           value of the cookie (``Expires`` will be set to now + max_age).  If
+           this value is ``None``, the cookie will not have a ``Max-Age`` value
+           (unless ``expires`` is set). If both ``max_age`` and ``expires`` are
+           set, this value takes precedence.
 
         ``path``
 
