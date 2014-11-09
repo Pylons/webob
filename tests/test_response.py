@@ -110,14 +110,14 @@ def test_init_content_type_w_charset():
 def test_cookies():
     res = Response()
     # test unicode value
-    res.set_cookie('x', text_(b'\N{BLACK SQUARE}', 'unicode_escape'))
+    res.set_cookie('x', "test")
     # utf8 encoded
-    eq_(res.headers.getall('set-cookie'), ['x="\\342\\226\\240"; Path=/'])
+    eq_(res.headers.getall('set-cookie'), ['x=test; Path=/'])
     r2 = res.merge_cookies(simple_app)
     r2 = BaseRequest.blank('/').get_response(r2)
     eq_(r2.headerlist,
         [('Content-Type', 'text/html; charset=utf8'),
-        ('Set-Cookie', 'x="\\342\\226\\240"; Path=/'),
+        ('Set-Cookie', 'x=test; Path=/'),
         ]
     )
 
