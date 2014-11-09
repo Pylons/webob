@@ -10,6 +10,23 @@ Documentation Changes
 - Remove the WebDAV only from certain HTTP Exceptions, these exceptions may
   also be used by REST services for example.
 
+Bug/Documentation Fixes
+~~~~~~~~~~~~~~~~~~~~~~~
+
+- ``response.set_cookie`` now has proper documentation for ``max_age`` and
+  ``expires``. The code has also been refactored to use ``cookies.make_cookie``
+  instead of duplicating the code. This fixes
+  https://github.com/Pylons/webob/issues/166 and
+  https://github.com/Pylons/webob/issues/171
+
+Backwards Incompatibilities
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- ``response.set_cookie`` will no longer accept unicode values because
+  ``cookies.make_cookie`` does not accept unicode values. Accepting unicode
+  values was technically contra-spec, and might not have been accepted by all
+  browsers.
+
 1.4 (2014-05-14)
 ----------------
 
