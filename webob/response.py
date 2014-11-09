@@ -31,6 +31,7 @@ from webob.compat import (
 from webob.cookies import (
     Cookie,
     Morsel,
+    make_cookie,
     )
 
 from webob.datetime_utils import (
@@ -690,7 +691,7 @@ class Response(object):
     # set_cookie, unset_cookie, delete_cookie, merge_cookies
     #
 
-    def set_cookie(self, key, value='', max_age=None,
+    def set_cookie(self, name, value='', max_age=None,
                    path='/', domain=None, secure=False, httponly=False,
                    comment=None, expires=None, overwrite=False):
         """
@@ -698,7 +699,7 @@ class Response(object):
 
         Arguments are:
 
-        ``key``
+        ``name``
 
            The cookie name.
 
@@ -766,28 +767,21 @@ class Response(object):
 
         """
         if overwrite:
-            self.unset_cookie(key, strict=False)
-        if value is None: # delete the cookie from the client
-            value = ''
-            max_age = 0
-            expires = timedelta(days=-5)
-        elif expires is None and max_age is not None:
-            if isinstance(max_age, int):
-                max_age = timedelta(seconds=max_age)
-            expires = datetime.utcnow() + max_age
-        elif max_age is None and expires is not None:
+            self.unset_cookie(name, strict=False)
+
+        # If expires is set, but not max_age we set max_age to expires
+        if not max_age and isinstance(expires, timedelta):
+            max_age = expires
+
+        # expires can also be a datetime
+        if not max_age and isinstance(expires, datetime):
             max_age = expires - datetime.utcnow()
-        value = bytes_(value, 'utf8')
-        key = bytes_(key, 'utf8')
-        m = Morsel(key, value)
-        m.path = bytes_(path, 'utf8')
-        m.domain = bytes_(domain, 'utf8')
-        m.comment = bytes_(comment, 'utf8')
-        m.expires = expires
-        m.max_age = max_age
-        m.secure = secure
-        m.httponly = httponly
-        self.headerlist.append(('Set-Cookie', m.serialize()))
+
+        cookie = make_cookie(name, value, max_age=max_age, path=path,
+                domain=domain, secure=secure, httponly=httponly,
+                comment=comment)
+
+        self.headerlist.append(('Set-Cookie', cookie))
 
     def delete_cookie(self, name, path='/', domain=None):
         """
