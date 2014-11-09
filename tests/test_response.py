@@ -683,6 +683,20 @@ def test_set_cookie_expires_is_not_None_and_max_age_is_None():
     eq_(val[2], 'a=1')
     assert val[3].startswith('expires')
 
+def test_set_cookie_expires_is_timedelta_and_max_age_is_None():
+    import datetime
+    res = Response()
+    then = datetime.timedelta(days=1)
+    res.set_cookie('a', '1', expires=then)
+    eq_(res.headerlist[-1][0], 'Set-Cookie')
+    val = [ x.strip() for x in res.headerlist[-1][1].split(';')]
+    assert len(val) == 4
+    val.sort()
+    ok_(val[0] in ('Max-Age=86399', 'Max-Age=86400'))
+    eq_(val[1], 'Path=/')
+    eq_(val[2], 'a=1')
+    assert val[3].startswith('expires')
+
 def test_set_cookie_value_is_unicode():
     res = Response()
     val = text_(b'La Pe\xc3\xb1a', 'utf-8')
