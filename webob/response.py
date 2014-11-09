@@ -789,7 +789,7 @@ class Response(object):
         m.httponly = httponly
         self.headerlist.append(('Set-Cookie', m.serialize()))
 
-    def delete_cookie(self, key, path='/', domain=None):
+    def delete_cookie(self, name, path='/', domain=None):
         """
         Delete a cookie from the client.  Note that path and domain must match
         how the cookie was originally set.
@@ -797,9 +797,9 @@ class Response(object):
         This sets the cookie to the empty string, and max_age=0 so
         that it should expire immediately.
         """
-        self.set_cookie(key, None, path=path, domain=domain)
+        self.set_cookie(name, None, path=path, domain=domain)
 
-    def unset_cookie(self, key, strict=True):
+    def unset_cookie(self, name, strict=True):
         """
         Unset a cookie with the given name (remove it from the
         response).
@@ -810,15 +810,15 @@ class Response(object):
         cookies = Cookie()
         for header in existing:
             cookies.load(header)
-        if isinstance(key, text_type):
-            key = key.encode('utf8')
-        if key in cookies:
-            del cookies[key]
+        if isinstance(name, text_type):
+            name = name.encode('utf8')
+        if name in cookies:
+            del cookies[name]
             del self.headers['Set-Cookie']
             for m in cookies.values():
                 self.headerlist.append(('Set-Cookie', m.serialize()))
         elif strict:
-            raise KeyError("No cookie has been set with the name %r" % key)
+            raise KeyError("No cookie has been set with the name %r" % name)
 
 
     def merge_cookies(self, resp):
