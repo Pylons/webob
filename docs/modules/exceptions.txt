@@ -1,0 +1,64 @@
+:mod:`webob.exc` -- WebOb Exceptions
+====================================
+
+.. automodule:: webob.exc
+
+HTTP Exceptions
+---------------
+
+.. autoclass:: HTTPException
+.. autoclass:: WSGIHTTPException
+.. autoclass:: HTTPError
+.. autoclass:: HTTPRedirection
+.. autoclass:: HTTPOk
+.. autoclass:: HTTPCreated
+.. autoclass:: HTTPAccepted
+.. autoclass:: HTTPNonAuthoritativeInformation
+.. autoclass:: HTTPNoContent
+.. autoclass:: HTTPResetContent
+.. autoclass:: HTTPPartialContent
+.. autoclass:: _HTTPMove
+.. autoclass:: HTTPMultipleChoices
+.. autoclass:: HTTPMovedPermanently
+.. autoclass:: HTTPFound
+.. autoclass:: HTTPSeeOther
+.. autoclass:: HTTPNotModified
+.. autoclass:: HTTPUseProxy
+.. autoclass:: HTTPTemporaryRedirect
+.. autoclass:: HTTPClientError
+.. autoclass:: HTTPBadRequest
+.. autoclass:: HTTPUnauthorized
+.. autoclass:: HTTPPaymentRequired
+.. autoclass:: HTTPForbidden
+.. autoclass:: HTTPNotFound
+.. autoclass:: HTTPMethodNotAllowed
+.. autoclass:: HTTPNotAcceptable
+.. autoclass:: HTTPProxyAuthenticationRequired
+.. autoclass:: HTTPRequestTimeout
+.. autoclass:: HTTPConflict
+.. autoclass:: HTTPGone
+.. autoclass:: HTTPLengthRequired
+.. autoclass:: HTTPPreconditionFailed
+.. autoclass:: HTTPRequestEntityTooLarge
+.. autoclass:: HTTPRequestURITooLong
+.. autoclass:: HTTPUnsupportedMediaType
+.. autoclass:: HTTPRequestRangeNotSatisfiable
+.. autoclass:: HTTPExpectationFailed
+.. autoclass:: HTTPUnprocessableEntity
+.. autoclass:: HTTPLocked
+.. autoclass:: HTTPFailedDependency
+.. autoclass:: HTTPPreconditionRequired
+.. autoclass:: HTTPTooManyRequests
+.. autoclass:: HTTPRequestHeaderFieldsTooLarge
+.. autoclass:: HTTPUnavailableForLegalReasons
+.. autoclass:: HTTPServerError
+.. autoclass:: HTTPInternalServerError
+.. autoclass:: HTTPNotImplemented
+.. autoclass:: HTTPBadGateway
+.. autoclass:: HTTPServiceUnavailable
+.. autoclass:: HTTPGatewayTimeout
+.. autoclass:: HTTPVersionNotSupported
+.. autoclass:: HTTPInsufficientStorage
+.. autoclass:: HTTPNetworkAuthenticationRequired
+.. autoclass:: HTTPExceptionMiddleware
+
