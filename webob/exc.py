@@ -1,6 +1,4 @@
 """
-HTTP Exception
---------------
 This module processes Python exceptions that relate to HTTP exceptions
 by defining a set of exceptions, all subclasses of HTTPException.
 Each exception, in addition to being a Python exception that can be
@@ -20,56 +18,59 @@ sent and then an exception was encountered.
 Exception
   HTTPException
     HTTPOk
-      * 200 - HTTPOk
-      * 201 - HTTPCreated
-      * 202 - HTTPAccepted
-      * 203 - HTTPNonAuthoritativeInformation
-      * 204 - HTTPNoContent
-      * 205 - HTTPResetContent
-      * 206 - HTTPPartialContent
+      * 200 - :class:`HTTPOk`
+      * 201 - :class:`HTTPCreated`
+      * 202 - :class:`HTTPAccepted`
+      * 203 - :class:`HTTPNonAuthoritativeInformation`
+      * 204 - :class:`HTTPNoContent`
+      * 205 - :class:`HTTPResetContent`
+      * 206 - :class:`HTTPPartialContent`
     HTTPRedirection
-      * 300 - HTTPMultipleChoices
-      * 301 - HTTPMovedPermanently
-      * 302 - HTTPFound
-      * 303 - HTTPSeeOther
-      * 304 - HTTPNotModified
-      * 305 - HTTPUseProxy
-      * 306 - Unused (not implemented, obviously)
-      * 307 - HTTPTemporaryRedirect
+      * 300 - :class:`HTTPMultipleChoices`
+      * 301 - :class:`HTTPMovedPermanently`
+      * 302 - :class:`HTTPFound`
+      * 303 - :class:`HTTPSeeOther`
+      * 304 - :class:`HTTPNotModified`
+      * 305 - :class:`HTTPUseProxy`
+      * 307 - :class:`HTTPTemporaryRedirect`
     HTTPError
       HTTPClientError
-        * 400 - HTTPBadRequest
-        * 401 - HTTPUnauthorized
-        * 402 - HTTPPaymentRequired
-        * 403 - HTTPForbidden
-        * 404 - HTTPNotFound
-        * 405 - HTTPMethodNotAllowed
-        * 406 - HTTPNotAcceptable
-        * 407 - HTTPProxyAuthenticationRequired
-        * 408 - HTTPRequestTimeout
-        * 409 - HTTPConflict
-        * 410 - HTTPGone
-        * 411 - HTTPLengthRequired
-        * 412 - HTTPPreconditionFailed
-        * 413 - HTTPRequestEntityTooLarge
-        * 414 - HTTPRequestURITooLong
-        * 415 - HTTPUnsupportedMediaType
-        * 416 - HTTPRequestRangeNotSatisfiable
-        * 417 - HTTPExpectationFailed
-        * 428 - HTTPPreconditionRequired
-        * 429 - HTTPTooManyRequests
-        * 431 - HTTPRequestHeaderFieldsTooLarge
+        * 400 - :class:`HTTPBadRequest`
+        * 401 - :class:`HTTPUnauthorized`
+        * 402 - :class:`HTTPPaymentRequired`
+        * 403 - :class:`HTTPForbidden`
+        * 404 - :class:`HTTPNotFound`
+        * 405 - :class:`HTTPMethodNotAllowed`
+        * 406 - :class:`HTTPNotAcceptable`
+        * 407 - :class:`HTTPProxyAuthenticationRequired`
+        * 408 - :class:`HTTPRequestTimeout`
+        * 409 - :class:`HTTPConflict`
+        * 410 - :class:`HTTPGone`
+        * 411 - :class:`HTTPLengthRequired`
+        * 412 - :class:`HTTPPreconditionFailed`
+        * 413 - :class:`HTTPRequestEntityTooLarge`
+        * 414 - :class:`HTTPRequestURITooLong`
+        * 415 - :class:`HTTPUnsupportedMediaType`
+        * 416 - :class:`HTTPRequestRangeNotSatisfiable`
+        * 417 - :class:`HTTPExpectationFailed`
+        * 422 - :class:`HTTPUnprocessableEntity`
+        * 423 - :class:`HTTPLocked`
+        * 424 - :class:`HTTPFailedDependency`
+        * 428 - :class:`HTTPPreconditionRequired`
+        * 429 - :class:`HTTPTooManyRequests`
+        * 431 - :class:`HTTPRequestHeaderFieldsTooLarge`
+        * 451 - :class:`HTTPUnavailableForLegalReasons`
       HTTPServerError
-        * 500 - HTTPInternalServerError
-        * 501 - HTTPNotImplemented
-        * 502 - HTTPBadGateway
-        * 503 - HTTPServiceUnavailable
-        * 504 - HTTPGatewayTimeout
-        * 505 - HTTPVersionNotSupported
-        * 511 - HTTPNetworkAuthenticationRequired
+        * 500 - :class:`HTTPInternalServerError`
+        * 501 - :class:`HTTPNotImplemented`
+        * 502 - :class:`HTTPBadGateway`
+        * 503 - :class:`HTTPServiceUnavailable`
+        * 504 - :class:`HTTPGatewayTimeout`
+        * 505 - :class:`HTTPVersionNotSupported`
+        * 511 - :class:`HTTPNetworkAuthenticationRequired`
 
-Subclass usage notes:
----------------------
+Usage notes
+-----------
 
 The HTTPException class is complicated by 4 factors:
 
@@ -608,6 +609,8 @@ class HTTPClientError(HTTPError):
     in-error.  This is an expected problem, and thus is not considered
     a bug.  A server-side traceback is not warranted.  Unless specialized,
     this is a '400 Bad Request'
+
+    code: 400, title: Bad Request
     """
     code = 400
     title = 'Bad Request'
@@ -866,7 +869,7 @@ class HTTPUnprocessableEntity(HTTPClientError):
     subclass of :class:`~HTTPClientError`
 
     This indicates that the server is unable to process the contained
-    instructions. Only for WebDAV.
+    instructions.
 
     code: 422, title: Unprocessable Entity
     """
@@ -879,7 +882,7 @@ class HTTPLocked(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
 
-    This indicates that the resource is locked. Only for WebDAV
+    This indicates that the resource is locked.
 
     code: 423, title: Locked
     """
@@ -894,7 +897,6 @@ class HTTPFailedDependency(HTTPClientError):
 
     This indicates that the method could not be performed because the
     requested action depended on another action and that action failed.
-    Only for WebDAV.
 
     code: 424, title: Failed Dependency
     """

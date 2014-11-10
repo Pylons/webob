@@ -1,7 +1,16 @@
 News
 ====
 
-1.4 (2013-05-14)
+Unreleased
+----------
+
+Documentation Changes
+~~~~~~~~~~~~~~~~~~~~~
+
+- Remove the WebDAV only from certain HTTP Exceptions, these exceptions may
+  also be used by REST services for example.
+
+1.4 (2014-05-14)
 ----------------
 
 Features
