@@ -92,30 +92,37 @@ def test_ch_unquote():
     eq_(cookies._unquote(b'"hello world'), b'"hello world')
     eq_(cookies._unquote(b'hello world'), b'hello world')
     eq_(cookies._unquote(b'"hello world"'), b'hello world')
-    eq_(cookies._value_quote(b'hello world'), b'"hello world"')
+
+    # Spaces are not valid in cookies, we support getting them, but won't support sending them
+    assert_raises(ValueError, cookies._value_quote, b'hello world')
+
     # quotation mark escaped w/ backslash is unquoted correctly (support
     # pre webob 1.3 cookies)
     eq_(cookies._unquote(b'"\\""'), b'"')
     # we also are able to unquote the newer \\042 serialization of quotation
     # mark
     eq_(cookies._unquote(b'"\\042"'), b'"')
-    # but when we generate a new cookie, quote using normal octal quoting
-    # rules
-    eq_(cookies._value_quote(b'"'), b'"\\042"')
+
+    # New cookies can not contain quotes.
+    assert_raises(ValueError, cookies._value_quote, b'"')
+
     # backslash escaped w/ backslash is unquoted correctly (support
     # pre webob 1.3 cookies)
     eq_(cookies._unquote(b'"\\\\"'), b'\\')
     # we also are able to unquote the newer \\134 serialization of backslash
     eq_(cookies._unquote(b'"\\134"'), b'\\')
-    # but when we generate a new cookie, quote using normal octal quoting
-    # rules
-    eq_(cookies._value_quote(b'\\'), b'"\\134"')
+
+    # Cookies may not contain a backslash
+    assert_raises(ValueError, cookies._value_quote, b'\\')
+
     # misc byte escaped as octal
     eq_(cookies._unquote(b'"\\377"'), b'\xff')
-    eq_(cookies._value_quote(b'\xff'), b'"\\377"')
+
+    assert_raises(ValueError, cookies._value_quote, b'\xff')
+
     # combination
     eq_(cookies._unquote(b'"a\\"\\377"'), b'a"\xff')
-    eq_(cookies._value_quote(b'a"\xff'), b'"a\\042\\377"')
+    assert_raises(ValueError, cookies._value_quote, b'a"\xff')
 
 def test_cookie_invalid_name():
     c = cookies.Cookie()
