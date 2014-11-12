@@ -4,6 +4,18 @@ News
 Unreleased
 ----------
 
+Backwards Incompatibilities
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- ``Morsel`` will no longer accept a cookie value that does not meet RFC6265's
+  cookie-octet specification. Upon calling ``Morsel.serialize`` a warning will
+  be issued, in the future this will raise a ``ValueError``, please update your
+  cookie handling code. See https://github.com/Pylons/webob/pull/172
+
+- ``response.set_cookie`` now uses the internal ``make_cookie`` API, which will
+  issue warnings if cookies are set with invalid bytes. See
+  https://github.com/Pylons/webob/pull/172
+
 Documentation Changes
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -19,13 +31,6 @@ Bug/Documentation Fixes
   https://github.com/Pylons/webob/issues/166 and
   https://github.com/Pylons/webob/issues/171
 
-Backwards Incompatibilities
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-- ``response.set_cookie`` will no longer accept unicode values because
-  ``cookies.make_cookie`` does not accept unicode values. Accepting unicode
-  values was technically contra-spec, and might not have been accepted by all
-  browsers.
 
 1.4 (2014-05-14)
 ----------------
