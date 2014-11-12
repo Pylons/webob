@@ -331,21 +331,16 @@ def _ch_unquote(m):
 # these chars can be in cookie value see
 # http://tools.ietf.org/html/rfc6265#section-4.1.1 and
 # https://github.com/Pylons/webob/pull/104#issuecomment-28044314
-
-# allowed in cookie values:
+#
 # ! (0x21), "#$%&'()*+" (0x25-0x2B), "-./0123456789:" (0x2D-0x3A),
 # "<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[" (0x3C-0x5B),
 # "]^_`abcdefghijklmnopqrstuvwxyz{|}~" (0x5D-0x7E)
 
-_no_escape_special_chars = "!#$%&'()*+-./<=>?@[]^_`{|}~"
-_no_escape_chars = (string.ascii_letters + string.digits +
-                    _no_escape_special_chars)
-_no_escape_bytes = bytes_(_no_escape_chars)
+_allowed_special_chars = "!#$%&'()*+-./:<=>?@[]^_`{|}~"
+_allowed_cookie_chars = (string.ascii_letters + string.digits +
+                    _allowed_special_chars)
+_allowed_cookie_bytes = bytes_(_allowed_cookie_chars)
 
-# these chars should not be quoted themselves but if they are present they
-# should cause the cookie value to be surrounded by quotes (voodoo inherited
-# by old webob code without any comments)
-_escape_noop_chars = _no_escape_chars + ': '
 
 # this is a map used to escape the values
 _escape_map = dict((chr(i), '\\%03o' % i) for i in range(256))
@@ -367,13 +362,13 @@ _notrans_binary = b' '*256
 _valid_token_chars = string.ascii_letters + string.digits + "!#$%&'*+,-.^_`|~"
 _valid_token_bytes = bytes_(_valid_token_chars)
 
-def _value_needs_quoting(v):
-    return v.translate(_notrans_binary, _no_escape_bytes)
-
 def _value_quote(v):
-    #assert isinstance(v, bytes)
-    if _value_needs_quoting(v):
-        return b'"' + b''.join(map(_escape_char, v)) + b'"'
+    # This looks scary, but is simple. We remove all valid characters from the
+    # string, if we end up with leftovers (string is longer than 0, we have
+    # invalid characters in our value)
+    if v.translate(None, _allowed_cookie_bytes):
+        raise ValueError('Invalid characters in cookie value')
+
     return v
 
 def _valid_cookie_name(key):
