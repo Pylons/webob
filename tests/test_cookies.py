@@ -151,11 +151,6 @@ def test_serialize_max_age_str():
     result = cookies.serialize_max_age(val)
     eq_(result, b'86400')
 
-def test_escape_comma_semi_dquote():
-    c = cookies.Cookie()
-    c['x'] = b'";,"'
-    eq_(c.serialize(True), r'x="\042\073\054\042"')
-
 def test_parse_qmark_in_val():
     v = r'x="\"\073\054\""; expires=Sun, 12-Jun-2011 23:16:01 GMT'
     c = cookies.Cookie(v)
