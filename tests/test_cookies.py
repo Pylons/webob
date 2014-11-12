@@ -438,6 +438,14 @@ class CookieProfileTest(CommonCookieProfile):
         cookie = self.makeOne(serializer=RaisingSerializer())
         self.assertEqual(cookie.get_value(), None)
 
+    def test_with_cookies(self):
+        request = self.makeOneRequest()
+        request.cookies['uns'] = 'InRlc3Qi'
+        cookie = self.makeOne(request=request)
+        ret = cookie.get_value()
+
+        self.assertEqual(ret, "test")
+
 class SignedCookieProfileTest(CommonCookieProfile):
     def makeOne(self, secret='seekrit', salt='salty', name='uns', **kw):
         if 'request' in kw:
