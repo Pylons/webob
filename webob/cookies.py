@@ -629,7 +629,7 @@ class CookieProfile(object):
         self.domains = domains
 
         if serializer is None:
-            serializer = JSONSerializer()
+            serializer = Base64Serializer()
 
         self.serializer = serializer
         self.request = None
