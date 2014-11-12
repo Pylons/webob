@@ -13,6 +13,7 @@ from datetime import (
 import re
 import string
 import time
+import warnings
 
 from webob.compat import (
     PY3,
@@ -371,12 +372,31 @@ weekdays = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 months = (None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
           'Oct', 'Nov', 'Dec')
 
+
+# This is temporary, until we can remove this from _value_quote
+_should_raise = None
+
+def __warn_or_raise(text, warn_class, to_raise, raise_reason):
+    if _should_raise:
+        raise to_raise(raise_reason)
+
+    else:
+        warnings.warn(text, warn_class, stacklevel=2)
+
+
 def _value_quote(v):
     # This looks scary, but is simple. We remove all valid characters from the
     # string, if we end up with leftovers (string is longer than 0, we have
     # invalid characters in our value)
     if v.translate(None, _allowed_cookie_bytes):
-        raise ValueError('Invalid characters in cookie value')
+        __warn_or_raise(
+                "Cookie value contains invalid bytes: (%s). Future versions "
+                "will raise ValueError upon encountering invalid bytes." %
+                (v.translate(None, _allowed_cookie_bytes),),
+                DeprecationWarning, ValueError, 'Invalid characters in cookie value'
+                )
+        #raise ValueError('Invalid characters in cookie value')
+        return b'"' + b''.join(map(_escape_char, v)) + b'"'
 
     return v
 

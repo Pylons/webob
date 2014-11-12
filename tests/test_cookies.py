@@ -7,6 +7,8 @@ import unittest
 from webob.compat import native_
 from webob.compat import PY3
 
+cookies._should_raise = True
+
 def test_cookie_empty():
     c = cookies.Cookie() # empty cookie
     eq_(repr(c), '<Cookie: []>')
@@ -445,6 +447,14 @@ class CookieProfileTest(CommonCookieProfile):
         ret = cookie.get_value()
 
         self.assertEqual(ret, "test")
+
+    def test_with_invalid_cookies(self):
+        request = self.makeOneRequest()
+        request.cookies['uns'] = 'InRlc3Q'
+        cookie = self.makeOne(request=request)
+        ret = cookie.get_value()
+
+        self.assertEqual(ret, None)
 
 class SignedCookieProfileTest(CommonCookieProfile):
     def makeOne(self, secret='seekrit', salt='salty', name='uns', **kw):
