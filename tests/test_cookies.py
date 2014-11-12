@@ -42,9 +42,9 @@ def test_cookie_complex():
 
 def test_cookie_complex_serialize():
     c = cookies.Cookie('dismiss-top=6; CP=null*, '\
-                       'PHPSESSID=0a539d42abc001cdc762809248d4beed, a="42,"')
+                       'PHPSESSID=0a539d42abc001cdc762809248d4beed, a="42"')
     eq_(c.serialize(),
-        'CP=null*; PHPSESSID=0a539d42abc001cdc762809248d4beed; a="42\\054"; '
+        'CP=null*; PHPSESSID=0a539d42abc001cdc762809248d4beed; a=42; '
         'dismiss-top=6')
 
 def test_cookie_load_multiple():
