@@ -341,8 +341,23 @@ _allowed_cookie_chars = (string.ascii_letters + string.digits +
                     _allowed_special_chars)
 _allowed_cookie_bytes = bytes_(_allowed_cookie_chars)
 
+# these are the characters accepted in cookie *names*
+# From http://tools.ietf.org/html/rfc2616#section-2.2:
+# token          = 1*<any CHAR except CTLs or separators>
+# separators     = "(" | ")" | "<" | ">" | "@"
+#                | "," | ";" | ":" | "\" | <">
+#                | "/" | "[" | "]" | "?" | "="
+#                | "{" | "}" | SP | HT
+#
+# CTL            = <any US-ASCII control character
+#                         (octets 0 - 31) and DEL (127)>
+#
+_valid_token_chars = string.ascii_letters + string.digits + "!#$%&'*+-.^_`|~"
+_valid_token_bytes = bytes_(_valid_token_chars)
 
 # this is a map used to escape the values
+
+_escape_noop_chars = _allowed_cookie_chars + ' '
 _escape_map = dict((chr(i), '\\%03o' % i) for i in range(256))
 _escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
 if PY3: # pragma: no cover
@@ -356,12 +371,6 @@ weekdays = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 months = (None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
           'Oct', 'Nov', 'Dec')
 
-_notrans_binary = b' '*256
-
-# these are the characters accepted in cookie *names*
-_valid_token_chars = string.ascii_letters + string.digits + "!#$%&'*+,-.^_`|~"
-_valid_token_bytes = bytes_(_valid_token_chars)
-
 def _value_quote(v):
     # This looks scary, but is simple. We remove all valid characters from the
     # string, if we end up with leftovers (string is longer than 0, we have
@@ -373,7 +382,8 @@ def _value_quote(v):
 
 def _valid_cookie_name(key):
     return isinstance(key, bytes) and not (
-        key.translate(_notrans_binary, _valid_token_bytes)
+        key.translate(None, _valid_token_bytes)
+        # Not explicitly required by RFC6265, may consider removing later:
         or key[0] == _b_dollar_sign
         or key.lower() in _c_keys
     )
@@ -399,7 +409,7 @@ def make_cookie(name, value, max_age=None, path='/', domain=None,
                 secure=False, httponly=False, comment=None):
     """ Generate a cookie value.  If ``value`` is None, generate a cookie value
     with an expiration date in the past"""
-    
+
     # We are deleting the cookie, override max_age and expires
     if value is None:
         value = b''
@@ -789,7 +799,7 @@ class SignedCookieProfile(CookieProfile):
 
     ``salt``
       A namespace to avoid collisions between different uses of a shared
-      secret. 
+      secret.
 
     ``hashalg``
       The HMAC digest algorithm to use for signing. The algorithm must be
