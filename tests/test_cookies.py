@@ -2,7 +2,7 @@
 from datetime import timedelta
 from webob import cookies
 from webob.compat import text_
-from nose.tools import eq_
+from nose.tools import (eq_, assert_raises)
 import unittest
 from webob.compat import native_
 from webob.compat import PY3
