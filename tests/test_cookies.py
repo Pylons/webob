@@ -234,19 +234,19 @@ class TestRequestCookies(unittest.TestCase):
         self.assertRaises(ValueError, inst.__setitem__, 'a', value)
 
     def test__setitem__success_no_existing_headers(self):
-        value = native_(b'La Pe\xc3\xb1a', 'utf-8')
+        value = native_(b'test_cookie', 'utf-8')
         environ = {}
         inst = self._makeOne(environ)
         inst['a'] = value
-        self.assertEqual(environ['HTTP_COOKIE'], 'a="La Pe\\303\\261a"')
+        self.assertEqual(environ['HTTP_COOKIE'], 'a=test_cookie')
 
     def test__setitem__success_append(self):
-        value = native_(b'La Pe\xc3\xb1a', 'utf-8')
+        value = native_(b'test_cookie', 'utf-8')
         environ = {'HTTP_COOKIE':'a=1; b=2'}
         inst = self._makeOne(environ)
         inst['c'] = value
         self.assertEqual(
-            environ['HTTP_COOKIE'], 'a=1; b=2; c="La Pe\\303\\261a"')
+            environ['HTTP_COOKIE'], 'a=1; b=2; c=test_cookie')
 
     def test__setitem__success_replace(self):
         environ = {'HTTP_COOKIE':'a=1; b="La Pe\\303\\261a"; c=3'}
