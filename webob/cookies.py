@@ -26,7 +26,7 @@ from webob.compat import (
 from webob.util import strings_differ
 
 __all__ = ['Cookie', 'CookieProfile', 'SignedCookieProfile', 'SignedSerializer',
-           'JSONSerializer', 'make_cookie']
+           'JSONSerializer', 'Base64Serializer', 'make_cookie']
 
 _marker = object()
 
@@ -449,6 +449,38 @@ class JSONSerializer(object):
         # NB: json.loads raises ValueError if no json object can be decoded
         # so we don't have to do it explicitly here.
         return json.loads(text_(bstruct, encoding='utf-8'))
+
+class Base64Serializer(object):
+    """ A serializer which uses base64 to encode/decode data"""
+
+    def __init__(self, serializer=None):
+        if serializer is None:
+            serializer = JSONSerializer()
+
+        self.serializer = serializer
+
+    def dumps(self, appstruct):
+        """
+        Given an ``appstruct``, serialize and sign the data.
+
+        Returns a bytestring.
+        """
+        cstruct = self.serializer.dumps(appstruct) # will be bytes
+        return base64.urlsafe_b64encode(cstruct)
+
+    def loads(self, bstruct):
+        """
+        Given a ``bstruct`` (a bytestring), verify the signature and then
+        deserialize and return the deserialized value.
+
+        A ``ValueError`` will be raised if the signature fails to validate.
+        """
+        try:
+            cstruct = base64.urlsafe_b64decode(bytes_(bstruct))
+        except (binascii.Error, TypeError) as e:
+            raise ValueError('Badly formed base64 data: %s' % e)
+
+        return self.serializer.loads(cstruct)
 
 class SignedSerializer(object):
     """
