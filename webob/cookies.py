@@ -328,12 +328,12 @@ def _ch_unquote(m):
 # serializing
 #
 
-# these chars can be in cookie value w/o causing it to be quoted
-# see http://tools.ietf.org/html/rfc6265#section-4.1.1
-# and https://github.com/Pylons/webob/pull/104#issuecomment-28044314
+# these chars can be in cookie value see
+# http://tools.ietf.org/html/rfc6265#section-4.1.1 and
+# https://github.com/Pylons/webob/pull/104#issuecomment-28044314
 
-# allowed in cookie values without quoting:
-# <space> (0x21), "#$%&'()*+" (0x25-0x2B), "-./0123456789:" (0x2D-0x3A),
+# allowed in cookie values:
+# ! (0x21), "#$%&'()*+" (0x25-0x2B), "-./0123456789:" (0x2D-0x3A),
 # "<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[" (0x3C-0x5B),
 # "]^_`abcdefghijklmnopqrstuvwxyz{|}~" (0x5D-0x7E)
 
