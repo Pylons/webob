@@ -30,7 +30,6 @@ from webob.compat import (
 
 from webob.cookies import (
     Cookie,
-    Morsel,
     make_cookie,
     )
 
@@ -777,6 +776,8 @@ class Response(object):
         # expires can also be a datetime
         if not max_age and isinstance(expires, datetime):
             max_age = expires - datetime.utcnow()
+
+        value = bytes_(value, 'utf-8')
 
         cookie = make_cookie(name, value, max_age=max_age, path=path,
                 domain=domain, secure=secure, httponly=httponly,
