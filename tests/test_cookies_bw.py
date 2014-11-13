@@ -19,8 +19,8 @@ def test_invalid_cookie_space():
         
         cookies._value_quote(b'hello world')
 
-        assert len(w) == 1
-        assert issubclass(w[-1].category, DeprecationWarning)
-        assert "ValueError" in str(w[-1].message)
+        eq_(len(w), 1)
+        eq_(issubclass(w[-1].category, DeprecationWarning), True)
+        eq_("ValueError" in str(w[-1].message), True)
 
     cookies._should_raise = True
