@@ -388,11 +388,13 @@ def _value_quote(v):
     # This looks scary, but is simple. We remove all valid characters from the
     # string, if we end up with leftovers (string is longer than 0, we have
     # invalid characters in our value)
-    if v.translate(None, _allowed_cookie_bytes):
+
+    leftovers = v.translate(None, _allowed_cookie_bytes)
+    if leftovers:
         __warn_or_raise(
                 "Cookie value contains invalid bytes: (%s). Future versions "
                 "will raise ValueError upon encountering invalid bytes." %
-                (v.translate(None, _allowed_cookie_bytes),),
+                (leftovers,),
                 DeprecationWarning, ValueError, 'Invalid characters in cookie value'
                 )
         #raise ValueError('Invalid characters in cookie value')
