@@ -20,7 +20,7 @@ def test_invalid_cookie_space():
         cookies._value_quote(b'hello world')
 
         eq_(len(w), 1)
-        eq_(issubclass(w[-1].category, DeprecationWarning), True)
+        eq_(issubclass(w[-1].category, RuntimeWarning), True)
         eq_("ValueError" in str(w[-1].message), True)
 
     cookies._should_raise = True

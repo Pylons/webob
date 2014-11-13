@@ -395,7 +395,7 @@ def _value_quote(v):
                 "Cookie value contains invalid bytes: (%s). Future versions "
                 "will raise ValueError upon encountering invalid bytes." %
                 (leftovers,),
-                DeprecationWarning, ValueError, 'Invalid characters in cookie value'
+                RuntimeWarning, ValueError, 'Invalid characters in cookie value'
                 )
         #raise ValueError('Invalid characters in cookie value')
         return b'"' + b''.join(map(_escape_char, v)) + b'"'
