@@ -8,6 +8,13 @@ from webob.request import Request
 from webob.response import Response
 from webob.compat import text_
 from webob.compat import bytes_
+from webob import cookies
+
+def setup_module(module):
+    cookies._should_raise = True
+
+def teardown_module(module):
+    cookies._should_raise = False
 
 def simple_app(environ, start_response):
     start_response('200 OK', [
@@ -121,10 +128,30 @@ def test_cookies():
         ]
     )
 
-def test_unicode_cookies():
+def test_unicode_cookies_error_raised():
     res = Response()
-    assert_raises(UnicodeEncodeError, Response.set_cookie, res, 'x',
+    assert_raises(ValueError, Response.set_cookie, res, 'x',
             text_(b'\N{BLACK SQUARE}', 'unicode_escape'))
+
+def test_unicode_cookies_warning_issued():
+    import warnings
+
+    cookies._should_raise = False
+
+    with warnings.catch_warnings(record=True) as w:
+        # Cause all warnings to always be triggered.
+        warnings.simplefilter("always")
+        # Trigger a warning.
+
+        res = Response()
+        res.set_cookie('x', text_(b'\N{BLACK SQUARE}', 'unicode_escape'))
+
+        eq_(len(w), 1)
+        eq_(issubclass(w[-1].category, RuntimeWarning), True)
+        eq_("ValueError" in str(w[-1].message), True)
+
+    cookies._should_raise = True
+
 
 def test_http_only_cookie():
     req = Request.blank('/')

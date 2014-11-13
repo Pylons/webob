@@ -7,7 +7,11 @@ import unittest
 from webob.compat import native_
 from webob.compat import PY3
 
-cookies._should_raise = True
+def setup_module(module):
+    cookies._should_raise = True
+
+def teardown_module(module):
+    cookies._should_raise = False
 
 def test_cookie_empty():
     c = cookies.Cookie() # empty cookie

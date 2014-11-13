@@ -9,9 +9,13 @@ from webob.compat import PY3
 
 import warnings
 
-def test_invalid_cookie_space():
+def setup_module(module):
     cookies._should_raise = False
 
+def teardown_module(module):
+    cookies._should_raise = False
+
+def test_invalid_cookie_space():
     with warnings.catch_warnings(record=True) as w:
         # Cause all warnings to always be triggered.
         warnings.simplefilter("always")
@@ -22,5 +26,3 @@ def test_invalid_cookie_space():
         eq_(len(w), 1)
         eq_(issubclass(w[-1].category, RuntimeWarning), True)
         eq_("ValueError" in str(w[-1].message), True)
-
-    cookies._should_raise = True
