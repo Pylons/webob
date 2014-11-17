@@ -1,14 +1,21 @@
+# Wire up travis
 language: python
 
-python:
-  - 2.6
-  - 2.7
-  - 3.2
-  - 3.3
-  - 3.4
-  - pypy
-  - pypy3
+env:
+  - TOXENV=py26
+  - TOXENV=py27
+  - TOXENV=py32
+  - TOXENV=py33
+  - TOXENV=py34
+  - TOXENV=pypy
+  - TOXENV=cover
 
-install: python setup.py install
+install:
+  - travis_retry pip install tox
 
-script: python setup.py nosetests
+script:
+  - travis_retry tox
+
+notifications:
+  email:
+    - pyramid-checkins@lists.repoze.org
