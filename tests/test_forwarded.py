@@ -1,4 +1,4 @@
-from webob import forwarded
+from webob.middleware import forwarded
 from webob import BaseRequest
 from nose.tools import assert_raises
 
