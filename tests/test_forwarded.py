@@ -54,7 +54,7 @@ def test_parse_forwarded_illegal_quoted_value():
                   forwarded.parse, 'for=_gazonk""')
 
 
-def test_forwarded_tween_host():
+def test_forwarded_handler_host():
     def handle(request):
         assert request.host == 'www.example.com'
         assert request.host_port == '80'
@@ -65,14 +65,14 @@ def test_forwarded_tween_host():
         assert request.relative_url('bar') == 'http://www.example.com/bar'
         assert request.domain == 'www.example.com'
 
-    wrapped_handle = forwarded.tween(handle)
+    wrapped_handle = forwarded.handler_factory(handle)
 
     wrapped_handle(BaseRequest.blank(
         '/foo',
         headers={'Forwarded': 'host=www.example.com'}))
 
 
-def test_forwarded_tween_host_port():
+def test_forwarded_handler_host_port():
     def handle(request):
         assert request.host == 'www.example.com:8080'
         assert request.host_port == '8080'
@@ -83,14 +83,14 @@ def test_forwarded_tween_host_port():
         assert request.relative_url('bar') == 'http://www.example.com:8080/bar'
         assert request.domain == 'www.example.com'
 
-    wrapped_handle = forwarded.tween(handle)
+    wrapped_handle = forwarded.handler_factory(handle)
 
     wrapped_handle(BaseRequest.blank(
         '/foo',
         headers={'Forwarded': 'host=www.example.com:8080'}))
 
 
-def test_forwarded_tween_proto():
+def test_forwarded_handler_proto():
     def handle(request):
         assert request.host == 'www.example.com'
         assert request.host_port == '443'
@@ -102,14 +102,14 @@ def test_forwarded_tween_proto():
         assert request.relative_url('bar') == 'https://www.example.com/bar'
         assert request.domain == 'www.example.com'
 
-    wrapped_handle = forwarded.tween(handle)
+    wrapped_handle = forwarded.handler_factory(handle)
 
     wrapped_handle(BaseRequest.blank(
         '/foo',
         headers={'Forwarded': 'host=www.example.com;proto=https'}))
 
 
-def test_forwarded_tween_multiple():
+def test_forwarded_handler_multiple():
     def handle(request):
         assert request.host == 'b.example.com'
         assert request.host_port == '80'
@@ -120,14 +120,14 @@ def test_forwarded_tween_multiple():
         assert request.relative_url('bar') == 'http://b.example.com/bar'
         assert request.domain == 'b.example.com'
 
-    wrapped_handle = forwarded.tween(handle)
+    wrapped_handle = forwarded.handler_factory(handle)
 
     wrapped_handle(BaseRequest.blank(
         '/foo',
         headers={'Forwarded': 'host=a.example.com, host=b.example.com'}))
 
 
-def test_forwarded_tween_only_proto():
+def test_forwarded_handler_only_proto():
     def handle(request):
         assert request.scheme == 'https'
         assert request.host == 'example.com'
@@ -139,14 +139,14 @@ def test_forwarded_tween_only_proto():
         assert request.relative_url('bar') == 'https://example.com/bar'
         assert request.domain == 'example.com'
 
-    wrapped_handle = forwarded.tween(handle)
+    wrapped_handle = forwarded.handler_factory(handle)
 
     wrapped_handle(BaseRequest.blank(
         '/foo',
         headers={'Host': 'example.com', 'Forwarded': 'proto=https'}))
 
 
-def test_forwarded_tween_empty_header():
+def test_forwarded_handler_empty_header():
     def handle(request):
         assert request.scheme == 'http'
         assert request.host == 'example.com'
@@ -158,14 +158,14 @@ def test_forwarded_tween_empty_header():
         assert request.relative_url('bar') == 'http://example.com/bar'
         assert request.domain == 'example.com'
 
-    wrapped_handle = forwarded.tween(handle)
+    wrapped_handle = forwarded.handler_factory(handle)
 
     wrapped_handle(BaseRequest.blank(
         '/foo',
         headers={'Host': 'example.com', 'Forwarded': ''}))
 
 
-def test_forwarded_tween_missing_header():
+def test_forwarded_handler_missing_header():
     def handle(request):
         assert request.scheme == 'http'
         assert request.host == 'example.com'
@@ -177,7 +177,7 @@ def test_forwarded_tween_missing_header():
         assert request.relative_url('bar') == 'http://example.com/bar'
         assert request.domain == 'example.com'
 
-    wrapped_handle = forwarded.tween(handle)
+    wrapped_handle = forwarded.handler_factory(handle)
 
     wrapped_handle(BaseRequest.blank(
         '/foo',
