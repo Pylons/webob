@@ -1,5 +1,6 @@
 from webob.middleware import forwarded
-from webob import BaseRequest
+from webob import BaseRequest, Response
+import webob.dec
 from nose.tools import assert_raises
 
 
@@ -195,3 +196,15 @@ def test_forwarded_handler_error():
         headers={'Forwarded': 'blah=www.example.com'}))
 
     assert response.status_code == 400
+
+
+def test_forwarded_middleware():
+    @webob.dec.wsgify
+    def app(request):
+        return Response(body=request.application_url)
+    wrapped = forwarded.Middleware(app)
+
+    response = BaseRequest.blank(
+        '/foo',
+        headers={'Forwarded': 'host=www.example.com'}).get_response(wrapped)
+    assert response.body == b'http://www.example.com'

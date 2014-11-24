@@ -1,4 +1,5 @@
 from webob.exc import HTTPBadRequest
+import webob.dec
 
 
 FORWARDED_TOKENS = set(['by', 'for', 'host', 'proto'])
@@ -52,6 +53,17 @@ def handler_factory(handler):
             request.scheme = forwarded_proto
         return handler(request)
     return wrapped_handler
+
+
+class Middleware(object):
+    def __init__(self, app):
+        def handler(request):
+            return request.get_response(app)
+        self.wrapped_handler = handler_factory(handler)
+
+    @webob.dec.wsgify
+    def __call__(self, request):
+        return self.wrapped_handler(request)
 
 
 class ForwardedError(ValueError):
