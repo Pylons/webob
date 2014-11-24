@@ -182,3 +182,16 @@ def test_forwarded_handler_missing_header():
     wrapped_handle(BaseRequest.blank(
         '/foo',
         headers={'Host': 'example.com'}))
+
+
+def test_forwarded_handler_error():
+    def handle(request):
+        pass
+
+    wrapped_handle = forwarded.handler_factory(handle)
+
+    response = wrapped_handle(BaseRequest.blank(
+        '/foo',
+        headers={'Forwarded': 'blah=www.example.com'}))
+
+    assert response.status_code == 400

@@ -1,3 +1,6 @@
+from webob.exc import HTTPBadRequest
+
+
 FORWARDED_TOKENS = set(['by', 'for', 'host', 'proto'])
 
 
@@ -34,7 +37,10 @@ def handler_factory(handler):
         forwarded_header = request.headers.get('forwarded')
         if forwarded_header is None:
             return handler(request)
-        forwarded = parse(forwarded_header)
+        try:
+            forwarded = parse(forwarded_header)
+        except ForwardedError:
+            return HTTPBadRequest('Illegal Forwarded header')
         if not forwarded:
             return handler(request)
         item = forwarded[-1]
