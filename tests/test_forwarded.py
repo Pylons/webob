@@ -36,6 +36,11 @@ def test_parse_forwarded_illegal_whitespace():
                   forwarded.parse, 'for=_something; by=192.51.100.17')
 
 
+def test_parse_forwarded_not_a_pair():
+    assert_raises(forwarded.ForwardedError,
+                  forwarded.parse, 'for')
+
+
 def test_parse_forwarded_illegal_token():
     assert_raises(forwarded.ForwardedError,
                   forwarded.parse, 'illegal=_something')
