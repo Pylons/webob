@@ -240,7 +240,7 @@ Here's the highlights:
 
 ``response(environ, start_response)``: The response object is a WSGI
     application.  As an application, it acts according to how you
-    creat it.  It *can* do conditional responses if you pass
+    create it.  It *can* do conditional responses if you pass
     ``conditional_response=True`` when instantiating (or set that
     attribute later).  It can also do HEAD and Range requests.
 
