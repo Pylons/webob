@@ -166,7 +166,7 @@ dictionary-like:
     Not available
 
 ``content``:
-    Use ``res.body`` for the ``str`` value, ``res.unicode_body`` for
+    Use ``res.body`` for the ``str`` value, ``res.text`` for
     the ``unicode`` value
 
 Response Subclasses
