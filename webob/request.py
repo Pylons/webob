@@ -220,7 +220,7 @@ class BaseRequest(object):
         )
 
         if content_type == 'application/x-www-form-urlencoded':
-            r.body = bytes_(t.transcode_query(native_(r.body)))
+            r.body = bytes_(t.transcode_query(native_(self.body)))
             return r
         elif content_type != 'multipart/form-data':
             return r

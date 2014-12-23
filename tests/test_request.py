@@ -2596,6 +2596,22 @@ class TestRequest_functional(unittest.TestCase):
         self.assertTrue(req.body_file_raw is old_body_file)
         self.assertTrue(req.body_file is old_body_file)
 
+    def test_already_consumed_stream(self):
+        from webob.request import Request
+        body = 'something'.encode('latin-1')
+        content_type = 'application/x-www-form-urlencoded; charset=latin-1'
+        environ = {
+            'wsgi.input': BytesIO(body),
+            'CONTENT_TYPE': content_type,
+            'CONTENT_LENGTH': len(body),
+            'REQUEST_METHOD': 'POST'
+        }
+        req = Request(environ)
+        req = req.decode('latin-1')
+        req2 = Request(environ)
+        req2 = req2.decode('latin-1')
+        self.assertEqual(body, req2.body)
+
     def test_broken_seek(self):
         # copy() should work even when the input has a broken seek method
         req = self._blankOne('/', method='POST',
