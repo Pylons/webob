@@ -2865,6 +2865,14 @@ class TestRequest_functional(unittest.TestCase):
         )
         self.assertRaises(ValueError, cls.from_file, val_file)
 
+    def test_from_file_patch(self):
+        cls = self._getTargetClass()
+        req = cls.from_bytes(_test_req_patch)
+        self.assertEqual("PATCH", req.method)
+        self.assertTrue(len(req.body))
+        self.assertTrue(req.body in _test_req_patch)
+        self.assertEqual(_test_req_patch, req.as_bytes())
+
     def test_from_bytes(self):
         # A valid request without a Content-Length header should still read
         # the full body.
@@ -3563,6 +3571,14 @@ these are the contents of the file 'bar.txt'
 ------------------------------deb95b63e42a--
 """
 
+_test_req_patch = b"""
+PATCH /webob/ HTTP/1.1
+Content-Length: 14
+Content-Type: application/json
+
+{"foo": "bar"}
+"""
+
 _test_req2 = b"""
 POST / HTTP/1.0
 Content-Length: 0
@@ -3606,6 +3622,7 @@ Content-Disposition: form-data; name=file; filename="photo.jpg"
 
 
 _test_req = _norm_req(_test_req)
+_test_req_patch = _norm_req(_test_req_patch)
 _test_req2 = _norm_req(_test_req2) + b'\r\n'
 _test_req_multipart_charset = _norm_req(_test_req_multipart_charset)
 
