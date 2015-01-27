@@ -8,6 +8,10 @@
 .. image:: https://travis-ci.org/Pylons/webob.png?branch=master
         :target: https://travis-ci.org/Pylons/webob
 
+.. image:: https://readthedocs.org/projects/webob/badge/?version=latest
+        :target: http://docs.pylonsproject.org/projects/webob/en/latest/
+        :alt: Documentation Status
+
 WebOb provides objects for HTTP requests and responses.  Specifically
 it does this by wrapping the `WSGI <http://wsgi.org>`_ request
 environment and response status/headers/app_iter(body).
