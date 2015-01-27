@@ -20,3 +20,5 @@ The request and response objects provide many conveniences for parsing
 HTTP request and forming HTTP responses.  Both objects are read/write:
 as a result, WebOb is also a nice way to create HTTP requests and
 parse HTTP responses.
+
+Please see the `full documentation <http://webob.rtfd.org/>`_ for details.
