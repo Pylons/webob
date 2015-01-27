@@ -1,5 +1,5 @@
-``webob`` READEME
-=================
+``webob`` README
+================
 
 .. image:: https://pypip.in/version/WebOb/badge.svg?style=flat
     :target: https://pypi.python.org/pypi/WebOb/
