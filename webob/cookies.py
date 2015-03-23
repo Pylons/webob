@@ -13,6 +13,7 @@ from datetime import (
 import re
 import string
 import time
+import warnings
 
 from webob.compat import (
     PY3,
@@ -26,7 +27,7 @@ from webob.compat import (
 from webob.util import strings_differ
 
 __all__ = ['Cookie', 'CookieProfile', 'SignedCookieProfile', 'SignedSerializer',
-           'JSONSerializer', 'make_cookie']
+           'JSONSerializer', 'Base64Serializer', 'make_cookie']
 
 _marker = object()
 
@@ -328,26 +329,36 @@ def _ch_unquote(m):
 # serializing
 #
 
-# these chars can be in cookie value w/o causing it to be quoted
-# see http://tools.ietf.org/html/rfc6265#section-4.1.1
-# and https://github.com/Pylons/webob/pull/104#issuecomment-28044314
-
-# allowed in cookie values without quoting:
-# <space> (0x21), "#$%&'()*+" (0x25-0x2B), "-./0123456789:" (0x2D-0x3A),
+# these chars can be in cookie value see
+# http://tools.ietf.org/html/rfc6265#section-4.1.1 and
+# https://github.com/Pylons/webob/pull/104#issuecomment-28044314
+#
+# ! (0x21), "#$%&'()*+" (0x25-0x2B), "-./0123456789:" (0x2D-0x3A),
 # "<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[" (0x3C-0x5B),
 # "]^_`abcdefghijklmnopqrstuvwxyz{|}~" (0x5D-0x7E)
 
-_no_escape_special_chars = "!#$%&'()*+-./<=>?@[]^_`{|}~"
-_no_escape_chars = (string.ascii_letters + string.digits +
-                    _no_escape_special_chars)
-_no_escape_bytes = bytes_(_no_escape_chars)
+_allowed_special_chars = "!#$%&'()*+-./:<=>?@[]^_`{|}~"
+_allowed_cookie_chars = (string.ascii_letters + string.digits +
+                    _allowed_special_chars)
+_allowed_cookie_bytes = bytes_(_allowed_cookie_chars)
 
-# these chars should not be quoted themselves but if they are present they
-# should cause the cookie value to be surrounded by quotes (voodoo inherited
-# by old webob code without any comments)
-_escape_noop_chars = _no_escape_chars + ': '
+# these are the characters accepted in cookie *names*
+# From http://tools.ietf.org/html/rfc2616#section-2.2:
+# token          = 1*<any CHAR except CTLs or separators>
+# separators     = "(" | ")" | "<" | ">" | "@"
+#                | "," | ";" | ":" | "\" | <">
+#                | "/" | "[" | "]" | "?" | "="
+#                | "{" | "}" | SP | HT
+#
+# CTL            = <any US-ASCII control character
+#                         (octets 0 - 31) and DEL (127)>
+#
+_valid_token_chars = string.ascii_letters + string.digits + "!#$%&'*+-.^_`|~"
+_valid_token_bytes = bytes_(_valid_token_chars)
 
 # this is a map used to escape the values
+
+_escape_noop_chars = _allowed_cookie_chars + ' '
 _escape_map = dict((chr(i), '\\%03o' % i) for i in range(256))
 _escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
 if PY3: # pragma: no cover
@@ -361,24 +372,40 @@ weekdays = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 months = (None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
           'Oct', 'Nov', 'Dec')
 
-_notrans_binary = b' '*256
 
-# these are the characters accepted in cookie *names*
-_valid_token_chars = string.ascii_letters + string.digits + "!#$%&'*+,-.^_`|~"
-_valid_token_bytes = bytes_(_valid_token_chars)
+# This is temporary, until we can remove this from _value_quote
+_should_raise = None
 
-def _value_needs_quoting(v):
-    return v.translate(_notrans_binary, _no_escape_bytes)
+def __warn_or_raise(text, warn_class, to_raise, raise_reason):
+    if _should_raise:
+        raise to_raise(raise_reason)
+
+    else:
+        warnings.warn(text, warn_class, stacklevel=2)
+
 
 def _value_quote(v):
-    #assert isinstance(v, bytes)
-    if _value_needs_quoting(v):
+    # This looks scary, but is simple. We remove all valid characters from the
+    # string, if we end up with leftovers (string is longer than 0, we have
+    # invalid characters in our value)
+
+    leftovers = v.translate(None, _allowed_cookie_bytes)
+    if leftovers:
+        __warn_or_raise(
+                "Cookie value contains invalid bytes: (%s). Future versions "
+                "will raise ValueError upon encountering invalid bytes." %
+                (leftovers,),
+                RuntimeWarning, ValueError, 'Invalid characters in cookie value'
+                )
+        #raise ValueError('Invalid characters in cookie value')
         return b'"' + b''.join(map(_escape_char, v)) + b'"'
+
     return v
 
 def _valid_cookie_name(key):
     return isinstance(key, bytes) and not (
-        key.translate(_notrans_binary, _valid_token_bytes)
+        key.translate(None, _valid_token_bytes)
+        # Not explicitly required by RFC6265, may consider removing later:
         or key[0] == _b_dollar_sign
         or key.lower() in _c_keys
     )
@@ -404,7 +431,7 @@ def make_cookie(name, value, max_age=None, path='/', domain=None,
                 secure=False, httponly=False, comment=None):
     """ Generate a cookie value.  If ``value`` is None, generate a cookie value
     with an expiration date in the past"""
-    
+
     # We are deleting the cookie, override max_age and expires
     if value is None:
         value = b''
@@ -449,6 +476,38 @@ class JSONSerializer(object):
         # NB: json.loads raises ValueError if no json object can be decoded
         # so we don't have to do it explicitly here.
         return json.loads(text_(bstruct, encoding='utf-8'))
+
+class Base64Serializer(object):
+    """ A serializer which uses base64 to encode/decode data"""
+
+    def __init__(self, serializer=None):
+        if serializer is None:
+            serializer = JSONSerializer()
+
+        self.serializer = serializer
+
+    def dumps(self, appstruct):
+        """
+        Given an ``appstruct``, serialize and sign the data.
+
+        Returns a bytestring.
+        """
+        cstruct = self.serializer.dumps(appstruct) # will be bytes
+        return base64.urlsafe_b64encode(cstruct)
+
+    def loads(self, bstruct):
+        """
+        Given a ``bstruct`` (a bytestring), verify the signature and then
+        deserialize and return the deserialized value.
+
+        A ``ValueError`` will be raised if the signature fails to validate.
+        """
+        try:
+            cstruct = base64.urlsafe_b64decode(bytes_(bstruct))
+        except (binascii.Error, TypeError) as e:
+            raise ValueError('Badly formed base64 data: %s' % e)
+
+        return self.serializer.loads(cstruct)
 
 class SignedSerializer(object):
     """
@@ -597,7 +656,7 @@ class CookieProfile(object):
         self.domains = domains
 
         if serializer is None:
-            serializer = JSONSerializer()
+            serializer = Base64Serializer()
 
         self.serializer = serializer
         self.request = None
@@ -762,7 +821,7 @@ class SignedCookieProfile(CookieProfile):
 
     ``salt``
       A namespace to avoid collisions between different uses of a shared
-      secret. 
+      secret.
 
     ``hashalg``
       The HMAC digest algorithm to use for signing. The algorithm must be

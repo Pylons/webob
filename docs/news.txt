@@ -4,11 +4,47 @@ News
 Unreleased
 ----------
 
+Backwards Incompatibilities
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- ``Morsel`` will no longer accept a cookie value that does not meet RFC6265's
+  cookie-octet specification. Upon calling ``Morsel.serialize`` a warning will
+  be issued, in the future this will raise a ``ValueError``, please update your
+  cookie handling code. See https://github.com/Pylons/webob/pull/172
+
+  The cookie-octet specification in RFC6265 states the following characters are
+  valid in a cookie value:
+  
+  Hex Range     Actual Characters
+  ---------     -----------------
+  [0x21     ]   !
+  [0x25-0x2B]   #$%&'()*+ 
+  [0x2D-0x3A]   -./0123456789: 
+  [0x3C-0x5B]   <=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[
+  [0x5D-0x7E]   ]^_`abcdefghijklmnopqrstuvwxyz{|}~
+
+  RFC6265 suggests using base 64 to serialize data before storing data in a
+  cookie.
+
+- ``response.set_cookie`` now uses the internal ``make_cookie`` API, which will
+  issue warnings if cookies are set with invalid bytes. See
+  https://github.com/Pylons/webob/pull/172
+
 Documentation Changes
 ~~~~~~~~~~~~~~~~~~~~~
 
 - Remove the WebDAV only from certain HTTP Exceptions, these exceptions may
   also be used by REST services for example.
+
+Bug/Documentation Fixes
+~~~~~~~~~~~~~~~~~~~~~~~
+
+- ``response.set_cookie`` now has proper documentation for ``max_age`` and
+  ``expires``. The code has also been refactored to use ``cookies.make_cookie``
+  instead of duplicating the code. This fixes
+  https://github.com/Pylons/webob/issues/166 and
+  https://github.com/Pylons/webob/issues/171
+
 
 1.4 (2014-05-14)
 ----------------

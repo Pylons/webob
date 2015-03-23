@@ -30,7 +30,7 @@ from webob.compat import (
 
 from webob.cookies import (
     Cookie,
-    Morsel,
+    make_cookie,
     )
 
 from webob.datetime_utils import (
@@ -690,7 +690,7 @@ class Response(object):
     # set_cookie, unset_cookie, delete_cookie, merge_cookies
     #
 
-    def set_cookie(self, key, value='', max_age=None,
+    def set_cookie(self, name, value='', max_age=None,
                    path='/', domain=None, secure=False, httponly=False,
                    comment=None, expires=None, overwrite=False):
         """
@@ -698,7 +698,7 @@ class Response(object):
 
         Arguments are:
 
-        ``key``
+        ``name``
 
            The cookie name.
 
@@ -711,13 +711,14 @@ class Response(object):
 
         ``max_age``
 
-           An integer representing a number of seconds or ``None``.  If this
-           value is an integer, it is used as the ``Max-Age`` of the
-           generated cookie.  If ``expires`` is not passed and this value is
-           an integer, the ``max_age`` value will also influence the
-           ``Expires`` value of the cookie (``Expires`` will be set to now +
-           max_age).  If this value is ``None``, the cookie will not have a
-           ``Max-Age`` value (unless ``expires`` is also sent).
+           An integer representing a number of seconds, ``datetime.timedelta``,
+           or ``None``. This value is used as the ``Max-Age`` of the generated
+           cookie.  If ``expires`` is not passed and this value is not
+           ``None``, the ``max_age`` value will also influence the ``Expires``
+           value of the cookie (``Expires`` will be set to now + max_age).  If
+           this value is ``None``, the cookie will not have a ``Max-Age`` value
+           (unless ``expires`` is set). If both ``max_age`` and ``expires`` are
+           set, this value takes precedence.
 
         ``path``
 
@@ -750,13 +751,14 @@ class Response(object):
 
         ``expires``
 
-           A ``datetime.timedelta`` object representing an amount of time or
-           the value ``None``.  A non-``None`` value is used to generate the
-           ``Expires`` value of the generated cookie.  If ``max_age`` is not
-           passed, but this value is not ``None``, it will influence the
-           ``Max-Age`` header (``Max-Age`` will be 'expires_value -
-           datetime.utcnow()').  If this value is ``None``, the ``Expires``
-           cookie value will be unset (unless ``max_age`` is also passed).
+           A ``datetime.timedelta`` object representing an amount of time,
+           ``datetime.datetime`` or ``None``. A non-``None`` value is used to
+           generate the ``Expires`` value of the generated cookie. If
+           ``max_age`` is not passed, but this value is not ``None``, it will
+           influence the ``Max-Age`` header. If this value is ``None``, the
+           ``Expires`` cookie value will be unset (unless ``max_age`` is set).
+           If ``max_age`` is set, it will be used to generate the ``expires``
+           and this value is ignored.
 
         ``overwrite``
 
@@ -765,30 +767,25 @@ class Response(object):
 
         """
         if overwrite:
-            self.unset_cookie(key, strict=False)
-        if value is None: # delete the cookie from the client
-            value = ''
-            max_age = 0
-            expires = timedelta(days=-5)
-        elif expires is None and max_age is not None:
-            if isinstance(max_age, int):
-                max_age = timedelta(seconds=max_age)
-            expires = datetime.utcnow() + max_age
-        elif max_age is None and expires is not None:
-            max_age = expires - datetime.utcnow()
-        value = bytes_(value, 'utf8')
-        key = bytes_(key, 'utf8')
-        m = Morsel(key, value)
-        m.path = bytes_(path, 'utf8')
-        m.domain = bytes_(domain, 'utf8')
-        m.comment = bytes_(comment, 'utf8')
-        m.expires = expires
-        m.max_age = max_age
-        m.secure = secure
-        m.httponly = httponly
-        self.headerlist.append(('Set-Cookie', m.serialize()))
+            self.unset_cookie(name, strict=False)
 
-    def delete_cookie(self, key, path='/', domain=None):
+        # If expires is set, but not max_age we set max_age to expires
+        if not max_age and isinstance(expires, timedelta):
+            max_age = expires
+
+        # expires can also be a datetime
+        if not max_age and isinstance(expires, datetime):
+            max_age = expires - datetime.utcnow()
+
+        value = bytes_(value, 'utf-8')
+
+        cookie = make_cookie(name, value, max_age=max_age, path=path,
+                domain=domain, secure=secure, httponly=httponly,
+                comment=comment)
+
+        self.headerlist.append(('Set-Cookie', cookie))
+
+    def delete_cookie(self, name, path='/', domain=None):
         """
         Delete a cookie from the client.  Note that path and domain must match
         how the cookie was originally set.
@@ -796,9 +793,9 @@ class Response(object):
         This sets the cookie to the empty string, and max_age=0 so
         that it should expire immediately.
         """
-        self.set_cookie(key, None, path=path, domain=domain)
+        self.set_cookie(name, None, path=path, domain=domain)
 
-    def unset_cookie(self, key, strict=True):
+    def unset_cookie(self, name, strict=True):
         """
         Unset a cookie with the given name (remove it from the
         response).
@@ -809,15 +806,15 @@ class Response(object):
         cookies = Cookie()
         for header in existing:
             cookies.load(header)
-        if isinstance(key, text_type):
-            key = key.encode('utf8')
-        if key in cookies:
-            del cookies[key]
+        if isinstance(name, text_type):
+            name = name.encode('utf8')
+        if name in cookies:
+            del cookies[name]
             del self.headers['Set-Cookie']
             for m in cookies.values():
                 self.headerlist.append(('Set-Cookie', m.serialize()))
         elif strict:
-            raise KeyError("No cookie has been set with the name %r" % key)
+            raise KeyError("No cookie has been set with the name %r" % name)
 
 
     def merge_cookies(self, resp):
