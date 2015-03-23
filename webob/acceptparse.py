@@ -314,17 +314,19 @@ class MIMEAccept(Accept):
                 '*' == offer):
             return True
 
+        # Set mask type with wildcard subtype for malformed masks
         try:
             mask_type, mask_subtype = [x.lower() for x in mask.split('/')]
         except ValueError:
             mask_type = mask
-            mask_subtype = ''
+            mask_subtype = '*'
 
+        # Set offer type with wildcard subtype for malformed offers
         try:
             offer_type, offer_subtype = [x.lower() for x in offer.split('/')]
         except ValueError:
             offer_type = offer
-            offer_subtype = ''
+            offer_subtype = '*'
 
         if mask_subtype == '*':
             # match on type only
@@ -342,17 +344,11 @@ class MIMEAccept(Accept):
 
         if offer_subtype == '*':
             # match on type only
-            if mask_type == '*':
-                return True
-            else:
-                return mask_type.lower() == offer_type.lower()
+            return mask_type.lower() == offer_type.lower()
 
         if offer_type == '*':
             # match on subtype only
-            if mask_subtype == '*':
-                return True
-            else:
-                return mask_subtype.lower() == offer_subtype.lower()
+            return mask_subtype.lower() == offer_subtype.lower()
 
         return offer.lower() == mask.lower()
 

@@ -314,7 +314,10 @@ def test_wildcard_matching():
         ('*/a', '*')]
     for mask, offer in matches:
         assert mimeaccept._match(mask, offer)
-
+        # Test malformed mask and offer variants where either is missing
+        # a type or subtype
+        assert mimeaccept._match('A', offer)
+        assert mimeaccept._match(mask, 'a')
 
     mismatches = [
         ('B/b', 'A/*'),
