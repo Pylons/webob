@@ -202,6 +202,9 @@ class CacheControl(object):
     max_age = value_property('max-age', none=-1)
     s_maxage = value_property('s-maxage', type='response')
     s_max_age = s_maxage
+    stale_while_revalidate = value_property(
+        'stale-while-revalidate', type='response')
+    stale_if_error = value_property('stale-if-error', type='response')
 
     def __str__(self):
         return serialize_cache_control(self.properties)
