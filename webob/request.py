@@ -1,5 +1,4 @@
 import binascii
-import cgi
 import io
 import os
 import re
@@ -39,6 +38,7 @@ from webob.compat import (
     url_unquote,
     quote_plus,
     urlparse,
+    cgi_FieldStorage
     )
 
 from webob.cookies import RequestCookies
@@ -229,13 +229,13 @@ class BaseRequest(object):
         fs_environ.setdefault('CONTENT_LENGTH', '0')
         fs_environ['QUERY_STRING'] = ''
         if PY3: # pragma: no cover
-            fs = cgi.FieldStorage(fp=self.body_file,
+            fs = cgi_FieldStorage(fp=self.body_file,
                                   environ=fs_environ,
                                   keep_blank_values=True,
                                   encoding=charset,
                                   errors=errors)
         else:
-            fs = cgi.FieldStorage(fp=self.body_file,
+            fs = cgi_FieldStorage(fp=self.body_file,
                                   environ=fs_environ,
                                   keep_blank_values=True)
 
@@ -793,14 +793,14 @@ class BaseRequest(object):
         fs_environ.setdefault('CONTENT_LENGTH', '0')
         fs_environ['QUERY_STRING'] = ''
         if PY3: # pragma: no cover
-            fs = cgi.FieldStorage(
+            fs = cgi_FieldStorage(
                 fp=self.body_file,
                 environ=fs_environ,
                 keep_blank_values=True,
                 encoding='utf8')
             vars = MultiDict.from_fieldstorage(fs)
         else:
-            fs = cgi.FieldStorage(
+            fs = cgi_FieldStorage(
                 fp=self.body_file,
                 environ=fs_environ,
                 keep_blank_values=True)
@@ -1566,7 +1566,7 @@ def _cgi_FieldStorage__repr__patch(self):
         return "FieldStorage(%r, %r)" % (self.name, self.filename)
     return "FieldStorage(%r, %r, %r)" % (self.name, self.filename, self.value)
 
-cgi.FieldStorage.__repr__ = _cgi_FieldStorage__repr__patch
+cgi_FieldStorage.__repr__ = _cgi_FieldStorage__repr__patch
 
 class FakeCGIBody(io.RawIOBase):
     def __init__(self, vars, content_type):
