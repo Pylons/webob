@@ -8,6 +8,13 @@ from webob.request import Request
 from webob.response import Response
 from webob.compat import text_
 from webob.compat import bytes_
+from webob import cookies
+
+def setup_module(module):
+    cookies._should_raise = True
+
+def teardown_module(module):
+    cookies._should_raise = False
 
 def simple_app(environ, start_response):
     start_response('200 OK', [
@@ -110,16 +117,41 @@ def test_init_content_type_w_charset():
 def test_cookies():
     res = Response()
     # test unicode value
-    res.set_cookie('x', text_(b'\N{BLACK SQUARE}', 'unicode_escape'))
+    res.set_cookie('x', "test")
     # utf8 encoded
-    eq_(res.headers.getall('set-cookie'), ['x="\\342\\226\\240"; Path=/'])
+    eq_(res.headers.getall('set-cookie'), ['x=test; Path=/'])
     r2 = res.merge_cookies(simple_app)
     r2 = BaseRequest.blank('/').get_response(r2)
     eq_(r2.headerlist,
         [('Content-Type', 'text/html; charset=utf8'),
-        ('Set-Cookie', 'x="\\342\\226\\240"; Path=/'),
+        ('Set-Cookie', 'x=test; Path=/'),
         ]
     )
+
+def test_unicode_cookies_error_raised():
+    res = Response()
+    assert_raises(ValueError, Response.set_cookie, res, 'x',
+            text_(b'\N{BLACK SQUARE}', 'unicode_escape'))
+
+def test_unicode_cookies_warning_issued():
+    import warnings
+
+    cookies._should_raise = False
+
+    with warnings.catch_warnings(record=True) as w:
+        # Cause all warnings to always be triggered.
+        warnings.simplefilter("always")
+        # Trigger a warning.
+
+        res = Response()
+        res.set_cookie('x', text_(b'\N{BLACK SQUARE}', 'unicode_escape'))
+
+        eq_(len(w), 1)
+        eq_(issubclass(w[-1].category, RuntimeWarning), True)
+        eq_("ValueError" in str(w[-1].message), True)
+
+    cookies._should_raise = True
+
 
 def test_http_only_cookie():
     req = Request.blank('/')
@@ -689,11 +721,19 @@ def test_set_cookie_expires_is_not_None_and_max_age_is_None():
     eq_(val[2], 'a=1')
     assert val[3].startswith('expires')
 
-def test_set_cookie_value_is_unicode():
+def test_set_cookie_expires_is_timedelta_and_max_age_is_None():
+    import datetime
     res = Response()
-    val = text_(b'La Pe\xc3\xb1a', 'utf-8')
-    res.set_cookie('a', val)
-    eq_(res.headerlist[-1], ('Set-Cookie', 'a="La Pe\\303\\261a"; Path=/'))
+    then = datetime.timedelta(days=1)
+    res.set_cookie('a', '1', expires=then)
+    eq_(res.headerlist[-1][0], 'Set-Cookie')
+    val = [ x.strip() for x in res.headerlist[-1][1].split(';')]
+    assert len(val) == 4
+    val.sort()
+    ok_(val[0] in ('Max-Age=86399', 'Max-Age=86400'))
+    eq_(val[1], 'Path=/')
+    eq_(val[2], 'a=1')
+    assert val[3].startswith('expires')
 
 def test_delete_cookie():
     res = Response()
