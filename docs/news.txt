@@ -22,6 +22,9 @@ Bug Fixes
 Documentation Changes
 ~~~~~~~~~~~~~~~~~~~~~
 
+- Documentation didn't match the actual code for the wsgify function signature.
+  See https://github.com/Pylons/webob/pull/167
+
 - Remove the WebDAV only from certain HTTP Exceptions, these exceptions may
   also be used by REST services for example.
 
