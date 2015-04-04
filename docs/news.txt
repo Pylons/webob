@@ -15,6 +15,11 @@ Features
 Bug Fixes
 ~~~~~~~~~
 
+- Response.from_file returns HTTP headers as latin1 rather than UTF-8, this
+  fixes the usage on Google AppEngine. See
+  https://github.com/Pylons/webob/issues/99 and
+  https://github.com/Pylons/webob/pull/150
+
 - Fix a bug in parsing the auth parameters that contained bad white space. This
   makes the parsing fall in line with what's required in RFC7235. See
   https://github.com/Pylons/webob/issues/158
