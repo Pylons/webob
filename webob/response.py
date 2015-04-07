@@ -244,8 +244,12 @@ class Response(object):
         return self._status
 
     def _status__set(self, value):
-        if isinstance(value, int):
-            self.status_code = value
+        try:
+            code = int(value)
+        except ValueError:
+            pass
+        else:
+            self.status_code = code
             return
         if PY3: # pragma: no cover
             if isinstance(value, bytes):
@@ -256,11 +260,6 @@ class Response(object):
             raise TypeError(
                 "You must set status to a string or integer (not %s)"
                 % type(value))
-        if ' ' not in value:
-             try:
-                value += ' ' + status_reasons[int(value)]
-             except KeyError:
-                value += ' ' + status_generic_reasons[int(value) // 100]
         self._status = value
 
     status = property(_status__get, _status__set, doc=_status__get.__doc__)
