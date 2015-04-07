@@ -451,7 +451,7 @@ def test_set_status():
     res = Response()
     res.status = "200"
     eq_(res.status, "200 OK")
-    assert_raises(TypeError, setattr, res, 'status', float(200))
+    assert_raises(TypeError, setattr, res, 'status', (200,))
 
 def test_set_headerlist():
     res = Response()
