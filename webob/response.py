@@ -246,7 +246,7 @@ class Response(object):
     def _status__set(self, value):
         try:
             code = int(value)
-        except ValueError:
+        except (ValueError, TypeError):
             pass
         else:
             self.status_code = code
