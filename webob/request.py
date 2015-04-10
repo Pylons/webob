@@ -1146,7 +1146,7 @@ class BaseRequest(object):
         # acquire body before we handle headers so that
         # content-length will be set
         body = None
-        if self.method in ('PUT', 'POST'):
+        if http_method_probably_has_body.get(self.method):
             if skip_body > 1:
                 if len(self.body) > skip_body:
                     body = bytes_('<body skipped (len=%s)>' % len(self.body))
@@ -1248,7 +1248,7 @@ class BaseRequest(object):
             if hname in r.headers:
                 hval = r.headers[hname] + ', ' + hval
             r.headers[hname] = hval
-        if r.method in ('PUT', 'POST'):
+        if http_method_probably_has_body.get(r.method):
             clen = r.content_length
             if clen is None:
                 body = fp.read()
