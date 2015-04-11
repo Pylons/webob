@@ -785,8 +785,10 @@ class BaseRequest(object):
             return NoVars('Not an HTML form submission (Content-Type: %s)'
                           % content_type)
         self._check_charset()
-        if self.is_body_seekable:
-            self.body_file_raw.seek(0)
+
+        self.make_body_seekable()
+        self.body_file_raw.seek(0)
+
         fs_environ = env.copy()
         # FieldStorage assumes a missing CONTENT_LENGTH, but a
         # default of 0 is better:
@@ -806,11 +808,6 @@ class BaseRequest(object):
                 keep_blank_values=True)
             vars = MultiDict.from_fieldstorage(fs)
 
-
-        #ctype = self.content_type or 'application/x-www-form-urlencoded'
-        ctype = self._content_type_raw or 'application/x-www-form-urlencoded'
-        f = FakeCGIBody(vars, ctype)
-        self.body_file = io.BufferedReader(f)
         env['webob._parsed_post_vars'] = (vars, self.body_file_raw)
         return vars
 

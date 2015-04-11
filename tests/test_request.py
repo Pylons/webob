@@ -524,8 +524,8 @@ class TestRequestCommon(unittest.TestCase):
         r_1 = req.body
         r_2 = req.POST
         r_3 = req.body
-        self.assertEqual(r_1, '{"password": "last centurion", "email": "rory@wiggy.net"}')
-        self.assertEqual(r_3, '{"password": "last centurion", "email": "rory@wiggy.net"}')
+        self.assertEqual(r_1, b'{"password": "last centurion", "email": "rory@wiggy.net"}')
+        self.assertEqual(r_3, b'{"password": "last centurion", "email": "rory@wiggy.net"}')
 
     def test_PUT_bad_content_type(self):
         from webob.multidict import NoVars
