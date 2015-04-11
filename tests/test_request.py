@@ -2995,14 +2995,10 @@ class TestRequest_functional(unittest.TestCase):
             content_type='multipart/form-data; boundary=boundary',
             POST=_cgi_escaping_body
         )
-        f0 = req.body_file_raw
         post1 = req.POST
-        f1 = req.body_file_raw
-        self.assertTrue(f1 is not f0)
+        self.assertTrue('webob._parsed_post_vars' in req.environ)
         post2 = req.POST
-        f2 = req.body_file_raw
         self.assertTrue(post1 is post2)
-        self.assertTrue(f1 is f2)
 
 
     def test_middleware_body(self):
