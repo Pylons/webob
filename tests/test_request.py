@@ -512,6 +512,21 @@ class TestRequestCommon(unittest.TestCase):
         result = req.POST
         self.assertEqual(result['var1'], 'value1')
 
+    def test_POST_json_no_content_type(self):
+        data = b'{"password": "last centurion", "email": "rory@wiggy.net"}'
+        INPUT = BytesIO(data)
+        environ = {'wsgi.input': INPUT,
+                   'REQUEST_METHOD': 'POST',
+                   'CONTENT_LENGTH':len(data),
+                   'webob.is_body_seekable': True,
+                  }
+        req = self._makeOne(environ)
+        r_1 = req.body
+        r_2 = req.POST
+        r_3 = req.body
+        self.assertEqual(r_1, '{"password": "last centurion", "email": "rory@wiggy.net"}')
+        self.assertEqual(r_3, '{"password": "last centurion", "email": "rory@wiggy.net"}')
+
     def test_PUT_bad_content_type(self):
         from webob.multidict import NoVars
         data = b'input'
