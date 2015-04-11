@@ -41,6 +41,9 @@ Features
 Bug Fixes
 ~~~~~~~~~
 
+- Read the body of a request if we think it might have a body. This fixes PATCH
+  to support bodies. See https://github.com/Pylons/webob/pull/184
+
 - Response.from_file returns HTTP headers as latin1 rather than UTF-8, this
   fixes the usage on Google AppEngine. See
   https://github.com/Pylons/webob/issues/99 and
