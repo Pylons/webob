@@ -4,6 +4,12 @@ News
 Unreleased
 ----------
 
+Bug Fixes
+~~~~~~~~~
+
+- Read the body of a request if we think it might have a body. This fixes PATCH
+  to support bodies. See https://github.com/Pylons/webob/pull/184
+
 Documentation Changes
 ~~~~~~~~~~~~~~~~~~~~~
 
