@@ -7,6 +7,9 @@ Unreleased
 Bug Fixes
 ~~~~~~~~~
 
+- Request.body would get mangled if the body was JSON but the right
+  content_type was not set. See https://github.com/Pylons/webob/pull/192
+
 - Read the body of a request if we think it might have a body. This fixes PATCH
   to support bodies. See https://github.com/Pylons/webob/pull/184
 
