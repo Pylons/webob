@@ -3402,6 +3402,11 @@ class FakeCGIBodyTests(unittest.TestCase):
                            'application/x-www-form-urlencoded')
         self.assertEqual(body.read(), b'bananas=bananas')
 
+    def test_readable(self):
+        from webob.request import FakeCGIBody
+        body = FakeCGIBody({'bananas': 'bananas'}, 'application/something')
+        self.assertTrue(body.readable())
+
 
 class Test_cgi_FieldStorage__repr__patch(unittest.TestCase):
     def _callFUT(self, fake):
