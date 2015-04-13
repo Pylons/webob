@@ -133,10 +133,10 @@ status_generic_reasons = {
 try:
     # py3.3+ have native comparison support
     from hmac import compare_digest
-except ImportError:
+except ImportError: # pragma: nocover (Python 2.7.7 backported this)
     compare_digest = None
 
-def strings_differ(string1, string2):
+def strings_differ(string1, string2, compare_digest=compare_digest):
     """Check whether two strings differ while avoiding timing attacks.
 
     This function returns True if the given strings differ and False
@@ -145,6 +145,10 @@ def strings_differ(string1, string2):
     to avoid certain timing-related crypto attacks:
 
         http://seb.dbzteam.org/crypto/python-oauth-timing-hmac.pdf
+
+    .. versionchanged:: 1.5
+       Support :func:`hmac.compare_digest` if it is available (Python 2.7.7+
+       and Python 3.3+).
 
     """
     len_eq = len(string1) == len(string2)
@@ -156,9 +160,10 @@ def strings_differ(string1, string2):
         left = string2
     right = string2
 
-    if compare_digest is not None: # pragma: nocover (Python 3.3+ only)
+    if compare_digest is not None:
         invalid_bits += not compare_digest(left, right)
     else:
         for a, b in zip(left, right):
             invalid_bits += a != b
     return invalid_bits != 0
+

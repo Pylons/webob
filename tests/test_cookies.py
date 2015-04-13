@@ -160,11 +160,6 @@ def test_morsel_repr():
     result = repr(v)
     eq_(result, "<Morsel: a='b'>")
 
-def test_strings_differ():
-    from webob.util import strings_differ
-
-    eq_(strings_differ('test1', 'test'), True)
-
 class TestRequestCookies(unittest.TestCase):
     def _makeOne(self, environ):
         from webob.cookies import RequestCookies
