@@ -240,12 +240,15 @@ mime types are not supported.
     'es;q=0.7, en-US;q=0.5'
     >>> req.headers['Accept-Language']
     'es;q=0.7, en-US;q=0.5'
-    >>> req.accept_language.best_matches('en-GB')
-    ['es', 'en-US', 'en-GB']
-    >>> req.accept_language.best_matches('es')
-    ['es']
-    >>> req.accept_language.best_matches('ES')
-    ['ES']
+    >>> req.accept_language.best_match(['en-GB'])
+    >>> req.accept_language.best_match(['en-GB'], default_match='en-GB')
+    'en-GB'
+    >>> req.accept_language.best_match(['en-GB', 'en-US'], default_match='en-GB')
+    'en-US'
+    >>> req.accept_language.best_match(['es'])
+    'es'
+    >>> req.accept_language.best_match(['ES'])
+    'ES'
 
     >>> req = Request.blank('/', accept_language='en;q=0.5')
     >>> req.accept_language.best_match(['en-gb'])
