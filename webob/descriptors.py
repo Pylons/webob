@@ -108,7 +108,7 @@ def deprecated_property(attr, name, text, version): # pragma: no cover
     """
     def warn():
         warn_deprecation('The attribute %s is deprecated: %s'
-            % (attr, text),
+            % (name, text),
             version,
             3
         )
@@ -122,7 +122,7 @@ def deprecated_property(attr, name, text, version): # pragma: no cover
         warn()
         attr.__delete__(self)
     return property(fget, fset, fdel,
-        '<Deprecated attribute %s>' % attr
+        '<Deprecated attribute %s>' % name
     )
 
 
