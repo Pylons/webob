@@ -355,7 +355,7 @@ is preferred:
 
 .. code-block:: python
 
-    >>> req.accept.best_matches()
+    >>> list(req.accept)
     ['application/xhtml+xml', 'text/html']
 
 For languages you'll often have a "fallback" language.  E.g., if there's
@@ -365,10 +365,22 @@ any less preferrable languages):
 .. code-block:: python
 
     >>> req.accept_language = 'es, pt-BR'
-    >>> req.accept_language.best_matches('en-US')
-    ['es', 'pt-BR', 'en-US']
-    >>> req.accept_language.best_matches('es')
-    ['es']
+    >>> req.accept_language.best_match(['en-GB', 'en-US'], default_match='en-US')
+    'en-US'
+    >>> req.accept_language.best_match(['es', 'en-US'], default_match='en-US')
+    'es'
+
+Your fallback language must appear both in the ``offers`` and as the
+``default_match`` to insure that it is returned as a best match if the
+client specified a preference for it.
+
+.. code-block:: python
+
+    >>> req.accept_language = 'en-US;q=0.5, en-GB;q=0.2'
+    >>> req.accept_language.best_match(['en-GB'], default_match='en-US')
+    'en-GB'
+    >>> req.accept_language.best_match(['en-GB', 'en-US'], default_match='en-US')
+    'en-US'
 
 Conditional Requests
 ~~~~~~~~~~~~~~~~~~~~
