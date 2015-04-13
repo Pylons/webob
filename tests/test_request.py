@@ -512,6 +512,21 @@ class TestRequestCommon(unittest.TestCase):
         result = req.POST
         self.assertEqual(result['var1'], 'value1')
 
+    def test_POST_json_no_content_type(self):
+        data = b'{"password": "last centurion", "email": "rory@wiggy.net"}'
+        INPUT = BytesIO(data)
+        environ = {'wsgi.input': INPUT,
+                   'REQUEST_METHOD': 'POST',
+                   'CONTENT_LENGTH':len(data),
+                   'webob.is_body_seekable': True,
+                  }
+        req = self._makeOne(environ)
+        r_1 = req.body
+        r_2 = req.POST
+        r_3 = req.body
+        self.assertEqual(r_1, b'{"password": "last centurion", "email": "rory@wiggy.net"}')
+        self.assertEqual(r_3, b'{"password": "last centurion", "email": "rory@wiggy.net"}')
+
     def test_PUT_bad_content_type(self):
         from webob.multidict import NoVars
         data = b'input'
@@ -2980,14 +2995,10 @@ class TestRequest_functional(unittest.TestCase):
             content_type='multipart/form-data; boundary=boundary',
             POST=_cgi_escaping_body
         )
-        f0 = req.body_file_raw
         post1 = req.POST
-        f1 = req.body_file_raw
-        self.assertTrue(f1 is not f0)
+        self.assertTrue('webob._parsed_post_vars' in req.environ)
         post2 = req.POST
-        f2 = req.body_file_raw
         self.assertTrue(post1 is post2)
-        self.assertTrue(f1 is f2)
 
 
     def test_middleware_body(self):
@@ -3390,6 +3401,11 @@ class FakeCGIBodyTests(unittest.TestCase):
         body = FakeCGIBody({'bananas': 'bananas'},
                            'application/x-www-form-urlencoded')
         self.assertEqual(body.read(), b'bananas=bananas')
+
+    def test_readable(self):
+        from webob.request import FakeCGIBody
+        body = FakeCGIBody({'bananas': 'bananas'}, 'application/something')
+        self.assertTrue(body.readable())
 
 
 class Test_cgi_FieldStorage__repr__patch(unittest.TestCase):
