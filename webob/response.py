@@ -260,11 +260,6 @@ class Response(object):
             raise TypeError(
                 "You must set status to a string or integer (not %s)"
                 % type(value))
-        if ' ' not in value:
-             try:
-                value += ' ' + status_reasons[int(value)]
-             except KeyError:
-                value += ' ' + status_generic_reasons[int(value) // 100]
 
         # Attempt to get the status code itself, if this fails we should fail
         status_code = int(value.split()[0])
