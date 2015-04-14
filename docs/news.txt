@@ -53,6 +53,9 @@ Bug Fixes
   makes the parsing fall in line with what's required in RFC7235. See
   https://github.com/Pylons/webob/issues/158
 
+- Use '\r\n' line endings in ``Response.__str__``. See:
+  https://github.com/Pylons/webob/pull/146
+
 Documentation Changes
 ~~~~~~~~~~~~~~~~~~~~~
 

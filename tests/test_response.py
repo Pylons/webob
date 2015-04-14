@@ -404,6 +404,10 @@ def test_content_type_in_headerlist():
     finally:
         Response.default_content_type = default_content_type
 
+def test_str_crlf():
+    res = Response('test')
+    assert '\r\n' in str(res)
+
 def test_from_file():
     res = Response('test')
     inp = io.BytesIO(bytes_(str(res)))
