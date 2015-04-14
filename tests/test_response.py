@@ -82,16 +82,6 @@ def test_set_response_status_str_generic_reason():
     assert res.status_code == 299
     assert res.status == '299 Success'
 
-def test_set_response_status_204():
-    # setting the response status to 204 should remove the content_type
-    req = BaseRequest.blank('/')
-    res = req.get_response(simple_app)
-    res.status = 204
-    assert res.status_code == 204
-    assert res.status == '204 No Content'
-    assert res.content_type is None
-    assert res.content_length is None
-
 def test_set_response_status_code():
     req = BaseRequest.blank('/')
     res = req.get_response(simple_app)
