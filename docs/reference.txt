@@ -964,7 +964,7 @@ The Response object can handle your conditional responses for you,
 checking If-None-Match, If-Modified-Since, and Range/If-Range.
 
 To enable this you must create the response like
-``Response(conditional_request=True)``, or make a subclass like:
+``Response(conditional_response=True)``, or make a subclass like:
 
 .. code-block:: python
 
