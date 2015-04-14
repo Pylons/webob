@@ -308,12 +308,14 @@ class NestedMultiDictTestCase(BaseDictTests, unittest.TestCase):
 class TestGetDict(BaseDictTests, unittest.TestCase):
     klass = multidict.GetDict
 
-    def _get_instance(self, **kwargs):
+    def _get_instance(self, environ=None, **kwargs):
+        if environ is None:
+            environ = {}
         if kwargs:
             data = multidict.MultiDict(kwargs)
         else:
             data = self.data.copy()
-        return self.klass(data, {})
+        return self.klass(data, environ)
 
     def test_inititems(self):
         #The first argument passed into the __init__ method
@@ -332,51 +334,92 @@ class TestGetDict(BaseDictTests, unittest.TestCase):
         d.extend(test = 'a')
         self.assertEqual(d['test'], 'a')
 
-    def test_listextend(self):
-        class Other:
+    def test_extend_from_items(self):
+        values = {'a': '1', 'b': '2', 'c': '3'}
+        class MappingWithItems:
             def items(self):
-                return [text_('\xe9'), 'e', 'f', 1]
+                return values.items()
 
-        other = Other()
         d = self._get_instance()
-        d.extend(other)
+        d.extend(MappingWithItems())
+        self.assertTrue(set(values.items()).issubset(d._items))
 
-        _list = [text_('\xe9'), 'e', r'f', 1]
-        for v in _list:
-            self.assertTrue(v in d._items)
-
-    def test_dictextend(self):
-        class Other:
+    def test_extend_from_keys(self):
+        values = {'a': '1', 'b': '2', 'c': '3'}
+        class MappingWithoutItems:
             def __getitem__(self, item):
-                return {'a':1, 'b':2, 'c':3}.get(item)
-
+                return values[item]
             def keys(self):
-                return ['a', 'b', 'c']
+                return values.keys()
 
-        other = Other()
         d = self._get_instance()
-        d.extend(other)
+        d.extend(MappingWithoutItems())
+        self.assertTrue(set(values.items()).issubset(d._items))
 
-        _list = [('a', 1), ('b', 2), ('c', 3)]
-        for v in _list:
-            self.assertTrue(v in d._items)
-
-    def test_otherextend(self):
-        class Other(object):
-            def __iter__(self):
-                return iter([('a', 1)])
-
-        other = Other()
+    def test_extend_from_iterable(self):
+        items = [('a', '1')]
         d = self._get_instance()
-        d.extend(other)
 
-        _list = [('a', 1)]
-        for v in _list:
-            self.assertTrue(v in d._items)
+        d.extend(iter(items))
+        self.assertTrue(set(items).issubset(d._items))
 
     def test_repr_with_password(self):
         d = self._get_instance(password='pwd')
         self.assertEqual(repr(d), "GET([('password', '******')])")
+
+    def test_setitem_updates_QUERY_STRING(self):
+        env = {}
+        d = self._get_instance(environ=env)
+        d['a'] = '2'
+        self.assertEqual(env['QUERY_STRING'], 'b=1&a=2')
+
+    def test_add_updates_QUERY_STRING(self):
+        env = {}
+        d = self._get_instance(environ=env)
+        d.add('a', '2')
+        self.assertEqual(env['QUERY_STRING'], 'a=%C3%A9&a=e&a=f&b=1&a=2')
+
+    def test_delitem_updates_QUERY_STRING(self):
+        env = {}
+        d = self._get_instance(environ=env)
+        del d['a']
+        self.assertEqual(env['QUERY_STRING'], 'b=1')
+
+    def test_clear_updates_QUERY_STRING(self):
+        env = {}
+        d = self._get_instance(environ=env)
+        d.clear()
+        self.assertEqual(env['QUERY_STRING'], '')
+
+    def test_setdefault_updates_QUERY_STRING(self):
+        env = {}
+        d = self._get_instance(environ=env)
+        d.setdefault('c', '2')
+        self.assertEqual(env['QUERY_STRING'], 'a=%C3%A9&a=e&a=f&b=1&c=2')
+
+    def test_pop_updates_QUERY_STRING(self):
+        env = {}
+        d = self._get_instance(environ=env)
+        d.pop('a')
+        self.assertEqual(env['QUERY_STRING'], 'a=e&a=f&b=1')
+
+    def test_popitem_updates_QUERY_STRING(self):
+        env = {}
+        d = self._get_instance(environ=env)
+        d.popitem()
+        self.assertEqual(env['QUERY_STRING'], 'a=%C3%A9&a=e&a=f')
+
+    def test_update_updates_QUERY_STRING(self):
+        env = {}
+        d = self._get_instance(environ=env)
+        d.update([('a', '2')])
+        self.assertEqual(env['QUERY_STRING'], 'b=1&a=2')
+
+    def test_extend_updates_QUERY_STRING(self):
+        env = {}
+        d = self._get_instance(environ=env)
+        d.extend([('a', '2')])
+        self.assertEqual(env['QUERY_STRING'], 'a=%C3%A9&a=e&a=f&b=1&a=2')
 
 class NoVarsTestCase(unittest.TestCase):
     klass = multidict.NoVars

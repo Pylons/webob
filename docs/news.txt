@@ -41,6 +41,10 @@ Features
 Bug Fixes
 ~~~~~~~~~
 
+- Fixed a bug in ``webob.multidict.GetDict`` which resulted in the
+  QUERY_STRING not being updated when changes were made to query
+  params using ``Request.GET.extend()``.
+
 - Read the body of a request if we think it might have a body. This fixes PATCH
   to support bodies. See https://github.com/Pylons/webob/pull/184
 
@@ -70,7 +74,6 @@ Documentation Changes
 
 - Remove the WebDAV only from certain HTTP Exceptions, these exceptions may
   also be used by REST services for example.
-
 
 1.4 (2014-05-14)
 ----------------

@@ -318,6 +318,9 @@ class GetDict(MultiDict):
     def update(self, *args, **kwargs):
         MultiDict.update(self, *args, **kwargs)
         self.on_change()
+    def extend(self, *args, **kwargs):
+        MultiDict.extend(self, *args, **kwargs)
+        self.on_change()
     def __repr__(self):
         items = map('(%r, %r)'.__mod__, _hide_passwd(self.items()))
         # TODO: GET -> GetDict
