@@ -89,6 +89,14 @@ def test_set_response_status_code():
     assert res.status_code == 200
     assert res.status == '200 OK'
 
+def test_set_response_status_bad():
+    req = BaseRequest.blank('/')
+    res = req.get_response(simple_app)
+    def status_test():
+        res.status = 'ThisShouldFail'
+
+    assert_raises(ValueError, status_test)
+
 def test_set_response_status_code_generic_reason():
     req = BaseRequest.blank('/')
     res = req.get_response(simple_app)
