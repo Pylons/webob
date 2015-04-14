@@ -244,8 +244,12 @@ class Response(object):
         return self._status
 
     def _status__set(self, value):
-        if isinstance(value, int):
-            self.status_code = value
+        try:
+            code = int(value)
+        except (ValueError, TypeError):
+            pass
+        else:
+            self.status_code = code
             return
         if PY3: # pragma: no cover
             if isinstance(value, bytes):
