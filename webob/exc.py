@@ -220,8 +220,8 @@ class WSGIHTTPException(Response, HTTPException):
     # title = 'OK'
     # explanation = 'why this happens'
     # body_template_obj = Template('response template')
-    code = None
-    title = None
+    code = 500
+    title = 'Internal Server Error'
     explanation = ''
     body_template_obj = Template('''\
 ${explanation}<br /><br />

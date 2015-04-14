@@ -140,10 +140,10 @@ def test_WSGIHTTPException_generate_response():
     assert_equal( excep(environ,start_response), [
         b'<html>\n'
         b' <head>\n'
-        b'  <title>None None</title>\n'
+        b'  <title>500 Internal Server Error</title>\n'
         b' </head>\n'
         b' <body>\n'
-        b'  <h1>None None</h1>\n'
+        b'  <h1>500 Internal Server Error</h1>\n'
         b'  <br /><br />\n'
         b'\n'
         b'\n\n'

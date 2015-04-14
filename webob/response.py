@@ -261,6 +261,9 @@ class Response(object):
                 value += ' ' + status_reasons[int(value)]
              except KeyError:
                 value += ' ' + status_generic_reasons[int(value) // 100]
+
+        # Attempt to get the status code itself, if this fails we should fail
+        status_code = int(value.split()[0])
         self._status = value
 
     status = property(_status__get, _status__set, doc=_status__get.__doc__)
