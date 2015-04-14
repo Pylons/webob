@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = '1.4.1dev0'
+version = '1.4.1'
 
 testing_extras = ['nose', 'coverage']
 
