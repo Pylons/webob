@@ -41,6 +41,10 @@ Features
 Bug Fixes
 ~~~~~~~~~
 
+- Response.status now uses duck-typing for integers, and has also learned to
+  raise a ValueError if the status isn't an integer followed by a space, and
+  then the reason. See https://github.com/Pylons/webob/pull/191
+
 - Fixed a bug in ``webob.multidict.GetDict`` which resulted in the
   QUERY_STRING not being updated when changes were made to query
   params using ``Request.GET.extend()``.
