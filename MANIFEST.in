@@ -1,4 +1,6 @@
 recursive-include tests *
+recursive-exclude tests *.pyc
+recursive-exclude tests *.pyo
 recursive-include docs *
-prune *.pyc
-prune *.pyo
+recursive-exclude docs *.pyc
+recursive-exclude docs *.pyo
