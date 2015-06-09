@@ -82,6 +82,29 @@ class DecoratorTests(unittest.TestCase):
         test_app = wsgify(None, args=(1,))
         self.assertRaises(TypeError, self._testit, test_app, '/a url')
 
+    def test_wsgify_call_args(self):
+        resp_str = "args: %s, kwargs: %s"
+        def show_vars(req, *args, **kwargs):
+            return bytes_(resp_str % (sorted(args), sorted(kwargs.items())))
+
+        app = wsgify(show_vars, args=('foo', 'bar'), kwargs={'a': 1, 'b': 2})
+        resp = app(Request.blank('/'))
+
+        self.assertEqual(resp,
+                         bytes_(resp_str % ("['bar', 'foo']",
+                                            "[('a', 1), ('b', 2)]")))
+
+    def test_wsgify_call_args_override(self):
+        resp_str = "args: %s, kwargs: %s"
+        def show_vars(req, *args, **kwargs):
+            return bytes_(resp_str % (sorted(args), sorted(kwargs.items())))
+
+        app = wsgify(show_vars, args=('foo', 'bar'), kwargs={'a': 1, 'b': 2})
+        resp = app(Request.blank('/'), 'qux', c=3)
+
+        self.assertEqual(resp,
+                         bytes_(resp_str % ("['qux']", "[('c', 3)]")))
+
     def test_wsgify_wrong_sig(self):
         @wsgify
         def test_app(req):
@@ -169,6 +192,37 @@ class DecoratorTests(unittest.TestCase):
         self.assertEqual(resp.content_type, 'text/html')
         self.assertEqual(resp.charset, 'UTF-8')
         self.assertEqual(resp.content_length, 40)
+
+    def test_middleware_call_kwargs(self):
+        resp_str = "kwargs: %s"
+        @wsgify.middleware
+        def set_args(req, app, **kwargs):
+            req.urlvars = kwargs
+            return req.get_response(app)
+        @wsgify
+        def show_vars(req):
+            return resp_str % sorted(req.urlvars.items())
+
+        app = set_args(show_vars, a=1, b=2)
+        resp = app(Request.blank('/'))
+
+        self.assertEqual(resp.body, bytes_(resp_str % "[('a', 1), ('b', 2)]"))
+
+    def test_middleware_call_kwargs_override(self):
+        resp_str = "kwargs: %s"
+        @wsgify.middleware
+        def set_args(req, app, **kwargs):
+            req.urlvars = kwargs
+            return req.get_response(app)
+        @wsgify
+        def show_vars(req):
+            return resp_str % sorted(req.urlvars.items())
+
+        app = set_args(show_vars, a=1, b=2)
+        resp = app(Request.blank('/'), c=3)
+
+        self.assertEqual(resp.body,
+                         bytes_(resp_str % "[('c', 3)]"))
 
     def test_unbound_middleware(self):
         @wsgify
