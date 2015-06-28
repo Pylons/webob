@@ -92,7 +92,7 @@ While we can test the application using WebOb, you might want to serve the appli
         from paste import httpserver
         httpserver.serve(app, host='127.0.0.1', port=8080)
 
-you could also use `wsgiref <http://python.org/doc/current/lib/module-wsgiref.simpleserver.html>`_ from the standard library, but this is mostly appropriate for testing as it is single-threaded:
+you could also use `wsgiref <https://docs.python.org/3/library/wsgiref.html#module-wsgiref.simple_server>`_ from the standard library, but this is mostly appropriate for testing as it is single-threaded:
 
 .. code-block:: python
 
