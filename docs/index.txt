@@ -8,6 +8,7 @@ WebOb
    modules/dec
    modules/static
    modules/exceptions
+   modules/client
    differences
    file-example
    wiki-example
