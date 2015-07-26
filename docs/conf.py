@@ -23,7 +23,7 @@ modindex_common_prefix = ['webob.']
 
 
 # html_favicon = ...
-html_add_permalinks = False
+html_add_permalinks = "False"
 #html_show_sourcelink = True # ?set to False?
 
 # Content template for the index page.
