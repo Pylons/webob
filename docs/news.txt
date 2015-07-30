@@ -7,7 +7,7 @@ Unreleased
 Backwards Incompatibilities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- ``response.set_cookie`` renamed the only required parameter from "key" to
+- ``Response.set_cookie`` renamed the only required parameter from "key" to
   "name". The code will now still accept "key" as a keyword argument, and will
   issue a DeprecationWarning until WebOb 1.7.
 
@@ -38,7 +38,7 @@ Backwards Incompatibilities
   RFC6265 suggests using base 64 to serialize data before storing data in a
   cookie.
 
-- ``response.set_cookie`` now uses the internal ``make_cookie`` API, which will
+- ``Response.set_cookie`` now uses the internal ``make_cookie`` API, which will
   issue warnings if cookies are set with invalid bytes. See
   https://github.com/Pylons/webob/pull/172
 
