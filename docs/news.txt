@@ -11,6 +11,11 @@ Backwards Incompatibilities
   "name". The code will now still accept "key" as a keyword argument, and will
   issue a DeprecationWarning until WebOb 1.7.
 
+- The ``status`` attribute of a ``Response`` object no longer takes a string
+  like ``None None`` and allows that to be set as the status. It now has to at
+  least match the pattern of ``<integer status code> <explenation of status
+  code>``. Invalid status strings will now raise a ``ValueError``.
+
 1.5.0a0 (2015-07-25)
 --------------------
 

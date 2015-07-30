@@ -262,7 +262,10 @@ class Response(object):
                 % type(value))
 
         # Attempt to get the status code itself, if this fails we should fail
-        status_code = int(value.split()[0])
+        try:
+            status_code = int(value.split()[0])
+        except ValueError:
+            raise ValueError('Invalid status code, integer required.')
         self._status = value
 
     status = property(_status__get, _status__set, doc=_status__get.__doc__)
