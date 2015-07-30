@@ -160,6 +160,28 @@ def test_unicode_cookies_warning_issued():
 
     cookies._should_raise = True
 
+# Remove in version 1.7
+def test_cookies_warning_issued_backwards_compat():
+    import warnings
+
+    with warnings.catch_warnings(record=True) as w:
+        # Cause all warnings to always be triggered.
+        warnings.simplefilter("always")
+        # Trigger a warning.
+
+        res = Response()
+        res.set_cookie(key='x', value='test')
+
+        eq_(len(w), 1)
+        eq_(issubclass(w[-1].category, DeprecationWarning), True)
+        eq_('Argument "key" was renamed to "name".' in str(w[-1].message), True)
+
+    cookies._should_raise = True
+
+def test_cookies_raises_typeerror():
+    res = Response()
+    assert_raises(TypeError, res.set_cookie)
+
 
 def test_http_only_cookie():
     req = Request.blank('/')
