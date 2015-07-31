@@ -1144,7 +1144,14 @@ for name, value in list(globals().items()):
         issubclass(value, HTTPException)
         and not name.startswith('_')):
         __all__.append(name)
-        if getattr(value, 'code', None):
+        if all((
+            getattr(value, 'code', None),
+            value not in (HTTPRedirection, HTTPClientError, HTTPServerError),
+            issubclass(
+                value,
+                (HTTPOk, HTTPRedirection, HTTPClientError, HTTPServerError)
+            )
+        )):
             status_map[value.code]=value
         if hasattr(value, 'explanation'):
             value.explanation = ' '.join(value.explanation.strip().split())
