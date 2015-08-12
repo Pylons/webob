@@ -49,12 +49,17 @@ simplest version:
    ...     res.body = open(filename, 'rb').read()
    ...     return res
 
-Let's give it a go.  We'll test it out with a file ``test-file.txt``
-in the WebOb doc directory:
+We'll test it out with a file ``test-file.txt`` in the WebOb doc directory,
+which has the following content:
+
+.. literalinclude:: file-example-code/test-file.txt
+   :language: text
+
+Let's give it a shot:
 
 .. code-block:: python
 
-   >>> fn = os.path.join(doc_dir, 'test-file.txt')
+   >>> fn = os.path.join(doc_dir, 'file-example-code/test-file.txt')
    >>> open(fn).read()
    'This is a test.  Hello test people!'
    >>> app = FileApp(fn)
