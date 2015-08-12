@@ -1,53 +1,6 @@
 WebOb
 +++++
 
-.. toctree::
-
-   reference
-   modules/webob
-   modules/dec
-   modules/static
-   modules/exceptions
-   modules/client
-   differences
-   file-example
-   wiki-example
-   comment-example
-   jsonrpc-example
-   do-it-yourself
-   news
-   license
-
-.. contents::
-
-.. comment:
-
-    >>> from doctest import ELLIPSIS
-
-
-Status & License
-================
-
-WebOb is an extraction and refinement of pieces from `Paste
-<http://pythonpaste.org/>`_.  It is under active development.
-Discussion should happen on the `Paste mailing lists
-<http://pythonpaste.org/community/>`_, and bugs can go on the `issue tracker
-<https://github.com/Pylons/webob/issues>`_.  It was originally
-written by `Ian Bicking <http://ianbicking.org/>`_, and is being maintained
-by the `Pylons Project <http://www.pylonsproject.org/>`.
-
-WebOb is released under an `MIT-style license <license.html>`_.
-
-WebOb development happens on `GitHub <https://github.com/Pylons/webob>`_.
-Development version is installable via `easy_install
-webob==dev <https://github.com/Pylons/webob/zipball/master>`__.  You
-can clone the source code with::
-
-    $ git clone https://github.com/Pylons/webob.git
-
-Introduction
-============
-
 WebOb provides objects for HTTP requests and responses.  Specifically
 it does this by wrapping the `WSGI <http://wsgi.org>`_ request
 environment and response status/headers/app_iter(body).
@@ -58,6 +11,28 @@ as a result, WebOb is also a nice way to create HTTP requests and
 parse HTTP responses; however, we won't cover that use case in this
 document.  The `reference documentation <reference.html>`_ shows many
 examples of creating requests.
+
+.. toctree::
+   :maxdepth: 2
+
+   reference
+   differences
+   news
+   license
+
+
+API Documentation
+=================
+
+Reference material for every public API exposed by WebOb:
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+   modules/webob
+   modules/*
+
 
 Request
 =======
@@ -334,5 +309,45 @@ advanced HTTP techniques, while the `comment middleware example
 reasonable to use WebOb in the context of a larger framework.  `Pylons
 <http://pylonshq.com>`_ uses WebOb in 0.9.7+.
 
-.. meta::
-   :google-site-verification: 1oDd59jXPaC0wzgPn3g6cFMI-QvEHjkh8-2rlZeXqwc
+.. toctree::
+   :maxdepth: 1
+
+   file-example
+   wiki-example
+   comment-example
+   jsonrpc-example
+   do-it-yourself
+
+
+Status & License
+================
+
+WebOb is an extraction and refinement of pieces from `Paste
+<http://pythonpaste.org/>`_.  It is under active development.  Discussion
+should happen on the `Pylons-discuss maillist
+<http://groups.google.com/group/pylons-discuss>`_, and bugs can go on the
+`issue tracker <https://github.com/Pylons/webob/issues>`_.  It was originally
+written by `Ian Bicking <http://ianbicking.org/>`_, and is being maintained by
+the `Pylons Project <http://www.pylonsproject.org/>`.
+
+If you've got questions that aren't answered by this documentation, contact the
+`Pylons-discuss maillist <http://groups.google.com/group/pylons-discuss>`_ or
+join the `#pyramid IRC channel <irc://irc.freenode.net/#pyramid>`_.
+
+WebOb is released under an `MIT-style license <license.html>`_.
+
+WebOb development happens on `GitHub <https://github.com/Pylons/webob>`_.
+Development version is installable via `easy_install
+webob==dev <https://github.com/Pylons/webob/zipball/master>`__.  You
+can clone the source code with::
+
+    $ git clone https://github.com/Pylons/webob.git
+
+Change History
+==============
+
+.. toctree::
+   :maxdepth: 1
+
+   whatsnew-1.5
+   changes
