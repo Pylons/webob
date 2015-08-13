@@ -1,11 +1,6 @@
 :mod:`webob` -- Request/Response objects
 ========================================
 
-Request
--------
-
-.. autoclass:: webob.request.BaseRequest
-   :members:
 
 Response
 --------
