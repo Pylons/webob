@@ -40,6 +40,10 @@ Backwards Incompatibilities
   RFC6265 suggests using base 64 to serialize data before storing data in a
   cookie.
 
+  Cookies that meet the RFC6265 standard will no longer be quoted, as this is
+  unnecessary. This is a no-op as far as browsers and cookie storage is
+  concerned.
+
 - ``Response.set_cookie`` now uses the internal ``make_cookie`` API, which will
   issue warnings if cookies are set with invalid bytes. See
   https://github.com/Pylons/webob/pull/172
