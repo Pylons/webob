@@ -29,8 +29,7 @@ Reference material for every public API exposed by WebOb:
    :maxdepth: 1
    :glob:
 
-   modules/webob
-   modules/*
+   api/*
 
 
 Request
