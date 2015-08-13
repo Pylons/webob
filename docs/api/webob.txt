@@ -52,14 +52,6 @@ Misc Functions and Internals
 .. autoclass:: webob.headers.EnvironHeaders
    :members:
 
-.. automodule:: webob.multidict
-.. autoclass:: MultiDict
-   :members:
-.. autoclass:: NestedMultiDict
-   :members:
-.. autoclass:: NoVars
-   :members:
-
 .. autoclass:: webob.cachecontrol.UpdateDict
    :members:
 

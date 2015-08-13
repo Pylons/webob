@@ -1,0 +1,12 @@
+:mod:`webob.multidict` -- multi-value dictionary object
+=======================================================
+
+.. automodule:: webob.multidict
+.. autoclass:: MultiDict
+   :members:
+   :inherited-members:
+.. autoclass:: NestedMultiDict
+   :members:
+.. autoclass:: NoVars
+   :members:
+
