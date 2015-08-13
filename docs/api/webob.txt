@@ -1,16 +1,6 @@
 :mod:`webob` -- Request/Response objects
 ========================================
 
-
-Response
---------
-
-.. autoclass:: webob.response.Response
-   :members:
-.. autoclass:: webob.response.AppIterRange
-   :members:
-
-
 Headers
 -------
 
