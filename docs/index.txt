@@ -316,6 +316,14 @@ reasonable to use WebOb in the context of a larger framework.  `Pylons
    jsonrpc-example
    do-it-yourself
 
+Change History
+==============
+
+.. toctree::
+   :maxdepth: 1
+
+   whatsnew-1.5
+   changes
 
 Status & License
 ================
@@ -326,13 +334,13 @@ should happen on the `Pylons-discuss maillist
 <http://groups.google.com/group/pylons-discuss>`_, and bugs can go on the
 `issue tracker <https://github.com/Pylons/webob/issues>`_.  It was originally
 written by `Ian Bicking <http://ianbicking.org/>`_, and is being maintained by
-the `Pylons Project <http://www.pylonsproject.org/>`.
+the `Pylons Project <http://www.pylonsproject.org/>`_.
 
 If you've got questions that aren't answered by this documentation, contact the
 `Pylons-discuss maillist <http://groups.google.com/group/pylons-discuss>`_ or
 join the `#pyramid IRC channel <irc://irc.freenode.net/#pyramid>`_.
 
-WebOb is released under an `MIT-style license <license.html>`_.
+WebOb is released under an :doc:`MIT-style license <license>`.
 
 WebOb development happens on `GitHub <https://github.com/Pylons/webob>`_.
 Development version is installable via `easy_install
@@ -341,11 +349,3 @@ can clone the source code with::
 
     $ git clone https://github.com/Pylons/webob.git
 
-Change History
-==============
-
-.. toctree::
-   :maxdepth: 1
-
-   whatsnew-1.5
-   changes
