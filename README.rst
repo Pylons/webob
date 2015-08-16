@@ -1,5 +1,5 @@
-``webob`` README
-================
+WebOb
+=====
 
 .. image:: https://pypip.in/version/WebOb/badge.svg?style=flat
     :target: https://pypi.python.org/pypi/WebOb/
@@ -21,7 +21,21 @@ HTTP request and forming HTTP responses.  Both objects are read/write:
 as a result, WebOb is also a nice way to create HTTP requests and
 parse HTTP responses.
 
-* `WebOb Documentation <http://webob.readthedocs.org/>`_
-* `Bug tracker <https://github.com/Pylons/webob/issues>`_
-* `Browse source code <https://github.com/Pylons/webob>`_
-* `Maillist <http://groups.google.com/group/pylons-discuss>`_
+Support and Documentation
+-------------------------
+
+See the `WebOb Documentation website <http://webob.readthedocs.org/>`_ to view
+documentation, report bugs, and obtain support.
+
+License
+-------
+
+WebOb is offered under the `MIT-license
+<http://webob.readthedocs.org/en/latest/license.html>`_.
+
+Authors
+-------
+
+WebOb was authored by Ian Bicking and is currently maintained by the `Pylons
+Project <http://pylonsproject.org/>`_ and a team of contributors.
+
