@@ -21,4 +21,7 @@ HTTP request and forming HTTP responses.  Both objects are read/write:
 as a result, WebOb is also a nice way to create HTTP requests and
 parse HTTP responses.
 
-Please see the `full documentation <http://webob.rtfd.org/>`_ for details.
+* `WebOb Documentation <http://webob.readthedocs.org/>`_
+* `Bug tracker <https://github.com/Pylons/webob/issues>`_
+* `Browse source code <https://github.com/Pylons/webob>`_
+* `Maillist <http://groups.google.com/group/pylons-discuss>`_
