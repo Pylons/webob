@@ -1,10 +1,6 @@
 WebOb
 =====
 
-.. image:: https://pypip.in/version/WebOb/badge.svg?style=flat
-    :target: https://pypi.python.org/pypi/WebOb/
-    :alt: Latest Version
-
 .. image:: https://travis-ci.org/Pylons/webob.png?branch=master
         :target: https://travis-ci.org/Pylons/webob
 
