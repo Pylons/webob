@@ -775,7 +775,7 @@ class BaseRequest(object):
             if body_file is self.body_file_raw:
                 return vars
         content_type = self.content_type
-        if ((self.method == 'PUT' and not content_type)
+        if ((self.method != 'POST' and not content_type)
             or content_type not in
                 ('',
                  'application/x-www-form-urlencoded',
