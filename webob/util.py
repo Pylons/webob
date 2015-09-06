@@ -79,6 +79,7 @@ status_reasons = {
     304: 'Not Modified',
     305: 'Use Proxy',
     307: 'Temporary Redirect',
+    308: 'Permanent Redirect',
 
     # Client Error
     400: 'Bad Request',
