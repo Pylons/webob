@@ -33,6 +33,7 @@ Exception
       * 304 - :class:`HTTPNotModified`
       * 305 - :class:`HTTPUseProxy`
       * 307 - :class:`HTTPTemporaryRedirect`
+      * 308 - :class:`HTTPPermanentRedirect`
     HTTPError
       HTTPClientError
         * 400 - :class:`HTTPBadRequest`
@@ -457,7 +458,7 @@ class _HTTPMove(HTTPRedirection):
     redirections which require a Location field
 
     Since a 'Location' header is a required attribute of 301, 302, 303,
-    305 and 307 (but not 304), this base class provides the mechanics to
+    305, 307 and 308 (but not 304), this base class provides the mechanics to
     make this easy.
 
     You can provide a location keyword argument to set the location
@@ -596,6 +597,19 @@ class HTTPTemporaryRedirect(_HTTPMove):
     """
     code = 307
     title = 'Temporary Redirect'
+
+class HTTPPermanentRedirect(_HTTPMove):
+    """
+    subclass of :class:`~_HTTPMove`
+
+    This indicates that the requested resource resides permanently
+    under a different URI.
+
+    code: 308, title: Permanent Redirect
+    """
+    code = 308
+    title = 'Permanent Redirect'
+
 
 ############################################################
 ## 4xx client error
