@@ -353,6 +353,7 @@ def test_status_map_is_deterministic():
         (304, webob_exc.HTTPNotModified),
         (305, webob_exc.HTTPUseProxy),
         (307, webob_exc.HTTPTemporaryRedirect),
+        (308, webob_exc.HTTPPermanentRedirect),
         (400, webob_exc.HTTPBadRequest),
         (401, webob_exc.HTTPUnauthorized),
         (402, webob_exc.HTTPPaymentRequired),
