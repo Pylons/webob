@@ -500,6 +500,19 @@ class TestRequestCommon(unittest.TestCase):
         self.assertTrue(result.reason.startswith(
                                         'Not an HTML form submission'))
 
+    def test_PATCH_missing_content_type(self):
+        from webob.multidict import NoVars
+        data = b'input'
+        INPUT = BytesIO(data)
+        environ = {'wsgi.input': INPUT,
+                   'REQUEST_METHOD': 'PATCH',
+                  }
+        req = self._makeOne(environ)
+        result = req.POST
+        self.assertTrue(isinstance(result, NoVars))
+        self.assertTrue(result.reason.startswith(
+                                        'Not an HTML form submission'))
+
     def test_POST_missing_content_type(self):
         data = b'var1=value1&var2=value2&rep=1&rep=2'
         INPUT = BytesIO(data)
