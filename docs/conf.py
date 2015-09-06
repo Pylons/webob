@@ -3,8 +3,6 @@ import sys
 import os
 import shlex
 
-import pylons_sphinx_themes
-
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
@@ -52,8 +50,7 @@ modindex_common_prefix = ['webob.']
 
 # -- Options for HTML output ---------------------------------------------
 
-html_theme = 'pyramid'
-html_theme_path = pylons_sphinx_themes.get_html_themes_path()
+html_theme = 'alabaster'
 
 html_static_path = ['_static']
 
