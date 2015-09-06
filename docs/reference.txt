@@ -17,15 +17,14 @@ affects the flavor of the documentation, perhaps to its detriment.
 But it also means you can feel confident that the documentation is
 correct.
 
-This is a somewhat different approach to reference documentation
-compared to the extracted documentation for the `request
-<class-webob.Request.html>`_ and `response
-<class-webob.Response.html>`_.
+This is a somewhat different approach to reference documentation compared to
+the extracted documentation for the :py:mod:`~webob.request` and
+:py:mod:`~webob.response`.
 
 Request
 =======
 
-The primary object in WebOb is ``webob.Request``, a wrapper around a
+The primary object in WebOb is :py:class:`webob.Request`, a wrapper around a
 `WSGI environment <http://www.python.org/dev/peps/pep-0333/>`_.
 
 The basic way you create a request object is simple enough:
@@ -82,11 +81,11 @@ constructor that will fill in a minimal environment:
 Request Body
 ------------
 
-``req.body`` is a file-like object that gives the body of the request
-(e.g., a POST form, the body of a PUT, etc).  It's kind of boring to
-start, but you can set it to a string and that will be turned into a
-file-like object.  You can read the entire body with
-``req.body``.
+:py:meth:`req.body <webob.request.BaseRequest.body>` is a file-like object that
+gives the body of the request (e.g., a POST form, the body of a PUT, etc).
+It's kind of boring to start, but you can set it to a string and that will be
+turned into a file-like object.  You can read the entire body with
+:py:meth:`req.body <webob.request.BaseRequest.body>`.
 
 .. code-block:: python
 
@@ -166,7 +165,8 @@ Headers
 -------
 
 All request headers are available through a dictionary-like object
-``req.headers``.  Keys are case-insensitive.
+:py:meth:`req.headers <webob.request.BaseRequest.headers>`.  Keys are
+case-insensitive.
 
 .. code-block:: python
 
@@ -185,13 +185,13 @@ Note that even POST requests can have a query string, so both kinds of
 variables can exist at the same time.  Also, a variable can show up
 more than once, as in ``?check=a&check=b``.
 
-For these variables WebOb uses a `MultiDict
-<class-webob.multidict.MultiDict.html>`_, which is basically a
-dictionary wrapper on a list of key/value pairs.  It looks like a
-single-valued dictionary, but you can access all the values of a key
-with ``.getall(key)`` (which always returns a list, possibly an empty
-list).  You also get all key/value pairs when using ``.items()`` and
-all values with ``.values()``.
+For these variables WebOb uses a :py:class:`~webob.multidict.MultiDict`, which
+is basically a dictionary wrapper on a list of key/value pairs.  It looks like
+a single-valued dictionary, but you can access all the values of a key with
+:py:meth:`.getall(key) <webob.multidict.MultiDict.getall>` (which always
+returns a list, possibly an empty list).  You also get all key/value pairs when
+using :py:meth:`.items() <webob.multidict.MultiDict.items>` and all values with
+:py:meth:`.values() <webob.multidict.MultiDict.values>`.
 
 Some examples:
 
@@ -207,8 +207,8 @@ Some examples:
     >>> req.GET.items()
     [(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob')]
 
-We'll have to create a request body and change the method to get
-POST.  Until we do that, the variables are boring:
+We'll have to create a request body and change the method to get ``POST``.
+Until we do that, the variables are boring:
 
 .. code-block:: python
 
@@ -223,9 +223,9 @@ POST.  Until we do that, the variables are boring:
     >>> req.POST['name']
     u'Joe'
 
-Often you won't care where the variables come from.  (Even if you care
-about the method, the location of the variables might not be
-important.)  There is a dictionary called ``req.params`` that
+Often you won't care where the variables come from.  (Even if you care about
+the method, the location of the variables might not be important.)  There is a
+dictionary called :py:meth:`req.params <webob.request.BaseRequest.params>` that
 contains variables from both sources:
 
 .. code-block:: python
@@ -244,10 +244,10 @@ contains variables from both sources:
     name: u'Joe'
     email: u'joe@example.com'
 
-The ``POST`` and ``GET`` nomenclature is historical -- ``req.GET`` can
-be used for non-GET requests to access query parameters, and
-``req.POST`` can also be used for PUT requests with the appropriate
-Content-Type.
+The ``POST`` and ``GET`` nomenclature is historical -- :py:meth:`req.GET
+<webob.request.BaseRequest.GET>` can be used for non-GET requests to access
+query parameters, and :py:meth:`req.POST <webob.request.BaseRequest.POST>` can
+also be used for PUT requests with the appropriate Content-Type.
 
     >>> req = Request.blank('/test?check=a&check=b&name=Bob')
     >>> req.method = 'PUT'
@@ -262,13 +262,12 @@ Content-Type.
 Unicode Variables
 ~~~~~~~~~~~~~~~~~
 
-Submissions are non-unicode (``str``) strings, unless some character
-set is indicated.  A client can indicate the character set with
-``Content-Type: application/x-www-form-urlencoded; charset=utf8``, but
-very few clients actually do this (sometimes XMLHttpRequest requests
-will do this, as JSON is always UTF8 even when a page is served with a
-different character set).  You can force a charset, which will affect
-all the variables:
+Submissions are non-unicode (``str``) strings, unless some character set is
+indicated. A client can indicate the character set with ``Content-Type:
+application/x-www-form-urlencoded; charset=utf8``, but very few clients
+actually do this (sometimes XMLHttpRequest requests will do this, as JSON is
+always UTF8 even when a page is served with a different character set). You can
+force a charset, which will affect all the variables:
 
 .. code-block:: python
 
@@ -291,27 +290,27 @@ they will be decoded into Unicode strings if you set the charset.
 Modifying the request
 ---------------------
 
-The headers are all modifiable, as are other environmental variables
-(like ``req.remote_user``, which maps to
-``request.environ['REMOTE_USER']``).
+The headers are all modifiable, as are other environmental variables (like
+:py:meth:`req.remote_user <webob.request.BaseRequest.remote_user>`, which maps
+to ``request.environ['REMOTE_USER']``).
 
-If you want to copy the request you can use ``req.copy()``; this
-copies the ``environ`` dictionary, and the request body from
-``environ['wsgi.input']``.
+If you want to copy the request you can use :py:meth:`req.copy()
+<webob.request.BaseRequest.copy>`; this copies the ``environ`` dictionary, and
+the request body from ``environ['wsgi.input']``.
 
-The method ``req.remove_conditional_headers(remove_encoding=True)``
-can be used to remove headers that might result in a ``304 Not
-Modified`` response.  If you are writing some intermediary it can be
-useful to avoid these headers.  Also if ``remove_encoding`` is true
-(the default) then any ``Accept-Encoding`` header will be removed,
-which can result in gzipped responses.
+The method :py:meth:`req.remove_conditional_headers(remove_encoding=True)
+<webob.request.BaseRequest.remove_conditional_headers>` can be used to remove
+headers that might result in a ``304 Not Modified`` response.  If you are
+writing some intermediary it can be useful to avoid these headers.  Also if
+``remove_encoding`` is true (the default) then any ``Accept-Encoding`` header
+will be removed, which can result in gzipped responses.
 
 Header Getters
 --------------
 
-In addition to ``req.headers``, there are attributes for most of the
-request headers defined by the HTTP 1.1 specification.  These
-attributes often return parsed forms of the headers.
+In addition to :py:meth:`req.headers <webob.request.BaseRequest.headers>`,
+there are attributes for most of the request headers defined by the HTTP 1.1
+specification.  These attributes often return parsed forms of the headers.
 
 Accept-* headers
 ~~~~~~~~~~~~~~~~
@@ -546,11 +545,11 @@ in ``environ['webob.adhoc_attrs']`` (a dictionary).
 Response
 ========
 
-The ``webob.Response`` object contains everything necessary to make a
-WSGI response.  Instances of it are in fact WSGI applications, but it
-can also represent the result of calling a WSGI application (as noted
-in `Calling WSGI Applications`_).  It can also be a way of
-accumulating a response in your WSGI application.
+The :py:class:`webob.Response <webob.response.Response>` object contains
+everything necessary to make a WSGI response.  Instances of it are in fact WSGI
+applications, but it can also represent the result of calling a WSGI
+application (as noted in `Calling WSGI Applications`_).  It can also be a way
+of accumulating a response in your WSGI application.
 
 A WSGI response is made up of a status (like ``200 OK``), a list of
 headers, and a body (or iterator that will produce a body).

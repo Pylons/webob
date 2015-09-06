@@ -1,21 +1,6 @@
 :mod:`webob` -- Request/Response objects
 ========================================
 
-Request
--------
-
-.. autoclass:: webob.request.BaseRequest
-   :members:
-
-Response
---------
-
-.. autoclass:: webob.response.Response
-   :members:
-.. autoclass:: webob.response.AppIterRange
-   :members:
-
-
 Headers
 -------
 
@@ -47,21 +32,6 @@ ETag
 .. autoclass:: webob.etag.ETagMatcher
    :members:
 
-
-Cookies
-~~~~~~~
-
-.. autoclass:: webob.cookies.CookieProfile
-   :members:
-.. autoclass:: webob.cookies.SignedCookieProfile
-   :members:
-.. autoclass:: webob.cookies.SignedSerializer
-   :members:
-.. autoclass:: webob.cookies.JSONSerializer
-   :members:
-.. autofunction:: webob.cookies.make_cookie
-
-
 Misc Functions and Internals
 ----------------------------
 
@@ -80,14 +50,6 @@ Misc Functions and Internals
 .. autoclass:: webob.headers.ResponseHeaders
    :members:
 .. autoclass:: webob.headers.EnvironHeaders
-   :members:
-
-.. automodule:: webob.multidict
-.. autoclass:: MultiDict
-   :members:
-.. autoclass:: NestedMultiDict
-   :members:
-.. autoclass:: NoVars
    :members:
 
 .. autoclass:: webob.cachecontrol.UpdateDict
