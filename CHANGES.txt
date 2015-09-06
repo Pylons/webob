@@ -4,6 +4,10 @@ Unreleased
 Features
 ~~~~~~~~
 
+- Unbreak req.POST when the request method is PATCH. Instead of returning
+  something cmpletely unrelated we return NoVar. See:
+  https://github.com/Pylons/webob/pull/215
+
 - HTTP Status Code 308 is now supported as a Permanent Redirect. See
   https://github.com/Pylons/webob/pull/207
 
