@@ -369,6 +369,20 @@ class CookieMakeCookie(unittest.TestCase):
         self.assertTrue('test_cookie=value' in cookie)
         self.assertTrue('Max-Age=500;' in cookie)
         self.assertTrue('expires' in cookie)
+        self.assertFalse('expires=500' in cookie)
+
+    def test_make_cookie_max_age_str_valid_int(self):
+        cookie = self.makeOne('test_cookie', 'value',
+                              max_age='500')
+
+        self.assertTrue('test_cookie=value' in cookie)
+        self.assertTrue('Max-Age=500;' in cookie)
+        self.assertTrue('expires' in cookie)
+        self.assertFalse('expires=500' in cookie)
+
+    def test_make_cookie_max_age_str_invalid_int(self):
+        self.assertRaises(ValueError, self.makeOne, 'test_cookie', 'value',
+                              max_age='test')
 
     def test_make_cookie_comment(self):
         cookie = self.makeOne('test_cookie', 'value', comment='lolwhy')
