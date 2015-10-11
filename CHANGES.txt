@@ -1,3 +1,13 @@
+1.5.0 (2015-10-11)
+------------------
+
+Bug Fixes
+~~~~~~~~~
+
+- The cookie API functions will now make sure that `max_age` is an integer or
+  an string that can convert to an integer. Previously passing in
+  max_age='test' would have silently done the wrong thing.
+
 1.5.0b0 (2015-09-06)
 --------------------
 
