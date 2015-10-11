@@ -446,8 +446,15 @@ def make_cookie(name, value, max_age=None, path='/', domain=None,
     elif isinstance(max_age, timedelta):
         max_age = (max_age.days * 60 * 60 * 24) + max_age.seconds
         expires = max_age
-    else:
+    elif max_age is not None:
+        try:
+            max_age = int(max_age)
+        except ValueError:
+            raise ValueError('max_age should be an integer. Amount of seconds until expiration.')
+
         expires = max_age
+    else:
+        expires = None
 
     morsel = Morsel(name, value)
 
