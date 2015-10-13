@@ -180,7 +180,7 @@ class Response(object):
 
         if status.startswith(_http):
             (http_ver, status_num, status_text) = status.split()
-            status = '{} {}'.format(native_(status_num), native_(status_text))
+            status = '%s %s' % (native_(status_num), native_(status_text))
 
         while 1:
             line = fp.readline().strip()
