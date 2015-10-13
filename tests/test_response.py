@@ -481,6 +481,13 @@ def test_from_file_not_unicode_headers():
     res = Response.from_file(inp)
     eq_(res.headerlist[0][0].__class__, str)
 
+def test_file_with_http_version():
+    inp = io.BytesIO(b'HTTP/1.1 200 OK\r\n\r\nSome data...')
+
+    res = Response.from_file(inp)
+    eq_(res.status_code, 200)
+    eq_(res.status, '200 OK')
+
 def test_set_status():
     res = Response()
     res.status = "200"
