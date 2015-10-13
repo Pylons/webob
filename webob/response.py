@@ -170,10 +170,18 @@ class Response(object):
         headerlist = []
         status = fp.readline().strip()
         is_text = isinstance(status, text_type)
+
         if is_text:
             _colon = ':'
+            _http = 'HTTP/'
         else:
             _colon = b':'
+            _http = b'HTTP/'
+
+        if status.startswith(_http):
+            (http_ver, status_num, status_text) = status.split()
+            status = '{} {}'.format(native_(status_num), native_(status_text))
+
         while 1:
             line = fp.readline().strip()
             if not line:
