@@ -409,6 +409,13 @@ def test_file_bad_header():
     file_w_bh = io.BytesIO(b'200 OK\nBad Header')
     assert_raises(ValueError, Response.from_file, file_w_bh)
 
+def test_file_with_http_version():
+    inp = io.BytesIO(b'HTTP/1.1 200 OK\r\n\r\nSome data...')
+
+    res = Response.from_file(inp)
+    eq_(res.status_code, 200)
+    eq_(res.status, '200 OK')
+
 def test_set_status():
     res = Response()
     res.status = "200"
