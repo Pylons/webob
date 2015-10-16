@@ -225,8 +225,7 @@ Like the request, most HTTP response headers are available as
 properties.  These are parsed, so you can do things like
 ``response.last_modified = os.path.getmtime(filename)``.
 
-The details are available in the `extracted Response documentation
-<class-webob.Response.html>`_.
+.. seealso:: :class:`webob.response.Response`
 
 Instantiating the Response
 --------------------------
