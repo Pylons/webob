@@ -4,6 +4,10 @@ Unreleased
 Bug Fixes
 ~~~~~~~~~
 
+- The exceptions HTTPNotAcceptable, HTTPUnsupportedMediaType and
+  HTTPNotImplemented will now correctly use the sub-classed template rather
+  than the default error template. See https://github.com/Pylons/webob/issues/221
+
 - Response's from_file now correctly deals with a status line that contains an
   HTTP version identifier. HTTP/1.1 200 OK is now correctly parsed, whereas
   before this would raise an error upon setting the Response.status in
