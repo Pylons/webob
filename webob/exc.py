@@ -716,7 +716,7 @@ class HTTPNotAcceptable(HTTPClientError):
     code = 406
     title = 'Not Acceptable'
     # override template since we need an environment variable
-    template = Template('''\
+    body_template_obj = Template('''\
 The resource could not be generated that was acceptable to your browser
 (content of type ${HTTP_ACCEPT}. <br /><br />
 ${detail}''')
@@ -844,7 +844,7 @@ class HTTPUnsupportedMediaType(HTTPClientError):
     code = 415
     title = 'Unsupported Media Type'
     # override template since we need an environment variable
-    template_obj = Template('''\
+    body_template_obj = Template('''\
 The request media type ${CONTENT_TYPE} is not supported by this server.
 <br /><br />
 ${detail}''')
@@ -1026,7 +1026,7 @@ class HTTPNotImplemented(HTTPServerError):
     """
     code = 501
     title = 'Not Implemented'
-    template = Template('''
+    body_template_obj = Template('''
 The request method ${REQUEST_METHOD} is not implemented for this server. <br /><br />
 ${detail}''')
 
