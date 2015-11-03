@@ -1083,7 +1083,6 @@ class Response(object):
             and self.content_range is None
             and method in ('HEAD', 'GET')
             and self.status_code == 200
-            and self.content_length is not None
         ):
             content_range = req.range.content_range(self.content_length)
             if content_range is None:

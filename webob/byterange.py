@@ -44,6 +44,8 @@ class Range(object):
 
             Though it's still up to you to actually serve that content range!
         """
+        if length is None:
+            length = self.end
         range = self.range_for_length(length)
         if range is None:
             return None
