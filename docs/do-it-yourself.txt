@@ -462,7 +462,7 @@ You can use hard-coded links in your HTML, but this can have problems.  Relative
 
 The base URL using SCRIPT_NAME is ``req.application_url``.  So, if we have access to the request we can make a URL.  But what if we don't have access?
 
-We can use thread-local variables to make it easy for any function to get access to the currect request.  A "thread-local" variable is a variable whose value is tracked separately for each thread, so if there are multiple requests in different threads, their requests won't clobber each other.
+We can use thread-local variables to make it easy for any function to get access to the current request.  A "thread-local" variable is a variable whose value is tracked separately for each thread, so if there are multiple requests in different threads, their requests won't clobber each other.
 
 The basic means of using a thread-local variable is ``threading.local()``.  This creates a blank object that can have thread-local attributes assigned to it.  I find the best way to get *at* a thread-local value is with a function, as this makes it clear that you are fetching the object, as opposed to getting at some global object.
 
