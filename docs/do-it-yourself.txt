@@ -324,7 +324,7 @@ Now we'll show a basic application.  Just a hello world application for now.  No
     ...         return 'Hello %s!' % req.params['name']
     ...     elif req.method == 'GET':
     ...         return '''<form method="POST">
-    ...             You're name: <input type="text" name="name">
+    ...             Your name: <input type="text" name="name">
     ...             <input type="submit">
     ...             </form>'''
     >>> hello_world = Router()
@@ -342,7 +342,7 @@ Now let's test that application:
     Content-Length: 131
     <BLANKLINE>
     <form method="POST">
-                You're name: <input type="text" name="name">
+                Your name: <input type="text" name="name">
                 <input type="submit">
                 </form>
     >>> req.method = 'POST'
@@ -421,7 +421,7 @@ Here's the hello world:
     ...         self.request = req
     ...     def get(self):
     ...         return '''<form method="POST">
-    ...             You're name: <input type="text" name="name">
+    ...             Your name: <input type="text" name="name">
     ...             <input type="submit">
     ...             </form>'''
     ...     def post(self):
@@ -442,7 +442,7 @@ We'll run the same test as before:
     Content-Length: 131
     <BLANKLINE>
     <form method="POST">
-                You're name: <input type="text" name="name">
+                Your name: <input type="text" name="name">
                 <input type="submit">
                 </form>
     >>> req.method = 'POST'
