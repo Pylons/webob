@@ -293,7 +293,7 @@ class _MiddlewareFactory(object):
         return '<%s at %s wrapping %r>' % (self.__class__.__name__, id(self),
                                            self.middleware)
 
-    def __call__(self, app, **config):
+    def __call__(self, app=None, **config):
         kw = self.kw.copy()
         kw.update(config)
         return self.wrapper_class.middleware(self.middleware, app, **kw)
