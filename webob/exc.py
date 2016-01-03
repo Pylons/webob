@@ -481,6 +481,9 @@ ${html_comment}''')
             detail=detail, headers=headers, comment=comment,
             body_template=body_template)
         if location is not None:
+            if '\n' in location or '\r' in location:
+                raise ValueError('Control characters are not allowed in location')
+
             self.location = location
             if add_slash:
                 raise TypeError(
