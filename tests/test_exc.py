@@ -259,6 +259,17 @@ def test_HTTPMove_location_not_none():
     m = webob_exc._HTTPMove(location='http://example.com')
     assert_equal( m( environ, start_response ), [] )
 
+def test_HTTPMove_location_newlines():
+    environ = {
+       'wsgi.url_scheme': 'HTTP',
+       'SERVER_NAME': 'localhost',
+       'SERVER_PORT': '80',
+       'REQUEST_METHOD': 'HEAD',
+       'PATH_INFO': '/',
+    }
+    assert_raises(ValueError, webob_exc._HTTPMove,
+            location='http://example.com\r\nX-Test: false')
+
 def test_HTTPMove_add_slash_and_location():
     def start_response(status, headers, exc_info=None):
         pass

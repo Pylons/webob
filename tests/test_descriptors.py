@@ -155,6 +155,14 @@ def test_header_getter_fset_text():
     desc.fset(resp, text_('avalue'))
     eq_(desc.fget(resp), 'avalue')
 
+def test_header_getter_fset_text_control_chars():
+    from webob.compat import text_
+    from webob.descriptors import header_getter
+    from webob import Response
+    resp = Response('aresp')
+    desc = header_getter('AHEADER', '14.3')
+    assert_raises(ValueError, desc.fset, resp, text_('\n'))
+
 def test_header_getter_fdel():
     from webob.descriptors import header_getter
     from webob import Response
