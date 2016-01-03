@@ -1,6 +1,16 @@
 Unreleased
 ----------
 
+Security
+~~~~~~~~
+
+- exc._HTTPMove and any subclasses will now raise a ValueError if the location
+  field contains a line feed or carriage return. These values may lead to
+  possible HTTP Response Splitting. The header_getter descriptor has also been
+  modified to no longer accept headers with a line feed or carriage return.
+  See: https://github.com/Pylons/webob/pull/229 and
+  https://github.com/Pylons/webob/issues/217
+
 Bug Fixes
 ~~~~~~~~~
 
