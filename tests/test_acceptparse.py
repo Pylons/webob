@@ -243,13 +243,13 @@ def test_noaccept_contains():
 
 def test_mime_init():
     mimeaccept = MIMEAccept('image/jpg')
-    assert mimeaccept._parsed == [('image/jpg', 1)]
+    assert mimeaccept._parsed == [(('image', 'jpg', {}), 1)]
     mimeaccept = MIMEAccept('image/png, image/jpg;q=0.5')
-    assert mimeaccept._parsed == [('image/png', 1), ('image/jpg', 0.5)]
+    assert mimeaccept._parsed == [(('image','png', {}), 1), (('image','jpg',{}), 0.5)]
     mimeaccept = MIMEAccept('image, image/jpg;q=0.5')
-    assert mimeaccept._parsed == [('image/jpg', 0.5)]
+    assert mimeaccept._parsed == [(('image','jpg',{}), 0.5)]
     mimeaccept = MIMEAccept('*/*')
-    assert mimeaccept._parsed == [('*/*', 1)]
+    assert mimeaccept._parsed == [(('*', '*', {}), 1)]
     mimeaccept = MIMEAccept('*/png')
     assert mimeaccept._parsed == []
     mimeaccept = MIMEAccept('image/pn*')
@@ -257,7 +257,7 @@ def test_mime_init():
     mimeaccept = MIMEAccept('imag*/png')
     assert mimeaccept._parsed == []
     mimeaccept = MIMEAccept('image/*')
-    assert mimeaccept._parsed == [('image/*', 1)]
+    assert mimeaccept._parsed == [(('image', '*', {}), 1)]
 
 def test_accept_html():
     mimeaccept = MIMEAccept('image/jpg')
@@ -277,6 +277,13 @@ def test_accept_json():
     mimeaccept = MIMEAccept('text/html, *; q=.2, */*; q=.2')
     assert mimeaccept.best_match(['application/json']) == 'application/json'
 
+def test_accept_parameters():
+    mimeaccept = MIMEAccept('text/html;level=1, text/html;level=2, text/html')
+    assert mimeaccept.best_match(['text/html']) == 'text/html'
+    assert mimeaccept.best_match(['text/html;level=1']) == 'text/html;level=1'
+    assert mimeaccept.best_match(['text/html;level=2']) == 'text/html;level=2'
+    assert mimeaccept.best_match(['text/html;foo=bar']) is None
+
 def test_accept_mixedcase():
     """3.7 Media Types
            [...]
@@ -289,13 +296,13 @@ def test_match_mixedcase():
     mimeaccept = MIMEAccept('image/jpg; q=.2, Image/pNg; Q=.4, image/*; q=.05')
     assert mimeaccept.best_match(['Image/JpG']) == 'Image/JpG'
     assert mimeaccept.best_match(['image/Tiff']) == 'image/Tiff'
-    assert mimeaccept.best_match(['image/Tiff', 'image/PnG', 'image/jpg']) == 'image/PnG'
+    assert mimeaccept.best_match(['image/Tiff', 'image/PnG;Q=.4', 'ImagE/PNG', 'image/jpg']) == 'image/PnG;Q=.4'
 
 def test_match_uppercase_q():
     """The relative-quality-factor "q" parameter is defined as an exact string
        in "14.1 Accept" BNF grammar"""
     mimeaccept = MIMEAccept('image/jpg; q=.4, Image/pNg; Q=.2, image/*; q=.05')
-    assert mimeaccept._parsed == [('image/jpg', 0.4), ('image/png', 1), ('image/*', 0.05)]
+    assert mimeaccept._parsed == [(('image','jpg',{}), 0.4), (('image','png',{'q':'.2'}), 1), (('image','*',{}), 0.05)]
 
 # property tests
 
