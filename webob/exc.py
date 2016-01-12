@@ -165,6 +165,7 @@ References:
 
 """
 
+import json
 from string import Template
 import re
 import sys
@@ -250,7 +251,7 @@ ${body}''')
     empty_body = False
 
     def __init__(self, detail=None, headers=None, comment=None,
-                 body_template=None, **kw):
+                 body_template=None, json_formatter=None, **kw):
         Response.__init__(self,
                           status='%s %s' % (self.code, self.title),
                           **kw)
@@ -265,6 +266,8 @@ ${body}''')
         if self.empty_body:
             del self.content_type
             del self.content_length
+        if json_formatter is not None:
+            self.json_formatter = json_formatter
 
     def __str__(self):
         return self.detail or self.explanation
@@ -300,6 +303,17 @@ ${body}''')
         return self.html_template_obj.substitute(status=self.status,
                                                  body=body)
 
+    def json_formatter(self, body, status, title, environ):
+        return {'message': body,
+                'code': status,
+                'title': title}
+
+    def json_body(self, environ):
+        body = self._make_body(environ, no_escape)
+        jsonbody = self.json_formatter(body=body, status=self.status,
+                                       title=self.title, environ=environ)
+        return json.dumps(jsonbody)
+
     def generate_response(self, environ, start_response):
         if self.content_length is not None:
             del self.content_length
@@ -308,6 +322,9 @@ ${body}''')
         if accept and 'html' in accept or '*/*' in accept:
             content_type = 'text/html'
             body = self.html_body(environ)
+        elif accept and 'json' in accept:
+            content_type = 'application/json'
+            body = self.json_body(environ)
         else:
             content_type = 'text/plain'
             body = self.plain_body(environ)
