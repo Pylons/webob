@@ -170,6 +170,7 @@ from string import Template
 import re
 import sys
 
+from webob.acceptparse import Accept
 from webob.compat import (
     class_types,
     text_,
@@ -318,11 +319,14 @@ ${body}''')
         if self.content_length is not None:
             del self.content_length
         headerlist = list(self.headerlist)
-        accept = environ.get('HTTP_ACCEPT', '')
-        if accept and 'html' in accept or '*/*' in accept:
+        accept_value = environ.get('HTTP_ACCEPT', '')
+        accept = Accept(accept_value)
+        match = accept.best_match(['application/json', 'text/html',
+                                   'text/plain'], default_match='text/plain')
+        if match == 'text/html':
             content_type = 'text/html'
             body = self.html_body(environ)
-        elif accept and 'json' in accept:
+        elif match == 'application/json':
             content_type = 'application/json'
             body = self.json_body(environ)
         else:
