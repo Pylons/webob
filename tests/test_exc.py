@@ -1,3 +1,5 @@
+import json
+
 from webob.request import Request
 from webob.dec import wsgify
 from webob import exc as webob_exc
@@ -118,6 +120,57 @@ def test_WSGIHTTPException_html_body_w_comment():
         ' </body>\n'
         '</html>'
        )
+
+def test_WSGIHTTPException_json_body_no_comment():
+    class ValidationError(webob_exc.WSGIHTTPException):
+        code = '422'
+        title = 'Validation Failed'
+        explanation = 'Validation of an attribute failed.'
+
+    exc = ValidationError(detail='Attribute "xyz" is invalid.')
+    body = exc.json_body({})
+    eq_(json.loads(body), {
+        "code": "422 Validation Failed",
+        "title": "Validation Failed",
+        "message": "Validation of an attribute failed.<br /><br />\nAttribute"
+                   ' "xyz" is invalid.\n\n',
+    })
+
+def test_WSGIHTTPException_respects_application_json():
+    class ValidationError(webob_exc.WSGIHTTPException):
+        code = '422'
+        title = 'Validation Failed'
+        explanation = 'Validation of an attribute failed.'
+    def start_response(status, headers, exc_info=None):
+        pass
+
+    exc = ValidationError(detail='Attribute "xyz" is invalid.')
+    resp = exc.generate_response(environ={
+        'wsgi.url_scheme': 'HTTP',
+        'SERVER_NAME': 'localhost',
+        'SERVER_PORT': '80',
+        'REQUEST_METHOD': 'PUT',
+        'HTTP_ACCEPT': 'application/json',
+    }, start_response=start_response)
+    eq_(json.loads(resp[0].decode('utf-8')), {
+        "code": "422 Validation Failed",
+        "title": "Validation Failed",
+        "message": "Validation of an attribute failed.<br /><br />\nAttribute"
+                   ' "xyz" is invalid.\n\n',
+    })
+
+def test_WSGIHTTPException_allows_custom_json_formatter():
+    def json_formatter(body, status, title, environ):
+        return {"fake": True}
+    class ValidationError(webob_exc.WSGIHTTPException):
+        code = '422'
+        title = 'Validation Failed'
+        explanation = 'Validation of an attribute failed.'
+
+    exc = ValidationError(detail='Attribute "xyz" is invalid.',
+                          json_formatter=json_formatter)
+    body = exc.json_body({})
+    eq_(json.loads(body), {"fake": True})
 
 def test_WSGIHTTPException_generate_response():
     def start_response(status, headers, exc_info=None):
