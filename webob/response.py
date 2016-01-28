@@ -116,16 +116,13 @@ class Response(object):
         if 'charset' in kw:
             charset = kw.pop('charset')
         elif self.default_charset:
-            if (content_type
-                and 'charset=' not in content_type
-                and (content_type == 'text/html'
-                    or content_type.startswith('text/')
-                    or content_type.startswith('application/xml')
-                    or content_type.startswith('application/json')
-                    or (content_type.startswith('application/')
-                         and (content_type.endswith('+xml') or content_type.endswith('+json'))))):
-                charset = self.default_charset
-        if content_type and charset:
+            if content_type and 'charset=' not in content_type:
+                if (content_type == 'text/html'
+                        or content_type.startswith('text/')
+                        or _is_xml(content_type)
+                        or _is_json(content_type)):
+                    charset = self.default_charset
+        if content_type and charset and not _is_json(content_type):
             content_type += '; charset=' + charset
         elif self._headerlist and charset:
             self.charset = charset
@@ -1250,6 +1247,16 @@ class EmptyResponse(object):
         raise StopIteration()
 
     __next__ = next # py3
+
+def _is_json(content_type):
+    return (content_type.startswith('application/json')
+            or (content_type.startswith('application/')
+                and content_type.endswith('+json')))
+
+def _is_xml(content_type):
+    return (content_type.startswith('application/xml')
+            or (content_type.startswith('application/')
+                and content_type.endswith('+xml')))
 
 def _request_uri(environ):
     """Like wsgiref.url.request_uri, except eliminates :80 ports
