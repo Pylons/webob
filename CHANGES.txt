@@ -1,6 +1,11 @@
 Unreleased
 ----------
 
+Compatibility
+~~~~~~~~~~~~~
+
+- Python 3.2 is no longer supported by WebOb
+
 Bugfix
 ~~~~~~
 
