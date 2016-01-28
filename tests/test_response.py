@@ -104,6 +104,7 @@ def test_set_response_status_code_generic_reason():
     assert res.status_code == 299
     assert res.status == '299 Success'
 
+
 def test_content_type():
     r = Response()
     # default ctype and charset
@@ -120,6 +121,21 @@ def test_content_type():
 def test_init_content_type_w_charset():
     v = 'text/plain;charset=ISO-8859-1'
     eq_(Response(content_type=v).headers['content-type'], v)
+
+def test_init_adds_default_charset_when_not_json():
+    content_type = 'text/plain'
+    expected = 'text/plain; charset=UTF-8'
+    eq_(Response(content_type=content_type).headers['content-type'], expected)
+
+def test_init_no_charset_when_json():
+    content_type = 'application/json'
+    expected = content_type
+    eq_(Response(content_type=content_type).headers['content-type'], expected)
+
+def test_init_keeps_specified_charset_when_json():
+    content_type = 'application/json;charset=ISO-8859-1'
+    expected = content_type
+    eq_(Response(content_type=content_type).headers['content-type'], expected)
 
 
 def test_cookies():
