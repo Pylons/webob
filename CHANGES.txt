@@ -1,6 +1,15 @@
 Unreleased
 ----------
 
+Bugfix
+~~~~~~
+
+- The application/json media type does not allow for a charset as discovery of
+  the encoding is done at the JSON layer. Upon initialization of a Response
+  WebOb will no longer add a charset if the content-type is set to JSON. See
+  https://github.com/Pylons/webob/pull/197 and
+  https://github.com/Pylons/pyramid/issues/1611
+
 Features
 ~~~~~~~~
 
