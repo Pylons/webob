@@ -149,9 +149,7 @@ you subclass ``Request`` you can also set ``charset`` as a class-level
 attribute.
 
 If it is set, then ``req.POST``, ``req.GET``, ``req.params``, and
-``req.cookies`` will contain unicode strings.  Each has a
-corresponding ``req.str_*`` (like ``req.str_POST``) that is always
-``str`` and never unicode.
+``req.cookies`` will contain unicode strings.
 
 Response
 ========
