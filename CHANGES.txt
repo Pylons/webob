@@ -22,6 +22,11 @@ Bugfix
 Features
 ~~~~~~~~
 
+- Lazily HTML escapes environment keys in HTTP Exceptions so that those keys in
+  the environ that are not used in the output of the page don't raise an
+  exception due to inability to be properly escaped. See
+  https://github.com/Pylons/webob/pull/139
+
 - MIMEAccept now accepts comparisons against wildcards, this allows one to
   match on just the media type or sub-type, without having to explicitly match
   on both the media type and sub-type at the same time. See
