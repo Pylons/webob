@@ -14,18 +14,10 @@ import re
 from webob.headers import _trans_name as header_to_key
 from webob.util import (
     header_docstring,
-    warn_deprecation,
     )
 
 part_re = re.compile(
     r',\s*([^\s;,\n]+)(?:[^,]*?;\s*q=([0-9.]*))?')
-
-
-
-
-def _warn_first_match():
-    # TODO: remove .first_match in version 1.3
-    warn_deprecation("Use best_match instead", '1.2', 3)
 
 class Accept(object):
     """
@@ -131,15 +123,6 @@ class Accept(object):
                 bestq = max(bestq, q * modifier)
         return bestq or None
 
-    def first_match(self, offers):
-        """
-        DEPRECATED
-        Returns the first allowed offered type. Ignores quality.
-        Returns the first offered type if nothing else matches; or if you include None
-        at the end of the match list then that will be returned.
-        """
-        _warn_first_match()
-
     def best_match(self, offers, default_match=None):
         """
         Returns the best match in the sequence of offered types.
@@ -184,7 +167,6 @@ class Accept(object):
         return mask == '*' or offer.lower() == mask.lower()
 
 
-
 class NilAccept(object):
     MasterClass = Accept
 
@@ -219,9 +201,6 @@ class NilAccept(object):
 
     def quality(self, offer, default_quality=1):
         return 0
-
-    def first_match(self, offers): # pragma: no cover
-        _warn_first_match()
 
     def best_match(self, offers, default_match=None):
         best_quality = -1
@@ -296,7 +275,6 @@ class MIMEAccept(Accept):
 
     accepts_html = property(accept_html) # note the plural
 
-
     def _match(self, mask, offer):
         """
             Check if the offer is covered by the mask
@@ -362,13 +340,12 @@ def _check_offer(offer):
         raise ValueError("The application should offer specific types, got %r" % offer)
 
 
-
 def accept_property(header, rfc_section,
     AcceptClass=Accept, NilClass=NilAccept
 ):
     key = header_to_key(header)
     doc = header_docstring(header, rfc_section)
-    #doc += "  Converts it as a %s." % convert_name
+    # doc += "  Converts it as a %s." % convert_name
     def fget(req):
         value = req.environ.get(key)
         if not value:

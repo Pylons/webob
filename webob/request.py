@@ -59,7 +59,6 @@ from webob.descriptors import (
     serialize_int,
     serialize_range,
     upath_property,
-    deprecated_property,
     )
 
 from webob.etag import (
@@ -1161,14 +1160,6 @@ class BaseRequest(object):
         # HTTP clearly specifies CRLF
         return b'\r\n'.join(parts)
 
-    def as_string(self, skip_body=False):
-        # TODO: Remove in 1.4
-        warn_deprecation(
-            "Please use req.as_bytes",
-            '1.3',
-            self._setattr_stacklevel
-            )
-
     def as_text(self):
         bytes = self.as_bytes()
         return bytes.decode(self.charset)
@@ -1186,15 +1177,6 @@ class BaseRequest(object):
         if f.tell() != len(b):
             raise ValueError("The string contains more data than expected")
         return r
-
-    @classmethod
-    def from_string(cls, b):
-        # TODO: Remove in 1.4
-        warn_deprecation(
-            "Please use req.from_bytes",
-            '1.3',
-            cls._setattr_stacklevel
-            )
 
     @classmethod
     def from_text(cls, s):
@@ -1731,11 +1713,3 @@ class Transcoder(object):
             fout=io.BytesIO()
         )
         return fout
-
-# TODO: remove in 1.4
-for _name in 'GET POST params cookies'.split():
-    _str_name = 'str_'+_name
-    _prop = deprecated_property(
-        None, _str_name,
-        "disabled starting WebOb 1.2, use %s instead" % _name, '1.2')
-    setattr(BaseRequest, _str_name, _prop)
