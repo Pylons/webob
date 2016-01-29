@@ -375,14 +375,14 @@ def test_HTTPFound_unused_environ_variable():
        'crashy': Crashy()
     }
 
-    m = _HTTPMove(location='http://www.example.com')
+    m = webob_exc._HTTPMove(location='http://www.example.com')
     assert_equal( m( environ, start_response ), [
         b'<html>\n'
         b' <head>\n'
-        b'  <title>None None</title>\n'
+        b'  <title>500 Internal Server Error</title>\n'
         b' </head>\n'
         b' <body>\n'
-        b'  <h1>None None</h1>\n'
+        b'  <h1>500 Internal Server Error</h1>\n'
         b'  The resource has been moved to '
         b'<a href="http://www.example.com">'
         b'http://www.example.com</a>;\n'
