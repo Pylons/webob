@@ -358,6 +358,40 @@ def test_HTTPMove_call_query_string():
     environ['PATH_INFO'] = '/'
     assert_equal( m( environ, start_response ), [] )
 
+def test_HTTPFound_unused_environ_variable():
+    class Crashy(object):
+        def __str__(self):
+            raise Exception('I crashed!')
+
+    def start_response(status, headers, exc_info=None):
+        pass
+    environ = {
+       'wsgi.url_scheme': 'HTTP',
+       'SERVER_NAME': 'localhost',
+       'SERVER_PORT': '80',
+       'REQUEST_METHOD': 'GET',
+       'PATH_INFO': '/',
+       'HTTP_ACCEPT': 'text/html',
+       'crashy': Crashy()
+    }
+
+    m = webob_exc._HTTPMove(location='http://www.example.com')
+    assert_equal( m( environ, start_response ), [
+        b'<html>\n'
+        b' <head>\n'
+        b'  <title>500 Internal Server Error</title>\n'
+        b' </head>\n'
+        b' <body>\n'
+        b'  <h1>500 Internal Server Error</h1>\n'
+        b'  The resource has been moved to '
+        b'<a href="http://www.example.com">'
+        b'http://www.example.com</a>;\n'
+        b'you should be redirected automatically.\n' 
+        b'\n\n'
+        b' </body>\n'
+        b'</html>' ] 
+    )
+
 def test_HTTPExceptionMiddleware_ok():
     def app( environ, start_response ):
         return '123'
