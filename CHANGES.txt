@@ -18,6 +18,11 @@ Bugfix
 Features
 ~~~~~~~~
 
+- MIMEAccept now accepts comparisons against wildcards, this allows one to
+  match on just the media type or sub-type, without having to explicitly match
+  on both the media type and sub-type at the same time. See
+  https://github.com/Pylons/webob/pull/185
+
 - Add the ability to return a JSON body from an exception. Using the Accept
   information in the request, the exceptions will now automatically return a
   JSON version of the exception instead of just HTML or text. See
