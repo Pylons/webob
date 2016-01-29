@@ -987,14 +987,6 @@ class TestRequestCommon(unittest.TestCase):
         body = req.as_bytes(337-1).split(b'\r\n\r\n', 1)[1]
         self.assertEqual(body, b'<body skipped (len=337)>')
 
-    def test_from_string_deprecated(self):
-        cls = self._getTargetClass()
-        self.assertRaises(DeprecationWarning, cls.from_string, _test_req)
-
-    def test_as_string_deprecated(self):
-        cls = self._getTargetClass()
-        req = cls.from_bytes(_test_req)
-        self.assertRaises(DeprecationWarning, req.as_string)
 
 class TestBaseRequest(unittest.TestCase):
     # tests of methods of a base request which are encoding-specific
@@ -3220,8 +3212,6 @@ class TestRequest_functional(unittest.TestCase):
         self.assertTrue(isinstance(req.accept, MIMEAccept))
         self.assertTrue('text/html' in req.accept)
 
-        self.assertRaises(DeprecationWarning,
-                          req.accept.first_match, ['text/html'])
         self.assertEqual(req.accept.best_match(['text/html',
                                                 'application/xhtml+xml']),
                          'application/xhtml+xml')
