@@ -9,6 +9,10 @@ Compatibility
 Bugfix
 ~~~~~~
 
+- Request.decode attempted to read from the an already consumed stream, it has
+  now been redirected to another stream to read from. See
+  https://github.com/Pylons/webob/pull/183
+
 - The application/json media type does not allow for a charset as discovery of
   the encoding is done at the JSON layer. Upon initialization of a Response
   WebOb will no longer add a charset if the content-type is set to JSON. See
