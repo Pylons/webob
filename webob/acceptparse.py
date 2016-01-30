@@ -14,18 +14,10 @@ import re
 from webob.headers import _trans_name as header_to_key
 from webob.util import (
     header_docstring,
-    warn_deprecation,
     )
 
 part_re = re.compile(
     r',\s*([^\s;,\n]+)(?:[^,]*?;\s*q=([0-9.]*))?')
-
-
-
-
-def _warn_first_match():
-    # TODO: remove .first_match in version 1.3
-    warn_deprecation("Use best_match instead", '1.2', 3)
 
 class Accept(object):
     """
@@ -131,15 +123,6 @@ class Accept(object):
                 bestq = max(bestq, q * modifier)
         return bestq or None
 
-    def first_match(self, offers):
-        """
-        DEPRECATED
-        Returns the first allowed offered type. Ignores quality.
-        Returns the first offered type if nothing else matches; or if you include None
-        at the end of the match list then that will be returned.
-        """
-        _warn_first_match()
-
     def best_match(self, offers, default_match=None):
         """
         Returns the best match in the sequence of offered types.
@@ -184,7 +167,6 @@ class Accept(object):
         return mask == '*' or offer.lower() == mask.lower()
 
 
-
 class NilAccept(object):
     MasterClass = Accept
 
@@ -219,9 +201,6 @@ class NilAccept(object):
 
     def quality(self, offer, default_quality=1):
         return 0
-
-    def first_match(self, offers): # pragma: no cover
-        _warn_first_match()
 
     def best_match(self, offers, default_match=None):
         best_quality = -1
@@ -274,7 +253,7 @@ class MIMEAccept(Accept):
     def parse(value):
         for mask, q in Accept.parse(value):
             try:
-                mask_major, mask_minor = map(lambda x: x.lower(), mask.split('/'))
+                mask_major, mask_minor = [x.lower() for x in mask.split('/')]
             except ValueError:
                 continue
             if mask_major == '*' and mask_minor != '*':
@@ -299,17 +278,58 @@ class MIMEAccept(Accept):
     def _match(self, mask, offer):
         """
             Check if the offer is covered by the mask
+
+            ``offer`` may contain wildcards to facilitate checking if a
+            ``mask`` would match a 'permissive' offer.
+
+            Wildcard matching forces the match to take place against the
+            type or subtype of the mask and offer (depending on where
+            the wildcard matches)
         """
-        _check_offer(offer)
-        if '*' not in mask:
-            return offer.lower() == mask.lower()
-        elif mask == '*/*':
+        # Match if comparisons are the same or either is a complete wildcard
+        if (mask.lower() == offer.lower() or
+                '*/*' in (mask, offer) or
+                '*' == offer):
             return True
-        else:
-            assert mask.endswith('/*')
-            mask_major = mask[:-2].lower()
-            offer_major = offer.split('/', 1)[0].lower()
-            return offer_major == mask_major
+
+        # Set mask type with wildcard subtype for malformed masks
+        try:
+            mask_type, mask_subtype = [x.lower() for x in mask.split('/')]
+        except ValueError:
+            mask_type = mask
+            mask_subtype = '*'
+
+        # Set offer type with wildcard subtype for malformed offers
+        try:
+            offer_type, offer_subtype = [x.lower() for x in offer.split('/')]
+        except ValueError:
+            offer_type = offer
+            offer_subtype = '*'
+
+        if mask_subtype == '*':
+            # match on type only
+            if offer_type == '*':
+                return True
+            else:
+                return mask_type.lower() == offer_type.lower()
+
+        if mask_type == '*':
+            # match on subtype only
+            if offer_subtype == '*':
+                return True
+            else:
+                return mask_subtype.lower() == offer_subtype.lower()
+
+        if offer_subtype == '*':
+            # match on type only
+            return mask_type.lower() == offer_type.lower()
+
+        if offer_type == '*':
+            # match on subtype only
+            return mask_subtype.lower() == offer_subtype.lower()
+
+        return offer.lower() == mask.lower()
+
 
 
 class MIMENilAccept(NilAccept):
@@ -320,13 +340,12 @@ def _check_offer(offer):
         raise ValueError("The application should offer specific types, got %r" % offer)
 
 
-
 def accept_property(header, rfc_section,
     AcceptClass=Accept, NilClass=NilAccept
 ):
     key = header_to_key(header)
     doc = header_docstring(header, rfc_section)
-    #doc += "  Converts it as a %s." % convert_name
+    # doc += "  Converts it as a %s." % convert_name
     def fget(req):
         value = req.environ.get(key)
         if not value:

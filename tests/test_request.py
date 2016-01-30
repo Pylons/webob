@@ -987,14 +987,6 @@ class TestRequestCommon(unittest.TestCase):
         body = req.as_bytes(337-1).split(b'\r\n\r\n', 1)[1]
         self.assertEqual(body, b'<body skipped (len=337)>')
 
-    def test_from_string_deprecated(self):
-        cls = self._getTargetClass()
-        self.assertRaises(DeprecationWarning, cls.from_string, _test_req)
-
-    def test_as_string_deprecated(self):
-        cls = self._getTargetClass()
-        req = cls.from_bytes(_test_req)
-        self.assertRaises(DeprecationWarning, req.as_string)
 
 class TestBaseRequest(unittest.TestCase):
     # tests of methods of a base request which are encoding-specific
@@ -2472,7 +2464,6 @@ class TestRequest_functional(unittest.TestCase):
         self.assertTrue(not self._blankOne('/', headers={'Accept': ''}).accept)
         req = self._blankOne('/', headers={'Accept':'text/plain'})
         self.assertTrue(req.accept)
-        self.assertRaises(ValueError, req.accept.best_match, ['*/*'])
         req = self._blankOne('/', accept=['*/*','text/*'])
         self.assertEqual(
             req.accept.best_match(['application/x-foo', 'text/plain']),
@@ -2623,6 +2614,22 @@ class TestRequest_functional(unittest.TestCase):
         req.make_body_seekable()
         self.assertTrue(req.body_file_raw is old_body_file)
         self.assertTrue(req.body_file is old_body_file)
+
+    def test_already_consumed_stream(self):
+        from webob.request import Request
+        body = 'something'.encode('latin-1')
+        content_type = 'application/x-www-form-urlencoded; charset=latin-1'
+        environ = {
+            'wsgi.input': BytesIO(body),
+            'CONTENT_TYPE': content_type,
+            'CONTENT_LENGTH': len(body),
+            'REQUEST_METHOD': 'POST'
+        }
+        req = Request(environ)
+        req = req.decode('latin-1')
+        req2 = Request(environ)
+        req2 = req2.decode('latin-1')
+        self.assertEqual(body, req2.body)
 
     def test_broken_seek(self):
         # copy() should work even when the input has a broken seek method
@@ -3205,8 +3212,6 @@ class TestRequest_functional(unittest.TestCase):
         self.assertTrue(isinstance(req.accept, MIMEAccept))
         self.assertTrue('text/html' in req.accept)
 
-        self.assertRaises(DeprecationWarning,
-                          req.accept.first_match, ['text/html'])
         self.assertEqual(req.accept.best_match(['text/html',
                                                 'application/xhtml+xml']),
                          'application/xhtml+xml')

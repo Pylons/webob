@@ -1,3 +1,5 @@
+import json
+
 from webob.request import Request
 from webob.dec import wsgify
 from webob import exc as webob_exc
@@ -118,6 +120,57 @@ def test_WSGIHTTPException_html_body_w_comment():
         ' </body>\n'
         '</html>'
        )
+
+def test_WSGIHTTPException_json_body_no_comment():
+    class ValidationError(webob_exc.WSGIHTTPException):
+        code = '422'
+        title = 'Validation Failed'
+        explanation = 'Validation of an attribute failed.'
+
+    exc = ValidationError(detail='Attribute "xyz" is invalid.')
+    body = exc.json_body({})
+    eq_(json.loads(body), {
+        "code": "422 Validation Failed",
+        "title": "Validation Failed",
+        "message": "Validation of an attribute failed.<br /><br />\nAttribute"
+                   ' "xyz" is invalid.\n\n',
+    })
+
+def test_WSGIHTTPException_respects_application_json():
+    class ValidationError(webob_exc.WSGIHTTPException):
+        code = '422'
+        title = 'Validation Failed'
+        explanation = 'Validation of an attribute failed.'
+    def start_response(status, headers, exc_info=None):
+        pass
+
+    exc = ValidationError(detail='Attribute "xyz" is invalid.')
+    resp = exc.generate_response(environ={
+        'wsgi.url_scheme': 'HTTP',
+        'SERVER_NAME': 'localhost',
+        'SERVER_PORT': '80',
+        'REQUEST_METHOD': 'PUT',
+        'HTTP_ACCEPT': 'application/json',
+    }, start_response=start_response)
+    eq_(json.loads(resp[0].decode('utf-8')), {
+        "code": "422 Validation Failed",
+        "title": "Validation Failed",
+        "message": "Validation of an attribute failed.<br /><br />\nAttribute"
+                   ' "xyz" is invalid.\n\n',
+    })
+
+def test_WSGIHTTPException_allows_custom_json_formatter():
+    def json_formatter(body, status, title, environ):
+        return {"fake": True}
+    class ValidationError(webob_exc.WSGIHTTPException):
+        code = '422'
+        title = 'Validation Failed'
+        explanation = 'Validation of an attribute failed.'
+
+    exc = ValidationError(detail='Attribute "xyz" is invalid.',
+                          json_formatter=json_formatter)
+    body = exc.json_body({})
+    eq_(json.loads(body), {"fake": True})
 
 def test_WSGIHTTPException_generate_response():
     def start_response(status, headers, exc_info=None):
@@ -259,6 +312,17 @@ def test_HTTPMove_location_not_none():
     m = webob_exc._HTTPMove(location='http://example.com')
     assert_equal( m( environ, start_response ), [] )
 
+def test_HTTPMove_location_newlines():
+    environ = {
+       'wsgi.url_scheme': 'HTTP',
+       'SERVER_NAME': 'localhost',
+       'SERVER_PORT': '80',
+       'REQUEST_METHOD': 'HEAD',
+       'PATH_INFO': '/',
+    }
+    assert_raises(ValueError, webob_exc._HTTPMove,
+            location='http://example.com\r\nX-Test: false')
+
 def test_HTTPMove_add_slash_and_location():
     def start_response(status, headers, exc_info=None):
         pass
@@ -293,6 +357,40 @@ def test_HTTPMove_call_query_string():
     environ[ 'QUERY_STRING' ] = 'querystring'
     environ['PATH_INFO'] = '/'
     assert_equal( m( environ, start_response ), [] )
+
+def test_HTTPFound_unused_environ_variable():
+    class Crashy(object):
+        def __str__(self):
+            raise Exception('I crashed!')
+
+    def start_response(status, headers, exc_info=None):
+        pass
+    environ = {
+       'wsgi.url_scheme': 'HTTP',
+       'SERVER_NAME': 'localhost',
+       'SERVER_PORT': '80',
+       'REQUEST_METHOD': 'GET',
+       'PATH_INFO': '/',
+       'HTTP_ACCEPT': 'text/html',
+       'crashy': Crashy()
+    }
+
+    m = webob_exc._HTTPMove(location='http://www.example.com')
+    assert_equal( m( environ, start_response ), [
+        b'<html>\n'
+        b' <head>\n'
+        b'  <title>500 Internal Server Error</title>\n'
+        b' </head>\n'
+        b' <body>\n'
+        b'  <h1>500 Internal Server Error</h1>\n'
+        b'  The resource has been moved to '
+        b'<a href="http://www.example.com">'
+        b'http://www.example.com</a>;\n'
+        b'you should be redirected automatically.\n' 
+        b'\n\n'
+        b' </body>\n'
+        b'</html>' ] 
+    )
 
 def test_HTTPExceptionMiddleware_ok():
     def app( environ, start_response ):

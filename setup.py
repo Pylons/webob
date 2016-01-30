@@ -25,7 +25,7 @@ setup(
     name='WebOb',
     version='1.6.0a0',
     description="WSGI request and response object",
-    long_description=README + '\n\n' +  CHANGES,
+    long_description=README + '\n\n' + CHANGES,
     classifiers=[
         "Development Status :: 6 - Mature",
         "Intended Audience :: Developers",
@@ -35,7 +35,6 @@ setup(
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware",
         "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.2",
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
@@ -52,7 +51,7 @@ setup(
     zip_safe=True,
     test_suite='nose.collector',
     tests_require=['nose'],
-    extras_require = {
+    extras_require={
         'testing': testing_extras,
         'docs': docs_extras,
         },

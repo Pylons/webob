@@ -165,10 +165,12 @@ References:
 
 """
 
+import json
 from string import Template
 import re
 import sys
 
+from webob.acceptparse import Accept
 from webob.compat import (
     class_types,
     text_,
@@ -185,6 +187,12 @@ from webob.util import (
 tag_re = re.compile(r'<.*?>', re.S)
 br_re = re.compile(r'<br.*?>', re.I|re.S)
 comment_re = re.compile(r'<!--|-->')
+
+def lazify(func):
+    class _lazyfied(object):
+        def __init__(self, s): self._s = s
+        def __str__(self): return func(self._s)
+    return _lazyfied
 
 def no_escape(value):
     if value is None:
@@ -250,7 +258,7 @@ ${body}''')
     empty_body = False
 
     def __init__(self, detail=None, headers=None, comment=None,
-                 body_template=None, **kw):
+                 body_template=None, json_formatter=None, **kw):
         Response.__init__(self,
                           status='%s %s' % (self.code, self.title),
                           **kw)
@@ -265,11 +273,14 @@ ${body}''')
         if self.empty_body:
             del self.content_type
             del self.content_length
+        if json_formatter is not None:
+            self.json_formatter = json_formatter
 
     def __str__(self):
         return self.detail or self.explanation
 
     def _make_body(self, environ, escape):
+        escape = lazify(escape)
         args = {
             'explanation': escape(self.explanation),
             'detail': escape(self.detail or ''),
@@ -300,14 +311,31 @@ ${body}''')
         return self.html_template_obj.substitute(status=self.status,
                                                  body=body)
 
+    def json_formatter(self, body, status, title, environ):
+        return {'message': body,
+                'code': status,
+                'title': title}
+
+    def json_body(self, environ):
+        body = self._make_body(environ, no_escape)
+        jsonbody = self.json_formatter(body=body, status=self.status,
+                                       title=self.title, environ=environ)
+        return json.dumps(jsonbody)
+
     def generate_response(self, environ, start_response):
         if self.content_length is not None:
             del self.content_length
         headerlist = list(self.headerlist)
-        accept = environ.get('HTTP_ACCEPT', '')
-        if accept and 'html' in accept or '*/*' in accept:
+        accept_value = environ.get('HTTP_ACCEPT', '')
+        accept = Accept(accept_value)
+        match = accept.best_match(['application/json', 'text/html',
+                                   'text/plain'], default_match='text/plain')
+        if match == 'text/html':
             content_type = 'text/html'
             body = self.html_body(environ)
+        elif match == 'application/json':
+            content_type = 'application/json'
+            body = self.json_body(environ)
         else:
             content_type = 'text/plain'
             body = self.plain_body(environ)
@@ -481,6 +509,9 @@ ${html_comment}''')
             detail=detail, headers=headers, comment=comment,
             body_template=body_template)
         if location is not None:
+            if '\n' in location or '\r' in location:
+                raise ValueError('Control characters are not allowed in location')
+
             self.location = location
             if add_slash:
                 raise TypeError(
