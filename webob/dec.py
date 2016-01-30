@@ -233,6 +233,13 @@ class wsgify(object):
 
             wrapped = restrict_ip(app, ips=['127.0.0.1'])
 
+        Or as a decorator::
+
+            @restrict_ip(ips=['127.0.0.1'])
+            @wsgify
+            def wrapped_app(req):
+                return 'hi'
+
         Or if you want to write output-rewriting middleware::
 
             @wsgify.middleware
