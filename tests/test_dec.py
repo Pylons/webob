@@ -169,6 +169,15 @@ class DecoratorTests(unittest.TestCase):
         self.assertEqual(resp.content_type, 'text/html')
         self.assertEqual(resp.charset, 'UTF-8')
         self.assertEqual(resp.content_length, 40)
+        @set_urlvar(a=1,b=2)
+        @wsgify
+        def show_vars3(req):
+            return resp_str % (sorted(req.urlvars.items()))
+        resp = self._testit(show_vars3, '/path')
+        self.assertEqual(resp.body, bytes_(resp_str % "[('a', 1), ('b', 2)]"))
+        self.assertEqual(resp.content_type, 'text/html')
+        self.assertEqual(resp.charset, 'UTF-8')
+        self.assertEqual(resp.content_length, 40)
 
     def test_unbound_middleware(self):
         @wsgify
