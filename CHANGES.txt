@@ -19,6 +19,9 @@ Bugfix
   https://github.com/Pylons/webob/pull/197 and
   https://github.com/Pylons/pyramid/issues/1611
 
+- Request.authorization would raise ValueError for unusual or malformed header
+  values. See https://github.com/Pylons/webob/issues/231
+
 Features
 ~~~~~~~~
 
