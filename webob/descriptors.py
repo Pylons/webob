@@ -321,7 +321,7 @@ known_auth_schemes = dict.fromkeys(known_auth_schemes, None)
 
 def parse_auth(val):
     if val is not None:
-        authtype, params = val.split(' ', 1)
+        authtype, sep, params = val.partition(' ')
         if authtype in known_auth_schemes:
             if authtype == 'Basic' and '"' not in params:
                 # this is the "Authentication: Basic XXXXX==" case
@@ -334,6 +334,8 @@ def parse_auth(val):
 def serialize_auth(val):
     if isinstance(val, (tuple, list)):
         authtype, params = val
+        if not params:
+            return authtype
         if isinstance(params, dict):
             params = ', '.join(map('%s="%s"'.__mod__, params.items()))
         assert isinstance(params, str)

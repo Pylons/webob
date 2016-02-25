@@ -608,7 +608,15 @@ def test_parse_auth_none():
 
 def test_parse_auth_emptystr():
     from webob.descriptors import parse_auth
-    assert_raises(ValueError, parse_auth, '')
+    eq_(parse_auth(''), ('', ''))
+
+def test_parse_auth_unknown_nospace():
+    from webob.descriptors import parse_auth
+    eq_(parse_auth('NoSpace'), ('NoSpace', ''))
+
+def test_parse_auth_known_nospace():
+    from webob.descriptors import parse_auth
+    eq_(parse_auth('Digest'), ('Digest', {}))
 
 def test_parse_auth_basic():
     from webob.descriptors import parse_auth
@@ -635,6 +643,22 @@ def test_serialize_auth_none():
 def test_serialize_auth_emptystr():
     from webob.descriptors import serialize_auth
     eq_(serialize_auth(''), '')
+
+def test_serialize_auth_str():
+    from webob.descriptors import serialize_auth
+    eq_(serialize_auth('some string'), 'some string')
+
+def test_serialize_auth_parsed_emptystr():
+    from webob.descriptors import serialize_auth
+    eq_(serialize_auth(('', '')), '')
+
+def test_serialize_auth_parsed_unknown_nospace():
+    from webob.descriptors import serialize_auth
+    eq_(serialize_auth(('NoSpace', '')), 'NoSpace')
+
+def test_serialize_auth_parsed_known_nospace():
+    from webob.descriptors import serialize_auth
+    eq_(serialize_auth(('Digest', {})), 'Digest')
 
 def test_serialize_auth_basic_quoted():
     from webob.descriptors import serialize_auth
