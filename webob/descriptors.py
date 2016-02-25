@@ -334,8 +334,6 @@ def parse_auth(val):
 def serialize_auth(val):
     if isinstance(val, (tuple, list)):
         authtype, params = val
-        if not params:
-            return authtype
         if isinstance(params, dict):
             params = ', '.join(map('%s="%s"'.__mod__, params.items()))
         assert isinstance(params, str)
