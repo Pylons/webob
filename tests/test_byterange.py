@@ -17,9 +17,14 @@ def test_range_parse():
     assert isinstance(Range.parse('BYTES=0-99'), Range)
     assert isinstance(Range.parse('bytes = 0-99'), Range)
     assert isinstance(Range.parse('bytes=0 - 102'), Range)
+    assert isinstance(Range.parse('items=0-99'), Range)
+    assert isinstance(Range.parse('ITEMS=0-99'), Range)
+
+def test_range_parse_invalid_ranges():
     assert Range.parse('bytes=10-5') is None
     assert Range.parse('bytes 5-10') is None
     assert Range.parse('words=10-5') is None
+    assert Range.parse('items extra=10-5') is None
 
 def test_range_content_range_length_none():
     range = Range(0, 100)
@@ -27,6 +32,12 @@ def test_range_content_range_length_none():
     assert isinstance(range.content_range(1), ContentRange)
     eq_(tuple(range.content_range(1)), (0,1,1))
     eq_(tuple(range.content_range(200)), (0,100,200))
+
+def test_range_content_range_units():
+    # Content-Range from Range should be expressed in same units
+    range = Range(0, 100, 'items')
+    content_range = range.content_range(200)
+    eq_(range.units, content_range.units)
 
 def test_range_for_length_end_is_none():
     # End is None
@@ -54,10 +65,14 @@ def test_range_str_end_none_negative_start():
 def test_range_str_1():
     range = Range(0, 100)
     eq_(str(range), 'bytes=0-99')
+    range = Range(0, 100, 'items')
+    eq_(str(range), 'items=0-99')
 
 def test_range_repr():
     range = Range(0, 99)
-    assert_true(range.__repr__(), '<Range bytes 0-98>')
+    eq_(range.__repr__(), '<Range bytes=0-98>')
+    range = Range(0, 99, 'items')
+    eq_(range.__repr__(), '<Range items=0-98>')
 
 
 # ContentRange class
@@ -67,13 +82,16 @@ def test_contentrange_bad_input():
 
 def test_contentrange_repr():
     contentrange = ContentRange(0, 99, 100)
-    assert_true(repr(contentrange), '<ContentRange bytes 0-98/100>')
+    eq_(repr(contentrange), '<ContentRange bytes 0-98/100>')
 
 def test_contentrange_str():
     contentrange = ContentRange(0, 99, None)
     eq_(str(contentrange), 'bytes 0-98/*')
     contentrange = ContentRange(None, None, 100)
     eq_(str(contentrange), 'bytes */100')
+    contentrange = ContentRange(0, 19, 100, 'items')
+    eq_(str(contentrange), 'items 0-18/100')
+
 
 def test_contentrange_iter():
     contentrange = ContentRange(0, 99, 100)

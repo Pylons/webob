@@ -2,18 +2,27 @@ import re
 
 __all__ = ['Range', 'ContentRange']
 
-_rx_range = re.compile('bytes *= *(\d*) *- *(\d*)', flags=re.I)
-_rx_content_range = re.compile(r'bytes (?:(\d+)-(\d+)|[*])/(?:(\d+)|[*])')
+# Range-Unit tokens are defined as 1 or or US-ASCII chars 0-127, excluding
+# control chars or separators.  http://tools.ietf.org/html/rfc2616#section-2.2
+seps = r'()<>@,;:\"/[]?={} '
+CTLs = ''.join([chr(i) for i in list(range(0, 32)) + [127]])
+excluded = re.escape(CTLs + seps)
+
+_rx_range = re.compile('([^%s]+) *= *(\d*) *- *(\d*)' % (excluded,), flags=re.I)
+_rx_content_range = re.compile(r'([^%s]+) (?:(\d+)-(\d+)|[*])/(?:(\d+)|[*])' % (excluded,))
+
+
 
 class Range(object):
     """
         Represents the Range header.
     """
 
-    def __init__(self, start, end):
+    def __init__(self, start, end, units='bytes'):
         assert end is None or end >= 0, "Bad range end: %r" % end
         self.start = start
         self.end = end # non-inclusive
+        self.units = units
 
     def range_for_length(self, length):
         """
@@ -47,21 +56,19 @@ class Range(object):
         range = self.range_for_length(length)
         if range is None:
             return None
-        return ContentRange(range[0], range[1], length)
+        return ContentRange(range[0], range[1], length, self.units)
 
     def __str__(self):
         s,e = self.start, self.end
         if e is None:
-            r = 'bytes=%s' % s
+            r = '%s=%s' % (self.units, s)
             if s >= 0:
                 r += '-'
             return r
-        return 'bytes=%s-%s' % (s, e-1)
+        return '%s=%s-%s' % (self.units, s, e-1)
 
     def __repr__(self):
-        return '%s(%r, %r)' % (
-            self.__class__.__name__,
-            self.start, self.end)
+        return '<%s %s>' % (self.__class__.__name__, self)
 
     def __iter__(self):
         return iter((self.start, self.end))
@@ -74,7 +81,7 @@ class Range(object):
         m = _rx_range.match(header or '')
         if not m:
             return None
-        start, end = m.groups()
+        units, start, end = m.groups()
         if not start:
             return cls(-int(end), None)
         start = int(start)
@@ -83,7 +90,7 @@ class Range(object):
         end = int(end) + 1 # return val is non-inclusive
         if start >= end:
             return None
-        return cls(start, end)
+        return cls(start, end, units)
 
 
 class ContentRange(object):
@@ -95,13 +102,14 @@ class ContentRange(object):
     can be ``*`` (represented as None in the attributes).
     """
 
-    def __init__(self, start, stop, length):
+    def __init__(self, start, stop, length, units='bytes'):
         if not _is_content_range_valid(start, stop, length):
             raise ValueError(
                 "Bad start:stop/length: %r-%r/%r" % (start, stop, length))
         self.start = start
         self.stop = stop # this is python-style range end (non-inclusive)
         self.length = length
+        self.units = units
 
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__, self)
@@ -113,9 +121,9 @@ class ContentRange(object):
             length = self.length
         if self.start is None:
             assert self.stop is None
-            return 'bytes */%s' % length
+            return '%s */%s' % (self.units, length)
         stop = self.stop - 1 # from non-inclusive to HTTP-style
-        return 'bytes %s-%s/%s' % (self.start, stop, length)
+        return '%s %s-%s/%s' % (self.units, self.start, stop, length)
 
     def __iter__(self):
         """
@@ -133,14 +141,14 @@ class ContentRange(object):
         m = _rx_content_range.match(value or '')
         if not m:
             return None
-        s, e, l = m.groups()
+        units, s, e, l = m.groups()
         if s:
             s = int(s)
             e = int(e) + 1
         l = l and int(l)
         if not _is_content_range_valid(s, e, l, response=True):
             return None
-        return cls(s, e, l)
+        return cls(s, e, l, units)
 
 
 def _is_content_range_valid(start, stop, length, response=False):
