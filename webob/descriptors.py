@@ -321,7 +321,7 @@ known_auth_schemes = dict.fromkeys(known_auth_schemes, None)
 
 def parse_auth(val):
     if val is not None:
-        authtype, params = val.split(' ', 1)
+        authtype, sep, params = val.partition(' ')
         if authtype in known_auth_schemes:
             if authtype == 'Basic' and '"' not in params:
                 # this is the "Authentication: Basic XXXXX==" case
