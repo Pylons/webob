@@ -406,6 +406,13 @@ def test_content_length():
     eq_(r5.body, b'xxxxx')
     eq_(r5.content_length, 5)
 
+def test_app_iter_range_no_content_length():
+    req = Request.blank('/', range=(2,5))
+    r = Response(conditional_response=True)
+    r.app_iter=[b'012', b'34', b'5']
+    res = req.get_response(r)
+    eq_(res.body, b'234')
+
 def test_app_iter_range():
     req = Request.blank('/', range=(2,5))
     for app_iter in [

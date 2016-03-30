@@ -23,7 +23,6 @@ def test_range_parse():
 
 def test_range_content_range_length_none():
     range = Range(0, 100)
-    eq_(range.content_range(None), None)
     assert isinstance(range.content_range(1), ContentRange)
     eq_(tuple(range.content_range(1)), (0,1,1))
     eq_(tuple(range.content_range(200)), (0,100,200))
