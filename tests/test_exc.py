@@ -159,6 +159,51 @@ def test_WSGIHTTPException_respects_application_json():
                    ' "xyz" is invalid.\n\n',
     })
 
+def test_WSGIHTTPException_respects_accept_text_html():
+    def start_response(status, headers, exc_info=None):
+        for header in headers:
+            if header[0] == 'Content-Type':
+                assert header[1].startswith('text/html')
+
+    exc = webob_exc.WSGIHTTPException()
+    resp = exc.generate_response(environ={
+        'wsgi.url_scheme': 'HTTP',
+        'SERVER_NAME': 'localhost',
+        'SERVER_PORT': '80',
+        'REQUEST_METHOD': 'GET',
+        'HTTP_ACCEPT': 'text/html',
+    }, start_response=start_response)
+
+def test_WSGIHTTPException_respects_accept_text_plain():
+    def start_response(status, headers, exc_info=None):
+        for header in headers:
+            if header[0] == 'Content-Type':
+                assert header[1].startswith('text/plain')
+
+    exc = webob_exc.WSGIHTTPException()
+    resp = exc.generate_response(environ={
+        'wsgi.url_scheme': 'HTTP',
+        'SERVER_NAME': 'localhost',
+        'SERVER_PORT': '80',
+        'REQUEST_METHOD': 'GET',
+        'HTTP_ACCEPT': 'text/plain',
+    }, start_response=start_response)
+
+def test_WSGIHTTPException_respects_accept_star_star():
+    def start_response(status, headers, exc_info=None):
+        for header in headers:
+            if header[0] == 'Content-Type':
+                assert header[1].startswith('text/html')
+
+    exc = webob_exc.WSGIHTTPException()
+    resp = exc.generate_response(environ={
+        'wsgi.url_scheme': 'HTTP',
+        'SERVER_NAME': 'localhost',
+        'SERVER_PORT': '80',
+        'REQUEST_METHOD': 'GET',
+        'HTTP_ACCEPT': '*/*',
+    }, start_response=start_response)
+
 def test_WSGIHTTPException_allows_custom_json_formatter():
     def json_formatter(body, status, title, environ):
         return {"fake": True}
@@ -386,10 +431,10 @@ def test_HTTPFound_unused_environ_variable():
         b'  The resource has been moved to '
         b'<a href="http://www.example.com">'
         b'http://www.example.com</a>;\n'
-        b'you should be redirected automatically.\n' 
+        b'you should be redirected automatically.\n'
         b'\n\n'
         b' </body>\n'
-        b'</html>' ] 
+        b'</html>' ]
     )
 
 def test_HTTPExceptionMiddleware_ok():
