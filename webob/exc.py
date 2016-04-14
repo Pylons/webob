@@ -179,10 +179,7 @@ from webob.compat import (
     )
 from webob.request import Request
 from webob.response import Response
-from webob.util import (
-    html_escape,
-    warn_deprecation,
-    )
+from webob.util import html_escape
 
 tag_re = re.compile(r'<.*?>', re.S)
 br_re = re.compile(r'<br.*?>', re.I|re.S)
