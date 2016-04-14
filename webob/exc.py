@@ -327,9 +327,9 @@ ${body}''')
             del self.content_length
         headerlist = list(self.headerlist)
         accept_value = environ.get('HTTP_ACCEPT', '')
-        match = accept.best_match(['application/json', 'text/html',
-                                   'text/plain'], default_match='text/plain')
         accept = MIMEAccept(accept_value)
+        match = accept.best_match(['text/html', 'application/json'])
+
         if match == 'text/html':
             content_type = 'text/html'
             body = self.html_body(environ)
