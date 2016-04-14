@@ -388,6 +388,12 @@ def test_MIMEAccept_best_match():
     assert mimeaccept.best_match(server_offer) == 'application/json'
     assert mimeaccept.best_client_match(server_offer) == 'text/html'
 
+def test_MIMEAccept_best_match_stars():
+    mimeaccept = MIMEAccept('text/html, application/json, */*;q=0.2')
+    server_offer = ['no/match', 'no/othermatch']
+    assert mimeaccept.best_match(server_offer) == 'no/match'
+    assert mimeaccept.best_client_match(server_offer) == 'no/match'
+
 # property tests
 
 def test_accept_property_fget():
