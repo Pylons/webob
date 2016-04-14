@@ -182,13 +182,15 @@ from webob.response import Response
 from webob.util import html_escape
 
 tag_re = re.compile(r'<.*?>', re.S)
-br_re = re.compile(r'<br.*?>', re.I|re.S)
+br_re = re.compile(r'<br.*?>', re.I | re.S)
 comment_re = re.compile(r'<!--|-->')
 
 def lazify(func):
     class _lazyfied(object):
-        def __init__(self, s): self._s = s
-        def __str__(self): return func(self._s)
+        def __init__(self, s):
+            self._s = s
+        def __str__(self):
+            return func(self._s)
     return _lazyfied
 
 def no_escape(value):
@@ -340,11 +342,11 @@ ${body}''')
         if isinstance(body, text_type):
             extra_kw.update(charset='utf-8')
         resp = Response(body,
-            status=self.status,
-            headerlist=headerlist,
-            content_type=content_type,
-            **extra_kw
-        )
+                        status=self.status,
+                        headerlist=headerlist,
+                        content_type=content_type,
+                        **extra_kw
+                        )
         resp.content_type = content_type
         return resp(environ, start_response)
 
