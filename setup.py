@@ -12,8 +12,9 @@ except IOError:
     README = CHANGES = ''
 
 testing_extras = [
-    'nose',
+    'pytest',
     'coverage',
+    'pytest-cov',
     ]
 
 docs_extras = [
@@ -49,8 +50,6 @@ setup(
     license='MIT',
     packages=['webob'],
     zip_safe=True,
-    test_suite='nose.collector',
-    tests_require=['nose'],
     extras_require={
         'testing': testing_extras,
         'docs': docs_extras,
