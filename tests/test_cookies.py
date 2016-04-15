@@ -359,7 +359,7 @@ class TestRequestCookies(object):
         assert r.endswith('>')
 
 
-class CookieMakeCookie(object):
+class TestCookieMakeCookie(object):
     def makeOne(self, name, value, **kw):
         from webob.cookies import make_cookie
         return make_cookie(name, value, **kw)
@@ -379,7 +379,7 @@ class CookieMakeCookie(object):
         assert 'test_cookie=value' in cookie
         assert 'Max-Age=500;' in cookie
         assert 'expires' in cookie
-        self.assertFalse('expires=500' in cookie)
+        assert 'expires=500' not in cookie
 
     def test_make_cookie_max_age_str_valid_int(self):
         cookie = self.makeOne('test_cookie', 'value',
@@ -388,11 +388,11 @@ class CookieMakeCookie(object):
         assert 'test_cookie=value' in cookie
         assert 'Max-Age=500;' in cookie
         assert 'expires' in cookie
-        self.assertFalse('expires=500' in cookie)
+        assert 'expires=500' not in cookie
 
     def test_make_cookie_max_age_str_invalid_int(self):
-        self.assertRaises(ValueError, self.makeOne, 'test_cookie', 'value',
-                          max_age='test')
+        with pytest.raises(ValueError):
+            self.makeOne('test_cookie', 'value', max_age='test')
 
     def test_make_cookie_comment(self):
         cookie = self.makeOne('test_cookie', 'value', comment='lolwhy')
@@ -424,7 +424,7 @@ class CommonCookieProfile(object):
         return request
 
 
-class CookieProfileTest(CommonCookieProfile):
+class TestCookieProfile(CommonCookieProfile):
     def makeOne(self, name='uns', **kw):
         if 'request' in kw:
             request = kw['request']
@@ -439,7 +439,7 @@ class CookieProfileTest(CommonCookieProfile):
         cookie = self.makeOne()
 
         from webob.cookies import CookieProfile
-        self.assertTrue(isinstance(cookie, CookieProfile))
+        assert isinstance(cookie, CookieProfile)
 
     def test_cookie_name(self):
         cookie = self.makeOne()
@@ -447,14 +447,15 @@ class CookieProfileTest(CommonCookieProfile):
         cookie_list = cookie.get_headers("test")
 
         for cookie in cookie_list:
-            self.assertTrue(cookie[1].startswith('uns'))
-            self.assertFalse('uns="";' in cookie[1])
+            assert cookie[1].startswith('uns')
+            assert 'uns="";' not in cookie[1]
 
     def test_cookie_no_request(self):
         from webob.cookies import CookieProfile
         cookie = CookieProfile('uns')
 
-        self.assertRaises(ValueError, cookie.get_value)
+        with pytest.raises(ValueError):
+            cookie.get_value()
 
     def test_get_value_serializer_raises_value_error(self):
         class RaisingSerializer(object):
@@ -479,7 +480,7 @@ class CookieProfileTest(CommonCookieProfile):
 
         assert ret is None
 
-class SignedCookieProfileTest(CommonCookieProfile):
+class TestSignedCookieProfile(CommonCookieProfile):
     def makeOne(self, secret='seekrit', salt='salty', name='uns', **kw):
         if 'request' in kw:
             request = kw['request']
@@ -496,8 +497,8 @@ class SignedCookieProfileTest(CommonCookieProfile):
         cookie_list = cookie.get_headers("test")
 
         for cookie in cookie_list:
-            self.assertTrue(cookie[1].startswith('uns'))
-            self.assertFalse('uns="";' in cookie[1])
+            assert cookie[1].startswith('uns')
+            assert 'uns="";' not in cookie[1]
 
     def test_cookie_expire(self):
         cookie = self.makeOne()
@@ -521,7 +522,7 @@ class SignedCookieProfileTest(CommonCookieProfile):
 
         cookie_list = cookie.get_headers("test")
 
-        self.assertTrue(isinstance(cookie_list, list))
+        assert isinstance(cookie_list, list)
 
     def test_set_cookie(self):
         request = self.makeOneRequest()
@@ -581,7 +582,7 @@ class SignedCookieProfileTest(CommonCookieProfile):
             if 'Domain=testing.example.net' in cookie[1]:
                 passed = True
 
-        self.assertTrue(passed)
+        assert passed
         assert len(ret) == 1
 
     def test_with_domains(self):
@@ -619,7 +620,8 @@ class SignedCookieProfileTest(CommonCookieProfile):
         cookie = self.makeOne()
 
         longstring = 'a' * 4096
-        self.assertRaises(ValueError, cookie.get_headers, longstring)
+        with pytest.raises(ValueError):
+            cookie.get_headers(longstring)
 
     def test_very_long_key(self):
         longstring = 'a' * 1024
@@ -638,7 +640,7 @@ def serialize(secret, salt, data):
     sig = hmac.new(salted_secret, cstruct, sha1).digest()
     return base64.urlsafe_b64encode(sig + cstruct).rstrip(b'=')
 
-class SignedSerializerTest(object):
+class TestSignedSerializer(object):
     def makeOne(self, secret, salt, hashalg='sha1', **kw):
         from webob.cookies import SignedSerializer
         return SignedSerializer(secret, salt, hashalg=hashalg, **kw)
