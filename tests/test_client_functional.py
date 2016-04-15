@@ -1,10 +1,11 @@
 import time
-import urllib
+
+import pytest
+
 from webob import Request, Response
 from webob.dec import wsgify
 from webob.client import SendRequest
 from .test_in_wsgiref import serve
-from nose.tools import assert_raises
 
 
 @wsgify
@@ -44,7 +45,8 @@ def test_client(client_app=None):
         assert req.environ.get('SERVER_NAME') is None
         assert req.environ.get('SERVER_PORT') is None
         assert req.environ.get('HTTP_HOST') is None
-        assert_raises(ValueError, req.send, client_app)
+        with pytest.raises(ValueError):
+            req.send(client_app)
         req = Request.blank(server.url)
         req.environ['CONTENT_LENGTH'] = 'not a number'
         assert req.send(client_app).status_code == 200
