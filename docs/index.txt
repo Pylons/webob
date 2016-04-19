@@ -322,6 +322,7 @@ Change History
    :maxdepth: 1
 
    whatsnew-1.5
+   whatsnew-1.6
    changes
 
 Status & License

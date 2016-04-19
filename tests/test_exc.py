@@ -1,10 +1,10 @@
+import pytest
+
 import json
 
 from webob.request import Request
 from webob.dec import wsgify
 from webob import exc as webob_exc
-
-from nose.tools import eq_, ok_, assert_equal, assert_raises
 
 @wsgify
 def method_not_allowed_app(req):
@@ -13,38 +13,37 @@ def method_not_allowed_app(req):
     return 'hello!'
 
 def test_noescape_null():
-    assert_equal(webob_exc.no_escape(None), '')
+    assert webob_exc.no_escape(None) == ''
 
 def test_noescape_not_basestring():
-    assert_equal(webob_exc.no_escape(42), '42')
+    assert webob_exc.no_escape(42) == '42'
 
 def test_noescape_unicode():
     class DummyUnicodeObject(object):
         def __unicode__(self):
             return '42'
     duo = DummyUnicodeObject()
-    assert_equal(webob_exc.no_escape(duo), '42')
+    assert webob_exc.no_escape(duo) == '42'
 
 def test_strip_tags_empty():
-    assert_equal(webob_exc.strip_tags(''), '')
+    assert webob_exc.strip_tags('') == ''
 
 def test_strip_tags_newline_to_space():
-    assert_equal(webob_exc.strip_tags('a\nb'), 'a b')
+    assert webob_exc.strip_tags('a\nb') == 'a b'
 
 def test_strip_tags_zaps_carriage_return():
-    assert_equal(webob_exc.strip_tags('a\rb'), 'ab')
+    assert webob_exc.strip_tags('a\rb') == 'ab'
 
 def test_strip_tags_br_to_newline():
-    assert_equal(webob_exc.strip_tags('a<br/>b'), 'a\nb')
+    assert webob_exc.strip_tags('a<br/>b') == 'a\nb'
 
 def test_strip_tags_zaps_comments():
-    assert_equal(webob_exc.strip_tags('a<!--b-->'), 'ab')
+    assert webob_exc.strip_tags('a<!--b-->') == 'ab'
 
 def test_strip_tags_zaps_tags():
-    assert_equal(webob_exc.strip_tags('foo<bar>baz</bar>'), 'foobaz')
+    assert webob_exc.strip_tags('foo<bar>baz</bar>') == 'foobaz'
 
 def test_HTTPException():
-    import warnings
     _called = []
     _result = object()
     def _response(environ, start_response):
@@ -53,10 +52,10 @@ def test_HTTPException():
     environ = {}
     start_response = object()
     exc = webob_exc.HTTPException('testing', _response)
-    ok_(exc.wsgi_response is _response)
+    assert exc.wsgi_response is _response
     result = exc(environ, start_response)
-    ok_(result is result)
-    assert_equal(_called, [(environ, start_response)])
+    assert result is result
+    assert _called == [(environ, start_response)]
 
 def test_exception_with_unicode_data():
     req = Request.blank('/', method='POST')
@@ -67,30 +66,29 @@ def test_WSGIHTTPException_headers():
     exc = webob_exc.WSGIHTTPException(headers=[('Set-Cookie', 'a=1'),
                                      ('Set-Cookie', 'a=2')])
     mixed = exc.headers.mixed()
-    assert mixed['set-cookie'] ==  ['a=1', 'a=2']
+    assert mixed['set-cookie'] == ['a=1', 'a=2']
 
 def test_WSGIHTTPException_w_body_template():
     from string import Template
     TEMPLATE = '$foo: $bar'
-    exc = webob_exc.WSGIHTTPException(body_template = TEMPLATE)
-    assert_equal(exc.body_template, TEMPLATE)
-    ok_(isinstance(exc.body_template_obj, Template))
-    eq_(exc.body_template_obj.substitute({'foo': 'FOO', 'bar': 'BAR'}),
-        'FOO: BAR')
+    exc = webob_exc.WSGIHTTPException(body_template=TEMPLATE)
+    assert exc.body_template == TEMPLATE
+    assert isinstance(exc.body_template_obj, Template)
+    assert exc.body_template_obj.substitute({'foo': 'FOO', 'bar': 'BAR'}) == 'FOO: BAR'
 
 def test_WSGIHTTPException_w_empty_body():
     class EmptyOnly(webob_exc.WSGIHTTPException):
         empty_body = True
     exc = EmptyOnly(content_type='text/plain', content_length=234)
-    ok_('content_type' not in exc.__dict__)
-    ok_('content_length' not in exc.__dict__)
+    assert 'content_type' not in exc.__dict__
+    assert 'content_length' not in exc.__dict__
 
 def test_WSGIHTTPException___str__():
     exc1 = webob_exc.WSGIHTTPException(detail='Detail')
-    eq_(str(exc1), 'Detail')
+    assert str(exc1) == 'Detail'
     class Explain(webob_exc.WSGIHTTPException):
         explanation = 'Explanation'
-    eq_(str(Explain()), 'Explanation')
+    assert str(Explain()) == 'Explanation'
 
 def test_WSGIHTTPException_plain_body_no_comment():
     class Explain(webob_exc.WSGIHTTPException):
@@ -98,8 +96,7 @@ def test_WSGIHTTPException_plain_body_no_comment():
         title = 'Testing'
         explanation = 'Explanation'
     exc = Explain(detail='Detail')
-    eq_(exc.plain_body({}),
-        '999 Testing\n\nExplanation\n\n Detail  ')
+    assert exc.plain_body({}) == '999 Testing\n\nExplanation\n\n Detail  '
 
 def test_WSGIHTTPException_html_body_w_comment():
     class Explain(webob_exc.WSGIHTTPException):
@@ -107,7 +104,7 @@ def test_WSGIHTTPException_html_body_w_comment():
         title = 'Testing'
         explanation = 'Explanation'
     exc = Explain(detail='Detail', comment='Comment')
-    eq_(exc.html_body({}),
+    assert exc.html_body({}) == (
         '<html>\n'
         ' <head>\n'
         '  <title>999 Testing</title>\n'
@@ -119,7 +116,7 @@ def test_WSGIHTTPException_html_body_w_comment():
         '<!-- Comment -->\n\n'
         ' </body>\n'
         '</html>'
-       )
+        )
 
 def test_WSGIHTTPException_json_body_no_comment():
     class ValidationError(webob_exc.WSGIHTTPException):
@@ -129,12 +126,12 @@ def test_WSGIHTTPException_json_body_no_comment():
 
     exc = ValidationError(detail='Attribute "xyz" is invalid.')
     body = exc.json_body({})
-    eq_(json.loads(body), {
+    assert json.loads(body) == {
         "code": "422 Validation Failed",
         "title": "Validation Failed",
         "message": "Validation of an attribute failed.<br /><br />\nAttribute"
                    ' "xyz" is invalid.\n\n',
-    })
+    }
 
 def test_WSGIHTTPException_respects_application_json():
     class ValidationError(webob_exc.WSGIHTTPException):
@@ -152,12 +149,12 @@ def test_WSGIHTTPException_respects_application_json():
         'REQUEST_METHOD': 'PUT',
         'HTTP_ACCEPT': 'application/json',
     }, start_response=start_response)
-    eq_(json.loads(resp[0].decode('utf-8')), {
+    assert json.loads(resp[0].decode('utf-8')) == {
         "code": "422 Validation Failed",
         "title": "Validation Failed",
         "message": "Validation of an attribute failed.<br /><br />\nAttribute"
                    ' "xyz" is invalid.\n\n',
-    })
+    }
 
 def test_WSGIHTTPException_allows_custom_json_formatter():
     def json_formatter(body, status, title, environ):
@@ -170,7 +167,7 @@ def test_WSGIHTTPException_allows_custom_json_formatter():
     exc = ValidationError(detail='Attribute "xyz" is invalid.',
                           json_formatter=json_formatter)
     body = exc.json_body({})
-    eq_(json.loads(body), {"fake": True})
+    assert json.loads(body) == {"fake": True}
 
 def test_WSGIHTTPException_generate_response():
     def start_response(status, headers, exc_info=None):
@@ -183,7 +180,7 @@ def test_WSGIHTTPException_generate_response():
        'HTTP_ACCEPT': 'text/html'
     }
     excep = webob_exc.WSGIHTTPException()
-    assert_equal( excep(environ,start_response), [
+    assert excep(environ, start_response) == [
         b'<html>\n'
         b' <head>\n'
         b'  <title>500 Internal Server Error</title>\n'
@@ -194,8 +191,7 @@ def test_WSGIHTTPException_generate_response():
         b'\n'
         b'\n\n'
         b' </body>\n'
-        b'</html>' ]
-    )
+        b'</html>']
 
 def test_WSGIHTTPException_call_w_body():
     def start_response(status, headers, exc_info=None):
@@ -208,7 +204,7 @@ def test_WSGIHTTPException_call_w_body():
     }
     excep = webob_exc.WSGIHTTPException()
     excep.body = b'test'
-    assert_equal( excep(environ,start_response), [b'test'] )
+    assert  excep(environ,start_response) == [b'test'] 
 
 
 def test_WSGIHTTPException_wsgi_response():
@@ -221,7 +217,7 @@ def test_WSGIHTTPException_wsgi_response():
        'REQUEST_METHOD': 'HEAD'
     }
     excep = webob_exc.WSGIHTTPException()
-    assert_equal( excep.wsgi_response(environ,start_response), [] )
+    assert  excep.wsgi_response(environ,start_response) == [] 
 
 def test_WSGIHTTPException_exception_newstyle():
     def start_response(status, headers, exc_info=None):
@@ -234,7 +230,7 @@ def test_WSGIHTTPException_exception_newstyle():
     }
     excep = webob_exc.WSGIHTTPException()
     webob_exc.newstyle_exceptions = True
-    assert_equal( excep(environ,start_response), [] )
+    assert  excep(environ,start_response) == [] 
 
 def test_WSGIHTTPException_exception_no_newstyle():
     def start_response(status, headers, exc_info=None):
@@ -247,7 +243,7 @@ def test_WSGIHTTPException_exception_no_newstyle():
     }
     excep = webob_exc.WSGIHTTPException()
     webob_exc.newstyle_exceptions = False
-    assert_equal( excep(environ,start_response), [] )
+    assert  excep(environ,start_response) == [] 
 
 def test_HTTPOk_head_of_proxied_head():
     # first set up a response to a HEAD request
@@ -266,9 +262,9 @@ def test_HTTPOk_head_of_proxied_head():
             return [HELLO_WORLD]
 
     def verify_response(resp, description):
-        assert_equal(resp.content_type, CONTENT_TYPE, description)
-        assert_equal(resp.content_length, len(HELLO_WORLD), description)
-        assert_equal(resp.body, b'', description)
+        assert resp.content_type == CONTENT_TYPE, description
+        assert resp.content_length == len(HELLO_WORLD), description
+        assert resp.body == b'', description
 
     req = Request.blank('/', method='HEAD')
     resp1 = req.get_response(head_app)
@@ -297,7 +293,7 @@ def test_HTTPMove():
        'PATH_INFO': '/',
     }
     m = webob_exc._HTTPMove()
-    assert_equal( m( environ, start_response ), [] )
+    assert  m( environ, start_response ) == [] 
 
 def test_HTTPMove_location_not_none():
     def start_response(status, headers, exc_info=None):
@@ -310,7 +306,7 @@ def test_HTTPMove_location_not_none():
        'PATH_INFO': '/',
     }
     m = webob_exc._HTTPMove(location='http://example.com')
-    assert_equal( m( environ, start_response ), [] )
+    assert  m( environ, start_response ) == [] 
 
 def test_HTTPMove_location_newlines():
     environ = {
@@ -320,14 +316,14 @@ def test_HTTPMove_location_newlines():
        'REQUEST_METHOD': 'HEAD',
        'PATH_INFO': '/',
     }
-    assert_raises(ValueError, webob_exc._HTTPMove,
-            location='http://example.com\r\nX-Test: false')
+    with pytest.raises(ValueError):
+        webob_exc._HTTPMove(location='http://example.com\r\nX-Test: false')
 
 def test_HTTPMove_add_slash_and_location():
     def start_response(status, headers, exc_info=None):
         pass
-    assert_raises( TypeError, webob_exc._HTTPMove, location='http://example.com',
-                   add_slash=True )
+    with pytest.raises(TypeError):
+        webob_exc._HTTPMove(location='http://example.com', add_slash=True)
 
 def test_HTTPMove_call_add_slash():
     def start_response(status, headers, exc_info=None):
@@ -341,7 +337,7 @@ def test_HTTPMove_call_add_slash():
     }
     m = webob_exc._HTTPMove()
     m.add_slash = True
-    assert_equal( m( environ, start_response ), [] )
+    assert  m( environ, start_response ) == [] 
 
 def test_HTTPMove_call_query_string():
     def start_response(status, headers, exc_info=None):
@@ -356,7 +352,7 @@ def test_HTTPMove_call_query_string():
     m.add_slash = True
     environ[ 'QUERY_STRING' ] = 'querystring'
     environ['PATH_INFO'] = '/'
-    assert_equal( m( environ, start_response ), [] )
+    assert  m( environ, start_response ) == [] 
 
 def test_HTTPFound_unused_environ_variable():
     class Crashy(object):
@@ -376,7 +372,7 @@ def test_HTTPFound_unused_environ_variable():
     }
 
     m = webob_exc._HTTPMove(location='http://www.example.com')
-    assert_equal( m( environ, start_response ), [
+    assert m(environ, start_response) == [
         b'<html>\n'
         b' <head>\n'
         b'  <title>500 Internal Server Error</title>\n'
@@ -386,42 +382,41 @@ def test_HTTPFound_unused_environ_variable():
         b'  The resource has been moved to '
         b'<a href="http://www.example.com">'
         b'http://www.example.com</a>;\n'
-        b'you should be redirected automatically.\n' 
+        b'you should be redirected automatically.\n'
         b'\n\n'
         b' </body>\n'
-        b'</html>' ] 
-    )
+        b'</html>']
 
 def test_HTTPExceptionMiddleware_ok():
-    def app( environ, start_response ):
+    def app(environ, start_response):
         return '123'
     application = app
     m = webob_exc.HTTPExceptionMiddleware(application)
     environ = {}
     start_response = None
-    res = m( environ, start_response )
-    assert_equal( res, '123' )
+    res = m(environ, start_response)
+    assert res == '123'
 
 def test_HTTPExceptionMiddleware_exception():
-    def wsgi_response( environ, start_response):
+    def wsgi_response(environ, start_response):
         return '123'
-    def app( environ, start_response ):
-        raise webob_exc.HTTPException( None, wsgi_response )
+    def app(environ, start_response):
+        raise webob_exc.HTTPException(None, wsgi_response)
     application = app
     m = webob_exc.HTTPExceptionMiddleware(application)
     environ = {}
     start_response = None
-    res = m( environ, start_response )
-    assert_equal( res, '123' )
+    res = m(environ, start_response)
+    assert res == '123'
 
 def test_HTTPExceptionMiddleware_exception_exc_info_none():
     class DummySys:
         def exc_info(self):
             return None
-    def wsgi_response( environ, start_response):
+    def wsgi_response(environ, start_response):
         return start_response('200 OK', [], exc_info=None)
-    def app( environ, start_response ):
-        raise webob_exc.HTTPException( None, wsgi_response )
+    def app(environ, start_response):
+        raise webob_exc.HTTPException(None, wsgi_response)
     application = app
     m = webob_exc.HTTPExceptionMiddleware(application)
     environ = {}
@@ -430,8 +425,8 @@ def test_HTTPExceptionMiddleware_exception_exc_info_none():
     try:
         old_sys = webob_exc.sys
         sys = DummySys()
-        res = m( environ, start_response )
-        assert_equal( res, None )
+        res = m(environ, start_response)
+        assert res is None
     finally:
         webob_exc.sys = old_sys
 
