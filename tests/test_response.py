@@ -1,3 +1,4 @@
+# coding: utf-8
 import zlib
 import io
 
@@ -915,6 +916,15 @@ def test_location():
     assert req.get_response(res).location == 'http://localhost/test.html'
     res.location = '/test2.html'
     assert req.get_response(res).location == 'http://localhost/test2.html'
+
+def test_location_uses_urlencode():
+    res = Response()
+    res.location = u'/ümläut.html'
+    assert res.location == '/%C3%BCml%C3%A4ut.html'
+    res.location = u'http://höst:80/ümläut.html?query=föö'
+    assert (
+        res.location ==
+        'http://h%C3%B6st:80/%C3%BCml%C3%A4ut.html?query=f%C3%B6%C3%B6')
 
 def test_request_uri_http():
     # covers webob/response.py:1152
