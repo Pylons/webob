@@ -55,6 +55,11 @@ Features
 Bugfixes
 ~~~~~~~~
 
+- Response.from_file now parses the status line correctly when the status line
+  contains an HTTP with version, as well as a status text that contains
+  multiple white spaces (e.g HTTP/1.1 404 Not Found). See
+  https://github.com/Pylons/webob/issues/250
+
 - Request.decode would attempt to read from an already consumed stream, it is
   now reading from the correct stream. See
   https://github.com/Pylons/webob/pull/183 for more information.
