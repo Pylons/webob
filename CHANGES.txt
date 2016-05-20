@@ -1,3 +1,15 @@
+1.6.1 (2016-05-20)
+------------------
+
+Bugfix
+~~~~~~
+
+- Response.from_file now parses the status line correctly when the status line
+  contains an HTTP with version, as well as a status text that contains
+  multiple white spaces (e.g 404 Not Found). See
+  https://github.com/Pylons/webob/issues/250
+
+
 1.6.0 (2016-03-15)
 ------------------
 
