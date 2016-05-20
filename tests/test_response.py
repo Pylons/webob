@@ -504,6 +504,13 @@ def test_file_with_http_version():
     eq_(res.status_code, 200)
     eq_(res.status, '200 OK')
 
+def test_file_with_http_version_more_status():
+    inp = io.BytesIO(b'HTTP/1.1 404 Not Found\r\n\r\nSome data...')
+
+    res = Response.from_file(inp)
+    assert res.status_code == 404
+    assert res.status == '404 Not Found'
+
 def test_set_status():
     res = Response()
     res.status = "200"
