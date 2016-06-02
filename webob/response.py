@@ -176,7 +176,7 @@ class Response(object):
             _http = b'HTTP/'
 
         if status.startswith(_http):
-            (http_ver, status_num, status_text) = status.split()
+            (http_ver, status_num, status_text) = status.split(None, 2)
             status = '%s %s' % (native_(status_num), native_(status_text))
 
         while 1:

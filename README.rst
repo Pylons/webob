@@ -20,14 +20,14 @@ parse HTTP responses.
 Support and Documentation
 -------------------------
 
-See the `WebOb Documentation website <http://webob.readthedocs.org/>`_ to view
+See the `WebOb Documentation website <https://webob.readthedocs.io/>`_ to view
 documentation, report bugs, and obtain support.
 
 License
 -------
 
 WebOb is offered under the `MIT-license
-<http://webob.readthedocs.org/en/latest/license.html>`_.
+<https://webob.readthedocs.io/en/latest/license.html>`_.
 
 Authors
 -------
