@@ -170,7 +170,7 @@ from string import Template
 import re
 import sys
 
-from webob.acceptparse import Accept
+from webob.acceptparse import MIMEAccept
 from webob.compat import (
     class_types,
     text_,
@@ -179,19 +179,18 @@ from webob.compat import (
     )
 from webob.request import Request
 from webob.response import Response
-from webob.util import (
-    html_escape,
-    warn_deprecation,
-    )
+from webob.util import html_escape
 
 tag_re = re.compile(r'<.*?>', re.S)
-br_re = re.compile(r'<br.*?>', re.I|re.S)
+br_re = re.compile(r'<br.*?>', re.I | re.S)
 comment_re = re.compile(r'<!--|-->')
 
 def lazify(func):
     class _lazyfied(object):
-        def __init__(self, s): self._s = s
-        def __str__(self): return func(self._s)
+        def __init__(self, s):
+            self._s = s
+        def __str__(self):
+            return func(self._s)
     return _lazyfied
 
 def no_escape(value):
@@ -327,9 +326,9 @@ ${body}''')
             del self.content_length
         headerlist = list(self.headerlist)
         accept_value = environ.get('HTTP_ACCEPT', '')
-        accept = Accept(accept_value)
-        match = accept.best_match(['application/json', 'text/html',
-                                   'text/plain'], default_match='text/plain')
+        accept = MIMEAccept(accept_value)
+        match = accept.best_match(['text/html', 'application/json'])
+
         if match == 'text/html':
             content_type = 'text/html'
             body = self.html_body(environ)
@@ -343,11 +342,11 @@ ${body}''')
         if isinstance(body, text_type):
             extra_kw.update(charset='utf-8')
         resp = Response(body,
-            status=self.status,
-            headerlist=headerlist,
-            content_type=content_type,
-            **extra_kw
-        )
+                        status=self.status,
+                        headerlist=headerlist,
+                        content_type=content_type,
+                        **extra_kw
+                        )
         resp.content_type = content_type
         return resp(environ, start_response)
 
