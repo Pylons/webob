@@ -105,29 +105,34 @@ class Response(object):
             self._status = '200 OK'
         else:
             self.status = status
+        # initialize headers, content_type, and charset
+        self._headers = None
         if headerlist is None:
             self._headerlist = []
         else:
             self._headerlist = headerlist
-        self._headers = None
-        if content_type is None:
-            content_type = self.default_content_type
-        charset = None
-        if 'charset' in kw:
-            charset = kw.pop('charset')
-        elif self.default_charset:
-            if content_type and 'charset=' not in content_type:
-                if (content_type == 'text/html'
+        content_type = content_type or self.headers.get('Content-Type') or \
+                self.default_content_type
+        if 'Content-Type' not in self.headers:
+            self.headers['Content-Type'] = content_type
+        charset = kw.get('charset')
+        if content_type:
+            if charset:
+                self.charset = charset
+            elif self.default_charset:
+                charset_match = CHARSET_RE.search(content_type)
+                if charset_match:
+                    charset = self.charset
+                elif (content_type == 'text/html'
                         or content_type.startswith('text/')
-                        or _is_xml(content_type)
-                        or _is_json(content_type)):
+                        or _is_xml(content_type)):
                     charset = self.default_charset
-        if content_type and charset and not _is_json(content_type):
-            content_type += '; charset=' + charset
-        elif self._headerlist and charset:
-            self.charset = charset
-        if not self._headerlist and content_type:
-            self._headerlist.append(('Content-Type', content_type))
+                    self.charset = charset
+                elif _is_json(content_type):
+                    # don't set charset on the Content-Type for standards
+                    # compliance, but still need it locally to encode body text
+                    self.charset = None
+                    charset = self.default_charset
         if conditional_response is None:
             self.conditional_response = self.default_conditional_response
         else:
@@ -140,10 +145,7 @@ class Response(object):
                         "charset")
                 body = body.encode(charset)
             app_iter = [body]
-            if headerlist is None:
-                self._headerlist.append(('Content-Length', str(len(body))))
-            else:
-                self.headers['Content-Length'] = str(len(body))
+            self.headers['Content-Length'] = str(len(body))
         self._app_iter = app_iter
         for name, value in kw.items():
             if not hasattr(self.__class__, name):
@@ -593,7 +595,10 @@ class Response(object):
 
     def _charset__get(self):
         """
-        Get/set the charset (in the Content-Type)
+        Get/set the charset specified in Content-Type.
+
+        In the case JSON content where the charset param is not standards
+        compliant, we ignore this.
         """
         header = self.headers.get('Content-Type')
         if not header:
@@ -607,10 +612,12 @@ class Response(object):
         if charset is None:
             del self.charset
             return
-        header = self.headers.pop('Content-Type', None)
+        header = self.headers.get('Content-Type', None)
         if header is None:
             raise AttributeError("You cannot set the charset when no "
                                  "content-type is defined")
+        if _is_json(header):
+            return
         match = CHARSET_RE.search(header)
         if match:
             header = header[:match.start()] + header[match.end():]
@@ -675,7 +682,7 @@ class Response(object):
         """
         A dictionary of all the parameters in the content type.
 
-        (This is not a view, set to change, modifications of the dict would not
+        (This is not a view, set to change, modifications of the dict will not
         be applied otherwise)
         """
         params = self.headers.get('Content-Type', '')
@@ -695,10 +702,14 @@ class Response(object):
         for k, v in sorted(value_dict.items()):
             if not _OK_PARAM_RE.search(v):
                 v = '"%s"' % v.replace('"', '\\"')
-            params.append('; %s=%s' % (k, v))
+            # charset has constraints which we handle in its setter
+            if k != 'charset':
+                params.append('; %s=%s' % (k, v))
         ct = self.headers.pop('Content-Type', '').split(';', 1)[0]
         ct += ''.join(params)
         self.headers['Content-Type'] = ct
+        if 'charset' in value_dict:
+            self.charset = value_dict['charset']
 
     def _content_type_params__del(self):
         self.headers['Content-Type'] = self.headers.get(
