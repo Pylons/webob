@@ -338,14 +338,10 @@ ${body}''')
         else:
             content_type = 'text/plain'
             body = self.plain_body(environ)
-        extra_kw = {}
-        if isinstance(body, text_type):
-            extra_kw.update(charset='utf-8')
         resp = Response(body,
                         status=self.status,
                         headerlist=headerlist,
                         content_type=content_type,
-                        **extra_kw
                         )
         resp.content_type = content_type
         return resp(environ, start_response)

@@ -60,6 +60,7 @@ def test_response():
     del req.environ
     with pytest.raises(TypeError):
         Response(charset=None,
+                 content_type='image/jpeg',
                  body=text_(b"unicode body"))
     with pytest.raises(TypeError):
         Response(wrong_key='dummy')
@@ -139,6 +140,15 @@ def test_init_keeps_specified_charset_when_json():
     content_type = 'application/json;charset=ISO-8859-1'
     expected = content_type
     assert Response(content_type=content_type).headers['content-type'] == expected
+
+def test_set_charset_fails_when_json():
+    content_type = 'application/json'
+    expected = content_type
+    res = Response(content_type=content_type)
+    res.charset = 'utf-8'
+    assert res.headers['content-type'] == expected
+    res.content_type_params = {'charset': 'utf-8'}
+    assert res.headers['content-type'] == expected
 
 
 def test_cookies():
