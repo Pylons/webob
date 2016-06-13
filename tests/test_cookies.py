@@ -72,6 +72,18 @@ def test_cookie_httponly():
     c[b'foo'].httponly = True
     assert c.serialize() == 'foo=bar; HttpOnly'
 
+def test_cookie_samesite_strict():
+    c = cookies.Cookie()
+    c[b"foo"] = b"bar"
+    c[b"foo"].samesite = b"Strict"
+    assert c.serialize() == "foo=bar; SameSite=Strict"
+
+def test_cookie_samesite_lax():
+    c = cookies.Cookie()
+    c[b"foo"] = b"bar"
+    c[b"foo"].samesite = b"Lax"
+    assert c.serialize() == "foo=bar; SameSite=Lax"
+
 def test_cookie_reserved_keys():
     c = cookies.Cookie('dismiss-top=6; CP=null*; $version=42; a=42')
     assert '$version' not in c
@@ -94,6 +106,13 @@ def test_serialize_cookie_date():
     cdate_delta = cookies.serialize_cookie_date(timedelta(seconds=10))
     cdate_int = cookies.serialize_cookie_date(10)
     assert cdate_delta == cdate_int
+
+def test_serialize_samesite():
+    assert cookies.serialize_samesite(b"Lax") == b"Lax"
+    assert cookies.serialize_samesite(b"Strict") == b"Strict"
+
+    with pytest.raises(ValueError):
+        cookies.serialize_samesite(b"SomethingElse")
 
 def test_ch_unquote():
     assert cookies._unquote(b'"hello world') == b'"hello world'
@@ -615,6 +634,14 @@ class TestSignedCookieProfile(CommonCookieProfile):
 
         for cookie in ret:
             assert '; HttpOnly' in cookie[1]
+
+    @pytest.mark.parametrize("samesite", [b"Strict", b"Lax"])
+    def test_with_samesite(self, samesite):
+        cookie = self.makeOne(samesite=samesite)
+        ret = cookie.get_headers("test")
+
+        for cookie in ret:
+            assert "; SameSite=" + samesite.decode("ascii") in cookie[1]
 
     def test_cookie_length(self):
         cookie = self.makeOne()

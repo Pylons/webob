@@ -237,6 +237,13 @@ def serialize_cookie_date(v):
     r = time.strftime('%%s, %d-%%s-%Y %H:%M:%S GMT', v)
     return bytes_(r % (weekdays[v[6]], months[v[1]]), 'ascii')
 
+
+def serialize_samesite(v):
+    if v.lower() not in (b"strict", b"lax"):
+        raise ValueError("SameSite must be b'Strict' or b'Lax'")
+    return v
+
+
 class Morsel(dict):
     __slots__ = ('name', 'value')
     def __init__(self, name, value):
@@ -252,6 +259,7 @@ class Morsel(dict):
     max_age = cookie_property(b'max-age', serialize_max_age)
     httponly = cookie_property(b'httponly', bool)
     secure = cookie_property(b'secure', bool)
+    samesite = cookie_property(b'samesite', serialize_samesite)
 
     def __setitem__(self, k, v):
         k = bytes_(k.lower(), 'ascii')
@@ -277,6 +285,8 @@ class Morsel(dict):
                 add(b'secure')
             if self.httponly:
                 add(b'HttpOnly')
+            if self.samesite:
+                add(b'SameSite=' + self.samesite)
         return native_(b'; '.join(result), 'ascii')
 
     __str__ = serialize
@@ -424,11 +434,11 @@ _c_renames = {
     }
 _c_valkeys = sorted(_c_renames)
 _c_keys = set(_c_renames)
-_c_keys.update([b'expires', b'secure', b'httponly'])
+_c_keys.update([b'expires', b'secure', b'httponly', b'samesite'])
 
 
 def make_cookie(name, value, max_age=None, path='/', domain=None,
-                secure=False, httponly=False, comment=None):
+                secure=False, httponly=False, comment=None, samesite=None):
     """ Generate a cookie value.  If ``value`` is None, generate a cookie value
     with an expiration date in the past"""
 
@@ -472,6 +482,8 @@ def make_cookie(name, value, max_age=None, path='/', domain=None,
         morsel.expires = expires
     if comment is not None:
         morsel.comment = bytes_(comment)
+    if samesite is not None:
+        morsel.samesite = samesite
     return morsel.serialize()
 
 class JSONSerializer(object):
@@ -629,6 +641,10 @@ class CookieProfile(object):
       Hide the cookie from Javascript by setting the 'HttpOnly' flag of the
       session cookie. Default: ``False``.
 
+    ``samesite``
+      The 'SameSite' attribute of the cookie, can be either ``b"Strict"``,
+      ``b"Lax"``, or ``None``.
+
     ``path``
       The path used for the session cookie. Default: ``'/'``.
 
@@ -651,6 +667,7 @@ class CookieProfile(object):
                  secure=False,
                  max_age=None,
                  httponly=None,
+                 samesite=None,
                  path='/',
                  domains=None,
                  serializer=None
@@ -659,6 +676,7 @@ class CookieProfile(object):
         self.secure = secure
         self.max_age = max_age
         self.httponly = httponly
+        self.samesite = samesite
         self.path = path
         self.domains = domains
 
@@ -681,6 +699,7 @@ class CookieProfile(object):
             self.secure,
             self.max_age,
             self.httponly,
+            self.samesite,
             self.path,
             self.domains,
             self.serializer,
@@ -710,7 +729,8 @@ class CookieProfile(object):
                 return None
 
     def set_cookies(self, response, value, domains=_default, max_age=_default,
-                    path=_default, secure=_default, httponly=_default):
+                    path=_default, secure=_default, httponly=_default,
+                    samesite=_default):
         """ Set the cookies on a response."""
         cookies = self.get_headers(
             value,
@@ -718,13 +738,15 @@ class CookieProfile(object):
             max_age=max_age,
             path=path,
             secure=secure,
-            httponly=httponly
+            httponly=httponly,
+            samesite=samesite,
             )
         response.headerlist.extend(cookies)
         return response
 
     def get_headers(self, value, domains=_default, max_age=_default,
-                    path=_default, secure=_default, httponly=_default):
+                    path=_default, secure=_default, httponly=_default,
+                    samesite=_default):
         """ Retrieve raw headers for setting cookies.
 
         Returns a list of headers that should be set for the cookies to
@@ -742,10 +764,12 @@ class CookieProfile(object):
             max_age=max_age,
             path=path,
             secure=secure,
-            httponly=httponly
+            httponly=httponly,
+            samesite=samesite,
             )
 
-    def _get_cookies(self, value, domains, max_age, path, secure, httponly):
+    def _get_cookies(self, value, domains, max_age, path, secure, httponly,
+                     samesite):
         """Internal function
 
         This returns a list of cookies that are valid HTTP Headers.
@@ -757,6 +781,8 @@ class CookieProfile(object):
         :path: The path, overrides any set in the CookieProfile
         :secure: Set this cookie to secure, overrides any set in CookieProfile
         :httponly: Set this cookie to HttpOnly, overrides any set in CookieProfile
+        :samesite: Set this cookie to be for only the same site, overrides any
+                   set in CookieProfile.
 
         """
 
@@ -776,6 +802,9 @@ class CookieProfile(object):
         if httponly is _default:
             httponly = self.httponly
 
+        if samesite is _default:
+            samesite = self.samesite
+
         # Length selected based upon http://browsercookielimits.x64.me
         if value is not None and len(value) > 4093:
             raise ValueError(
@@ -792,6 +821,7 @@ class CookieProfile(object):
                     path=path,
                     max_age=max_age,
                     httponly=httponly,
+                    samesite=samesite,
                     secure=secure
             )
             cookies.append(('Set-Cookie', cookievalue))
@@ -805,6 +835,7 @@ class CookieProfile(object):
                     domain=domain,
                     max_age=max_age,
                     httponly=httponly,
+                    samesite=samesite,
                     secure=secure,
                 )
                 cookies.append(('Set-Cookie', cookievalue))
@@ -848,6 +879,10 @@ class SignedCookieProfile(CookieProfile):
       Hide the cookie from Javascript by setting the 'HttpOnly' flag of the
       session cookie. Default: ``False``.
 
+    ``samesite``
+      The 'SameSite' attribute of the cookie, can be either ``b"Strict"``,
+      ``b"Lax"``, or ``None``.
+
     ``path``
       The path used for the session cookie. Default: ``'/'``.
 
@@ -870,6 +905,7 @@ class SignedCookieProfile(CookieProfile):
                  secure=False,
                  max_age=None,
                  httponly=False,
+                 samesite=None,
                  path="/",
                  domains=None,
                  hashalg='sha512',
@@ -892,6 +928,7 @@ class SignedCookieProfile(CookieProfile):
             secure=secure,
             max_age=max_age,
             httponly=httponly,
+            samesite=samesite,
             path=path,
             domains=domains,
             serializer=signed_serializer,
@@ -907,6 +944,7 @@ class SignedCookieProfile(CookieProfile):
             self.secure,
             self.max_age,
             self.httponly,
+            self.samesite,
             self.path,
             self.domains,
             self.hashalg,
