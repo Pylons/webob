@@ -138,6 +138,8 @@ def header_getter(header, rfc_section):
     def fset(r, value):
         fdel(r)
         if value is not None:
+            value = value.strip()
+
             if '\n' in value or '\r' in value:
                 raise ValueError('Header value may not contain control characters')
 
