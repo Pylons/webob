@@ -8,3 +8,11 @@ Bugfix
   contains an HTTP with version, as well as a status text that contains
   multiple white spaces (e.g HTTP/1.1 404 Not Found). See
   https://github.com/Pylons/webob/issues/250
+
+- Response now has a new property named `has_body` that may be used to
+  interrogate the Response to find out if `Response.body` is or isn't set.
+
+  This is used in the exception handling code so that if you use a WebOb HTTP
+  Exception and pass a generator to `app_iter` WebOb won't attempt to read the
+  whole thing and instead allows it to be returned to the WSGI server. See
+  https://github.com/Pylons/webob/pull/259 
