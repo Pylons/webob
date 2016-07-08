@@ -437,6 +437,37 @@ def test_app_iter_range_inner_method():
     res = Response(app_iter=FakeAppIter())
     assert res.app_iter_range(30, 40), ('you win', 30 == 40)
 
+def test_has_body():
+    empty = Response()
+    assert not empty.has_body
+
+    with_list = Response(app_iter=['1'])
+    assert with_list.has_body
+
+    with_empty_list = Response(app_iter=[b''])
+    assert not with_empty_list.has_body
+
+    with_body = Response(body='Seomthing')
+    assert with_body.has_body
+
+    with_none_app_iter = Response(app_iter=None)
+    assert not with_none_app_iter.has_body
+
+    with_none_body = Response(body=None)
+    assert not with_none_body.has_body
+
+    # key feature: has_body should not read app_iter
+    app_iter = iter(['1', '2'])
+    not_iterating = Response(app_iter=app_iter)
+    assert not_iterating.has_body
+    assert next(app_iter) == '1'
+
+    # messed with private attribute but method should nonetheless not
+    # return True
+    messing_with_privates = Response()
+    messing_with_privates._app_iter = None
+    assert not messing_with_privates.has_body
+
 def test_content_type_in_headerlist():
     # Couldn't manage to clone Response in order to modify class
     # attributes safely. Shouldn't classes be fresh imported for every
