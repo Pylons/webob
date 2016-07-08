@@ -405,6 +405,24 @@ class Response(object):
 
     json = json_body = property(_json_body__get, _json_body__set, _json_body__del)
 
+    def _has_body__get(self):
+        """Determine if the the response has a body. In contrast to simply
+        accessing ``body`` this method will *not* read the underlying app_iter."""
+        app_iter = self._app_iter
+
+        if isinstance(app_iter, list) and len(app_iter) == 1:
+            if app_iter[0] != b'':
+                return True
+            else:
+                return False
+
+        if app_iter is None:  # pragma: no cover (just a safeguard, houl)
+            return False
+
+        return True
+
+    has_body = property(_has_body__get)
+
 
     #
     # text, unicode_body, ubody
