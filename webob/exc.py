@@ -352,7 +352,7 @@ ${body}''')
 
     def __call__(self, environ, start_response):
         is_head = environ['REQUEST_METHOD'] == 'HEAD'
-        if self.body or self.empty_body or is_head:
+        if self.has_body or self.empty_body or is_head:
             app_iter = Response.__call__(self, environ, start_response)
         else:
             app_iter = self.generate_response(environ, start_response)
