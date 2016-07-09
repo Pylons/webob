@@ -647,12 +647,32 @@ class Response(object):
 
     def _content_type__get(self):
         """
-        Get/set the Content-Type header (or None), *without* the
-        charset or any parameters.
+        Get/set the Content-Type header. If no Content-Type header is set, this
+        will return None.
 
-        If you include parameters (or ``;`` at all) when setting the
-        content_type, any existing parameters will be deleted;
-        otherwise they will be preserved.
+        .. versionchanged:: 1.7
+
+            Setting a new Content-Type will remove charset from the
+            Content-Type parameters if the Content-Type is not ``text/*`` or XML
+            (``application/xml``, or ``*/*+xml``)
+
+            In the future all parameters will be deleted upon changing the
+            Content-Type, if you explicitly want to transfer over existing
+            parameters, you may retrieve them with ``content_type_params`` and
+            set them after setting ``content_type``.
+
+            .. code::
+
+                resp = Response()
+                params = resp.content_type_params
+                resp.content_type = 'application/something'
+                resp.content_type_params = params
+
+        .. deprecated:: 1.7
+
+            If you include parameters (or ``;`` at all) when setting the
+            content_type, any existing parameters will be deleted;
+            otherwise they will be preserved.
         """
         header = self.headers.get('Content-Type')
         if not header:
@@ -666,9 +686,20 @@ class Response(object):
         if ';' not in value:
             header = self.headers.get('Content-Type', '')
             if ';' in header:
-                params = header.split(';', 1)[1]
-                value += ';' + params
-        self.headers['Content-Type'] = value
+                warn_deprecation(
+                    'Preserving Content-Type parameters. In the '
+                    'future upon changing the Content-Type no paramaters '
+                    'will be preserved.', 1.9, 1)
+                params = self.content_type_params
+                self.headers['Content-Type'] = value
+
+                if 'charset' in params:
+                    if not _content_type_has_charset(value):
+                        del params['charset']
+
+                self.content_type_params = params
+        else:
+            self.headers['Content-Type'] = value
 
     def _content_type__del(self):
         self.headers.pop('Content-Type', None)
