@@ -408,11 +408,10 @@ class Response(object):
     def _json_body__get(self):
         """Access the body of the response as JSON"""
         # Note: UTF-8 is a content-type specific default for JSON:
-        return json.loads(self.body.decode(self.charset or 'UTF-8'))
+        return json.loads(self.body.decode('UTF-8'))
 
     def _json_body__set(self, value):
-        self.body = json.dumps(value, separators=(',', ':')).encode(
-            self.charset or 'UTF-8')
+        self.body = json.dumps(value, separators=(',', ':')).encode('UTF-8')
 
     def _json_body__del(self):
         del self.body
