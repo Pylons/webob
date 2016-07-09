@@ -268,7 +268,10 @@ class Response(object):
 
         # Attempt to get the status code itself, if this fails we should fail
         try:
-            status_code = int(value.split()[0])
+            # We don't need this value anywhere, we just want to validate it's
+            # an integer. So we are using the side-effect of int() raises a
+            # ValueError as a test
+            int(value.split()[0])
         except ValueError:
             raise ValueError('Invalid status code, integer required.')
         self._status = value
