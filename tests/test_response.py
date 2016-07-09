@@ -36,9 +36,9 @@ def test_response():
     res.body = b'Not OK'
     assert b''.join(res.app_iter) == b'Not OK'
     res.charset = 'iso8859-1'
-    assert res.headers['content-type'] == 'text/html; charset=iso8859-1'
+    assert 'text/html; charset=iso8859-1' == res.headers['content-type']
     res.content_type = 'text/xml'
-    assert res.headers['content-type'] == 'text/xml; charset=iso8859-1'
+    assert 'text/xml; charset=iso8859-1' == res.headers['content-type']
     res.headers = {'content-type': 'text/html'}
     assert res.headers['content-type'] == 'text/html'
     assert res.headerlist == [('content-type', 'text/html')]
