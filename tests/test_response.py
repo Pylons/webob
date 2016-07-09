@@ -143,6 +143,9 @@ def test_init_keeps_specified_charset_when_json():
     expected = content_type
     assert Response(content_type=content_type).headers['content-type'] == expected
 
+def test_init_doesnt_add_default_content_type_with_bodyless_status():
+    assert Response(status='204 No Content').content_type is None
+
 def test_cookies():
     res = Response()
     # test unicode value

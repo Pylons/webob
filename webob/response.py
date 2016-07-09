@@ -126,17 +126,21 @@ class Response(object):
         content_type = content_type or self.headers.get('Content-Type') or \
             self.default_content_type
 
-        if 'Content-Type' not in self.headers and content_type:
+        if (
+            'Content-Type' not in self.headers and
+            content_type and
+            _code_has_body(self.status_code)
+        ):
             self.headers['Content-Type'] = content_type
 
         # Set up the charset
         charset = kw.get('charset')
 
-        if content_type:
+        if self.content_type:
             if charset:
                 self.charset = charset
             elif not self.charset and self.default_charset:
-                if _content_type_has_charset(content_type):
+                if _content_type_has_charset(self.content_type):
                     self.charset = self.default_charset
 
             body_encoding = self.charset or body_encoding
@@ -1305,6 +1309,13 @@ class EmptyResponse(object):
         raise StopIteration()
 
     __next__ = next # py3
+
+def _code_has_body(status_code):
+    return (
+        (not (100 <= status_code < 199)) and
+        (status_code != 204) and
+        (status_code != 304)
+    )
 
 def _is_xml(content_type):
     return (
