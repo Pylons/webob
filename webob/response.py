@@ -256,7 +256,7 @@ class Response(object):
         else:
             self.status_code = code
             return
-        if PY3: # pragma: no cover
+        if PY3:
             if isinstance(value, bytes):
                 value = value.decode('ascii')
         elif isinstance(value, text_type):
@@ -362,7 +362,7 @@ class Response(object):
         if len(body) == 0:
             # if body-length is zero, we assume it's a HEAD response and
             # leave content_length alone
-            pass # pragma: no cover (no idea why necessary, it's hit)
+            pass
         elif self.content_length is None:
             self.content_length = len(body)
         elif self.content_length != len(body):
