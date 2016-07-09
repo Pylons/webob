@@ -1271,20 +1271,23 @@ class EmptyResponse(object):
 
     __next__ = next # py3
 
-def _is_json(content_type):
+def _is_xml(content_type):
     return (
-        content_type.startswith('application/json') or (
+        content_type.startswith('application/xml') or
+        (
             content_type.startswith('application/') and
-            content_type.endswith('+json')
+            content_type.endswith('+xml')
+        ) or
+        (
+            content_type.startswith('image/') and
+            content_type.endswith('+xml')
         )
     )
 
-def _is_xml(content_type):
+def _content_type_has_charset(content_type):
     return (
-        content_type.startswith('application/xml') or (
-            content_type.startswith('application/') and
-            content_type.endswith('+xml')
-        )
+        content_type.startswith('text/') or
+        _is_xml(content_type)
     )
 
 def _request_uri(environ):
