@@ -616,7 +616,7 @@ class Response(object):
 
     def _charset__set(self, charset):
         if charset is None:
-            del self.charset
+            self._charset__del()
             return
         header = self.headers.get('Content-Type', None)
         if header is None:
@@ -698,8 +698,9 @@ class Response(object):
 
     def _content_type_params__set(self, value_dict):
         if not value_dict:
-            del self.content_type_params
+            self._content_type_params__del()
             return
+
         params = []
         for k, v in sorted(value_dict.items()):
             if not _OK_PARAM_RE.search(v):
