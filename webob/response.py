@@ -113,7 +113,7 @@ class Response(object):
             self._headerlist = headerlist
         content_type = content_type or self.headers.get('Content-Type') or \
             self.default_content_type
-        if 'Content-Type' not in self.headers:
+        if 'Content-Type' not in self.headers and content_type:
             self.headers['Content-Type'] = content_type
         charset = kw.get('charset')
         if content_type:
