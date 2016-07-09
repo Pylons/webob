@@ -112,7 +112,7 @@ class Response(object):
         else:
             self._headerlist = headerlist
         content_type = content_type or self.headers.get('Content-Type') or \
-                self.default_content_type
+            self.default_content_type
         if 'Content-Type' not in self.headers:
             self.headers['Content-Type'] = content_type
         charset = kw.get('charset')
@@ -153,7 +153,6 @@ class Response(object):
                 raise TypeError(
                     "Unexpected keyword: %s=%r" % (name, value))
             setattr(self, name, value)
-
 
     @classmethod
     def from_file(cls, fp):
@@ -220,7 +219,6 @@ class Response(object):
             headerlist=self._headerlist[:],
             app_iter=app_iter,
             conditional_response=self.conditional_response)
-
 
     #
     # __repr__, __str__
@@ -290,8 +288,7 @@ class Response(object):
             self._status = '%d %s' % (code, status_generic_reasons[code // 100])
 
     status_code = status_int = property(_status_code__get, _status_code__set,
-                           doc=_status_code__get.__doc__)
-
+                                        doc=_status_code__get.__doc__)
 
     #
     # headerslist, headers
@@ -332,7 +329,6 @@ class Response(object):
         self._headers = None
 
     headers = property(_headers__get, _headers__set, doc=_headers__get.__doc__)
-
 
     #
     # body
@@ -400,7 +396,8 @@ class Response(object):
         return json.loads(self.body.decode(self.charset or 'UTF-8'))
 
     def _json_body__set(self, value):
-        self.body = json.dumps(value, separators=(',', ':')).encode(self.charset or 'UTF-8')
+        self.body = json.dumps(value, separators=(',', ':')).encode(
+            self.charset or 'UTF-8')
 
     def _json_body__del(self):
         del self.body
@@ -424,7 +421,6 @@ class Response(object):
         return True
 
     has_body = property(_has_body__get)
-
 
     #
     # text, unicode_body, ubody
@@ -457,7 +453,7 @@ class Response(object):
     text = property(_text__get, _text__set, _text__del, doc=_text__get.__doc__)
 
     unicode_body = ubody = property(_text__get, _text__set, _text__del,
-        "Deprecated alias for .text")
+                                    "Deprecated alias for .text")
 
     #
     # body_file, write(text)
@@ -502,8 +498,6 @@ class Response(object):
         if self.content_length is not None:
             self.content_length += len(text)
 
-
-
     #
     # app_iter
     #
@@ -530,8 +524,6 @@ class Response(object):
 
     app_iter = property(_app_iter__get, _app_iter__set, _app_iter__del,
                         doc=_app_iter__get.__doc__)
-
-
 
     #
     # headers attrs
@@ -562,7 +554,8 @@ class Response(object):
     last_modified = date_header('Last-Modified', '14.29')
 
     _etag_raw = header_getter('ETag', '14.19')
-    etag = converter(_etag_raw,
+    etag = converter(
+        _etag_raw,
         parse_etag_response, serialize_etag_response,
         'Entity tag'
     )
@@ -587,7 +580,6 @@ class Response(object):
         header_getter('WWW-Authenticate', '14.47'),
         parse_auth, serialize_auth,
     )
-
 
     #
     # charset
@@ -637,7 +629,6 @@ class Response(object):
     charset = property(_charset__get, _charset__set, _charset__del,
                        doc=_charset__get.__doc__)
 
-
     #
     # content_type
     #
@@ -672,7 +663,6 @@ class Response(object):
 
     content_type = property(_content_type__get, _content_type__set,
                             _content_type__del, doc=_content_type__get.__doc__)
-
 
     #
     # content_type_params
@@ -721,9 +711,6 @@ class Response(object):
         _content_type_params__del,
         _content_type_params__get.__doc__
     )
-
-
-
 
     #
     # set_cookie, unset_cookie, delete_cookie, merge_cookies
@@ -827,9 +814,10 @@ class Response(object):
 
         value = bytes_(value, 'utf-8')
 
-        cookie = make_cookie(name, value, max_age=max_age, path=path,
-                domain=domain, secure=secure, httponly=httponly,
-                comment=comment)
+        cookie = make_cookie(
+            name, value, max_age=max_age, path=path,
+            domain=domain, secure=secure, httponly=httponly,
+            comment=comment)
 
         self.headerlist.append(('Set-Cookie', cookie))
 
@@ -864,7 +852,6 @@ class Response(object):
         elif strict:
             raise KeyError("No cookie has been set with the name %r" % name)
 
-
     def merge_cookies(self, resp):
         """Merge the cookies that were set on this response with the
         given `resp` object (which can be any WSGI application).
@@ -883,11 +870,10 @@ class Response(object):
                          h[0].lower() == 'set-cookie']
             def repl_app(environ, start_response):
                 def repl_start_response(status, headers, exc_info=None):
-                    return start_response(status, headers+c_headers,
+                    return start_response(status, headers + c_headers,
                                           exc_info=exc_info)
                 return resp(environ, repl_start_response)
             return repl_app
-
 
     #
     # cache_control
@@ -944,7 +930,6 @@ class Response(object):
         _cache_control__get, _cache_control__set,
         _cache_control__del, doc=_cache_control__get.__doc__)
 
-
     #
     # cache_expires
     #
@@ -987,8 +972,6 @@ class Response(object):
 
     cache_expires = property(lambda self: self._cache_expires, _cache_expires)
 
-
-
     #
     # encode_content, decode_content, md5_etag
     #
@@ -999,7 +982,7 @@ class Response(object):
         identity are supported).
         """
         assert encoding in ('identity', 'gzip'), \
-               "Unknown encoding: %r" % encoding
+            "Unknown encoding: %r" % encoding
         if encoding == 'identity':
             self.decode_content()
             return
@@ -1049,8 +1032,6 @@ class Response(object):
         self.etag = md5_digest.strip('=')
         if set_content_md5:
             self.content_md5 = md5_digest
-
-
 
     #
     # __call__, conditional_response_app
@@ -1105,11 +1086,12 @@ class Response(object):
             if status304:
                 start_response('304 Not Modified', filter_headers(headerlist))
                 return EmptyResponse(self._app_iter)
-        if (req.range and self in req.if_range
-            and self.content_range is None
-            and method in ('HEAD', 'GET')
-            and self.status_code == 200
-            and self.content_length is not None
+        if (
+            req.range and self in req.if_range and
+            self.content_range is None and
+            method in ('HEAD', 'GET') and
+            self.status_code == 200 and
+            self.content_length is not None
         ):
             content_range = req.range.content_range(self.content_length)
             if content_range is None:
@@ -1144,7 +1126,7 @@ class Response(object):
                     return app_iter
 
         start_response(self.status, headerlist)
-        if method  == 'HEAD':
+        if method == 'HEAD':
             return EmptyResponse(self._app_iter)
         return self._app_iter
 
@@ -1163,7 +1145,7 @@ def filter_headers(hlist, remove_headers=('content-length', 'content-type')):
     return [h for h in hlist if (h[0].lower() not in remove_headers)]
 
 
-def iter_file(file, block_size=1<<18): # 256Kb
+def iter_file(file, block_size=1 << 18): # 256Kb
     while True:
         data = file.read(block_size)
         if not data:
@@ -1196,8 +1178,6 @@ class ResponseBodyFile(object):
     def flush(self):
         pass
 
-
-
 class AppIterRange(object):
     """
     Wraps an app_iter, returning just a range of bytes
@@ -1224,14 +1204,13 @@ class AppIterRange(object):
             elif self._pos == start:
                 return b''
             else:
-                chunk = chunk[start-self._pos:]
+                chunk = chunk[start - self._pos:]
                 if stop is not None and self._pos > stop:
-                    chunk = chunk[:stop-self._pos]
+                    chunk = chunk[:stop - self._pos]
                     assert len(chunk) == stop - start
                 return chunk
         else:
             raise StopIteration()
-
 
     def next(self):
         if self._pos < self.start:
@@ -1247,7 +1226,7 @@ class AppIterRange(object):
         if stop is None or self._pos <= stop:
             return chunk
         else:
-            return chunk[:stop-self._pos]
+            return chunk[:stop - self._pos]
 
     __next__ = next # py3
 
@@ -1278,20 +1257,26 @@ class EmptyResponse(object):
     __next__ = next # py3
 
 def _is_json(content_type):
-    return (content_type.startswith('application/json')
-            or (content_type.startswith('application/')
-                and content_type.endswith('+json')))
+    return (
+        content_type.startswith('application/json') or (
+            content_type.startswith('application/') and
+            content_type.endswith('+json')
+        )
+    )
 
 def _is_xml(content_type):
-    return (content_type.startswith('application/xml')
-            or (content_type.startswith('application/')
-                and content_type.endswith('+xml')))
+    return (
+        content_type.startswith('application/xml') or (
+            content_type.startswith('application/') and
+            content_type.endswith('+xml')
+        )
+    )
 
 def _request_uri(environ):
     """Like wsgiref.url.request_uri, except eliminates :80 ports
 
     Return the full request URI"""
-    url = environ['wsgi.url_scheme']+'://'
+    url = environ['wsgi.url_scheme'] + '://'
 
     if environ.get('HTTP_HOST'):
         url += environ['HTTP_HOST']
@@ -1311,7 +1296,7 @@ def _request_uri(environ):
 
     url += url_quote(script_name)
     qpath_info = url_quote(path_info)
-    if not 'SCRIPT_NAME' in environ:
+    if 'SCRIPT_NAME' not in environ:
         url += qpath_info[1:]
     else:
         url += qpath_info
