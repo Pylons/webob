@@ -139,7 +139,7 @@ def test_init_no_charset_when_json():
     assert Response(content_type=content_type).headers['content-type'] == expected
 
 def test_init_keeps_specified_charset_when_json():
-    content_type = 'application/json;charset=ISO-8859-1'
+    content_type = 'application/json; charset=ISO-8859-1'
     expected = content_type
     assert Response(content_type=content_type).headers['content-type'] == expected
 
