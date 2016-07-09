@@ -214,7 +214,6 @@ class Response(object):
         # and this to make sure app_iter instances are different
         self._app_iter = list(app_iter)
         return self.__class__(
-            content_type=False,
             status=self._status,
             headerlist=self._headerlist[:],
             app_iter=app_iter,
