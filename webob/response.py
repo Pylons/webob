@@ -87,66 +87,79 @@ class Response(object):
     def __init__(self, body=None, status=None, headerlist=None, app_iter=None,
                  content_type=None, conditional_response=None,
                  **kw):
+
+        body_encoding = None
+
+        # Do some sanity checking, and turn json_body into an actual body
         if app_iter is None and body is None and ('json_body' in kw or 'json' in kw):
             if 'json_body' in kw:
                 json_body = kw.pop('json_body')
             else:
                 json_body = kw.pop('json')
             body = json.dumps(json_body, separators=(',', ':'))
+            body_encoding = 'UTF-8'
+
             if content_type is None:
                 content_type = 'application/json'
+
         if app_iter is None:
             if body is None:
                 body = b''
         elif body is not None:
             raise TypeError(
                 "You may only give one of the body and app_iter arguments")
+
+        # Set up Response.status
         if status is None:
             self._status = '200 OK'
         else:
             self.status = status
-        # initialize headers, content_type, and charset
+
+        # Initialize headers
         self._headers = None
         if headerlist is None:
             self._headerlist = []
         else:
             self._headerlist = headerlist
+
+        # Set up the content_type
         content_type = content_type or self.headers.get('Content-Type') or \
             self.default_content_type
+
         if 'Content-Type' not in self.headers and content_type:
             self.headers['Content-Type'] = content_type
+
+        # Set up the charset
         charset = kw.get('charset')
+
         if content_type:
             if charset:
                 self.charset = charset
-            elif self.default_charset:
-                charset_match = CHARSET_RE.search(content_type)
-                if charset_match:
-                    charset = self.charset
-                elif (content_type == 'text/html'
-                        or content_type.startswith('text/')
-                        or _is_xml(content_type)):
-                    charset = self.default_charset
-                    self.charset = charset
-                elif _is_json(content_type):
-                    # don't set charset on the Content-Type for standards
-                    # compliance, but still need it locally to encode body text
-                    self.charset = None
-                    charset = self.default_charset
+            elif not self.charset and self.default_charset:
+                if _content_type_has_charset(content_type):
+                    self.charset = self.default_charset
+
+            body_encoding = self.charset or body_encoding
+
+        # Set up conditional response
         if conditional_response is None:
             self.conditional_response = self.default_conditional_response
         else:
             self.conditional_response = bool(conditional_response)
+
+        # Set up app_iter
         if app_iter is None:
             if isinstance(body, text_type):
-                if charset is None:
+                if body_encoding is None:
                     raise TypeError(
                         "You cannot set the body to a text value without a "
                         "charset")
-                body = body.encode(charset)
+                body = body.encode(body_encoding)
             app_iter = [body]
             self.headers['Content-Length'] = str(len(body))
         self._app_iter = app_iter
+
+        # Loop through all the remaining keyword arguments
         for name, value in kw.items():
             if not hasattr(self.__class__, name):
                 # Not a basic attribute
