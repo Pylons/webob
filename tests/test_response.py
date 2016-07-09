@@ -141,16 +141,6 @@ def test_init_keeps_specified_charset_when_json():
     expected = content_type
     assert Response(content_type=content_type).headers['content-type'] == expected
 
-def test_set_charset_fails_when_json():
-    content_type = 'application/json'
-    expected = content_type
-    res = Response(content_type=content_type)
-    res.charset = 'utf-8'
-    assert res.headers['content-type'] == expected
-    res.content_type_params = {'charset': 'utf-8'}
-    assert res.headers['content-type'] == expected
-
-
 def test_cookies():
     res = Response()
     # test unicode value

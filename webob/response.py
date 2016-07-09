@@ -604,8 +604,8 @@ class Response(object):
         """
         Get/set the charset specified in Content-Type.
 
-        In the case JSON content where the charset param is not standards
-        compliant, we ignore this.
+        There is no checking to validate that a ``content_type`` actually allows
+        for a charset parameter.
         """
         header = self.headers.get('Content-Type')
         if not header:
@@ -623,8 +623,6 @@ class Response(object):
         if header is None:
             raise AttributeError("You cannot set the charset when no "
                                  "content-type is defined")
-        if _is_json(header):
-            return
         match = CHARSET_RE.search(header)
         if match:
             header = header[:match.start()] + header[match.end():]
