@@ -139,6 +139,11 @@ class BaseRequest(object):
             )
         d = self.__dict__
         d['environ'] = environ
+        
+        # Handle the X-FORWARDED-PROTO header form the SSL off-load
+        if 'HTTP_X_FORWARDED_PROTO' in environ:
+            d['environ']['wsgi.url_scheme'] = environ['HTTP_X_FORWARDED_PROTO']
+
         if kw:
             cls = self.__class__
             if 'method' in kw:
