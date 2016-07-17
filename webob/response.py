@@ -79,6 +79,11 @@ class Response(object):
     default_charset = 'UTF-8'
     unicode_errors = 'strict'
     default_conditional_response = False
+
+    # These two are only around so that when people pass them into the
+    # constructor they correctly get saved and set, however they are not used
+    # by any part of the Response. See commit
+    # 627593bbcd4ab52adc7ee569001cdda91c670d5d for rationale.
     request = None
     environ = None
 
