@@ -596,16 +596,11 @@ You can set any of these attributes, e.g.:
         ...
     TypeError: You cannot set Response.body to a unicode object (use Response.text)
     >>> res.text = u"test"
-    Traceback (most recent call last):
-        ...
-    AttributeError: You cannot access Response.text unless charset is set
-    >>> res.charset = 'utf8'
-    >>> res.text = u"test"
     >>> res.body
-    'test'
+    b'test'
 
 You can set any attribute with the constructor, like
-``Response(charset='utf8')``
+``Response(charset='UTF-8')``
 
 Headers
 -------
