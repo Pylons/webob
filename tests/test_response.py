@@ -66,6 +66,9 @@ def test_response():
                  body=text_(b"unicode body"))
     with pytest.raises(TypeError):
         Response(wrong_key='dummy')
+    with pytest.raises(TypeError):
+        resp = Response()
+        resp.body = text_(b"unicode body")
 
 def test_set_response_status_binary():
     req = BaseRequest.blank('/')
@@ -692,7 +695,7 @@ def test_text_get_decode():
     res = Response()
     res.charset = 'utf-8'
     res.body = b'La Pe\xc3\xb1a'
-    assert res.text, text_(b'La Pe\xc3\xb1a' == 'utf-8')
+    assert res.text, text_(b'La Pe\xc3\xb1a')
 
 def test_text_set_no_charset():
     res = Response()
@@ -752,7 +755,7 @@ def test_charset_set_no_content_type_header():
     res = Response()
     res.headers.pop('Content-Type', None)
     with pytest.raises(AttributeError):
-        res.__setattr__('charset', 'utf-8')
+        res.charset = 'utf-8'
 
 def test_charset_del_no_content_type_header():
     res = Response()
@@ -779,6 +782,11 @@ def test_content_type_params_set_ok_param_quoting():
     res = Response()
     res.content_type_params = {'a': ''}
     assert res.headers['Content-Type'] == 'text/html; a=""'
+
+def test_charset_delete():
+    res = Response()
+    del res.charset
+    assert res.charset is None
 
 def test_set_cookie_overwrite():
     res = Response()
