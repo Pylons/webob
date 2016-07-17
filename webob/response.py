@@ -68,6 +68,8 @@ _OK_PARAM_RE = re.compile(r'^[a-z0-9_.-]+$', re.I)
 
 _gzip_header = b'\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff'
 
+_marker = object()
+
 class Response(object):
     """
         Represents a WSGI response
@@ -85,7 +87,7 @@ class Response(object):
     #
 
     def __init__(self, body=None, status=None, headerlist=None, app_iter=None,
-                 content_type=None, conditional_response=None,
+                 content_type=None, conditional_response=None, charset=_marker,
                  **kw):
 
         body_encoding = None
@@ -134,10 +136,8 @@ class Response(object):
             self.headers['Content-Type'] = content_type
 
         # Set up the charset
-        charset = kw.get('charset')
-
         if self.content_type:
-            if charset:
+            if charset is not _marker:
                 self.charset = charset
             elif not self.charset and self.default_charset:
                 if _content_type_has_charset(self.content_type):
