@@ -89,7 +89,8 @@ class Response(object):
         converted to a proper status that also includes the status text. Any
         existing status text will be kept, non-standard values are allowed.
 
-        ``headerlist`` is a list of HTTP headers for the response.
+        ``headerlist`` is a list of HTTP headers for the response as tuples of
+        HTTP header name, value pairs.
 
         ``content_type`` sets the `Content-Type` header. If the ``headerlist``
         already contains a `Content-Type` it will take precedence. If no
