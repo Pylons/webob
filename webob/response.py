@@ -72,7 +72,69 @@ _marker = object()
 
 class Response(object):
     """
-        Represents a WSGI response
+        Represents a WSGI response.
+
+        If no arguments are passed creates a :py:class:`~Response` that uses a
+        variety of defaults. Defaults may be changed by sub-classing the
+        :py:class:`~Response`, see the :ref:`sub-classing notes
+        <response_subclassing_notes>`.
+
+        The ``body`` may be a :py:class:`bytes` or a ``text_type``. If it is a
+        ``text_type`` it will be encoded using the ``charset`` or if there is
+        no ``charset`` using ``default_encoding``. This argument is mutually
+        exclusive with ``app_iter``.
+
+        The ``status`` is a either an :py:class:`int` or a string that is an
+        integer followed by the status text. If it is an integer, it will be
+        converted to a proper status that also includes the status text. Any
+        existing status text will be kept, non-standard values are allowed.
+
+        ``headerlist`` is a list of HTTP headers for the response.
+
+        ``content_type`` sets the `Content-Type` header. If the ``headerlist``
+        already contains a `Content-Type` it will take precedence. If no
+        ``Content-Type`` is set in either the ``headerlist`` the
+        ``default_content_type`` value will be used instead.
+
+        ``conditional_response`` is used to change the behaviour of the
+        :py:class:`~Response` to check the original request for conditional
+        response headers. See :py:meth:`~Response.conditional_response_app` for
+        more information.
+
+        The ``charset`` adds a ``charset`` ``Content-Type`` parameter. If no
+        ``charset`` is provided, and the ``Content-Type`` is text, the
+        ``default_charset`` will automatically be added.  Currently the only
+        ``Content-Type``'s that allow for a ``charset`` are defined to be:
+        ``text/*``, ``application/xml``, and ``*/*+xml``. Any other
+        ``Content-Type``'s will not have a ``charset`` added.
+
+        All other response attributes may be set on the response by providing
+        them as keyword arguments. A :py:exc:`TypeError` will be raised for any
+        unexpected keywords.
+
+        .. _response_subclassing_notes:
+
+        **Sub-classing notes:**
+
+        The ``default_content_type`` is used as the default for the
+        ``Content-Type`` header that is returned on the response. It is
+        ``text/html``.
+
+        The ``default_charset`` is used as the default character set to return
+        on the ``Content-Type`` header, if the ``Content-Type`` allows for a
+        ``charset`` paramater. Currently the only ``Content-Type``'s that allow
+        for a ``charset`` are defined to be: ``text/*``, ``application/xml``,
+        and ``*/*+xml``. Any other ``Content-Type``'s will not have a
+        ``charset`` added.
+
+        The ``unicode_errors`` is set to ``strict``, and access on a
+        :py:attr:`~Response.text` will raise an error if it fails to decode the
+        :py:attr:`~Response.body`.
+
+        ``default_conditional_response`` is set to False. This flag may be set
+        to True so that all ``Response`` objects will attempt to check the
+        original request for conditional response headers. See
+        :py:meth:`~Response.conditional_response_app` for more information.
     """
 
     default_content_type = 'text/html'
@@ -355,8 +417,8 @@ class Response(object):
 
     def _body__get(self):
         """
-        The body of the response, as a ``str``.  This will read in the
-        entire app_iter if necessary.
+        The body of the response, as a :py:class:`bytes`.  This will read in
+        the entire app_iter if necessary.
         """
         app_iter = self._app_iter
 #         try:
@@ -410,8 +472,18 @@ class Response(object):
     body = property(_body__get, _body__set, _body__set)
 
     def _json_body__get(self):
-        """Access the body of the response as JSON"""
-        # Note: UTF-8 is a content-type specific default for JSON:
+        """
+        Set/get the body of the response as JSON
+
+        .. note::
+
+           This will automatically :py:meth:`~bytes.decode` the
+           :py:attr:`~Response.body` as ``UTF-8`` on get, and
+           :py:meth:`~str.encode` the :py:meth:`json.dumps` as ``UTF-8``
+           before assigning to :py:attr:`~Response.body`.
+
+        """
+        # Note: UTF-8 is a content-type specific default for JSON
         return json.loads(self.body.decode('UTF-8'))
 
     def _json_body__set(self, value):
@@ -423,8 +495,12 @@ class Response(object):
     json = json_body = property(_json_body__get, _json_body__set, _json_body__del)
 
     def _has_body__get(self):
-        """Determine if the the response has a body. In contrast to simply
-        accessing ``body`` this method will *not* read the underlying app_iter."""
+        """
+        Determine if the the response has a :py:attr:`~Response.body`. In
+        contrast to simply accessing :py:attr:`~Response.body` this method
+        will **not** read the underlying :py:attr:`~Response.app_iter`.
+        """
+
         app_iter = self._app_iter
 
         if isinstance(app_iter, list) and len(app_iter) == 1:
