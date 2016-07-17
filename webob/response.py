@@ -94,17 +94,13 @@ class Response(object):
     def __init__(self, body=None, status=None, headerlist=None, app_iter=None,
                  content_type=None, conditional_response=None, charset=_marker,
                  **kw):
-
-        body_encoding = None
-
         # Do some sanity checking, and turn json_body into an actual body
         if app_iter is None and body is None and ('json_body' in kw or 'json' in kw):
             if 'json_body' in kw:
                 json_body = kw.pop('json_body')
             else:
                 json_body = kw.pop('json')
-            body = json.dumps(json_body, separators=(',', ':'))
-            body_encoding = 'UTF-8'
+            body = json.dumps(json_body, separators=(',', ':')).encode('UTF-8')
 
             if content_type is None:
                 content_type = 'application/json'
@@ -148,8 +144,6 @@ class Response(object):
                 if _content_type_has_charset(self.content_type):
                     self.charset = self.default_charset
 
-            body_encoding = self.charset or body_encoding
-
         # Set up conditional response
         if conditional_response is None:
             self.conditional_response = self.default_conditional_response
@@ -159,11 +153,12 @@ class Response(object):
         # Set up app_iter
         if app_iter is None:
             if isinstance(body, text_type):
-                if body_encoding is None:
+                encoding = self.charset
+                if encoding is None:
                     raise TypeError(
                         "You cannot set the body to a text value without a "
                         "charset")
-                body = body.encode(body_encoding)
+                body = body.encode(encoding)
             app_iter = [body]
             self.headers['Content-Length'] = str(len(body))
         self._app_iter = app_iter
