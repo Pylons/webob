@@ -74,40 +74,48 @@ class Response(object):
     """
         Represents a WSGI response.
 
-        If no arguments are passed creates a :py:class:`~Response` that uses a
+        If no arguments are passed, creates a :py:class:`~Response` that uses a
         variety of defaults. Defaults may be changed by sub-classing the
-        :py:class:`~Response`, see the :ref:`sub-classing notes
+        :py:class:`~Response`. See the :ref:`sub-classing notes
         <response_subclassing_notes>`.
 
-        The ``body`` may be a :py:class:`bytes` or a ``text_type``. If it is a
-        ``text_type`` it will be encoded using the ``charset`` or if there is
-        no ``charset`` using ``default_encoding``. This argument is mutually
-        exclusive with ``app_iter``.
+        :cvar ~Response.body: ``body`` may be a :py:class:`bytes` or ``text_type``. If
+            ``body`` is a ``text_type``, then it will be encoded using either
+            ``charset`` when provided or ``default_encoding`` when ``charset``
+            is not provided. This argument is mutually  exclusive with
+            ``app_iter``.
 
-        The ``status`` is a either an :py:class:`int` or a string that is an
-        integer followed by the status text. If it is an integer, it will be
-        converted to a proper status that also includes the status text. Any
-        existing status text will be kept, non-standard values are allowed.
+        :vartype ~Response.body: bytes or text_type
 
-        ``headerlist`` is a list of HTTP headers for the response as tuples of
-        HTTP header name, value pairs.
+        :cvar status: Either an :py:class:`int` or a string that is an integer
+            followed by the status text. If it is an integer, it will be
+            converted to a proper status that also includes the status text.
+            Any existing status text will be kept. Non-standard values are
+            allowed.
 
-        ``content_type`` sets the `Content-Type` header. If the ``headerlist``
-        already contains a `Content-Type` it will take precedence. If no
-        ``Content-Type`` is set in either the ``headerlist`` the
-        ``default_content_type`` value will be used instead.
+        :vartype status: int or str
 
-        ``conditional_response`` is used to change the behaviour of the
-        :py:class:`~Response` to check the original request for conditional
-        response headers. See :py:meth:`~Response.conditional_response_app` for
-        more information.
+        :cvar list headerlist: A list of HTTP headers for the response.
 
-        The ``charset`` adds a ``charset`` ``Content-Type`` parameter. If no
-        ``charset`` is provided, and the ``Content-Type`` is text, the
-        ``default_charset`` will automatically be added.  Currently the only
-        ``Content-Type``'s that allow for a ``charset`` are defined to be:
-        ``text/*``, ``application/xml``, and ``*/*+xml``. Any other
-        ``Content-Type``'s will not have a ``charset`` added.
+        :cvar ~Response.content_type: Sets the ``Content-Type`` header. If the
+            ``headerlist`` already contains a ``Content-Type``, then it will
+            take precedence. If no ``Content-Type`` is set in the
+            ``headerlist``, then the ``default_content_type`` value will be
+            used instead.
+
+        :vartype ~Response.content_type: str or None
+
+        :cvar conditional_response: Used to change the behavior of the
+            :py:class:`~Response` to check the original request for conditional
+            response headers. See :py:meth:`~Response.conditional_response_app`
+            for more information.
+
+        :cvar charset: Adds a ``charset`` ``Content-Type`` parameter. If no
+            ``charset`` is provided and the ``Content-Type`` is text, then the
+            ``default_charset`` will automatically be added.  Currently the
+            only ``Content-Type``'s that allow for a ``charset`` are defined to
+            be ``text/*``, ``application/xml``, and ``*/*+xml``. Any other
+            ``Content-Type``'s will not have a ``charset`` added.
 
         All other response attributes may be set on the response by providing
         them as keyword arguments. A :py:exc:`TypeError` will be raised for any
@@ -117,25 +125,25 @@ class Response(object):
 
         **Sub-classing notes:**
 
-        The ``default_content_type`` is used as the default for the
-        ``Content-Type`` header that is returned on the response. It is
-        ``text/html``.
+        * The ``default_content_type`` is used as the default for the
+          ``Content-Type`` header that is returned on the response. It is
+          ``text/html``.
 
-        The ``default_charset`` is used as the default character set to return
-        on the ``Content-Type`` header, if the ``Content-Type`` allows for a
-        ``charset`` paramater. Currently the only ``Content-Type``'s that allow
-        for a ``charset`` are defined to be: ``text/*``, ``application/xml``,
-        and ``*/*+xml``. Any other ``Content-Type``'s will not have a
-        ``charset`` added.
+        * The ``default_charset`` is used as the default character set to
+          return on the ``Content-Type`` header, if the ``Content-Type`` allows
+          for a ``charset`` parameter. Currently the only ``Content-Type``'s
+          that allow for a ``charset`` are defined to be: ``text/*``,
+          ``application/xml``, and ``*/*+xml``. Any other ``Content-Type``'s
+          will not have a ``charset`` added.
 
-        The ``unicode_errors`` is set to ``strict``, and access on a
-        :py:attr:`~Response.text` will raise an error if it fails to decode the
-        :py:attr:`~Response.body`.
+        * The ``unicode_errors`` is set to ``strict``, and access on a
+          :py:attr:`~Response.text` will raise an error if it fails to decode the
+          :py:attr:`~Response.body`.
 
-        ``default_conditional_response`` is set to False. This flag may be set
-        to True so that all ``Response`` objects will attempt to check the
-        original request for conditional response headers. See
-        :py:meth:`~Response.conditional_response_app` for more information.
+        * ``default_conditional_response`` is set to False. This flag may be
+          set to True so that all ``Response`` objects will attempt to check
+          the original request for conditional response headers. See
+          :py:meth:`~Response.conditional_response_app` for more information.
     """
 
     default_content_type = 'text/html'
