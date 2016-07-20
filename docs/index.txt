@@ -44,8 +44,8 @@ request (including the path and query string), a file-like object for
 the request body, and a variety of custom keys.  You can always access
 the environ with ``req.environ``.
 
-Some of the most important/interesting attributes of a request
-object:
+Some of the most important and interesting attributes of a request object are
+the following:
 
 ``req.method``:
     The request method, e.g., ``'GET'``, ``'POST'``
@@ -74,25 +74,24 @@ object:
     A simple dictionary of all the cookies.
 
 ``req.headers``:
-    A dictionary of all the headers.  This is dictionary is case-insensitive.
+    A dictionary of all the headers.  This dictionary is case-insensitive.
 
 ``req.urlvars`` and ``req.urlargs``:
     ``req.urlvars`` is the keyword parameters associated with the
     request URL.  ``req.urlargs`` are the positional parameters.
     These are set by products like `Routes
-    <http://routes.groovie.org/>`_ and `Selector
-    <http://lukearno.com/projects/selector/>`_.
+    <http://routes.readthedocs.io/en/latest/>`_ and `Selector
+    <https://github.com/lukearno/selector>`_.
 
 .. _`dictionary-like object`: #multidict
 
-Also, for standard HTTP request headers there are usually attributes,
-for instance: ``req.accept_language``, ``req.content_length``,
-``req.user_agent``, as an example.  These properties expose the
-*parsed* form of each header, for whatever parsing makes sense.  For
-instance, ``req.if_modified_since`` returns a `datetime
-<http://python.org/doc/current/lib/datetime-datetime.html>`_ object
-(or None if the header is was not provided).  Details are in the
-`Request reference <class-webob.Request.html>`_.
+Also for standard HTTP request headers, there are usually attributes, e.g.,
+``req.accept_language``, ``req.content_length``, and ``req.user_agent``. These
+properties expose the *parsed* form of each header, for whatever parsing makes
+sense. For instance, ``req.if_modified_since`` returns a `datetime
+<http://python.org/doc/current/lib/datetime-datetime.html>`_ object (or
+``None`` if the header is was not provided). Details are in the `Request
+reference <class-webob.Request.html>`_.
 
 URLs
 ----
