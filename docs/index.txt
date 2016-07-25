@@ -177,7 +177,7 @@ WSGI):
     to ``app_iter``).
 
 Everything else in the object derives from this underlying state.
-Here's the highlights:
+Here are the highlights:
 
 ``response.content_type``:
     The content type *not* including the ``charset`` parameter.
@@ -207,7 +207,7 @@ Here's the highlights:
     the cookie value to ``''``.
 
 ``response.cache_expires(seconds=0)``:
-    This makes this response cachable for the given number of seconds,
+    This makes this response cacheable for the given number of seconds,
     or if ``seconds`` is 0 then the response is uncacheable (this also
     sets the ``Expires`` header).
 
@@ -231,15 +231,15 @@ Instantiating the Response
 
 Of course most of the time you just want to *make* a response.
 Generally any attribute of the response can be passed in as a keyword
-argument to the class; e.g.:
+argument to the class, e.g.:
 
 .. code-block:: python
 
   response = Response(body='hello world!', content_type='text/plain')
 
 The status defaults to ``'200 OK'``.  The content_type does not
-default to anything, though if you subclass ``Response`` and set
-``default_content_type`` you can override this behavior.
+default to anything, although if you subclass ``Response`` and set
+``default_content_type``, you can override this behavior.
 
 Exceptions
 ==========
