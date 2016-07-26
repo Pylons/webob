@@ -163,7 +163,7 @@ class BaseRequest(object):
             encoding = getattr(self, encattr)
             if encoding in _LATIN_ENCODINGS:  # shortcut
                 return val
-            return bytes_(val, 'latin-1').decode(encoding, 'replace')
+            return bytes_(val, 'latin-1').decode(encoding, 'surrogateescape')
     else:
         def encget(self, key, default=NoDefault, encattr=None):
             val = self.environ.get(key, default)
@@ -174,7 +174,7 @@ class BaseRequest(object):
             if encattr is None:
                 return val
             encoding = getattr(self, encattr)
-            return val.decode(encoding, 'replace')
+            return val.decode(encoding, 'surrogateescape')
 
     def encset(self, key, val, encattr=None):
         if encattr:
