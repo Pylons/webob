@@ -264,33 +264,33 @@ You can use this like:
 .. code-block:: python
 
     try:
-        ... stuff ...
+        # ... stuff ...
         raise HTTPNotFound('No such resource')
     except HTTPException, e:
         return e(environ, start_response)
 
 The exceptions are still WSGI applications, but you cannot set
-attributes like ``content_type``, ``charset``, etc. on these exception
+attributes like ``content_type``, ``charset``, etc., on these exception
 objects.
 
 Multidict
 =========
 
-Several parts of WebOb use a "multidict"; this is a dictionary where a
+Several parts of WebOb use a "multidict", which is a dictionary where a
 key can have multiple values.  The quintessential example is a query
-string like ``?pref=red&pref=blue``; the ``pref`` variable has two
-values: ``red`` and ``blue``.
+string like ``?pref=red&pref=blue``. The ``pref`` variable has two
+values, ``red`` and ``blue``.
 
-In a multidict, when you do ``request.GET['pref']`` you'll get back
+In a multidict, when you do ``request.GET['pref']``, you'll get back
 only ``'blue'`` (the last value of ``pref``).  Sometimes returning a
-string, and sometimes returning a list, is the cause of frequent
+string and other times returning a list is a cause of frequent
 exceptions.  If you want *all* the values back, use
 ``request.GET.getall('pref')``.  If you want to be sure there is *one
 and only one* value, use ``request.GET.getone('pref')``, which will
 raise an exception if there is zero or more than one value for
 ``pref``.
 
-When you use operations like ``request.GET.items()`` you'll get back
+When you use operations like ``request.GET.items()``, you'll get back
 something like ``[('pref', 'red'), ('pref', 'blue')]``.  All the
 key/value pairs will show up.  Similarly ``request.GET.keys()``
 returns ``['pref', 'pref']``.  Multidict is a view on a list of
@@ -299,11 +299,13 @@ tuples; all the keys are ordered, and all the values are ordered.
 Example
 =======
 
-The `file-serving example <file-example.html>`_ shows how to do more
+The `file-serving example <file-example>`_ shows how to do more
 advanced HTTP techniques, while the `comment middleware example
-<comment-example.html>`_ shows middleware.  For applications it's more
-reasonable to use WebOb in the context of a larger framework.  `Pylons
-<http://pylonshq.com>`_ uses WebOb in 0.9.7+.
+<comment-example>`_ shows middleware.  For applications, it's more
+reasonable to use WebOb in the context of a larger framework.  `Pyramid
+<https://trypyramid.com>`_, and its predecessor `Pylons
+<http://docs.pylonsproject.org/projects/pylons-webframework/en/latest/>`_,
+both use WebOb.
 
 .. toctree::
    :maxdepth: 1
@@ -324,27 +326,26 @@ Change History
    whatsnew-1.6
    changes
 
-Status & License
-================
+Status and License
+==================
 
 WebOb is an extraction and refinement of pieces from `Paste
-<http://pythonpaste.org/>`_.  It is under active development.  Discussion
-should happen on the `Pylons-discuss maillist
-<http://groups.google.com/group/pylons-discuss>`_, and bugs can go on the
-`issue tracker <https://github.com/Pylons/webob/issues>`_.  It was originally
-written by `Ian Bicking <http://ianbicking.org/>`_, and is being maintained by
-the `Pylons Project <http://www.pylonsproject.org/>`_.
+<http://pythonpaste.org/>`_.  It is under active development on `GitHub
+<https://github.com/pylons/webob>`_. It was originally written by `Ian Bicking
+<http://www.ianbicking.org/>`_, and is maintained by the `Pylons Project
+<http://www.pylonsproject.org/>`_.
 
-If you've got questions that aren't answered by this documentation, contact the
-`Pylons-discuss maillist <http://groups.google.com/group/pylons-discuss>`_ or
-join the `#pyramid IRC channel <irc://irc.freenode.net/#pyramid>`_.
+You can clone the source code with:
 
-WebOb is released under an :doc:`MIT-style license <license>`.
-
-WebOb development happens on `GitHub <https://github.com/Pylons/webob>`_.
-Development version is installable via `easy_install
-webob==dev <https://github.com/Pylons/webob/zipball/master>`__.  You
-can clone the source code with::
+.. code-block:: bash
 
     $ git clone https://github.com/Pylons/webob.git
 
+Report issues on the `issue tracker <https://github.com/Pylons/webob/issues>`_.
+
+If you've got questions that aren't answered by this documentation, contact the
+`pylons-discuss mail list
+<https://groups.google.com/forum/#!forum/pylons-discuss>`_ or join the
+`#pyramid IRC channel <https://webchat.freenode.net/?channels=pyramid>`_.
+
+WebOb is released under an :doc:`MIT-style license <license>`.
