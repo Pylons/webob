@@ -151,7 +151,7 @@ class BaseRequest(object):
                         "Unexpected keyword: %s=%r" % (name, value))
                 setattr(self, name, value)
 
-    if PY3: # pragma: no cover
+    if PY3:  # pragma: no cover
         def encget(self, key, default=NoDefault, encattr=None):
             val = self.environ.get(key, default)
             if val is NoDefault:
@@ -161,9 +161,9 @@ class BaseRequest(object):
             if not encattr:
                 return val
             encoding = getattr(self, encattr)
-            if encoding in _LATIN_ENCODINGS: # shortcut
+            if encoding in _LATIN_ENCODINGS:  # shortcut
                 return val
-            return bytes_(val, 'latin-1').decode(encoding)
+            return bytes_(val, 'latin-1').decode(encoding, 'replace')
     else:
         def encget(self, key, default=NoDefault, encattr=None):
             val = self.environ.get(key, default)
@@ -174,7 +174,7 @@ class BaseRequest(object):
             if encattr is None:
                 return val
             encoding = getattr(self, encattr)
-            return val.decode(encoding)
+            return val.decode(encoding, 'replace')
 
     def encset(self, key, val, encattr=None):
         if encattr:

@@ -1609,7 +1609,7 @@ class TestBaseRequest(object):
     def test_encget_does_raises_on_invalid_utf_8(self):
         val = b'\x80'
         inst = self._makeOne({'path': val})
-        assert inst.encget('path', encattr='url_encoding') == text_(b'\x80', 'utf-8')
+        assert inst.encget('path', encattr='url_encoding') == text_(b'\x80', 'utf-8', 'replace')
 
     def test_encget_with_encattr_latin_1(self):
         if PY3:
