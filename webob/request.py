@@ -68,6 +68,8 @@ from webob.etag import (
     etag_property,
     )
 
+from webob.exceptions import URLDecodeError
+
 from webob.headers import EnvironHeaders
 
 from webob.multidict import (
@@ -163,7 +165,10 @@ class BaseRequest(object):
             encoding = getattr(self, encattr)
             if encoding in _LATIN_ENCODINGS:  # shortcut
                 return val
-            return bytes_(val, 'latin-1').decode(encoding, 'surrogateescape')
+            try:
+                return bytes_(val, 'latin-1').decode(encoding)
+            except UnicodeDecodeError as e:
+                raise URLDecodeError(e)
     else:
         def encget(self, key, default=NoDefault, encattr=None):
             val = self.environ.get(key, default)
@@ -174,7 +179,10 @@ class BaseRequest(object):
             if encattr is None:
                 return val
             encoding = getattr(self, encattr)
-            return val.decode(encoding, 'surrogateescape')
+            try:
+                return val.decode(encoding)
+            except UnicodeDecodeError as e:
+                raise URLDecodeError(e)
 
     def encset(self, key, val, encattr=None):
         if encattr:

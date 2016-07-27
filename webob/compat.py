@@ -17,10 +17,6 @@ else:
     class_types = (type, types.ClassType)
     text_type = unicode
     long = long
-    # Register PEP 383 in Python2
-    from .surrogateescape import register_surrogateescape
-    register_surrogateescape()
-
 
 
 # TODO check if errors is ever used

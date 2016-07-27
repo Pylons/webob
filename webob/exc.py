@@ -1167,6 +1167,7 @@ class HTTPExceptionMiddleware(object):
                 return start_response(status, headers, exc_info)
             return parent_exc_info[1](environ, repl_start_response)
 
+
 try:
     from paste import httpexceptions
 except ImportError:   # pragma: no cover
