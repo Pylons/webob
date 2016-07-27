@@ -17,7 +17,7 @@ from webob.compat import (
     text_,
     PY3,
     )
-from webob.exceptions import URLDecodeError
+from webob.request import RequestDecodeError
 
 
 class TestRequestCommon(object):
@@ -1607,10 +1607,10 @@ class TestBaseRequest(object):
         inst = self._makeOne({'a': val})
         assert inst.encget('a', encattr='url_encoding') == text_(b'\xc3\xab', 'utf-8')
 
-    def test_encget_does_raises_an_URLDecodeError_on_invalid_utf_8(self):
+    def test_encget_does_raises_an_RequestDecodeError_on_invalid_utf_8(self):
         val = b'\x80'
         inst = self._makeOne({'path': val})
-        with pytest.raises(URLDecodeError):
+        with pytest.raises(RequestDecodeError):
             inst.encget('path', encattr='url_encoding')
 
     def test_encget_with_encattr_latin_1(self):

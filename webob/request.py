@@ -68,8 +68,6 @@ from webob.etag import (
     etag_property,
     )
 
-from webob.exceptions import URLDecodeError
-
 from webob.headers import EnvironHeaders
 
 from webob.multidict import (
@@ -81,7 +79,7 @@ from webob.multidict import (
 
 from webob.util import warn_deprecation
 
-__all__ = ['BaseRequest', 'Request', 'LegacyRequest']
+__all__ = ['BaseRequest', 'Request', 'LegacyRequest', 'RequestDecodeError']
 
 class _NoDefault:
     def __repr__(self):
@@ -99,6 +97,21 @@ _LATIN_ENCODINGS = (
     'ascii', 'latin-1', 'latin', 'latin_1', 'l1', 'latin1',
     'iso-8859-1', 'iso8859_1', 'iso_8859_1', 'iso8859', '8859',
     )
+
+
+class RequestDecodeError(UnicodeDecodeError):
+    """
+    subclass of :class:`~UnicodeDecodeError
+
+    This indicates that the server received an invalid URL.
+    """
+    def __init__(self, exc):
+        super(UnicodeDecodeError, self).__init__(exc.encoding,
+                                                 exc.reason,
+                                                 exc.object,
+                                                 exc.start,
+                                                 exc.end)
+
 
 class BaseRequest(object):
     ## The limit after which request bodies should be stored on disk
@@ -168,7 +181,7 @@ class BaseRequest(object):
             try:
                 return bytes_(val, 'latin-1').decode(encoding)
             except UnicodeDecodeError as e:
-                raise URLDecodeError(e)
+                raise RequestDecodeError(e)
     else:
         def encget(self, key, default=NoDefault, encattr=None):
             val = self.environ.get(key, default)
@@ -182,7 +195,7 @@ class BaseRequest(object):
             try:
                 return val.decode(encoding)
             except UnicodeDecodeError as e:
-                raise URLDecodeError(e)
+                raise RequestDecodeError(e)
 
     def encset(self, key, val, encattr=None):
         if encattr:
