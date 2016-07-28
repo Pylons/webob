@@ -103,7 +103,7 @@ class RequestDecodeError(UnicodeDecodeError):
     """
     subclass of :class:`~UnicodeDecodeError
 
-    This indicates that the server received an invalid URL.
+    This indicates that the server received an invalid Request.
     """
     def __init__(self, exc):
         super(UnicodeDecodeError, self).__init__(exc.encoding,
@@ -852,7 +852,10 @@ class BaseRequest(object):
             data = parse_qsl_text(source)
             #d = lambda b: b.decode('utf8')
             #data = [(d(k), d(v)) for k,v in data]
-        vars = GetDict(data, env)
+        try:
+            vars = GetDict(data, env)
+        except RequestDecodeError as e:
+            raise GETDecodeError(e)
         env['webob._parsed_query_vars'] = (vars, source)
         return vars
 
