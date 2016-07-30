@@ -66,7 +66,7 @@ Bugfixes
 
 - The application/json media type does not allow for a charset as discovery of
   the encoding is done at the JSON layer, and it must always be UTF-{8,16,32}.
-  See the IANA spec at
+  See the IANA specification at
   https://www.iana.org/assignments/media-types/application/json, which notes
 
     No "charset" parameter is defined for this registration.
