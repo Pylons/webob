@@ -234,7 +234,7 @@ class Response(object):
         # allows for a charset.
 
         if self.content_type:
-            if charset is not _marker:
+            if not self.charset and charset is not _marker:
                 self.charset = charset
             elif not self.charset and self.default_charset:
                 if _content_type_has_charset(self.content_type):
