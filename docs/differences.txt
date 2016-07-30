@@ -61,6 +61,9 @@ Response
 ``flush()`` and ``tell()``:
     Not available.
 
+``tell()``:
+    Available in ``res.body_file.tell()``.
+
 There are also many extra methods and attributes on WebOb Response
 objects.
 
@@ -162,7 +165,7 @@ dictionary-like:
 ``has_header(header)``:
     Use ``header in res.headers``
 
-``flush()``, ``tell()``:
+``flush()``:
     Not available
 
 ``content``:

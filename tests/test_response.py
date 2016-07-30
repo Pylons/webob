@@ -610,6 +610,23 @@ def test_response_file_body_writelines():
     rbo.flush() # noop
     assert res.app_iter, [b'foo', b'bar', b'baz']
 
+def test_response_file_body_tell():
+    import zipfile
+    from webob.response import ResponseBodyFile
+    rbo = ResponseBodyFile(Response())
+    assert rbo.tell() == 0
+    writer = zipfile.ZipFile(rbo, 'w')
+    writer.writestr('zinfo_or_arcname', b'foo')
+    writer.close()
+    assert rbo.tell() == 133
+
+def test_response_file_body_tell_text():
+    from webob.response import ResponseBodyFile
+    rbo = ResponseBodyFile(Response())
+    assert rbo.tell() == 0
+    rbo.write('123456789')
+    assert rbo.tell() == 9
+
 def test_response_write_non_str():
     res = Response()
     with pytest.raises(TypeError):

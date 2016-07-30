@@ -543,7 +543,7 @@ class Response(object):
             else:
                 return False
 
-        if app_iter is None:  # pragma: no cover (just a safeguard, houl)
+        if app_iter is None: # pragma: no cover
             return False
 
         return True
@@ -1339,6 +1339,13 @@ class ResponseBodyFile(object):
 
     def flush(self):
         pass
+
+    def tell(self):
+        if self.response.app_iter is None: # pragma: no cover
+            return 0
+
+        return sum([len(chunk) for chunk in self.response.app_iter])
+
 
 class AppIterRange(object):
     """
