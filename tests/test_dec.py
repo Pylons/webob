@@ -4,7 +4,6 @@ from webob.response import Response
 from webob.dec import wsgify
 from webob.compat import bytes_
 from webob.compat import text_
-from webob.compat import PY3
 
 class DecoratorTests(unittest.TestCase):
     def _testit(self, app, req):
