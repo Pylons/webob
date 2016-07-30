@@ -210,13 +210,29 @@ class Response(object):
         # Set up the content_type
         content_type = content_type or self.default_content_type
 
+        # We only set the content_type to the one passed to the constructor or
+        # the default content type if there is none that exists AND there was
+        # no headerlist passed. If a headerlist was provided then most likely
+        # the ommission of the Content-Type is on purpose and we shouldn't try
+        # to be smart about it.
+        #
+        # Also allow creation of a empty Response with just the status set to a
+        # Response with empty body, such as Response(status='204 No Content')
+        # without the default content_type being set
+
         if (
-            'Content-Type' not in self.headers and
+            self.content_type is None and
+            headerlist is None and
             _code_has_body(self.status_code)
         ):
             self.content_type = content_type
 
         # Set up the charset
+        #
+        # In contrast with the above, if a charset is not set but there is a
+        # content_type we will set the default charset if the content_type
+        # allows for a charset.
+
         if self.content_type:
             if charset is not _marker:
                 self.charset = charset
