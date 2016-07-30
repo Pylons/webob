@@ -833,14 +833,10 @@ class Response(object):
         for k, v in sorted(value_dict.items()):
             if not _OK_PARAM_RE.search(v):
                 v = '"%s"' % v.replace('"', '\\"')
-            # charset has constraints which we handle in its setter
-            if k != 'charset':
-                params.append('; %s=%s' % (k, v))
+            params.append('; %s=%s' % (k, v))
         ct = self.headers.pop('Content-Type', '').split(';', 1)[0]
         ct += ''.join(params)
         self.headers['Content-Type'] = ct
-        if 'charset' in value_dict:
-            self.charset = value_dict['charset']
 
     def _content_type_params__del(self):
         self.headers['Content-Type'] = self.headers.get(
