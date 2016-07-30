@@ -76,9 +76,9 @@ class Response(object):
     """
         Represents a WSGI response.
 
-        If no arguments are passed, creates a :py:class:`~Response` that uses a
+        If no arguments are passed, creates a :class:`~Response` that uses a
         variety of defaults. The defaults may be changed by sub-classing the
-        :py:class:`~Response`. See the :ref:`sub-classing notes
+        :class:`~Response`. See the :ref:`sub-classing notes
         <response_subclassing_notes>`.
 
         :cvar ~Response.body: If ``body`` is a ``text_type``, then it will be
@@ -88,7 +88,7 @@ class Response(object):
 
         :vartype ~Response.body: bytes or text_type
 
-        :cvar ~Response.status: Either an :py:class:`int` or a string that is
+        :cvar ~Response.status: Either an :class:`int` or a string that is
             an integer followed by the status text. If it is an integer, it
             will be converted to a proper status that also includes the status
             text.  Any existing status text will be kept. Non-standard values
@@ -113,8 +113,8 @@ class Response(object):
         :vartype ~Response.content_type: str or None
 
         :cvar conditional_response: Used to change the behavior of the
-            :py:class:`~Response` to check the original request for conditional
-            response headers. See :py:meth:`~Response.conditional_response_app`
+            :class:`~Response` to check the original request for conditional
+            response headers. See :meth:`~Response.conditional_response_app`
             for more information.
 
         :vartype conditional_response: bool
@@ -129,7 +129,7 @@ class Response(object):
         :vartype ~Response.charset: str or None
 
         All other response attributes may be set on the response by providing
-        them as keyword arguments. A :py:exc:`TypeError` will be raised for any
+        them as keyword arguments. A :exc:`TypeError` will be raised for any
         unexpected keywords.
 
         .. _response_subclassing_notes:
@@ -148,13 +148,13 @@ class Response(object):
           will not have a ``charset`` added.
 
         * The ``unicode_errors`` is set to ``strict``, and access on a
-          :py:attr:`~Response.text` will raise an error if it fails to decode the
-          :py:attr:`~Response.body`.
+          :attr:`~Response.text` will raise an error if it fails to decode the
+          :attr:`~Response.body`.
 
         * ``default_conditional_response`` is set to False. This flag may be
           set to True so that all ``Response`` objects will attempt to check
           the original request for conditional response headers. See
-          :py:meth:`~Response.conditional_response_app` for more information.
+          :meth:`~Response.conditional_response_app` for more information.
     """
 
     default_content_type = 'text/html'
@@ -435,7 +435,7 @@ class Response(object):
 
     def _body__get(self):
         """
-        The body of the response, as a :py:class:`bytes`.  This will read in
+        The body of the response, as a :class:`bytes`.  This will read in
         the entire app_iter if necessary.
         """
         app_iter = self._app_iter
@@ -495,10 +495,10 @@ class Response(object):
 
         .. note::
 
-           This will automatically :py:meth:`~bytes.decode` the
-           :py:attr:`~Response.body` as ``UTF-8`` on get, and
-           :py:meth:`~str.encode` the :py:meth:`json.dumps` as ``UTF-8``
-           before assigning to :py:attr:`~Response.body`.
+           This will automatically :meth:`~bytes.decode` the
+           :attr:`~Response.body` as ``UTF-8`` on get, and
+           :meth:`~str.encode` the :meth:`json.dumps` as ``UTF-8``
+           before assigning to :attr:`~Response.body`.
 
         """
         # Note: UTF-8 is a content-type specific default for JSON
@@ -514,9 +514,9 @@ class Response(object):
 
     def _has_body__get(self):
         """
-        Determine if the the response has a :py:attr:`~Response.body`. In
-        contrast to simply accessing :py:attr:`~Response.body` this method
-        will **not** read the underlying :py:attr:`~Response.app_iter`.
+        Determine if the the response has a :attr:`~Response.body`. In
+        contrast to simply accessing :attr:`~Response.body` this method
+        will **not** read the underlying :attr:`~Response.app_iter`.
         """
 
         app_iter = self._app_iter
