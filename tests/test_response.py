@@ -620,6 +620,13 @@ def test_response_file_body_tell():
     writer.close()
     assert rbo.tell() == 133
 
+def test_response_file_body_tell_text():
+    from webob.response import ResponseBodyFile
+    rbo = ResponseBodyFile(Response())
+    assert rbo.tell() == 0
+    rbo.write('123456789')
+    assert rbo.tell() == 9
+
 def test_response_write_non_str():
     res = Response()
     with pytest.raises(TypeError):
