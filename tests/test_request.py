@@ -3278,6 +3278,39 @@ class TestRequest_functional(object):
         assert list(res.headers.items()) == [('Content-Type', 'text/plain; charset=UTF-8')]
         assert res.body == b'Hi!'
 
+    def test_call_WSGI_app_204(self):
+        req = self._blankOne('/')
+        def wsgi_app(environ, start_response):
+            start_response('204 No Content', [])
+            return [b'']
+        assert req.call_application(wsgi_app) == ('204 No Content', [], [b''])
+
+        res = req.get_response(wsgi_app)
+        from webob.response import Response
+        assert isinstance(res, Response)
+        assert res.status == '204 No Content'
+        from webob.headers import ResponseHeaders
+        assert isinstance(res.headers, ResponseHeaders)
+        assert list(res.headers.items()) == []
+        assert res.body == b''
+
+    def test_call_WSGI_app_no_content_type(self):
+        req = self._blankOne('/')
+        def wsgi_app(environ, start_response):
+            start_response('200 OK', [])
+            return [b'']
+        assert req.call_application(wsgi_app) == ('200 OK', [], [b''])
+
+        res = req.get_response(wsgi_app)
+        from webob.response import Response
+        assert isinstance(res, Response)
+        assert res.status == '200 OK'
+        assert res.content_type is None
+        from webob.headers import ResponseHeaders
+        assert isinstance(res.headers, ResponseHeaders)
+        assert list(res.headers.items()) == []
+        assert res.body == b''
+
     def test_get_response_catch_exc_info_true(self):
         req = self._blankOne('/')
         def wsgi_app(environ, start_response):
