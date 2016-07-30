@@ -36,9 +36,11 @@ def test_response():
     res.body = b'Not OK'
     assert b''.join(res.app_iter) == b'Not OK'
     res.charset = 'iso8859-1'
-    assert res.headers['content-type'] == 'text/html; charset=iso8859-1'
+    assert 'text/html; charset=iso8859-1' == res.headers['content-type']
     res.content_type = 'text/xml'
-    assert res.headers['content-type'] == 'text/xml; charset=iso8859-1'
+    assert 'text/xml; charset=iso8859-1' == res.headers['content-type']
+    res.content_type = 'text/xml; charset=UTF-8'
+    assert 'text/xml; charset=UTF-8' == res.headers['content-type']
     res.headers = {'content-type': 'text/html'}
     assert res.headers['content-type'] == 'text/html'
     assert res.headerlist == [('content-type', 'text/html')]
@@ -60,9 +62,13 @@ def test_response():
     del req.environ
     with pytest.raises(TypeError):
         Response(charset=None,
+                 content_type='image/jpeg',
                  body=text_(b"unicode body"))
     with pytest.raises(TypeError):
         Response(wrong_key='dummy')
+    with pytest.raises(TypeError):
+        resp = Response()
+        resp.body = text_(b"unicode body")
 
 def test_set_response_status_binary():
     req = BaseRequest.blank('/')
@@ -136,10 +142,12 @@ def test_init_no_charset_when_json():
     assert Response(content_type=content_type).headers['content-type'] == expected
 
 def test_init_keeps_specified_charset_when_json():
-    content_type = 'application/json;charset=ISO-8859-1'
+    content_type = 'application/json; charset=ISO-8859-1'
     expected = content_type
     assert Response(content_type=content_type).headers['content-type'] == expected
 
+def test_init_doesnt_add_default_content_type_with_bodyless_status():
+    assert Response(status='204 No Content').content_type is None
 
 def test_cookies():
     res = Response()
@@ -437,6 +445,37 @@ def test_app_iter_range_inner_method():
     res = Response(app_iter=FakeAppIter())
     assert res.app_iter_range(30, 40), ('you win', 30 == 40)
 
+def test_has_body():
+    empty = Response()
+    assert not empty.has_body
+
+    with_list = Response(app_iter=['1'])
+    assert with_list.has_body
+
+    with_empty_list = Response(app_iter=[b''])
+    assert not with_empty_list.has_body
+
+    with_body = Response(body='Seomthing')
+    assert with_body.has_body
+
+    with_none_app_iter = Response(app_iter=None)
+    assert not with_none_app_iter.has_body
+
+    with_none_body = Response(body=None)
+    assert not with_none_body.has_body
+
+    # key feature: has_body should not read app_iter
+    app_iter = iter(['1', '2'])
+    not_iterating = Response(app_iter=app_iter)
+    assert not_iterating.has_body
+    assert next(app_iter) == '1'
+
+    # messed with private attribute but method should nonetheless not
+    # return True
+    messing_with_privates = Response()
+    messing_with_privates._app_iter = None
+    assert not messing_with_privates.has_body
+
 def test_content_type_in_headerlist():
     # Couldn't manage to clone Response in order to modify class
     # attributes safely. Shouldn't classes be fresh imported for every
@@ -504,6 +543,13 @@ def test_file_with_http_version():
     res = Response.from_file(inp)
     assert res.status_code == 200
     assert res.status == '200 OK'
+
+def test_file_with_http_version_more_status():
+    inp = io.BytesIO(b'HTTP/1.1 404 Not Found\r\n\r\nSome data...')
+
+    res = Response.from_file(inp)
+    assert res.status_code == 404
+    assert res.status == '404 Not Found'
 
 def test_set_status():
     res = Response()
@@ -649,7 +695,7 @@ def test_text_get_decode():
     res = Response()
     res.charset = 'utf-8'
     res.body = b'La Pe\xc3\xb1a'
-    assert res.text, text_(b'La Pe\xc3\xb1a' == 'utf-8')
+    assert res.text, text_(b'La Pe\xc3\xb1a')
 
 def test_text_set_no_charset():
     res = Response()
@@ -709,7 +755,7 @@ def test_charset_set_no_content_type_header():
     res = Response()
     res.headers.pop('Content-Type', None)
     with pytest.raises(AttributeError):
-        res.__setattr__('charset', 'utf-8')
+        res.charset = 'utf-8'
 
 def test_charset_del_no_content_type_header():
     res = Response()
@@ -736,6 +782,11 @@ def test_content_type_params_set_ok_param_quoting():
     res = Response()
     res.content_type_params = {'a': ''}
     assert res.headers['Content-Type'] == 'text/html; a=""'
+
+def test_charset_delete():
+    res = Response()
+    del res.charset
+    assert res.charset is None
 
 def test_set_cookie_overwrite():
     res = Response()

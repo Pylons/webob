@@ -139,6 +139,8 @@ def test_WSGIHTTPException_respects_application_json():
         title = 'Validation Failed'
         explanation = 'Validation of an attribute failed.'
     def start_response(status, headers, exc_info=None):
+        # check that json doesn't contain a charset
+        assert ('Content-Type', 'application/json') in headers
         pass
 
     exc = ValidationError(detail='Attribute "xyz" is invalid.')
@@ -156,6 +158,51 @@ def test_WSGIHTTPException_respects_application_json():
                    ' "xyz" is invalid.\n\n',
     }
 
+def test_WSGIHTTPException_respects_accept_text_html():
+    def start_response(status, headers, exc_info=None):
+        for header in headers:
+            if header[0] == 'Content-Type':
+                assert header[1].startswith('text/html')
+
+    exc = webob_exc.WSGIHTTPException()
+    resp = exc.generate_response(environ={
+        'wsgi.url_scheme': 'HTTP',
+        'SERVER_NAME': 'localhost',
+        'SERVER_PORT': '80',
+        'REQUEST_METHOD': 'GET',
+        'HTTP_ACCEPT': 'text/html',
+    }, start_response=start_response)
+
+def test_WSGIHTTPException_respects_accept_text_plain():
+    def start_response(status, headers, exc_info=None):
+        for header in headers:
+            if header[0] == 'Content-Type':
+                assert header[1].startswith('text/plain')
+
+    exc = webob_exc.WSGIHTTPException()
+    resp = exc.generate_response(environ={
+        'wsgi.url_scheme': 'HTTP',
+        'SERVER_NAME': 'localhost',
+        'SERVER_PORT': '80',
+        'REQUEST_METHOD': 'GET',
+        'HTTP_ACCEPT': 'text/plain',
+    }, start_response=start_response)
+
+def test_WSGIHTTPException_respects_accept_star_star():
+    def start_response(status, headers, exc_info=None):
+        for header in headers:
+            if header[0] == 'Content-Type':
+                assert header[1].startswith('text/html')
+
+    exc = webob_exc.WSGIHTTPException()
+    resp = exc.generate_response(environ={
+        'wsgi.url_scheme': 'HTTP',
+        'SERVER_NAME': 'localhost',
+        'SERVER_PORT': '80',
+        'REQUEST_METHOD': 'GET',
+        'HTTP_ACCEPT': '*/*',
+    }, start_response=start_response)
+
 def test_WSGIHTTPException_allows_custom_json_formatter():
     def json_formatter(body, status, title, environ):
         return {"fake": True}
@@ -171,6 +218,7 @@ def test_WSGIHTTPException_allows_custom_json_formatter():
 
 def test_WSGIHTTPException_generate_response():
     def start_response(status, headers, exc_info=None):
+        assert ('Content-Type', 'text/html; charset=UTF-8') in headers
         pass
     environ = {
        'wsgi.url_scheme': 'HTTP',
