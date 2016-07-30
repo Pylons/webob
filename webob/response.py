@@ -77,27 +77,32 @@ class Response(object):
         Represents a WSGI response.
 
         If no arguments are passed, creates a :py:class:`~Response` that uses a
-        variety of defaults. Defaults may be changed by sub-classing the
+        variety of defaults. The defaults may be changed by sub-classing the
         :py:class:`~Response`. See the :ref:`sub-classing notes
         <response_subclassing_notes>`.
 
-        :cvar ~Response.body: ``body`` may be a :py:class:`bytes` or ``text_type``. If
-            ``body`` is a ``text_type``, then it will be encoded using either
-            ``charset`` when provided or ``default_encoding`` when ``charset``
-            is not provided. This argument is mutually  exclusive with
-            ``app_iter``.
+        :cvar ~Response.body: If ``body`` is a ``text_type``, then it will be
+            encoded using either ``charset`` when provided or
+            ``default_encoding`` when ``charset`` is not provided. This
+            argument is mutually  exclusive with ``app_iter``.
 
         :vartype ~Response.body: bytes or text_type
 
-        :cvar status: Either an :py:class:`int` or a string that is an integer
-            followed by the status text. If it is an integer, it will be
-            converted to a proper status that also includes the status text.
-            Any existing status text will be kept. Non-standard values are
-            allowed.
+        :cvar ~Response.status: Either an :py:class:`int` or a string that is
+            an integer followed by the status text. If it is an integer, it
+            will be converted to a proper status that also includes the status
+            text.  Any existing status text will be kept. Non-standard values
+            are allowed.
 
-        :vartype status: int or str
+        :vartype ~Response.status: int or str
 
-        :cvar list headerlist: A list of HTTP headers for the response.
+        :cvar list ~Response.headerlist: A list of HTTP headers for the response.
+
+        :cvar ~Response.app_iter: An iterator that is used as the body of the
+            response. Should conform to the WSGI requirements and should
+            provide bytes. This argument is mutually exclusive with ``body``.
+
+        :vartype ~Response.app_iter: iterable
 
         :cvar ~Response.content_type: Sets the ``Content-Type`` header. If the
             ``headerlist`` already contains a ``Content-Type``, then it will
@@ -112,12 +117,16 @@ class Response(object):
             response headers. See :py:meth:`~Response.conditional_response_app`
             for more information.
 
-        :cvar charset: Adds a ``charset`` ``Content-Type`` parameter. If no
+        :vartype conditional_response: bool
+
+        :cvar ~Response.charset: Adds a ``charset`` ``Content-Type`` parameter. If no
             ``charset`` is provided and the ``Content-Type`` is text, then the
             ``default_charset`` will automatically be added.  Currently the
             only ``Content-Type``'s that allow for a ``charset`` are defined to
             be ``text/*``, ``application/xml``, and ``*/*+xml``. Any other
             ``Content-Type``'s will not have a ``charset`` added.
+
+        :vartype ~Response.charset: str or None
 
         All other response attributes may be set on the response by providing
         them as keyword arguments. A :py:exc:`TypeError` will be raised for any
