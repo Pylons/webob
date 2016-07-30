@@ -1,3 +1,5 @@
+import pytest
+
 from webob.request import Request
 from webob.acceptparse import Accept
 from webob.acceptparse import MIMEAccept
@@ -6,8 +8,6 @@ from webob.acceptparse import NoAccept
 from webob.acceptparse import accept_property
 from webob.acceptparse import AcceptLanguage
 from webob.acceptparse import AcceptCharset
-
-from nose.tools import eq_, assert_raises
 
 def test_parse_accept_badq():
     assert list(Accept.parse("value1; q=0.1.2")) == [('value1', 1)]
@@ -139,7 +139,8 @@ def test_best_match():
                               'text/html']) == 'text/html'
     assert accept.best_match([('foo/bar', 0.5),
                               ('text/html', 0.4)]) == 'foo/bar'
-    assert_raises(ValueError, accept.best_match, ['text/*'])
+    with pytest.raises(ValueError):
+        accept.best_match(['text/*'])
 
 def test_best_match_with_one_lower_q():
     accept = Accept('text/html, foo/bar;q=0.5')
@@ -185,9 +186,7 @@ def test_accept_match_lang():
 
 def test_nil():
     nilaccept = NilAccept()
-    eq_(repr(nilaccept),
-        "<NilAccept: <class 'webob.acceptparse.Accept'>>"
-    )
+    assert repr(nilaccept) == "<NilAccept: <class 'webob.acceptparse.Accept'>>"
     assert not nilaccept
     assert str(nilaccept) == ''
     assert nilaccept.quality('dummy') == 0
@@ -271,7 +270,69 @@ def test_match():
     assert mimeaccept._match('image/*', 'image/jpg')
     assert mimeaccept._match('*/*', 'image/jpg')
     assert not mimeaccept._match('text/html', 'image/jpg')
-    assert_raises(ValueError, mimeaccept._match, 'image/jpg', '*/*')
+
+    mismatches = [
+        ('B/b', 'A/a'),
+        ('B/b', 'B/a'),
+        ('B/b', 'A/b'),
+        ('A/a', 'B/b'),
+        ('B/a', 'B/b'),
+        ('A/b', 'B/b')
+    ]
+    for mask, offer in mismatches:
+        assert not mimeaccept._match(mask, offer)
+
+
+def test_wildcard_matching():
+    """
+    Wildcard matching forces the match to take place against the type
+    or subtype of the mask and offer (depending on where the wildcard
+    matches)
+    """
+    mimeaccept = MIMEAccept('type/subtype')
+    matches = [
+        ('*/*', '*/*'),
+        ('*/*', 'A/*'),
+        ('*/*', '*/a'),
+        ('*/*', 'A/a'),
+        ('A/*', '*/*'),
+        ('A/*', 'A/*'),
+        ('A/*', '*/a'),
+        ('A/*', 'A/a'),
+        ('*/a', '*/*'),
+        ('*/a', 'A/*'),
+        ('*/a', '*/a'),
+        ('*/a', 'A/a'),
+        ('A/a', '*/*'),
+        ('A/a', 'A/*'),
+        ('A/a', '*/a'),
+        ('A/a', 'A/a'),
+        # Offers might not contain a subtype
+        ('*/*', '*'),
+        ('A/*', '*'),
+        ('*/a', '*')]
+    for mask, offer in matches:
+        assert mimeaccept._match(mask, offer)
+        # Test malformed mask and offer variants where either is missing
+        # a type or subtype
+        assert mimeaccept._match('A', offer)
+        assert mimeaccept._match(mask, 'a')
+
+    mismatches = [
+        ('B/b', 'A/*'),
+        ('B/*', 'A/a'),
+        ('B/*', 'A/*'),
+        ('*/b', '*/a')]
+    for mask, offer in mismatches:
+        assert not mimeaccept._match(mask, offer)
+
+def test_mimeaccept_contains():
+    mimeaccept = MIMEAccept('A/a, B/b, C/c')
+    assert 'A/a' in mimeaccept
+    assert 'A/*' in mimeaccept
+    assert '*/a' in mimeaccept
+    assert not 'A/b' in mimeaccept
+    assert not 'B/a' in mimeaccept
 
 def test_accept_json():
     mimeaccept = MIMEAccept('text/html, *; q=.2, */*; q=.2')
@@ -303,23 +364,23 @@ def test_accept_property_fget():
     desc = accept_property('Accept-Charset', '14.2')
     req = Request.blank('/', environ={'envkey': 'envval'})
     desc.fset(req, 'val')
-    eq_(desc.fget(req).header_value, 'val')
+    assert desc.fget(req).header_value == 'val'
 
 def test_accept_property_fget_nil():
     desc = accept_property('Accept-Charset', '14.2')
     req = Request.blank('/')
-    eq_(type(desc.fget(req)), NilAccept)
+    assert type(desc.fget(req)) == NilAccept
 
 def test_accept_property_fset():
     desc = accept_property('Accept-Charset', '14.2')
     req = Request.blank('/', environ={'envkey': 'envval'})
     desc.fset(req, 'baz')
-    eq_(desc.fget(req).header_value, 'baz')
+    assert desc.fget(req).header_value == 'baz'
 
 def test_accept_property_fset_acceptclass():
     req = Request.blank('/', environ={'envkey': 'envval'})
     req.accept_charset = ['utf-8', 'latin-11']
-    eq_(req.accept_charset.header_value, 'utf-8, latin-11, iso-8859-1')
+    assert req.accept_charset.header_value == 'utf-8, latin-11, iso-8859-1'
 
 def test_accept_property_fdel():
     desc = accept_property('Accept-Charset', '14.2')
@@ -327,4 +388,4 @@ def test_accept_property_fdel():
     desc.fset(req, 'val')
     assert desc.fget(req).header_value == 'val'
     desc.fdel(req)
-    eq_(type(desc.fget(req)), NilAccept)
+    assert type(desc.fget(req)) == NilAccept

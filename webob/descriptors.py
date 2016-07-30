@@ -108,7 +108,7 @@ def deprecated_property(attr, name, text, version): # pragma: no cover
     """
     def warn():
         warn_deprecation('The attribute %s is deprecated: %s'
-            % (attr, text),
+            % (name, text),
             version,
             3
         )
@@ -122,7 +122,7 @@ def deprecated_property(attr, name, text, version): # pragma: no cover
         warn()
         attr.__delete__(self)
     return property(fget, fset, fdel,
-        '<Deprecated attribute %s>' % attr
+        '<Deprecated attribute %s>' % name
     )
 
 
@@ -138,6 +138,9 @@ def header_getter(header, rfc_section):
     def fset(r, value):
         fdel(r)
         if value is not None:
+            if '\n' in value or '\r' in value:
+                raise ValueError('Header value may not contain control characters')
+
             if isinstance(value, text_type) and not PY3:
                 value = value.encode('latin-1')
             r._headerlist.append((header, value))
@@ -303,7 +306,7 @@ def serialize_content_range(value):
 
 
 
-_rx_auth_param = re.compile(r'([a-z]+)=(".*?"|[^,]*)(?:\Z|, *)')
+_rx_auth_param = re.compile(r'([a-z]+)[ \t]*=[ \t]*(".*?"|[^,]*?)[ \t]*(?:\Z|, *)')
 
 def parse_auth_params(params):
     r = {}

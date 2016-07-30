@@ -1,5 +1,10 @@
 import collections
 
+import base64
+import binascii
+import hashlib
+import hmac
+import json
 from datetime import (
     date,
     datetime,
@@ -8,6 +13,7 @@ from datetime import (
 import re
 import string
 import time
+import warnings
 
 from webob.compat import (
     PY3,
@@ -18,7 +24,10 @@ from webob.compat import (
     string_types,
     )
 
-__all__ = ['Cookie']
+from webob.util import strings_differ
+
+__all__ = ['Cookie', 'CookieProfile', 'SignedCookieProfile', 'SignedSerializer',
+           'JSONSerializer', 'Base64Serializer', 'make_cookie']
 
 _marker = object()
 
@@ -51,7 +60,7 @@ class RequestCookies(collections.MutableMapping):
         if value is None:
             replacement = None
         else:
-            bytes_val = _quote(bytes_(value, 'utf-8'))
+            bytes_val = _value_quote(bytes_(value, 'utf-8'))
             replacement = bytes_name + b'=' + bytes_val
         matches = _rx_cookie.finditer(header)
         found = False
@@ -89,7 +98,7 @@ class RequestCookies(collections.MutableMapping):
         except UnicodeEncodeError:
             raise TypeError('cookie name must be encodable to ascii')
         if not _valid_cookie_name(bytes_cookie_name):
-            raise TypeError('cookie name must be valid according to RFC 2109')
+            raise TypeError('cookie name must be valid according to RFC 6265')
         return name
 
     def __setitem__(self, name, value):
@@ -231,10 +240,9 @@ def serialize_cookie_date(v):
 class Morsel(dict):
     __slots__ = ('name', 'value')
     def __init__(self, name, value):
-        assert _valid_cookie_name(name)
-        assert isinstance(value, bytes)
-        self.name = name
-        self.value = value
+        self.name = bytes_(name, encoding='ascii')
+        self.value = bytes_(value, encoding='ascii')
+        assert _valid_cookie_name(self.name)
         self.update(dict.fromkeys(_c_keys, None))
 
     path = cookie_property(b'path')
@@ -253,12 +261,15 @@ class Morsel(dict):
     def serialize(self, full=True):
         result = []
         add = result.append
-        add(self.name + b'=' + _quote(self.value))
+        add(self.name + b'=' + _value_quote(self.value))
         if full:
             for k in _c_valkeys:
                 v = self[k]
                 if v:
-                    add(_c_renames[k]+b'='+_quote(v))
+                    info = _c_renames[k]
+                    name = info['name']
+                    quoter = info['quoter']
+                    add(name + b'=' + quoter(v))
             expires = self[b'expires']
             if expires:
                 add(b'expires=' + expires)
@@ -275,19 +286,6 @@ class Morsel(dict):
             native_(self.name),
             native_(self.value)
         )
-
-_c_renames = {
-    b"path" : b"Path",
-    b"comment" : b"Comment",
-    b"domain" : b"Domain",
-    b"max-age" : b"Max-Age",
-}
-_c_valkeys = sorted(_c_renames)
-_c_keys = set(_c_renames)
-_c_keys.update([b'expires', b'secure', b'httponly'])
-
-
-
 
 #
 # parsing
@@ -314,8 +312,8 @@ _ch_unquote_map = dict((bytes_('%03o' % i), _bchr(i))
 )
 _ch_unquote_map.update((v, v) for v in list(_ch_unquote_map.values()))
 
-_b_dollar_sign = 36 if PY3 else '$'
-_b_quote_mark = 34 if PY3 else '"'
+_b_dollar_sign = ord('$') if PY3 else '$'
+_b_quote_mark = ord('"') if PY3 else '"'
 
 def _unquote(v):
     #assert isinstance(v, bytes)
@@ -331,41 +329,589 @@ def _ch_unquote(m):
 # serializing
 #
 
-# these chars can be in cookie value w/o causing it to be quoted
-_no_escape_special_chars = "!#$%&'*+-.^_`|~/"
-_no_escape_chars = (string.ascii_letters + string.digits +
-                    _no_escape_special_chars)
-_no_escape_bytes = bytes_(_no_escape_chars)
-# these chars never need to be quoted
-_escape_noop_chars = _no_escape_chars + ': '
+# these chars can be in cookie value see
+# http://tools.ietf.org/html/rfc6265#section-4.1.1 and
+# https://github.com/Pylons/webob/pull/104#issuecomment-28044314
+#
+# ! (0x21), "#$%&'()*+" (0x25-0x2B), "-./0123456789:" (0x2D-0x3A),
+# "<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[" (0x3C-0x5B),
+# "]^_`abcdefghijklmnopqrstuvwxyz{|}~" (0x5D-0x7E)
+
+_allowed_special_chars = "!#$%&'()*+-./:<=>?@[]^_`{|}~"
+_allowed_cookie_chars = (string.ascii_letters + string.digits +
+                    _allowed_special_chars)
+_allowed_cookie_bytes = bytes_(_allowed_cookie_chars)
+
+# these are the characters accepted in cookie *names*
+# From http://tools.ietf.org/html/rfc2616#section-2.2:
+# token          = 1*<any CHAR except CTLs or separators>
+# separators     = "(" | ")" | "<" | ">" | "@"
+#                | "," | ";" | ":" | "\" | <">
+#                | "/" | "[" | "]" | "?" | "="
+#                | "{" | "}" | SP | HT
+#
+# CTL            = <any US-ASCII control character
+#                         (octets 0 - 31) and DEL (127)>
+#
+_valid_token_chars = string.ascii_letters + string.digits + "!#$%&'*+-.^_`|~"
+_valid_token_bytes = bytes_(_valid_token_chars)
+
 # this is a map used to escape the values
+
+_escape_noop_chars = _allowed_cookie_chars + ' '
 _escape_map = dict((chr(i), '\\%03o' % i) for i in range(256))
 _escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
-_escape_map['"'] = r'\"'
-_escape_map['\\'] = r'\\'
 if PY3: # pragma: no cover
     # convert to {int -> bytes}
-    _escape_map = dict((ord(k), bytes_(v, 'ascii')) for k, v in _escape_map.items())
+    _escape_map = dict(
+        (ord(k), bytes_(v, 'ascii')) for k, v in _escape_map.items()
+        )
 _escape_char = _escape_map.__getitem__
 
 weekdays = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 months = (None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
           'Oct', 'Nov', 'Dec')
 
-_notrans_binary = b' '*256
 
-def _needs_quoting(v):
-    return v.translate(_notrans_binary, _no_escape_bytes)
+# This is temporary, until we can remove this from _value_quote
+_should_raise = None
 
-def _quote(v):
-    #assert isinstance(v, bytes)
-    if _needs_quoting(v):
+def __warn_or_raise(text, warn_class, to_raise, raise_reason):
+    if _should_raise:
+        raise to_raise(raise_reason)
+
+    else:
+        warnings.warn(text, warn_class, stacklevel=2)
+
+
+def _value_quote(v):
+    # This looks scary, but is simple. We remove all valid characters from the
+    # string, if we end up with leftovers (string is longer than 0, we have
+    # invalid characters in our value)
+
+    leftovers = v.translate(None, _allowed_cookie_bytes)
+    if leftovers:
+        __warn_or_raise(
+                "Cookie value contains invalid bytes: (%s). Future versions "
+                "will raise ValueError upon encountering invalid bytes." %
+                (leftovers,),
+                RuntimeWarning, ValueError, 'Invalid characters in cookie value'
+                )
+        #raise ValueError('Invalid characters in cookie value')
         return b'"' + b''.join(map(_escape_char, v)) + b'"'
+
     return v
 
 def _valid_cookie_name(key):
     return isinstance(key, bytes) and not (
-        _needs_quoting(key)
+        key.translate(None, _valid_token_bytes)
+        # Not explicitly required by RFC6265, may consider removing later:
         or key[0] == _b_dollar_sign
         or key.lower() in _c_keys
     )
+
+def _path_quote(v):
+    return b''.join(map(_escape_char, v))
+
+_domain_quote = _path_quote
+_max_age_quote = _path_quote
+
+_c_renames = {
+    b"path" : {'name':b"Path", 'quoter':_path_quote},
+    b"comment" : {'name':b"Comment", 'quoter':_value_quote},
+    b"domain" : {'name':b"Domain", 'quoter':_domain_quote},
+    b"max-age" : {'name':b"Max-Age", 'quoter':_max_age_quote},
+    }
+_c_valkeys = sorted(_c_renames)
+_c_keys = set(_c_renames)
+_c_keys.update([b'expires', b'secure', b'httponly'])
+
+
+def make_cookie(name, value, max_age=None, path='/', domain=None,
+                secure=False, httponly=False, comment=None):
+    """ Generate a cookie value.  If ``value`` is None, generate a cookie value
+    with an expiration date in the past"""
+
+    # We are deleting the cookie, override max_age and expires
+    if value is None:
+        value = b''
+        # Note that the max-age value of zero is technically contraspec;
+        # RFC6265 says that max-age cannot be zero.  However, all browsers
+        # appear to support this to mean "delete immediately".
+        # http://www.timwilson.id.au/news-three-critical-problems-with-rfc6265.html
+        max_age = 0
+        expires = 'Wed, 31-Dec-97 23:59:59 GMT'
+
+    # Convert max_age to seconds
+    elif isinstance(max_age, timedelta):
+        max_age = (max_age.days * 60 * 60 * 24) + max_age.seconds
+        expires = max_age
+    elif max_age is not None:
+        try:
+            max_age = int(max_age)
+        except ValueError:
+            raise ValueError('max_age should be an integer. Amount of seconds until expiration.')
+
+        expires = max_age
+    else:
+        expires = None
+
+    morsel = Morsel(name, value)
+
+    if domain is not None:
+        morsel.domain = bytes_(domain)
+    if path is not None:
+        morsel.path = bytes_(path)
+    if httponly:
+        morsel.httponly = True
+    if secure:
+        morsel.secure = True
+    if max_age is not None:
+        morsel.max_age = max_age
+    if expires is not None:
+        morsel.expires = expires
+    if comment is not None:
+        morsel.comment = bytes_(comment)
+    return morsel.serialize()
+
+class JSONSerializer(object):
+    """ A serializer which uses `json.dumps`` and ``json.loads``"""
+    def dumps(self, appstruct):
+        return bytes_(json.dumps(appstruct), encoding='utf-8')
+
+    def loads(self, bstruct):
+        # NB: json.loads raises ValueError if no json object can be decoded
+        # so we don't have to do it explicitly here.
+        return json.loads(text_(bstruct, encoding='utf-8'))
+
+class Base64Serializer(object):
+    """ A serializer which uses base64 to encode/decode data"""
+
+    def __init__(self, serializer=None):
+        if serializer is None:
+            serializer = JSONSerializer()
+
+        self.serializer = serializer
+
+    def dumps(self, appstruct):
+        """
+        Given an ``appstruct``, serialize and sign the data.
+
+        Returns a bytestring.
+        """
+        cstruct = self.serializer.dumps(appstruct) # will be bytes
+        return base64.urlsafe_b64encode(cstruct)
+
+    def loads(self, bstruct):
+        """
+        Given a ``bstruct`` (a bytestring), verify the signature and then
+        deserialize and return the deserialized value.
+
+        A ``ValueError`` will be raised if the signature fails to validate.
+        """
+        try:
+            cstruct = base64.urlsafe_b64decode(bytes_(bstruct))
+        except (binascii.Error, TypeError) as e:
+            raise ValueError('Badly formed base64 data: %s' % e)
+
+        return self.serializer.loads(cstruct)
+
+class SignedSerializer(object):
+    """
+    A helper to cryptographically sign arbitrary content using HMAC.
+
+    The serializer accepts arbitrary functions for performing the actual
+    serialization and deserialization.
+
+    ``secret``
+      A string which is used to sign the cookie. The secret should be at
+      least as long as the block size of the selected hash algorithm. For
+      ``sha512`` this would mean a 128 bit (64 character) secret.
+
+    ``salt``
+      A namespace to avoid collisions between different uses of a shared
+      secret.
+
+    ``hashalg``
+      The HMAC digest algorithm to use for signing. The algorithm must be
+      supported by the :mod:`hashlib` library. Default: ``'sha512'``.
+
+    ``serializer``
+      An object with two methods: `loads`` and ``dumps``.  The ``loads`` method
+      should accept bytes and return a Python object.  The ``dumps`` method
+      should accept a Python object and return bytes.  A ``ValueError`` should
+      be raised for malformed inputs.  Default: ``None`, which will use a
+      derivation of :func:`json.dumps` and ``json.loads``.
+
+    """
+
+    def __init__(self,
+                 secret,
+                 salt,
+                 hashalg='sha512',
+                 serializer=None,
+                 ):
+        self.salt = salt
+        self.secret = secret
+        self.hashalg = hashalg
+
+        try:
+            # bwcompat with webob <= 1.3.1, leave latin-1 as the default
+            self.salted_secret = bytes_(salt or '') + bytes_(secret)
+        except UnicodeEncodeError:
+            self.salted_secret = (
+                bytes_(salt or '', 'utf-8') + bytes_(secret, 'utf-8'))
+
+        self.digestmod = lambda string=b'': hashlib.new(self.hashalg, string)
+        self.digest_size = self.digestmod().digest_size
+
+        if serializer is None:
+            serializer = JSONSerializer()
+
+        self.serializer = serializer
+
+    def dumps(self, appstruct):
+        """
+        Given an ``appstruct``, serialize and sign the data.
+
+        Returns a bytestring.
+        """
+        cstruct = self.serializer.dumps(appstruct) # will be bytes
+        sig = hmac.new(self.salted_secret, cstruct, self.digestmod).digest()
+        return base64.urlsafe_b64encode(sig + cstruct).rstrip(b'=')
+
+    def loads(self, bstruct):
+        """
+        Given a ``bstruct`` (a bytestring), verify the signature and then
+        deserialize and return the deserialized value.
+
+        A ``ValueError`` will be raised if the signature fails to validate.
+        """
+        try:
+            b64padding = b'=' * (-len(bstruct) % 4)
+            fstruct = base64.urlsafe_b64decode(bytes_(bstruct) + b64padding)
+        except (binascii.Error, TypeError) as e:
+            raise ValueError('Badly formed base64 data: %s' % e)
+
+        cstruct = fstruct[self.digest_size:]
+        expected_sig = fstruct[:self.digest_size]
+
+        sig = hmac.new(
+            self.salted_secret, bytes_(cstruct), self.digestmod).digest()
+
+        if strings_differ(sig, expected_sig):
+            raise ValueError('Invalid signature')
+
+        return self.serializer.loads(cstruct)
+
+
+_default = object()
+
+class CookieProfile(object):
+    """
+    A helper class that helps bring some sanity to the insanity that is cookie
+    handling.
+
+    The helper is capable of generating multiple cookies if necessary to
+    support subdomains and parent domains.
+
+    ``cookie_name``
+      The name of the cookie used for sessioning. Default: ``'session'``.
+
+    ``max_age``
+      The maximum age of the cookie used for sessioning (in seconds).
+      Default: ``None`` (browser scope).
+
+    ``secure``
+      The 'secure' flag of the session cookie. Default: ``False``.
+
+    ``httponly``
+      Hide the cookie from Javascript by setting the 'HttpOnly' flag of the
+      session cookie. Default: ``False``.
+
+    ``path``
+      The path used for the session cookie. Default: ``'/'``.
+
+    ``domains``
+      The domain(s) used for the session cookie. Default: ``None`` (no domain).
+      Can be passed an iterable containing multiple domains, this will set
+      multiple cookies one for each domain.
+
+    ``serializer``
+      An object with two methods: ``loads`` and ``dumps``.  The ``loads`` method
+      should accept a bytestring and return a Python object.  The ``dumps``
+      method should accept a Python object and return bytes.  A ``ValueError``
+      should be raised for malformed inputs.  Default: ``None``, which will use
+      a derivation of :func:`json.dumps` and :func:`json.loads`.
+
+    """
+
+    def __init__(self,
+                 cookie_name,
+                 secure=False,
+                 max_age=None,
+                 httponly=None,
+                 path='/',
+                 domains=None,
+                 serializer=None
+                 ):
+        self.cookie_name = cookie_name
+        self.secure = secure
+        self.max_age = max_age
+        self.httponly = httponly
+        self.path = path
+        self.domains = domains
+
+        if serializer is None:
+            serializer = Base64Serializer()
+
+        self.serializer = serializer
+        self.request = None
+
+    def __call__(self, request):
+        """ Bind a request to a copy of this instance and return it"""
+
+        return self.bind(request)
+
+    def bind(self, request):
+        """ Bind a request to a copy of this instance and return it"""
+
+        selfish = CookieProfile(
+            self.cookie_name,
+            self.secure,
+            self.max_age,
+            self.httponly,
+            self.path,
+            self.domains,
+            self.serializer,
+            )
+        selfish.request = request
+        return selfish
+
+    def get_value(self):
+        """ Looks for a cookie by name in the currently bound request, and
+        returns its value.  If the cookie profile is not bound to a request,
+        this method will raise a :exc:`ValueError`.
+
+        Looks for the cookie in the cookies jar, and if it can find it it will
+        attempt to deserialize it.  Returns ``None`` if there is no cookie or
+        if the value in the cookie cannot be successfully deserialized.
+        """
+
+        if not self.request:
+            raise ValueError('No request bound to cookie profile')
+
+        cookie = self.request.cookies.get(self.cookie_name)
+
+        if cookie is not None:
+            try:
+                return self.serializer.loads(bytes_(cookie))
+            except ValueError:
+                return None
+
+    def set_cookies(self, response, value, domains=_default, max_age=_default,
+                    path=_default, secure=_default, httponly=_default):
+        """ Set the cookies on a response."""
+        cookies = self.get_headers(
+            value,
+            domains=domains,
+            max_age=max_age,
+            path=path,
+            secure=secure,
+            httponly=httponly
+            )
+        response.headerlist.extend(cookies)
+        return response
+
+    def get_headers(self, value, domains=_default, max_age=_default,
+                    path=_default, secure=_default, httponly=_default):
+        """ Retrieve raw headers for setting cookies.
+
+        Returns a list of headers that should be set for the cookies to
+        be correctly tracked.
+        """
+        if value is None:
+            max_age = 0
+            bstruct = None
+        else:
+            bstruct = self.serializer.dumps(value)
+
+        return self._get_cookies(
+            bstruct,
+            domains=domains,
+            max_age=max_age,
+            path=path,
+            secure=secure,
+            httponly=httponly
+            )
+
+    def _get_cookies(self, value, domains, max_age, path, secure, httponly):
+        """Internal function
+
+        This returns a list of cookies that are valid HTTP Headers.
+
+        :environ: The request environment
+        :value: The value to store in the cookie
+        :domains: The domains, overrides any set in the CookieProfile
+        :max_age: The max_age, overrides any set in the CookieProfile
+        :path: The path, overrides any set in the CookieProfile
+        :secure: Set this cookie to secure, overrides any set in CookieProfile
+        :httponly: Set this cookie to HttpOnly, overrides any set in CookieProfile
+
+        """
+
+        # If the user doesn't provide values, grab the defaults
+        if domains is _default:
+            domains = self.domains
+
+        if max_age is _default:
+            max_age = self.max_age
+
+        if path is _default:
+            path = self.path
+
+        if secure is _default:
+            secure = self.secure
+
+        if httponly is _default:
+            httponly = self.httponly
+
+        # Length selected based upon http://browsercookielimits.x64.me
+        if value is not None and len(value) > 4093:
+            raise ValueError(
+                'Cookie value is too long to store (%s bytes)' %
+                len(value)
+            )
+
+        cookies = []
+
+        if not domains:
+            cookievalue = make_cookie(
+                    self.cookie_name,
+                    value,
+                    path=path,
+                    max_age=max_age,
+                    httponly=httponly,
+                    secure=secure
+            )
+            cookies.append(('Set-Cookie', cookievalue))
+
+        else:
+            for domain in domains:
+                cookievalue = make_cookie(
+                    self.cookie_name,
+                    value,
+                    path=path,
+                    domain=domain,
+                    max_age=max_age,
+                    httponly=httponly,
+                    secure=secure,
+                )
+                cookies.append(('Set-Cookie', cookievalue))
+
+        return cookies
+
+
+class SignedCookieProfile(CookieProfile):
+    """
+    A helper for generating cookies that are signed to prevent tampering.
+
+    By default this will create a single cookie, given a value it will
+    serialize it, then use HMAC to cryptographically sign the data. Finally
+    the result is base64-encoded for transport. This way a remote user can
+    not tamper with the value without uncovering the secret/salt used.
+
+    ``secret``
+      A string which is used to sign the cookie. The secret should be at
+      least as long as the block size of the selected hash algorithm. For
+      ``sha512`` this would mean a 128 bit (64 character) secret.
+
+    ``salt``
+      A namespace to avoid collisions between different uses of a shared
+      secret.
+
+    ``hashalg``
+      The HMAC digest algorithm to use for signing. The algorithm must be
+      supported by the :mod:`hashlib` library. Default: ``'sha512'``.
+
+    ``cookie_name``
+      The name of the cookie used for sessioning. Default: ``'session'``.
+
+    ``max_age``
+      The maximum age of the cookie used for sessioning (in seconds).
+      Default: ``None`` (browser scope).
+
+    ``secure``
+      The 'secure' flag of the session cookie. Default: ``False``.
+
+    ``httponly``
+      Hide the cookie from Javascript by setting the 'HttpOnly' flag of the
+      session cookie. Default: ``False``.
+
+    ``path``
+      The path used for the session cookie. Default: ``'/'``.
+
+    ``domains``
+      The domain(s) used for the session cookie. Default: ``None`` (no domain).
+      Can be passed an iterable containing multiple domains, this will set
+      multiple cookies one for each domain.
+
+    ``serializer``
+      An object with two methods: `loads`` and ``dumps``.  The ``loads`` method
+      should accept bytes and return a Python object.  The ``dumps`` method
+      should accept a Python object and return bytes.  A ``ValueError`` should
+      be raised for malformed inputs.  Default: ``None`, which will use a
+      derivation of :func:`json.dumps` and ``json.loads``.
+    """
+    def __init__(self,
+                 secret,
+                 salt,
+                 cookie_name,
+                 secure=False,
+                 max_age=None,
+                 httponly=False,
+                 path="/",
+                 domains=None,
+                 hashalg='sha512',
+                 serializer=None,
+                 ):
+        self.secret = secret
+        self.salt = salt
+        self.hashalg = hashalg
+        self.original_serializer = serializer
+
+        signed_serializer = SignedSerializer(
+            secret,
+            salt,
+            hashalg,
+            serializer=self.original_serializer,
+            )
+        CookieProfile.__init__(
+            self,
+            cookie_name,
+            secure=secure,
+            max_age=max_age,
+            httponly=httponly,
+            path=path,
+            domains=domains,
+            serializer=signed_serializer,
+            )
+
+    def bind(self, request):
+        """ Bind a request to a copy of this instance and return it"""
+
+        selfish = SignedCookieProfile(
+            self.secret,
+            self.salt,
+            self.cookie_name,
+            self.secure,
+            self.max_age,
+            self.httponly,
+            self.path,
+            self.domains,
+            self.hashalg,
+            self.original_serializer,
+            )
+        selfish.request = request
+        return selfish
+

@@ -222,7 +222,7 @@ class wsgify(object):
         Use this like::
 
             @wsgify.middleware
-            def restrict_ip(app, req, ips):
+            def restrict_ip(req, app, ips):
                 if req.remote_addr not in ips:
                     raise webob.exc.HTTPForbidden('Bad IP: %s' % req.remote_addr)
                 return app
@@ -233,10 +233,17 @@ class wsgify(object):
 
             wrapped = restrict_ip(app, ips=['127.0.0.1'])
 
+        Or as a decorator::
+
+            @restrict_ip(ips=['127.0.0.1'])
+            @wsgify
+            def wrapped_app(req):
+                return 'hi'
+
         Or if you want to write output-rewriting middleware::
 
             @wsgify.middleware
-            def all_caps(app, req):
+            def all_caps(req, app):
                 resp = req.get_response(app)
                 resp.body = resp.body.upper()
                 return resp
@@ -293,7 +300,7 @@ class _MiddlewareFactory(object):
         return '<%s at %s wrapping %r>' % (self.__class__.__name__, id(self),
                                            self.middleware)
 
-    def __call__(self, app, **config):
+    def __call__(self, app=None, **config):
         kw = self.kw.copy()
         kw.update(config)
         return self.wrapper_class.middleware(self.middleware, app, **kw)

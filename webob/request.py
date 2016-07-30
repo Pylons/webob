@@ -1,5 +1,4 @@
 import binascii
-import cgi
 import io
 import os
 import re
@@ -39,6 +38,7 @@ from webob.compat import (
     url_unquote,
     quote_plus,
     urlparse,
+    cgi_FieldStorage
     )
 
 from webob.cookies import RequestCookies
@@ -59,7 +59,6 @@ from webob.descriptors import (
     serialize_int,
     serialize_range,
     upath_property,
-    deprecated_property,
     )
 
 from webob.etag import (
@@ -220,7 +219,7 @@ class BaseRequest(object):
         )
 
         if content_type == 'application/x-www-form-urlencoded':
-            r.body = bytes_(t.transcode_query(native_(r.body)))
+            r.body = bytes_(t.transcode_query(native_(self.body)))
             return r
         elif content_type != 'multipart/form-data':
             return r
@@ -229,13 +228,13 @@ class BaseRequest(object):
         fs_environ.setdefault('CONTENT_LENGTH', '0')
         fs_environ['QUERY_STRING'] = ''
         if PY3: # pragma: no cover
-            fs = cgi.FieldStorage(fp=self.body_file,
+            fs = cgi_FieldStorage(fp=self.body_file,
                                   environ=fs_environ,
                                   keep_blank_values=True,
                                   encoding=charset,
                                   errors=errors)
         else:
-            fs = cgi.FieldStorage(fp=self.body_file,
+            fs = cgi_FieldStorage(fp=self.body_file,
                                   environ=fs_environ,
                                   keep_blank_values=True)
 
@@ -668,6 +667,30 @@ class BaseRequest(object):
             del self.environ['HTTP_HOST']
     host = property(_host__get, _host__set, _host__del, doc=_host__get.__doc__)
 
+    @property
+    def domain(self):
+        """ Returns the domain portion of the host value.  Equivalent to:
+
+        .. code-block:: python
+
+           domain = request.host
+           if ':' in domain:
+               domain = domain.split(':', 1)[0]
+
+        This will be equivalent to the domain portion of the ``HTTP_HOST``
+        value in the environment if it exists, or the ``SERVER_NAME`` value in
+        the environment if it doesn't.  For example, if the environment
+        contains an ``HTTP_HOST`` value of ``foo.example.com:8000``,
+        ``request.domain`` will return ``foo.example.com``.
+
+        Note that this value cannot be *set* on the request.  To set the host
+        value use :meth:`webob.request.Request.host` instead.
+        """
+        domain = self.host
+        if ':' in domain:
+             domain = domain.split(':', 1)[0]
+        return domain
+
     def _body__get(self):
         """
         Return the content of the request body.
@@ -751,7 +774,7 @@ class BaseRequest(object):
             if body_file is self.body_file_raw:
                 return vars
         content_type = self.content_type
-        if ((self.method == 'PUT' and not content_type)
+        if ((self.method != 'POST' and not content_type)
             or content_type not in
                 ('',
                  'application/x-www-form-urlencoded',
@@ -761,32 +784,29 @@ class BaseRequest(object):
             return NoVars('Not an HTML form submission (Content-Type: %s)'
                           % content_type)
         self._check_charset()
-        if self.is_body_seekable:
-            self.body_file_raw.seek(0)
+
+        self.make_body_seekable()
+        self.body_file_raw.seek(0)
+
         fs_environ = env.copy()
         # FieldStorage assumes a missing CONTENT_LENGTH, but a
         # default of 0 is better:
         fs_environ.setdefault('CONTENT_LENGTH', '0')
         fs_environ['QUERY_STRING'] = ''
         if PY3: # pragma: no cover
-            fs = cgi.FieldStorage(
+            fs = cgi_FieldStorage(
                 fp=self.body_file,
                 environ=fs_environ,
                 keep_blank_values=True,
                 encoding='utf8')
             vars = MultiDict.from_fieldstorage(fs)
         else:
-            fs = cgi.FieldStorage(
+            fs = cgi_FieldStorage(
                 fp=self.body_file,
                 environ=fs_environ,
                 keep_blank_values=True)
             vars = MultiDict.from_fieldstorage(fs)
 
-
-        #ctype = self.content_type or 'application/x-www-form-urlencoded'
-        ctype = self._content_type_raw or 'application/x-www-form-urlencoded'
-        f = FakeCGIBody(vars, ctype)
-        self.body_file = io.BufferedReader(f)
         env['webob._parsed_post_vars'] = (vars, self.body_file_raw)
         return vars
 
@@ -1122,7 +1142,7 @@ class BaseRequest(object):
         # acquire body before we handle headers so that
         # content-length will be set
         body = None
-        if self.method in ('PUT', 'POST'):
+        if http_method_probably_has_body.get(self.method):
             if skip_body > 1:
                 if len(self.body) > skip_body:
                     body = bytes_('<body skipped (len=%s)>' % len(self.body))
@@ -1139,14 +1159,6 @@ class BaseRequest(object):
             parts.extend([b'', body])
         # HTTP clearly specifies CRLF
         return b'\r\n'.join(parts)
-
-    def as_string(self, skip_body=False):
-        warn_deprecation(
-            "Please use req.as_bytes",
-            '1.3',
-            self._setattr_stacklevel
-            )
-        return self.as_bytes(skip_body=skip_body)
 
     def as_text(self):
         bytes = self.as_bytes()
@@ -1165,15 +1177,6 @@ class BaseRequest(object):
         if f.tell() != len(b):
             raise ValueError("The string contains more data than expected")
         return r
-
-    @classmethod
-    def from_string(cls, b):
-        warn_deprecation(
-            "Please use req.from_bytes",
-            '1.3',
-            cls._setattr_stacklevel
-            )
-        return cls.from_bytes(b)
 
     @classmethod
     def from_text(cls, s):
@@ -1224,7 +1227,7 @@ class BaseRequest(object):
             if hname in r.headers:
                 hval = r.headers[hname] + ', ' + hval
             r.headers[hname] = hval
-        if r.method in ('PUT', 'POST'):
+        if http_method_probably_has_body.get(r.method):
             clen = r.content_length
             if clen is None:
                 body = fp.read()
@@ -1542,7 +1545,7 @@ def _cgi_FieldStorage__repr__patch(self):
         return "FieldStorage(%r, %r)" % (self.name, self.filename)
     return "FieldStorage(%r, %r, %r)" % (self.name, self.filename, self.value)
 
-cgi.FieldStorage.__repr__ = _cgi_FieldStorage__repr__patch
+cgi_FieldStorage.__repr__ = _cgi_FieldStorage__repr__patch
 
 class FakeCGIBody(io.RawIOBase):
     def __init__(self, vars, content_type):
@@ -1710,11 +1713,3 @@ class Transcoder(object):
             fout=io.BytesIO()
         )
         return fout
-
-# TODO: remove in 1.4
-for _name in 'GET POST params cookies'.split():
-    _str_name = 'str_'+_name
-    _prop = deprecated_property(
-        None, _str_name,
-        "disabled starting WebOb 1.2, use %s instead" % _name, '1.2')
-    setattr(BaseRequest, _str_name, _prop)

@@ -1,6 +1,4 @@
 """
-HTTP Exception
---------------
 This module processes Python exceptions that relate to HTTP exceptions
 by defining a set of exceptions, all subclasses of HTTPException.
 Each exception, in addition to being a Python exception that can be
@@ -20,56 +18,60 @@ sent and then an exception was encountered.
 Exception
   HTTPException
     HTTPOk
-      * 200 - HTTPOk
-      * 201 - HTTPCreated
-      * 202 - HTTPAccepted
-      * 203 - HTTPNonAuthoritativeInformation
-      * 204 - HTTPNoContent
-      * 205 - HTTPResetContent
-      * 206 - HTTPPartialContent
+      * 200 - :class:`HTTPOk`
+      * 201 - :class:`HTTPCreated`
+      * 202 - :class:`HTTPAccepted`
+      * 203 - :class:`HTTPNonAuthoritativeInformation`
+      * 204 - :class:`HTTPNoContent`
+      * 205 - :class:`HTTPResetContent`
+      * 206 - :class:`HTTPPartialContent`
     HTTPRedirection
-      * 300 - HTTPMultipleChoices
-      * 301 - HTTPMovedPermanently
-      * 302 - HTTPFound
-      * 303 - HTTPSeeOther
-      * 304 - HTTPNotModified
-      * 305 - HTTPUseProxy
-      * 306 - Unused (not implemented, obviously)
-      * 307 - HTTPTemporaryRedirect
+      * 300 - :class:`HTTPMultipleChoices`
+      * 301 - :class:`HTTPMovedPermanently`
+      * 302 - :class:`HTTPFound`
+      * 303 - :class:`HTTPSeeOther`
+      * 304 - :class:`HTTPNotModified`
+      * 305 - :class:`HTTPUseProxy`
+      * 307 - :class:`HTTPTemporaryRedirect`
+      * 308 - :class:`HTTPPermanentRedirect`
     HTTPError
       HTTPClientError
-        * 400 - HTTPBadRequest
-        * 401 - HTTPUnauthorized
-        * 402 - HTTPPaymentRequired
-        * 403 - HTTPForbidden
-        * 404 - HTTPNotFound
-        * 405 - HTTPMethodNotAllowed
-        * 406 - HTTPNotAcceptable
-        * 407 - HTTPProxyAuthenticationRequired
-        * 408 - HTTPRequestTimeout
-        * 409 - HTTPConflict
-        * 410 - HTTPGone
-        * 411 - HTTPLengthRequired
-        * 412 - HTTPPreconditionFailed
-        * 413 - HTTPRequestEntityTooLarge
-        * 414 - HTTPRequestURITooLong
-        * 415 - HTTPUnsupportedMediaType
-        * 416 - HTTPRequestRangeNotSatisfiable
-        * 417 - HTTPExpectationFailed
-        * 428 - HTTPPreconditionRequired
-        * 429 - HTTPTooManyRequests
-        * 431 - HTTPRequestHeaderFieldsTooLarge
+        * 400 - :class:`HTTPBadRequest`
+        * 401 - :class:`HTTPUnauthorized`
+        * 402 - :class:`HTTPPaymentRequired`
+        * 403 - :class:`HTTPForbidden`
+        * 404 - :class:`HTTPNotFound`
+        * 405 - :class:`HTTPMethodNotAllowed`
+        * 406 - :class:`HTTPNotAcceptable`
+        * 407 - :class:`HTTPProxyAuthenticationRequired`
+        * 408 - :class:`HTTPRequestTimeout`
+        * 409 - :class:`HTTPConflict`
+        * 410 - :class:`HTTPGone`
+        * 411 - :class:`HTTPLengthRequired`
+        * 412 - :class:`HTTPPreconditionFailed`
+        * 413 - :class:`HTTPRequestEntityTooLarge`
+        * 414 - :class:`HTTPRequestURITooLong`
+        * 415 - :class:`HTTPUnsupportedMediaType`
+        * 416 - :class:`HTTPRequestRangeNotSatisfiable`
+        * 417 - :class:`HTTPExpectationFailed`
+        * 422 - :class:`HTTPUnprocessableEntity`
+        * 423 - :class:`HTTPLocked`
+        * 424 - :class:`HTTPFailedDependency`
+        * 428 - :class:`HTTPPreconditionRequired`
+        * 429 - :class:`HTTPTooManyRequests`
+        * 431 - :class:`HTTPRequestHeaderFieldsTooLarge`
+        * 451 - :class:`HTTPUnavailableForLegalReasons`
       HTTPServerError
-        * 500 - HTTPInternalServerError
-        * 501 - HTTPNotImplemented
-        * 502 - HTTPBadGateway
-        * 503 - HTTPServiceUnavailable
-        * 504 - HTTPGatewayTimeout
-        * 505 - HTTPVersionNotSupported
-        * 511 - HTTPNetworkAuthenticationRequired
+        * 500 - :class:`HTTPInternalServerError`
+        * 501 - :class:`HTTPNotImplemented`
+        * 502 - :class:`HTTPBadGateway`
+        * 503 - :class:`HTTPServiceUnavailable`
+        * 504 - :class:`HTTPGatewayTimeout`
+        * 505 - :class:`HTTPVersionNotSupported`
+        * 511 - :class:`HTTPNetworkAuthenticationRequired`
 
-Subclass usage notes:
----------------------
+Usage notes
+-----------
 
 The HTTPException class is complicated by 4 factors:
 
@@ -163,10 +165,12 @@ References:
 
 """
 
+import json
 from string import Template
 import re
 import sys
 
+from webob.acceptparse import MIMEAccept
 from webob.compat import (
     class_types,
     text_,
@@ -175,14 +179,19 @@ from webob.compat import (
     )
 from webob.request import Request
 from webob.response import Response
-from webob.util import (
-    html_escape,
-    warn_deprecation,
-    )
+from webob.util import html_escape
 
 tag_re = re.compile(r'<.*?>', re.S)
-br_re = re.compile(r'<br.*?>', re.I|re.S)
+br_re = re.compile(r'<br.*?>', re.I | re.S)
 comment_re = re.compile(r'<!--|-->')
+
+def lazify(func):
+    class _lazyfied(object):
+        def __init__(self, s):
+            self._s = s
+        def __str__(self):
+            return func(self._s)
+    return _lazyfied
 
 def no_escape(value):
     if value is None:
@@ -212,15 +221,6 @@ class HTTPException(Exception):
     def __call__(self, environ, start_response):
         return self.wsgi_response(environ, start_response)
 
-    # TODO: remove in version 1.3
-    @property
-    def exception(self):
-        warn_deprecation(
-            "As of WebOb 1.2, raise the HTTPException instance directly "
-            "instead of raising the result of 'HTTPException.exception'",
-            '1.3', 2)
-        return self
-
 class WSGIHTTPException(Response, HTTPException):
 
     ## You should set in subclasses:
@@ -228,8 +228,8 @@ class WSGIHTTPException(Response, HTTPException):
     # title = 'OK'
     # explanation = 'why this happens'
     # body_template_obj = Template('response template')
-    code = None
-    title = None
+    code = 500
+    title = 'Internal Server Error'
     explanation = ''
     body_template_obj = Template('''\
 ${explanation}<br /><br />
@@ -257,7 +257,7 @@ ${body}''')
     empty_body = False
 
     def __init__(self, detail=None, headers=None, comment=None,
-                 body_template=None, **kw):
+                 body_template=None, json_formatter=None, **kw):
         Response.__init__(self,
                           status='%s %s' % (self.code, self.title),
                           **kw)
@@ -272,11 +272,14 @@ ${body}''')
         if self.empty_body:
             del self.content_type
             del self.content_length
+        if json_formatter is not None:
+            self.json_formatter = json_formatter
 
     def __str__(self):
         return self.detail or self.explanation
 
     def _make_body(self, environ, escape):
+        escape = lazify(escape)
         args = {
             'explanation': escape(self.explanation),
             'detail': escape(self.detail or ''),
@@ -307,32 +310,45 @@ ${body}''')
         return self.html_template_obj.substitute(status=self.status,
                                                  body=body)
 
+    def json_formatter(self, body, status, title, environ):
+        return {'message': body,
+                'code': status,
+                'title': title}
+
+    def json_body(self, environ):
+        body = self._make_body(environ, no_escape)
+        jsonbody = self.json_formatter(body=body, status=self.status,
+                                       title=self.title, environ=environ)
+        return json.dumps(jsonbody)
+
     def generate_response(self, environ, start_response):
         if self.content_length is not None:
             del self.content_length
         headerlist = list(self.headerlist)
-        accept = environ.get('HTTP_ACCEPT', '')
-        if accept and 'html' in accept or '*/*' in accept:
+        accept_value = environ.get('HTTP_ACCEPT', '')
+        accept = MIMEAccept(accept_value)
+        match = accept.best_match(['text/html', 'application/json'])
+
+        if match == 'text/html':
             content_type = 'text/html'
             body = self.html_body(environ)
+        elif match == 'application/json':
+            content_type = 'application/json'
+            body = self.json_body(environ)
         else:
             content_type = 'text/plain'
             body = self.plain_body(environ)
-        extra_kw = {}
-        if isinstance(body, text_type):
-            extra_kw.update(charset='utf-8')
         resp = Response(body,
-            status=self.status,
-            headerlist=headerlist,
-            content_type=content_type,
-            **extra_kw
-        )
+                        status=self.status,
+                        headerlist=headerlist,
+                        content_type=content_type,
+                        )
         resp.content_type = content_type
         return resp(environ, start_response)
 
     def __call__(self, environ, start_response):
         is_head = environ['REQUEST_METHOD'] == 'HEAD'
-        if self.body or self.empty_body or is_head:
+        if self.has_body or self.empty_body or is_head:
             app_iter = Response.__call__(self, environ, start_response)
         else:
             app_iter = self.generate_response(environ, start_response)
@@ -465,7 +481,7 @@ class _HTTPMove(HTTPRedirection):
     redirections which require a Location field
 
     Since a 'Location' header is a required attribute of 301, 302, 303,
-    305 and 307 (but not 304), this base class provides the mechanics to
+    305, 307 and 308 (but not 304), this base class provides the mechanics to
     make this easy.
 
     You can provide a location keyword argument to set the location
@@ -488,6 +504,9 @@ ${html_comment}''')
             detail=detail, headers=headers, comment=comment,
             body_template=body_template)
         if location is not None:
+            if '\n' in location or '\r' in location:
+                raise ValueError('Control characters are not allowed in location')
+
             self.location = location
             if add_slash:
                 raise TypeError(
@@ -605,6 +624,19 @@ class HTTPTemporaryRedirect(_HTTPMove):
     code = 307
     title = 'Temporary Redirect'
 
+class HTTPPermanentRedirect(_HTTPMove):
+    """
+    subclass of :class:`~_HTTPMove`
+
+    This indicates that the requested resource resides permanently
+    under a different URI.
+
+    code: 308, title: Permanent Redirect
+    """
+    code = 308
+    title = 'Permanent Redirect'
+
+
 ############################################################
 ## 4xx client error
 ############################################################
@@ -617,6 +649,8 @@ class HTTPClientError(HTTPError):
     in-error.  This is an expected problem, and thus is not considered
     a bug.  A server-side traceback is not warranted.  Unless specialized,
     this is a '400 Bad Request'
+
+    code: 400, title: Bad Request
     """
     code = 400
     title = 'Bad Request'
@@ -708,7 +742,7 @@ class HTTPNotAcceptable(HTTPClientError):
     code = 406
     title = 'Not Acceptable'
     # override template since we need an environment variable
-    template = Template('''\
+    body_template_obj = Template('''\
 The resource could not be generated that was acceptable to your browser
 (content of type ${HTTP_ACCEPT}. <br /><br />
 ${detail}''')
@@ -836,7 +870,7 @@ class HTTPUnsupportedMediaType(HTTPClientError):
     code = 415
     title = 'Unsupported Media Type'
     # override template since we need an environment variable
-    template_obj = Template('''\
+    body_template_obj = Template('''\
 The request media type ${CONTENT_TYPE} is not supported by this server.
 <br /><br />
 ${detail}''')
@@ -875,7 +909,7 @@ class HTTPUnprocessableEntity(HTTPClientError):
     subclass of :class:`~HTTPClientError`
 
     This indicates that the server is unable to process the contained
-    instructions. Only for WebDAV.
+    instructions.
 
     code: 422, title: Unprocessable Entity
     """
@@ -888,7 +922,7 @@ class HTTPLocked(HTTPClientError):
     """
     subclass of :class:`~HTTPClientError`
 
-    This indicates that the resource is locked. Only for WebDAV
+    This indicates that the resource is locked.
 
     code: 423, title: Locked
     """
@@ -903,7 +937,6 @@ class HTTPFailedDependency(HTTPClientError):
 
     This indicates that the method could not be performed because the
     requested action depended on another action and that action failed.
-    Only for WebDAV.
 
     code: 424, title: Failed Dependency
     """
@@ -1019,7 +1052,7 @@ class HTTPNotImplemented(HTTPServerError):
     """
     code = 501
     title = 'Not Implemented'
-    template = Template('''
+    body_template_obj = Template('''
 The request method ${REQUEST_METHOD} is not implemented for this server. <br /><br />
 ${detail}''')
 
@@ -1151,7 +1184,14 @@ for name, value in list(globals().items()):
         issubclass(value, HTTPException)
         and not name.startswith('_')):
         __all__.append(name)
-        if getattr(value, 'code', None):
+        if all((
+            getattr(value, 'code', None),
+            value not in (HTTPRedirection, HTTPClientError, HTTPServerError),
+            issubclass(
+                value,
+                (HTTPOk, HTTPRedirection, HTTPClientError, HTTPServerError)
+            )
+        )):
             status_map[value.code]=value
         if hasattr(value, 'explanation'):
             value.explanation = ' '.join(value.explanation.strip().split())

@@ -28,7 +28,7 @@ Request
 
 ``languages()``:
     This is available through ``req.accept_language``, particularly
-    ``req.accept_language.best_matches(fallback_language)``
+    ``req.accept_language.best_match(supported_languages)``
 
 ``match_accept(mimetypes)``:
     This is available through ``req.accept.first_match(mimetypes)``;
@@ -169,7 +169,7 @@ dictionary-like:
     Not available
 
 ``content``:
-    Use ``res.body`` for the ``str`` value, ``res.unicode_body`` for
+    Use ``res.body`` for the ``str`` value, ``res.text`` for
     the ``unicode`` value
 
 Response Subclasses

@@ -1,34 +1,32 @@
+import os
+
 from setuptools import setup
 
-version = '1.2.3'
+here = os.path.abspath(os.path.dirname(__file__))
+try:
+    with open(os.path.join(here, 'README.rst')) as f:
+        README = f.read()
+    with open(os.path.join(here, 'CHANGES.txt')) as f:
+        CHANGES = f.read()
+except IOError:
+    README = CHANGES = ''
 
-testing_extras = ['nose', 'coverage']
+testing_extras = [
+    'pytest',
+    'coverage',
+    'pytest-cov',
+    ]
 
-docs_extras = ['Sphinx']
+docs_extras = [
+    'Sphinx >= 1.3.1',
+    'pylons-sphinx-themes',
+    ]
 
 setup(
     name='WebOb',
-    version=version,
+    version='1.7.0dev0',
     description="WSGI request and response object",
-    long_description="""\
-WebOb provides wrappers around the WSGI request environment, and an
-object to help create WSGI responses.
-
-The objects map much of the specified behavior of HTTP, including
-header parsing and accessors for other standard parts of the
-environment.
-
-You may install the `in-development version of WebOb
-<https://github.com/Pylons/webob/zipball/master#egg=WebOb-dev>`_ with
-``pip install WebOb==dev`` (or ``easy_install WebOb==dev``).
-
-* `WebOb reference <http://docs.webob.org/en/latest/reference.html>`_
-* `Bug tracker <https://github.com/Pylons/webob/issues>`_
-* `Browse source code <https://github.com/Pylons/webob>`_
-* `Mailing list <http://bit.ly/paste-users>`_
-* `Release news <http://docs.webob.org/en/latest/news.html>`_
-* `Detailed changelog <https://github.com/Pylons/webob/commits/master>`_
-""",
+    long_description=README + '\n\n' + CHANGES,
     classifiers=[
         "Development Status :: 6 - Mature",
         "Intended Audience :: Developers",
@@ -36,10 +34,12 @@ You may install the `in-development version of WebOb
         "Topic :: Internet :: WWW/HTTP :: WSGI",
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware",
-        "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.2",
         "Programming Language :: Python :: 3.3",
+        "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Programming Language :: Python :: Implementation :: PyPy",
     ],
     keywords='wsgi request web http',
     author='Ian Bicking',
@@ -49,10 +49,8 @@ You may install the `in-development version of WebOb
     license='MIT',
     packages=['webob'],
     zip_safe=True,
-    test_suite='nose.collector',
-    tests_require=['nose'],
-    extras_require = {
-        'testing':testing_extras,
-        'docs':docs_extras,
+    extras_require={
+        'testing': testing_extras,
+        'docs': docs_extras,
         },
 )
