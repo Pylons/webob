@@ -139,6 +139,8 @@ def test_WSGIHTTPException_respects_application_json():
         title = 'Validation Failed'
         explanation = 'Validation of an attribute failed.'
     def start_response(status, headers, exc_info=None):
+        # check that json doesn't contain a charset
+        assert ('Content-Type', 'application/json') in headers
         pass
 
     exc = ValidationError(detail='Attribute "xyz" is invalid.')
@@ -216,6 +218,7 @@ def test_WSGIHTTPException_allows_custom_json_formatter():
 
 def test_WSGIHTTPException_generate_response():
     def start_response(status, headers, exc_info=None):
+        assert ('Content-Type', 'text/html; charset=UTF-8') in headers
         pass
     environ = {
        'wsgi.url_scheme': 'HTTP',

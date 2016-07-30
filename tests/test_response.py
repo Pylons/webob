@@ -36,9 +36,11 @@ def test_response():
     res.body = b'Not OK'
     assert b''.join(res.app_iter) == b'Not OK'
     res.charset = 'iso8859-1'
-    assert res.headers['content-type'] == 'text/html; charset=iso8859-1'
+    assert 'text/html; charset=iso8859-1' == res.headers['content-type']
     res.content_type = 'text/xml'
-    assert res.headers['content-type'] == 'text/xml; charset=iso8859-1'
+    assert 'text/xml; charset=iso8859-1' == res.headers['content-type']
+    res.content_type = 'text/xml; charset=UTF-8'
+    assert 'text/xml; charset=UTF-8' == res.headers['content-type']
     res.headers = {'content-type': 'text/html'}
     assert res.headers['content-type'] == 'text/html'
     assert res.headerlist == [('content-type', 'text/html')]
@@ -60,9 +62,13 @@ def test_response():
     del req.environ
     with pytest.raises(TypeError):
         Response(charset=None,
+                 content_type='image/jpeg',
                  body=text_(b"unicode body"))
     with pytest.raises(TypeError):
         Response(wrong_key='dummy')
+    with pytest.raises(TypeError):
+        resp = Response()
+        resp.body = text_(b"unicode body")
 
 def test_set_response_status_binary():
     req = BaseRequest.blank('/')
@@ -136,10 +142,12 @@ def test_init_no_charset_when_json():
     assert Response(content_type=content_type).headers['content-type'] == expected
 
 def test_init_keeps_specified_charset_when_json():
-    content_type = 'application/json;charset=ISO-8859-1'
+    content_type = 'application/json; charset=ISO-8859-1'
     expected = content_type
     assert Response(content_type=content_type).headers['content-type'] == expected
 
+def test_init_doesnt_add_default_content_type_with_bodyless_status():
+    assert Response(status='204 No Content').content_type is None
 
 def test_cookies():
     res = Response()
@@ -687,7 +695,7 @@ def test_text_get_decode():
     res = Response()
     res.charset = 'utf-8'
     res.body = b'La Pe\xc3\xb1a'
-    assert res.text, text_(b'La Pe\xc3\xb1a' == 'utf-8')
+    assert res.text, text_(b'La Pe\xc3\xb1a')
 
 def test_text_set_no_charset():
     res = Response()
@@ -747,7 +755,7 @@ def test_charset_set_no_content_type_header():
     res = Response()
     res.headers.pop('Content-Type', None)
     with pytest.raises(AttributeError):
-        res.__setattr__('charset', 'utf-8')
+        res.charset = 'utf-8'
 
 def test_charset_del_no_content_type_header():
     res = Response()
@@ -774,6 +782,11 @@ def test_content_type_params_set_ok_param_quoting():
     res = Response()
     res.content_type_params = {'a': ''}
     assert res.headers['Content-Type'] == 'text/html; a=""'
+
+def test_charset_delete():
+    res = Response()
+    del res.charset
+    assert res.charset is None
 
 def test_set_cookie_overwrite():
     res = Response()
