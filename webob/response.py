@@ -208,15 +208,13 @@ class Response(object):
             self._headerlist = headerlist
 
         # Set up the content_type
-        content_type = content_type or self.headers.get('Content-Type') or \
-            self.default_content_type
+        content_type = content_type or self.default_content_type
 
         if (
             'Content-Type' not in self.headers and
-            content_type and
             _code_has_body(self.status_code)
         ):
-            self.headers['Content-Type'] = content_type
+            self.content_type = content_type
 
         # Set up the charset
         if self.content_type:
