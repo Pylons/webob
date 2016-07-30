@@ -804,6 +804,8 @@ class Response(object):
                         del params['charset']
 
                 self.content_type_params = params
+            else:
+                self.headers['Content-Type'] = value
         else:
             self.headers['Content-Type'] = value
 
