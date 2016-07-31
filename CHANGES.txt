@@ -1,8 +1,40 @@
 Unreleased
 ----------
 
+Feature
+~~~~~~~
+
+- Add `tell()` to `ResponseBodyFile` so that it may be used for example for
+  ZipFile support. See https://github.com/Pylons/webob/pull/117
+
+- Allow the return from `wsgify.middleware` to be used as a decorator. See
+  https://github.com/Pylons/webob/pull/228
+
 Bugfix
 ~~~~~~
+
+- `wsgify.__call__` raised a `TypeError` with an unhelpful message, it will now
+  return the `repr` for the wrapped function:
+  https://github.com/Pylons/webob/issues/119
+
+- Response.content_type removes the charset content_type parameters unless the
+  new content_type is a text like type that has a charset parameter.
+  See https://github.com/Pylons/webob/pull/261 and
+  https://github.com/Pylons/webob/issues/130
+
+- json.dumps/loads are now always UTF-8. It no longer tries to use the charset.
+
+- The Response `__init__` will by default no longer set the Content-Type to the
+  default if a headerlist is provided. This fixes issues whereby
+  Request.get_response() would return a Response that didn't match the actual
+  response.
+  See https://github.com/Pylons/webob/pull/261 and
+  https://github.com/Pylons/webob/issues/205
+
+- Cleans up the remainder of the issues with the updated WebOb exceptions that
+  were taught to return JSON in version 1.6. See
+  https://github.com/Pylons/webob/issues/237 and
+  https://github.com/Pylons/webob/issues/236
 
 - Response.from_file now parses the status line correctly when the status line
   contains an HTTP with version, as well as a status text that contains
