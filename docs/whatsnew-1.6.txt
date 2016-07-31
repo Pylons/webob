@@ -74,8 +74,8 @@ Bugfixes
 
   `IETF RFC 4627 <https://www.ietf.org/rfc/rfc4627.txt>`_ describes the method
   for encoding discovery using the JSON content itself. Upon initialization of
-  a Response, WebOb will no longer add a charset if the content-type is set to
-  JSON. See https://github.com/Pylons/webob/pull/197,
+  a Response, WebOb will no longer add a ``charset`` if the content-type is set
+  to JSON. See https://github.com/Pylons/webob/pull/197,
   https://github.com/Pylons/webob/issues/237, and
   https://github.com/Pylons/pyramid/issues/1611
 
