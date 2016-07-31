@@ -64,18 +64,18 @@ Bugfixes
   now reading from the correct stream. See
   https://github.com/Pylons/webob/pull/183 for more information.
 
-- The application/json media type does not allow for a charset as discovery of
-  the encoding is done at the JSON layer, and it must always be UTF-{8,16,32}.
-  See the IANA specification at
-  https://www.iana.org/assignments/media-types/application/json, which notes
+- The ``application/json`` media type does not allow for a ``charset`` because
+  discovery of the encoding is done at the JSON layer, and it must always be
+  UTF-{8,16,32}. See the IANA specification at
+  https://www.iana.org/assignments/media-types/application/json, which notes:
 
     No "charset" parameter is defined for this registration.
     Adding one really has no effect on compliant recipients.
 
-  RFC4627 describes the method for encoding discovery using the JSON content
-  itself. Upon initialization of a Response WebOb will no longer add a charset
-  if the content-type is set to JSON. See
-  https://github.com/Pylons/webob/pull/197,
-  https://github.com/Pylons/webob/issues/237 and
+  `IETF RFC 4627 <https://www.ietf.org/rfc/rfc4627.txt>`_ describes the method
+  for encoding discovery using the JSON content itself. Upon initialization of
+  a Response, WebOb will no longer add a charset if the content-type is set to
+  JSON. See https://github.com/Pylons/webob/pull/197,
+  https://github.com/Pylons/webob/issues/237, and
   https://github.com/Pylons/pyramid/issues/1611
 
