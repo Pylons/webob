@@ -118,7 +118,8 @@ class wsgify(object):
         if isinstance(req, dict):
             if len(args) != 1 or kw:
                 raise TypeError(
-                    "Calling %r as a WSGI app with the wrong signature")
+                    "Calling %r as a WSGI app with the wrong signature" %
+                    self.func)
             environ = req
             start_response = args[0]
             req = self.RequestClass(environ)
