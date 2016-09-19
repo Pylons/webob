@@ -2890,6 +2890,14 @@ class TestRequest_functional(object):
         assert req.body in _test_req_patch
         assert _test_req_patch == req.as_bytes()
 
+    def test_from_file_delete(self):
+        cls = self._getTargetClass()
+        req = cls.from_bytes(_test_req_delete)
+        assert "DELETE" == req.method
+        assert len(req.body)
+        assert req.body in _test_req_delete
+        assert _test_req_delete == req.as_bytes()
+
     def test_from_bytes(self):
         # A valid request without a Content-Length header should still read
         # the full body.
@@ -3613,6 +3621,14 @@ Content-Type: application/json
 {"foo": "bar"}
 """
 
+_test_req_delete = b"""
+DELETE /webob HTTP/1.1
+Content-Length: 14
+Content-Type: application/json
+
+{"foo": "bar"}
+"""
+
 _test_req2 = b"""
 POST / HTTP/1.0
 Content-Length: 0
@@ -3657,6 +3673,7 @@ Content-Disposition: form-data; name=file; filename="photo.jpg"
 
 _test_req = _norm_req(_test_req)
 _test_req_patch = _norm_req(_test_req_patch)
+_test_req_delete = _norm_req(_test_req_delete)
 _test_req2 = _norm_req(_test_req2) + b'\r\n'
 _test_req_multipart_charset = _norm_req(_test_req_multipart_charset)
 
