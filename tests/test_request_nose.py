@@ -48,7 +48,7 @@ def test_request_readlines():
 
 def test_request_delete_with_body():
     req = Request.blank('/', method='DELETE')
-    assert not req.is_body_readable
+    assert req.is_body_readable
     req.body = b'abc'
     assert req.is_body_readable
     assert req.body_file.read() == b'abc'

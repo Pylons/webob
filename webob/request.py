@@ -89,9 +89,9 @@ NoDefault = _NoDefault()
 PATH_SAFE = '/:@&+$,'
 
 http_method_probably_has_body = dict.fromkeys(
-    ('GET', 'HEAD', 'DELETE', 'TRACE'), False)
+    ('GET', 'HEAD', 'TRACE'), False)
 http_method_probably_has_body.update(
-    dict.fromkeys(('POST', 'PUT', 'PATCH'), True))
+    dict.fromkeys(('POST', 'PUT', 'PATCH', 'DELETE'), True))
 
 _LATIN_ENCODINGS = (
     'ascii', 'latin-1', 'latin', 'latin_1', 'l1', 'latin1',
