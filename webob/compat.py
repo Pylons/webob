@@ -139,7 +139,8 @@ if PY3 and sys.version_info[:3] < (3, 4, 4):  # pragma no cover
 
     class cgi_FieldStorage(_cgi_FieldStorage):
         # This is taken exactly from Python 3.5's cgi.py module, and patched
-        # with the patch from http://bugs.python.org/issue23801.
+        # with the patch from http://bugs.python.org/issue23801 and
+        # the patch from https://bugs.python.org/issue27777.
         def read_multi(self, environ, keep_blank_values, strict_parsing):
             """Internal: read a part that is itself multipart."""
             ib = self.innerboundary
@@ -182,6 +183,11 @@ if PY3 and sys.version_info[:3] < (3, 4, 4):  # pragma no cover
                 self.bytes_read += len(hdr_text)
                 parser.feed(hdr_text.decode(self.encoding, self.errors))
                 headers = parser.close()
+                
+                # Some clients add Content-Length for part headers, ignore them
+                if 'content-length' in headers:
+                    del headers['content-length']
+                
                 part = klass(self.fp, headers, ib, environ, keep_blank_values,
                              strict_parsing, self.limit-self.bytes_read,
                              self.encoding, self.errors)
