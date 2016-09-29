@@ -85,11 +85,6 @@ NoDefault = _NoDefault()
 
 PATH_SAFE = '/:@&+$,'
 
-http_method_probably_has_body = dict.fromkeys(
-    ('GET', 'HEAD', 'DELETE', 'TRACE'), False)
-http_method_probably_has_body.update(
-    dict.fromkeys(('POST', 'PUT', 'PATCH'), True))
-
 _LATIN_ENCODINGS = (
     'ascii', 'latin-1', 'latin', 'latin_1', 'l1', 'latin1',
     'iso-8859-1', 'iso8859_1', 'iso_8859_1', 'iso8859', '8859',
@@ -892,36 +887,26 @@ class BaseRequest(object):
     # this way we can have seekable input without testing the .seek() method
     is_body_seekable = environ_getter('webob.is_body_seekable', False)
 
-    #is_body_readable = environ_getter('webob.is_body_readable', False)
+    @property
+    def is_body_readable(self):
+        """
+            webob.is_body_readable is a flag that tells us that we can read the
+            input stream even though CONTENT_LENGTH is missing.
+        """
 
-    def _is_body_readable__get(self):
-        """
-            webob.is_body_readable is a flag that tells us
-            that we can read the input stream even though
-            CONTENT_LENGTH is missing. This allows FakeCGIBody
-            to work and can be used by servers to support
-            chunked encoding in requests.
-            For background see https://bitbucket.org/ianb/webob/issue/6
-        """
-        if http_method_probably_has_body.get(self.method):
-            # known HTTP method with body
+        clen = self.content_length
+
+        if clen is not None and clen != 0:
             return True
-        elif self.content_length is not None:
-            # unknown HTTP method, but the Content-Length
-            # header is present
-            return True
-        else:
-            # last resort -- rely on the special flag
+        elif clen is None:
+            # rely on the special flag
             return self.environ.get('webob.is_body_readable', False)
 
-    def _is_body_readable__set(self, flag):
+        return False
+
+    @is_body_readable.setter
+    def is_body_readable(self, flag):
         self.environ['webob.is_body_readable'] = bool(flag)
-
-    is_body_readable = property(_is_body_readable__get, _is_body_readable__set,
-        doc=_is_body_readable__get.__doc__
-    )
-
-
 
     def make_body_seekable(self):
         """
@@ -1142,7 +1127,7 @@ class BaseRequest(object):
         # acquire body before we handle headers so that
         # content-length will be set
         body = None
-        if http_method_probably_has_body.get(self.method):
+        if self.is_body_readable:
             if skip_body > 1:
                 if len(self.body) > skip_body:
                     body = bytes_('<body skipped (len=%s)>' % len(self.body))
@@ -1227,15 +1212,16 @@ class BaseRequest(object):
             if hname in r.headers:
                 hval = r.headers[hname] + ', ' + hval
             r.headers[hname] = hval
-        if http_method_probably_has_body.get(r.method):
-            clen = r.content_length
-            if clen is None:
-                body = fp.read()
-            else:
-                body = fp.read(clen)
-            if is_text:
-                body = bytes_(body, 'utf-8')
-            r.body = body
+
+        clen = r.content_length
+        if clen is None:
+            body = fp.read()
+        else:
+            body = fp.read(clen)
+        if is_text:
+            body = bytes_(body, 'utf-8')
+        r.body = body
+
         return r
 
     def call_application(self, application, catch_exc_info=False):
