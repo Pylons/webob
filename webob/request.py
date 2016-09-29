@@ -28,7 +28,6 @@ from webob.cachecontrol import (
 from webob.compat import (
     PY3,
     bytes_,
-    integer_types,
     native_,
     parse_qsl_text,
     reraise,
@@ -76,8 +75,6 @@ from webob.multidict import (
     NoVars,
     GetDict,
     )
-
-from webob.util import warn_deprecation
 
 __all__ = ['BaseRequest', 'Request', 'LegacyRequest']
 
