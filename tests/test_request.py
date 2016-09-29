@@ -670,24 +670,23 @@ class TestRequestCommon(object):
         assert req.range == None
 
     def test_is_body_readable_POST(self):
-        req = self._blankOne('/', environ={'REQUEST_METHOD':'POST'})
+        req = self._blankOne('/', environ={'REQUEST_METHOD': 'POST', 'CONTENT_LENGTH': '100'})
         assert req.is_body_readable
 
     def test_is_body_readable_PATCH(self):
-        req = self._blankOne('/', environ={'REQUEST_METHOD':'PATCH'})
+        req = self._blankOne('/', environ={'REQUEST_METHOD': 'PATCH', 'CONTENT_LENGTH': '100'})
         assert req.is_body_readable
 
     def test_is_body_readable_GET(self):
-        req = self._blankOne('/', environ={'REQUEST_METHOD':'GET'})
-        assert req.is_body_readable == False
+        req = self._blankOne('/', environ={'REQUEST_METHOD': 'GET', 'CONTENT_LENGTH': '100'})
+        assert req.is_body_readable
 
     def test_is_body_readable_unknown_method_and_content_length(self):
-        req = self._blankOne('/', environ={'REQUEST_METHOD':'WTF'})
-        req.content_length = 10
+        req = self._blankOne('/', environ={'REQUEST_METHOD': 'WTF', 'CONTENT_LENGTH': '100'})
         assert req.is_body_readable
 
     def test_is_body_readable_special_flag(self):
-        req = self._blankOne('/', environ={'REQUEST_METHOD':'WTF',
+        req = self._blankOne('/', environ={'REQUEST_METHOD': 'WTF',
                                           'webob.is_body_readable': True})
         assert req.is_body_readable
 
