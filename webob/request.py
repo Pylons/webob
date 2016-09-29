@@ -686,33 +686,33 @@ class BaseRequest(object):
              domain = domain.split(':', 1)[0]
         return domain
 
-    def _body__get(self):
+    @property
+    def body(self):
         """
         Return the content of the request body.
         """
         if not self.is_body_readable:
             return b''
+
         self.make_body_seekable() # we need this to have content_length
         r = self.body_file.read(self.content_length)
         self.body_file_raw.seek(0)
         return r
-    def _body__set(self, value):
+
+    @body.setter
+    def body(self, value):
         if value is None:
             value = b''
         if not isinstance(value, bytes):
             raise TypeError("You can only set Request.body to bytes (not %r)"
-                                % type(value))
-        if not http_method_probably_has_body.get(self.method, True):
-            if not value:
-                self.content_length = None
-                self.body_file_raw = io.BytesIO()
-                return
+                            % type(value))
         self.content_length = len(value)
         self.body_file_raw = io.BytesIO(value)
         self.is_body_seekable = True
-    def _body__del(self):
+
+    @body.deleter
+    def body(self):
         self.body = b''
-    body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
 
     def _json_body__get(self):
         """Access the body of the request as JSON"""
