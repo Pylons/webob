@@ -15,8 +15,14 @@ def test_request_read_no_content_length():
 def test_request_read_no_content_length_POST():
     req, input = _make_read_tracked_request(b'abc', 'POST')
     assert req.content_length is None
-    assert req.body == b'abc'
-    assert input.was_read
+    assert req.body == b''
+    assert not input.was_read
+
+def test_request_read_no_content_length_DELETE():
+    req, input = _make_read_tracked_request(b'abc', 'DELETE')
+    assert req.content_length is None
+    assert req.body == b''
+    assert not input.was_read
 
 def test_request_read_no_flag_but_content_length_is_present():
     req, input = _make_read_tracked_request(b'abc')
