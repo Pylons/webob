@@ -683,7 +683,7 @@ class BaseRequest(object):
         """
         domain = self.host
         if ':' in domain:
-             domain = domain.split(':', 1)[0]
+            domain = domain.split(':', 1)[0]
         return domain
 
     @property
