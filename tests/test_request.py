@@ -2833,6 +2833,10 @@ class TestRequest_functional(object):
 
         r.body = None
         assert r.body == b''
+
+        no_seek = UnseekableInput(bytes_(string.ascii_letters))
+
+        r = self._makeOne({'a': 1}, method='PUT', body_file=no_seek)
         assert not hasattr(r.body_file_raw, 'seek')
 
         r.make_body_seekable()
