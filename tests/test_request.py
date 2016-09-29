@@ -3677,7 +3677,8 @@ class UnseekableInput(object):
             self.pos = len(self.data)
             return t
         else:
-            assert(self.pos + size <= len(self.data))
+            if self.pos + size > len(self.data):
+                size = len(self.data) - self.pos
             t = self.data[self.pos:self.pos + size]
             self.pos += size
             return t
