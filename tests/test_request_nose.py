@@ -75,11 +75,16 @@ class ReadTracker(object):
     def __init__(self, data):
         self.data = data
         self.was_read = False
+
     def read(self, size=-1):
-        if size < 0:
+        if size < 0 or size > len(self.data):
             size = len(self.data)
-        assert size == len(self.data)
+
+        if self.was_read:
+            return b''
+
         self.was_read = True
+
         return self.data
 
 def test_limited_length_file_repr():
@@ -117,6 +122,9 @@ class _Helper_test_request_wrong_clen(object):
                 raise AssertionError("Reading should stop after first empty string")
             self.file_ended = True
         return r
+
+    def seek(self, pos):
+        pass
 
 def test_disconnect_detection_cgi():
     data = 'abc'*(1<<20)
