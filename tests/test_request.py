@@ -101,7 +101,7 @@ class TestRequestCommon(object):
 
     def test_body_file_setter_w_bytes(self):
         req = self._blankOne('/')
-        with pytest.raises(DeprecationWarning):
+        with pytest.raises(ValueError):
             setattr(req, 'body_file', b'foo')
 
     def test_body_file_setter_non_bytes(self):

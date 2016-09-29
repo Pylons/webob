@@ -248,21 +248,24 @@ class BaseRequest(object):
         fout.seek(0)
         return r
 
-
     # this is necessary for correct warnings depth for both
     # BaseRequest and Request (due to AdhocAttrMixin.__setattr__)
     _setattr_stacklevel = 2
 
-    def _body_file__get(self):
+    @property
+    def body_file(self):
         """
             Input stream of the request (wsgi.input).
             Setting this property resets the content_length and seekable flag
             (unlike setting req.body_file_raw).
         """
+
         if not self.is_body_readable:
             return io.BytesIO()
+
         r = self.body_file_raw
         clen = self.content_length
+
         if not self.is_body_seekable and clen is not None:
             # we need to wrap input in LimitedLengthFile
             # but we have to cache the instance as well
@@ -271,32 +274,32 @@ class BaseRequest(object):
             #   req.body_file.read(100)
             #   req.body_file.read(100)
             env = self.environ
-            wrapped, raw = env.get('webob._body_file', (0,0))
+            wrapped, raw = env.get('webob._body_file', (0, 0))
+
             if raw is not r:
                 wrapped = LimitedLengthFile(r, clen)
                 wrapped = io.BufferedReader(wrapped)
                 env['webob._body_file'] = wrapped, r
             r = wrapped
+
         return r
 
-    def _body_file__set(self, value):
+    @body_file.setter
+    def body_file(self, value):
         if isinstance(value, bytes):
-            warn_deprecation(
-                "Please use req.body = b'bytes' or req.body_file = fileobj",
-                '1.2',
-                self._setattr_stacklevel
-            )
+            raise ValueError('Excepted fileobj but received bytes.')
+
         self.content_length = None
         self.body_file_raw = value
         self.is_body_seekable = False
         self.is_body_readable = True
-    def _body_file__del(self):
+
+    @body_file.deleter
+    def body_file(self):
         self.body = b''
-    body_file = property(_body_file__get,
-                         _body_file__set,
-                         _body_file__del,
-                         doc=_body_file__get.__doc__)
+
     body_file_raw = environ_getter('wsgi.input')
+
     @property
     def body_file_seekable(self):
         """
