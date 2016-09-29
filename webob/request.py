@@ -91,10 +91,10 @@ _LATIN_ENCODINGS = (
     )
 
 class BaseRequest(object):
-    ## The limit after which request bodies should be stored on disk
-    ## if they are read in (under this, and the request body is stored
-    ## in memory):
-    request_body_tempfile_limit = 10*1024
+    # The limit after which request bodies should be stored on disk
+    # if they are read in (under this, and the request body is stored
+    # in memory):
+    request_body_tempfile_limit = 10 * 1024
 
     _charset = None
 
@@ -104,6 +104,7 @@ class BaseRequest(object):
         if type(environ) is not dict:
             raise TypeError(
                 "WSGI environ must be a dict; you passed %r" % (environ,))
+
         if unicode_errors is not None:
             warnings.warn(
                 "You unicode_errors=%r to the Request constructor.  Passing a "
@@ -112,6 +113,7 @@ class BaseRequest(object):
                     unicode_errors,),
                 DeprecationWarning
                 )
+
         if decode_param_names is not None:
             warnings.warn(
                 "You passed decode_param_names=%r to the Request constructor. "
@@ -120,6 +122,7 @@ class BaseRequest(object):
                 "been ignored " % (decode_param_names,),
                 DeprecationWarning
                 )
+
         if not _is_utf8(charset):
             raise DeprecationWarning(
                 "You passed charset=%r to the Request constructor. As of "
@@ -127,16 +130,19 @@ class BaseRequest(object):
                 "charset, please construct the request without a charset or "
                 "with a charset of 'None',  then use ``req = "
                 "req.decode(charset)``" % charset
-
             )
+
         d = self.__dict__
         d['environ'] = environ
+
         if kw:
             cls = self.__class__
+
             if 'method' in kw:
                 # set method first, because .body setters
                 # depend on it for checks
                 self.method = kw.pop('method')
+
             for name, value in kw.items():
                 if not hasattr(cls, name):
                     raise TypeError(
@@ -229,7 +235,6 @@ class BaseRequest(object):
             fs = cgi_FieldStorage(fp=self.body_file,
                                   environ=fs_environ,
                                   keep_blank_values=True)
-
 
         fout = t.transcode_fs(fs, r._content_type_raw)
 
@@ -751,7 +756,6 @@ class BaseRequest(object):
 
     text = property(_text__get, _text__set, _text__del, doc=_text__get.__doc__)
 
-
     @property
     def POST(self):
         """
@@ -847,7 +851,6 @@ class BaseRequest(object):
         params = NestedMultiDict(self.GET, self.POST)
         return params
 
-
     @property
     def cookies(self):
         """
@@ -925,7 +928,6 @@ class BaseRequest(object):
             self.body_file_raw.seek(0)
         else:
             self.copy_body()
-
 
     def copy_body(self):
         """
@@ -1017,7 +1019,6 @@ class BaseRequest(object):
         """
         return tempfile.TemporaryFile()
 
-
     def remove_conditional_headers(self,
                                    remove_encoding=True,
                                    remove_range=True,
@@ -1046,7 +1047,6 @@ class BaseRequest(object):
             if key in self.environ:
                 del self.environ[key]
 
-
     accept = accept_property('Accept', '14.1', MIMEAccept, MIMENilAccept)
     accept_charset = accept_property('Accept-Charset', '14.2', AcceptCharset)
     accept_encoding = accept_property('Accept-Encoding', '14.3',
@@ -1057,7 +1057,6 @@ class BaseRequest(object):
         environ_getter('HTTP_AUTHORIZATION', None, '14.8'),
         parse_auth, serialize_auth,
     )
-
 
     def _cache_control__get(self):
         """
@@ -1155,7 +1154,6 @@ class BaseRequest(object):
         assert url.startswith(host)
         url = url[len(host):]
         parts = [bytes_('%s %s %s' % (self.method, url, self.http_version))]
-        #self.headers.setdefault('Host', self.host)
 
         # acquire body before we handle headers so that
         # content-length will be set
@@ -1498,7 +1496,7 @@ def environ_add_POST(env, data, content_type=None):
             data = url_encode(data)
     else:
         if not isinstance(data, bytes):
-            raise ValueError('Please provide `POST` data as string'
+            raise ValueError('Please provide `POST` data as bytes'
                              ' for content type `%s`' % content_type)
     data = bytes_(data, 'utf8')
     env['wsgi.input'] = io.BytesIO(data)
@@ -1507,10 +1505,9 @@ def environ_add_POST(env, data, content_type=None):
     env['CONTENT_TYPE'] = content_type
 
 
-
-#########################
-## Helper classes and monkeypatching
-#########################
+#
+# Helper classes and monkeypatching
+#
 
 class DisconnectionError(IOError):
     pass
@@ -1543,11 +1540,10 @@ class LimitedLengthFile(io.RawIOBase):
         data = self.file.read(sz0)
         sz = len(data)
         self.remaining -= sz
-        #if not data:
         if sz < sz0 and self.remaining:
             raise DisconnectionError(
-                "The client disconnected while sending the POST/PUT body "
-                + "(%d more bytes were expected)" % self.remaining
+                "The client disconnected while sending the body "
+                "(%d more bytes were expected)" % (self.remaining,)
             )
         buff[:sz] = data
         return sz
@@ -1566,12 +1562,13 @@ def _cgi_FieldStorage__repr__patch(self):
 
 cgi_FieldStorage.__repr__ = _cgi_FieldStorage__repr__patch
 
+
 class FakeCGIBody(io.RawIOBase):
     def __init__(self, vars, content_type):
         if content_type.startswith('multipart/form-data'):
             if not _get_multipart_boundary(content_type):
                 raise ValueError('Content-type: %r does not contain boundary'
-                            % content_type)
+                                 % content_type)
         self.vars = vars
         self.content_type = content_type
         self.file = None
@@ -1593,11 +1590,13 @@ class FakeCGIBody(io.RawIOBase):
 
     def readinto(self, buff):
         if self.file is None:
-            if self.content_type.startswith(
-                'application/x-www-form-urlencoded'):
+            if self.content_type.startswith('application/x-www-form-urlencoded'):
                 data = '&'.join(
-                    '%s=%s' % (quote_plus(bytes_(k, 'utf8')), quote_plus(bytes_(v, 'utf8')))
-                    for k,v in self.vars.items()
+                    '%s=%s' % (
+                        quote_plus(bytes_(k, 'utf8')),
+                        quote_plus(bytes_(v, 'utf8'))
+                    )
+                    for k, v in self.vars.items()
                 )
                 self.file = io.BytesIO(bytes_(data))
             elif self.content_type.startswith('multipart/form-data'):
@@ -1611,18 +1610,18 @@ class FakeCGIBody(io.RawIOBase):
                 assert 0, ('Bad content type: %r' % self.content_type)
         return self.file.readinto(buff)
 
-
 def _get_multipart_boundary(ctype):
     m = re.search(r'boundary=([^ ]+)', ctype, re.I)
     if m:
         return native_(m.group(1).strip('"'))
 
-
 def _encode_multipart(vars, content_type, fout=None):
     """Encode a multipart request body into a string"""
     f = fout or io.BytesIO()
     w = f.write
-    wt = lambda t: f.write(t.encode('utf8'))
+    def wt(t):
+        w(t.encode('utf8'))
+
     CRLF = b'\r\n'
     boundary = _get_multipart_boundary(content_type)
     if not boundary:
@@ -1707,15 +1706,18 @@ class Transcoder(object):
                 return q_orig
             q = urlparse.parse_qsl(q, self.charset)
             t = self._trans
-            q = [(t(k), t(v)) for k,v in q]
+            q = [(t(k), t(v)) for k, v in q]
             return url_encode(q)
 
     def transcode_fs(self, fs, content_type):
         # transcode FieldStorage
-        if PY3: # pragma: no cover
-            decode = lambda b: b
+        if PY3:
+            def decode(b):
+                return b
         else:
-            decode = lambda b: b.decode(self.charset, self.errors)
+            def decode(b):
+                return b.decode(self.charset, self.errors)
+
         data = []
         for field in fs.list or ():
             field.name = decode(field.name)
@@ -1732,3 +1734,4 @@ class Transcoder(object):
             fout=io.BytesIO()
         )
         return fout
+
