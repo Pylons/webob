@@ -929,53 +929,86 @@ class BaseRequest(object):
 
     def copy_body(self):
         """
-        Copies the body, in cases where it might be shared with
-        another request object and that is not desired.
+        Copies the body, in cases where it might be shared with another request
+        object and that is not desired.
 
-        This copies the body in-place, either into a BytesIO object
-        or a temporary file.
+        This copies the body either into a BytesIO object (through setting
+        req.body) or a temporary file.
         """
-        if not self.is_body_readable:
-            # there's no body to copy
-            self.body = b''
-        elif self.content_length is None:
-            # chunked body or FakeCGIBody
-            self.body = self.body_file_raw.read()
-            self._copy_body_tempfile()
+
+        if self.is_body_readable:
+            # Before we copy, if we can, rewind the body file
+            if self.is_body_seekable:
+                self.body_file_raw.seek(0)
+
+            tempfile_limit = self.request_body_tempfile_limit
+            todo = self.content_length if self.content_length is not None else 65535
+
+            newbody = b''
+            fileobj = None
+            input = self.body_file
+
+            while todo > 0:
+                data = input.read(min(todo, 65535))
+
+                if not data and self.content_length is None:
+                    # We attempted to read more data, but got none, break.
+                    # This can happen if for instance we are reading as much as
+                    # we can because we don't have a Content-Length...
+                    break
+                elif not data:
+                    # We have a Content-Length and we attempted to read, but
+                    # there was nothing more to read. Oh the humanity! This
+                    # should rarely if never happen because self.body_file
+                    # should be a LimitedLengthFile which should already have
+                    # raised if there was less data than expected.
+                    raise DisconnectionError(
+                        "Client disconnected (%s more bytes were expected)" % todo
+                    )
+
+                if fileobj:
+                    fileobj.write(data)
+                else:
+                    newbody += data
+
+                    # When we have enough data that we need a tempfile, let's
+                    # create one, then clear the temporary variable we were
+                    # using
+                    if len(newbody) > tempfile_limit:
+                        fileobj = self.make_tempfile()
+                        fileobj.write(newbody)
+                        newbody = b''
+
+                # Only decrement todo if Content-Length is set
+                if self.content_length is not None:
+                    todo -= len(data)
+
+            if fileobj:
+                # We apparently had enough data to need a file
+
+                # Set the Content-Length to the amount of data that was just
+                # written.
+                self.content_length = fileobj.tell()
+
+                # Seek it back to the beginning
+                fileobj.seek(0)
+
+                self.body_file_raw = fileobj
+
+                # Allow it to be seeked in the future, so we don't need to copy
+                # for things like .body
+                self.is_body_seekable = True
+
+                # Not strictly required since Content-Length is set
+                self.is_body_readable = True
+            else:
+                # No file created, set the body and let it deal with creating
+                # Content-Length and other vars.
+                self.body = newbody
         else:
-            # try to read body into tempfile
-            did_copy = self._copy_body_tempfile()
-            if not did_copy:
-                # it wasn't necessary, so just read it into memory
-                self.body = self.body_file.read(self.content_length)
-
-    def _copy_body_tempfile(self):
-        """
-            Copy wsgi.input to tempfile if necessary. Returns True if it did.
-        """
-        tempfile_limit = self.request_body_tempfile_limit
-        todo = self.content_length
-        assert isinstance(todo, integer_types), todo
-        if not tempfile_limit or todo <= tempfile_limit:
-            return False
-        fileobj = self.make_tempfile()
-        input = self.body_file
-        while todo > 0:
-            data = input.read(min(todo, 65536))
-            if not data:
-                # Normally this should not happen, because LimitedLengthFile
-                # should have raised an exception by now.
-                # It can happen if the is_body_seekable flag is incorrect.
-                raise DisconnectionError(
-                    "Client disconnected (%s more bytes were expected)"
-                    % todo
-                )
-            fileobj.write(data)
-            todo -= len(data)
-        fileobj.seek(0)
-        self.body_file_raw = fileobj
-        self.is_body_seekable = True
-        return True
+            # Always leave the request with a valid body, and this is pretty
+            # cheap.
+            self.body = b''
 
     def make_tempfile(self):
         """
