@@ -1565,6 +1565,13 @@ cgi_FieldStorage.__repr__ = _cgi_FieldStorage__repr__patch
 
 class FakeCGIBody(io.RawIOBase):
     def __init__(self, vars, content_type):
+        warnings.warn(
+            "FakeCGIBody is no longer used by WebOb and will be removed from a future "
+            "version of WebOb. If you require FakeCGIBody please make a copy into "
+            "you own project",
+            DeprecationWarning
+            )
+
         if content_type.startswith('multipart/form-data'):
             if not _get_multipart_boundary(content_type):
                 raise ValueError('Content-type: %r does not contain boundary'
