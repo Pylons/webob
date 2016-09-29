@@ -2813,31 +2813,35 @@ class TestRequest_functional(object):
         # I need to implement a not seekable stringio like object.
 
         import string
-        class DummyIO(object):
-            def __init__(self, txt):
-                self.txt = txt
-            def read(self, n=-1):
-                return self.txt[0:n]
+
         cls = self._getTargetClass()
         limit = cls.request_body_tempfile_limit
         len_strl = limit // len(string.ascii_letters) + 1
         r = self._makeOne(
-            {'a': 1, 'REQUEST_METHOD': 'POST'},
-            body_file=DummyIO(bytes_(string.ascii_letters) * len_strl))
-        assert len(r.body) == len(string.ascii_letters * len_strl) - 1
+            {
+                'a': 1,
+                'REQUEST_METHOD': 'POST',
+            },
+            body_file=BytesIO(bytes_(string.ascii_letters * len_strl))
+        )
+        assert isinstance(r.body_file, BytesIO)
+        assert r.is_body_readable
+
+        assert len(r.body) == len(string.ascii_letters * len_strl)
         with pytest.raises(TypeError):
             setattr(r, 'body', text_('hello world'))
 
         r.body = None
         assert r.body == b''
-        r = self._makeOne({'a': 1}, method='PUT', body_file=DummyIO(
-            bytes_(string.ascii_letters)))
         assert not hasattr(r.body_file_raw, 'seek')
+
         r.make_body_seekable()
         assert hasattr(r.body_file_raw, 'seek')
+
         r = self._makeOne({'a': 1}, method='PUT',
                           body_file=BytesIO(bytes_(string.ascii_letters)))
         assert hasattr(r.body_file_raw, 'seek')
+
         r.make_body_seekable()
         assert hasattr(r.body_file_raw, 'seek')
 
