@@ -18,7 +18,7 @@ def teardown_module(module):
 
 def simple_app(environ, start_response):
     start_response('200 OK', [
-        ('Content-Type', 'text/html; charset=utf8'),
+        ('Content-Type', 'text/html; charset=UTF-8'),
         ])
     return ['OK']
 
@@ -28,7 +28,7 @@ def test_response():
     assert res.status == '200 OK'
     assert res.status_code == 200
     assert res.body == "OK"
-    assert res.charset == 'utf8'
+    assert res.charset == "UTF-8"
     assert res.content_type == 'text/html'
     res.status = 404
     assert res.status == '404 Not Found'
@@ -158,7 +158,7 @@ def test_cookies():
     r2 = res.merge_cookies(simple_app)
     r2 = BaseRequest.blank('/').get_response(r2)
     assert r2.headerlist == [
-        ('Content-Type', 'text/html; charset=utf8'),
+        ('Content-Type', 'text/html; charset=UTF-8'),
         ('Set-Cookie', 'x=test; Path=/'),
         ]
 
@@ -475,19 +475,6 @@ def test_has_body():
     messing_with_privates = Response()
     messing_with_privates._app_iter = None
     assert not messing_with_privates.has_body
-
-def test_content_type_in_headerlist():
-    # Couldn't manage to clone Response in order to modify class
-    # attributes safely. Shouldn't classes be fresh imported for every
-    # test?
-    default_content_type = Response.default_content_type
-    Response.default_content_type = None
-    try:
-        res = Response(headerlist=[('Content-Type', 'text/html')], charset='utf8')
-        assert res._headerlist
-        assert res.charset == 'utf8'
-    finally:
-        Response.default_content_type = default_content_type
 
 def test_str_crlf():
     res = Response('test')
