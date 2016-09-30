@@ -893,8 +893,8 @@ class BaseRequest(object):
     @property
     def is_body_readable(self):
         """
-            webob.is_body_readable is a flag that tells us that we can read the
-            input stream even though CONTENT_LENGTH is missing.
+        webob.is_body_readable is a flag that tells us that we can read the
+        input stream even though CONTENT_LENGTH is missing.
         """
 
         clen = self.content_length
