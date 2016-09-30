@@ -1,8 +1,21 @@
 Unreleased
 ----------
 
+Backwards Incompatibility
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- WebOb no longer supports Chunked Encoding, this means that if you are using
+  WebOb and need Chunked Encoding you will be required to have a proxy that
+  unchunks the request for you. Please read
+  https://github.com/Pylons/webob/issues/279 for more background.
+
 Feature
 ~~~~~~~
+
+- webob.Request with any HTTP method is now allowed to have a body. This allows
+  DELETE to have a request body for passing extra information. See
+  https://github.com/Pylons/webob/pull/283 and
+  https://github.com/Pylons/webob/pull/274
 
 - Add `tell()` to `ResponseBodyFile` so that it may be used for example for
   ZipFile support. See https://github.com/Pylons/webob/pull/117
