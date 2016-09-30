@@ -439,7 +439,7 @@ class Response(object):
         The headers in a dictionary-like object
         """
         if self._headers is None:
-            self._headers = ResponseHeaders.view_list(self.headerlist)
+            self._headers = ResponseHeaders.view_list(self._headerlist)
         return self._headers
 
     def _headers__set(self, value):
