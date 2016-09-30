@@ -13,6 +13,12 @@ Feature
 Bugfix
 ~~~~~~
 
+- WebOb's exceptions will lazily read underlying variables when inserted into
+  templates to avoid expensive computations/crashes when inserting into the
+  template. This had a bad performance regression on Py27 because of the way
+  the lazified class was created and returned. See
+  https://github.com/Pylons/webob/pull/284
+
 - `wsgify.__call__` raised a `TypeError` with an unhelpful message, it will now
   return the `repr` for the wrapped function:
   https://github.com/Pylons/webob/issues/119
