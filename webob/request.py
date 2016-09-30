@@ -28,7 +28,6 @@ from webob.cachecontrol import (
 from webob.compat import (
     PY3,
     bytes_,
-    integer_types,
     native_,
     parse_qsl_text,
     reraise,
@@ -77,8 +76,6 @@ from webob.multidict import (
     GetDict,
     )
 
-from webob.util import warn_deprecation
-
 __all__ = ['BaseRequest', 'Request', 'LegacyRequest']
 
 class _NoDefault:
@@ -88,21 +85,16 @@ NoDefault = _NoDefault()
 
 PATH_SAFE = '/:@&+$,'
 
-http_method_probably_has_body = dict.fromkeys(
-    ('GET', 'HEAD', 'DELETE', 'TRACE'), False)
-http_method_probably_has_body.update(
-    dict.fromkeys(('POST', 'PUT', 'PATCH'), True))
-
 _LATIN_ENCODINGS = (
     'ascii', 'latin-1', 'latin', 'latin_1', 'l1', 'latin1',
     'iso-8859-1', 'iso8859_1', 'iso_8859_1', 'iso8859', '8859',
     )
 
 class BaseRequest(object):
-    ## The limit after which request bodies should be stored on disk
-    ## if they are read in (under this, and the request body is stored
-    ## in memory):
-    request_body_tempfile_limit = 10*1024
+    # The limit after which request bodies should be stored on disk
+    # if they are read in (under this, and the request body is stored
+    # in memory):
+    request_body_tempfile_limit = 10 * 1024
 
     _charset = None
 
@@ -112,6 +104,7 @@ class BaseRequest(object):
         if type(environ) is not dict:
             raise TypeError(
                 "WSGI environ must be a dict; you passed %r" % (environ,))
+
         if unicode_errors is not None:
             warnings.warn(
                 "You unicode_errors=%r to the Request constructor.  Passing a "
@@ -120,6 +113,7 @@ class BaseRequest(object):
                     unicode_errors,),
                 DeprecationWarning
                 )
+
         if decode_param_names is not None:
             warnings.warn(
                 "You passed decode_param_names=%r to the Request constructor. "
@@ -128,6 +122,7 @@ class BaseRequest(object):
                 "been ignored " % (decode_param_names,),
                 DeprecationWarning
                 )
+
         if not _is_utf8(charset):
             raise DeprecationWarning(
                 "You passed charset=%r to the Request constructor. As of "
@@ -135,16 +130,19 @@ class BaseRequest(object):
                 "charset, please construct the request without a charset or "
                 "with a charset of 'None',  then use ``req = "
                 "req.decode(charset)``" % charset
-
             )
+
         d = self.__dict__
         d['environ'] = environ
+
         if kw:
             cls = self.__class__
+
             if 'method' in kw:
                 # set method first, because .body setters
                 # depend on it for checks
                 self.method = kw.pop('method')
+
             for name, value in kw.items():
                 if not hasattr(cls, name):
                     raise TypeError(
@@ -238,7 +236,6 @@ class BaseRequest(object):
                                   environ=fs_environ,
                                   keep_blank_values=True)
 
-
         fout = t.transcode_fs(fs, r._content_type_raw)
 
         # this order is important, because setting body_file
@@ -248,21 +245,24 @@ class BaseRequest(object):
         fout.seek(0)
         return r
 
-
     # this is necessary for correct warnings depth for both
     # BaseRequest and Request (due to AdhocAttrMixin.__setattr__)
     _setattr_stacklevel = 2
 
-    def _body_file__get(self):
+    @property
+    def body_file(self):
         """
             Input stream of the request (wsgi.input).
             Setting this property resets the content_length and seekable flag
             (unlike setting req.body_file_raw).
         """
+
         if not self.is_body_readable:
             return io.BytesIO()
+
         r = self.body_file_raw
         clen = self.content_length
+
         if not self.is_body_seekable and clen is not None:
             # we need to wrap input in LimitedLengthFile
             # but we have to cache the instance as well
@@ -271,32 +271,32 @@ class BaseRequest(object):
             #   req.body_file.read(100)
             #   req.body_file.read(100)
             env = self.environ
-            wrapped, raw = env.get('webob._body_file', (0,0))
+            wrapped, raw = env.get('webob._body_file', (0, 0))
+
             if raw is not r:
                 wrapped = LimitedLengthFile(r, clen)
                 wrapped = io.BufferedReader(wrapped)
                 env['webob._body_file'] = wrapped, r
             r = wrapped
+
         return r
 
-    def _body_file__set(self, value):
+    @body_file.setter
+    def body_file(self, value):
         if isinstance(value, bytes):
-            warn_deprecation(
-                "Please use req.body = b'bytes' or req.body_file = fileobj",
-                '1.2',
-                self._setattr_stacklevel
-            )
+            raise ValueError('Excepted fileobj but received bytes.')
+
         self.content_length = None
         self.body_file_raw = value
         self.is_body_seekable = False
         self.is_body_readable = True
-    def _body_file__del(self):
+
+    @body_file.deleter
+    def body_file(self):
         self.body = b''
-    body_file = property(_body_file__get,
-                         _body_file__set,
-                         _body_file__del,
-                         doc=_body_file__get.__doc__)
+
     body_file_raw = environ_getter('wsgi.input')
+
     @property
     def body_file_seekable(self):
         """
@@ -688,36 +688,36 @@ class BaseRequest(object):
         """
         domain = self.host
         if ':' in domain:
-             domain = domain.split(':', 1)[0]
+            domain = domain.split(':', 1)[0]
         return domain
 
-    def _body__get(self):
+    @property
+    def body(self):
         """
         Return the content of the request body.
         """
         if not self.is_body_readable:
             return b''
+
         self.make_body_seekable() # we need this to have content_length
         r = self.body_file.read(self.content_length)
         self.body_file_raw.seek(0)
         return r
-    def _body__set(self, value):
+
+    @body.setter
+    def body(self, value):
         if value is None:
             value = b''
         if not isinstance(value, bytes):
             raise TypeError("You can only set Request.body to bytes (not %r)"
-                                % type(value))
-        if not http_method_probably_has_body.get(self.method, True):
-            if not value:
-                self.content_length = None
-                self.body_file_raw = io.BytesIO()
-                return
+                            % type(value))
         self.content_length = len(value)
         self.body_file_raw = io.BytesIO(value)
         self.is_body_seekable = True
-    def _body__del(self):
+
+    @body.deleter
+    def body(self):
         self.body = b''
-    body = property(_body__get, _body__set, _body__del, doc=_body__get.__doc__)
 
     def _json_body__get(self):
         """Access the body of the request as JSON"""
@@ -755,7 +755,6 @@ class BaseRequest(object):
         del self.body
 
     text = property(_text__get, _text__set, _text__del, doc=_text__get.__doc__)
-
 
     @property
     def POST(self):
@@ -852,7 +851,6 @@ class BaseRequest(object):
         params = NestedMultiDict(self.GET, self.POST)
         return params
 
-
     @property
     def cookies(self):
         """
@@ -892,36 +890,26 @@ class BaseRequest(object):
     # this way we can have seekable input without testing the .seek() method
     is_body_seekable = environ_getter('webob.is_body_seekable', False)
 
-    #is_body_readable = environ_getter('webob.is_body_readable', False)
+    @property
+    def is_body_readable(self):
+        """
+        webob.is_body_readable is a flag that tells us that we can read the
+        input stream even though CONTENT_LENGTH is missing.
+        """
 
-    def _is_body_readable__get(self):
-        """
-            webob.is_body_readable is a flag that tells us
-            that we can read the input stream even though
-            CONTENT_LENGTH is missing. This allows FakeCGIBody
-            to work and can be used by servers to support
-            chunked encoding in requests.
-            For background see https://bitbucket.org/ianb/webob/issue/6
-        """
-        if http_method_probably_has_body.get(self.method):
-            # known HTTP method with body
+        clen = self.content_length
+
+        if clen is not None and clen != 0:
             return True
-        elif self.content_length is not None:
-            # unknown HTTP method, but the Content-Length
-            # header is present
-            return True
-        else:
-            # last resort -- rely on the special flag
+        elif clen is None:
+            # rely on the special flag
             return self.environ.get('webob.is_body_readable', False)
 
-    def _is_body_readable__set(self, flag):
+        return False
+
+    @is_body_readable.setter
+    def is_body_readable(self, flag):
         self.environ['webob.is_body_readable'] = bool(flag)
-
-    is_body_readable = property(_is_body_readable__get, _is_body_readable__set,
-        doc=_is_body_readable__get.__doc__
-    )
-
-
 
     def make_body_seekable(self):
         """
@@ -941,56 +929,88 @@ class BaseRequest(object):
         else:
             self.copy_body()
 
-
     def copy_body(self):
         """
-        Copies the body, in cases where it might be shared with
-        another request object and that is not desired.
+        Copies the body, in cases where it might be shared with another request
+        object and that is not desired.
 
-        This copies the body in-place, either into a BytesIO object
-        or a temporary file.
+        This copies the body either into a BytesIO object (through setting
+        req.body) or a temporary file.
         """
-        if not self.is_body_readable:
-            # there's no body to copy
-            self.body = b''
-        elif self.content_length is None:
-            # chunked body or FakeCGIBody
-            self.body = self.body_file_raw.read()
-            self._copy_body_tempfile()
+
+        if self.is_body_readable:
+            # Before we copy, if we can, rewind the body file
+            if self.is_body_seekable:
+                self.body_file_raw.seek(0)
+
+            tempfile_limit = self.request_body_tempfile_limit
+            todo = self.content_length if self.content_length is not None else 65535
+
+            newbody = b''
+            fileobj = None
+            input = self.body_file
+
+            while todo > 0:
+                data = input.read(min(todo, 65535))
+
+                if not data and self.content_length is None:
+                    # We attempted to read more data, but got none, break.
+                    # This can happen if for instance we are reading as much as
+                    # we can because we don't have a Content-Length...
+                    break
+                elif not data:
+                    # We have a Content-Length and we attempted to read, but
+                    # there was nothing more to read. Oh the humanity! This
+                    # should rarely if never happen because self.body_file
+                    # should be a LimitedLengthFile which should already have
+                    # raised if there was less data than expected.
+                    raise DisconnectionError(
+                        "Client disconnected (%s more bytes were expected)" % todo
+                    )
+
+                if fileobj:
+                    fileobj.write(data)
+                else:
+                    newbody += data
+
+                    # When we have enough data that we need a tempfile, let's
+                    # create one, then clear the temporary variable we were
+                    # using
+                    if len(newbody) > tempfile_limit:
+                        fileobj = self.make_tempfile()
+                        fileobj.write(newbody)
+                        newbody = b''
+
+                # Only decrement todo if Content-Length is set
+                if self.content_length is not None:
+                    todo -= len(data)
+
+            if fileobj:
+                # We apparently had enough data to need a file
+
+                # Set the Content-Length to the amount of data that was just
+                # written.
+                self.content_length = fileobj.tell()
+
+                # Seek it back to the beginning
+                fileobj.seek(0)
+
+                self.body_file_raw = fileobj
+
+                # Allow it to be seeked in the future, so we don't need to copy
+                # for things like .body
+                self.is_body_seekable = True
+
+                # Not strictly required since Content-Length is set
+                self.is_body_readable = True
+            else:
+                # No file created, set the body and let it deal with creating
+                # Content-Length and other vars.
+                self.body = newbody
         else:
-            # try to read body into tempfile
-            did_copy = self._copy_body_tempfile()
-            if not did_copy:
-                # it wasn't necessary, so just read it into memory
-                self.body = self.body_file.read(self.content_length)
-
-    def _copy_body_tempfile(self):
-        """
-            Copy wsgi.input to tempfile if necessary. Returns True if it did.
-        """
-        tempfile_limit = self.request_body_tempfile_limit
-        todo = self.content_length
-        assert isinstance(todo, integer_types), todo
-        if not tempfile_limit or todo <= tempfile_limit:
-            return False
-        fileobj = self.make_tempfile()
-        input = self.body_file
-        while todo > 0:
-            data = input.read(min(todo, 65536))
-            if not data:
-                # Normally this should not happen, because LimitedLengthFile
-                # should have raised an exception by now.
-                # It can happen if the is_body_seekable flag is incorrect.
-                raise DisconnectionError(
-                    "Client disconnected (%s more bytes were expected)"
-                    % todo
-                )
-            fileobj.write(data)
-            todo -= len(data)
-        fileobj.seek(0)
-        self.body_file_raw = fileobj
-        self.is_body_seekable = True
-        return True
+            # Always leave the request with a valid body, and this is pretty
+            # cheap.
+            self.body = b''
 
     def make_tempfile(self):
         """
@@ -998,7 +1018,6 @@ class BaseRequest(object):
             This API is not stable yet. A 'size' argument might be added.
         """
         return tempfile.TemporaryFile()
-
 
     def remove_conditional_headers(self,
                                    remove_encoding=True,
@@ -1028,7 +1047,6 @@ class BaseRequest(object):
             if key in self.environ:
                 del self.environ[key]
 
-
     accept = accept_property('Accept', '14.1', MIMEAccept, MIMENilAccept)
     accept_charset = accept_property('Accept-Charset', '14.2', AcceptCharset)
     accept_encoding = accept_property('Accept-Encoding', '14.3',
@@ -1039,7 +1057,6 @@ class BaseRequest(object):
         environ_getter('HTTP_AUTHORIZATION', None, '14.8'),
         parse_auth, serialize_auth,
     )
-
 
     def _cache_control__get(self):
         """
@@ -1137,12 +1154,11 @@ class BaseRequest(object):
         assert url.startswith(host)
         url = url[len(host):]
         parts = [bytes_('%s %s %s' % (self.method, url, self.http_version))]
-        #self.headers.setdefault('Host', self.host)
 
         # acquire body before we handle headers so that
         # content-length will be set
         body = None
-        if http_method_probably_has_body.get(self.method):
+        if self.is_body_readable:
             if skip_body > 1:
                 if len(self.body) > skip_body:
                     body = bytes_('<body skipped (len=%s)>' % len(self.body))
@@ -1227,15 +1243,16 @@ class BaseRequest(object):
             if hname in r.headers:
                 hval = r.headers[hname] + ', ' + hval
             r.headers[hname] = hval
-        if http_method_probably_has_body.get(r.method):
-            clen = r.content_length
-            if clen is None:
-                body = fp.read()
-            else:
-                body = fp.read(clen)
-            if is_text:
-                body = bytes_(body, 'utf-8')
-            r.body = body
+
+        clen = r.content_length
+        if clen is None:
+            body = fp.read()
+        else:
+            body = fp.read(clen)
+        if is_text:
+            body = bytes_(body, 'utf-8')
+        r.body = body
+
         return r
 
     def call_application(self, application, catch_exc_info=False):
@@ -1479,7 +1496,7 @@ def environ_add_POST(env, data, content_type=None):
             data = url_encode(data)
     else:
         if not isinstance(data, bytes):
-            raise ValueError('Please provide `POST` data as string'
+            raise ValueError('Please provide `POST` data as bytes'
                              ' for content type `%s`' % content_type)
     data = bytes_(data, 'utf8')
     env['wsgi.input'] = io.BytesIO(data)
@@ -1488,10 +1505,9 @@ def environ_add_POST(env, data, content_type=None):
     env['CONTENT_TYPE'] = content_type
 
 
-
-#########################
-## Helper classes and monkeypatching
-#########################
+#
+# Helper classes and monkeypatching
+#
 
 class DisconnectionError(IOError):
     pass
@@ -1524,11 +1540,10 @@ class LimitedLengthFile(io.RawIOBase):
         data = self.file.read(sz0)
         sz = len(data)
         self.remaining -= sz
-        #if not data:
         if sz < sz0 and self.remaining:
             raise DisconnectionError(
-                "The client disconnected while sending the POST/PUT body "
-                + "(%d more bytes were expected)" % self.remaining
+                "The client disconnected while sending the body "
+                "(%d more bytes were expected)" % (self.remaining,)
             )
         buff[:sz] = data
         return sz
@@ -1547,12 +1562,20 @@ def _cgi_FieldStorage__repr__patch(self):
 
 cgi_FieldStorage.__repr__ = _cgi_FieldStorage__repr__patch
 
+
 class FakeCGIBody(io.RawIOBase):
     def __init__(self, vars, content_type):
+        warnings.warn(
+            "FakeCGIBody is no longer used by WebOb and will be removed from a future "
+            "version of WebOb. If you require FakeCGIBody please make a copy into "
+            "you own project",
+            DeprecationWarning
+            )
+
         if content_type.startswith('multipart/form-data'):
             if not _get_multipart_boundary(content_type):
                 raise ValueError('Content-type: %r does not contain boundary'
-                            % content_type)
+                                 % content_type)
         self.vars = vars
         self.content_type = content_type
         self.file = None
@@ -1574,11 +1597,13 @@ class FakeCGIBody(io.RawIOBase):
 
     def readinto(self, buff):
         if self.file is None:
-            if self.content_type.startswith(
-                'application/x-www-form-urlencoded'):
+            if self.content_type.startswith('application/x-www-form-urlencoded'):
                 data = '&'.join(
-                    '%s=%s' % (quote_plus(bytes_(k, 'utf8')), quote_plus(bytes_(v, 'utf8')))
-                    for k,v in self.vars.items()
+                    '%s=%s' % (
+                        quote_plus(bytes_(k, 'utf8')),
+                        quote_plus(bytes_(v, 'utf8'))
+                    )
+                    for k, v in self.vars.items()
                 )
                 self.file = io.BytesIO(bytes_(data))
             elif self.content_type.startswith('multipart/form-data'):
@@ -1592,18 +1617,18 @@ class FakeCGIBody(io.RawIOBase):
                 assert 0, ('Bad content type: %r' % self.content_type)
         return self.file.readinto(buff)
 
-
 def _get_multipart_boundary(ctype):
     m = re.search(r'boundary=([^ ]+)', ctype, re.I)
     if m:
         return native_(m.group(1).strip('"'))
 
-
 def _encode_multipart(vars, content_type, fout=None):
     """Encode a multipart request body into a string"""
     f = fout or io.BytesIO()
     w = f.write
-    wt = lambda t: f.write(t.encode('utf8'))
+    def wt(t):
+        w(t.encode('utf8'))
+
     CRLF = b'\r\n'
     boundary = _get_multipart_boundary(content_type)
     if not boundary:
@@ -1688,15 +1713,18 @@ class Transcoder(object):
                 return q_orig
             q = urlparse.parse_qsl(q, self.charset)
             t = self._trans
-            q = [(t(k), t(v)) for k,v in q]
+            q = [(t(k), t(v)) for k, v in q]
             return url_encode(q)
 
     def transcode_fs(self, fs, content_type):
         # transcode FieldStorage
-        if PY3: # pragma: no cover
-            decode = lambda b: b
+        if PY3:
+            def decode(b):
+                return b
         else:
-            decode = lambda b: b.decode(self.charset, self.errors)
+            def decode(b):
+                return b.decode(self.charset, self.errors)
+
         data = []
         for field in fs.list or ():
             field.name = decode(field.name)
@@ -1713,3 +1741,4 @@ class Transcoder(object):
             fout=io.BytesIO()
         )
         return fout
+

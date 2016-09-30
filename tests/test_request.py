@@ -101,7 +101,7 @@ class TestRequestCommon(object):
 
     def test_body_file_setter_w_bytes(self):
         req = self._blankOne('/')
-        with pytest.raises(DeprecationWarning):
+        with pytest.raises(ValueError):
             setattr(req, 'body_file', b'foo')
 
     def test_body_file_setter_non_bytes(self):
@@ -670,24 +670,23 @@ class TestRequestCommon(object):
         assert req.range == None
 
     def test_is_body_readable_POST(self):
-        req = self._blankOne('/', environ={'REQUEST_METHOD':'POST'})
+        req = self._blankOne('/', environ={'REQUEST_METHOD': 'POST', 'CONTENT_LENGTH': '100'})
         assert req.is_body_readable
 
     def test_is_body_readable_PATCH(self):
-        req = self._blankOne('/', environ={'REQUEST_METHOD':'PATCH'})
+        req = self._blankOne('/', environ={'REQUEST_METHOD': 'PATCH', 'CONTENT_LENGTH': '100'})
         assert req.is_body_readable
 
     def test_is_body_readable_GET(self):
-        req = self._blankOne('/', environ={'REQUEST_METHOD':'GET'})
-        assert req.is_body_readable == False
+        req = self._blankOne('/', environ={'REQUEST_METHOD': 'GET', 'CONTENT_LENGTH': '100'})
+        assert req.is_body_readable
 
     def test_is_body_readable_unknown_method_and_content_length(self):
-        req = self._blankOne('/', environ={'REQUEST_METHOD':'WTF'})
-        req.content_length = 10
+        req = self._blankOne('/', environ={'REQUEST_METHOD': 'WTF', 'CONTENT_LENGTH': '100'})
         assert req.is_body_readable
 
     def test_is_body_readable_special_flag(self):
-        req = self._blankOne('/', environ={'REQUEST_METHOD':'WTF',
+        req = self._blankOne('/', environ={'REQUEST_METHOD': 'WTF',
                                           'webob.is_body_readable': True})
         assert req.is_body_readable
 
@@ -2814,31 +2813,39 @@ class TestRequest_functional(object):
         # I need to implement a not seekable stringio like object.
 
         import string
-        class DummyIO(object):
-            def __init__(self, txt):
-                self.txt = txt
-            def read(self, n=-1):
-                return self.txt[0:n]
+
         cls = self._getTargetClass()
         limit = cls.request_body_tempfile_limit
         len_strl = limit // len(string.ascii_letters) + 1
         r = self._makeOne(
-            {'a': 1, 'REQUEST_METHOD': 'POST'},
-            body_file=DummyIO(bytes_(string.ascii_letters) * len_strl))
-        assert len(r.body) == len(string.ascii_letters * len_strl) - 1
+            {
+                'a': 1,
+                'REQUEST_METHOD': 'POST',
+            },
+            body_file=BytesIO(bytes_(string.ascii_letters * len_strl))
+        )
+        assert isinstance(r.body_file, BytesIO)
+        assert r.is_body_readable
+
+        assert len(r.body) == len(string.ascii_letters * len_strl)
         with pytest.raises(TypeError):
             setattr(r, 'body', text_('hello world'))
 
         r.body = None
         assert r.body == b''
-        r = self._makeOne({'a': 1}, method='PUT', body_file=DummyIO(
-            bytes_(string.ascii_letters)))
+
+        no_seek = UnseekableInput(bytes_(string.ascii_letters))
+
+        r = self._makeOne({'a': 1}, method='PUT', body_file=no_seek)
         assert not hasattr(r.body_file_raw, 'seek')
+
         r.make_body_seekable()
         assert hasattr(r.body_file_raw, 'seek')
+
         r = self._makeOne({'a': 1}, method='PUT',
                           body_file=BytesIO(bytes_(string.ascii_letters)))
         assert hasattr(r.body_file_raw, 'seek')
+
         r.make_body_seekable()
         assert hasattr(r.body_file_raw, 'seek')
 
@@ -3670,7 +3677,8 @@ class UnseekableInput(object):
             self.pos = len(self.data)
             return t
         else:
-            assert(self.pos + size <= len(self.data))
+            if self.pos + size > len(self.data):
+                size = len(self.data) - self.pos
             t = self.data[self.pos:self.pos + size]
             self.pos += size
             return t
