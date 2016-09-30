@@ -41,7 +41,11 @@ Bugfix
   See https://github.com/Pylons/webob/pull/261 and
   https://github.com/Pylons/webob/issues/130
 
-- json.dumps/loads are now always UTF-8. It no longer tries to use the charset.
+- Response.json's json.dumps/loads are now always UTF-8. It no longer tries to
+  use the charset.
+
+- Response.__init__ will no longer set the default Content-Type on Responses
+  that have no body and thus shouldn't have a Content-Type
 
 - The Response `__init__` will by default no longer set the Content-Type to the
   default if a headerlist is provided. This fixes issues whereby
