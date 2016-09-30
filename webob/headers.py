@@ -21,11 +21,7 @@ class ResponseHeaders(MultiDict):
 
     def getall(self, key):
         key = key.lower()
-        result = []
-        for k, v in self._items:
-            if k.lower() == key:
-                result.append(v)
-        return result
+        return [v for (k, v) in self._items if k.lower() == key]
 
     def mixed(self):
         r = self.dict_of_lists()
