@@ -212,9 +212,6 @@ class Response(object):
         else:
             self._headerlist = headerlist
 
-        # Set up the content_type
-        content_type = content_type or self.default_content_type
-
         # We only set the content_type to the one passed to the constructor or
         # the default content type if there is none that exists AND there was
         # no headerlist passed. If a headerlist was provided then most likely
@@ -225,25 +222,35 @@ class Response(object):
         # Response with empty body, such as Response(status='204 No Content')
         # without the default content_type being set
 
-        if (
-            self.content_type is None and
-            headerlist is None and
-            _code_has_body(self.status_code)
-        ):
-            self.content_type = content_type
+        encoding = None
+        code_has_body = (
+            self._status[0] != '1' and
+            self._status[:3] not in ('204', '304')
+        )
+        if headerlist is None and code_has_body:
+            content_type = content_type or self.default_content_type
 
-        # Set up the charset
-        #
-        # In contrast with the above, if a charset is not set but there is a
-        # content_type we will set the default charset if the content_type
-        # allows for a charset.
+            # Check if content_type is set because default_content_type could
+            # be None, in which case there is no content_type
+            if content_type:
 
-        if self.content_type:
-            if not self.charset and charset is not _marker:
-                self.charset = charset
-            elif not self.charset and self.default_charset:
-                if _content_type_has_charset(self.content_type):
-                    self.charset = self.default_charset
+                # Set up the charset, if the content_type doesn't already have one
+
+                has_charset = 'charset=' in content_type
+
+                if not has_charset and charset is not _marker and charset is not None:
+                    encoding = charset
+                    content_type += '; charset=' + charset
+                elif not has_charset and charset is _marker and self.default_charset:
+                    # Optimize for the default_content_type case, avoid a function call
+                    if (
+                        content_type is self.default_content_type or
+                        _content_type_has_charset(content_type)
+                    ):
+                        encoding = self.default_charset
+                        content_type += '; charset=' + self.default_charset
+
+            self._headerlist.append(('Content-Type', content_type))
 
         # Set up conditional response
         if conditional_response is None:
@@ -251,17 +258,30 @@ class Response(object):
         else:
             self.conditional_response = bool(conditional_response)
 
-        # Set up app_iter
-        if app_iter is None:
+        # Set up app_iter if the HTTP Status code has a body
+        if app_iter is None and code_has_body:
             if isinstance(body, text_type):
-                encoding = self.charset
+                # Fall back to trying self.charset if encoding is not set. In
+                # most cases encoding will be set to the default value.
+                encoding = encoding or self.charset
                 if encoding is None:
                     raise TypeError(
                         "You cannot set the body to a text value without a "
                         "charset")
                 body = body.encode(encoding)
             app_iter = [body]
-            self.headers['Content-Length'] = str(len(body))
+
+            if headerlist is not None:
+                self._headerlist[:] = [
+                    (k, v)
+                    for (k, v)
+                    in self._headerlist
+                    if k.lower() != 'content-length'
+                ]
+            self._headerlist.append(('Content-Length', str(len(body))))
+        elif app_iter is None or not code_has_body:
+            app_iter = [b'']
+
         self._app_iter = app_iter
 
         # Loop through all the remaining keyword arguments
@@ -1435,13 +1455,6 @@ class EmptyResponse(object):
         raise StopIteration()
 
     __next__ = next # py3
-
-def _code_has_body(status_code):
-    return (
-        (not (100 <= status_code < 199)) and
-        (status_code != 204) and
-        (status_code != 304)
-    )
 
 def _is_xml(content_type):
     return (
