@@ -1226,6 +1226,23 @@ class Response(object):
         if set_content_md5:
             self.content_md5 = md5_digest
 
+    @staticmethod
+    def _make_location_absolute(environ, value):
+        if SCHEME_RE.search(value):
+            return value
+
+        new_location = urlparse.urljoin(_request_uri(environ), value)
+        return new_location
+
+    def _abs_headerlist(self, environ):
+        # Build the headerlist, if we have a Location header, make it absolute
+        return [
+            (k, v) if k.lower() != 'location'
+            else (k, self._make_location_absolute(environ, v))
+            for (k, v)
+            in self._headerlist
+        ]
+
     #
     # __call__, conditional_response_app
     #
@@ -1236,26 +1253,14 @@ class Response(object):
         """
         if self.conditional_response:
             return self.conditional_response_app(environ, start_response)
+
         headerlist = self._abs_headerlist(environ)
+
         start_response(self.status, headerlist)
         if environ['REQUEST_METHOD'] == 'HEAD':
             # Special case here...
             return EmptyResponse(self._app_iter)
         return self._app_iter
-
-    def _abs_headerlist(self, environ):
-        """Returns a headerlist, with the Location header possibly
-        made absolute given the request environ.
-        """
-        headerlist = list(self.headerlist)
-        for i, (name, value) in enumerate(headerlist):
-            if name.lower() == 'location':
-                if SCHEME_RE.search(value):
-                    break
-                new_location = urlparse.urljoin(_request_uri(environ), value)
-                headerlist[i] = (name, new_location)
-                break
-        return headerlist
 
     _safe_methods = ('GET', 'HEAD')
 
@@ -1268,7 +1273,9 @@ class Response(object):
         * Range               (406 Partial Content; only on GET, HEAD)
         """
         req = BaseRequest(environ)
+
         headerlist = self._abs_headerlist(environ)
+
         method = environ.get('REQUEST_METHOD', 'GET')
         if method in self._safe_methods:
             status304 = False
