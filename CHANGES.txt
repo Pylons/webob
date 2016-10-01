@@ -4,6 +4,11 @@ Unreleased
 Backwards Incompatibility
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
+- Response.text will no longer raise if the Content-Type does not have a
+  charset, it will fall back to using the new default_body_encoding. To get the
+  old behaviour back please sub-class Response and set default_body_encoding to
+  None. See https://github.com/Pylons/webob/pull/287
+
 - WebOb no longer supports Chunked Encoding, this means that if you are using
   WebOb and need Chunked Encoding you will be required to have a proxy that
   unchunks the request for you. Please read
@@ -11,6 +16,10 @@ Backwards Incompatibility
 
 Feature
 ~~~~~~~
+
+- Response has a new default_body_encoding which may be used to allow
+  getting/setting Response.text when a Content-Type has no charset. See
+  https://github.com/Pylons/webob/pull/287
 
 - webob.Request with any HTTP method is now allowed to have a body. This allows
   DELETE to have a request body for passing extra information. See
