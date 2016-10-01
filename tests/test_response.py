@@ -1268,3 +1268,8 @@ def test_explicit_charset():
     res = Response(charset='UTF-16')
     assert res.content_type == 'text/html'
     assert res.charset == 'UTF-16'
+
+def test_set_content_type():
+    res = Response(content_type='application/json')
+    res.content_type = 'application/foo'
+    assert res.content_type == 'application/foo'
