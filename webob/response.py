@@ -225,7 +225,7 @@ class Response(object):
         encoding = None
         code_has_body = (
             self._status[0] != '1' and
-            self._status[:3] not in ('204', '304')
+            self._status[:3] not in ('204', '205', '304')
         )
         if headerlist is None and code_has_body:
             content_type = content_type or self.default_content_type
