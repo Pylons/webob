@@ -1228,3 +1228,43 @@ def test_cache_expires_set_zero_then_nonzero():
     assert not res.cache_control.no_store
     assert not res.cache_control.must_revalidate
     assert res.cache_control.max_age == 1
+
+def test_default_content_type():
+    class NoDefault(Response):
+        default_content_type = None
+
+    res = NoDefault()
+    assert res.content_type is None
+
+def test_default_charset():
+    class DefaultCharset(Response):
+        default_charset = 'UTF-16'
+
+    res = DefaultCharset()
+    assert res.content_type == 'text/html'
+    assert res.charset == 'UTF-16'
+    assert res.headers['Content-Type'] == 'text/html; charset=UTF-16'
+
+def test_header_list_no_defaults():
+    res = Response(headerlist=[])
+    assert res.headerlist == [('Content-Length', '0')]
+    assert res.content_type is None
+    assert res.charset is None
+    assert res.body == b''
+
+def test_204_has_no_body():
+    res = Response(status='204 No Content')
+    assert res.body == b''
+    assert res.content_length is None
+    assert res.headerlist == []
+
+def test_204_app_iter_set():
+    res = Response(status='204', app_iter=[b'test'])
+    assert res.body == b''
+    assert res.content_length is None
+    assert res.headerlist == []
+
+def test_explicit_charset():
+    res = Response(charset='UTF-16')
+    assert res.content_type == 'text/html'
+    assert res.charset == 'UTF-16'
