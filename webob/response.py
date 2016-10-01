@@ -155,12 +155,17 @@ class Response(object):
           set to True so that all ``Response`` objects will attempt to check
           the original request for conditional response headers. See
           :meth:`~Response.conditional_response_app` for more information.
+
+        * ``default_body_encoding`` is set to 'UTF-8' by default, it exists to
+          allow users to get/set the Response object using .text, even if no
+          charset has been set for the Content-Type.
     """
 
     default_content_type = 'text/html'
     default_charset = 'UTF-8'
     unicode_errors = 'strict'
     default_conditional_response = False
+    default_body_encoding = 'UTF-8'
 
     # These two are only around so that when people pass them into the
     # constructor they correctly get saved and set, however they are not used
@@ -556,24 +561,30 @@ class Response(object):
 
     def _text__get(self):
         """
-        Get/set the text value of the body (using the charset of the
-        Content-Type)
+        Get/set the text value of the body using the charset of the
+        Content-Type or the default_body_encoding.
         """
-        if not self.charset:
+        if not self.charset and not self.default_body_encoding:
             raise AttributeError(
-                "You cannot access Response.text unless charset is set")
+                "You cannot access Response.text unless charset or default_body_encoding"
+                " is set"
+            )
+        decoding = self.charset or self.default_body_encoding
         body = self.body
-        return body.decode(self.charset, self.unicode_errors)
+        return body.decode(decoding, self.unicode_errors)
 
     def _text__set(self, value):
-        if not self.charset:
+        if not self.charset and not self.default_body_encoding:
             raise AttributeError(
-                "You cannot access Response.text unless charset is set")
+                "You cannot access Response.text unless charset or default_body_encoding"
+                " is set"
+            )
         if not isinstance(value, text_type):
             raise TypeError(
                 "You can only set Response.text to a unicode string "
                 "(not %s)" % type(value))
-        self.body = value.encode(self.charset)
+        encoding = self.charset or self.default_body_encoding
+        self.body = value.encode(encoding)
 
     def _text__del(self):
         del self.body

@@ -693,8 +693,13 @@ def test_body_del():
 
 def test_text_get_no_charset():
     res = Response(charset=None)
+    assert '' == res.text
+
+def test_text_get_no_default_body_encoding():
+    res = Response(charset=None)
+    res.default_body_encoding = None
     with pytest.raises(AttributeError):
-        res.__getattribute__('text')
+        assert '' == res.text
 
 def test_unicode_body():
     res = Response()
@@ -717,8 +722,15 @@ def test_text_get_decode():
 def test_text_set_no_charset():
     res = Response()
     res.charset = None
+    res.text = text_('abc')
+    assert res.text == 'abc'
+
+def test_text_set_no_default_body_encoding():
+    res = Response()
+    res.charset = None
+    res.default_body_encoding = None
     with pytest.raises(AttributeError):
-        res.__setattr__('text', 'abc')
+        res.text = text_('abc')
 
 def test_text_set_not_unicode():
     res = Response()
