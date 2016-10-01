@@ -1182,20 +1182,35 @@ def test_decode_content_gzip():
     res.decode_content()
     assert res.body == b'abc'
 
-def test__abs_headerlist_location_with_scheme():
-    res = Response()
-    res.content_encoding = 'gzip'
-    res.headerlist = [('Location', 'http:')]
-    result = res._abs_headerlist({})
-    assert result, [('Location' == 'http:')]
+def test__make_location_absolute_has_scheme_only():
+    result = Response._make_location_absolute(
+        {
+            'wsgi.url_scheme': 'http',
+            'HTTP_HOST': 'example.com:80'
+        },
+        'http:'
+    )
+    assert result == 'http:'
 
-def test__abs_headerlist_location_no_scheme():
-    res = Response()
-    res.content_encoding = 'gzip'
-    res.headerlist = [('Location', '/abc')]
-    result = res._abs_headerlist({'wsgi.url_scheme': 'http',
-                                  'HTTP_HOST': 'example.com:80'})
-    assert result == [('Location', 'http://example.com/abc')]
+def test__make_location_absolute_path():
+    result = Response._make_location_absolute(
+        {
+            'wsgi.url_scheme': 'http',
+            'HTTP_HOST': 'example.com:80'
+        },
+        '/abc'
+    )
+    assert result == 'http://example.com/abc'
+
+def test__make_location_absolute_already_absolute():
+    result = Response._make_location_absolute(
+        {
+            'wsgi.url_scheme': 'http',
+            'HTTP_HOST': 'example.com:80'
+        },
+        'https://funcptr.net/'
+    )
+    assert result == 'https://funcptr.net/'
 
 def test_response_set_body_file1():
     data = b'abc'
