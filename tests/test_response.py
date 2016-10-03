@@ -1288,3 +1288,27 @@ def test_set_content_type():
     res = Response(content_type='application/json')
     res.content_type = 'application/foo'
     assert res.content_type == 'application/foo'
+
+def test_raises_no_charset():
+    with pytest.raises(TypeError):
+        Response(content_type='image/jpeg', body=text_(b'test'))
+
+def test_raises_none_charset():
+    with pytest.raises(TypeError):
+        Response(
+            content_type='image/jpeg',
+            body=text_(b'test'),
+            charset=None)
+
+def test_doesnt_raise_with_charset_content_type_has_no_charset():
+    res = Response(content_type='image/jpeg', body=text_(b'test'), charset='utf-8')
+    assert res.body == b'test'
+    assert res.content_type == 'image/jpeg'
+    assert res.charset is None
+
+def test_content_type_has_charset():
+    res = Response(content_type='application/foo; charset=UTF-8', body=text_(b'test'))
+    assert res.body == b'test'
+    assert res.content_type == 'application/foo'
+    assert res.charset == 'UTF-8'
+    assert res.headers['Content-Type'] == 'application/foo; charset=UTF-8'
