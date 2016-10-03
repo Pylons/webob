@@ -976,6 +976,7 @@ def test_cache_control_get():
 
 def test_location():
     res = Response()
+    res.status = '301'
     res.location = '/test.html'
     assert res.location == '/test.html'
     req = Request.blank('/')
