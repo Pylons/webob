@@ -4,6 +4,10 @@ Unreleased
 Backwards Incompatibility
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
+- Response `__init__` will no longer set the default Content-Type, nor
+  Content-Length on Responses that don't have a body. This allows WebOb to
+  return proper responses for things like `Response(status='204 No Content')`.
+
 - Response.text will no longer raise if the Content-Type does not have a
   charset, it will fall back to using the new default_body_encoding. To get the
   old behaviour back please sub-class Response and set default_body_encoding to
@@ -53,12 +57,13 @@ Bugfix
 - Response.json's json.dumps/loads are now always UTF-8. It no longer tries to
   use the charset.
 
-- Response.__init__ will no longer set the default Content-Type on Responses
-  that have no body and thus shouldn't have a Content-Type
+- Response `__init__` will no longer set the default Content-Type, nor
+  Content-Length on Responses that don't have a body. This allows WebOb to
+  return proper responses for things like `Response(status='204 No Content')`.
 
 - The Response `__init__` will by default no longer set the Content-Type to the
   default if a headerlist is provided. This fixes issues whereby
-  Request.get_response() would return a Response that didn't match the actual
+  `Request.get_response()` would return a Response that didn't match the actual
   response.
   See https://github.com/Pylons/webob/pull/261 and
   https://github.com/Pylons/webob/issues/205
