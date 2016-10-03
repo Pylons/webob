@@ -212,6 +212,26 @@ class Response(object):
         else:
             self._headerlist = headerlist
 
+        # Set the encoding for the Response to charset, so if a charset is
+        # passed but the Content-Type does not allow for a charset, we can
+        # still encode text_type body's.
+        # r = Response(
+        #   content_type='application/foo',
+        #   charset='UTF-8',
+        #   body=u'somebody')
+        # Should work without issues, and the header will be correctly set to
+        # Content-Type: application/foo with no charset on it.
+
+        encoding = None
+        if charset is not _marker:
+            encoding = charset
+
+        # Does the status code have a body or not?
+        code_has_body = (
+            self._status[0] != '1' and
+            self._status[:3] not in ('204', '205', '304')
+        )
+
         # We only set the content_type to the one passed to the constructor or
         # the default content type if there is none that exists AND there was
         # no headerlist passed. If a headerlist was provided then most likely
@@ -220,35 +240,57 @@ class Response(object):
         #
         # Also allow creation of a empty Response with just the status set to a
         # Response with empty body, such as Response(status='204 No Content')
-        # without the default content_type being set
+        # without the default content_type being set (since empty bodies have
+        # no Content-Type)
+        #
+        # Check if content_type is set because default_content_type could be
+        # None, in which case there is no content_type, and thus we don't need
+        # to anything
 
-        encoding = None
-        code_has_body = (
-            self._status[0] != '1' and
-            self._status[:3] not in ('204', '205', '304')
-        )
-        if headerlist is None and code_has_body:
-            content_type = content_type or self.default_content_type
+        content_type = content_type or self.default_content_type
 
-            # Check if content_type is set because default_content_type could
-            # be None, in which case there is no content_type
-            if content_type:
+        if headerlist is None and code_has_body and content_type:
+            # Set up the charset, if the content_type doesn't already have one
 
-                # Set up the charset, if the content_type doesn't already have one
+            has_charset = 'charset=' in content_type
 
-                has_charset = 'charset=' in content_type
+            # If the Content-Type already has a charset, we don't set the user
+            # provided charset on the Content-Type, so we shouldn't use it as
+            # the encoding for text_type based body's.
+            if has_charset:
+                encoding = None
 
-                if not has_charset and charset is not _marker and charset is not None:
-                    encoding = charset
-                    content_type += '; charset=' + charset
-                elif not has_charset and charset is _marker and self.default_charset:
-                    # Optimize for the default_content_type case, avoid a function call
-                    if (
-                        content_type is self.default_content_type or
-                        _content_type_has_charset(content_type)
-                    ):
-                        encoding = self.default_charset
-                        content_type += '; charset=' + self.default_charset
+            # Do not use the default_charset for the encoding because we
+            # want things like
+            # Response(content_type='image/jpeg',body=u'foo') to raise when
+            # trying to encode the body.
+
+            new_charset = encoding
+
+            if (
+                not has_charset and
+                charset is _marker and
+                self.default_charset
+            ):
+                new_charset = self.default_charset
+
+            # Optimize for the default_content_type as shipped by
+            # WebOb, becuase we know that 'text/html' has a charset,
+            # otherwise add a charset if the content_type has a charset.
+            #
+            # Even if the user supplied charset explicitly, we do not add
+            # it to the Content-Type unless it has has a charset, instead
+            # the user supplied charset is solely used for encoding the
+            # body if it is a text_type
+
+            if (
+                new_charset and
+                (
+                    content_type == 'text/html' or
+                    _content_type_has_charset(content_type)
+                )
+            ):
+                content_type += '; charset=' + new_charset
 
             self._headerlist.append(('Content-Type', content_type))
 
