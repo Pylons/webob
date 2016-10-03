@@ -3282,7 +3282,7 @@ class TestRequest_functional(object):
         assert res.status == '200 OK'
         from webob.headers import ResponseHeaders
         assert isinstance(res.headers, ResponseHeaders)
-        assert list(res.headers.items()) == [('Content-Type', 'text/plain; charset=UTF-8')]
+        assert list(res.headers.items()) == [('Content-Type', 'text/plain')]
         assert res.body == b'Hi!'
 
     def test_call_WSGI_app_204(self):
@@ -3329,7 +3329,7 @@ class TestRequest_functional(object):
         assert res.status == '200 OK'
         from webob.headers import ResponseHeaders
         assert isinstance(res.headers, ResponseHeaders)
-        assert list(res.headers.items()) == [('Content-Type', 'text/plain; charset=UTF-8')]
+        assert list(res.headers.items()) == [('Content-Type', 'text/plain')]
         assert res.body == b'Hi!'
 
     def equal_req(self, req, inp):

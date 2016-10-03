@@ -212,8 +212,25 @@ class Response(object):
         else:
             self._headerlist = headerlist
 
-        # Set up the content_type
-        content_type = content_type or self.default_content_type
+        # Set the encoding for the Response to charset, so if a charset is
+        # passed but the Content-Type does not allow for a charset, we can
+        # still encode text_type body's.
+        # r = Response(
+        #   content_type='application/foo',
+        #   charset='UTF-8',
+        #   body=u'somebody')
+        # Should work without issues, and the header will be correctly set to
+        # Content-Type: application/foo with no charset on it.
+
+        encoding = None
+        if charset is not _marker:
+            encoding = charset
+
+        # Does the status code have a body or not?
+        code_has_body = (
+            self._status[0] != '1' and
+            self._status[:3] not in ('204', '205', '304')
+        )
 
         # We only set the content_type to the one passed to the constructor or
         # the default content type if there is none that exists AND there was
@@ -223,27 +240,59 @@ class Response(object):
         #
         # Also allow creation of a empty Response with just the status set to a
         # Response with empty body, such as Response(status='204 No Content')
-        # without the default content_type being set
-
-        if (
-            self.content_type is None and
-            headerlist is None and
-            _code_has_body(self.status_code)
-        ):
-            self.content_type = content_type
-
-        # Set up the charset
+        # without the default content_type being set (since empty bodies have
+        # no Content-Type)
         #
-        # In contrast with the above, if a charset is not set but there is a
-        # content_type we will set the default charset if the content_type
-        # allows for a charset.
+        # Check if content_type is set because default_content_type could be
+        # None, in which case there is no content_type, and thus we don't need
+        # to anything
 
-        if self.content_type:
-            if not self.charset and charset is not _marker:
-                self.charset = charset
-            elif not self.charset and self.default_charset:
-                if _content_type_has_charset(self.content_type):
-                    self.charset = self.default_charset
+        content_type = content_type or self.default_content_type
+
+        if headerlist is None and code_has_body and content_type:
+            # Set up the charset, if the content_type doesn't already have one
+
+            has_charset = 'charset=' in content_type
+
+            # If the Content-Type already has a charset, we don't set the user
+            # provided charset on the Content-Type, so we shouldn't use it as
+            # the encoding for text_type based body's.
+            if has_charset:
+                encoding = None
+
+            # Do not use the default_charset for the encoding because we
+            # want things like
+            # Response(content_type='image/jpeg',body=u'foo') to raise when
+            # trying to encode the body.
+
+            new_charset = encoding
+
+            if (
+                not has_charset and
+                charset is _marker and
+                self.default_charset
+            ):
+                new_charset = self.default_charset
+
+            # Optimize for the default_content_type as shipped by
+            # WebOb, becuase we know that 'text/html' has a charset,
+            # otherwise add a charset if the content_type has a charset.
+            #
+            # Even if the user supplied charset explicitly, we do not add
+            # it to the Content-Type unless it has has a charset, instead
+            # the user supplied charset is solely used for encoding the
+            # body if it is a text_type
+
+            if (
+                new_charset and
+                (
+                    content_type == 'text/html' or
+                    _content_type_has_charset(content_type)
+                )
+            ):
+                content_type += '; charset=' + new_charset
+
+            self._headerlist.append(('Content-Type', content_type))
 
         # Set up conditional response
         if conditional_response is None:
@@ -251,17 +300,30 @@ class Response(object):
         else:
             self.conditional_response = bool(conditional_response)
 
-        # Set up app_iter
-        if app_iter is None:
+        # Set up app_iter if the HTTP Status code has a body
+        if app_iter is None and code_has_body:
             if isinstance(body, text_type):
-                encoding = self.charset
+                # Fall back to trying self.charset if encoding is not set. In
+                # most cases encoding will be set to the default value.
+                encoding = encoding or self.charset
                 if encoding is None:
                     raise TypeError(
                         "You cannot set the body to a text value without a "
                         "charset")
                 body = body.encode(encoding)
             app_iter = [body]
-            self.headers['Content-Length'] = str(len(body))
+
+            if headerlist is not None:
+                self._headerlist[:] = [
+                    (k, v)
+                    for (k, v)
+                    in self._headerlist
+                    if k.lower() != 'content-length'
+                ]
+            self._headerlist.append(('Content-Length', str(len(body))))
+        elif app_iter is None or not code_has_body:
+            app_iter = [b'']
+
         self._app_iter = app_iter
 
         # Loop through all the remaining keyword arguments
@@ -439,7 +501,7 @@ class Response(object):
         The headers in a dictionary-like object
         """
         if self._headers is None:
-            self._headers = ResponseHeaders.view_list(self.headerlist)
+            self._headers = ResponseHeaders.view_list(self._headerlist)
         return self._headers
 
     def _headers__set(self, value):
@@ -1206,6 +1268,23 @@ class Response(object):
         if set_content_md5:
             self.content_md5 = md5_digest
 
+    @staticmethod
+    def _make_location_absolute(environ, value):
+        if SCHEME_RE.search(value):
+            return value
+
+        new_location = urlparse.urljoin(_request_uri(environ), value)
+        return new_location
+
+    def _abs_headerlist(self, environ):
+        # Build the headerlist, if we have a Location header, make it absolute
+        return [
+            (k, v) if k.lower() != 'location'
+            else (k, self._make_location_absolute(environ, v))
+            for (k, v)
+            in self._headerlist
+        ]
+
     #
     # __call__, conditional_response_app
     #
@@ -1216,26 +1295,14 @@ class Response(object):
         """
         if self.conditional_response:
             return self.conditional_response_app(environ, start_response)
+
         headerlist = self._abs_headerlist(environ)
+
         start_response(self.status, headerlist)
         if environ['REQUEST_METHOD'] == 'HEAD':
             # Special case here...
             return EmptyResponse(self._app_iter)
         return self._app_iter
-
-    def _abs_headerlist(self, environ):
-        """Returns a headerlist, with the Location header possibly
-        made absolute given the request environ.
-        """
-        headerlist = list(self.headerlist)
-        for i, (name, value) in enumerate(headerlist):
-            if name.lower() == 'location':
-                if SCHEME_RE.search(value):
-                    break
-                new_location = urlparse.urljoin(_request_uri(environ), value)
-                headerlist[i] = (name, new_location)
-                break
-        return headerlist
 
     _safe_methods = ('GET', 'HEAD')
 
@@ -1248,7 +1315,9 @@ class Response(object):
         * Range               (406 Partial Content; only on GET, HEAD)
         """
         req = BaseRequest(environ)
+
         headerlist = self._abs_headerlist(environ)
+
         method = environ.get('REQUEST_METHOD', 'GET')
         if method in self._safe_methods:
             status304 = False
@@ -1435,13 +1504,6 @@ class EmptyResponse(object):
         raise StopIteration()
 
     __next__ = next # py3
-
-def _code_has_body(status_code):
-    return (
-        (not (100 <= status_code < 199)) and
-        (status_code != 204) and
-        (status_code != 304)
-    )
 
 def _is_xml(content_type):
     return (

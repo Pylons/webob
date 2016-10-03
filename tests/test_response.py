@@ -18,7 +18,7 @@ def teardown_module(module):
 
 def simple_app(environ, start_response):
     start_response('200 OK', [
-        ('Content-Type', 'text/html; charset=utf8'),
+        ('Content-Type', 'text/html; charset=UTF-8'),
         ])
     return ['OK']
 
@@ -28,7 +28,7 @@ def test_response():
     assert res.status == '200 OK'
     assert res.status_code == 200
     assert res.body == "OK"
-    assert res.charset == 'utf8'
+    assert res.charset == "UTF-8"
     assert res.content_type == 'text/html'
     res.status = 404
     assert res.status == '404 Not Found'
@@ -158,7 +158,7 @@ def test_cookies():
     r2 = res.merge_cookies(simple_app)
     r2 = BaseRequest.blank('/').get_response(r2)
     assert r2.headerlist == [
-        ('Content-Type', 'text/html; charset=utf8'),
+        ('Content-Type', 'text/html; charset=UTF-8'),
         ('Set-Cookie', 'x=test; Path=/'),
         ]
 
@@ -475,19 +475,6 @@ def test_has_body():
     messing_with_privates = Response()
     messing_with_privates._app_iter = None
     assert not messing_with_privates.has_body
-
-def test_content_type_in_headerlist():
-    # Couldn't manage to clone Response in order to modify class
-    # attributes safely. Shouldn't classes be fresh imported for every
-    # test?
-    default_content_type = Response.default_content_type
-    Response.default_content_type = None
-    try:
-        res = Response(headerlist=[('Content-Type', 'text/html')], charset='utf8')
-        assert res._headerlist
-        assert res.charset == 'utf8'
-    finally:
-        Response.default_content_type = default_content_type
 
 def test_str_crlf():
     res = Response('test')
@@ -989,6 +976,7 @@ def test_cache_control_get():
 
 def test_location():
     res = Response()
+    res.status = '301'
     res.location = '/test.html'
     assert res.location == '/test.html'
     req = Request.blank('/')
@@ -1195,20 +1183,35 @@ def test_decode_content_gzip():
     res.decode_content()
     assert res.body == b'abc'
 
-def test__abs_headerlist_location_with_scheme():
-    res = Response()
-    res.content_encoding = 'gzip'
-    res.headerlist = [('Location', 'http:')]
-    result = res._abs_headerlist({})
-    assert result, [('Location' == 'http:')]
+def test__make_location_absolute_has_scheme_only():
+    result = Response._make_location_absolute(
+        {
+            'wsgi.url_scheme': 'http',
+            'HTTP_HOST': 'example.com:80'
+        },
+        'http:'
+    )
+    assert result == 'http:'
 
-def test__abs_headerlist_location_no_scheme():
-    res = Response()
-    res.content_encoding = 'gzip'
-    res.headerlist = [('Location', '/abc')]
-    result = res._abs_headerlist({'wsgi.url_scheme': 'http',
-                                  'HTTP_HOST': 'example.com:80'})
-    assert result == [('Location', 'http://example.com/abc')]
+def test__make_location_absolute_path():
+    result = Response._make_location_absolute(
+        {
+            'wsgi.url_scheme': 'http',
+            'HTTP_HOST': 'example.com:80'
+        },
+        '/abc'
+    )
+    assert result == 'http://example.com/abc'
+
+def test__make_location_absolute_already_absolute():
+    result = Response._make_location_absolute(
+        {
+            'wsgi.url_scheme': 'http',
+            'HTTP_HOST': 'example.com:80'
+        },
+        'https://funcptr.net/'
+    )
+    assert result == 'https://funcptr.net/'
 
 def test_response_set_body_file1():
     data = b'abc'
@@ -1241,3 +1244,72 @@ def test_cache_expires_set_zero_then_nonzero():
     assert not res.cache_control.no_store
     assert not res.cache_control.must_revalidate
     assert res.cache_control.max_age == 1
+
+def test_default_content_type():
+    class NoDefault(Response):
+        default_content_type = None
+
+    res = NoDefault()
+    assert res.content_type is None
+
+def test_default_charset():
+    class DefaultCharset(Response):
+        default_charset = 'UTF-16'
+
+    res = DefaultCharset()
+    assert res.content_type == 'text/html'
+    assert res.charset == 'UTF-16'
+    assert res.headers['Content-Type'] == 'text/html; charset=UTF-16'
+
+def test_header_list_no_defaults():
+    res = Response(headerlist=[])
+    assert res.headerlist == [('Content-Length', '0')]
+    assert res.content_type is None
+    assert res.charset is None
+    assert res.body == b''
+
+def test_204_has_no_body():
+    res = Response(status='204 No Content')
+    assert res.body == b''
+    assert res.content_length is None
+    assert res.headerlist == []
+
+def test_204_app_iter_set():
+    res = Response(status='204', app_iter=[b'test'])
+    assert res.body == b''
+    assert res.content_length is None
+    assert res.headerlist == []
+
+def test_explicit_charset():
+    res = Response(charset='UTF-16')
+    assert res.content_type == 'text/html'
+    assert res.charset == 'UTF-16'
+
+def test_set_content_type():
+    res = Response(content_type='application/json')
+    res.content_type = 'application/foo'
+    assert res.content_type == 'application/foo'
+
+def test_raises_no_charset():
+    with pytest.raises(TypeError):
+        Response(content_type='image/jpeg', body=text_(b'test'))
+
+def test_raises_none_charset():
+    with pytest.raises(TypeError):
+        Response(
+            content_type='image/jpeg',
+            body=text_(b'test'),
+            charset=None)
+
+def test_doesnt_raise_with_charset_content_type_has_no_charset():
+    res = Response(content_type='image/jpeg', body=text_(b'test'), charset='utf-8')
+    assert res.body == b'test'
+    assert res.content_type == 'image/jpeg'
+    assert res.charset is None
+
+def test_content_type_has_charset():
+    res = Response(content_type='application/foo; charset=UTF-8', body=text_(b'test'))
+    assert res.body == b'test'
+    assert res.content_type == 'application/foo'
+    assert res.charset == 'UTF-8'
+    assert res.headers['Content-Type'] == 'application/foo; charset=UTF-8'
