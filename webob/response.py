@@ -6,6 +6,7 @@ from datetime import (
 from hashlib import md5
 import re
 import struct
+import urllib
 import zlib
 try:
     import simplejson as json
@@ -47,6 +48,7 @@ from webob.descriptors import (
     converter,
     date_header,
     header_getter,
+    encode_location,
     list_header,
     parse_auth,
     parse_content_range,
@@ -764,7 +766,7 @@ class Response(object):
     def etag_strong(self):
         return parse_etag_response(self._etag_raw, strong=True)
 
-    location = header_getter('Location', '14.30')
+    location = header_getter('Location', '14.30', encode=encode_location)
     pragma = header_getter('Pragma', '14.32')
     age = converter(
         header_getter('Age', '14.6'),

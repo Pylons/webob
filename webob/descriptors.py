@@ -13,6 +13,8 @@ from webob.byterange import (
 from webob.compat import (
     PY3,
     text_type,
+    urlparse,
+    url_quote,
     )
 
 from webob.datetime_utils import (
@@ -125,8 +127,21 @@ def deprecated_property(attr, name, text, version): # pragma: no cover
         '<Deprecated attribute %s>' % name
     )
 
+def encode_latin1(value):
+    if isinstance(value, text_type) and not PY3:
+        return value.encode('latin-1')
+    else:
+        return value
 
-def header_getter(header, rfc_section):
+def encode_location(value):
+    if isinstance(value, text_type) and not PY3:
+        # This emulates PY3 url_quote behavior.
+        value = value.encode('utf-8')
+    # Don't mess with the URL syntax (e.g. keep 'http://' as is), but quote
+    # everything else.
+    return url_quote(value, safe='/:?&=')
+
+def header_getter(header, rfc_section, encode=encode_latin1):
     doc = header_docstring(header, rfc_section)
     key = header.lower()
 
@@ -141,8 +156,7 @@ def header_getter(header, rfc_section):
             if '\n' in value or '\r' in value:
                 raise ValueError('Header value may not contain control characters')
 
-            if isinstance(value, text_type) and not PY3:
-                value = value.encode('latin-1')
+            value = encode(value)
             r._headerlist.append((header, value))
 
     def fdel(r):
