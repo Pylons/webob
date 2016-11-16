@@ -2558,10 +2558,16 @@ class TestRequest_functional(object):
         assert req.cookies == {'foo': '?foo'}
 
     def test_path_quoting(self):
-        path = '/:@&+$,/bar'
+        path = "/_.-~!$&'()*+,;=:@/bar"
         req = self._blankOne(path)
         assert req.path == path
         assert req.url.endswith(path)
+
+    def test_path_quoting_pct_encodes(self):
+        path = '/[]/bar'
+        req = self._blankOne(path)
+        assert req.path == '/%5B%5D/bar'
+        assert req.url.endswith('/%5B%5D/bar')
 
     def test_params(self):
         req = self._blankOne('/?a=1&b=2')

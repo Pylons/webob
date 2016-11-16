@@ -83,7 +83,7 @@ class _NoDefault:
         return '(No Default)'
 NoDefault = _NoDefault()
 
-PATH_SAFE = '/:@&+$,'
+PATH_SAFE = "/~!$&'()*+,;=:@"
 
 _LATIN_ENCODINGS = (
     'ascii', 'latin-1', 'latin', 'latin_1', 'l1', 'latin1',
