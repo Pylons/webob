@@ -2558,7 +2558,7 @@ class TestRequest_functional(object):
         assert req.cookies == {'foo': '?foo'}
 
     def test_path_quoting(self):
-        path = '/:@&+$,/bar'
+        path = "/_.-~!$&'()*+,;=:@/bar"
         req = self._blankOne(path)
         assert req.path == path
         assert req.url.endswith(path)
