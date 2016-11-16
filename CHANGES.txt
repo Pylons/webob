@@ -39,6 +39,9 @@ Feature
 Bugfix
 ~~~~~~
 
+- Fixes request.PATH_SAFE to contain all of the path safe characters according
+  to RFC3986. See https://github.com/Pylons/webob/pull/291
+
 - WebOb's exceptions will lazily read underlying variables when inserted into
   templates to avoid expensive computations/crashes when inserting into the
   template. This had a bad performance regression on Py27 because of the way
@@ -84,4 +87,4 @@ Bugfix
   This is used in the exception handling code so that if you use a WebOb HTTP
   Exception and pass a generator to `app_iter` WebOb won't attempt to read the
   whole thing and instead allows it to be returned to the WSGI server. See
-  https://github.com/Pylons/webob/pull/259 
+  https://github.com/Pylons/webob/pull/259
