@@ -104,11 +104,10 @@ class Response(object):
 
         :vartype ~Response.app_iter: iterable
 
-        :cvar ~Response.content_type: Sets the ``Content-Type`` header. If the
-            ``headerlist`` already contains a ``Content-Type``, then it will
-            take precedence. If no ``Content-Type`` is set in the
-            ``headerlist``, then the ``default_content_type`` value will be
-            used instead.
+        :cvar ~Response.content_type: Sets the ``Content-Type`` header. If no
+        ``content_type`` is provided, and there is no ``headerlist``, the
+        ``default_content_type`` will be automatically set. If ``headerlist``
+        is provided then this value is ignored.
 
         :vartype ~Response.content_type: str or None
 
@@ -124,7 +123,8 @@ class Response(object):
             ``default_charset`` will automatically be added.  Currently the
             only ``Content-Type``'s that allow for a ``charset`` are defined to
             be ``text/*``, ``application/xml``, and ``*/*+xml``. Any other
-            ``Content-Type``'s will not have a ``charset`` added.
+            ``Content-Type``'s will not have a ``charset`` added. If a
+            ``headerlist`` is provided this value is ignored.
 
         :vartype ~Response.charset: str or None
 
