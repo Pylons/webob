@@ -1,5 +1,6 @@
 import zlib
 import io
+import sys
 
 import pytest
 
@@ -965,6 +966,31 @@ def test_location():
     assert req.get_response(res).location == 'http://localhost/test.html'
     res.location = '/test2.html'
     assert req.get_response(res).location == 'http://localhost/test2.html'
+
+
+@pytest.mark.xfail(sys.version_info < (3,0),
+                   reason="Python 2.x unicode != str, WSGI requires str. Test "
+                   "added due to https://github.com/Pylons/webob/issues/247. "
+                   "PEP3333 requires environ variables are str, Django messes "
+                   "with the environ and changes it from str to unicode.")
+def test_location_unicode():
+    environ = {
+        'REQUEST_METHOD': 'GET',
+        'wsgi.url_scheme': 'http',
+        'HTTP_HOST': u'test.com',
+    }
+    res = Response()
+    res.status = '301'
+    res.location = '/test.html'
+
+    def start_response(status, headerlist):
+        for (header, val) in headerlist:
+            if header.lower() == 'location':
+                assert val == 'http://test.com/test.html'
+                assert isinstance(val, str)
+
+    res(environ, start_response)
+
 
 def test_request_uri_http():
     # covers webob/response.py:1152
