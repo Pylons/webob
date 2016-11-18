@@ -131,64 +131,84 @@ else:
     from cgi import escape
 
 
-# We only need this on Python3 but the issue was fixed in Pytohn 3.4.4 and 3.5.
-if PY3 and sys.version_info[:3] < (3, 4, 4):  # pragma no cover
-    # Work around http://bugs.python.org/issue23801
+if PY3:
     import cgi
+    import tempfile
     from cgi import FieldStorage as _cgi_FieldStorage
 
-    class cgi_FieldStorage(_cgi_FieldStorage):
-        # This is taken exactly from Python 3.5's cgi.py module, and patched
-        # with the patch from http://bugs.python.org/issue23801.
-        def read_multi(self, environ, keep_blank_values, strict_parsing):
-            """Internal: read a part that is itself multipart."""
-            ib = self.innerboundary
-            if not cgi.valid_boundary(ib):
-                raise ValueError(
-                    'Invalid boundary in multipart form: %r' % (ib,))
-            self.list = []
-            if self.qs_on_post:
-                query = cgi.urllib.parse.parse_qsl(
-                    self.qs_on_post, self.keep_blank_values,
-                    self.strict_parsing,
-                    encoding=self.encoding, errors=self.errors)
-                for key, value in query:
-                    self.list.append(cgi.MiniFieldStorage(key, value))
+    # Various different FieldStorage work-arounds required on Python 3.x
 
-            klass = self.FieldStorageClass or self.__class__
-            first_line = self.fp.readline()  # bytes
-            if not isinstance(first_line, bytes):
-                raise ValueError("%s should return bytes, got %s"
-                                 % (self.fp, type(first_line).__name__))
-            self.bytes_read += len(first_line)
+    if sys.version_info[:3] < (3, 7, 0):  # pragma no cover
+        # Assume that this will be fixed in Python 3.7
+        # Work around https://bugs.python.org/issue27777
 
-            # Ensure that we consume the file until we've hit our innerboundary
-            while (first_line.strip() != (b"--" + self.innerboundary) and
-                    first_line):
-                first_line = self.fp.readline()
+        class cgi_FieldStorage(_cgi_FieldStorage):
+            def make_file(self):
+                if self._binary_file or self.length >= 0:
+                    return tempfile.TemporaryFile("wb+")
+                else:
+                    return tempfile.TemporaryFile(
+                        "w+",
+                        encoding=self.encoding, newline='\n'
+                    )
+
+        _cgi_FieldStorage = cgi_FieldStorage
+
+    if sys.version_info[:3] < (3, 4, 4):  # pragma no cover
+        # Work around http://bugs.python.org/issue23801
+
+        class cgi_FieldStorage(_cgi_FieldStorage):
+            # This is taken exactly from Python 3.5's cgi.py module, and patched
+            # with the patch from http://bugs.python.org/issue23801.
+            def read_multi(self, environ, keep_blank_values, strict_parsing):
+                """Internal: read a part that is itself multipart."""
+                ib = self.innerboundary
+                if not cgi.valid_boundary(ib):
+                    raise ValueError(
+                        'Invalid boundary in multipart form: %r' % (ib,))
+                self.list = []
+                if self.qs_on_post:
+                    query = cgi.urllib.parse.parse_qsl(
+                        self.qs_on_post, self.keep_blank_values,
+                        self.strict_parsing,
+                        encoding=self.encoding, errors=self.errors)
+                    for key, value in query:
+                        self.list.append(cgi.MiniFieldStorage(key, value))
+
+                klass = self.FieldStorageClass or self.__class__
+                first_line = self.fp.readline()  # bytes
+                if not isinstance(first_line, bytes):
+                    raise ValueError("%s should return bytes, got %s"
+                                     % (self.fp, type(first_line).__name__))
                 self.bytes_read += len(first_line)
 
-            while True:
-                parser = cgi.FeedParser()
-                hdr_text = b""
+                # Ensure that we consume the file until we've hit our innerboundary
+                while (first_line.strip() != (b"--" + self.innerboundary) and
+                        first_line):
+                    first_line = self.fp.readline()
+                    self.bytes_read += len(first_line)
+
                 while True:
-                    data = self.fp.readline()
-                    hdr_text += data
-                    if not data.strip():
+                    parser = cgi.FeedParser()
+                    hdr_text = b""
+                    while True:
+                        data = self.fp.readline()
+                        hdr_text += data
+                        if not data.strip():
+                            break
+                    if not hdr_text:
                         break
-                if not hdr_text:
-                    break
-                # parser takes strings, not bytes
-                self.bytes_read += len(hdr_text)
-                parser.feed(hdr_text.decode(self.encoding, self.errors))
-                headers = parser.close()
-                part = klass(self.fp, headers, ib, environ, keep_blank_values,
-                             strict_parsing, self.limit-self.bytes_read,
-                             self.encoding, self.errors)
-                self.bytes_read += part.bytes_read
-                self.list.append(part)
-                if part.done or self.bytes_read >= self.length > 0:
-                    break
-            self.skip_lines()
+                    # parser takes strings, not bytes
+                    self.bytes_read += len(hdr_text)
+                    parser.feed(hdr_text.decode(self.encoding, self.errors))
+                    headers = parser.close()
+                    part = klass(self.fp, headers, ib, environ, keep_blank_values,
+                                 strict_parsing, self.limit-self.bytes_read,
+                                 self.encoding, self.errors)
+                    self.bytes_read += part.bytes_read
+                    self.list.append(part)
+                    if part.done or self.bytes_read >= self.length > 0:
+                        break
+                self.skip_lines()
 else:
     from cgi import FieldStorage as cgi_FieldStorage
