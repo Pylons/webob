@@ -953,7 +953,7 @@ class Response(object):
 
     def set_cookie(self, name=None, value='', max_age=None,
                    path='/', domain=None, secure=False, httponly=False,
-                   comment=None, expires=None, overwrite=False, key=None):
+                   comment=None, expires=None, overwrite=False):
         """
         Set (add) a cookie for the response.
 
@@ -1027,11 +1027,6 @@ class Response(object):
            existing cookie.
 
         """
-
-        # Backwards compatibility for the old name "key", remove this in 1.7
-        if name is None and key is not None:
-            warn_deprecation('Argument "key" was renamed to "name".', 1.7, 1)
-            name = key
 
         if name is None:
             raise TypeError('set_cookie() takes at least 1 argument')
