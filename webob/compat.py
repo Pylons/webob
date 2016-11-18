@@ -140,9 +140,10 @@ if PY3:
 
     if sys.version_info[:3] < (3, 7, 0):  # pragma no cover
         # Assume that this will be fixed in Python 3.7
-        # Work around https://bugs.python.org/issue27777
 
         class cgi_FieldStorage(_cgi_FieldStorage):
+
+            # Work around https://bugs.python.org/issue27777
             def make_file(self):
                 if self._binary_file or self.length >= 0:
                     return tempfile.TemporaryFile("wb+")
@@ -152,14 +153,8 @@ if PY3:
                         encoding=self.encoding, newline='\n'
                     )
 
-        _cgi_FieldStorage = cgi_FieldStorage
-
-    if sys.version_info[:3] < (3, 4, 4):  # pragma no cover
-        # Work around http://bugs.python.org/issue23801
-
-        class cgi_FieldStorage(_cgi_FieldStorage):
-            # This is taken exactly from Python 3.5's cgi.py module, and patched
-            # with the patch from http://bugs.python.org/issue23801.
+            # Work around http://bugs.python.org/issue23801
+            # This is taken exactly from Python 3.5's cgi.py module
             def read_multi(self, environ, keep_blank_values, strict_parsing):
                 """Internal: read a part that is itself multipart."""
                 ib = self.innerboundary
@@ -210,5 +205,8 @@ if PY3:
                     if part.done or self.bytes_read >= self.length > 0:
                         break
                 self.skip_lines()
+    else:  # pragma no cover
+        cgi_FieldStorage = _cgi_FieldStorage
+
 else:
     from cgi import FieldStorage as cgi_FieldStorage
