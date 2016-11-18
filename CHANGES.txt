@@ -1,6 +1,12 @@
 Unreleased
 ----------
 
+Compatibility
+~~~~~~~~~~~~~
+
+- WebOb is no longer supported on Python 2.6 and PyPy3 (due to pip no longer
+  supporting Python 3.2 even on PyPy)
+
 Backwards Incompatibility
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
