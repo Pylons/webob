@@ -770,6 +770,14 @@ class Response(object):
            If ``max_age`` is set, it will be used to generate the ``expires``
            and this value is ignored.
 
+           If a ``datetime.datetime`` is provided it has to either be timezone
+           aware or be based on UTC. ``datetime.datetime`` objects that are
+           local time are not supported. Timezone aware ``datetime.datetime``
+           objects are converted to UTC.
+
+           This argument will be removed in future
+           versions of WebOb (version 1.10).
+
         ``overwrite``
 
            If this key is ``True``, before setting the cookie, unset any
@@ -781,6 +789,11 @@ class Response(object):
         if name is None and key is not None:
             warn_deprecation('Argument "key" was renamed to "name".', 1.7, 1)
             name = key
+
+        # Remove in WebOb 1.10
+        if expires:
+            warn_deprecation('Argument "expires" will be removed in a future '
+                             'version of WebOb, please use "max_age".', 1.10, 1)
 
         if name is None:
             raise TypeError('set_cookie() takes at least 1 argument')
@@ -794,6 +807,11 @@ class Response(object):
 
         # expires can also be a datetime
         if not max_age and isinstance(expires, datetime):
+
+            # If expires has a timezone attached, convert it to UTC
+            if expires.tzinfo and expires.utcoffset():
+                expires = (expires - expires.utcoffset()).replace(tzinfo=None)
+
             max_age = expires - datetime.utcnow()
 
         value = bytes_(value, 'utf-8')
