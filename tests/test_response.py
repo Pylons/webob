@@ -832,7 +832,7 @@ def test_set_cookie_expires_is_None_and_max_age_is_timedelta():
     assert val[2] == 'a=1'
     assert val[3].startswith('expires')
 
-def test_set_cookie_expires_is_not_None_and_max_age_is_None():
+def test_set_cookie_expires_is_datetime_and_max_age_is_None():
     import datetime
     res = Response()
     then = datetime.datetime.utcnow() + datetime.timedelta(days=1)
