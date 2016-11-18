@@ -4,6 +4,9 @@ Unreleased
 Backwards Incompatibility
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
+- Response.set_cookie no longer accepts a key argument. This was deprecated in
+  WebOb 1.5 and as mentioned in the deprecation, is being removed in 1.7
+
 - Response `__init__` will no longer set the default Content-Type, nor
   Content-Length on Responses that don't have a body. This allows WebOb to
   return proper responses for things like `Response(status='204 No Content')`.
