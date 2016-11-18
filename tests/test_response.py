@@ -189,24 +189,6 @@ def test_unicode_cookies_warning_issued():
 
     cookies._should_raise = True
 
-# Remove in version 1.7
-def test_cookies_warning_issued_backwards_compat():
-    import warnings
-
-    with warnings.catch_warnings(record=True) as w:
-        # Cause all warnings to always be triggered.
-        warnings.simplefilter("always")
-        # Trigger a warning.
-
-        res = Response()
-        res.set_cookie(key='x', value='test')
-
-        assert len(w) == 1
-        assert issubclass(w[-1].category, DeprecationWarning) is True
-        assert 'Argument "key" was renamed to "name".' in str(w[-1].message)
-
-    cookies._should_raise = True
-
 def test_cookies_raises_typeerror():
     res = Response()
     with pytest.raises(TypeError):
