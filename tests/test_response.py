@@ -580,6 +580,8 @@ def test_response_file_body_writelines():
     rbo.flush() # noop
     assert res.app_iter, [b'foo', b'bar', b'baz']
 
+@pytest.mark.xfail(sys.version_info >= (3,6),
+                   reason="Python 3.6 and up requires that rbo is seekable.")
 def test_response_file_body_tell():
     import zipfile
     from webob.response import ResponseBodyFile
