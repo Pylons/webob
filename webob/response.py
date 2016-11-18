@@ -105,9 +105,9 @@ class Response(object):
         :vartype ~Response.app_iter: iterable
 
         :cvar ~Response.content_type: Sets the ``Content-Type`` header. If no
-        ``content_type`` is provided, and there is no ``headerlist``, the
-        ``default_content_type`` will be automatically set. If ``headerlist``
-        is provided then this value is ignored.
+            ``content_type`` is provided, and there is no ``headerlist``, the
+            ``default_content_type`` will be automatically set. If
+            ``headerlist`` is provided then this value is ignored.
 
         :vartype ~Response.content_type: str or None
 
