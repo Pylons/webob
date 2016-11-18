@@ -42,6 +42,15 @@ Feature
 Bugfix
 ~~~~~~
 
+- Fixup cgi.FieldStorage on Python 3.x to work-around issue reported in Python
+  bug report 27777 and 24764. This is currently applied for Python versions
+  less than 3.7. See https://github.com/Pylons/webob/pull/294
+
+- Response.set_cookie now accepts datetime objects for the expire kwarg and
+  will correctly convert them to UTC with no tzinfo for use in calculating the
+  max_age. See https://github.com/Pylons/webob/issues/254 and
+  https://github.com/Pylons/webob/pull/292
+
 - Fixes request.PATH_SAFE to contain all of the path safe characters according
   to RFC3986. See https://github.com/Pylons/webob/pull/291
 
