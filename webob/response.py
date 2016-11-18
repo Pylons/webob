@@ -1036,10 +1036,10 @@ class Response(object):
 
         """
 
-        # Remove in WebOb 1.9
+        # Remove in WebOb 1.10
         if expires:
             warn_deprecation('Argument "expires" will be removed in a future '
-                             'version of WebOb, please use "max_age".', 1.9, 1)
+                             'version of WebOb, please use "max_age".', 1.10, 1)
 
         if name is None:
             raise TypeError('set_cookie() takes at least 1 argument')
