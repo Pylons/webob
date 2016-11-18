@@ -319,6 +319,7 @@ Change History
 
    whatsnew-1.5
    whatsnew-1.6
+   whatsnew-1.7
    changes
 
 Status and License
