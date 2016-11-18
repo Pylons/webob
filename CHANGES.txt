@@ -1,3 +1,18 @@
+1.6.3 (2016-11-18)
+------------------
+
+Bugfix
+~~~~~~
+
+- Fixup cgi.FieldStorage on Python 3.x to work-around issue reported in Python
+  bug report 27777 and 24764. This is currently applied for Python versions
+  less than 3.7. See https://github.com/Pylons/webob/pull/294
+
+- Response.set_cookie now accepts datetime objects for the expires kwarg and
+  will correctly convert them to UTC with no tzinfo for use in calculating the
+  max_age. See https://github.com/Pylons/webob/issues/254 and
+  https://github.com/Pylons/webob/pull/292
+
 1.6.2 (2016-10-14)
 ------------------
 
