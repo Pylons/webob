@@ -4,8 +4,9 @@ What's New in WebOb 1.7
 Compatibility
 ~~~~~~~~~~~~~
 
-- WebOb is no longer supported on Python 2.6 and PyPy3 (due to pip no longer
-  supporting Python 3.2 even on PyPy)
+- WebOb is no longer supported on Python 2.6 and PyPy3. PyPy3 support will be
+  re-introduced as soon as it supports a Python version higher than 3.2 and pip
+  fully supports the platform again.
 
   If you would like Python 2.6 support, please pin to WebOb 1.6, which still
   has Python 2.6 support.
