@@ -42,10 +42,12 @@ class TestFileApp(unittest.TestCase):
         assert resp1.content_type in ('text/x-python', 'text/plain')
         self.assertEqual(resp1.charset, 'UTF-8')
         self.assertEqual(resp1.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
+        self.assertEqual(resp1.body, b"import this\n")
 
         resp2 = get_response(app)
         assert resp2.content_type in ('text/x-python', 'text/plain')
         self.assertEqual(resp2.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
+        self.assertEqual(resp2.body, b"import this\n")
 
         resp3 = get_response(app, range=(7, 11))
         self.assertEqual(resp3.status_code, 206)
