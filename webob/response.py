@@ -74,91 +74,92 @@ _marker = object()
 
 class Response(object):
     """
-        Represents a WSGI response.
+    Represents a WSGI response.
 
-        If no arguments are passed, creates a :class:`~Response` that uses a
-        variety of defaults. The defaults may be changed by sub-classing the
-        :class:`~Response`. See the :ref:`sub-classing notes
-        <response_subclassing_notes>`.
+    If no arguments are passed, creates a :class:`~Response` that uses a
+    variety of defaults. The defaults may be changed by sub-classing the
+    :class:`~Response`. See the :ref:`sub-classing notes
+    <response_subclassing_notes>`.
 
-        :cvar ~Response.body: If ``body`` is a ``text_type``, then it will be
-            encoded using either ``charset`` when provided or
-            ``default_encoding`` when ``charset`` is not provided. This
-            argument is mutually  exclusive with ``app_iter``.
+    :cvar ~Response.body: If ``body`` is a ``text_type``, then it will be
+        encoded using either ``charset`` when provided or ``default_encoding``
+        when ``charset`` is not provided if the ``content_type`` allows for a
+        ``charset``. This argument is mutually  exclusive with ``app_iter``.
 
-        :vartype ~Response.body: bytes or text_type
+    :vartype ~Response.body: bytes or text_type
 
-        :cvar ~Response.status: Either an :class:`int` or a string that is
-            an integer followed by the status text. If it is an integer, it
-            will be converted to a proper status that also includes the status
-            text.  Any existing status text will be kept. Non-standard values
-            are allowed.
+    :cvar ~Response.status: Either an :class:`int` or a string that is
+        an integer followed by the status text. If it is an integer, it will be
+        converted to a proper status that also includes the status text.  Any
+        existing status text will be kept. Non-standard values are allowed.
 
-        :vartype ~Response.status: int or str
+    :vartype ~Response.status: int or str
 
-        :cvar list ~Response.headerlist: A list of HTTP headers for the response.
+    :cvar ~Response.headerlist: A list of HTTP headers for the response.
 
-        :cvar ~Response.app_iter: An iterator that is used as the body of the
-            response. Should conform to the WSGI requirements and should
-            provide bytes. This argument is mutually exclusive with ``body``.
+    :vartype ~Response.headerlist: list
 
-        :vartype ~Response.app_iter: iterable
+    :cvar ~Response.app_iter: An iterator that is used as the body of the
+        response. Should conform to the WSGI requirements and should provide
+        bytes. This argument is mutually exclusive with ``body``.
 
-        :cvar ~Response.content_type: Sets the ``Content-Type`` header. If no
-            ``content_type`` is provided, and there is no ``headerlist``, the
-            ``default_content_type`` will be automatically set. If
-            ``headerlist`` is provided then this value is ignored.
+    :vartype ~Response.app_iter: iterable
 
-        :vartype ~Response.content_type: str or None
+    :cvar ~Response.content_type: Sets the ``Content-Type`` header. If no
+        ``content_type`` is provided, and there is no ``headerlist``, the
+        ``default_content_type`` will be automatically set. If ``headerlist``
+        is provided then this value is ignored.
 
-        :cvar conditional_response: Used to change the behavior of the
-            :class:`~Response` to check the original request for conditional
-            response headers. See :meth:`~Response.conditional_response_app`
-            for more information.
+    :vartype ~Response.content_type: str or None
 
-        :vartype conditional_response: bool
+    :cvar conditional_response: Used to change the behavior of the
+        :class:`~Response` to check the original request for conditional
+        response headers. See :meth:`~Response.conditional_response_app` for
+        more information.
 
-        :cvar ~Response.charset: Adds a ``charset`` ``Content-Type`` parameter. If no
-            ``charset`` is provided and the ``Content-Type`` is text, then the
-            ``default_charset`` will automatically be added.  Currently the
-            only ``Content-Type``'s that allow for a ``charset`` are defined to
-            be ``text/*``, ``application/xml``, and ``*/*+xml``. Any other
-            ``Content-Type``'s will not have a ``charset`` added. If a
-            ``headerlist`` is provided this value is ignored.
+    :vartype conditional_response: bool
 
-        :vartype ~Response.charset: str or None
+    :cvar ~Response.charset: Adds a ``charset`` ``Content-Type`` parameter. If
+        no ``charset`` is provided and the ``Content-Type`` is text, then the
+        ``default_charset`` will automatically be added.  Currently the only
+        ``Content-Type``'s that allow for a ``charset`` are defined to be
+        ``text/*``, ``application/xml``, and ``*/*+xml``. Any other
+        ``Content-Type``'s will not have a ``charset`` added. If a
+        ``headerlist`` is provided this value is ignored.
 
-        All other response attributes may be set on the response by providing
-        them as keyword arguments. A :exc:`TypeError` will be raised for any
-        unexpected keywords.
+    :vartype ~Response.charset: str or None
 
-        .. _response_subclassing_notes:
+    All other response attributes may be set on the response by providing them
+    as keyword arguments. A :exc:`TypeError` will be raised for any unexpected
+    keywords.
 
-        **Sub-classing notes:**
+    .. _response_subclassing_notes:
 
-        * The ``default_content_type`` is used as the default for the
-          ``Content-Type`` header that is returned on the response. It is
-          ``text/html``.
+    **Sub-classing notes:**
 
-        * The ``default_charset`` is used as the default character set to
-          return on the ``Content-Type`` header, if the ``Content-Type`` allows
-          for a ``charset`` parameter. Currently the only ``Content-Type``'s
-          that allow for a ``charset`` are defined to be: ``text/*``,
-          ``application/xml``, and ``*/*+xml``. Any other ``Content-Type``'s
-          will not have a ``charset`` added.
+    * The ``default_content_type`` is used as the default for the
+      ``Content-Type`` header that is returned on the response. It is
+      ``text/html``.
 
-        * The ``unicode_errors`` is set to ``strict``, and access on a
-          :attr:`~Response.text` will raise an error if it fails to decode the
-          :attr:`~Response.body`.
+    * The ``default_charset`` is used as the default character set to return on
+      the ``Content-Type`` header, if the ``Content-Type`` allows for a
+      ``charset`` parameter. Currently the only ``Content-Type``'s that allow
+      for a ``charset`` are defined to be: ``text/*``, ``application/xml``, and
+      ``*/*+xml``. Any other ``Content-Type``'s will not have a ``charset``
+      added.
 
-        * ``default_conditional_response`` is set to False. This flag may be
-          set to True so that all ``Response`` objects will attempt to check
-          the original request for conditional response headers. See
-          :meth:`~Response.conditional_response_app` for more information.
+    * The ``unicode_errors`` is set to ``strict``, and access on a
+      :attr:`~Response.text` will raise an error if it fails to decode the
+      :attr:`~Response.body`.
 
-        * ``default_body_encoding`` is set to 'UTF-8' by default, it exists to
-          allow users to get/set the Response object using .text, even if no
-          charset has been set for the Content-Type.
+    * ``default_conditional_response`` is set to False. This flag may be set to
+      True so that all ``Response`` objects will attempt to check the original
+      request for conditional response headers. See
+      :meth:`~Response.conditional_response_app` for more information.
+
+    * ``default_body_encoding`` is set to 'UTF-8' by default, it exists to
+      allow users to get/set the Response object using .text, even if no
+      charset has been set for the Content-Type.
     """
 
     default_content_type = 'text/html'
@@ -1412,6 +1413,9 @@ class ResponseBodyFile(object):
     closed = False
 
     def __init__(self, response):
+        """
+        Represents a :class:`~Response` as a file like object.
+        """
         self.response = response
         self.write = response.write
 
@@ -1424,6 +1428,9 @@ class ResponseBodyFile(object):
     )
 
     def writelines(self, seq):
+        """
+        Write a sequence of lines to the response
+        """
         for item in seq:
             self.write(item)
 
@@ -1434,6 +1441,9 @@ class ResponseBodyFile(object):
         pass
 
     def tell(self):
+        """
+        Provide the current location where we are going to start writing
+        """
         if self.response.app_iter is None: # pragma: no cover
             return 0
 
