@@ -39,13 +39,13 @@ class TestFileApp(unittest.TestCase):
     def test_fileapp(self):
         app = static.FileApp(self.tempfile)
         resp1 = get_response(app)
-        self.assertEqual(resp1.content_type, 'text/x-python')
+        assert resp1.content_type in ('text/x-python', 'text/plain')
         self.assertEqual(resp1.charset, 'UTF-8')
         self.assertEqual(resp1.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
         self.assertEqual(resp1.body, b"import this\n")
 
         resp2 = get_response(app)
-        self.assertEqual(resp2.content_type, 'text/x-python')
+        assert resp2.content_type in ('text/x-python', 'text/plain')
         self.assertEqual(resp2.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
         self.assertEqual(resp2.body, b"import this\n")
 
