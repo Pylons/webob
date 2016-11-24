@@ -185,13 +185,18 @@ tag_re = re.compile(r'<.*?>', re.S)
 br_re = re.compile(r'<br.*?>', re.I | re.S)
 comment_re = re.compile(r'<!--|-->')
 
+class _lazified(object):
+    def __init__(self, func, value):
+        self.func = func
+        self.value = value
+
+    def __str__(self):
+        return self.func(self.value)
+
 def lazify(func):
-    class _lazyfied(object):
-        def __init__(self, s):
-            self._s = s
-        def __str__(self):
-            return func(self._s)
-    return _lazyfied
+    def wrapper(value):
+        return _lazified(func, value)
+    return wrapper
 
 def no_escape(value):
     if value is None:

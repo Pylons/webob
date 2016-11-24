@@ -146,10 +146,7 @@ def header_getter(header, rfc_section):
             r._headerlist.append((header, value))
 
     def fdel(r):
-        items = r._headerlist
-        for i in range(len(items)-1, -1, -1):
-            if items[i][0].lower() == key:
-                del items[i]
+        r._headerlist[:] = [(k, v) for (k, v) in r._headerlist if k.lower() != key]
 
     return property(fget, fset, fdel, doc)
 
