@@ -1444,7 +1444,7 @@ class ResponseBodyFile(object):
         """
         Provide the current location where we are going to start writing
         """
-        if self.response.app_iter is None: # pragma: no cover
+        if not self.response.has_body:
             return 0
 
         return sum([len(chunk) for chunk in self.response.app_iter])
@@ -1562,7 +1562,7 @@ def _request_uri(environ):
     elif url.endswith(':443') and environ['wsgi.url_scheme'] == 'https':
         url = url[:-4]
 
-    if PY3: # pragma: no cover
+    if PY3:
         script_name = bytes_(environ.get('SCRIPT_NAME', '/'), 'latin-1')
         path_info = bytes_(environ.get('PATH_INFO', ''), 'latin-1')
     else:

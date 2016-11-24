@@ -54,7 +54,7 @@ class RequestCookies(collections.MutableMapping):
         header = self._environ.get('HTTP_COOKIE')
         had_header = header is not None
         header = header or ''
-        if PY3: # pragma: no cover
+        if PY3:
                 header = header.encode('latin-1')
         bytes_name = bytes_(name, 'ascii')
         if value is None:
@@ -197,7 +197,7 @@ class Cookie(dict):
 
 
 def _parse_cookie(data):
-    if PY3: # pragma: no cover
+    if PY3:
         data = data.encode('latin-1')
     for key, val in _rx_cookie.findall(data):
         yield key, _unquote(val)
@@ -361,7 +361,7 @@ _valid_token_bytes = bytes_(_valid_token_chars)
 _escape_noop_chars = _allowed_cookie_chars + ' '
 _escape_map = dict((chr(i), '\\%03o' % i) for i in range(256))
 _escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
-if PY3: # pragma: no cover
+if PY3:
     # convert to {int -> bytes}
     _escape_map = dict(
         (ord(k), bytes_(v, 'ascii')) for k, v in _escape_map.items()

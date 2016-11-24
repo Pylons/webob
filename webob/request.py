@@ -225,7 +225,7 @@ class BaseRequest(object):
         fs_environ = self.environ.copy()
         fs_environ.setdefault('CONTENT_LENGTH', '0')
         fs_environ['QUERY_STRING'] = ''
-        if PY3: # pragma: no cover
+        if PY3:
             fs = cgi_FieldStorage(fp=self.body_file,
                                   environ=fs_environ,
                                   keep_blank_values=True,
@@ -792,7 +792,7 @@ class BaseRequest(object):
         # default of 0 is better:
         fs_environ.setdefault('CONTENT_LENGTH', '0')
         fs_environ['QUERY_STRING'] = ''
-        if PY3: # pragma: no cover
+        if PY3:
             fs = cgi_FieldStorage(
                 fp=self.body_file,
                 environ=fs_environ,
@@ -1469,7 +1469,7 @@ def environ_from_url(path):
 def environ_add_POST(env, data, content_type=None):
     if data is None:
         return
-    elif isinstance(data, text_type): # pragma: no cover
+    elif isinstance(data, text_type):
         data = data.encode('ascii')
     if env['REQUEST_METHOD'] not in ('POST', 'PUT'):
         env['REQUEST_METHOD'] = 'POST'
@@ -1699,7 +1699,7 @@ class Transcoder(object):
         self._trans = lambda b: b.decode(charset, errors).encode('utf8')
 
     def transcode_query(self, q):
-        if PY3: # pragma: no cover
+        if PY3:
             q_orig = q
             if '=' not in q:
                 # this doesn't look like a form submission
