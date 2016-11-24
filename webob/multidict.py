@@ -10,7 +10,7 @@ import binascii
 import warnings
 
 from webob.compat import (
-    PY3,
+    PY2,
     iteritems_,
     itervalues_,
     url_encode,
@@ -69,7 +69,7 @@ class MultiDict(MutableMapping):
                 'base64' : binascii.a2b_base64,
                 'quoted-printable' : binascii.a2b_qp
                 }
-            if PY3:
+            if not PY2:
                 if charset == 'utf8':
                     decode = lambda b: b
                 else:
@@ -82,11 +82,11 @@ class MultiDict(MutableMapping):
             else:
                 value = field.value
                 if transfer_encoding in supported_transfer_encoding:
-                    if PY3:
+                    if not PY2:
                         # binascii accepts bytes
                         value = value.encode('utf8')
                     value = supported_transfer_encoding[transfer_encoding](value)
-                    if PY3:
+                    if not PY2:
                         # binascii returns bytes
                         value = value.decode('utf8')
                 obj.add(field.name, decode(value))
@@ -249,32 +249,32 @@ class MultiDict(MutableMapping):
     def iterkeys(self):
         for k, v in self._items:
             yield k
-    if PY3:
-        keys = iterkeys
-    else:
+    if PY2:
         def keys(self):
             return [k for k, v in self._items]
+    else:
+        keys = iterkeys
 
     __iter__ = iterkeys
 
     def iteritems(self):
         return iter(self._items)
 
-    if PY3:
-        items = iteritems
-    else:
+    if PY2:
         def items(self):
             return self._items[:]
+    else:
+        items = iteritems
 
     def itervalues(self):
         for k, v in self._items:
             yield v
 
-    if PY3:
-        values = itervalues
-    else:
+    if PY2:
         def values(self):
             return [v for k, v in self._items]
+    else:
+        values = itervalues
 
 _dummy = object()
 
@@ -393,21 +393,21 @@ class NestedMultiDict(MultiDict):
         for d in self.dicts:
             for item in iteritems_(d):
                 yield item
-    if PY3:
-        items = iteritems
-    else:
+    if PY2:
         def items(self):
             return list(self.iteritems())
+    else:
+        items = iteritems
 
     def itervalues(self):
         for d in self.dicts:
             for value in itervalues_(d):
                 yield value
-    if PY3:
-        values = itervalues
-    else:
+    if PY2:
         def values(self):
             return list(self.itervalues())
+    else:
+        values = itervalues
 
     def __iter__(self):
         for d in self.dicts:
@@ -416,11 +416,11 @@ class NestedMultiDict(MultiDict):
 
     iterkeys = __iter__
 
-    if PY3:
-        keys = iterkeys
-    else:
+    if PY2:
         def keys(self):
             return list(self.iterkeys())
+    else:
+        keys = iterkeys
 
 class NoVars(object):
     """
@@ -482,17 +482,17 @@ class NoVars(object):
     def iterkeys(self):
         return iter([])
 
-    if PY3:
-        keys = iterkeys
-        items = iterkeys
-        values = iterkeys
-    else:
+    if PY2:
         def keys(self):
             return []
         items = keys
         values = keys
         itervalues = iterkeys
         iteritems = iterkeys
+    else:
+        keys = iterkeys
+        items = iterkeys
+        values = iterkeys
 
     __iter__ = iterkeys
 
