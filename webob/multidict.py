@@ -476,13 +476,13 @@ class NoVars(object):
     def __len__(self):
         return 0
 
-    def __cmp__(self, other):
-        return cmp({}, other)
-
     def iterkeys(self):
         return iter([])
 
     if PY2:
+        def __cmp__(self, other):
+            return cmp({}, other)
+
         def keys(self):
             return []
         items = keys
