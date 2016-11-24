@@ -11,7 +11,7 @@ from webob.byterange import (
     )
 
 from webob.compat import (
-    PY3,
+    PY2,
     text_type,
     )
 
@@ -83,14 +83,7 @@ def environ_decoder(key, default=_not_given, rfc_section=None,
     return property(fget, fset, fdel, doc=doc)
 
 def upath_property(key):
-    if PY3:
-        def fget(req):
-            encoding = req.url_encoding
-            return req.environ.get(key, '').encode('latin-1').decode(encoding)
-        def fset(req, val):
-            encoding = req.url_encoding
-            req.environ[key] = val.encode(encoding).decode('latin-1')
-    else:
+    if PY2:
         def fget(req):
             encoding = req.url_encoding
             return req.environ.get(key, '').decode(encoding)
@@ -99,6 +92,14 @@ def upath_property(key):
             if isinstance(val, text_type):
                 val = val.encode(encoding)
             req.environ[key] = val
+    else:
+        def fget(req):
+            encoding = req.url_encoding
+            return req.environ.get(key, '').encode('latin-1').decode(encoding)
+        def fset(req, val):
+            encoding = req.url_encoding
+            req.environ[key] = val.encode(encoding).decode('latin-1')
+
     return property(fget, fset, doc='upath_property(%r)' % key)
 
 
@@ -141,7 +142,7 @@ def header_getter(header, rfc_section):
             if '\n' in value or '\r' in value:
                 raise ValueError('Header value may not contain control characters')
 
-            if isinstance(value, text_type) and not PY3:
+            if isinstance(value, text_type) and PY2:
                 value = value.encode('latin-1')
             r._headerlist.append((header, value))
 
