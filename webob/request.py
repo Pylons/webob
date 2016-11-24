@@ -27,6 +27,7 @@ from webob.cachecontrol import (
 
 from webob.compat import (
     PY3,
+    PY2,
     bytes_,
     native_,
     parse_qsl_text,
@@ -149,30 +150,22 @@ class BaseRequest(object):
                         "Unexpected keyword: %s=%r" % (name, value))
                 setattr(self, name, value)
 
-    if PY3: # pragma: no cover
-        def encget(self, key, default=NoDefault, encattr=None):
-            val = self.environ.get(key, default)
-            if val is NoDefault:
-                raise KeyError(key)
-            if val is default:
-                return default
-            if not encattr:
-                return val
-            encoding = getattr(self, encattr)
-            if encoding in _LATIN_ENCODINGS: # shortcut
-                return val
-            return bytes_(val, 'latin-1').decode(encoding)
-    else:
-        def encget(self, key, default=NoDefault, encattr=None):
-            val = self.environ.get(key, default)
-            if val is NoDefault:
-                raise KeyError(key)
-            if val is default:
-                return default
-            if encattr is None:
-                return val
-            encoding = getattr(self, encattr)
+    def encget(self, key, default=NoDefault, encattr=None):
+        val = self.environ.get(key, default)
+        if val is NoDefault:
+            raise KeyError(key)
+        if val is default:
+            return default
+        if not encattr:
+            return val
+        encoding = getattr(self, encattr)
+
+        if PY2:
             return val.decode(encoding)
+
+        if encoding in _LATIN_ENCODINGS: # shortcut
+            return val
+        return bytes_(val, 'latin-1').decode(encoding)
 
     def encset(self, key, val, encattr=None):
         if encattr:
