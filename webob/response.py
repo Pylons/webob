@@ -22,7 +22,7 @@ from webob.cachecontrol import (
     )
 
 from webob.compat import (
-    PY3,
+    PY2,
     bytes_,
     native_,
     text_type,
@@ -415,7 +415,7 @@ class Response(object):
             self.body
         parts += map('%s: %s'.__mod__, self.headerlist)
         if not skip_body and self.body:
-            parts += ['', self.text if PY3 else self.body]
+            parts += ['', self.body if PY2 else self.text]
         return '\r\n'.join(parts)
 
     #
@@ -436,7 +436,7 @@ class Response(object):
         else:
             self.status_code = code
             return
-        if PY3:
+        if not PY2:
             if isinstance(value, bytes):
                 value = value.decode('ascii')
         elif isinstance(value, text_type):
@@ -1562,12 +1562,12 @@ def _request_uri(environ):
     elif url.endswith(':443') and environ['wsgi.url_scheme'] == 'https':
         url = url[:-4]
 
-    if PY3:
-        script_name = bytes_(environ.get('SCRIPT_NAME', '/'), 'latin-1')
-        path_info = bytes_(environ.get('PATH_INFO', ''), 'latin-1')
-    else:
+    if PY2:
         script_name = environ.get('SCRIPT_NAME', '/')
         path_info = environ.get('PATH_INFO', '')
+    else:
+        script_name = bytes_(environ.get('SCRIPT_NAME', '/'), 'latin-1')
+        path_info = bytes_(environ.get('PATH_INFO', ''), 'latin-1')
 
     url += url_quote(script_name)
     qpath_info = url_quote(path_info)
