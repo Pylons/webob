@@ -26,7 +26,6 @@ from webob.cachecontrol import (
     )
 
 from webob.compat import (
-    PY3,
     PY2,
     bytes_,
     native_,
@@ -172,10 +171,10 @@ class BaseRequest(object):
             encoding = getattr(self, encattr)
         else:
             encoding = 'ascii'
-        if PY3: # pragma: no cover
-            self.environ[key] = bytes_(val, encoding).decode('latin-1')
-        else:
+        if PY2: # pragma: no cover
             self.environ[key] = bytes_(val, encoding)
+        else:
+            self.environ[key] = bytes_(val, encoding).decode('latin-1')
 
     @property
     def charset(self):
@@ -218,16 +217,16 @@ class BaseRequest(object):
         fs_environ = self.environ.copy()
         fs_environ.setdefault('CONTENT_LENGTH', '0')
         fs_environ['QUERY_STRING'] = ''
-        if PY3:
+        if PY2:
+            fs = cgi_FieldStorage(fp=self.body_file,
+                                  environ=fs_environ,
+                                  keep_blank_values=True)
+        else:
             fs = cgi_FieldStorage(fp=self.body_file,
                                   environ=fs_environ,
                                   keep_blank_values=True,
                                   encoding=charset,
                                   errors=errors)
-        else:
-            fs = cgi_FieldStorage(fp=self.body_file,
-                                  environ=fs_environ,
-                                  keep_blank_values=True)
 
         fout = t.transcode_fs(fs, r._content_type_raw)
 
@@ -785,20 +784,19 @@ class BaseRequest(object):
         # default of 0 is better:
         fs_environ.setdefault('CONTENT_LENGTH', '0')
         fs_environ['QUERY_STRING'] = ''
-        if PY3:
+        if PY2:
+            fs = cgi_FieldStorage(
+                fp=self.body_file,
+                environ=fs_environ,
+                keep_blank_values=True)
+        else:
             fs = cgi_FieldStorage(
                 fp=self.body_file,
                 environ=fs_environ,
                 keep_blank_values=True,
                 encoding='utf8')
-            vars = MultiDict.from_fieldstorage(fs)
-        else:
-            fs = cgi_FieldStorage(
-                fp=self.body_file,
-                environ=fs_environ,
-                keep_blank_values=True)
-            vars = MultiDict.from_fieldstorage(fs)
 
+        vars = MultiDict.from_fieldstorage(fs)
         env['webob._parsed_post_vars'] = (vars, self.body_file_raw)
         return vars
 
@@ -1692,31 +1690,28 @@ class Transcoder(object):
         self._trans = lambda b: b.decode(charset, errors).encode('utf8')
 
     def transcode_query(self, q):
-        if PY3:
-            q_orig = q
-            if '=' not in q:
-                # this doesn't look like a form submission
-                return q_orig
-            q = list(parse_qsl_text(q, self.charset))
-            return url_encode(q)
-        else:
-            q_orig = q
-            if '=' not in q:
-                # this doesn't look like a form submission
-                return q_orig
+        q_orig = q
+        if '=' not in q:
+            # this doesn't look like a form submission
+            return q_orig
+
+        if PY2:
             q = urlparse.parse_qsl(q, self.charset)
             t = self._trans
             q = [(t(k), t(v)) for k, v in q]
-            return url_encode(q)
+        else:
+            q = list(parse_qsl_text(q, self.charset))
+
+        return url_encode(q)
 
     def transcode_fs(self, fs, content_type):
         # transcode FieldStorage
-        if PY3:
-            def decode(b):
-                return b
-        else:
+        if PY2:
             def decode(b):
                 return b.decode(self.charset, self.errors)
+        else:
+            def decode(b):
+                return b
 
         data = []
         for field in fs.list or ():
@@ -1734,4 +1729,3 @@ class Transcoder(object):
             fout=io.BytesIO()
         )
         return fout
-
