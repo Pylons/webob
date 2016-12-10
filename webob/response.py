@@ -1320,9 +1320,12 @@ class Response(object):
         """
         Like the normal ``__call__`` interface, but checks conditional headers:
 
-            * If-Modified-Since   (304 Not Modified; only on GET, HEAD)
-            * If-None-Match       (304 Not Modified; only on GET, HEAD)
-            * Range               (406 Partial Content; only on GET, HEAD)
+            * ``If-Modified-Since``   (``304 Not Modified``; only on ``GET``,
+              ``HEAD``)
+            * ``If-None-Match``       (``304 Not Modified``; only on ``GET``,
+              ``HEAD``)
+            * ``Range``               (``406 Partial Content``; only on ``GET``,
+              ``HEAD``)
         """
         req = BaseRequest(environ)
 
