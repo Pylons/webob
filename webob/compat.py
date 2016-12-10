@@ -2,6 +2,7 @@
 
 import sys
 import types
+from cgi import parse_header
 
 # True if we are running on Python 3.
 PY3 = sys.version_info[0] == 3
@@ -198,6 +199,15 @@ if PY3:
                     self.bytes_read += len(hdr_text)
                     parser.feed(hdr_text.decode(self.encoding, self.errors))
                     headers = parser.close()
+                    # Some clients add Content-Length for part headers, ignore them
+                    if 'content-length' in headers:
+                        filename = None
+                        if 'content-disposition' in self.headers:
+                            cdisp, pdict = parse_header(self.headers['content-disposition'])
+                            if 'filename' in pdict:
+                                filename = pdict['filename']
+                        if filename is None:
+                            del headers['content-length']
                     part = klass(self.fp, headers, ib, environ, keep_blank_values,
                                  strict_parsing, self.limit-self.bytes_read,
                                  self.encoding, self.errors)
