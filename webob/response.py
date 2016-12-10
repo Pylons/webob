@@ -12,8 +12,6 @@ try:
 except ImportError:
     import json
 
-import warnings
-
 from webob.byterange import ContentRange
 
 from webob.cachecontrol import (
