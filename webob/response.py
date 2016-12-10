@@ -838,14 +838,12 @@ class Response(object):
 
         .. versionchanged:: 1.7
 
-            Setting a new Content-Type will remove charset from the
-            Content-Type parameters if the Content-Type is not ``text/*`` or XML
-            (``application/xml``, or ``*/*+xml``)
+            Setting a new Content-Type will remove all Content-Type parameters
+            and reset the charset to the default if the Content-Type is
+            ``text/*`` or XML (``application/xml``, or ``*/*+xml``)
 
-            In the future all parameters will be deleted upon changing the
-            Content-Type, if you explicitly want to transfer over existing
-            parameters, you may retrieve them with ``content_type_params`` and
-            set them after setting ``content_type``.
+            To preserve all Content-Type parameters you may use the following
+            code:
 
             .. code::
 
@@ -853,12 +851,6 @@ class Response(object):
                 params = resp.content_type_params
                 resp.content_type = 'application/something'
                 resp.content_type_params = params
-
-        .. deprecated:: 1.7
-
-            If you include parameters (or ``;`` at all) when setting the
-            content_type, any existing parameters will be deleted;
-            otherwise they will be preserved.
         """
         header = self.headers.get('Content-Type')
         if not header:
