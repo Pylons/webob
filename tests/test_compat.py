@@ -90,7 +90,47 @@ Larry
         fs = cgi_FieldStorage(fp, environ=env)
         assert len(fs.list) == 1
         assert fs.list[0].name == 'submit-name'
-        assert fs.list[0].value == b'Larry'
+        assert fs.list[0].value == 'Larry'
+    
+    def test_my_fieldstorage_part_content_length(self):
+        from webob.compat import cgi_FieldStorage
+        BOUNDARY = "4ddfd368-cb07-4b9e-b003-876010298a6c"
+        POSTDATA = """--4ddfd368-cb07-4b9e-b003-876010298a6c
+Content-Disposition: form-data; name="object"; filename="file.txt"
+Content-Type: text/plain
+Content-Length: 5
+Content-Transfer-Encoding: 7bit
+
+ADMIN
+--4ddfd368-cb07-4b9e-b003-876010298a6c
+Content-Disposition: form-data; name="sign_date"
+Content-Type: application/json; charset=UTF-8
+Content-Length: 22
+Content-Transfer-Encoding: 7bit
+
+"2016-11-23T12:22:41Z"
+--4ddfd368-cb07-4b9e-b003-876010298a6c
+Content-Disposition: form-data; name="staffId"
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 5
+Content-Transfer-Encoding: 7bit
+
+ADMIN
+--4ddfd368-cb07-4b9e-b003-876010298a6c--"""
+        env = {
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'multipart/form-data; boundary={}'.format(BOUNDARY),
+            'CONTENT_LENGTH': str(len(POSTDATA))}
+        fp = BytesIO(POSTDATA.encode('latin-1'))
+        fs = cgi_FieldStorage(fp, environ=env)
+        assert len(fs.list) == 3
+        expect = [{'name':'object', 'filename':'file.txt', 'value':b'ADMIN'},
+                  {'name':'sign_date', 'filename':None, 'value':'"2016-11-23T12:22:41Z"'},
+                  {'name':'staffId', 'filename':None, 'value':'ADMIN'}]
+        for x in range(len(fs.list)):
+            for k, exp in expect[x].items():
+                got = getattr(fs.list[x], k)
+                assert got == exp
 
     def test_fieldstorage_multipart_leading_whitespace(self):
         from webob.compat import cgi_FieldStorage
