@@ -871,31 +871,36 @@ class Response(object):
         if not value:
             self._content_type__del()
             return
-        if ';' not in value:
-            header = self.headers.get('Content-Type', '')
-            if ';' in header:
-                warn_deprecation(
-                    'Preserving Content-Type parameters. In the '
-                    'future upon changing the Content-Type no paramaters '
-                    'will be preserved.', 1.9, 1)
-                params = self.content_type_params
-                self.headers['Content-Type'] = value
-
-                if 'charset' in params:
-                    if not _content_type_has_charset(value):
-                        warnings.warn(
-                            'Explicitly removing charset as new content_type '
-                            'does not allow charset as a parameter. If you are '
-                            'expecting a charset to be set, please add it back '
-                            'explicitly after setting the content_type.',
-                            RuntimeWarning)
-                        del params['charset']
-
-                self.content_type_params = params
-            else:
-                self.headers['Content-Type'] = value
         else:
-            self.headers['Content-Type'] = value
+            content_type = value
+
+            # Set up the charset if the content-type doesn't have one
+
+            has_charset = 'charset=' in content_type
+
+            new_charset = None
+
+            if (
+                not has_charset and
+                self.default_charset
+            ):
+                new_charset = self.default_charset
+
+            # Optimize for the default_content_type as shipped by
+            # WebOb, becuase we know that 'text/html' has a charset,
+            # otherwise add a charset if the content_type has a charset.
+            #
+            # We add the default charset if the content-type is "texty".
+            if (
+                new_charset and
+                (
+                    content_type == 'text/html' or
+                    _content_type_has_charset(content_type)
+                )
+            ):
+                content_type += '; charset=' + new_charset
+
+            self.headers['Content-Type'] = content_type
 
     def _content_type__del(self):
         self.headers.pop('Content-Type', None)
