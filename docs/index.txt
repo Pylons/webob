@@ -264,10 +264,6 @@ You can use this like:
     except HTTPException, e:
         return e(environ, start_response)
 
-The exceptions are still WSGI applications, but you cannot set
-attributes like ``content_type``, ``charset``, etc., on these exception
-objects.
-
 Multidict
 =========
 
