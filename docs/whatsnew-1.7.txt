@@ -15,6 +15,31 @@ Compatibility
 Backwards Incompatibility
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
+- :attr:`Response.content_type <webob.response.Response.content_type>` removes
+  all existing Content-Type parameters, and if the new Content-Type is "texty"
+  it adds a new charset (unless already provided) using the
+  ``default_charset``, to emulate the old behaviour you may use the following:
+  
+  .. code-block:: python
+
+     res = Response(content_type='text/html', charset='UTF-8')
+     assert res.content_type == 'text/html'
+     assert res.charset == 'UTF-8'
+
+     params = res.content_type_params
+     
+     # Change the Content-Type
+     res.content_type = 'application/unknown'
+     assert res.content_type == 'application/unknown'
+     assert res.charset == None
+
+     # This will add the ``charset=UTF-8`` parameter to the Content-Type
+     res.content_type_params = params
+
+     assert res.headers['Content-Type'] == 'application/unknown; charset=UTF-8'
+
+  See https://github.com/Pylons/webob/pull/301 for more information.
+
 - :class:`~webob.response.Response` no longer treats ``application/json`` as a
   special case that may also be treated as text. This means the following may
   no longer be used:
@@ -166,34 +191,6 @@ Bugfix
 - :func:`wsgify.__call__ <webob.dec.wsgify.__call__>` raised a ``TypeError``
   with an unhelpful message, it will now return the `repr` for the wrapped
   function: https://github.com/Pylons/webob/issues/119
-
-- :attr:`Response.content_type <webob.response.Response.content_type>` removes
-  the charset content-type parameter unless the new content_type is a text
-  like type that has a charset parameter.  See
-  https://github.com/Pylons/webob/pull/261 and
-  https://github.com/Pylons/webob/issues/130
-
-  Future versions of WebOb will remove all Content-Type parameters, and the
-  user will have to explicitly add them back. Here's how to save and restore
-  the Content-Type parameters:
-
-  .. code-block:: python
-
-     res = Response(content_type='text/html', charset='UTF-8')
-     assert res.content_type == 'text/html'
-     assert res.charset == 'UTF-8'
-
-     params = res.content_type_params
-     
-     # Change the Content-Type
-     res.content_type = 'application/unknown'
-     assert res.content_type == 'application/unknown'
-     assert res.charset == None
-
-     # This will add the ``charset=UTF-8`` parameter to the Content-Type
-     res.content_type_params = params
-
-     assert res.headers['Content-Type'] == 'application/unknown; charset=UTF-8'
 
 - :attr:`Response.json <webob.response.Response.json>`'s json.dumps/loads are
   now always UTF-8. It no longer tries to use the charset.

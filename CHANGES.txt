@@ -10,6 +10,11 @@ Compatibility
 Backwards Incompatibility
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
+- ``Response.content_type`` removes all existing Content-Type parameters, and
+  if the new Content-Type is "texty" it adds a new charset (unless already
+  provided) using the ``default_charset``. See
+  https://github.com/Pylons/webob/pull/301
+
 - ``Response.set_cookie`` no longer accepts a key argument. This was deprecated
   in WebOb 1.5 and as mentioned in the deprecation, is being removed in 1.7
 
@@ -70,11 +75,6 @@ Bugfix
 - ``wsgify.__call__`` raised a ``TypeError`` with an unhelpful message, it will
   now return the ``repr`` for the wrapped function:
   https://github.com/Pylons/webob/issues/119
-
-- ``Response.content_type`` removes the charset content-type parameter unless
-  the new content-type is a text like type that has a charset parameter.  See
-  https://github.com/Pylons/webob/pull/261 and
-  https://github.com/Pylons/webob/issues/130
 
 - ``Response.json``'s ``json.dumps``/``json.loads`` are now always UTF-8. It no
   longer tries to use the charset.
