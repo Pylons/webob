@@ -232,8 +232,8 @@ argument to the class, e.g.:
 
   response = Response(body='hello world!', content_type='text/plain')
 
-The status defaults to ``'200 OK'``. The content_type defaults to
-``default_content_type`` which is set to `text/html`, although if you subclass
+The status defaults to ``'200 OK'``. The ``content_type`` defaults to
+``default_content_type`` which is set to ``text/html``, although if you subclass
 ``Response`` and set ``default_content_type``, you can override this behavior.
 
 Exceptions

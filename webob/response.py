@@ -150,14 +150,14 @@ class Response(object):
       :attr:`~Response.text` will raise an error if it fails to decode the
       :attr:`~Response.body`.
 
-    * ``default_conditional_response`` is set to False. This flag may be set to
-      True so that all ``Response`` objects will attempt to check the original
-      request for conditional response headers. See
+    * ``default_conditional_response`` is set to ``False``. This flag may be
+      set to ``True`` so that all ``Response`` objects will attempt to check
+      the original request for conditional response headers. See
       :meth:`~Response.conditional_response_app` for more information.
 
-    * ``default_body_encoding`` is set to 'UTF-8' by default, it exists to
-      allow users to get/set the Response object using .text, even if no
-      charset has been set for the Content-Type.
+    * ``default_body_encoding`` is set to 'UTF-8' by default. It exists to
+      allow users to get/set the ``Response`` object using ``.text``, even if
+      no ``charset`` has been set for the ``Content-Type``.
     """
 
     default_content_type = 'text/html'
@@ -343,7 +343,7 @@ class Response(object):
 
         This reads the response as represented by ``str(resp)``; it
         may not read every valid HTTP response properly.  Responses
-        must have a ``Content-Length``"""
+        must have a ``Content-Length``."""
         headerlist = []
         status = fp.readline().strip()
         is_text = isinstance(status, text_type)
@@ -386,7 +386,7 @@ class Response(object):
         return r
 
     def copy(self):
-        """Makes a copy of the response"""
+        """Makes a copy of the response."""
         # we need to do this for app_iter to be reusable
         app_iter = list(self._app_iter)
         iter_close(self._app_iter)
@@ -422,7 +422,7 @@ class Response(object):
 
     def _status__get(self):
         """
-        The status string
+        The status string.
         """
         return self._status
 
@@ -458,7 +458,7 @@ class Response(object):
 
     def _status_code__get(self):
         """
-        The status as an integer
+        The status as an integer.
         """
         return int(self._status.split()[0])
 
@@ -477,7 +477,7 @@ class Response(object):
 
     def _headerlist__get(self):
         """
-        The list of response headers
+        The list of response headers.
         """
         return self._headerlist
 
@@ -497,7 +497,7 @@ class Response(object):
 
     def _headers__get(self):
         """
-        The headers in a dictionary-like object
+        The headers in a dictionary-like object.
         """
         if self._headers is None:
             self._headers = ResponseHeaders.view_list(self._headerlist)
@@ -573,7 +573,7 @@ class Response(object):
 
     def _json_body__get(self):
         """
-        Set/get the body of the response as JSON
+        Set/get the body of the response as JSON.
 
         .. note::
 
@@ -597,7 +597,7 @@ class Response(object):
     def _has_body__get(self):
         """
         Determine if the the response has a :attr:`~Response.body`. In
-        contrast to simply accessing :attr:`~Response.body` this method
+        contrast to simply accessing :attr:`~Response.body`, this method
         will **not** read the underlying :attr:`~Response.app_iter`.
         """
 
@@ -622,8 +622,8 @@ class Response(object):
 
     def _text__get(self):
         """
-        Get/set the text value of the body using the charset of the
-        Content-Type or the default_body_encoding.
+        Get/set the text value of the body using the ``charset`` of the
+        ``Content-Type`` or the ``default_body_encoding``.
         """
         if not self.charset and not self.default_body_encoding:
             raise AttributeError(
@@ -662,7 +662,7 @@ class Response(object):
     def _body_file__get(self):
         """
         A file-like object that can be used to write to the
-        body.  If you passed in a list app_iter, that app_iter will be
+        body.  If you passed in a list ``app_iter``, that ``app_iter`` will be
         modified by writes.
         """
         return ResponseBodyFile(self)
@@ -704,10 +704,10 @@ class Response(object):
 
     def _app_iter__get(self):
         """
-        Returns the app_iter of the response.
+        Returns the ``app_iter`` of the response.
 
-        If body was set, this will create an app_iter from that body
-        (a single-item list)
+        If ``body`` was set, this will create an ``app_iter`` from that
+        ``body`` (a single-item list).
         """
         return self._app_iter
 
@@ -787,10 +787,10 @@ class Response(object):
 
     def _charset__get(self):
         """
-        Get/set the charset specified in Content-Type.
+        Get/set the ``charset`` specified in ``Content-Type``.
 
-        There is no checking to validate that a ``content_type`` actually allows
-        for a charset parameter.
+        There is no checking to validate that a ``content_type`` actually
+        allows for a ``charset`` parameter.
         """
         header = self.headers.get('Content-Type')
         if not header:
@@ -833,19 +833,20 @@ class Response(object):
 
     def _content_type__get(self):
         """
-        Get/set the Content-Type header. If no Content-Type header is set, this
-        will return None.
+        Get/set the ``Content-Type`` header. If no ``Content-Type`` header is
+        set, this will return ``None``.
 
         .. versionchanged:: 1.7
 
-            Setting a new Content-Type will remove all Content-Type parameters
-            and reset the charset to the default if the Content-Type is
-            ``text/*`` or XML (``application/xml``, or ``*/*+xml``)
+            Setting a new ``Content-Type`` will remove all ``Content-Type``
+            parameters and reset the ``charset`` to the default if the
+            ``Content-Type`` is ``text/*`` or XML (``application/xml`` or
+            ``*/*+xml``).
 
-            To preserve all Content-Type parameters you may use the following
-            code:
+            To preserve all ``Content-Type`` parameters, you may use the
+            following code:
 
-            .. code::
+            .. code-block:: python
 
                 resp = Response()
                 params = resp.content_type_params
@@ -907,7 +908,7 @@ class Response(object):
         A dictionary of all the parameters in the content type.
 
         (This is not a view, set to change, modifications of the dict will not
-        be applied otherwise)
+        be applied otherwise.)
         """
         params = self.headers.get('Content-Type', '')
         if ';' not in params:
@@ -972,10 +973,10 @@ class Response(object):
            or ``None``. This value is used as the ``Max-Age`` of the generated
            cookie.  If ``expires`` is not passed and this value is not
            ``None``, the ``max_age`` value will also influence the ``Expires``
-           value of the cookie (``Expires`` will be set to now + max_age).  If
-           this value is ``None``, the cookie will not have a ``Max-Age`` value
-           (unless ``expires`` is set). If both ``max_age`` and ``expires`` are
-           set, this value takes precedence.
+           value of the cookie (``Expires`` will be set to ``now`` +
+           ``max_age``).  If this value is ``None``, the cookie will not have a
+           ``Max-Age`` value (unless ``expires`` is set). If both ``max_age``
+           and ``expires`` are set, this value takes precedence.
 
         ``path``
 
@@ -1022,8 +1023,8 @@ class Response(object):
            local time are not supported. Timezone aware ``datetime.datetime``
            objects are converted to UTC.
 
-           This argument will be removed in future
-           versions of WebOb (version 1.9).
+           This argument will be removed in future versions of WebOb (version
+           1.9).
 
         ``overwrite``
 
@@ -1067,18 +1068,17 @@ class Response(object):
 
     def delete_cookie(self, name, path='/', domain=None):
         """
-        Delete a cookie from the client.  Note that path and domain must match
-        how the cookie was originally set.
+        Delete a cookie from the client.  Note that ``path`` and ``domain``
+        must match how the cookie was originally set.
 
-        This sets the cookie to the empty string, and max_age=0 so
+        This sets the cookie to the empty string, and ``max_age=0`` so
         that it should expire immediately.
         """
         self.set_cookie(name, None, path=path, domain=domain)
 
     def unset_cookie(self, name, strict=True):
         """
-        Unset a cookie with the given name (remove it from the
-        response).
+        Unset a cookie with the given name (remove it from the response).
         """
         existing = self.headers.getall('Set-Cookie')
         if not existing and not strict:
@@ -1098,9 +1098,9 @@ class Response(object):
 
     def merge_cookies(self, resp):
         """Merge the cookies that were set on this response with the
-        given `resp` object (which can be any WSGI application).
+        given ``resp`` object (which can be any WSGI application).
 
-        If the `resp` is a :class:`webob.Response` object, then the
+        If the ``resp`` is a :class:`webob.Response` object, then the
         other object will be modified in-place.
         """
         if not self.headers.get('Set-Cookie'):
@@ -1128,7 +1128,7 @@ class Response(object):
     def _cache_control__get(self):
         """
         Get/set/modify the Cache-Control header (`HTTP spec section 14.9
-        <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9>`_)
+        <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9>`_).
         """
         value = self.headers.get('cache-control', '')
         if self._cache_control_obj is None:
@@ -1182,7 +1182,7 @@ class Response(object):
         """
             Set expiration on this request.  This sets the response to
             expire in the given seconds, and any other attributes are used
-            for cache_control (e.g., private=True, etc).
+            for ``cache_control`` (e.g., ``private=True``).
         """
         if seconds is True:
             seconds = 0
@@ -1222,8 +1222,8 @@ class Response(object):
 
     def encode_content(self, encoding='gzip', lazy=False):
         """
-        Encode the content with the given encoding (only gzip and
-        identity are supported).
+        Encode the content with the given encoding (only ``gzip`` and
+        ``identity`` are supported).
         """
         assert encoding in ('identity', 'gzip'), \
             "Unknown encoding: %r" % encoding
@@ -1262,10 +1262,11 @@ class Response(object):
     def md5_etag(self, body=None, set_content_md5=False):
         """
         Generate an etag for the response object using an MD5 hash of
-        the body (the body parameter, or ``self.body`` if not given)
+        the body (the ``body`` parameter, or ``self.body`` if not given).
 
-        Sets ``self.etag``
-        If ``set_content_md5`` is True sets ``self.content_md5`` as well
+        Sets ``self.etag``.
+
+        If ``set_content_md5`` is ``True``, sets ``self.content_md5`` as well.
         """
         if body is None:
             body = self.body
@@ -1317,11 +1318,14 @@ class Response(object):
 
     def conditional_response_app(self, environ, start_response):
         """
-        Like the normal __call__ interface, but checks conditional headers:
+        Like the normal ``__call__`` interface, but checks conditional headers:
 
-        * If-Modified-Since   (304 Not Modified; only on GET, HEAD)
-        * If-None-Match       (304 Not Modified; only on GET, HEAD)
-        * Range               (406 Partial Content; only on GET, HEAD)
+            * ``If-Modified-Since``   (``304 Not Modified``; only on ``GET``,
+              ``HEAD``)
+            * ``If-None-Match``       (``304 Not Modified``; only on ``GET``,
+              ``HEAD``)
+            * ``Range``               (``406 Partial Content``; only on ``GET``,
+              ``HEAD``)
         """
         req = BaseRequest(environ)
 
@@ -1383,7 +1387,7 @@ class Response(object):
 
     def app_iter_range(self, start, stop):
         """
-        Return a new app_iter built from the response app_iter, that
+        Return a new ``app_iter`` built from the response ``app_iter``, that
         serves up only the given ``start:stop`` range.
         """
         app_iter = self._app_iter
@@ -1424,7 +1428,7 @@ class ResponseBodyFile(object):
 
     def writelines(self, seq):
         """
-        Write a sequence of lines to the response
+        Write a sequence of lines to the response.
         """
         for item in seq:
             self.write(item)
@@ -1437,7 +1441,7 @@ class ResponseBodyFile(object):
 
     def tell(self):
         """
-        Provide the current location where we are going to start writing
+        Provide the current location where we are going to start writing.
         """
         if not self.response.has_body:
             return 0
@@ -1447,7 +1451,7 @@ class ResponseBodyFile(object):
 
 class AppIterRange(object):
     """
-    Wraps an app_iter, returning just a range of bytes
+    Wraps an ``app_iter``, returning just a range of bytes.
     """
 
     def __init__(self, app_iter, start, stop):
@@ -1502,10 +1506,11 @@ class AppIterRange(object):
 
 
 class EmptyResponse(object):
-    """An empty WSGI response.
+    """
+    An empty WSGI response.
 
     An iterator that immediately stops. Optionally provides a close
-    method to close an underlying app_iter it replaces.
+    method to close an underlying ``app_iter`` it replaces.
     """
 
     def __init__(self, app_iter=None):
@@ -1543,9 +1548,9 @@ def _content_type_has_charset(content_type):
     )
 
 def _request_uri(environ):
-    """Like wsgiref.url.request_uri, except eliminates :80 ports
+    """Like ``wsgiref.url.request_uri``, except eliminates ``:80`` ports.
 
-    Return the full request URI"""
+    Returns the full request URI."""
     url = environ['wsgi.url_scheme'] + '://'
 
     if environ.get('HTTP_HOST'):
