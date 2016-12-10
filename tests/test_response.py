@@ -39,7 +39,7 @@ def test_response():
     res.charset = 'iso8859-1'
     assert 'text/html; charset=iso8859-1' == res.headers['content-type']
     res.content_type = 'text/xml'
-    assert 'text/xml; charset=iso8859-1' == res.headers['content-type']
+    assert 'text/xml; charset=UTF-8' == res.headers['content-type']
     res.content_type = 'text/xml; charset=UTF-8'
     assert 'text/xml; charset=UTF-8' == res.headers['content-type']
     res.headers = {'content-type': 'text/html'}
