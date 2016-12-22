@@ -24,7 +24,7 @@ docs_extras = [
 
 setup(
     name='WebOb',
-    version='1.7.0rc2',
+    version='1.7.0',
     description="WSGI request and response object",
     long_description=README + '\n\n' + CHANGES,
     classifiers=[
@@ -38,6 +38,7 @@ setup(
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
     ],
