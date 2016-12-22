@@ -24,9 +24,9 @@ listed below.
 
 * [master](https://github.com/Pylons/webob/) - The branch on which further
 development takes place. The default branch on GitHub.
-* [1.5-branch](https://github.com/Pylons/webob/tree/1.5-branch) - The branch
+* [1.6-branch](https://github.com/Pylons/webob/tree/1.6-branch) - The branch
 classified as "stable" or "latest". Actively maintained. 
-* [1.4-branch](https://github.com/Pylons/webob/tree/1.4-branch) - The oldest
+* [1.5-branch](https://github.com/Pylons/webob/tree/1.5-branch) - The oldest
 actively maintained and stable branch.
 
 Older branches are not actively maintained. In general, two stable branches and
