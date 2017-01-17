@@ -1316,7 +1316,9 @@ def test_204_has_no_body():
 
 def test_204_app_iter_set():
     res = Response(status='204', app_iter=[b'test'])
-    assert res.body == b''
+
+    # You are on your own in this case... you set app_iter you bought it
+    assert res.body == b'test'
     assert res.content_length is None
     assert res.headerlist == []
 
@@ -1353,3 +1355,13 @@ def test_content_type_has_charset():
     assert res.content_type == 'application/foo'
     assert res.charset == 'UTF-8'
     assert res.headers['Content-Type'] == 'application/foo; charset=UTF-8'
+
+def test_app_iter_is_same():
+    class app_iter(object):
+        pass
+
+    my_app_iter = app_iter()
+
+    res = Response(status=204, app_iter=my_app_iter)
+    assert res.app_iter == my_app_iter
+    assert isinstance(res.app_iter, app_iter)
