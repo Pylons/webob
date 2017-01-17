@@ -320,7 +320,7 @@ class Response(object):
                     if k.lower() != 'content-length'
                 ]
             self._headerlist.append(('Content-Length', str(len(body))))
-        elif app_iter is None or not code_has_body:
+        elif app_iter is None and not code_has_body:
             app_iter = [b'']
 
         self._app_iter = app_iter
