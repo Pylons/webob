@@ -1,4 +1,13 @@
 Unreleased
 ----------
 
+Bugfix
+~~~~~~
 
+- ``Response.__init__`` would discard ``app_iter`` when a ``Response`` had no
+  body, this would cause issues when ``app_iter`` was an object that was tied
+  to the life-cycle of a web application and had to be properly closed.
+  ``app_iter`` is more advanced API for ``Response`` and thus even if it
+  contains a body and is thus against the HTTP RFC's, we should let the users
+  shoot themselves by returning a body. See
+  https://github.com/Pylons/webob/issues/305
