@@ -1,3 +1,13 @@
+Unreleased
+----------
+
+Bugfix
+~~~~~~
+
+- Allow unnamed fields in form data to be properly transcoded when calling
+  request.decode with an alternate encoding. See
+  https://github.com/Pylons/webob/pull/309
+
 1.6.3 (2016-11-18)
 ------------------
 
