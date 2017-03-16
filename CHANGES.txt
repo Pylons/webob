@@ -4,6 +4,10 @@ Unreleased
 Bugfix
 ~~~~~~
 
+- Allow unnamed fields in form data to be properly transcoded when calling
+  request.decode with an alternate encoding. See
+  https://github.com/Pylons/webob/pull/309
+
 - ``Response.__init__`` would discard ``app_iter`` when a ``Response`` had no
   body, this would cause issues when ``app_iter`` was an object that was tied
   to the life-cycle of a web application and had to be properly closed.
