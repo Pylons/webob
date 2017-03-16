@@ -19,7 +19,7 @@ Backwards Incompatibility
   all existing Content-Type parameters, and if the new Content-Type is "texty"
   it adds a new charset (unless already provided) using the
   ``default_charset``, to emulate the old behaviour you may use the following:
-  
+
   .. code-block:: python
 
      res = Response(content_type='text/html', charset='UTF-8')
@@ -27,7 +27,7 @@ Backwards Incompatibility
      assert res.charset == 'UTF-8'
 
      params = res.content_type_params
-     
+
      # Change the Content-Type
      res.content_type = 'application/unknown'
      assert res.content_type == 'application/unknown'
@@ -47,7 +47,7 @@ Backwards Incompatibility
   .. code-block:: python
 
      res = Response(json.dumps({}), content_type='application/json')
-     
+
   Since ``application/json`` does not have a ``charset``, this will now raise
   an error.
 
@@ -120,6 +120,11 @@ Backwards Incompatibility
   unchunks the request for you. Please read
   https://github.com/Pylons/webob/issues/279 for more background.
 
+  This changes the behaviour of ``request.is_body_readable``, it will no longer
+  assume that a request has a body just because it is a particular HTTP verb.
+  This change also allows any HTTP verb to be able to contain a body, which
+  allows for example a HTTP body on DELETE or even GET.
+
 Feature
 ~~~~~~~
 
@@ -159,7 +164,7 @@ Feature
          if req.remote_addr not in ips:
              raise webob.exc.HTTPForbidden('Bad IP: %s' % req.remote_addr)
          return app
-     
+
      @restrict_ip(ips=['127.0.0.1'])
      @wsgify
      def app(req):
