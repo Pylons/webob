@@ -1613,8 +1613,9 @@ def _encode_multipart(vars, content_type, fout=None):
         w(b'--')
         wt(boundary)
         w(CRLF)
-        assert name is not None, 'Value associated with no name: %r' % value
-        wt('Content-Disposition: form-data; name="%s"' % name)
+        wt('Content-Disposition: form-data')
+        if name is not None:
+            wt('; name="%s"' % name)
         filename = None
         if getattr(value, 'filename', None):
             filename = value.filename
@@ -1696,7 +1697,11 @@ class Transcoder(object):
         if PY3: # pragma: no cover
             decode = lambda b: b
         else:
-            decode = lambda b: b.decode(self.charset, self.errors)
+            def decode(b):
+                if b is not None:
+                    return b.decode(self.charset, self.errors)
+                else:
+                    return b
         data = []
         for field in fs.list or ():
             field.name = decode(field.name)

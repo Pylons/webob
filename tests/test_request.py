@@ -2631,6 +2631,20 @@ class TestRequest_functional(unittest.TestCase):
         req2 = req2.decode('latin-1')
         self.assertEqual(body, req2.body)
 
+    def test_none_field_name(self):
+        from webob.request import Request
+        body = b'--FOO\r\nContent-Disposition: form-data\r\n\r\n123\r\n--FOO--'
+        content_type = 'multipart/form-data; boundary=FOO'
+        environ = {
+            'wsgi.input': BytesIO(body),
+            'CONTENT_TYPE': content_type,
+            'CONTENT_LENGTH': len(body),
+            'REQUEST_METHOD': 'POST'
+        }
+        req = Request(environ)
+        req = req.decode('latin-1')
+        assert body == req.body
+
     def test_broken_seek(self):
         # copy() should work even when the input has a broken seek method
         req = self._blankOne('/', method='POST',
