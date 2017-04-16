@@ -1198,6 +1198,18 @@ def test_encode_content_gzip_buffer_coverage():
     result = list(res.app_iter)
     assert len(b"".join(result)) < len(DATA)
 
+def test_encode_content_gzip_buffer_coverage():
+    """this test is to provide 100% coverage of
+    response.Response.encode_content was necessary in order to get
+    pull request https://github.com/Pylons/webob/pull/85 into upstream
+    """
+    res = Response()
+    DATA = b"abcdefghijklmnopqrstuvwxyz0123456789" * 1000000
+    res.app_iter = io.BytesIO(DATA)
+    res.encode_content('gzip')
+    result = list(res.app_iter)
+    assert len("".join(result)) < len(DATA)
+
 def test_decode_content_identity():
     res = Response()
     res.content_encoding = 'identity'
