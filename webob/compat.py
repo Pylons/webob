@@ -103,7 +103,7 @@ if PY3: # pragma: no cover
         return unquote(s.encode('ascii')).decode('latin-1')
 
     def parse_qsl_text(qs, encoding='utf-8'):
-        qs = qs.encode('latin-1')
+        qs = qs.encode(encoding)
         qs = qs.replace(b'+', b' ')
         pairs = [s2 for s1 in qs.split(b'&') for s2 in s1.split(b';') if s2]
         for name_value in pairs:
