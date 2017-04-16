@@ -241,6 +241,56 @@ def test_WSGIHTTPException_generate_response():
         b' </body>\n'
         b'</html>']
 
+def test_WSGIHTTPException_generate_response_w_unencodable_object_html():
+    from webob.util import html_escape
+    def start_response(status, headers, exc_info=None):
+        pass
+    class Unencodable(object):
+        def __str__(self):
+            raise u'\u00fe'.encode('ascii')
+    environ = {
+        'wsgi.url_scheme': 'HTTP',
+        'SERVER_NAME': 'localhost',
+        'SERVER_PORT': '80',
+        'REQUEST_METHOD': 'PUT',
+        'HTTP_ACCEPT': 'text/html',
+        'BAD': Unencodable()
+    }
+    body_template = "$BAD"
+    excep = WSGIHTTPException(body_template=body_template)
+    assert_equal( excep(environ,start_response), [
+        b'<html>\n'
+        b' <head>\n'
+        b'  <title>None None</title>\n'
+        b' </head>\n'
+        b' <body>\n'
+        b'  <h1>None None</h1>\n' + \
+        b'  ' + html_escape(object.__repr__(environ['BAD'])).encode('ascii') + b'\n' + \
+        b' </body>\n'
+        b'</html>' ]
+    )
+
+def test_WSGIHTTPException_generate_response_w_undecodable_object_plain():
+    def start_response(status, headers, exc_info=None):
+        pass
+    class Undecodable(object):
+        def __str__(self):
+            return b'\xfe'.decode('ascii')
+    environ = {
+        'wsgi.url_scheme': 'HTTP',
+        'SERVER_NAME': 'localhost',
+        'SERVER_PORT': '80',
+        'REQUEST_METHOD': 'PUT',
+        'HTTP_ACCEPT': 'text/plain',
+        'BAD': Undecodable()
+    }
+    body_template = "$BAD"
+    excep = WSGIHTTPException(body_template=body_template)
+    assert_equal( excep(environ,start_response), [
+        b'None None\n\n' +
+        object.__repr__(environ['BAD']).replace('<', '[').replace('>', ']').encode('ascii')]
+    )
+
 def test_WSGIHTTPException_call_w_body():
     def start_response(status, headers, exc_info=None):
         pass
