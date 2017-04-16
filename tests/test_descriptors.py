@@ -155,8 +155,9 @@ def test_header_getter_fset_text_control_chars():
     from webob import Response
     resp = Response('aresp')
     desc = header_getter('AHEADER', '14.3')
+    desc.fset(resp, text_('pylons\n'))
     with pytest.raises(ValueError):
-        desc.fset(resp, text_('\n'))
+        desc.fset(resp, text_('pylons\npyramid'))
 
 def test_header_getter_fdel():
     from webob.descriptors import header_getter
