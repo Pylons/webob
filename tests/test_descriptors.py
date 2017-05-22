@@ -56,7 +56,7 @@ def test_environ_getter_nodefault_fget():
 def test_environ_getter_nodefault_fdel():
     from webob.descriptors import environ_getter
     desc = environ_getter('akey')
-    assert desc.fdel == None
+    assert desc.fdel is None
 
 def test_environ_getter_default_fget():
     from webob.descriptors import environ_getter
@@ -121,7 +121,7 @@ def test_header_getter_fget():
     from webob import Response
     resp = Response('aresp')
     desc = header_getter('AHEADER', '14.3')
-    assert desc.fget(resp) == None
+    assert desc.fget(resp) is None
 
 def test_header_getter_fset():
     from webob.descriptors import header_getter
@@ -138,7 +138,7 @@ def test_header_getter_fset_none():
     desc = header_getter('AHEADER', '14.3')
     desc.fset(resp, 'avalue')
     desc.fset(resp, None)
-    assert desc.fget(resp) == None
+    assert desc.fget(resp) is None
 
 def test_header_getter_fset_text():
     from webob.compat import text_
@@ -165,14 +165,14 @@ def test_header_getter_fdel():
     desc = header_getter('AHEADER', '14.3')
     desc.fset(resp, 'avalue2')
     desc.fdel(resp)
-    assert desc.fget(resp) == None
+    assert desc.fget(resp) is None
 
 def test_header_getter_unicode_fget_none():
     from webob.descriptors import header_getter
     from webob import Response
     resp = Response('aresp')
     desc = header_getter('AHEADER', '14.3')
-    assert desc.fget(resp) == None
+    assert desc.fget(resp) is None
 
 def test_header_getter_unicode_fget():
     from webob.descriptors import header_getter
@@ -188,7 +188,7 @@ def test_header_getter_unicode_fset_none():
     resp = Response('aresp')
     desc = header_getter('AHEADER', '14.3')
     desc.fset(resp, None)
-    assert desc.fget(resp) == None
+    assert desc.fget(resp) is None
 
 def test_header_getter_unicode_fset():
     from webob.descriptors import header_getter
@@ -205,7 +205,7 @@ def test_header_getter_unicode_fdel():
     desc = header_getter('AHEADER', '14.3')
     desc.fset(resp, 'avalue3')
     desc.fdel(resp)
-    assert desc.fget(resp) == None
+    assert desc.fget(resp) is None
 
 def test_converter_not_prop():
     from webob.descriptors import converter
@@ -282,10 +282,9 @@ def test_converter_none_for_wrong_type():
     from webob.descriptors import serialize_int
     req = Request.blank('/')
     desc = converter(
-        ## XXX: Should this fail  if the type is wrong?
         environ_getter('CONTENT_LENGTH', 'sixsixsix', '14.13'),
         parse_int_safe, serialize_int, 'int')
-    assert desc.fget(req) == None
+    assert desc.fget(req) is None
 
 def test_converter_delete():
     from webob.descriptors import converter
@@ -294,7 +293,6 @@ def test_converter_delete():
     from webob.descriptors import serialize_int
     req = Request.blank('/')
     desc = converter(
-        ## XXX: Should this fail  if the type is wrong?
         environ_getter('CONTENT_LENGTH', '666', '14.13'),
         parse_int_safe, serialize_int, 'int')
     with pytest.raises(KeyError):
@@ -318,7 +316,7 @@ def test_parse_list_multiple():
 def test_parse_list_none():
     from webob.descriptors import parse_list
     result = parse_list(None)
-    assert result == None
+    assert result is None
 
 def test_parse_list_unicode_single():
     from webob.descriptors import parse_list
@@ -369,7 +367,7 @@ def test_date_header_fget_none():
     from webob.descriptors import date_header
     resp = Response('aresponse')
     desc = date_header('HTTP_DATE', "14.8")
-    assert desc.fget(resp) == None
+    assert desc.fget(resp) is None
 
 def test_date_header_fset_fget():
     import datetime
@@ -388,10 +386,11 @@ def test_date_header_fdel():
     desc = date_header('HTTP_DATE', "14.8")
     desc.fset(resp, "Tue, 15 Nov 1994 08:12:31 GMT")
     desc.fdel(resp)
-    assert desc.fget(resp) == None
+    assert desc.fget(resp) is None
 
 def test_deprecated_property():
     from webob.descriptors import deprecated_property
+
     class Foo(object):
         pass
     Foo.attr = deprecated_property('attr', 'attr', 'whatever', '1.2')
@@ -416,7 +415,7 @@ def test_parse_etag_response_quoted():
 def test_parse_etag_response_is_none():
     from webob.descriptors import parse_etag_response
     etresp = parse_etag_response(None)
-    assert etresp == None
+    assert etresp is None
 
 def test_serialize_etag_response():
     from webob.descriptors import serialize_etag_response
@@ -447,13 +446,13 @@ def test_serialize_if_range_other():
 
 def test_parse_range_none():
     from webob.descriptors import parse_range
-    assert parse_range(None) == None
+    assert parse_range(None) is None
 
 def test_parse_range_type():
     from webob.byterange import Range
     from webob.descriptors import parse_range
     val = parse_range("bytes=1-500")
-    assert type(val) == type(Range.parse("bytes=1-500"))
+    assert type(val) is type(Range.parse("bytes=1-500"))
 
 def test_parse_range_values():
     from webob.byterange import Range
@@ -464,22 +463,22 @@ def test_parse_range_values():
 def test_serialize_range_none():
     from webob.descriptors import serialize_range
     val = serialize_range(None)
-    assert val == None
+    assert val is None
 
 def test_serialize_range():
     from webob.descriptors import serialize_range
-    val = serialize_range((1,500))
+    val = serialize_range((1, 500))
     assert val == 'bytes=1-499'
 
 def test_parse_int_none():
     from webob.descriptors import parse_int
     val = parse_int(None)
-    assert val == None
+    assert val is None
 
 def test_parse_int_emptystr():
     from webob.descriptors import parse_int
     val = parse_int('')
-    assert val == None
+    assert val is None
 
 def test_parse_int():
     from webob.descriptors import parse_int
@@ -493,11 +492,11 @@ def test_parse_int_invalid():
 
 def test_parse_int_safe_none():
     from webob.descriptors import parse_int_safe
-    assert parse_int_safe(None) == None
+    assert parse_int_safe(None) is None
 
 def test_parse_int_safe_emptystr():
     from webob.descriptors import parse_int_safe
-    assert parse_int_safe('') == None
+    assert parse_int_safe('') is None
 
 def test_parse_int_safe():
     from webob.descriptors import parse_int_safe
@@ -505,7 +504,7 @@ def test_parse_int_safe():
 
 def test_parse_int_safe_invalid():
     from webob.descriptors import parse_int_safe
-    assert parse_int_safe('abc') == None
+    assert parse_int_safe('abc') is None
 
 def test_serialize_int():
     from webob.descriptors import serialize_int
@@ -513,11 +512,11 @@ def test_serialize_int():
 
 def test_parse_content_range_none():
     from webob.descriptors import parse_content_range
-    assert parse_content_range(None) == None
+    assert parse_content_range(None) is None
 
 def test_parse_content_range_emptystr():
     from webob.descriptors import parse_content_range
-    assert parse_content_range(' ') == None
+    assert parse_content_range(' ') is None
 
 def test_parse_content_range_length():
     from webob.byterange import ContentRange
@@ -543,7 +542,7 @@ def test_serialize_content_range_none():
 
 def test_serialize_content_range_emptystr():
     from webob.descriptors import serialize_content_range
-    assert serialize_content_range('') == None
+    assert serialize_content_range('') is None
 
 def test_serialize_content_range_invalid():
     from webob.descriptors import serialize_content_range
@@ -614,8 +613,20 @@ def test_parse_auth_none():
 
 def test_parse_auth_emptystr():
     from webob.descriptors import parse_auth
-    with pytest.raises(ValueError):
-        parse_auth('')
+    assert parse_auth('') == ('', '')
+
+def test_parse_auth_bearer():
+    from webob.descriptors import parse_auth
+    assert parse_auth('Bearer token').authtype == 'Bearer'
+    assert parse_auth('Bearer token').params == 'token'
+
+def test_parse_auth_unknown_nospace():
+    from webob.descriptors import parse_auth
+    assert parse_auth('NoSpace') == ('NoSpace', '')
+
+def test_parse_auth_known_nospace():
+    from webob.descriptors import parse_auth
+    assert parse_auth('Digest') == ('Digest', {})
 
 def test_parse_auth_basic():
     from webob.descriptors import parse_auth
@@ -646,6 +657,22 @@ def test_serialize_auth_none():
 def test_serialize_auth_emptystr():
     from webob.descriptors import serialize_auth
     assert serialize_auth('') == ''
+
+def test_serialize_auth_str():
+    from webob.descriptors import serialize_auth
+    assert serialize_auth('some string') == 'some string'
+
+def test_serialize_auth_parsed_emptystr():
+    from webob.descriptors import serialize_auth
+    assert serialize_auth(('', '')) == ' '
+
+def test_serialize_auth_parsed_unknown_nospace():
+    from webob.descriptors import serialize_auth
+    assert serialize_auth(('NoSpace', '')) == 'NoSpace '
+
+def test_serialize_auth_parsed_known_nospace():
+    from webob.descriptors import serialize_auth
+    assert serialize_auth(('Digest', {})) == 'Digest '
 
 def test_serialize_auth_basic_quoted():
     from webob.descriptors import serialize_auth
@@ -698,7 +725,7 @@ class _TestEnvironDecoder(object):
 
     def test_nodefault_fdel(self):
         desc = self._callFUT('akey')
-        assert desc.fdel == None
+        assert desc.fdel is None
 
     def test_default_fget(self):
         req = self._makeRequest()

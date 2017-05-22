@@ -1,9 +1,11 @@
+import re
+
 from datetime import (
     date,
     datetime,
     )
 
-import re
+from collections import namedtuple
 
 from webob.byterange import (
     ContentRange,
@@ -317,16 +319,18 @@ known_auth_schemes = ['Basic', 'Digest', 'WSSE', 'HMACDigest', 'GoogleLogin',
                       'Cookie', 'OpenID']
 known_auth_schemes = dict.fromkeys(known_auth_schemes, None)
 
+_authorization = namedtuple('Authorization', ['authtype', 'params'])
+
 def parse_auth(val):
     if val is not None:
-        authtype, params = val.split(' ', 1)
+        authtype, sep, params = val.partition(' ')
         if authtype in known_auth_schemes:
             if authtype == 'Basic' and '"' not in params:
                 # this is the "Authentication: Basic XXXXX==" case
                 pass
             else:
                 params = parse_auth_params(params)
-        return authtype, params
+        return _authorization(authtype, params)
     return val
 
 def serialize_auth(val):
