@@ -92,7 +92,7 @@ While we can test the application using WebOb, you might want to serve the appli
         from paste import httpserver
         httpserver.serve(app, host='127.0.0.1', port=8080)
 
-you could also use `wsgiref <http://python.org/doc/current/lib/module-wsgiref.simpleserver.html>`_ from the standard library, but this is mostly appropriate for testing as it is single-threaded:
+you could also use `wsgiref <https://docs.python.org/3/library/wsgiref.html#module-wsgiref.simple_server>`_ from the standard library, but this is mostly appropriate for testing as it is single-threaded:
 
 .. code-block:: python
 
@@ -168,25 +168,25 @@ To do the matching, we'll compile those templates to regular expressions.
 
 **line 2:** Here we create the regular expression.  The ``re.VERBOSE`` flag makes the regular expression parser ignore whitespace and allow comments, so we can avoid some of the feel of line-noise.  This matches any variables, i.e., ``{var:regex}`` (where ``:regex`` is optional).  Note that there are two groups we capture: ``match.group(1)`` will be the variable name, and ``match.group(2)`` will be the regular expression (or None when there is no regular expression).  Note that ``(?:...)?`` means that the section is optional.
 
-**line 10**: This variable will hold the regular expression that we are creating.
+**line 9**: This variable will hold the regular expression that we are creating.
 
-**line 11**: This contains the position of the end of the last match.
+**line 10**: This contains the position of the end of the last match.
 
-**line 12**: The ``finditer`` method yields all the matches.
+**line 11**: The ``finditer`` method yields all the matches.
 
-**line 13**: We're getting all the non-``{}`` text from after the last match, up to the beginning of this match.  We call ``re.escape`` on that text, which escapes any characters that have special meaning.  So ``.html`` will be escaped as ``\.html``.
+**line 12**: We're getting all the non-``{}`` text from after the last match, up to the beginning of this match.  We call ``re.escape`` on that text, which escapes any characters that have special meaning.  So ``.html`` will be escaped as ``\.html``.
 
-**line 14**: The first match is the variable name.
+**line 13**: The first match is the variable name.
 
-**line 15**: ``expr`` is the regular expression we'll match against, the optional second match.  The default is ``[^/]+``, which matches any non-empty, non-/ string.  Which seems like a reasonable default to me.
+**line 14**: ``expr`` is the regular expression we'll match against, the optional second match.  The default is ``[^/]+``, which matches any non-empty, non-/ string.  Which seems like a reasonable default to me.
 
-**line 16**: Here we create the actual regular expression.  ``(?P<name>...)`` is a grouped expression that is named.  When you get a match, you can look at ``match.groupdict()`` and get the names and values.
+**line 15**: Here we create the actual regular expression.  ``(?P<name>...)`` is a grouped expression that is named.  When you get a match, you can look at ``match.groupdict()`` and get the names and values.
 
-**line 17, 18**: We add the expression on to the complete regular expression and save the last position.
+**line 16, 17**: We add the expression on to the complete regular expression and save the last position.
 
-**line 19**: We add remaining non-variable text to the regular expression.
+**line 18**: We add remaining non-variable text to the regular expression.
 
-**line 20**: And then we make the regular expression match the complete string (``^`` to force it to match from the start, ``$`` to make sure it matches up to the end).
+**line 19**: And then we make the regular expression match the complete string (``^`` to force it to match from the start, ``$`` to make sure it matches up to the end).
 
 To test it we can try some translations.  You could put these directly in the docstring of the ``template_to_regex`` function and use `doctest <http://python.org/doc/current/lib/module-doctest.html>`_ to test that.  But I'm using doctest to test *this* document, so I can't put a docstring doctest inside the doctest itself.  Anyway, here's what a test looks like:
 
@@ -249,19 +249,19 @@ Now, the ``Router`` class.  The class has the ``add_route`` method, and also a `
 
 **line 8, 9**: We will allow you to call ``add_route`` with a string (that will be imported) or a controller object.  We test for a string here, and then import it if necessary.
 
-**line 13**: Here we add a ``__call__`` method.  This is the method used when you call an object like a function.  You should recognize this as the WSGI signature.
+**line 14**: Here we add a ``__call__`` method.  This is the method used when you call an object like a function.  You should recognize this as the WSGI signature.
 
-**line 14**: We create a request object.  Note we'll only use this request object in this function; if the controller wants a request object it'll have to make on of its own.
+**line 15**: We create a request object.  Note we'll only use this request object in this function; if the controller wants a request object it'll have to make on of its own.
 
-**line 16**: We test the regular expression against ``req.path_info``.  This is the same as ``environ['PATH_INFO']``.  That's all the request path left to be processed.
+**line 17**: We test the regular expression against ``req.path_info``.  This is the same as ``environ['PATH_INFO']``.  That's all the request path left to be processed.
 
-**line 18**: We set ``req.urlvars`` to the dictionary of matches in the regular expression.  This variable actually maps to ``environ['wsgiorg.routing_args']``.  Any attributes you set on a request will, in one way or another, map to the environment dictionary: the request holds no state of its own.
+**line 19**: We set ``req.urlvars`` to the dictionary of matches in the regular expression.  This variable actually maps to ``environ['wsgiorg.routing_args']``.  Any attributes you set on a request will, in one way or another, map to the environment dictionary: the request holds no state of its own.
 
-**line 19**: We also add in any explicit variables passed in through ``add_route()``.
+**line 20**: We also add in any explicit variables passed in through ``add_route()``.
 
-**line 20**: Then we call the controller as a WSGI application itself.  Any fancy framework stuff the controller wants to do, it'll have to do itself.
+**line 21**: Then we call the controller as a WSGI application itself.  Any fancy framework stuff the controller wants to do, it'll have to do itself.
 
-**line 21**: If nothing matches, we return a 404 Not Found response.  ``webob.exc.HTTPNotFound()`` is a WSGI application that returns 404 responses.  You could add a message too, like ``webob.exc.HTTPNotFound('No route matched')``.  Then, of course, we call the application.
+**line 22**: If nothing matches, we return a 404 Not Found response.  ``webob.exc.HTTPNotFound()`` is a WSGI application that returns 404 responses.  You could add a message too, like ``webob.exc.HTTPNotFound('No route matched')``.  Then, of course, we call the application.
 
 Controllers
 -----------
@@ -295,7 +295,7 @@ To do that we'll write a `decorator <http://www.ddj.com/web-development/18440607
 
 **line 6**: Here we catch any ``webob.exc.HTTPException`` exceptions.  This is so you can do ``raise webob.exc.HTTPNotFound()`` in your function.  These exceptions are themselves WSGI applications.
 
-**line 7**: We call the function with the request object, any any variables in ``req.urlvars``.  And we get back a response.
+**line 7**: We call the function with the request object, any variables in ``req.urlvars``.  And we get back a response.
 
 **line 10**: We'll allow the function to return a full response object, or just a string.  If they return a string, we'll create a ``Response`` object with that (and with the standard ``200 OK`` status, ``text/html`` content type, and ``utf8`` charset/encoding).
 
@@ -324,7 +324,7 @@ Now we'll show a basic application.  Just a hello world application for now.  No
     ...         return 'Hello %s!' % req.params['name']
     ...     elif req.method == 'GET':
     ...         return '''<form method="POST">
-    ...             You're name: <input type="text" name="name">
+    ...             Your name: <input type="text" name="name">
     ...             <input type="submit">
     ...             </form>'''
     >>> hello_world = Router()
@@ -342,7 +342,7 @@ Now let's test that application:
     Content-Length: 131
     <BLANKLINE>
     <form method="POST">
-                You're name: <input type="text" name="name">
+                Your name: <input type="text" name="name">
                 <input type="submit">
                 </form>
     >>> req.method = 'POST'
@@ -400,17 +400,17 @@ We'll allow an extra ``action`` variable, which will define the method (actually
 
 **line 7, 8**: If there was one, we'll use the method name ``{action}_{method}``...
 
-**line 8, 9**: ... otherwise we'll use just the method for the method name.
+**line 9, 10**: ... otherwise we'll use just the method for the method name.
 
-**line 10-13**: We'll get the method from the instance, or respond with a 404 error if there is not such method.
+**line 11-14**: We'll get the method from the instance, or respond with a 404 error if there is not such method.
 
-**line 14**: Call the method, get the response
+**line 15**: Call the method, get the response
 
-**line 15, 16**: If the response is just a string, create a full response object from it.
+**line 16, 17**: If the response is just a string, create a full response object from it.
 
-**line 19**: and then we forward the request...
+**line 20**: and then we forward the request...
 
-**line 20**: ... and return the wrapper object we've created.
+**line 21**: ... and return the wrapper object we've created.
 
 Here's the hello world:
 
@@ -421,7 +421,7 @@ Here's the hello world:
     ...         self.request = req
     ...     def get(self):
     ...         return '''<form method="POST">
-    ...             You're name: <input type="text" name="name">
+    ...             Your name: <input type="text" name="name">
     ...             <input type="submit">
     ...             </form>'''
     ...     def post(self):
@@ -442,7 +442,7 @@ We'll run the same test as before:
     Content-Length: 131
     <BLANKLINE>
     <form method="POST">
-                You're name: <input type="text" name="name">
+                Your name: <input type="text" name="name">
                 <input type="submit">
                 </form>
     >>> req.method = 'POST'
@@ -462,7 +462,7 @@ You can use hard-coded links in your HTML, but this can have problems.  Relative
 
 The base URL using SCRIPT_NAME is ``req.application_url``.  So, if we have access to the request we can make a URL.  But what if we don't have access?
 
-We can use thread-local variables to make it easy for any function to get access to the currect request.  A "thread-local" variable is a variable whose value is tracked separately for each thread, so if there are multiple requests in different threads, their requests won't clobber each other.
+We can use thread-local variables to make it easy for any function to get access to the current request.  A "thread-local" variable is a variable whose value is tracked separately for each thread, so if there are multiple requests in different threads, their requests won't clobber each other.
 
 The basic means of using a thread-local variable is ``threading.local()``.  This creates a blank object that can have thread-local attributes assigned to it.  I find the best way to get *at* a thread-local value is with a function, as this makes it clear that you are fetching the object, as opposed to getting at some global object.
 

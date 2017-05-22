@@ -1,0 +1,228 @@
+What's New in WebOb 1.7
+=======================
+
+Compatibility
+~~~~~~~~~~~~~
+
+- WebOb is no longer supported on Python 2.6 and PyPy3. PyPy3 support will be
+  re-introduced as soon as it supports a Python version higher than 3.2 and pip
+  fully supports the platform again.
+
+  If you would like Python 2.6 support, please pin to WebOb 1.6, which still
+  has Python 2.6 support.
+
+
+Backwards Incompatibility
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- :attr:`Response.content_type <webob.response.Response.content_type>` removes
+  all existing Content-Type parameters, and if the new Content-Type is "texty"
+  it adds a new charset (unless already provided) using the
+  ``default_charset``, to emulate the old behaviour you may use the following:
+
+  .. code-block:: python
+
+     res = Response(content_type='text/html', charset='UTF-8')
+     assert res.content_type == 'text/html'
+     assert res.charset == 'UTF-8'
+
+     params = res.content_type_params
+
+     # Change the Content-Type
+     res.content_type = 'application/unknown'
+     assert res.content_type == 'application/unknown'
+     assert res.charset == None
+
+     # This will add the ``charset=UTF-8`` parameter to the Content-Type
+     res.content_type_params = params
+
+     assert res.headers['Content-Type'] == 'application/unknown; charset=UTF-8'
+
+  See https://github.com/Pylons/webob/pull/301 for more information.
+
+- :class:`~webob.response.Response` no longer treats ``application/json`` as a
+  special case that may also be treated as text. This means the following may
+  no longer be used:
+
+  .. code-block:: python
+
+     res = Response(json.dumps({}), content_type='application/json')
+
+  Since ``application/json`` does not have a ``charset``, this will now raise
+  an error.
+
+  Replacements are:
+
+  .. code-block:: python
+
+     res = Response(json_body={})
+
+  This will create a new :class:`~webob.response.Response` that automatically
+  sets up the the Content-Type and converts the dictionary to a JSON object
+  internally.
+
+  If you want WebOb to the encoding but do the conversion to JSON yourself, the
+  following would also work:
+
+  .. code-block:: python
+
+     res = Response(text=json.dumps({}), content_type='application/json')
+
+  This uses :attr:`~webob.response.Response.default_body_encoding` to encode
+  the text.
+
+- :func:`Response.set_cookie <webob.response.Response.set_cookie>` no longer
+  accepts a key argument. This was deprecated in WebOb 1.5 and as mentioned in
+  the deprecation, is being removed in 1.7
+
+  Use:
+
+  .. code-block:: python
+
+     res = Response()
+     res.set_cookie(name='cookie_name', value='val')
+
+     # or
+
+     res.set_cookie('cookie_name', 'val')
+
+  Instead of:
+
+  .. code-block:: python
+
+     res = Response()
+     res.set_cookie(key='cookie_name', value='val')
+
+- :func:`Response.__init__ <webob.response.Response>` will no longer
+  set the default Content-Type, nor Content-Length on Responses that don't have
+  a body. This allows WebOb to return proper responses for things like
+  `Response(status='204 No Content')`.
+
+- :attr:`Response.text <webob.response.Response.text>` will no longer raise if
+  the Content-Type does not have a charset, it will fall back to using the new
+  default_body_encoding. To get the old behaviour back please sub-class
+  Response and set default_body_encoding to None. See
+  https://github.com/Pylons/webob/pull/287
+
+  An example of a Response class that has the old behaviour:
+
+  .. code-block:: python
+
+     class MyResponse(Response):
+        default_body_encoding = None
+
+     res = MyResponse(content_type='application/json')
+     # This will raise as application/json doesn't have a charset
+     res.text = 'sometext'
+
+- WebOb no longer supports Chunked Encoding, this means that if you are using
+  WebOb and need Chunked Encoding you will be required to have a proxy that
+  unchunks the request for you. Please read
+  https://github.com/Pylons/webob/issues/279 for more background.
+
+  This changes the behaviour of ``request.is_body_readable``, it will no longer
+  assume that a request has a body just because it is a particular HTTP verb.
+  This change also allows any HTTP verb to be able to contain a body, which
+  allows for example a HTTP body on DELETE or even GET.
+
+Feature
+~~~~~~~
+
+- :class:`~webob.response.Response` has a new ``default_body_encoding`` which
+  may be used to allow getting/setting :attr:`Response.text
+  <webob.response.Response.text>` when a Content-Type has no charset. See
+  https://github.com/Pylons/webob/pull/287
+
+  .. code-block:: python
+
+     res = Response()
+     res.default_body_encoding = 'latin1'
+     res.text = 'Will be encoded as latin1 and .body will be set'
+
+     res = Response()
+     res.default_body_encoding = 'latin1'
+     res.body = b'A valid latin-1 string'
+     res.text == 'A valid latin-1 string'
+
+
+- :class:`~webob.request.Request` with any HTTP method is now allowed to have a
+  body. This allows DELETE to have a request body for passing extra
+  information. See https://github.com/Pylons/webob/pull/283 and
+  https://github.com/Pylons/webob/pull/274
+
+- Add :func:`~webob.response.ResponseBodyFile.tell` to
+  :class:`~webob.response.ResponseBodyFile` so that it may be used for example
+  for zipfile support. See https://github.com/Pylons/webob/pull/117
+
+- Allow the return from :func:`wsgify.middleware <webob.dec.wsgify.middleware>` to
+  be used as a decorator. See https://github.com/Pylons/webob/pull/228
+
+  .. code-block:: python
+
+     @wsgify.middleware
+     def restrict_ip(req, app, ips):
+         if req.remote_addr not in ips:
+             raise webob.exc.HTTPForbidden('Bad IP: %s' % req.remote_addr)
+         return app
+
+     @restrict_ip(ips=['127.0.0.1'])
+     @wsgify
+     def app(req):
+           return 'hi'
+
+Bugfix
+~~~~~~
+
+- Fixup :class:`cgi.FieldStorage` on Python 3.x to work-around issue reported
+  in Python bug report 27777 and 24764. This is currently applied for Python
+  versions less than 3.7. See https://github.com/Pylons/webob/pull/294
+
+- :func:`Response.set_cookie <webob.response.Response.set_cookie>` now accepts
+  :class:`~datetime.datetime` objects for the ``expires`` kwarg and will
+  correctly convert them to UTC with no ``tzinfo`` for use in calculating the
+  ``max_age``. See https://github.com/Pylons/webob/issues/254 and
+  https://github.com/Pylons/webob/pull/292
+
+- Fixes :attr:`request.PATH_SAFE <webob.request.PATH_SAFE>` to contain all of
+  the path safe characters according to RFC3986. See
+  https://github.com/Pylons/webob/pull/291
+
+- WebOb's exceptions will lazily read underlying variables when inserted into
+  templates to avoid expensive computations/crashes when inserting into the
+  template. This had a bad performance regression on Py27 because of the way
+  the lazified class was created and returned. See
+  https://github.com/Pylons/webob/pull/284
+
+- :func:`wsgify.__call__ <webob.dec.wsgify.__call__>` raised a ``TypeError``
+  with an unhelpful message, it will now return the `repr` for the wrapped
+  function: https://github.com/Pylons/webob/issues/119
+
+- :attr:`Response.json <webob.response.Response.json>`'s json.dumps/loads are
+  now always UTF-8. It no longer tries to use the charset.
+
+- The :class:`~webob.response.Response` will by default no longer set the
+  Content-Type to the default if a headerlist is provided. This fixes issues
+  whereby `Request.get_response()` would return a Response that didn't match
+  the actual response. See https://github.com/Pylons/webob/pull/261 and
+  https://github.com/Pylons/webob/issues/205
+
+- Cleans up the remainder of the issues with the updated WebOb exceptions that
+  were taught to return JSON in version 1.6. See
+  https://github.com/Pylons/webob/issues/237 and
+  https://github.com/Pylons/webob/issues/236
+
+- :func:`Response.from_file <webob.response.Response.from_file>` now parses the
+  status line correctly when the status line contains an HTTP with version, as
+  well as a status text that contains multiple white spaces (e.g HTTP/1.1 404
+  Not Found). See https://github.com/Pylons/webob/issues/250
+
+- :class:`~webob.response.Response` now has a new property named
+  :attr:`~webob.response.Response.has_body` that may be used to interrogate the
+  Response to find out if the :attr:`~webob.response.Response.body` is or isn't
+  set.
+
+  This is used in the exception handling code so that if you use a WebOb HTTP
+  Exception and pass a generator to ``app_iter`` WebOb won't attempt to read
+  the whole thing and instead allows it to be returned to the WSGI server. See
+  https://github.com/Pylons/webob/pull/259
+

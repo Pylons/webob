@@ -1,0 +1,16 @@
+:mod:`webob.cookies` -- Cookies
+===============================
+
+Cookies
+-------
+
+.. autoclass:: webob.cookies.CookieProfile
+   :members:
+.. autoclass:: webob.cookies.SignedCookieProfile
+   :members:
+.. autoclass:: webob.cookies.SignedSerializer
+   :members:
+.. autoclass:: webob.cookies.JSONSerializer
+   :members:
+.. autofunction:: webob.cookies.make_cookie
+

@@ -33,6 +33,7 @@ Exception
       * 304 - :class:`HTTPNotModified`
       * 305 - :class:`HTTPUseProxy`
       * 307 - :class:`HTTPTemporaryRedirect`
+      * 308 - :class:`HTTPPermanentRedirect`
     HTTPError
       HTTPClientError
         * 400 - :class:`HTTPBadRequest`
@@ -164,10 +165,12 @@ References:
 
 """
 
+import json
 from string import Template
 import re
 import sys
 
+from webob.acceptparse import MIMEAccept
 from webob.compat import (
     class_types,
     text_,
@@ -176,14 +179,24 @@ from webob.compat import (
     )
 from webob.request import Request
 from webob.response import Response
-from webob.util import (
-    html_escape,
-    warn_deprecation,
-    )
+from webob.util import html_escape
 
 tag_re = re.compile(r'<.*?>', re.S)
-br_re = re.compile(r'<br.*?>', re.I|re.S)
+br_re = re.compile(r'<br.*?>', re.I | re.S)
 comment_re = re.compile(r'<!--|-->')
+
+class _lazified(object):
+    def __init__(self, func, value):
+        self.func = func
+        self.value = value
+
+    def __str__(self):
+        return self.func(self.value)
+
+def lazify(func):
+    def wrapper(value):
+        return _lazified(func, value)
+    return wrapper
 
 def no_escape(value):
     if value is None:
@@ -249,7 +262,7 @@ ${body}''')
     empty_body = False
 
     def __init__(self, detail=None, headers=None, comment=None,
-                 body_template=None, **kw):
+                 body_template=None, json_formatter=None, **kw):
         Response.__init__(self,
                           status='%s %s' % (self.code, self.title),
                           **kw)
@@ -264,11 +277,14 @@ ${body}''')
         if self.empty_body:
             del self.content_type
             del self.content_length
+        if json_formatter is not None:
+            self.json_formatter = json_formatter
 
     def __str__(self):
         return self.detail or self.explanation
 
     def _make_body(self, environ, escape):
+        escape = lazify(escape)
         args = {
             'explanation': escape(self.explanation),
             'detail': escape(self.detail or ''),
@@ -299,32 +315,45 @@ ${body}''')
         return self.html_template_obj.substitute(status=self.status,
                                                  body=body)
 
+    def json_formatter(self, body, status, title, environ):
+        return {'message': body,
+                'code': status,
+                'title': title}
+
+    def json_body(self, environ):
+        body = self._make_body(environ, no_escape)
+        jsonbody = self.json_formatter(body=body, status=self.status,
+                                       title=self.title, environ=environ)
+        return json.dumps(jsonbody)
+
     def generate_response(self, environ, start_response):
         if self.content_length is not None:
             del self.content_length
         headerlist = list(self.headerlist)
-        accept = environ.get('HTTP_ACCEPT', '')
-        if accept and 'html' in accept or '*/*' in accept:
+        accept_value = environ.get('HTTP_ACCEPT', '')
+        accept = MIMEAccept(accept_value)
+        match = accept.best_match(['text/html', 'application/json'])
+
+        if match == 'text/html':
             content_type = 'text/html'
             body = self.html_body(environ)
+        elif match == 'application/json':
+            content_type = 'application/json'
+            body = self.json_body(environ)
         else:
             content_type = 'text/plain'
             body = self.plain_body(environ)
-        extra_kw = {}
-        if isinstance(body, text_type):
-            extra_kw.update(charset='utf-8')
         resp = Response(body,
-            status=self.status,
-            headerlist=headerlist,
-            content_type=content_type,
-            **extra_kw
-        )
+                        status=self.status,
+                        headerlist=headerlist,
+                        content_type=content_type,
+                        )
         resp.content_type = content_type
         return resp(environ, start_response)
 
     def __call__(self, environ, start_response):
         is_head = environ['REQUEST_METHOD'] == 'HEAD'
-        if self.body or self.empty_body or is_head:
+        if self.has_body or self.empty_body or is_head:
             app_iter = Response.__call__(self, environ, start_response)
         else:
             app_iter = self.generate_response(environ, start_response)
@@ -457,7 +486,7 @@ class _HTTPMove(HTTPRedirection):
     redirections which require a Location field
 
     Since a 'Location' header is a required attribute of 301, 302, 303,
-    305 and 307 (but not 304), this base class provides the mechanics to
+    305, 307 and 308 (but not 304), this base class provides the mechanics to
     make this easy.
 
     You can provide a location keyword argument to set the location
@@ -480,6 +509,9 @@ ${html_comment}''')
             detail=detail, headers=headers, comment=comment,
             body_template=body_template)
         if location is not None:
+            if '\n' in location or '\r' in location:
+                raise ValueError('Control characters are not allowed in location')
+
             self.location = location
             if add_slash:
                 raise TypeError(
@@ -597,6 +629,19 @@ class HTTPTemporaryRedirect(_HTTPMove):
     code = 307
     title = 'Temporary Redirect'
 
+class HTTPPermanentRedirect(_HTTPMove):
+    """
+    subclass of :class:`~_HTTPMove`
+
+    This indicates that the requested resource resides permanently
+    under a different URI.
+
+    code: 308, title: Permanent Redirect
+    """
+    code = 308
+    title = 'Permanent Redirect'
+
+
 ############################################################
 ## 4xx client error
 ############################################################
@@ -702,7 +747,7 @@ class HTTPNotAcceptable(HTTPClientError):
     code = 406
     title = 'Not Acceptable'
     # override template since we need an environment variable
-    template = Template('''\
+    body_template_obj = Template('''\
 The resource could not be generated that was acceptable to your browser
 (content of type ${HTTP_ACCEPT}. <br /><br />
 ${detail}''')
@@ -830,7 +875,7 @@ class HTTPUnsupportedMediaType(HTTPClientError):
     code = 415
     title = 'Unsupported Media Type'
     # override template since we need an environment variable
-    template_obj = Template('''\
+    body_template_obj = Template('''\
 The request media type ${CONTENT_TYPE} is not supported by this server.
 <br /><br />
 ${detail}''')
@@ -1012,7 +1057,7 @@ class HTTPNotImplemented(HTTPServerError):
     """
     code = 501
     title = 'Not Implemented'
-    template = Template('''
+    body_template_obj = Template('''
 The request method ${REQUEST_METHOD} is not implemented for this server. <br /><br />
 ${detail}''')
 
@@ -1144,7 +1189,14 @@ for name, value in list(globals().items()):
         issubclass(value, HTTPException)
         and not name.startswith('_')):
         __all__.append(name)
-        if getattr(value, 'code', None):
+        if all((
+            getattr(value, 'code', None),
+            value not in (HTTPRedirection, HTTPClientError, HTTPServerError),
+            issubclass(
+                value,
+                (HTTPOk, HTTPRedirection, HTTPClientError, HTTPServerError)
+            )
+        )):
             status_map[value.code]=value
         if hasattr(value, 'explanation'):
             value.explanation = ' '.join(value.explanation.strip().split())

@@ -59,7 +59,7 @@ class Range(object):
         return 'bytes=%s-%s' % (s, e-1)
 
     def __repr__(self):
-        return '%s(%r, %r)' % (
+        return '<%s bytes %r-%r>' % (
             self.__class__.__name__,
             self.start, self.end)
 

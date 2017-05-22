@@ -4,7 +4,6 @@ from webob.response import Response
 from webob.dec import wsgify
 from webob.compat import bytes_
 from webob.compat import text_
-from webob.compat import PY3
 
 class DecoratorTests(unittest.TestCase):
     def _testit(self, app, req):
@@ -223,6 +222,22 @@ class DecoratorTests(unittest.TestCase):
 
         self.assertEqual(resp.body,
                          bytes_(resp_str % "[('c', 3)]"))
+
+    def test_middleware_as_decorator(self):
+        resp_str = "These are the vars: %s"
+        @wsgify.middleware
+        def set_urlvar(req, app, **vars):
+            req.urlvars.update(vars)
+            return app(req)
+        @set_urlvar(a=1,b=2)
+        @wsgify
+        def show_vars(req):
+            return resp_str % (sorted(req.urlvars.items()))
+        resp = self._testit(show_vars, '/path')
+        self.assertEqual(resp.body, bytes_(resp_str % "[('a', 1), ('b', 2)]"))
+        self.assertEqual(resp.content_type, 'text/html')
+        self.assertEqual(resp.charset, 'UTF-8')
+        self.assertEqual(resp.content_length, 40)
 
     def test_unbound_middleware(self):
         @wsgify

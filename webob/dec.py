@@ -118,7 +118,8 @@ class wsgify(object):
         if isinstance(req, dict):
             if len(args) != 1 or kw:
                 raise TypeError(
-                    "Calling %r as a WSGI app with the wrong signature")
+                    "Calling %r as a WSGI app with the wrong signature" %
+                    self.func)
             environ = req
             start_response = args[0]
             req = self.RequestClass(environ)
@@ -230,6 +231,13 @@ class wsgify(object):
 
             wrapped = restrict_ip(app, ips=['127.0.0.1'])
 
+        Or as a decorator::
+
+            @restrict_ip(ips=['127.0.0.1'])
+            @wsgify
+            def wrapped_app(req):
+                return 'hi'
+
         Or if you want to write output-rewriting middleware::
 
             @wsgify.middleware
@@ -297,7 +305,7 @@ class _MiddlewareFactory(object):
         return '<%s at %s wrapping %r>' % (self.__class__.__name__, id(self),
                                            self.middleware)
 
-    def __call__(self, app, **config):
+    def __call__(self, app=None, **config):
         kw = self.kw.copy()
         kw.update(config)
         return self.wrapper_class.middleware(self.middleware, app, **kw)

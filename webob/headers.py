@@ -21,11 +21,7 @@ class ResponseHeaders(MultiDict):
 
     def getall(self, key):
         key = key.lower()
-        result = []
-        for k, v in self._items:
-            if k.lower() == key:
-                result.append(v)
-        return result
+        return [v for (k, v) in self._items if k.lower() == key]
 
     def mixed(self):
         r = self.dict_of_lists()
@@ -42,10 +38,7 @@ class ResponseHeaders(MultiDict):
 
     def __setitem__(self, key, value):
         norm_key = key.lower()
-        items = self._items
-        for i in range(len(items)-1, -1, -1):
-            if items[i][0].lower() == norm_key:
-                del items[i]
+        self._items[:] = [(k, v) for (k, v) in self._items if k.lower() != norm_key]
         self._items.append((key, value))
 
     def __delitem__(self, key):

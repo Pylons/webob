@@ -3,13 +3,12 @@ import sys
 import re
 try:
     import httplib
-except ImportError: # pragma: no cover
+except ImportError:
     import http.client as httplib
 from webob.compat import url_quote
 import socket
 from webob import exc
-from webob.compat import PY3
-
+from webob.compat import PY2
 
 __all__ = ['send_request_app', 'SendRequest']
 
@@ -134,9 +133,9 @@ class SendRequest:
         Turn a Message object into a list of WSGI-style headers.
         """
         headers_out = []
-        if PY3:  # pragma: no cover
+        if not PY2:
             headers = message._headers
-        else:  # pragma: no cover
+        else:
             headers = message.headers
         for full_header in headers:
             if not full_header: # pragma: no cover
