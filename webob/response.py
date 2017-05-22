@@ -715,7 +715,6 @@ class Response(object):
         if self._app_iter is not None:
             # Undo the automatically-set content-length
             self.content_length = None
-            self.content_md5 = None
         self._app_iter = value
 
     def _app_iter__del(self):
