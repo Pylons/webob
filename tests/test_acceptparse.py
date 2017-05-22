@@ -331,8 +331,8 @@ def test_mimeaccept_contains():
     assert 'A/a' in mimeaccept
     assert 'A/*' in mimeaccept
     assert '*/a' in mimeaccept
-    assert not 'A/b' in mimeaccept
-    assert not 'B/a' in mimeaccept
+    assert 'A/b' not in mimeaccept
+    assert 'B/a' not in mimeaccept
 
 def test_accept_json():
     mimeaccept = MIMEAccept('text/html, *; q=.2, */*; q=.2')
@@ -356,7 +356,48 @@ def test_match_uppercase_q():
     """The relative-quality-factor "q" parameter is defined as an exact string
        in "14.1 Accept" BNF grammar"""
     mimeaccept = MIMEAccept('image/jpg; q=.4, Image/pNg; Q=.2, image/*; q=.05')
-    assert mimeaccept._parsed == [('image/jpg', 0.4), ('image/png', 1), ('image/*', 0.05)]
+    assert mimeaccept._parsed == [
+        ('image/jpg', 0.4),
+        ('image/png', 1),
+        ('image/*', 0.05)]
+
+def test_rfc7231_ordering():
+    mimeaccept = MIMEAccept('text/plain; q=0.5, text/html, text/x-dvi; q=0.8, text/x-c')
+    assert mimeaccept._parsed == [
+        ('text/plain', 0.5),
+        ('text/html', 1),
+        ('text/x-dvi', 0.8),
+        ('text/x-c', 1)]
+    best = mimeaccept.best_match(['text/x-c', 'text/html'])
+    assert best == 'text/x-c'
+
+def test_MIMEAccept_best_client_match():
+    mimeaccept = MIMEAccept('text/plain; q=0.5, text/html, text/x-dvi; q=0.8, text/x-c')
+    assert mimeaccept._parsed == [
+        ('text/plain', 0.5),
+        ('text/html', 1),
+        ('text/x-dvi', 0.8),
+        ('text/x-c', 1)]
+    best = mimeaccept.best_client_match(['text/x-c', 'text/html'])
+    assert best == 'text/html'
+
+def test_MIMEAccept_best_match():
+    mimeaccept = MIMEAccept('text/html, application/json, */*;q=0.2')
+    server_offer = ['application/json', 'text/html']
+    assert mimeaccept.best_match(server_offer) == 'application/json'
+    assert mimeaccept.best_client_match(server_offer) == 'text/html'
+
+def test_MIMEAccept_best_match_stars():
+    mimeaccept = MIMEAccept('text/html, application/json, */*;q=0.2')
+    server_offer = ['no/match', 'no/othermatch']
+    assert mimeaccept.best_match(server_offer) == 'no/match'
+    assert mimeaccept.best_client_match(server_offer) == 'no/match'
+
+def test_MIMEAccept_best_match_qs():
+    mimeaccept = MIMEAccept('text/html, application/json, */*;q=0.2')
+    server_offer = [('application/json', 0.5), ('text/html', 1)]
+    assert mimeaccept.best_match(server_offer) == 'text/html'
+    assert mimeaccept.best_client_match(server_offer) == 'text/html'
 
 # property tests
 

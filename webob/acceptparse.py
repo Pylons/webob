@@ -162,6 +162,46 @@ class Accept(object):
                     matched_by = mask
         return best_offer
 
+    def best_client_match(self, offers, default_match=None):
+        """
+        Returns the best match in the sequence of offered types.
+
+        The sequence can be a simple sequence, or you can have
+        ``(match, server_quality)`` items in the sequence.  If you
+        have these tuples then the client quality is multiplied by the
+        server_quality to get a total.  If two matches have equal
+        weight, then the one that shows up first in the `Accept` list
+        will be returned.
+
+        But among matches with the same quality the match to a more specific
+        requested type will be chosen. For example a match to text/* trumps */*.
+
+        default_match (default None) is returned if there is no intersection.
+        """
+        best_quality = -1
+        best_offer = default_match
+        matched_by = '*/*'
+        for mask, quality in self._parsed_nonzero:
+            for offer in offers:
+                if isinstance(offer, (tuple, list)):
+                    offer, server_quality = offer
+                else:
+                    server_quality = 1
+
+                possible_quality = server_quality * quality
+                if possible_quality < best_quality:
+                    continue
+                elif possible_quality == best_quality:
+                    # 'text/plain' overrides 'message/*' overrides '*/*'
+                    # (if all match w/ the same q=)
+                    if matched_by.count('*') <= mask.count('*'):
+                        continue
+                if self._match(mask, offer):
+                    best_quality = possible_quality
+                    best_offer = offer
+                    matched_by = mask
+        return best_offer
+
     def _match(self, mask, offer):
         _check_offer(offer)
         return mask == '*' or offer.lower() == mask.lower()
