@@ -4,6 +4,14 @@ import threading
 import random
 import socket
 import cgi
+
+import pytest
+
+from wsgiref.simple_server import make_server
+from wsgiref.simple_server import WSGIRequestHandler
+from wsgiref.simple_server import WSGIServer
+from wsgiref.simple_server import ServerHandler
+
 from webob.request import Request
 from webob.response import Response
 from webob.compat import url_open
@@ -12,12 +20,6 @@ from webob.compat import reraise
 from webob.compat import Queue
 from webob.compat import Empty
 from contextlib import contextmanager
-from nose.tools import assert_raises
-from nose.tools import eq_ as eq
-from wsgiref.simple_server import make_server
-from wsgiref.simple_server import WSGIRequestHandler
-from wsgiref.simple_server import WSGIServer
-from wsgiref.simple_server import ServerHandler
 
 log = logging.getLogger(__name__)
 
@@ -77,7 +79,8 @@ def _test_app_req_interrupt(env, sr):
                 'request.content_length is %s instead of %s' % (cl, target_cl))
         op = _test_ops_req_interrupt[req.path_info]
         log.info("Running test: %s", req.path_info)
-        assert_raises(IOError, op, req)
+        with pytest.raises(IOError):
+            op(req)
     except:
         _global_res.put(sys.exc_info())
     else:
@@ -95,7 +98,7 @@ def _req_int_cgi(req):
 
 def _req_int_readline(req):
     try:
-        eq(req.body_file.readline(), b'a=b\n')
+        assert req.body_file.readline() == b'a=b\n'
     except IOError:
         # too early to detect disconnect
         raise AssertionError("False disconnect alert")

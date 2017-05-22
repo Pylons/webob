@@ -4,7 +4,6 @@ from webob.response import Response
 from webob.dec import wsgify
 from webob.compat import bytes_
 from webob.compat import text_
-from webob.compat import PY3
 
 class DecoratorTests(unittest.TestCase):
     def _testit(self, app, req):
@@ -81,6 +80,29 @@ class DecoratorTests(unittest.TestCase):
     def test_wsgify_args_no_func(self):
         test_app = wsgify(None, args=(1,))
         self.assertRaises(TypeError, self._testit, test_app, '/a url')
+
+    def test_wsgify_call_args(self):
+        resp_str = "args: %s, kwargs: %s"
+        def show_vars(req, *args, **kwargs):
+            return bytes_(resp_str % (sorted(args), sorted(kwargs.items())))
+
+        app = wsgify(show_vars, args=('foo', 'bar'), kwargs={'a': 1, 'b': 2})
+        resp = app(Request.blank('/'))
+
+        self.assertEqual(resp,
+                         bytes_(resp_str % ("['bar', 'foo']",
+                                            "[('a', 1), ('b', 2)]")))
+
+    def test_wsgify_call_args_override(self):
+        resp_str = "args: %s, kwargs: %s"
+        def show_vars(req, *args, **kwargs):
+            return bytes_(resp_str % (sorted(args), sorted(kwargs.items())))
+
+        app = wsgify(show_vars, args=('foo', 'bar'), kwargs={'a': 1, 'b': 2})
+        resp = app(Request.blank('/'), 'qux', c=3)
+
+        self.assertEqual(resp,
+                         bytes_(resp_str % ("['qux']", "[('c', 3)]")))
 
     def test_wsgify_wrong_sig(self):
         @wsgify
@@ -165,6 +187,53 @@ class DecoratorTests(unittest.TestCase):
             return resp_str % (sorted(req.urlvars.items()))
         show_vars2 = set_urlvar(show_vars, a=1, b=2)
         resp = self._testit(show_vars2, '/path')
+        self.assertEqual(resp.body, bytes_(resp_str % "[('a', 1), ('b', 2)]"))
+        self.assertEqual(resp.content_type, 'text/html')
+        self.assertEqual(resp.charset, 'UTF-8')
+        self.assertEqual(resp.content_length, 40)
+
+    def test_middleware_call_kwargs(self):
+        resp_str = "kwargs: %s"
+        @wsgify.middleware
+        def set_args(req, app, **kwargs):
+            req.urlvars = kwargs
+            return req.get_response(app)
+        @wsgify
+        def show_vars(req):
+            return resp_str % sorted(req.urlvars.items())
+
+        app = set_args(show_vars, a=1, b=2)
+        resp = app(Request.blank('/'))
+
+        self.assertEqual(resp.body, bytes_(resp_str % "[('a', 1), ('b', 2)]"))
+
+    def test_middleware_call_kwargs_override(self):
+        resp_str = "kwargs: %s"
+        @wsgify.middleware
+        def set_args(req, app, **kwargs):
+            req.urlvars = kwargs
+            return req.get_response(app)
+        @wsgify
+        def show_vars(req):
+            return resp_str % sorted(req.urlvars.items())
+
+        app = set_args(show_vars, a=1, b=2)
+        resp = app(Request.blank('/'), c=3)
+
+        self.assertEqual(resp.body,
+                         bytes_(resp_str % "[('c', 3)]"))
+
+    def test_middleware_as_decorator(self):
+        resp_str = "These are the vars: %s"
+        @wsgify.middleware
+        def set_urlvar(req, app, **vars):
+            req.urlvars.update(vars)
+            return app(req)
+        @set_urlvar(a=1,b=2)
+        @wsgify
+        def show_vars(req):
+            return resp_str % (sorted(req.urlvars.items()))
+        resp = self._testit(show_vars, '/path')
         self.assertEqual(resp.body, bytes_(resp_str % "[('a', 1), ('b', 2)]"))
         self.assertEqual(resp.content_type, 'text/html')
         self.assertEqual(resp.charset, 'UTF-8')

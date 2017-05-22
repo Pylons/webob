@@ -12,8 +12,9 @@ except IOError:
     README = CHANGES = ''
 
 testing_extras = [
-    'nose',
+    'pytest',
     'coverage',
+    'pytest-cov',
     ]
 
 docs_extras = [
@@ -23,7 +24,7 @@ docs_extras = [
 
 setup(
     name='WebOb',
-    version='1.6.0a0',
+    version='1.8.0dev0',
     description="WSGI request and response object",
     long_description=README + '\n\n' + CHANGES,
     classifiers=[
@@ -33,11 +34,11 @@ setup(
         "Topic :: Internet :: WWW/HTTP :: WSGI",
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware",
-        "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
     ],
@@ -49,8 +50,6 @@ setup(
     license='MIT',
     packages=['webob'],
     zip_safe=True,
-    test_suite='nose.collector',
-    tests_require=['nose'],
     extras_require={
         'testing': testing_extras,
         'docs': docs_extras,

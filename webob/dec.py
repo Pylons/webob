@@ -118,16 +118,15 @@ class wsgify(object):
         if isinstance(req, dict):
             if len(args) != 1 or kw:
                 raise TypeError(
-                    "Calling %r as a WSGI app with the wrong signature")
+                    "Calling %r as a WSGI app with the wrong signature" %
+                    self.func)
             environ = req
             start_response = args[0]
             req = self.RequestClass(environ)
             req.response = req.ResponseClass()
             try:
-                args = self.args
-                if self.middleware_wraps:
-                    args = (self.middleware_wraps,) + args
-                resp = self.call_func(req, *args, **self.kwargs)
+                args, kw = self._prepare_args(None, None)
+                resp = self.call_func(req, *args, **kw)
             except HTTPException as exc:
                 resp = exc
             if resp is None:
@@ -143,9 +142,8 @@ class wsgify(object):
                 resp = req.response.merge_cookies(resp)
             return resp(environ, start_response)
         else:
-            if self.middleware_wraps:
-                args = (self.middleware_wraps,) + args
-            return self.func(req, *args, **kw)
+            args, kw = self._prepare_args(args, kw)
+            return self.call_func(req, *args, **kw)
 
     def get(self, url, **kw):
         """Run a GET request on this application, returning a Response.
@@ -233,6 +231,13 @@ class wsgify(object):
 
             wrapped = restrict_ip(app, ips=['127.0.0.1'])
 
+        Or as a decorator::
+
+            @restrict_ip(ips=['127.0.0.1'])
+            @wsgify
+            def wrapped_app(req):
+                return 'hi'
+
         Or if you want to write output-rewriting middleware::
 
             @wsgify.middleware
@@ -258,6 +263,13 @@ class wsgify(object):
         if app is None:
             return _MiddlewareFactory(cls, middle_func, kw)
         return cls(middle_func, middleware_wraps=app, kwargs=kw)
+
+    def _prepare_args(self, args, kwargs):
+        args = args or self.args
+        kwargs = kwargs or self.kwargs
+        if self.middleware_wraps:
+            args = (self.middleware_wraps,) + args
+        return args, kwargs
 
 class _UnboundMiddleware(object):
     """A `wsgify.middleware` invocation that has not yet wrapped a
@@ -293,7 +305,7 @@ class _MiddlewareFactory(object):
         return '<%s at %s wrapping %r>' % (self.__class__.__name__, id(self),
                                            self.middleware)
 
-    def __call__(self, app, **config):
+    def __call__(self, app=None, **config):
         kw = self.kw.copy()
         kw.update(config)
         return self.wrapper_class.middleware(self.middleware, app, **kw)

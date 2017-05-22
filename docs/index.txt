@@ -34,6 +34,20 @@ Reference material for every public API exposed by WebOb:
    api/*
 
 
+Experimental API
+================
+
+There are a variety of features that are considered experimental in WebOb,
+these features may change without any notice in future versions of WebOb, or be
+removed entirely.
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+   experimental/*
+
+
 Request
 =======
 
@@ -44,8 +58,8 @@ request (including the path and query string), a file-like object for
 the request body, and a variety of custom keys.  You can always access
 the environ with ``req.environ``.
 
-Some of the most important/interesting attributes of a request
-object:
+Some of the most important and interesting attributes of a request object are
+the following:
 
 ``req.method``:
     The request method, e.g., ``'GET'``, ``'POST'``
@@ -74,25 +88,24 @@ object:
     A simple dictionary of all the cookies.
 
 ``req.headers``:
-    A dictionary of all the headers.  This is dictionary is case-insensitive.
+    A dictionary of all the headers.  This dictionary is case-insensitive.
 
 ``req.urlvars`` and ``req.urlargs``:
     ``req.urlvars`` is the keyword parameters associated with the
     request URL.  ``req.urlargs`` are the positional parameters.
     These are set by products like `Routes
-    <http://routes.groovie.org/>`_ and `Selector
-    <http://lukearno.com/projects/selector/>`_.
+    <http://routes.readthedocs.io/en/latest/>`_ and `Selector
+    <https://github.com/lukearno/selector>`_.
 
 .. _`dictionary-like object`: #multidict
 
-Also, for standard HTTP request headers there are usually attributes,
-for instance: ``req.accept_language``, ``req.content_length``,
-``req.user_agent``, as an example.  These properties expose the
-*parsed* form of each header, for whatever parsing makes sense.  For
-instance, ``req.if_modified_since`` returns a `datetime
-<http://python.org/doc/current/lib/datetime-datetime.html>`_ object
-(or None if the header is was not provided).  Details are in the
-`Request reference <class-webob.Request.html>`_.
+Also for standard HTTP request headers, there are usually attributes, e.g.,
+``req.accept_language``, ``req.content_length``, and ``req.user_agent``. These
+properties expose the *parsed* form of each header, for whatever parsing makes
+sense. For instance, ``req.if_modified_since`` returns a `datetime
+<http://python.org/doc/current/lib/datetime-datetime.html>`_ object (or
+``None`` if the header is was not provided). Details are in the `Request
+reference <class-webob.Request.html>`_.
 
 URLs
 ----
@@ -104,18 +117,18 @@ is mounted at ``http://localhost/app-root``.
 
 ``req.url``:
     The full request URL, with query string, e.g.,
-    ``'http://localhost/app-root/doc?article_id=10'``
+    ``'http://localhost/app-root/doc?article_id=10'``.
 
 ``req.application_url``:
-    The URL of the application (just the SCRIPT_NAME portion of the
-    path, not PATH_INFO).  E.g., ``'http://localhost/app-root'``
+    The URL of the application (just the ``SCRIPT_NAME`` portion of the
+    path, not ``PATH_INFO``), e.g., ``'http://localhost/app-root'``.
 
 ``req.host_url``:
-    The URL with the host, e.g., ``'http://localhost'``
+    The URL with the host, e.g., ``'http://localhost'``.
 
 ``req.relative_url(url, to_application=False)``:
     Gives a URL, relative to the current URL.  If ``to_application``
-    is True, then resolves it relative to ``req.application_url``.
+    is True, then the URL is resolved relative to ``req.application_url``.
 
 Methods
 -------
@@ -178,7 +191,7 @@ WSGI):
     to ``app_iter``).
 
 Everything else in the object derives from this underlying state.
-Here's the highlights:
+Here are the highlights:
 
 ``response.content_type``:
     The content type *not* including the ``charset`` parameter.
@@ -193,22 +206,17 @@ Here's the highlights:
     ``response.content_type_params`` is a dictionary of all the
     parameters.
 
-``response.request``:
-    This optional attribute can point to the request object associated
-    with this response object.
-
-``response.set_cookie(key, value, max_age=None, path='/', domain=None, secure=None, httponly=False, version=None, comment=None)``:
+``response.set_cookie(name=None, value='', max_age=None, path='/', domain=None, secure=False, httponly=False, comment=None, overwrite=False)``:
     Set a cookie.  The keyword arguments control the various cookie
     parameters.  The ``max_age`` argument is the length for the cookie
-    to live in seconds (you may also use a timedelta object).  The
-    `Expires`` key will also be set based on the value of ``max_age``.
+    to live in seconds (you may also use a timedelta object). 
 
 ``response.delete_cookie(key, path='/', domain=None)``:
     Delete a cookie from the client.  This sets ``max_age`` to 0 and
     the cookie value to ``''``.
 
 ``response.cache_expires(seconds=0)``:
-    This makes this response cachable for the given number of seconds,
+    This makes this response cacheable for the given number of seconds,
     or if ``seconds`` is 0 then the response is uncacheable (this also
     sets the ``Expires`` header).
 
@@ -232,15 +240,15 @@ Instantiating the Response
 
 Of course most of the time you just want to *make* a response.
 Generally any attribute of the response can be passed in as a keyword
-argument to the class; e.g.:
+argument to the class, e.g.:
 
 .. code-block:: python
 
   response = Response(body='hello world!', content_type='text/plain')
 
-The status defaults to ``'200 OK'``.  The content_type does not
-default to anything, though if you subclass ``Response`` and set
-``default_content_type`` you can override this behavior.
+The status defaults to ``'200 OK'``. The ``content_type`` defaults to
+``default_content_type`` which is set to ``text/html``, although if you subclass
+``Response`` and set ``default_content_type``, you can override this behavior.
 
 Exceptions
 ==========
@@ -265,33 +273,29 @@ You can use this like:
 .. code-block:: python
 
     try:
-        ... stuff ...
+        # ... stuff ...
         raise HTTPNotFound('No such resource')
     except HTTPException, e:
         return e(environ, start_response)
 
-The exceptions are still WSGI applications, but you cannot set
-attributes like ``content_type``, ``charset``, etc. on these exception
-objects.
-
 Multidict
 =========
 
-Several parts of WebOb use a "multidict"; this is a dictionary where a
+Several parts of WebOb use a "multidict", which is a dictionary where a
 key can have multiple values.  The quintessential example is a query
-string like ``?pref=red&pref=blue``; the ``pref`` variable has two
-values: ``red`` and ``blue``.
+string like ``?pref=red&pref=blue``. The ``pref`` variable has two
+values, ``red`` and ``blue``.
 
-In a multidict, when you do ``request.GET['pref']`` you'll get back
+In a multidict, when you do ``request.GET['pref']``, you'll get back
 only ``'blue'`` (the last value of ``pref``).  Sometimes returning a
-string, and sometimes returning a list, is the cause of frequent
+string and other times returning a list is a cause of frequent
 exceptions.  If you want *all* the values back, use
 ``request.GET.getall('pref')``.  If you want to be sure there is *one
 and only one* value, use ``request.GET.getone('pref')``, which will
 raise an exception if there is zero or more than one value for
 ``pref``.
 
-When you use operations like ``request.GET.items()`` you'll get back
+When you use operations like ``request.GET.items()``, you'll get back
 something like ``[('pref', 'red'), ('pref', 'blue')]``.  All the
 key/value pairs will show up.  Similarly ``request.GET.keys()``
 returns ``['pref', 'pref']``.  Multidict is a view on a list of
@@ -300,11 +304,13 @@ tuples; all the keys are ordered, and all the values are ordered.
 Example
 =======
 
-The `file-serving example <file-example.html>`_ shows how to do more
+The `file-serving example <file-example>`_ shows how to do more
 advanced HTTP techniques, while the `comment middleware example
-<comment-example.html>`_ shows middleware.  For applications it's more
-reasonable to use WebOb in the context of a larger framework.  `Pylons
-<http://pylonshq.com>`_ uses WebOb in 0.9.7+.
+<comment-example>`_ shows middleware.  For applications, it's more
+reasonable to use WebOb in the context of a larger framework.  `Pyramid
+<https://trypyramid.com>`_, and its predecessor `Pylons
+<http://docs.pylonsproject.org/projects/pylons-webframework/en/latest/>`_,
+both use WebOb.
 
 .. toctree::
    :maxdepth: 1
@@ -322,29 +328,30 @@ Change History
    :maxdepth: 1
 
    whatsnew-1.5
+   whatsnew-1.6
+   whatsnew-1.7
    changes
 
-Status & License
-================
+Status and License
+==================
 
 WebOb is an extraction and refinement of pieces from `Paste
-<http://pythonpaste.org/>`_.  It is under active development.  Discussion
-should happen on the `Pylons-discuss maillist
-<http://groups.google.com/group/pylons-discuss>`_, and bugs can go on the
-`issue tracker <https://github.com/Pylons/webob/issues>`_.  It was originally
-written by `Ian Bicking <http://ianbicking.org/>`_, and is being maintained by
-the `Pylons Project <http://www.pylonsproject.org/>`_.
+<http://pythonpaste.org/>`_.  It is under active development on `GitHub
+<https://github.com/pylons/webob>`_. It was originally written by `Ian Bicking
+<http://www.ianbicking.org/>`_, and is maintained by the `Pylons Project
+<http://www.pylonsproject.org/>`_.
 
-If you've got questions that aren't answered by this documentation, contact the
-`Pylons-discuss maillist <http://groups.google.com/group/pylons-discuss>`_ or
-join the `#pyramid IRC channel <irc://irc.freenode.net/#pyramid>`_.
+You can clone the source code with:
 
-WebOb is released under an :doc:`MIT-style license <license>`.
-
-WebOb development happens on `GitHub <https://github.com/Pylons/webob>`_.
-Development version is installable via `easy_install
-webob==dev <https://github.com/Pylons/webob/zipball/master>`__.  You
-can clone the source code with::
+.. code-block:: bash
 
     $ git clone https://github.com/Pylons/webob.git
 
+Report issues on the `issue tracker <https://github.com/Pylons/webob/issues>`_.
+
+If you've got questions that aren't answered by this documentation, contact the
+`pylons-discuss mail list
+<https://groups.google.com/forum/#!forum/pylons-discuss>`_ or join the
+`#pyramid IRC channel <https://webchat.freenode.net/?channels=pyramid>`_.
+
+WebOb is released under an :doc:`MIT-style license <license>`.

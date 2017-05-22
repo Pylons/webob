@@ -2,11 +2,13 @@
 
 import sys
 import types
+from cgi import parse_header
 
 # True if we are running on Python 3.
 PY3 = sys.version_info[0] == 3
+PY2 = sys.version_info[0] == 2
 
-if PY3: # pragma: no cover
+if PY3:
     string_types = str,
     integer_types = int,
     class_types = type,
@@ -31,7 +33,7 @@ def bytes_(s, encoding='latin-1', errors='strict'):
         return s.encode(encoding, errors)
     return s
 
-if PY3: # pragma: no cover
+if PY3:
     def native_(s, encoding='latin-1', errors='strict'):
         if isinstance(s, text_type):
             return s
@@ -47,7 +49,7 @@ try:
 except ImportError:
     from Queue import Queue, Empty
 
-if PY3: # pragma: no cover
+if PY3:
     from urllib import parse
     urlparse = parse
     from urllib.parse import quote as url_quote
@@ -67,11 +69,11 @@ if PY3: # pragma: no cover
         if exc.__traceback__ is not tb:
             raise exc.with_traceback(tb)
         raise exc
-else: # pragma: no cover
+else:
     exec("def reraise(exc): raise exc[0], exc[1], exc[2]")
 
 
-if PY3: # pragma: no cover
+if PY3:
     def iteritems_(d):
         return d.items()
     def itervalues_(d):
@@ -125,21 +127,32 @@ else:
             yield (x.decode(encoding), y.decode(encoding))
 
 
-if PY3: # pragma no cover
+if PY3:
     from html import escape
 else:
     from cgi import escape
 
 
-# We only need this on Python3 but the issue was fixed in Pytohn 3.4.4 and 3.5.
-if PY3 and sys.version_info[:3] < (3, 4, 4):  # pragma no cover
-    # Work around http://bugs.python.org/issue23801
+if PY3:
     import cgi
+    import tempfile
     from cgi import FieldStorage as _cgi_FieldStorage
 
-    class cgi_FieldStorage(_cgi_FieldStorage):
-        # This is taken exactly from Python 3.5's cgi.py module, and patched
-        # with the patch from http://bugs.python.org/issue23801.
+    # Various different FieldStorage work-arounds required on Python 3.x
+    class cgi_FieldStorage(_cgi_FieldStorage): # pragma: no cover
+
+        # Work around https://bugs.python.org/issue27777
+        def make_file(self):
+            if self._binary_file or self.length >= 0:
+                return tempfile.TemporaryFile("wb+")
+            else:
+                return tempfile.TemporaryFile(
+                    "w+",
+                    encoding=self.encoding, newline='\n'
+                )
+
+        # Work around http://bugs.python.org/issue23801
+        # This is taken exactly from Python 3.5's cgi.py module
         def read_multi(self, environ, keep_blank_values, strict_parsing):
             """Internal: read a part that is itself multipart."""
             ib = self.innerboundary
@@ -182,6 +195,15 @@ if PY3 and sys.version_info[:3] < (3, 4, 4):  # pragma no cover
                 self.bytes_read += len(hdr_text)
                 parser.feed(hdr_text.decode(self.encoding, self.errors))
                 headers = parser.close()
+                # Some clients add Content-Length for part headers, ignore them
+                if 'content-length' in headers:
+                    filename = None
+                    if 'content-disposition' in self.headers:
+                        cdisp, pdict = parse_header(self.headers['content-disposition'])
+                        if 'filename' in pdict:
+                            filename = pdict['filename']
+                    if filename is None:
+                        del headers['content-length']
                 part = klass(self.fp, headers, ib, environ, keep_blank_values,
                              strict_parsing, self.limit-self.bytes_read,
                              self.encoding, self.errors)

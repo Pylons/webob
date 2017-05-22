@@ -1,53 +1,50 @@
 Unreleased
 ----------
 
-Compatibility
-~~~~~~~~~~~~~
+Backwards Incompatibilities
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- Python 3.2 is no longer supported by WebOb
+- When calling a ``@wsgify`` decorated function, the default arguments passed
+  to ``@wsgify`` are now used when called with the request, and not as a
+  `start_response`
+
+  .. code::
+
+     def hello(req, name):
+         return "Hello, %s!" % name
+     app = wsgify(hello, args=("Fred",))
+
+     req = Request.blank('/')
+     resp = req.get_response(app)  # => "Hello, Fred"
+     resp2 = app(req) # => "Hello, Fred"
+
+  Previously the ``resp2`` line would have failed with a ``TypeError``. With
+  this change there is no way to override the default arguments with no
+  arguments. See https://github.com/Pylons/webob/pull/203
+
+Experimental Features
+~~~~~~~~~~~~~~~~~~~~~
+
+These features are experimental and may change at any point in the future.
+
+- The cookie APIs now have the ability to set the SameSite attribute on a
+  cookie in both ``webob.cookies.make_cookie`` and
+  ``webob.cookies.CookieProfile``. See https://github.com/Pylons/webob/pull/255
 
 Bugfix
 ~~~~~~
 
-- Request.decode attempted to read from the an already consumed stream, it has
-  now been redirected to another stream to read from. See
-  https://github.com/Pylons/webob/pull/183
-
-- The application/json media type does not allow for a charset as discovery of
-  the encoding is done at the JSON layer. Upon initialization of a Response
-  WebOb will no longer add a charset if the content-type is set to JSON. See
-  https://github.com/Pylons/webob/pull/197 and
-  https://github.com/Pylons/pyramid/issues/1611
-
 - Request.authorization would raise ValueError for unusual or malformed header
   values. See https://github.com/Pylons/webob/issues/231
 
-Features
-~~~~~~~~
+- Allow unnamed fields in form data to be properly transcoded when calling
+  request.decode with an alternate encoding. See
+  https://github.com/Pylons/webob/pull/309
 
-- Lazily HTML escapes environment keys in HTTP Exceptions so that those keys in
-  the environ that are not used in the output of the page don't raise an
-  exception due to inability to be properly escaped. See
-  https://github.com/Pylons/webob/pull/139
-
-- MIMEAccept now accepts comparisons against wildcards, this allows one to
-  match on just the media type or sub-type, without having to explicitly match
-  on both the media type and sub-type at the same time. See
-  https://github.com/Pylons/webob/pull/185
-
-- Add the ability to return a JSON body from an exception. Using the Accept
-  information in the request, the exceptions will now automatically return a
-  JSON version of the exception instead of just HTML or text. See
-  https://github.com/Pylons/webob/pull/230 and
-  https://github.com/Pylons/webob/issues/209
-
-Security
-~~~~~~~~
-
-- exc._HTTPMove and any subclasses will now raise a ValueError if the location
-  field contains a line feed or carriage return. These values may lead to
-  possible HTTP Response Splitting. The header_getter descriptor has also been
-  modified to no longer accept headers with a line feed or carriage return.
-  See: https://github.com/Pylons/webob/pull/229 and
-  https://github.com/Pylons/webob/issues/217
-
+- ``Response.__init__`` would discard ``app_iter`` when a ``Response`` had no
+  body, this would cause issues when ``app_iter`` was an object that was tied
+  to the life-cycle of a web application and had to be properly closed.
+  ``app_iter`` is more advanced API for ``Response`` and thus even if it
+  contains a body and is thus against the HTTP RFC's, we should let the users
+  shoot themselves by returning a body. See
+  https://github.com/Pylons/webob/issues/305
