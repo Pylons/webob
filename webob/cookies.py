@@ -439,8 +439,39 @@ _c_keys.update([b'expires', b'secure', b'httponly', b'samesite'])
 
 def make_cookie(name, value, max_age=None, path='/', domain=None,
                 secure=False, httponly=False, comment=None, samesite=None):
-    """ Generate a cookie value.  If ``value`` is None, generate a cookie value
-    with an expiration date in the past"""
+    """ Generate a cookie value.
+
+    ``name``
+      The name of the cookie.
+
+    ``value``
+      The ``value`` of the cookie, if it is ``None`` it will generate a cookie
+      value with an expiration date in the past.
+
+    ``max_age``
+      The maximum age of the cookie used for sessioning (in seconds).
+      Default: ``None`` (browser scope).
+
+    ``path``
+      The path used for the session cookie. Default: ``'/'``.
+
+    ``domain``
+      The domain used for the session cookie. Default: ``None`` (no domain).
+
+    ``secure``
+      The 'secure' flag of the session cookie. Default: ``False``.
+
+    ``httponly``
+      Hide the cookie from Javascript by setting the 'HttpOnly' flag of the
+      session cookie. Default: ``False``.
+
+    ``comment``
+      Set a comment on the cookie. Default: ``None``
+
+    ``samesite``
+      The 'SameSite' attribute of the cookie, can be either ``b"Strict"``,
+      ``b"Lax"``, or ``None``.
+    """
 
     # We are deleting the cookie, override max_age and expires
     if value is None:
