@@ -615,6 +615,11 @@ def test_parse_auth_emptystr():
     from webob.descriptors import parse_auth
     assert parse_auth('') == ('', '')
 
+def test_parse_auth_bearer():
+    from webob.descriptors import parse_auth
+    assert parse_auth('Bearer token').authtype == 'Bearer'
+    assert parse_auth('Bearer token').params == 'token'
+
 def test_parse_auth_unknown_nospace():
     from webob.descriptors import parse_auth
     assert parse_auth('NoSpace') == ('NoSpace', '')
