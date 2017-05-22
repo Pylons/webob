@@ -950,7 +950,8 @@ class Response(object):
 
     def set_cookie(self, name=None, value='', max_age=None,
                    path='/', domain=None, secure=False, httponly=False,
-                   comment=None, expires=None, overwrite=False):
+                   comment=None, expires=None, overwrite=False, key=None,
+                   samesite=None):
         """
         Set (add) a cookie for the response.
 
@@ -1000,6 +1001,12 @@ class Response(object):
            A boolean.  If it's ``True``, the ``HttpOnly`` flag will be sent
            in the cookie, if it's ``False``, the ``HttpOnly`` flag will not
            be sent in the cookie.
+
+        ``samesite``
+
+          A string representing the ``SameSite`` attribute of the cookie or
+          ``None``. If samesite is ``None`` no ``SameSite`` value will be sent
+          in the cookie. Should only be ``b"Strict"`` or ``b"Lax"``.
 
         ``comment``
 
@@ -1059,11 +1066,9 @@ class Response(object):
 
         value = bytes_(value, 'utf-8')
 
-        cookie = make_cookie(
-            name, value, max_age=max_age, path=path,
-            domain=domain, secure=secure, httponly=httponly,
-            comment=comment)
-
+        cookie = make_cookie(name, value, max_age=max_age, path=path,
+                domain=domain, secure=secure, httponly=httponly,
+                comment=comment, samesite=samesite)
         self.headerlist.append(('Set-Cookie', cookie))
 
     def delete_cookie(self, name, path='/', domain=None):
