@@ -22,6 +22,11 @@ Backwards Incompatibilities
   this change there is no way to override the default arguments with no
   arguments. See https://github.com/Pylons/webob/pull/203
 
+- When setting ``app_iter`` on a ``Response`` object the ``content_md5`` header
+  is no longer cleared. This behaviour is odd and disallows setting the
+  ``content_md5`` and then returning an iterator for chunked content encoded
+  responses. See https://github.com/Pylons/webob/issues/86
+
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
 
