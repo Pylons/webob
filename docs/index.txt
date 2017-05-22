@@ -34,6 +34,20 @@ Reference material for every public API exposed by WebOb:
    api/*
 
 
+Experimental API
+================
+
+There are a variety of features that are considered experimental in WebOb,
+these features may change without any notice in future versions of WebOb, or be
+removed entirely.
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+   experimental/*
+
+
 Request
 =======
 
