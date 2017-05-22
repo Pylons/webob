@@ -6,8 +6,9 @@ Experimental Features
 
 These features are experimental and may change at any point in the future.
 
-- The cookie API's now have the ability to set the SameSite attribute in both
-  webob.cookies.make_cookie and webob.cookies.CookieProfile.
+- The cookie APIs now have the ability to set the SameSite attribute on a
+  cookie in both ``webob.cookies.make_cookie`` and
+  ``webob.cookies.CookieProfile``.
 
 Bugfix
 ~~~~~~

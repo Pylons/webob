@@ -445,7 +445,7 @@ def make_cookie(name, value, max_age=None, path='/', domain=None,
       The name of the cookie.
 
     ``value``
-      The ``value`` of the cookie, if it is ``None`` it will generate a cookie
+      The ``value`` of the cookie. If it is ``None``, it will generate a cookie
       value with an expiration date in the past.
 
     ``max_age``
@@ -453,7 +453,7 @@ def make_cookie(name, value, max_age=None, path='/', domain=None,
       Default: ``None`` (browser scope).
 
     ``path``
-      The path used for the session cookie. Default: ``'/'``.
+      The path used for the session cookie. Default: ``/``.
 
     ``domain``
       The domain used for the session cookie. Default: ``None`` (no domain).
@@ -462,7 +462,7 @@ def make_cookie(name, value, max_age=None, path='/', domain=None,
       The 'secure' flag of the session cookie. Default: ``False``.
 
     ``httponly``
-      Hide the cookie from Javascript by setting the 'HttpOnly' flag of the
+      Hide the cookie from JavaScript by setting the 'HttpOnly' flag of the
       session cookie. Default: ``False``.
 
     ``comment``
