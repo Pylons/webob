@@ -147,10 +147,10 @@ class DirectoryApp(object):
             return Response(
                 status=301,
                 location=new_url)
-        if not os.path.isfile(path):
-            return exc.HTTPNotFound(comment=path)
-        elif not path.startswith(self.path):
+        if not path.startswith(self.path):
             return exc.HTTPForbidden()
+        elif not os.path.isfile(path):
+            return exc.HTTPNotFound(comment=path)
         else:
             return self.make_fileapp(path)
 

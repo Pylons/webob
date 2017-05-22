@@ -101,7 +101,7 @@ class TestRequestCommon(object):
 
     def test_body_file_setter_w_bytes(self):
         req = self._blankOne('/')
-        with pytest.raises(DeprecationWarning):
+        with pytest.raises(ValueError):
             setattr(req, 'body_file', b'foo')
 
     def test_body_file_setter_non_bytes(self):
@@ -670,24 +670,23 @@ class TestRequestCommon(object):
         assert req.range == None
 
     def test_is_body_readable_POST(self):
-        req = self._blankOne('/', environ={'REQUEST_METHOD':'POST'})
+        req = self._blankOne('/', environ={'REQUEST_METHOD': 'POST', 'CONTENT_LENGTH': '100'})
         assert req.is_body_readable
 
     def test_is_body_readable_PATCH(self):
-        req = self._blankOne('/', environ={'REQUEST_METHOD':'PATCH'})
+        req = self._blankOne('/', environ={'REQUEST_METHOD': 'PATCH', 'CONTENT_LENGTH': '100'})
         assert req.is_body_readable
 
     def test_is_body_readable_GET(self):
-        req = self._blankOne('/', environ={'REQUEST_METHOD':'GET'})
-        assert req.is_body_readable == False
+        req = self._blankOne('/', environ={'REQUEST_METHOD': 'GET', 'CONTENT_LENGTH': '100'})
+        assert req.is_body_readable
 
     def test_is_body_readable_unknown_method_and_content_length(self):
-        req = self._blankOne('/', environ={'REQUEST_METHOD':'WTF'})
-        req.content_length = 10
+        req = self._blankOne('/', environ={'REQUEST_METHOD': 'WTF', 'CONTENT_LENGTH': '100'})
         assert req.is_body_readable
 
     def test_is_body_readable_special_flag(self):
-        req = self._blankOne('/', environ={'REQUEST_METHOD':'WTF',
+        req = self._blankOne('/', environ={'REQUEST_METHOD': 'WTF',
                                           'webob.is_body_readable': True})
         assert req.is_body_readable
 
@@ -2559,10 +2558,16 @@ class TestRequest_functional(object):
         assert req.cookies == {'foo': '?foo'}
 
     def test_path_quoting(self):
-        path = '/:@&+$,/bar'
+        path = "/_.-~!$&'()*+,;=:@/bar"
         req = self._blankOne(path)
         assert req.path == path
         assert req.url.endswith(path)
+
+    def test_path_quoting_pct_encodes(self):
+        path = '/[]/bar'
+        req = self._blankOne(path)
+        assert req.path == '/%5B%5D/bar'
+        assert req.url.endswith('/%5B%5D/bar')
 
     def test_params(self):
         req = self._blankOne('/?a=1&b=2')
@@ -2612,6 +2617,20 @@ class TestRequest_functional(object):
         req2 = Request(environ)
         req2 = req2.decode('latin-1')
         assert body == req2.body
+
+    def test_none_field_name(self):
+        from webob.request import Request
+        body = b'--FOO\r\nContent-Disposition: form-data\r\n\r\n123\r\n--FOO--'
+        content_type = 'multipart/form-data; boundary=FOO'
+        environ = {
+            'wsgi.input': BytesIO(body),
+            'CONTENT_TYPE': content_type,
+            'CONTENT_LENGTH': len(body),
+            'REQUEST_METHOD': 'POST'
+        }
+        req = Request(environ)
+        req = req.decode('latin-1')
+        assert body == req.body
 
     def test_broken_seek(self):
         # copy() should work even when the input has a broken seek method
@@ -2814,31 +2833,39 @@ class TestRequest_functional(object):
         # I need to implement a not seekable stringio like object.
 
         import string
-        class DummyIO(object):
-            def __init__(self, txt):
-                self.txt = txt
-            def read(self, n=-1):
-                return self.txt[0:n]
+
         cls = self._getTargetClass()
         limit = cls.request_body_tempfile_limit
         len_strl = limit // len(string.ascii_letters) + 1
         r = self._makeOne(
-            {'a': 1, 'REQUEST_METHOD': 'POST'},
-            body_file=DummyIO(bytes_(string.ascii_letters) * len_strl))
-        assert len(r.body) == len(string.ascii_letters * len_strl) - 1
+            {
+                'a': 1,
+                'REQUEST_METHOD': 'POST',
+            },
+            body_file=BytesIO(bytes_(string.ascii_letters * len_strl))
+        )
+        assert isinstance(r.body_file, BytesIO)
+        assert r.is_body_readable
+
+        assert len(r.body) == len(string.ascii_letters * len_strl)
         with pytest.raises(TypeError):
             setattr(r, 'body', text_('hello world'))
 
         r.body = None
         assert r.body == b''
-        r = self._makeOne({'a': 1}, method='PUT', body_file=DummyIO(
-            bytes_(string.ascii_letters)))
+
+        no_seek = UnseekableInput(bytes_(string.ascii_letters))
+
+        r = self._makeOne({'a': 1}, method='PUT', body_file=no_seek)
         assert not hasattr(r.body_file_raw, 'seek')
+
         r.make_body_seekable()
         assert hasattr(r.body_file_raw, 'seek')
+
         r = self._makeOne({'a': 1}, method='PUT',
                           body_file=BytesIO(bytes_(string.ascii_letters)))
         assert hasattr(r.body_file_raw, 'seek')
+
         r.make_body_seekable()
         assert hasattr(r.body_file_raw, 'seek')
 
@@ -3265,9 +3292,9 @@ class TestRequest_functional(object):
     def test_call_WSGI_app(self):
         req = self._blankOne('/')
         def wsgi_app(environ, start_response):
-            start_response('200 OK', [('Content-type', 'text/plain')])
+            start_response('200 OK', [('Content-Type', 'text/plain')])
             return [b'Hi!']
-        assert req.call_application(wsgi_app) == ('200 OK', [('Content-type', 'text/plain')], [b'Hi!'])
+        assert req.call_application(wsgi_app) == ('200 OK', [('Content-Type', 'text/plain')], [b'Hi!'])
 
         res = req.get_response(wsgi_app)
         from webob.response import Response
@@ -3275,13 +3302,46 @@ class TestRequest_functional(object):
         assert res.status == '200 OK'
         from webob.headers import ResponseHeaders
         assert isinstance(res.headers, ResponseHeaders)
-        assert list(res.headers.items()) == [('Content-type', 'text/plain')]
+        assert list(res.headers.items()) == [('Content-Type', 'text/plain')]
         assert res.body == b'Hi!'
+
+    def test_call_WSGI_app_204(self):
+        req = self._blankOne('/')
+        def wsgi_app(environ, start_response):
+            start_response('204 No Content', [])
+            return [b'']
+        assert req.call_application(wsgi_app) == ('204 No Content', [], [b''])
+
+        res = req.get_response(wsgi_app)
+        from webob.response import Response
+        assert isinstance(res, Response)
+        assert res.status == '204 No Content'
+        from webob.headers import ResponseHeaders
+        assert isinstance(res.headers, ResponseHeaders)
+        assert list(res.headers.items()) == []
+        assert res.body == b''
+
+    def test_call_WSGI_app_no_content_type(self):
+        req = self._blankOne('/')
+        def wsgi_app(environ, start_response):
+            start_response('200 OK', [])
+            return [b'']
+        assert req.call_application(wsgi_app) == ('200 OK', [], [b''])
+
+        res = req.get_response(wsgi_app)
+        from webob.response import Response
+        assert isinstance(res, Response)
+        assert res.status == '200 OK'
+        assert res.content_type is None
+        from webob.headers import ResponseHeaders
+        assert isinstance(res.headers, ResponseHeaders)
+        assert list(res.headers.items()) == []
+        assert res.body == b''
 
     def test_get_response_catch_exc_info_true(self):
         req = self._blankOne('/')
         def wsgi_app(environ, start_response):
-            start_response('200 OK', [('Content-type', 'text/plain')])
+            start_response('200 OK', [('Content-Type', 'text/plain')])
             return [b'Hi!']
         res = req.get_response(wsgi_app, catch_exc_info=True)
         from webob.response import Response
@@ -3289,7 +3349,7 @@ class TestRequest_functional(object):
         assert res.status == '200 OK'
         from webob.headers import ResponseHeaders
         assert isinstance(res.headers, ResponseHeaders)
-        assert list(res.headers.items()) == [('Content-type', 'text/plain')]
+        assert list(res.headers.items()) == [('Content-Type', 'text/plain')]
         assert res.body == b'Hi!'
 
     def equal_req(self, req, inp):
@@ -3637,7 +3697,8 @@ class UnseekableInput(object):
             self.pos = len(self.data)
             return t
         else:
-            assert(self.pos + size <= len(self.data))
+            if self.pos + size > len(self.data):
+                size = len(self.data) - self.pos
             t = self.data[self.pos:self.pos + size]
             self.pos += size
             return t

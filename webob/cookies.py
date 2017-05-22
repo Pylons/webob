@@ -16,7 +16,7 @@ import time
 import warnings
 
 from webob.compat import (
-    PY3,
+    PY2,
     text_type,
     bytes_,
     text_,
@@ -54,8 +54,8 @@ class RequestCookies(collections.MutableMapping):
         header = self._environ.get('HTTP_COOKIE')
         had_header = header is not None
         header = header or ''
-        if PY3: # pragma: no cover
-                header = header.encode('latin-1')
+        if not PY2:
+            header = header.encode('latin-1')
         bytes_name = bytes_(name, 'ascii')
         if value is None:
             replacement = None
@@ -134,7 +134,7 @@ class RequestCookies(collections.MutableMapping):
     def items(self):
         return self._cache.items()
 
-    if not PY3:
+    if PY2:
         def iterkeys(self):
             return self._cache.iterkeys()
 
@@ -197,7 +197,7 @@ class Cookie(dict):
 
 
 def _parse_cookie(data):
-    if PY3: # pragma: no cover
+    if not PY2:
         data = data.encode('latin-1')
     for key, val in _rx_cookie.findall(data):
         yield key, _unquote(val)
@@ -316,14 +316,14 @@ _re_cookie_str = _re_cookie_str_key + _re_cookie_str_equal + _re_cookie_str_val
 _rx_cookie = re.compile(bytes_(_re_cookie_str, 'ascii'))
 _rx_unquote = re.compile(bytes_(r'\\([0-3][0-7][0-7]|.)', 'ascii'))
 
-_bchr = (lambda i: bytes([i])) if PY3 else chr
+_bchr = chr if PY2 else (lambda i: bytes([i]))
 _ch_unquote_map = dict((bytes_('%03o' % i), _bchr(i))
     for i in range(256)
 )
 _ch_unquote_map.update((v, v) for v in list(_ch_unquote_map.values()))
 
-_b_dollar_sign = ord('$') if PY3 else '$'
-_b_quote_mark = ord('"') if PY3 else '"'
+_b_dollar_sign = '$' if PY2 else ord('$')
+_b_quote_mark = '"' if PY2 else ord('"')
 
 def _unquote(v):
     #assert isinstance(v, bytes)
@@ -371,7 +371,7 @@ _valid_token_bytes = bytes_(_valid_token_chars)
 _escape_noop_chars = _allowed_cookie_chars + ' '
 _escape_map = dict((chr(i), '\\%03o' % i) for i in range(256))
 _escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
-if PY3: # pragma: no cover
+if not PY2:
     # convert to {int -> bytes}
     _escape_map = dict(
         (ord(k), bytes_(v, 'ascii')) for k, v in _escape_map.items()

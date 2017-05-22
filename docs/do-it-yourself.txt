@@ -295,7 +295,7 @@ To do that we'll write a `decorator <http://www.ddj.com/web-development/18440607
 
 **line 6**: Here we catch any ``webob.exc.HTTPException`` exceptions.  This is so you can do ``raise webob.exc.HTTPNotFound()`` in your function.  These exceptions are themselves WSGI applications.
 
-**line 7**: We call the function with the request object, any any variables in ``req.urlvars``.  And we get back a response.
+**line 7**: We call the function with the request object, any variables in ``req.urlvars``.  And we get back a response.
 
 **line 10**: We'll allow the function to return a full response object, or just a string.  If they return a string, we'll create a ``Response`` object with that (and with the standard ``200 OK`` status, ``text/html`` content type, and ``utf8`` charset/encoding).
 
