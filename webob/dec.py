@@ -125,10 +125,8 @@ class wsgify(object):
             req = self.RequestClass(environ)
             req.response = req.ResponseClass()
             try:
-                args = self.args
-                if self.middleware_wraps:
-                    args = (self.middleware_wraps,) + args
-                resp = self.call_func(req, *args, **self.kwargs)
+                args, kw = self._prepare_args(None, None)
+                resp = self.call_func(req, *args, **kw)
             except HTTPException as exc:
                 resp = exc
             if resp is None:
@@ -144,9 +142,8 @@ class wsgify(object):
                 resp = req.response.merge_cookies(resp)
             return resp(environ, start_response)
         else:
-            if self.middleware_wraps:
-                args = (self.middleware_wraps,) + args
-            return self.func(req, *args, **kw)
+            args, kw = self._prepare_args(args, kw)
+            return self.call_func(req, *args, **kw)
 
     def get(self, url, **kw):
         """Run a GET request on this application, returning a Response.
@@ -266,6 +263,13 @@ class wsgify(object):
         if app is None:
             return _MiddlewareFactory(cls, middle_func, kw)
         return cls(middle_func, middleware_wraps=app, kwargs=kw)
+
+    def _prepare_args(self, args, kwargs):
+        args = args or self.args
+        kwargs = kwargs or self.kwargs
+        if self.middleware_wraps:
+            args = (self.middleware_wraps,) + args
+        return args, kwargs
 
 class _UnboundMiddleware(object):
     """A `wsgify.middleware` invocation that has not yet wrapped a

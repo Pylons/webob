@@ -1,6 +1,27 @@
 Unreleased
 ----------
 
+Backwards Incompatibilities
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- When calling a ``@wsgify`` decorated function, the default arguments passed
+  to ``@wsgify`` are now used when called with the request, and not as a
+  `start_response`
+
+  .. code::
+
+     def hello(req, name):
+         return "Hello, %s!" % name
+     app = wsgify(hello, args=("Fred",))
+
+     req = Request.blank('/')
+     resp = req.get_response(app)  # => "Hello, Fred"
+     resp2 = app(req) # => "Hello, Fred"
+
+  Previously the ``resp2`` line would have failed with a ``TypeError``. With
+  this change there is no way to override the default arguments with no
+  arguments. See https://github.com/Pylons/webob/pull/203
+
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -8,7 +29,7 @@ These features are experimental and may change at any point in the future.
 
 - The cookie APIs now have the ability to set the SameSite attribute on a
   cookie in both ``webob.cookies.make_cookie`` and
-  ``webob.cookies.CookieProfile``.
+  ``webob.cookies.CookieProfile``. See https://github.com/Pylons/webob/pull/255
 
 Bugfix
 ~~~~~~
