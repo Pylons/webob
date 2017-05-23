@@ -16,8 +16,10 @@ from webob.compat import (
     native_,
     text_type,
     text_,
-    PY3,
     )
+
+py2only = pytest.mark.skipif("sys.version_info >= (3, 0)")
+py3only = pytest.mark.skipif("sys.version_info < (3, 0)")
 
 class TestRequestCommon(object):
     # unit tests of non-bytes-vs-text-specific methods of request object
@@ -1598,28 +1600,19 @@ class TestBaseRequest(object):
         assert inst.encget('a', None) == None
 
     def test_encget_with_encattr(self):
-        if PY3:
-            val = b'\xc3\xab'.decode('latin-1')
-        else:
-            val = b'\xc3\xab'
-        inst = self._makeOne({'a':val})
+        val = native_(b'\xc3\xab', 'latin-1')
+        inst = self._makeOne({'a': val})
         assert inst.encget('a', encattr='url_encoding') == text_(b'\xc3\xab', 'utf-8')
 
     def test_encget_with_encattr_latin_1(self):
-        if PY3:
-            val = b'\xc3\xab'.decode('latin-1')
-        else:
-            val = b'\xc3\xab'
-        inst = self._makeOne({'a':val})
+        val = native_(b'\xc3\xab', 'latin-1')
+        inst = self._makeOne({'a': val})
         inst.my_encoding = 'latin-1'
         assert inst.encget('a', encattr='my_encoding') == text_(b'\xc3\xab', 'latin-1')
 
     def test_encget_no_encattr(self):
-        if PY3:
-            val = b'\xc3\xab'.decode('latin-1')
-        else:
-            val = b'\xc3\xab'
-        inst = self._makeOne({'a':val})
+        val = native_(b'\xc3\xab', 'latin-1')
+        inst = self._makeOne({'a': val})
         assert inst.encget('a') == val
 
     def test_relative_url(self):
@@ -1629,11 +1622,8 @@ class TestBaseRequest(object):
         assert result == 'http://localhost/%C3%AB/a'
 
     def test_header_getter(self):
-        if PY3:
-            val = b'abc'.decode('latin-1')
-        else:
-            val = b'abc'
-        inst = self._makeOne({'HTTP_FLUB':val})
+        val = native_(b'abc', 'latin-1')
+        inst = self._makeOne({'HTTP_FLUB': val})
         result = inst.headers['Flub']
         assert result.__class__ == str
         assert result == 'abc'
@@ -1976,35 +1966,47 @@ class TestLegacyRequest(object):
         req = self._makeOne(environ)
         assert req.host_url == 'https://example.com:4333'
 
+    @py2only
+    def test_application_url_py2(self):
+        inst = self._blankOne('/%C3%AB')
+        inst.script_name = b'/\xc3\xab'
+        app_url = inst.application_url
+        assert app_url == 'http://localhost/%C3%AB'
+
+    @py3only
     def test_application_url(self):
         inst = self._blankOne('/%C3%AB')
         inst.script_name = b'/\xc3\xab'
         app_url = inst.application_url
-        if PY3: # pragma: no cover
-            # this result is why you should not use legacyrequest under py 3
-            assert app_url == 'http://localhost/%C3%83%C2%AB'
-        else:
-            assert app_url == 'http://localhost/%C3%AB'
+        assert app_url == 'http://localhost/%C3%83%C2%AB'
 
+    @py2only
+    def test_path_url_py2(self):
+        inst = self._blankOne('/%C3%AB')
+        inst.script_name = b'/\xc3\xab'
+        result = inst.path_url
+        assert result == 'http://localhost/%C3%AB/%C3%AB'
+
+    @py3only
     def test_path_url(self):
         inst = self._blankOne('/%C3%AB')
         inst.script_name = b'/\xc3\xab'
         result = inst.path_url
-        if PY3: # pragma: no cover
-            # this result is why you should not use legacyrequest under py 3
-            assert result == 'http://localhost/%C3%83%C2%AB/%C3%83%C2%AB'
-        else:
-            assert result == 'http://localhost/%C3%AB/%C3%AB'
+        assert result == 'http://localhost/%C3%83%C2%AB/%C3%83%C2%AB'
 
+    @py2only
+    def test_path_py2(self):
+        inst = self._blankOne('/%C3%AB')
+        inst.script_name = b'/\xc3\xab'
+        result = inst.path
+        assert result == '/%C3%AB/%C3%AB'
+
+    @py3only
     def test_path(self):
         inst = self._blankOne('/%C3%AB')
         inst.script_name = b'/\xc3\xab'
         result = inst.path
-        if PY3: # pragma: no cover
-            # this result is why you should not use legacyrequest under py 3
-            assert result == '/%C3%83%C2%AB/%C3%83%C2%AB'
-        else:
-            assert result == '/%C3%AB/%C3%AB'
+        assert result == '/%C3%83%C2%AB/%C3%83%C2%AB'
 
     def test_path_qs_no_qs(self):
         environ = {'wsgi.url_scheme': 'http',
@@ -2267,35 +2269,29 @@ class TestLegacyRequest(object):
         assert inst.encget('a', None) == None
 
     def test_encget_with_encattr(self):
-        if PY3:
-            val = b'\xc3\xab'.decode('latin-1')
-        else:
-            val = b'\xc3\xab'
+        val = native_(b'\xc3\xab', 'latin-1')
         inst = self._makeOne({'a':val})
         assert inst.encget('a', encattr='url_encoding') == native_(b'\xc3\xab', 'latin-1')
 
     def test_encget_no_encattr(self):
-        if PY3:
-            val = b'\xc3\xab'.decode('latin-1')
-        else:
-            val = b'\xc3\xab'
-        inst = self._makeOne({'a':val})
+        val = native_(b'\xc3\xab', 'latin-1')
+        inst = self._makeOne({'a': val})
         assert inst.encget('a'), native_(b'\xc3\xab' == 'latin-1')
 
+    @py2only
+    def test_relative_url_py2(self):
+        inst = self._blankOne('/%C3%AB/c')
+        result = inst.relative_url('a')
+        assert result == 'http://localhost/%C3%AB/a'
+
+    @py3only
     def test_relative_url(self):
         inst = self._blankOne('/%C3%AB/c')
         result = inst.relative_url('a')
-        if PY3: # pragma: no cover
-            # this result is why you should not use legacyrequest under py 3
-            assert result == 'http://localhost/%C3%83%C2%AB/a'
-        else:
-            assert result == 'http://localhost/%C3%AB/a'
+        assert result == 'http://localhost/%C3%83%C2%AB/a'
 
     def test_header_getter(self):
-        if PY3:
-            val = b'abc'.decode('latin-1')
-        else:
-            val = b'abc'
+        val = native_(b'abc', 'latin-1')
         inst = self._makeOne({'HTTP_FLUB':val})
         result = inst.headers['Flub']
         assert result == 'abc'
