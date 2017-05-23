@@ -1,8 +1,7 @@
 [run]
 parallel = true
 source =
-    src/webob
-    tests
+    webob
 omit =
 
 [paths]
