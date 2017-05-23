@@ -4,9 +4,8 @@ from datetime import timedelta
 import pytest
 
 from webob.compat import (
-    PY3,
-    text_,
     native_,
+    text_,
     )
 
 from webob.request import Request
@@ -763,11 +762,7 @@ class _TestEnvironDecoder(object):
         desc = self._callFUT('HTTP_X_AKEY', encattr='url_encoding')
         req = self._makeRequest()
         desc.fset(req, text_(b'\xc3\xab', 'utf-8'))
-        if PY3:
-            assert req.environ['HTTP_X_AKEY'] == b'\xc3\xab'.decode('latin-1')
-        else:
-            assert req.environ['HTTP_X_AKEY'] == b'\xc3\xab'
-
+        assert req.environ['HTTP_X_AKEY'] == native_(b'\xc3\xab', 'latin-1')
 
 class TestEnvironDecoder(_TestEnvironDecoder):
     def _makeRequest(self):
@@ -778,10 +773,7 @@ class TestEnvironDecoder(_TestEnvironDecoder):
     def test_fget_nonascii(self):
         desc = self._callFUT('HTTP_X_AKEY', encattr='url_encoding')
         req = self._makeRequest()
-        if PY3:
-            req.environ['HTTP_X_AKEY'] = b'\xc3\xab'.decode('latin-1')
-        else:
-            req.environ['HTTP_X_AKEY'] = b'\xc3\xab'
+        req.environ['HTTP_X_AKEY'] = native_(b'\xc3\xab')
         result = desc.fget(req)
         assert result == text_(b'\xc3\xab', 'utf-8')
 
@@ -794,10 +786,7 @@ class TestEnvironDecoderLegacy(_TestEnvironDecoder):
     def test_fget_nonascii(self):
         desc = self._callFUT('HTTP_X_AKEY', encattr='url_encoding')
         req = self._makeRequest()
-        if PY3:
-            req.environ['HTTP_X_AKEY'] = b'\xc3\xab'.decode('latin-1')
-        else:
-            req.environ['HTTP_X_AKEY'] = b'\xc3\xab'
+        req.environ['HTTP_X_AKEY'] = native_(b'\xc3\xab', 'latin-1')
         result = desc.fget(req)
         assert result == native_(b'\xc3\xab', 'latin-1')
 
