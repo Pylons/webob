@@ -5,7 +5,6 @@ import pytest
 from webob import Request, Response
 from webob.dec import wsgify
 from webob.client import SendRequest
-from .test_in_wsgiref import serve
 
 
 @wsgify
@@ -16,8 +15,8 @@ def simple_app(req):
             }
     return Response(json=data)
 
-
-def test_client(client_app=None):
+@pytest.mark.usefixtures("serve")
+def test_client(serve, client_app=None):
     with serve(simple_app) as server:
         req = Request.blank(server.url, method='POST', content_type='application/json',
                             json={'test': 1})
@@ -57,7 +56,8 @@ def no_length_app(environ, start_response):
     return [b'ok']
 
 
-def test_no_content_length(client_app=None):
+@pytest.mark.usefixtures("serve")
+def test_no_content_length(serve, client_app=None):
     with serve(no_length_app) as server:
         req = Request.blank(server.url)
         resp = req.send(client_app)
@@ -73,7 +73,8 @@ def cookie_app(req):
     return resp
 
 
-def test_client_cookies(client_app=None):
+@pytest.mark.usefixtures("serve")
+def test_client_cookies(serve, client_app=None):
     with serve(cookie_app) as server:
         req = Request.blank(server.url + '/?test')
         resp = req.send(client_app)
@@ -87,7 +88,8 @@ def slow_app(req):
     return Response('ok')
 
 
-def test_client_slow(client_app=None):
+@pytest.mark.usefixtures("serve")
+def test_client_slow(serve, client_app=None):
     if client_app is None:
         client_app = SendRequest()
     if not client_app._timeout_supported(client_app.HTTPConnection):
