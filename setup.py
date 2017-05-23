@@ -1,6 +1,6 @@
 import os
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
 try:
@@ -15,6 +15,7 @@ testing_extras = [
     'pytest',
     'coverage',
     'pytest-cov',
+    'pytest-xdist',
     ]
 
 docs_extras = [
@@ -48,7 +49,9 @@ setup(
     maintainer='Pylons Project',
     url='http://webob.org/',
     license='MIT',
-    packages=['webob'],
+    packages=find_packages('src', exclude=['tests']),
+    package_dir={'': 'src'},
+    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*',
     zip_safe=True,
     extras_require={
         'testing': testing_extras,

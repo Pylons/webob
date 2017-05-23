@@ -1,0 +1,13 @@
+[run]
+parallel = true
+source =
+    webob
+
+[paths]
+source =
+    src/webob
+    */site-packages/webob
+
+[report]
+show_missing = true
+precision = 2

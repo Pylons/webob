@@ -11,6 +11,7 @@ build/
 dist/
 env*/
 .coverage
+.coverage.*
 .cache/
 WebOb.egg-info/
 pytest*.xml

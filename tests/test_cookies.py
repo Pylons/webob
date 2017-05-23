@@ -5,7 +5,9 @@ from datetime import timedelta
 from webob import cookies
 from webob.compat import text_
 from webob.compat import native_
-from webob.compat import PY3
+
+py2only = pytest.mark.skipif("sys.version_info >= (3, 0)")
+py3only = pytest.mark.skipif("sys.version_info < (3, 0)")
 
 def setup_module(module):
     cookies._should_raise = True
@@ -38,6 +40,7 @@ def test_cookie_escaped_unquoted():
 def test_cookie_complex():
     c = cookies.Cookie('dismiss-top=6; CP=null*, '
                        'PHPSESSID=0a539d42abc001cdc762809248d4beed, a="42,"')
+
     def d(v):
         return v.decode('ascii')
     c_dict = dict((d(k), d(v.value)) for k, v in c.items())
@@ -327,23 +330,45 @@ class TestRequestCookies(object):
         inst = self._makeOne(environ)
         assert sorted(list(inst.items())) == [('a', '1'), ('b', val), ('c', '3')]
 
-    if not PY3:
-        def test_iterkeys(self):
-            environ = {'HTTP_COOKIE': 'a=1; b="La Pe\\303\\261a"; c=3'}
-            inst = self._makeOne(environ)
-            assert sorted(list(inst.iterkeys())) == ['a', 'b', 'c']
+    @py2only
+    def test_iterkeys(self):
+        environ = {'HTTP_COOKIE': 'a=1; b="La Pe\\303\\261a"; c=3'}
+        inst = self._makeOne(environ)
+        assert sorted(list(inst.iterkeys())) == ['a', 'b', 'c']
 
-        def test_itervalues(self):
-            val = text_(b'La Pe\xc3\xb1a', 'utf-8')
-            environ = {'HTTP_COOKIE': 'a=1; b="La Pe\\303\\261a"; c=3'}
-            inst = self._makeOne(environ)
-            sorted(list(inst.itervalues())) == ['1', '3', val]
+    @py3only
+    def test_iterkeys_py3(self):
+        environ = {'HTTP_COOKIE': b'a=1; b="La Pe\\303\\261a"; c=3'.decode('utf-8')}
+        inst = self._makeOne(environ)
+        assert sorted(list(inst.keys())) == ['a', 'b', 'c']
 
-        def test_iteritems(self):
-            val = text_(b'La Pe\xc3\xb1a', 'utf-8')
-            environ = {'HTTP_COOKIE': 'a=1; b="La Pe\\303\\261a"; c=3'}
-            inst = self._makeOne(environ)
-            assert sorted(list(inst.iteritems())) == [('a', '1'), ('b', val), ('c', '3')]
+    @py2only
+    def test_itervalues(self):
+        val = text_(b'La Pe\xc3\xb1a', 'utf-8')
+        environ = {'HTTP_COOKIE': 'a=1; b="La Pe\\303\\261a"; c=3'}
+        inst = self._makeOne(environ)
+        sorted(list(inst.itervalues())) == ['1', '3', val]
+
+    @py3only
+    def test_itervalues_py3(self):
+        val = text_(b'La Pe\xc3\xb1a', 'utf-8')
+        environ = {'HTTP_COOKIE': b'a=1; b="La Pe\\303\\261a"; c=3'.decode('utf-8')}
+        inst = self._makeOne(environ)
+        sorted(list(inst.values())) == ['1', '3', val]
+
+    @py2only
+    def test_iteritems(self):
+        val = text_(b'La Pe\xc3\xb1a', 'utf-8')
+        environ = {'HTTP_COOKIE': 'a=1; b="La Pe\\303\\261a"; c=3'}
+        inst = self._makeOne(environ)
+        assert sorted(list(inst.iteritems())) == [('a', '1'), ('b', val), ('c', '3')]
+
+    @py3only
+    def test_iteritems_py3(self):
+        val = text_(b'La Pe\xc3\xb1a', 'utf-8')
+        environ = {'HTTP_COOKIE': b'a=1; b="La Pe\\303\\261a"; c=3'.decode('utf-8')}
+        inst = self._makeOne(environ)
+        assert sorted(list(inst.items())) == [('a', '1'), ('b', val), ('c', '3')]
 
     def test___contains__(self):
         environ = {'HTTP_COOKIE': 'a=1'}
