@@ -15,6 +15,7 @@ testing_extras = [
     'pytest',
     'coverage',
     'pytest-cov',
+    'pytest-xdist',
     ]
 
 docs_extras = [
