@@ -2,7 +2,6 @@
 parallel = true
 source =
     webob
-omit =
 
 [paths]
 source =

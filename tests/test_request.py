@@ -992,6 +992,55 @@ class TestRequestCommon(object):
         body = req.as_bytes(337-1).split(b'\r\n\r\n', 1)[1]
         assert body == b'<body skipped (len=337)>'
 
+    def test_charset_in_content_type(self):
+        Request = self._getTargetClass()
+        # should raise no exception
+        req = Request({
+            'REQUEST_METHOD': 'POST',
+            'QUERY_STRING':'a=b',
+            'CONTENT_TYPE':'text/html;charset=ascii'
+        })
+        assert req.charset == 'ascii'
+        assert dict(req.GET) == {'a': 'b'}
+        assert dict(req.POST) == {}
+        req.charset = 'ascii' # no exception
+        with pytest.raises(DeprecationWarning):
+            setattr(req, 'charset', 'utf-8')
+
+        # again no exception
+        req = Request({
+            'REQUEST_METHOD': 'POST',
+            'QUERY_STRING':'a=b',
+            'CONTENT_TYPE':'multipart/form-data;charset=ascii'
+        })
+        assert req.charset == 'ascii'
+        assert dict(req.GET) == {'a': 'b'}
+        with pytest.raises(DeprecationWarning):
+            getattr(req, 'POST')
+
+    def test_limited_length_file_repr(self):
+        from webob.request import Request
+        req = Request.blank('/', POST='x')
+        req.body_file_raw = 'dummy'
+        req.is_body_seekable = False
+        assert repr(req.body_file.raw), "<LimitedLengthFile('dummy' == maxlen=1)>"
+
+    @pytest.mark.parametrize("is_seekable", [False, True])
+    def test_request_wrong_clen(self, is_seekable):
+        from webob.request import Request
+        tlen = 1<<20
+        req = Request.blank('/', POST='x'*tlen)
+        assert req.content_length == tlen
+        req.body_file = _Helper_test_request_wrong_clen(req.body_file)
+        assert req.content_length == None
+        req.content_length = tlen + 100
+        req.is_body_seekable = is_seekable
+        assert req.content_length == tlen+100
+        # this raises AssertionError if the body reading
+        # trusts content_length too much
+        with pytest.raises(IOError):
+            req.copy_body()
+
 
 class TestBaseRequest(object):
     # tests of methods of a base request which are encoding-specific
@@ -3702,3 +3751,20 @@ class UnseekableInput(object):
 class UnseekableInputWithSeek(UnseekableInput):
     def seek(self, pos, rel=0):
         raise IOError("Invalid seek!")
+
+
+class _Helper_test_request_wrong_clen(object):
+    def __init__(self, f):
+        self.f = f
+        self.file_ended = False
+
+    def read(self, *args):
+        r = self.f.read(*args)
+        if not r:
+            if self.file_ended:
+                raise AssertionError("Reading should stop after first empty string")
+            self.file_ended = True
+        return r
+
+    def seek(self, pos):
+        pass
