@@ -1,0 +1,15 @@
+[run]
+parallel = true
+source =
+    src/webob
+    tests
+omit =
+
+[paths]
+source =
+    src/webob
+    */site-packages/webob
+
+[report]
+show_missing = true
+precision = 2
