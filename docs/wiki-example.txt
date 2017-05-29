@@ -13,9 +13,9 @@ WebOb isn't itself intended to write applications -- it is not a web
 framework on its own -- but it is *possible* to write applications
 using just WebOb.
 
-The `file serving example <file-example.html>`_ is a better example of
+The `file serving example <file-example>`_ is a better example of
 advanced HTTP usage.  The `comment middleware example
-<comment-example.html>`_ is a better example of using middleware.
+<comment-example>`_ is a better example of using middleware.
 This example provides some completeness by showing an
 application-focused end point.
 
