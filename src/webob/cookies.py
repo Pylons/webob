@@ -402,7 +402,7 @@ def _value_quote(v):
     leftovers = v.translate(None, _allowed_cookie_bytes)
     if leftovers:
         __warn_or_raise(
-                "Cookie value contains invalid bytes: (%s). Future versions "
+                "Cookie value contains invalid bytes: (%r). Future versions "
                 "will raise ValueError upon encountering invalid bytes." %
                 (leftovers,),
                 RuntimeWarning, ValueError, 'Invalid characters in cookie value'
