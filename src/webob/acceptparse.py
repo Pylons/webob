@@ -232,6 +232,13 @@ class AcceptCharset(Accept):
         if not latin1_found:
             yield ('iso-8859-1', 1)
 
+
+class AcceptEncoding(Accept):
+    """
+    Represents an ``Accept-Encoding`` header.
+    """
+
+
 class AcceptLanguage(Accept):
     def _match(self, mask, item):
         item = item.replace('_', '-').lower()

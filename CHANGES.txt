@@ -27,6 +27,11 @@ Backwards Incompatibilities
   ``content_md5`` and then returning an iterator for chunked content encoded
   responses. See https://github.com/Pylons/webob/issues/86
 
+- The ``accept_encoding`` property on a ``Request`` object now returns an
+  instance of ``webob.acceptparse.AcceptEncoding`` rather than
+  ``webob.acceptparse.Accept`` when the ``Accept-Encoding`` header is a truthy
+  value. See https://github.com/Pylons/webob/issues/325
+
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
 
