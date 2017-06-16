@@ -6,12 +6,49 @@ Headers
 
 Accept-*
 ~~~~~~~~
+.. # 2017-06-16: There appears to be various bugs with the ``:members`` and
+.. # ``:inherited-members`` options, both when the two are used together, and
+.. # when one of them is combined with ``autoattribute``, so we are using
+.. # ``automethod`` and ``autoattribute`` instead.
 
 .. automodule:: webob.acceptparse
-.. autoclass:: Accept
-   :members:
+
+.. autoclass:: AcceptCharset
+
+   .. automethod:: best_match
+   .. automethod:: quality
+
+.. autoclass:: AcceptEncoding
+
+   .. automethod:: best_match
+   .. automethod:: quality
+
+.. autoclass:: AcceptLanguage
+
+   .. automethod:: best_match
+   .. automethod:: quality
+
 .. autoclass:: MIMEAccept
-   :members:
+
+   .. autoattribute:: accepts_html
+   .. automethod:: accept_html
+   .. automethod:: best_match
+   .. automethod:: quality
+
+.. autoclass:: MIMENilAccept
+
+   .. automethod:: best_match
+   .. automethod:: quality
+
+.. autoclass:: NilAccept
+
+   .. automethod:: best_match
+   .. automethod:: quality
+
+.. autoclass:: NoAccept
+
+   .. automethod:: best_match
+   .. automethod:: quality
 
 Cache-Control
 ~~~~~~~~~~~~~
