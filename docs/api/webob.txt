@@ -16,16 +16,19 @@ Accept-*
 .. autoclass:: AcceptCharset
 
    .. automethod:: best_match
+   .. automethod:: parse
    .. automethod:: quality
 
 .. autoclass:: AcceptEncoding
 
    .. automethod:: best_match
+   .. automethod:: parse
    .. automethod:: quality
 
 .. autoclass:: AcceptLanguage
 
    .. automethod:: best_match
+   .. automethod:: parse
    .. automethod:: quality
 
 .. autoclass:: MIMEAccept
@@ -33,6 +36,7 @@ Accept-*
    .. autoattribute:: accepts_html
    .. automethod:: accept_html
    .. automethod:: best_match
+   .. automethod:: parse
    .. automethod:: quality
 
 .. autoclass:: MIMENilAccept
