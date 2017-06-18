@@ -234,6 +234,11 @@ class AcceptCharset(Accept):
     """
     @staticmethod
     def parse(value):
+        """
+        Parse ``Accept-Charset`` header.
+
+        Return iterator of ``(charset, qvalue)`` pairs.
+        """
         latin1_found = False
         for m, q in Accept.parse(value):
             _m = m.lower()
@@ -272,6 +277,11 @@ class MIMEAccept(Accept):
     """
     @staticmethod
     def parse(value):
+        """
+        Parse ``Accept`` header.
+
+        Return iterator of ``(media range, qvalue)`` pairs.
+        """
         for mask, q in Accept.parse(value):
             try:
                 mask_major, mask_minor = [x.lower() for x in mask.split('/')]
