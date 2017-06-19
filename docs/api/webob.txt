@@ -6,12 +6,48 @@ Headers
 
 Accept-*
 ~~~~~~~~
-
 .. automodule:: webob.acceptparse
-.. autoclass:: Accept
-   :members:
+
+.. autoclass:: AcceptCharset
+
+   .. automethod:: best_match
+   .. automethod:: parse
+   .. automethod:: quality
+
+.. autoclass:: AcceptEncoding
+
+   .. automethod:: best_match
+   .. automethod:: parse
+   .. automethod:: quality
+
+.. autoclass:: AcceptLanguage
+
+   .. automethod:: best_match
+   .. automethod:: parse
+   .. automethod:: quality
+
 .. autoclass:: MIMEAccept
-   :members:
+
+   .. autoattribute:: accepts_html
+   .. automethod:: accept_html
+   .. automethod:: best_match
+   .. automethod:: parse
+   .. automethod:: quality
+
+.. autoclass:: MIMENilAccept
+
+   .. automethod:: best_match
+   .. automethod:: quality
+
+.. autoclass:: NilAccept
+
+   .. automethod:: best_match
+   .. automethod:: quality
+
+.. autoclass:: NoAccept
+
+   .. automethod:: best_match
+   .. automethod:: quality
 
 Cache-Control
 ~~~~~~~~~~~~~

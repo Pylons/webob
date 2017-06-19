@@ -168,6 +168,10 @@ class Accept(object):
 
 
 class NilAccept(object):
+    """
+    Represents a generic ``Accept-*`` style header when it is not present in
+    the request or is empty.
+    """
     MasterClass = Accept
 
     def __repr__(self):
@@ -217,12 +221,24 @@ class NilAccept(object):
         return best_offer
 
 class NoAccept(NilAccept):
+    """
+    Represents an ``Accept-Encoding`` header when it is not present in the
+    request or is empty.
+    """
     def __contains__(self, item):
         return False
 
 class AcceptCharset(Accept):
+    """
+    Represents an ``Accept-Charset`` header.
+    """
     @staticmethod
     def parse(value):
+        """
+        Parse ``Accept-Charset`` header.
+
+        Return iterator of ``(charset, qvalue)`` pairs.
+        """
         latin1_found = False
         for m, q in Accept.parse(value):
             _m = m.lower()
@@ -240,6 +256,9 @@ class AcceptEncoding(Accept):
 
 
 class AcceptLanguage(Accept):
+    """
+    Represents an ``Accept-Language`` header.
+    """
     def _match(self, mask, item):
         item = item.replace('_', '-').lower()
         mask = mask.lower()
@@ -252,12 +271,17 @@ class AcceptLanguage(Accept):
 
 class MIMEAccept(Accept):
     """
-        Represents the ``Accept`` header, which is a list of mimetypes.
+    Represents an ``Accept`` header, which is a list of mimetypes.
 
-        This class knows about mime wildcards, like ``image/*``
+    This class knows about mime wildcards, like ``image/*``
     """
     @staticmethod
     def parse(value):
+        """
+        Parse ``Accept`` header.
+
+        Return iterator of ``(media range, qvalue)`` pairs.
+        """
         for mask, q in Accept.parse(value):
             try:
                 mask_major, mask_minor = [x.lower() for x in mask.split('/')]
@@ -340,6 +364,10 @@ class MIMEAccept(Accept):
 
 
 class MIMENilAccept(NilAccept):
+    """
+    Represents an ``Accept`` header when it is not present in the request or is
+    empty.
+    """
     MasterClass = MIMEAccept
 
 def _check_offer(offer):
