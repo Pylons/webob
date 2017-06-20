@@ -14,48 +14,48 @@ def test_parse_accept_badq():
 
 def test_init_accept_content_type():
     accept = Accept('text/html')
-    assert accept._parsed == [('text/html', 1)]
+    assert accept.parsed == [('text/html', 1)]
 
 def test_init_accept_accept_charset():
     accept = AcceptCharset('iso-8859-5, unicode-1-1;q=0.8')
-    assert accept._parsed == [('iso-8859-5', 1),
-                              ('unicode-1-1', 0.80000000000000004),
-                              ('iso-8859-1', 1)]
+    assert accept.parsed == [('iso-8859-5', 1),
+                             ('unicode-1-1', 0.80000000000000004),
+                             ('iso-8859-1', 1)]
 
 def test_init_accept_accept_charset_mixedcase():
     """3.4 Character Sets
            [...]
            HTTP character sets are identified by case-insensitive tokens."""
     accept = AcceptCharset('ISO-8859-5, UNICODE-1-1;q=0.8')
-    assert accept._parsed == [('iso-8859-5', 1),
-                              ('unicode-1-1', 0.80000000000000004),
-                              ('iso-8859-1', 1)]
+    assert accept.parsed == [('iso-8859-5', 1),
+                             ('unicode-1-1', 0.80000000000000004),
+                             ('iso-8859-1', 1)]
 
 def test_init_accept_accept_charset_with_iso_8859_1():
     accept = Accept('iso-8859-1')
-    assert accept._parsed == [('iso-8859-1', 1)]
+    assert accept.parsed == [('iso-8859-1', 1)]
 
 def test_init_accept_accept_charset_wildcard():
     accept = Accept('*')
-    assert accept._parsed == [('*', 1)]
+    assert accept.parsed == [('*', 1)]
 
 def test_init_accept_accept_language():
     accept = AcceptLanguage('da, en-gb;q=0.8, en;q=0.7')
-    assert accept._parsed == [('da', 1),
-                              ('en-gb', 0.80000000000000004),
-                              ('en', 0.69999999999999996)]
+    assert accept.parsed == [('da', 1),
+                             ('en-gb', 0.80000000000000004),
+                             ('en', 0.69999999999999996)]
 
 def test_init_accept_invalid_value():
     accept = AcceptLanguage('da, q, en-gb;q=0.8')
     # The "q" value should not be there.
-    assert accept._parsed == [('da', 1),
-                              ('en-gb', 0.80000000000000004)]
+    assert accept.parsed == [('da', 1),
+                             ('en-gb', 0.80000000000000004)]
 
 def test_init_accept_invalid_q_value():
     accept = AcceptLanguage('da, en-gb;q=foo')
     # I can't get to cover line 40-41 (webob.acceptparse) as the regex
     # will prevent from hitting these lines (aconrad)
-    assert accept._parsed == [('da', 1), ('en-gb', 1)]
+    assert accept.parsed == [('da', 1), ('en-gb', 1)]
 
 def test_accept_repr():
     accept = Accept('text/html')
@@ -242,21 +242,21 @@ def test_noaccept_contains():
 
 def test_mime_init():
     mimeaccept = MIMEAccept('image/jpg')
-    assert mimeaccept._parsed == [('image/jpg', 1)]
+    assert mimeaccept.parsed == [('image/jpg', 1)]
     mimeaccept = MIMEAccept('image/png, image/jpg;q=0.5')
-    assert mimeaccept._parsed == [('image/png', 1), ('image/jpg', 0.5)]
+    assert mimeaccept.parsed == [('image/png', 1), ('image/jpg', 0.5)]
     mimeaccept = MIMEAccept('image, image/jpg;q=0.5')
-    assert mimeaccept._parsed == [('image/jpg', 0.5)]
+    assert mimeaccept.parsed == [('image/jpg', 0.5)]
     mimeaccept = MIMEAccept('*/*')
-    assert mimeaccept._parsed == [('*/*', 1)]
+    assert mimeaccept.parsed == [('*/*', 1)]
     mimeaccept = MIMEAccept('*/png')
-    assert mimeaccept._parsed == []
+    assert mimeaccept.parsed == []
     mimeaccept = MIMEAccept('image/pn*')
-    assert mimeaccept._parsed == []
+    assert mimeaccept.parsed == []
     mimeaccept = MIMEAccept('imag*/png')
-    assert mimeaccept._parsed == []
+    assert mimeaccept.parsed == []
     mimeaccept = MIMEAccept('image/*')
-    assert mimeaccept._parsed == [('image/*', 1)]
+    assert mimeaccept.parsed == [('image/*', 1)]
 
 def test_accept_html():
     mimeaccept = MIMEAccept('image/jpg')
@@ -356,7 +356,7 @@ def test_match_uppercase_q():
     """The relative-quality-factor "q" parameter is defined as an exact string
        in "14.1 Accept" BNF grammar"""
     mimeaccept = MIMEAccept('image/jpg; q=.4, Image/pNg; Q=.2, image/*; q=.05')
-    assert mimeaccept._parsed == [('image/jpg', 0.4), ('image/png', 1), ('image/*', 0.05)]
+    assert mimeaccept.parsed == [('image/jpg', 0.4), ('image/png', 1), ('image/*', 0.05)]
 
 # property tests
 
