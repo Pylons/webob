@@ -9,45 +9,32 @@ Accept-*
 .. automodule:: webob.acceptparse
 
 .. autoclass:: AcceptCharset
-
-   .. automethod:: best_match
-   .. automethod:: parse
-   .. automethod:: quality
+   :members:
+   :inherited-members:
 
 .. autoclass:: AcceptEncoding
-
-   .. automethod:: best_match
-   .. automethod:: parse
-   .. automethod:: quality
+   :members:
+   :inherited-members:
 
 .. autoclass:: AcceptLanguage
-
-   .. automethod:: best_match
-   .. automethod:: parse
-   .. automethod:: quality
+   :members:
+   :inherited-members:
 
 .. autoclass:: MIMEAccept
-
-   .. autoattribute:: accepts_html
-   .. automethod:: accept_html
-   .. automethod:: best_match
-   .. automethod:: parse
-   .. automethod:: quality
+   :members:
+   :inherited-members:
 
 .. autoclass:: MIMENilAccept
-
-   .. automethod:: best_match
-   .. automethod:: quality
+   :members:
+   :inherited-members:
 
 .. autoclass:: NilAccept
-
-   .. automethod:: best_match
-   .. automethod:: quality
+   :members:
+   :inherited-members:
 
 .. autoclass:: NoAccept
-
-   .. automethod:: best_match
-   .. automethod:: quality
+   :members:
+   :inherited-members:
 
 Cache-Control
 ~~~~~~~~~~~~~
