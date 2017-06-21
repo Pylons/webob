@@ -29,8 +29,8 @@ class Accept(object):
 
     def __init__(self, header_value):
         self.header_value = header_value
-        self._parsed = list(self.parse(header_value))
-        self._parsed_nonzero = [(m,q) for (m,q) in self._parsed if q]
+        self.parsed = list(self.parse(header_value))
+        self._parsed_nonzero = [(m,q) for (m,q) in self.parsed if q]
 
     @staticmethod
     def parse(value):
@@ -67,7 +67,7 @@ class Accept(object):
 
     def __str__(self):
         result = []
-        for mask, quality in self._parsed:
+        for mask, quality in self.parsed:
             if quality != 1:
                 mask = '%s;q=%0.*f' % (
                     mask, min(len(str(quality).split('.')[1]), 3), quality)
@@ -118,7 +118,7 @@ class Accept(object):
         is no match (not 0).
         """
         bestq = 0
-        for mask, q in self._parsed:
+        for mask, q in self.parsed:
             if self._match(mask, offer):
                 bestq = max(bestq, q * modifier)
         return bestq or None
