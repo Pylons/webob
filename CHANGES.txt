@@ -44,6 +44,10 @@ These features are experimental and may change at any point in the future.
 Bugfix
 ~~~~~~
 
+- Request.host_url, Request.host_port, Request.domain correctly parse IPv6 Host
+  headers as provided by a browser. See
+  https://github.com/Pylons/webob/pull/332
+
 - Request.authorization would raise ValueError for unusual or malformed header
   values. See https://github.com/Pylons/webob/issues/231
 
