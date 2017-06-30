@@ -1639,6 +1639,16 @@ class TestBaseRequest(object):
         req = self._makeOne(environ)
         assert req.domain == 'example.com'
 
+    def test_domain_with_ipv6(self):
+        environ = {'HTTP_HOST': '[2001:DB8::1]:6453'}
+        req = self._makeOne(environ)
+        assert req.domain == '[2001:DB8::1]'
+
+    def test_domain_with_ipv6_no_port(self):
+        environ = {'HTTP_HOST': '[2001:DB8::1]'}
+        req = self._makeOne(environ)
+        assert req.domain == '[2001:DB8::1]'
+
     def test_encget_raises_without_default(self):
         inst = self._makeOne({})
         with pytest.raises(KeyError):
@@ -1965,6 +1975,18 @@ class TestLegacyRequest(object):
         req = self._makeOne(environ)
         assert req.host_port == '4333'
 
+    def test_host_port_ipv6(self):
+        environ = {'HTTP_HOST': '[2001:DB8::1]:6453'}
+        req = self._makeOne(environ)
+        assert req.host_port == '6453'
+
+    def test_host_port_ipv6(self):
+        environ = {'wsgi.url_scheme': 'https',
+                   'HTTP_HOST': '[2001:DB8::1]'
+                  }
+        req = self._makeOne(environ)
+        assert req.host_port == '443'
+
     def test_host_url_w_http_host_and_no_port(self):
         environ = {'wsgi.url_scheme': 'http',
                    'HTTP_HOST': 'example.com',
@@ -2014,6 +2036,20 @@ class TestLegacyRequest(object):
                   }
         req = self._makeOne(environ)
         assert req.host_url == 'https://example.com:4333'
+
+    def test_host_url_http_ipv6_host(self):
+        environ = {'wsgi.url_scheme': 'https',
+                   'HTTP_HOST': '[2001:DB8::1]:6453'
+                  }
+        req = self._makeOne(environ)
+        assert req.host_url == 'https://[2001:DB8::1]:6453'
+
+    def test_host_url_http_ipv6_host_no_port(self):
+        environ = {'wsgi.url_scheme': 'https',
+                   'HTTP_HOST': '[2001:DB8::1]'
+                  }
+        req = self._makeOne(environ)
+        assert req.host_url == 'https://[2001:DB8::1]'
 
     @py2only
     def test_application_url_py2(self):
