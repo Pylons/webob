@@ -420,8 +420,8 @@ class BaseRequest(object):
         e = self.environ
         host = e.get('HTTP_HOST')
         if host is not None:
-            if ':' in host:
-                host, port = host.split(':', 1)
+            if ':' in host and host[-1] != ']':
+                host, port = host.rsplit(':', 1)
             else:
                 url_scheme = e['wsgi.url_scheme']
                 if url_scheme == 'https':
@@ -442,8 +442,8 @@ class BaseRequest(object):
         url = scheme + '://'
         host = e.get('HTTP_HOST')
         if host is not None:
-            if ':' in host:
-                host, port = host.split(':', 1)
+            if ':' in host and host[-1] != ']':
+                host, port = host.rsplit(':', 1)
             else:
                 port = None
         else:
@@ -674,8 +674,8 @@ class BaseRequest(object):
         .. code-block:: python
 
            domain = request.host
-           if ':' in domain:
-               domain = domain.split(':', 1)[0]
+           if ':' in domain and domain[-1] != ']': # Check for ] because of IPv6
+               domain = domain.rsplit(':', 1)[0]
 
         This will be equivalent to the domain portion of the ``HTTP_HOST``
         value in the environment if it exists, or the ``SERVER_NAME`` value in
@@ -687,8 +687,8 @@ class BaseRequest(object):
         value use :meth:`webob.request.Request.host` instead.
         """
         domain = self.host
-        if ':' in domain:
-            domain = domain.split(':', 1)[0]
+        if ':' in domain and domain[-1] != ']':
+            domain = domain.rsplit(':', 1)[0]
         return domain
 
     @property
