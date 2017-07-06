@@ -19,6 +19,18 @@ from webob.util import (
 part_re = re.compile(
     r',\s*([^\s;,\n]+)(?:[^,]*?;\s*q=([0-9.]*))?')
 
+# RFC 7231 Section 5.3.1 "Quality Values"
+# qvalue = ( "0" [ "." 0*3DIGIT ] )
+#        / ( "1" [ "." 0*3("0") ] )
+qvalue_re = r"""
+    (?:0(?:\.[0-9]{0,3})?)
+    |
+    (?:1(?:\.0{0,3})?)
+    """
+# weight = OWS ";" OWS "q=" qvalue
+weight_re = r'[ \t]*;[ \t]*[qQ]=(' + qvalue_re + r')'
+
+
 class Accept(object):
     """
     Represents a generic ``Accept-*`` style header.
@@ -267,6 +279,93 @@ class AcceptLanguage(Accept):
             or item.split('-')[0] == mask
             or item == mask.split('-')[0]
         )
+
+
+class AcceptLanguageValidHeader(AcceptLanguage):
+    """
+    Represent a valid ``Accept-Language`` header.
+
+    A valid header is one that conforms to :rfc:`RFC 7231, section 5.3.5
+    <7231#section-5.3.5>`.
+
+    We take the reference from the ``language-range`` syntax rule in :rfc:`RFC
+    7231, section 5.3.5 <7231#section-5.3.5>` to :rfc:`RFC 4647, section 2.1
+    <4647#section-2.1>` to mean that only basic language ranges (and not
+    extended language ranges) are expected in the ``Accept-Language`` header.
+    """
+
+    # RFC 7231 Section 5.3.5 "Accept-Language":
+    # Accept-Language = 1#( language-range [ weight ] )
+    # language-range  =
+    #           <language-range, see [RFC4647], Section 2.1>
+    # RFC 4647 Section 2.1 "Basic Language Range":
+    # language-range   = (1*8ALPHA *("-" 1*8alphanum)) / "*"
+    # alphanum         = ALPHA / DIGIT
+    lang_range_re = r"""
+        \*|
+        (?:
+        [A-Za-z]{1,8}
+        (?:-[A-Za-z0-9]{1,8})*
+        )
+    """
+    lang_range_n_weight_re = r'(' + lang_range_re + r')(?:' + weight_re + r')?'
+    lang_range_n_weight_compiled_re = re.compile(
+        lang_range_n_weight_re,
+        re.VERBOSE
+    )
+    # RFC 7230 Section 7 "ABNF List Extension: #rule":
+    # 1#element => *( "," OWS ) element *( OWS "," [ OWS element ] )
+    # and RFC 7230 Errata ID: 4169
+    accept_language_compiled_re = re.compile(
+        r'^(?:,[ \t]*)*' + lang_range_n_weight_re +
+        r'(?:[ \t]*,(?:[ \t]*' + lang_range_n_weight_re + r')?)*$',
+        re.VERBOSE
+    )
+
+    def __init__(self, header_value):
+        """
+        Create an :class:`AcceptLanguageValidHeader` instance.
+
+        :param header_value: (``str``) header value.
+        :raises ValueError: if `header_value` is an invalid value for an
+                            ``Accept-Language`` header.
+        """
+        self.header_value = header_value
+        """(``str``) The header value."""
+
+        self.parsed = list(self.parse(header_value))
+        """(``list``) Parsed form of the header: a list of (language range,
+        quality value) tuples."""
+
+        self._parsed_nonzero = [(m, q) for (m, q) in self.parsed if q]
+
+    @classmethod
+    def parse(cls, value):
+        """
+        Parse an ``Accept-Language`` header.
+
+        :param value: (``str``) header value
+        :return: If `value` is a valid ``Accept-Language`` header, returns a
+                 generator that yields (language range, quality value) tuples,
+                 as parsed from the header from left to right.
+        :raises ValueError: if `value` is an invalid header
+        """
+        # Check if header is valid
+        # Using Python stdlib's `re` module, there is currently no way to check
+        # the match *and* get all the groups using the same regex, so we have
+        # to use one regex to check the match, and another to get the groups.
+        if cls.accept_language_compiled_re.match(value) is None:
+            raise ValueError  # invalid header
+        else:
+            def generator(value):
+                for match in (
+                    cls.lang_range_n_weight_compiled_re.finditer(value)
+                ):
+                    lang_range = match.group(1)
+                    qvalue = match.group(2)
+                    qvalue = float(qvalue) if qvalue else 1.0
+                    yield (lang_range, qvalue)
+            return generator(value=value)
 
 
 class MIMEAccept(Accept):

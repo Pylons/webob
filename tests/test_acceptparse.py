@@ -39,24 +39,6 @@ def test_init_accept_accept_charset_wildcard():
     accept = Accept('*')
     assert accept.parsed == [('*', 1)]
 
-def test_init_accept_accept_language():
-    accept = AcceptLanguage('da, en-gb;q=0.8, en;q=0.7')
-    assert accept.parsed == [('da', 1),
-                             ('en-gb', 0.80000000000000004),
-                             ('en', 0.69999999999999996)]
-
-def test_init_accept_invalid_value():
-    accept = AcceptLanguage('da, q, en-gb;q=0.8')
-    # The "q" value should not be there.
-    assert accept.parsed == [('da', 1),
-                             ('en-gb', 0.80000000000000004)]
-
-def test_init_accept_invalid_q_value():
-    accept = AcceptLanguage('da, en-gb;q=foo')
-    # I can't get to cover line 40-41 (webob.acceptparse) as the regex
-    # will prevent from hitting these lines (aconrad)
-    assert accept.parsed == [('da', 1), ('en-gb', 1)]
-
 def test_accept_repr():
     accept = Accept('text/html')
     assert repr(accept) == "<Accept('text/html')>"
@@ -389,3 +371,163 @@ def test_accept_property_fdel():
     assert desc.fget(req).header_value == 'val'
     desc.fdel(req)
     assert type(desc.fget(req)) == NilAccept
+
+
+class TestAcceptLanguageValidHeader(object):
+    def _get_class(self):
+        from webob.acceptparse import AcceptLanguageValidHeader
+        return AcceptLanguageValidHeader
+
+    @pytest.mark.parametrize('value', [
+        '',
+        '*s',
+        '*-a',
+        'a-*',
+        'a' * 9,
+        'a-' + 'a' * 9,
+        'a-a-' + 'a' * 9,
+        '-',
+        'a-',
+        '-a',
+        '---',
+        '--a',
+        '1-a',
+        '1-a-a',
+        'q=1',
+        'a;q=',
+        'a;q=-1',
+        'a;q=2',
+        'a;q=1.001',
+        'a;q=0.0001',
+        'a;q=1.0001',
+        'a;q=00',
+        'a;q=01',
+        'a,q=0.1',
+        'da, en-gb;q=',
+        'da, en-gb;q=-1',
+        'da, en-gb;q=2',
+        'da, en-gb;q=1.001',
+        'da, en-gb;q=0.0001',
+        'da, en-gb;q=1.0001',
+        'da, en-gb;q=00',
+        'da, en-gb;q=01',
+        'da, en-gb,q=01',
+        'q=,en-gb;q=1',
+        'en-gb;q=1,q=',
+        'da;q=0.2, en/gb;q=0.3',
+        'en/gb;q=0.2, da;q=0.3',
+        ' da;q=0.2, en-gb;q=0.3',
+        ', da;q=0.2, en-gb;q=0.3 ',
+        ', da;q= 0.2, en-gb;q=0.3',
+        ', da;q =0.2, en-gb;q=0.3',
+        ', da;q=0.2, en-gb;q= 0.3',
+        ', da;q=0.2, en-gb;q =0.3',
+        # RFC 7230 Section 7
+        ',',
+        ',   ,',
+        # RFC 7230 Errata ID: 4169
+        'foo , ,bar,charlie   ',
+    ])
+    def test_parse__invalid_header(self, value):
+        with pytest.raises(ValueError):
+            self._get_class().parse(value=value)
+
+    @pytest.mark.parametrize('value, expected_list', [
+        ('*', [('*', 1.0)]),
+        ('de', [('de', 1.0)]),
+        ('fR', [('fR', 1.0)]),
+        ('JA', [('JA', 1.0)]),
+        ('zh-Hant', [('zh-Hant', 1.0)]),
+        ('Sr-cYrL', [('Sr-cYrL', 1.0)]),
+        ('es-419', [('es-419', 1.0)]),
+        ('zh-Hans-CN', [('zh-Hans-CN', 1.0)]),
+        ('de-CH-1901', [('de-CH-1901', 1.0)]),
+        ('de-CH-x-phonebk', [('de-CH-x-phonebk', 1.0)]),
+        ('az-Arab-x-AZE-derbend', [('az-Arab-x-AZE-derbend', 1.0)]),
+        ('zh-CN-a-myExt-x-private', [('zh-CN-a-myExt-x-private', 1.0)]),
+        ('ar-a-aaa-b-bbb-a-ccc', [('ar-a-aaa-b-bbb-a-ccc', 1.0)]),
+        ('de;q=0', [('de', 0.0)]),
+        ('fR;q=0.0', [('fR', 0.0)]),
+        ('JA;q=0.00', [('JA', 0.0)]),
+        ('zh-Hant;q=0.000', [('zh-Hant', 0.0)]),
+        ('zh-Hans-CN;q=1', [('zh-Hans-CN', 1.0)]),
+        ('de-CH-x-phonebk;q=1.0', [('de-CH-x-phonebk', 1.0)]),
+        ('az-Arab-x-AZE-derbend;q=1.00', [('az-Arab-x-AZE-derbend', 1.0)]),
+        ('zh-CN-a-myExt-x-private;q=1.000', [('zh-CN-a-myExt-x-private', 1.0)]),
+        ('de;q=0.1', [('de', 0.1)]),
+        ('de;q=0.87', [('de', 0.87)]),
+        ('de;q=0.382', [('de', 0.382)]),
+        ('de,ar;q=0.7', [('de', 1.0), ('ar', 0.7)]),
+        ('de;q=0.8,ar', [('de', 0.8), ('ar', 1.0)]),
+        ('de;q=0.8,ar;q=1', [('de', 0.8), ('ar', 1.0)]),
+        ('de;q=0.8,ar;q=1.0', [('de', 0.8), ('ar', 1.0)]),
+        ('de;q=0.8,ar;q=1.00', [('de', 0.8), ('ar', 1.0)]),
+        ('de;q=0.8,ar;q=1.000', [('de', 0.8), ('ar', 1.0)]),
+        ('de;q=0.8,ar;q=0', [('de', 0.8), ('ar', 0.0)]),
+        ('de;q=0.8,ar;q=0.0', [('de', 0.8), ('ar', 0.0)]),
+        ('de;q=0.8,ar;q=0.00', [('de', 0.8), ('ar', 0.0)]),
+        ('de;q=0.8,ar;q=0.000', [('de', 0.8), ('ar', 0.0)]),
+        ('de;q=0.8,ar;q=0.7', [('de', 0.8), ('ar', 0.7)]),
+        ('de;q=0.8,ar;q=0.72', [('de', 0.8), ('ar', 0.72)]),
+        ('de;q=0.8,ar;q=0.723', [('de', 0.8), ('ar', 0.723)]),
+        ('de,zh,az,es', [('de', 1.0), ('zh', 1.0), ('az', 1.0), ('es', 1.0)]),
+        (
+            'da, en-gb;q=0.8, en;q=0.7',
+            [('da', 1.0), ('en-gb', 0.8), ('en', 0.7)]
+        ),
+        (
+            'de \t;\t  Q=0.3 ,zh ;\tq=0.5,az\t; Q=0.6',
+            [('de', 0.3), ('zh', 0.5), ('az', 0.6)]
+        ),
+        (
+            'zh-Hant;q=0.372,zh-CN-a-myExt-x-private;q=0.977,de,*;q=0.000',
+            [
+                ('zh-Hant', 0.372), ('zh-CN-a-myExt-x-private', 0.977),
+                ('de', 1.0), ('*', 0.0)
+            ]
+        ),
+        ('aaaaaaaa', [('aaaaaaaa', 1.0)]),
+        ('aaaaaaaa-a', [('aaaaaaaa-a', 1.0)]),
+        ('aaaaaaaa-aaaaaaaa', [('aaaaaaaa-aaaaaaaa', 1.0)]),
+        ('a-aaaaaaaa-aaaaaaaa', [('a-aaaaaaaa-aaaaaaaa', 1.0)]),
+        ('aaaaaaaa-a-aaaaaaaa', [('aaaaaaaa-a-aaaaaaaa', 1.0)]),
+        # RFC 7230 Section 7
+        ('foo,bar', [('foo', 1.0), ('bar', 1.0)]),
+        ('foo, bar,', [('foo', 1.0), ('bar', 1.0)]),
+        # RFC 7230 Errata ID: 4169
+        ('foo , ,bar,charlie', [('foo', 1.0), ('bar', 1.0), ('charlie', 1.0)]),
+        (
+            ',\t ,,,  \t \t,   ,\t\t\t,foo \t\t,, bar,  ,\tcharlie \t,,  ,',
+            [('foo', 1.0), ('bar', 1.0), ('charlie', 1.0)]
+        ),
+        (
+            ',\t foo \t;\t q=0.3,, bar ; Q=0.4 \t,  ,\tcharlie \t; q=0.8,,  ,',
+            [('foo', 0.3), ('bar', 0.4), ('charlie', 0.8)]
+        ),
+    ])
+    def test_parse__valid_header(self, value, expected_list):
+        returned = self._get_class().parse(value=value)
+        list_of_returned = list(returned)
+        assert list_of_returned == expected_list
+
+    @pytest.mark.parametrize('header_value', [
+        '',
+        ', da;q=0.2, en-gb;q=0.3 ',
+    ])
+    def test_init_invalid_header(self, header_value):
+        with pytest.raises(ValueError):
+            self._get_class()(header_value=header_value)
+
+    def test_init_valid_header(self):
+        header_value = \
+            'zh-Hant;q=0.372,zh-CN-a-myExt-x-private;q=0.977,de,*;q=0.000'
+        accept_language = self._get_class()(header_value=header_value)
+        assert accept_language.header_value == header_value
+        assert accept_language.parsed == [
+            ('zh-Hant', 0.372), ('zh-CN-a-myExt-x-private', 0.977),
+            ('de', 1.0), ('*', 0.0)
+        ]
+        assert accept_language._parsed_nonzero == [
+            ('zh-Hant', 0.372), ('zh-CN-a-myExt-x-private', 0.977),
+            ('de', 1.0)
+        ]

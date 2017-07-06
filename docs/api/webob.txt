@@ -17,6 +17,10 @@ Accept-*
    :inherited-members:
 
 .. autoclass:: AcceptLanguage
+
+.. autoclass:: AcceptLanguageValidHeader
+   :members: __init__, parse
+
    :members:
    :inherited-members:
 
