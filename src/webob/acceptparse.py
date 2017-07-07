@@ -376,10 +376,14 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         suggested as a matching scheme for the ``Accept-Language`` header in
         :rfc:`RFC 7231, section 5.3.5 <7231#section-5.3.5>`, and defined in
         :rfc:`RFC 4647, section 3.3.1 <4647#section-3.3.1>`. It filters the
-        tags in the `language_tags` argument, and returns a list of the ones
+        tags in the `language_tags` argument, and returns a list of the tags
         that match the language ranges in the header according to the Basic
-        Filtering matching scheme, in order of preference, together with their
-        qvalues.
+        Filtering matching scheme, in descending order of preference, together
+        with the qvalue of the range each tag matched.
+
+        :param language_tags: (``iterable``) language tags
+        :return: A list of tuples of the form (language tag, qvalue), in
+                 descending order of preference.
 
         For each tag in `language_tags`:
 
@@ -402,18 +406,14 @@ class AcceptLanguageValidHeader(AcceptLanguage):
            filtered out. Otherwise, the language tag is considered a match.
 
         The method returns a list of tuples of the form (language tag, qvalue),
-        in descending order of preference: first by descending order of qvalue,
-        and where qvalues are equal, we consider the tag whose matched range
+        in descending order of preference: in descending order of qvalue, and
+        if two tags have equal qvalues, we consider the tag whose matched range
         appears earlier in the header to have higher preference. If the matched
-        range is the same for two or more tags (so they have the same qvalue
-        and their matched range are in the same position in the header), the
-        ones that appear earlier in `language_tags` appear earlier in the
-        returned list. (If `language_tags` is not ordered, e.g. if it is a set
-        or a dict, then that order would not be reliable.)
-
-        :param language_tags: (``iterable``) language tags
-        :return: A list of tuples of the form (language tag, qvalue), in
-                 descending order of preference.
+        range is the same for two or more tags (i.e. their matched ranges have
+        the same qvalue and the same position in the header), their order in
+        the `language_tags` argument is used as tiebreaker. (If `language_tags`
+        is unordered, e.g. if it is a set or a dict, then that order may not be
+        reliable.)
         """
         # The Basic Filtering matching scheme as applied to the Accept-Language
         # header is very under-specified by RFCs 7231 and 4647. This
