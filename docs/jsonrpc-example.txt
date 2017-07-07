@@ -11,21 +11,21 @@ Introduction
 This is an example of how to write a web service using WebOb.  The
 example shows how to create a `JSON-RPC <http://json-rpc.org/>`_
 endpoint using WebOb and the `simplejson
-<http://www.undefined.org/python/#simplejson>`_ JSON library.  This
+<https://pypi.python.org/pypi/simplejson>`_ JSON library.  This
 also shows how to use WebOb as a client library using `WSGIProxy
-<http://pythonpaste.org/wsgiproxy/>`_.
+<https://pypi.python.org/pypi/WSGIProxy/>`_.
 
 While this example presents JSON-RPC, this is not an endorsement of
 JSON-RPC.  In fact I don't like JSON-RPC.  It's unnecessarily
 un-RESTful, and modelled too closely on `XML-RPC
-<http://www.xmlrpc.com/>`_.
+<http://xmlrpc.scripting.com/>`_.
 
 Code
 ----
 
 The finished code for this is available in
 `docs/json-example-code/jsonrpc.py
-<https://github.com/Pylons/webob/tree/master/docs/jsonrpc-example-code/jsonrpc.py>`_
+<https://github.com/Pylons/webob/blob/master/docs/jsonrpc-example-code/jsonrpc.py>`_
 -- you can run that file as a script to try it out, or import it.
 
 Concepts
@@ -36,7 +36,7 @@ and get the return values.  It also provides a way to get error
 responses.
 
 The `specification
-<http://json-rpc.org/wd/JSON-RPC-1-1-WD-20060807.html>`_ goes into the
+<http://json-rpc.org/wiki/specification>`_ goes into the
 details (though in a vague sort of way).  Here's the basics:
 
 * All access goes through a POST to a single URL.
@@ -76,8 +76,7 @@ Infrastructure
 --------------
 
 To make this easier to test, we'll set up a bit of infrastructure.
-This will open up a server (using `wsgiref
-<http://python.org/doc/current/lib/module-wsgiref.simpleserver.html>`_)
+This will open up a server (using :py:mod:`wsgiref.simple_server`)
 and serve up our application (note that *creating* the application is
 left out to start with):
 
@@ -536,12 +535,11 @@ Using Them Together
 -------------------
 
 Good programmers start with tests.  But at least we'll end with a
-test.  We'll use `doctest
-<http://python.org/doc/current/lib/module-doctest.html>`_ for our
+test.  We'll use :py:mod:`doctest` for our
 tests.  The test is in `docs/json-example-code/test_jsonrpc.txt
-<https://github.com/Pylons/webob/tree/master/docs/jsonrpc-example-code/test_jsonrpc.txt>`_
+<https://github.com/Pylons/webob/blob/master/docs/jsonrpc-example-code/test_jsonrpc.txt>`_
 and you can run it with `docs/json-example-code/test_jsonrpc.py
-<https://github.com/Pylons/webob/tree/master/docs/jsonrpc-example-code/test_jsonrpc.py>`_,
+<https://github.com/Pylons/webob/blob/master/docs/jsonrpc-example-code/test_jsonrpc.py>`_,
 which looks like:
 
 .. code-block:: python
@@ -648,6 +646,6 @@ elegance of the symmetry of the request and response objects, and the
 client and server for the protocol.
 
 Many of these techniques would be better used with a `RESTful
-<http://en.wikipedia.org/wiki/Representational_State_Transfer>`_
+<https://en.wikipedia.org/wiki/Representational_state_transfer>`_
 service, so do think about that direction if you are implementing your
 own protocol.
