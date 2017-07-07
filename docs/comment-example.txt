@@ -249,10 +249,10 @@ and just turns ``&`` into ``&amp;``, etc.
 
 Because we put in some text without quoting it is susceptible to a
 `Cross-Site Scripting
-<http://en.wikipedia.org/wiki/Cross-site_scripting>`_ attack.  Fixing
+<https://en.wikipedia.org/wiki/Cross-site_scripting>`_ attack.  Fixing
 that is beyond the scope of this tutorial; you could quote it or clean
 it with something like `lxml.html.clean
-<http://codespeak.net/lxml/lxmlhtml.html#cleaning-up-html>`_.
+<http://lxml.de/lxmlhtml.html#cleaning-up-html>`_.
 
 Accepting Comments
 ------------------
