@@ -531,3 +531,148 @@ class TestAcceptLanguageValidHeader(object):
             ('zh-Hant', 0.372), ('zh-CN-a-myExt-x-private', 0.977),
             ('de', 1.0)
         ]
+
+    @pytest.mark.parametrize(
+        'header_value, language_tags, expected_returned',
+        [
+            # Example from RFC 4647, Section 3.4
+            (
+                'de-de',
+                ['de', 'de-DE-1996', 'de-Deva', 'de-Latn-DE'],
+                [('de-DE-1996', 1.0)]
+            ),
+            # Empty `language_tags`
+            (
+                'a',
+                [],
+                []
+            ),
+            # No matches
+            (
+                'a, b',
+                ['c', 'd'],
+                []
+            ),
+            # Several ranges and tags, no matches
+            (
+                'a-b;q=0.9, c-d;q=0.5, e-f',
+                ('a', 'b', 'c', 'd', 'e', 'f'),
+                []
+            ),
+            # Case-insensitive match
+            (
+                'foO, BaR',
+                ['foo', 'bar'],
+                [('foo', 1.0), ('bar', 1.0)]
+            ),
+            # If a tag matches a non-'*' range with q=0, tag is filtered out
+            (
+                'b;q=1, b;q=0, a, b-c, d;q=0',
+                ['b-c', 'a', 'b-c-d', 'd-e-f'],
+                [('a', 1.0)]
+            ),
+            # Match if a range exactly equals a tag
+            (
+                'd-e-f',
+                ['a-b-c', 'd-e-f'],
+                [('d-e-f', 1.0)]
+            ),
+            # Match if a range exactly equals a prefix of the tag such that the
+            # first character following the prefix is '-'
+            (
+                'a-b-c-d, a-b-c-d-e, a-b-c-d-f-g-h',
+                ['a-b-c-d-f-g'],
+                [('a-b-c-d-f-g', 1.0)]
+            ),
+            # If a tag matches a '*' range with q=0, the tag is filtered out
+            # (and any other '*' ranges with non-0 qvalues have no effect)
+            (
+                'a, b, *;q=0.5, *;q=0',
+                ['a-a', 'b-a', 'c-a'],
+                [('a-a', 1.0), ('b-a', 1.0)]
+            ),
+            # '*', when it is the only range in the header, matches everything
+            (
+                '*',
+                ['a', 'b'],
+                [('a', 1.0), ('b', 1.0)]
+            ),
+            # '*' range matches only tags not matched by any other range
+            (
+                '*;q=0.2, a;q=0.5, b',
+                ['a-a', 'b-a', 'c-a', 'd-a'],
+                [('b-a', 1.0), ('a-a', 0.5), ('c-a', 0.2), ('d-a', 0.2)]
+            ),
+            # '*' range without a qvalue gives a matched qvalue of 1.0
+            (
+                'a;q=0.5, b, *',
+                ['a-a', 'b-a', 'c-a', 'd-a'],
+                [('b-a', 1.0), ('c-a', 1.0), ('d-a', 1.0), ('a-a', 0.5)]
+            ),
+            # The qvalue for the '*' range works the same way as qvalues for
+            # non-'*' ranges.
+            (
+                'a;q=0.5, *;q=0.9',
+                # (meaning: prefer anything other than 'a', with 'a' as a
+                # fallback)
+                ['a', 'b'],
+                [('b', 0.9), ('a', 0.5)]
+            ),
+            # When there is more than one '*' range in the header, the one with
+            # the highest qvalue is matched
+            (
+                'a;q=0.5, *;q=0.6, b;q=0.7, *;q=0.9',
+                ['a', 'b', 'c'],
+                [('c', 0.9), ('b', 0.7), ('a', 0.5)]
+            ),
+            # When there is more than one '*' range in the header, and they
+            # have the same qvalue, the one that appears earlier in the header
+            # is matched
+            (
+                'a;q=0.5, *;q=0.9, b;q=0.9, *;q=0.9',
+                ['a', 'b', 'c'],
+                [('c', 0.9), ('b', 0.9), ('a', 0.5)]
+            ),
+            # More than one range matching the same tag: range with the highest
+            # qvalue is matched
+            (
+                'a-b-c;q=0.7, a;q=0.9, a-b;q=0.8',
+                ['a-b-c'],
+                [('a-b-c', 0.9)]
+            ),
+            # More than one range with the same qvalue matching the same tag:
+            # the range in an earlier position in the header is matched
+            (
+                'a-b-c;q=0.7, a;q=0.9, b;q=0.9, a-b;q=0.9',
+                ['a-b-c', 'b'],
+                [('a-b-c', 0.9), ('b', 0.9)]
+            ),
+            # The returned list of tuples is sorted in descending order of qvalue
+            (
+                'a;q=0.7, b;q=0.3, c, d;q=0.5',
+                ['d', 'c', 'b', 'a'],
+                [('c', 1.0), ('a', 0.7), ('d', 0.5), ('b', 0.3)]
+            ),
+            # When qvalues are the same, the tag whose matched range appears
+            # earlier in the header comes first
+            (
+                'a, c, b',
+                ['b', 'a', 'c'],
+                [('a', 1.0), ('c', 1.0), ('b', 1.0)]
+            ),
+            # When many tags match the same range (so same qvalue and same
+            # matched range position in header), they are returned in order of
+            # their position in the `language_tags` argument
+            (
+                'a',
+                ['a-b', 'a', 'a-b-c'],
+                [('a-b', 1.0), ('a', 1.0), ('a-b-c', 1.0)]
+            ),
+        ]
+    )
+    def test_basic_filtering(
+            self, header_value, language_tags, expected_returned,
+        ):
+        instance = self._get_class()(header_value=header_value)
+        returned = instance.basic_filtering(language_tags=language_tags)
+        assert returned == expected_returned

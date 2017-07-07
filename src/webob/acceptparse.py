@@ -368,6 +368,174 @@ class AcceptLanguageValidHeader(AcceptLanguage):
             return generator(value=value)
 
 
+    def basic_filtering(self, language_tags):
+        """
+        Return the tags that match the header, using Basic Filtering.
+
+        This is an implementation of the Basic Filtering matching scheme,
+        suggested as a matching scheme for the ``Accept-Language`` header in
+        :rfc:`RFC 7231, section 5.3.5 <7231#section-5.3.5>`, and defined in
+        :rfc:`RFC 4647, section 3.3.1 <4647#section-3.3.1>`. It filters the
+        tags in the `language_tags` argument, and returns a list of the ones
+        that match the language ranges in the header according to the Basic
+        Filtering matching scheme, in order of preference, together with their
+        qvalues.
+
+        For each tag in `language_tags`:
+
+        1. If the tag matches any language range in the header with ``q=0``
+           (meaning "not acceptable", see :rfc:`RFC 7231, section 5.3.1
+           <7231#section-5.3.1>`), the tag is filtered out.
+        2. The language ranges in the header that do not have ``q=0`` and are
+           not ``*`` are considered in descending order of preference: first in
+           descending order of qvalue; where two or more language ranges have
+           the same qvalue, we consider the language range that appears earlier
+           in the header to have higher preference.
+        3. A language range 'matches a particular language tag if, in a
+           case-insensitive comparison, it exactly equals the tag, or if it
+           exactly equals a prefix of the tag such that the first character
+           following the prefix is "-".' (:rfc:`RFC 4647, section 3.3.1
+           <4647#section-3.3.1>`)
+        4. If a language tag has not matched any of the language ranges so far,
+           and there is one or more ``*`` language ranges in the header: if any
+           of the ``*`` language ranges have ``q=0``, the language tag is
+           filtered out. Otherwise, the language tag is considered a match.
+
+        The method returns a list of tuples of the form (language tag, qvalue),
+        in descending order of preference: first by descending order of qvalue,
+        and where qvalues are equal, we consider the tag whose matched range
+        appears earlier in the header to have higher preference. If the matched
+        range is the same for two or more tags (so they have the same qvalue
+        and their matched range are in the same position in the header), the
+        ones that appear earlier in `language_tags` appear earlier in the
+        returned list. (If `language_tags` is not ordered, e.g. if it is a set
+        or a dict, then that order would not be reliable.)
+
+        :param language_tags: (``iterable``) language tags
+        :return: A list of tuples of the form (language tag, qvalue), in
+                 descending order of preference.
+        """
+        # The Basic Filtering matching scheme as applied to the Accept-Language
+        # header is very under-specified by RFCs 7231 and 4647. This
+        # implementation combines the description of the matching scheme in RFC
+        # 4647 and the rules of the Accept-Language header in RFC 7231 to
+        # arrive at an algorithm for Basic Filtering as applied to the
+        # Accept-Language header.
+
+        parsed = list(self.parsed)
+        tags = language_tags
+
+        not_acceptable_ranges = []
+        acceptable_ranges = []
+
+        asterisk_range_highest_qvalue = None
+        # If there is one or more '*' ranges in the header, this stores the
+        # highest qvalue from these ranges
+
+        asterisk_q0_found = False
+        # Whether there is a '*' range in the header with q=0
+
+        for position_in_header, (range_, qvalue) in enumerate(parsed):
+            if qvalue == 0.0:
+                if range_ == '*':
+                    asterisk_q0_found = True
+                else:
+                    not_acceptable_ranges.append(range_)
+            elif not asterisk_q0_found and range_ == '*':
+                if (
+                    (asterisk_range_highest_qvalue is None) or
+                    (qvalue > asterisk_range_highest_qvalue)
+                ):
+                    asterisk_range_highest_qvalue = qvalue
+                    asterisk_range_highest_qvalue_position = position_in_header
+                    # We take the highest qvalue to handle the case where there
+                    # is more than one '*' range in the header (which would not
+                    # make sense, but as it's still a valid header, we'll
+                    # handle it anyway)
+            else:
+                acceptable_ranges.append((range_, qvalue, position_in_header))
+        # Sort acceptable_ranges by qvalue, descending order
+        acceptable_ranges.sort(key=lambda tuple_: tuple_[1], reverse=True)
+
+        def match(tag, range_):
+            tag = tag.lower()
+            range_ = range_.lower()
+            # RFC 4647, section 2.1: 'A language range matches a particular
+            # language tag if, in a case-insensitive comparison, it exactly
+            # equals the tag, or if it exactly equals a prefix of the tag such
+            # that the first character following the prefix is "-".'
+            return (range_ == tag) or tag.startswith(range_ + '-')
+            # We can assume here that the language tags are valid tags, so we
+            # do not have to worry about them being malformed and ending with
+            # '-'.
+
+        filtered_tags = []
+        for tag in tags:
+            # If tag matches a range with q=0, it is filtered out
+            not_acceptable = False
+            for range_ in not_acceptable_ranges:
+                if match(tag=tag, range_=range_):
+                    not_acceptable = True
+                    break
+            if not_acceptable:
+                continue
+
+            matched_range_qvalue = None
+            for range_, qvalue, position_in_header in acceptable_ranges:
+                if match(tag=tag, range_=range_):
+                    matched_range_qvalue = qvalue
+                    matched_range_position = position_in_header
+                    break
+            else:
+                if (
+                    # there is no *;q=0 in header, and
+                    (not asterisk_q0_found) and
+                    # there is one or more * range in header
+                    (asterisk_range_highest_qvalue is not None)
+                ):
+                    # From RFC 4647, section 3.3.1: '...HTTP/1.1 [RFC2616]
+                    # specifies that the range "*" matches only languages not
+                    # matched by any other range within an "Accept-Language"
+                    # header.'
+                    # (Though RFC 2616 is obsolete, and there is no mention of
+                    # the meaning of "*" in RFC 7231, as the ``language-range``
+                    # syntax rule in RFC 7231 section 5.3.1 directs us to RFC
+                    # 4647, we can only assume that the meaning of "*" in the
+                    # Accept-Language header remains the same).
+                    matched_range_qvalue = asterisk_range_highest_qvalue
+                    matched_range_position = \
+                        asterisk_range_highest_qvalue_position
+            if matched_range_qvalue is not None:  # if there was a match
+                filtered_tags.append(
+                    (tag, matched_range_qvalue, matched_range_position)
+                )
+
+        # sort by matched_range_position, ascending
+        filtered_tags.sort(key=lambda tuple_: tuple_[2])
+        # When qvalues are tied, matched range position in the header is the
+        # tiebreaker.
+
+        # sort by qvalue, descending
+        filtered_tags.sort(key=lambda tuple_: tuple_[1], reverse=True)
+
+        return [(item[0], item[1]) for item in filtered_tags]
+        # We return a list of tuples with qvalues, instead of just a set or
+        # a list of language tags, because
+        # RFC 4647 section 3.3: "If the language priority list contains more
+        # than one range, the content returned is typically ordered in
+        # descending level of preference, but it MAY be unordered, according to
+        # the needs of the application or protocol."
+        # We return the filtered tags in order of preference, each paired with
+        # the qvalue of the range that was their best match, as the ordering
+        # and the qvalues may well be needed in some applications, and a simple
+        # set or list of language tags can always be easily obtained from the
+        # returned list if the qvalues are not required.
+        # One use for qvalues, for example, would be to indicate that two tags
+        # are equally preferred (same qvalue), which we would not be able to do
+        # in a set or list without making a member of the set or list into e.g.
+        # an iterable.
+
+
 class MIMEAccept(Accept):
     """
     Represents an ``Accept`` header, which is a list of mimetypes.
