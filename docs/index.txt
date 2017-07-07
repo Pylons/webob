@@ -4,7 +4,7 @@ WebOb
 +++++
 
 WebOb provides objects for HTTP requests and responses.  Specifically
-it does this by wrapping the `WSGI <http://wsgi.org>`_ request
+it does this by wrapping the `WSGI <https://wsgi.readthedocs.io/en/latest/>`_ request
 environment and response status/headers/app_iter(body).
 
 The request and response objects provide many conveniences for parsing
@@ -308,7 +308,7 @@ advanced HTTP techniques, while the `comment middleware example
 <comment-example>`_ shows middleware.  For applications, it's more
 reasonable to use WebOb in the context of a larger framework.  `Pyramid
 <https://trypyramid.com>`_, and its predecessor `Pylons
-<http://docs.pylonsproject.org/projects/pylons-webframework/en/latest/>`_,
+<https://docs.pylonsproject.org/projects/pylons-webframework/en/latest/>`_,
 both use WebOb.
 
 .. toctree::
@@ -335,10 +335,10 @@ Status and License
 ==================
 
 WebOb is an extraction and refinement of pieces from `Paste
-<http://pythonpaste.org/>`_.  It is under active development on `GitHub
+<https://pypi.python.org/pypi/Paste>`_.  It is under active development on `GitHub
 <https://github.com/pylons/webob>`_. It was originally written by `Ian Bicking
 <http://www.ianbicking.org/>`_, and is maintained by the `Pylons Project
-<http://www.pylonsproject.org/>`_.
+<https://pylonsproject.org/>`_.
 
 You can clone the source code with:
 
