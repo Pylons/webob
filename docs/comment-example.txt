@@ -48,7 +48,7 @@ When you use this middleware, you'll use it like:
     app = Commenter(app, storage_dir='./comments')
 
 For our application we'll use a simple static file server that is
-included with `Paste <http://pythonpaste.org>`_ (use ``easy_install
+included with `Paste <https://bitbucket.org/ianb/paste/>`_ (use ``easy_install
 Paste`` to install this).  The setup is all at the bottom of
 ``example.py``, and looks like this:
 
