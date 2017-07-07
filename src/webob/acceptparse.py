@@ -532,8 +532,8 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         # returned list if the qvalues are not required.
         # One use for qvalues, for example, would be to indicate that two tags
         # are equally preferred (same qvalue), which we would not be able to do
-        # in a set or list without making a member of the set or list into e.g.
-        # an iterable.
+        # easily with a set or a list without e.g. making a member of the set
+        # or list a sequence.
 
 
 class MIMEAccept(Accept):
