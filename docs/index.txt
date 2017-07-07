@@ -52,7 +52,7 @@ Request
 =======
 
 The request object is a wrapper around the `WSGI environ dictionary
-<http://www.python.org/dev/peps/pep-0333/#environ-variables>`_.  This
+<https://www.python.org/dev/peps/pep-0333/#environ-variables>`_.  This
 dictionary contains keys for each header, keys that describe the
 request (including the path and query string), a file-like object for
 the request body, and a variety of custom keys.  You can always access
@@ -102,8 +102,7 @@ the following:
 Also for standard HTTP request headers, there are usually attributes, e.g.,
 ``req.accept_language``, ``req.content_length``, and ``req.user_agent``. These
 properties expose the *parsed* form of each header, for whatever parsing makes
-sense. For instance, ``req.if_modified_since`` returns a `datetime
-<http://python.org/doc/current/lib/datetime-datetime.html>`_ object (or
+sense. For instance, ``req.if_modified_since`` returns a :py:class:`~datetime.datetime` object (or
 ``None`` if the header is was not provided). Details are in the `Request
 reference <class-webob.Request.html>`_.
 
