@@ -471,12 +471,10 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         filtered_tags = []
         for tag in tags:
             # If tag matches a range with q=0, it is filtered out
-            not_acceptable = False
-            for range_ in not_acceptable_ranges:
-                if match(tag=tag, range_=range_):
-                    not_acceptable = True
-                    break
-            if not_acceptable:
+            if any((
+                match(tag=tag, range_=range_)
+                for range_ in not_acceptable_ranges
+            )):
                 continue
 
             matched_range_qvalue = None
