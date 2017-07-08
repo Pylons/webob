@@ -429,8 +429,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         acceptable_ranges = []
 
         asterisk_range_highest_qvalue = None
-        # If there is one or more '*' ranges in the header, this stores the
-        # highest qvalue from these ranges
+        # The highest qvalue from '*' ranges in the header with non-0 qvalues
 
         asterisk_q0_found = False
         # Whether there is a '*' range in the header with q=0
