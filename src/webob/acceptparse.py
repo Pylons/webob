@@ -532,6 +532,246 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         # easily with a set or a list without e.g. making a member of the set
         # or list a sequence.
 
+    def lookup(
+        self, language_tags, default_range=None, default_tag=None,
+        default=None,
+    ):
+        """
+        Return the language tag that best matches the header, using Lookup.
+
+        This is an implementation of the Lookup matching scheme,
+        suggested as a matching scheme for the ``Accept-Language`` header in
+        :rfc:`RFC 7231, section 5.3.5 <7231#section-5.3.5>`, and described in
+        :rfc:`RFC 4647, section 3.4 <4647#section-3.4>`.
+
+        Each language range in the header is considered in turn, in descending
+        order of qvalue; where qvalue is tied, ranges are considered from left
+        to right.
+
+        Each language range in the header represents the most specific tag that
+        is an acceptable match: Lookup progressively truncates subtags from the
+        end of the range until a matching language tag is found. An example is
+        given in :rfc:`RFC 4647, section 3.4 <4647#section-3.4>`, under
+        "Example of a Lookup Fallback Pattern":
+
+        ::
+
+            Range to match: zh-Hant-CN-x-private1-private2
+            1. zh-Hant-CN-x-private1-private2
+            2. zh-Hant-CN-x-private1
+            3. zh-Hant-CN
+            4. zh-Hant
+            5. zh
+            6. (default)
+
+        :param language_tags: (``iterable``) language tags
+
+        :param default_range: (optional, ``None`` or ``str``)
+
+                              | If Lookup finds no match using the ranges in
+                                the header, and this argument is not None,
+                                Lookup will next attempt to match the range in
+                                this argument, using the same subtag
+                                truncation.
+
+                              | `default_range` cannot be '*', as '*' is
+                                skipped in Lookup. See :ref:`note
+                                <acceptparse-lookup-asterisk-note>`.
+
+                              | This parameter corresponds to the functionality
+                                described in :rfc:`RFC 4647, section 3.4.1
+                                <4647#section-3.4.1>`, in the paragraph
+                                starting with "One common way to provide for a
+                                default is to allow a specific language range
+                                to be set as the default..."
+
+        :param default_tag: (optional, ``None`` or ``str``)
+
+                            | At least one of `default_tag` or `default` must
+                              be supplied as an argument to the method, to
+                              define the defaulting behaviour.
+
+                            | If Lookup finds no match using the ranges in the
+                              header and `default_range`, this argument is not
+                              ``None``, and it does not match any range in the
+                              header with ``q=0`` (exactly, with no subtag
+                              truncation), then this value is returned.
+
+                            | This parameter corresponds to "return a
+                              particular language tag designated for the
+                              operation", one of the examples of "defaulting
+                              behavior" described in :rfc:`RFC 4647, section
+                              3.4.1 <4647#section-3.4.1>`.
+
+        :param default: (optional, ``None`` or any type, including a callable)
+
+                        | At least one of `default_tag` or `default` must be
+                          supplied as an argument to the method, to define the
+                          defaulting behaviour.
+
+                        | If Lookup finds no match using the ranges in the
+                          header and `default_range`, and `default_tag` is
+                          ``None`` or not acceptable because it matches a
+                          ``q=0`` range in the header, then Lookup will next
+                          examine the `default` argument.
+
+                        | If `default` is a callable, it will be called, and
+                          the callable's return value will be returned.
+
+                        | If `default` is not a callable, the value itself will
+                          be returned.
+
+                        | The difference between supplying a ``str`` to
+                          `default_tag` and `default` is that `default_tag` is
+                          checked against ``q=0`` ranges in the header to see
+                          if it matches one of the ranges specified as not
+                          acceptable, whereas a ``str`` for the `default`
+                          argument is simply returned.
+
+                        | This parameter corresponds to the "defaulting
+                          behavior" described in :rfc:`RFC 4647, section 3.4.1
+                          <4647#section-3.4.1>`
+
+        :return: (``str``, ``None``, or any type)
+
+                 | The best match according to the Lookup matching scheme, or a
+                   return value from one of the default arguments.
+
+        *Notes*:
+
+        .. _acceptparse-lookup-asterisk-note:
+
+        - Lookup's behaviour with '*' language ranges in the header may be
+          surprising. From :rfc:`RFC 4647, section 3.4 <4647#section-3.4>`:
+
+              In the lookup scheme, this range does not convey enough
+              information by itself to determine which language tag is most
+              appropriate, since it matches everything.  If the language range
+              "*" is followed by other language ranges, it is skipped.  If the
+              language range "*" is the only one in the language priority list
+              or if no other language range follows, the default value is
+              computed and returned.
+
+          So
+
+          ::
+
+              >>> header = AcceptLanguageValidHeader('de, zh, *')
+              >>> header.lookup(language_tags=['ja', 'en'], default='default')
+              'default'
+
+        - Any tags in `language_tags` and `default_tag` and any tag matched
+          during the subtag truncation search for `default_range`, that are an
+          exact match for a non-``*`` range with ``q=0`` in the header, are
+          considered not acceptable and ruled out.
+
+        - If there is a ``*;q=0`` in the header, then `default_range` and
+          `default_tag` have no effect, as ``*;q=0`` means that all languages
+          not already matched by other ranges within the header are
+          unacceptable.
+        """
+        assert not (default_tag is None and default is None), \
+            '`default_tag` and `default` arguments cannot both be None.'
+
+        # We need separate `default_tag` and `default` arguments because if we
+        # only had the `default` argument, there would be no way to tell
+        # whether a str is a language tag (in which case we have to check
+        # whether it has been specified as not acceptable with a q=0 range in
+        # the header) or not (in which case we can just return the value).
+
+        assert default_range != '*', 'default_range cannot be *.'
+
+        parsed = list(self.parsed)
+
+        tags = language_tags
+        not_acceptable_ranges = []
+        acceptable_ranges = []
+
+        asterisk_non0_found = False
+        # Whether there is a '*' range in the header with q={not 0}
+
+        asterisk_q0_found = False
+        # Whether there is a '*' range in the header with q=0
+        # While '*' is skipped in Lookup because it "does not convey enough
+        # information by itself to determine which language tag is most
+        # appropriate" (RFC 4647, section 3.4), '*;q=0' is clear in meaning:
+        # languages not matched by any other range within the header are not
+        # acceptable.
+
+        for range_, qvalue in parsed:
+            if qvalue == 0.0:
+                if range_ == '*':  # *;q=0
+                    asterisk_q0_found = True
+                else:  # {non-* range};q=0
+                    not_acceptable_ranges.append(range_.lower())
+            elif not asterisk_q0_found and range_ == '*':  # *;q={not 0}
+                asterisk_non0_found = True
+                # if asterisk_q0_found, then it does not matter whether
+                # asterisk_non0_found
+            else:  # {non-* range};q={not 0}
+                acceptable_ranges.append((range_, qvalue))
+        # Sort acceptable_ranges by qvalue, descending order
+        acceptable_ranges.sort(key=lambda tuple_: tuple_[1], reverse=True)
+        # Sort guaranteed to be stable with Python >= 2.2, so position in
+        # header is tiebreaker when two ranges have the same qvalue
+
+        acceptable_ranges = [tuple_[0] for tuple_ in acceptable_ranges]
+        lowered_tags = [tag.lower() for tag in tags]
+
+        def best_match(range_):
+            subtags = range_.split('-')
+            while True:
+                for index, tag in enumerate(lowered_tags):
+                    if tag in not_acceptable_ranges:
+                        continue
+                        # We think a non-'*' range with q=0 represents only
+                        # itself as a tag, and there should be no falling back
+                        # with subtag truncation. For example, with
+                        # 'en-gb;q=0', it should not mean 'en;q=0': the client
+                        # is unlikely to expect that specifying 'en-gb' as not
+                        # acceptable would mean that 'en' is also not
+                        # acceptable. There is no guidance on this at all in
+                        # the RFCs, so it is left to us to decide how it should
+                        # work.
+
+                    if tag == range_:
+                        return tags[index]  # return the pre-lowered tag
+
+                try:
+                    subtag_before_this = subtags[-2]
+                except IndexError:  # len(subtags) == 1
+                    break
+                # len(subtags) >= 2
+                if len(subtag_before_this) == 1 and (
+                    subtag_before_this.isdigit() or
+                    subtag_before_this.isalpha()
+                ):  # if subtag_before_this is a single-letter or -digit subtag
+                    subtags.pop(-1)  # pop twice instead of once
+                subtags.pop(-1)
+                range_ = '-'.join(subtags)
+
+        for range_ in acceptable_ranges:
+            match = best_match(range_=range_.lower())
+            if match is not None:
+                return match
+
+        if not asterisk_q0_found:
+            if default_range is not None:
+                lowered_default_range = default_range.lower()
+                match = best_match(range_=lowered_default_range)
+                if match is not None:
+                    return match
+
+            if default_tag is not None:
+                lowered_default_tag = default_tag.lower()
+                if lowered_default_tag not in not_acceptable_ranges:
+                    return default_tag
+
+        try:
+            return default()
+        except TypeError:  # default is not a callable
+            return default
+
 
 class MIMEAccept(Accept):
     """

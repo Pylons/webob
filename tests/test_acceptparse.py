@@ -676,3 +676,502 @@ class TestAcceptLanguageValidHeader(object):
         instance = self._get_class()(header_value=header_value)
         returned = instance.basic_filtering(language_tags=language_tags)
         assert returned == expected_returned
+
+    def test_lookup_default_tag_and_default_cannot_both_be_None(self):
+        instance = self._get_class()(header_value='valid-header')
+        with pytest.raises(AssertionError):
+            instance.lookup(
+                language_tags=['tag'],
+                default_range='language-range',
+                default_tag=None,
+                default=None,
+            )
+
+    def test_lookup_default_range_cannot_be_asterisk(self):
+        instance = self._get_class()(header_value='valid-header')
+        with pytest.raises(AssertionError):
+            instance.lookup(
+                language_tags=['tag'],
+                default_range='*',
+                default_tag='default-tag',
+                default=None,
+            )
+
+    @pytest.mark.parametrize(
+        (
+            'header_value, language_tags, default_range, default_tag, default'
+            ', expected'
+        ),
+        [
+            # Each language range in the header is considered in turn, in
+            # descending order of qvalue
+            (
+                'aA;q=0.3, Bb, cC;q=0.7',
+                ['Aa', 'bB', 'Cc'],
+                None, 'default-tag', None,
+                'bB',
+            ),
+            # For ranges with the same qvalue, position in header is the
+            # tiebreaker.
+            (
+                'bB-Cc;q=0.8, aA;q=0.9, Bb;q=0.9',
+                ['bb', 'aa'],
+                None, 'default-tag', None,
+                'aa',
+            ),
+            # Each language range represents the most specific tag that is an
+            # acceptable match. Examples from RFC 4647, section 3.4, first
+            # paragraph:
+            (
+                'de-ch',
+                ['de-CH-1996', 'de-CH', 'de'],
+                None, 'default-tag', None,
+                'de-CH',
+            ),
+            (
+                'de-ch',
+                ['de-CH-1996', 'de'],
+                None, 'default-tag', None,
+                'de',
+            ),
+            # The language range is progressively truncated from the end until
+            # a matching language tag is located. From the example of a Lookup
+            # Fallback Pattern in RFC 4647, section 3.4:
+            (
+                'zh-Hant-CN-x-private1-private2',
+                [
+                    'zh-Hant-CN-x-private1-private2',
+                    'zh-Hant-CN-x-private1',
+                    'zh-Hant-CN-x',
+                    'zh-Hant-CN',
+                    'zh-Hant',
+                    'zh',
+                ],
+                None, 'default-tag', None,
+                'zh-Hant-CN-x-private1-private2',
+            ),
+            (
+                'zh-Hant-CN-x-private1-private2',
+                [
+                    'zh-Hant-CN-x-private1',
+                    'zh-Hant-CN-x',
+                    'zh-Hant-CN',
+                    'zh-Hant',
+                    'zh',
+                ],
+                None, 'default-tag', None,
+                'zh-Hant-CN-x-private1',
+            ),
+            (
+                'zh-Hant-CN-x-private1-private2',
+                [
+                    'zh-Hant-CN-x',
+                    'zh-Hant-CN',
+                    'zh-Hant',
+                    'zh',
+                ],
+                None, 'default-tag', None,
+                'zh-Hant-CN',
+            ),
+            (
+                'zh-Hant-CN-x-private1-private2',
+                [
+                    'zh-Hant-CN',
+                    'zh-Hant',
+                    'zh',
+                ],
+                None, 'default-tag', None,
+                'zh-Hant-CN',
+            ),
+            (
+                'zh-Hant-CN-x-private1-private2',
+                [
+                    'zh-Hant',
+                    'zh',
+                ],
+                None, 'default-tag', None,
+                'zh-Hant',
+            ),
+            (
+                'zh-Hant-CN-x-private1-private2',
+                ['zh'],
+                None, 'default-tag', None,
+                'zh',
+            ),
+            (
+                'zh-Hant-CN-x-private1-private2',
+                ['some-other-tag-1', 'some-other-tag-2'],
+                None, 'default-tag', None,
+                'default-tag',
+            ),
+            # Further tests to check that single-letter or -digit subtags are
+            # removed at the same time as their closest trailing subtag:
+            (
+                'AA-T-subtag',
+                ['Aa-t', 'aA'],
+                None, 'default-tag', None,
+                'aA',
+            ),
+            (
+                'AA-1-subtag',
+                ['aa-1', 'aA'],
+                None, 'default-tag', None,
+                'aA',
+            ),
+            (
+                'Aa-P-subtag-8-subtag',
+                ['Aa-p-subtag-8', 'Aa-p', 'aA'],
+                None, 'default-tag', None,
+                'aA',
+            ),
+            (
+                'aA-3-subTag-C-subtag',
+                ['aA-3-subtag-c', 'aA-3', 'aA'],
+                None, 'default-tag', None,
+                'aA',
+            ),
+            # Test that single-letter or -digit subtag in first position works
+            # as expected
+            (
+                'T-subtag',
+                ['t-SubTag', 'another'],
+                None, 'default-tag', None,
+                't-SubTag',
+            ),
+            (
+                'T-subtag',
+                ['another'],
+                None, 'default-tag', None,
+                'default-tag',
+            ),
+            # If the language range "*" is followed by other language ranges,
+            # it is skipped.
+            (
+                '*, Aa-aA-AA',
+                ['bb', 'aA'],
+                None, 'default-tag', None,
+                'aA',
+            ),
+            # If the language range "*" is the only one in the header, lookup
+            # proceeds to the default arguments.
+            (
+                '*',
+                ['bb', 'aa'],
+                None, 'default-tag', None,
+                'default-tag',
+            ),
+            # If no other language range follows the "*" in the header, lookup
+            # proceeds to the default arguments.
+            (
+                'dd, cc, *',
+                ['bb', 'aa'],
+                None, 'default-tag', None,
+                'default-tag',
+            ),
+            # If a non-'*' range has q=0, any tag that matches the range
+            # exactly (without subtag truncation) is not acceptable.
+            (
+                'aa, bB-Cc-DD;q=0, bB-Cc, cc',
+                ['bb', 'bb-Cc-DD', 'bb-cC-dd', 'Bb-cc', 'bb-cC-dd'],
+                None, 'default-tag', None,
+                'Bb-cc',
+            ),
+            # ;q=0 and ;q={not 0} both in header: q=0 takes precedence and
+            # makes the exact match not acceptable, but the q={not 0} means
+            # that tags can still match after subtag truncation.
+            (
+                'aa, bB-Cc-DD;q=0.9, cc, Bb-cC-dD;q=0',
+                ['bb', 'Bb-Cc', 'Bb-cC-dD'],
+                None, 'default-tag', None,
+                'Bb-Cc',
+            ),
+            # If none of the ranges in the header match any of the language
+            # tags, and the `default_range` argument is not None and does not
+            # match any q=0 range in the header, we search through it by
+            # progressively truncating from the end, as we do with the ranges
+            # in the header. Example from RFC 4647, section 3.4.1:
+            (
+                'fr-FR, zh-Hant',
+                [
+                    'fr-FR',
+                    'fr',
+                    'zh-Hant',
+                    'zh',
+                    'ja-JP',
+                    'ja',
+                ],
+                'ja-JP', 'default-tag', None,
+                'fr-FR',
+            ),
+            (
+                'fr-FR, zh-Hant',
+                [
+                    'fr',
+                    'zh-Hant',
+                    'zh',
+                    'ja-JP',
+                    'ja',
+                ],
+                'ja-JP', 'default-tag', None,
+                'fr',
+            ),
+            (
+                'fr-FR, zh-Hant',
+                [
+                    'zh-Hant',
+                    'zh',
+                    'ja-JP',
+                    'ja',
+                ],
+                'ja-JP', 'default-tag', None,
+                'zh-Hant',
+            ),
+            (
+                'fr-FR, zh-Hant',
+                [
+                    'zh',
+                    'ja-JP',
+                    'ja',
+                ],
+                'ja-JP', 'default-tag', None,
+                'zh',
+            ),
+            (
+                'fr-FR, zh-Hant',
+                [
+                    'ja-JP',
+                    'ja',
+                ],
+                'ja-JP', 'default-tag', None,
+                'ja-JP',
+            ),
+            (
+                'fr-FR, zh-Hant',
+                ['ja'],
+                'ja-JP', 'default-tag', None,
+                'ja',
+            ),
+            (
+                'fr-FR, zh-Hant',
+                ['some-other-tag-1', 'some-other-tag-2'],
+                'ja-JP', 'default-tag', None,
+                'default-tag',
+            ),
+            # If none of the ranges in the header match the language tags, the
+            # `default_range` argument is not None, and there is a '*;q=0'
+            # range in the header, then the `default_range` and its substrings
+            # from subtag truncation are not acceptable.
+            (
+                'aa-bb, cc-dd, *;q=0',
+                ['ee-ff', 'ee'],
+                'ee-ff', None, 'default',
+                'default',
+            ),
+            # If none of the ranges in the header match the language tags, the
+            # `default_range` argument is not None, and the argument exactly
+            # matches a non-'*' range in the header with q=0 (without fallback
+            # subtag truncation), then the `default_range` itself is not
+            # acceptable...
+            (
+                'aa-bb, cc-dd, eE-Ff;q=0',
+                ['Ee-fF'],
+                'EE-FF', 'default-tag', None,
+                'default-tag',
+            ),
+            # ...but it should still be searched with subtag truncation,
+            # because its substrings other than itself are still acceptable:
+            (
+                'aa-bb, cc-dd, eE-Ff-Gg;q=0',
+                ['Ee', 'Ee-fF-gG', 'Ee-fF'],
+                'EE-FF-GG', 'default-tag', None,
+                'Ee-fF',
+            ),
+            (
+                'aa-bb, cc-dd, eE-Ff-Gg;q=0',
+                ['Ee-fF-gG', 'Ee'],
+                'EE-FF-GG', 'default-tag', None,
+                'Ee',
+            ),
+            # If `default_range` only has one subtag, then no subtag truncation
+            # is possible, and we proceed to `default-tag`:
+            (
+                'aa-bb, cc-dd, eE;q=0',
+                ['Ee'],
+                'EE', 'default-tag', None,
+                'default-tag',
+            ),
+            # If the `default_range` argument would only match a non-'*' range
+            # in the header with q=0 exactly if the `default_range` had subtags
+            # from the end truncated, then it is acceptable, and we attempt to
+            # match it with the language tags using subtag truncation. However,
+            # the tag equivalent of the range with q=0 would be considered not
+            # acceptable and ruled out, if we reach it during the subtag
+            # truncation search.
+            (
+                'aa-bb, cc-dd, eE-Ff;q=0',
+                ['Ee-fF', 'Ee-fF-33', 'ee'],
+                'EE-FF-33', 'default-tag', None,
+                'Ee-fF-33',
+            ),
+            (
+                'aa-bb, cc-dd, eE-Ff;q=0',
+                ['Ee-fF', 'eE'],
+                'EE-FF-33', 'default-tag', None,
+                'eE',
+            ),
+            # If none of the ranges in the header match, the `default_range`
+            # argument is None or does not match, and the `default_tag`
+            # argument is not None and does not match any range in the header
+            # with q=0, then the `default_tag` argument is returned.
+            (
+                'aa-bb, cc-dd',
+                ['ee-ff', 'ee'],
+                None, 'default-tag', None,
+                'default-tag',
+            ),
+            (
+                'aa-bb, cc-dd',
+                ['ee-ff', 'ee'],
+                'gg-hh', 'default-tag', None,
+                'default-tag',
+            ),
+            # If none of the ranges in the header match, the `default_range`
+            # argument is None or does not match, the `default_tag` argument is
+            # not None, and there is a '*' range in the header with q=0, then
+            # the `default_tag` argument is not acceptable.
+            (
+                'aa-bb, cc-dd, *;q=0',
+                ['ee-ff', 'ee'],
+                'gg-hh', 'ii-jj', 'default',
+                'default',
+            ),
+            # If none of the ranges in the header match, the `default_range`
+            # argument is None or does not match, the `default_tag` argument is
+            # not None and matches a non-'*' range in the header with q=0
+            # exactly, then the `default_tag` argument is not acceptable.
+            (
+                'aa-bb, cc-dd, iI-jJ;q=0',
+                ['ee-ff', 'ee'],
+                'gg-hh', 'Ii-Jj', 'default',
+                'default',
+            ),
+            # If none of the ranges in the header match, the `default_range`
+            # argument is None or does not match, and the `default_tag`
+            # argument is None, then we proceed to the `default` argument.
+            (
+                'aa-bb, cc-dd',
+                ['ee-ff', 'ee'],
+                None, None, 'default',
+                'default',
+            ),
+            (
+                'aa-bb, cc-dd',
+                ['ee-ff', 'ee'],
+                'gg-hh', None, 'default',
+                'default',
+            ),
+            # If we fall back to the `default` argument, and it is not a
+            # callable, the argument itself is returned.
+            (
+                'aa',
+                ['bb'],
+                None, None, 0,
+                0,
+            ),
+            (
+                'Aa, cC;q=0',
+                ['bb'],
+                'aA-Cc', 'Cc', ['non-callable object'],
+                ['non-callable object'],
+            ),
+            # If we fall back to the `default` argument, and it is a callable,
+            # it is called, and the callable's return value is returned by the
+            # method.
+            (
+                'aa',
+                ['bb'],
+                None, None, lambda: 'callable called',
+                'callable called',
+            ),
+            (
+                'Aa, cc;q=0',
+                ['bb'],
+                'aA-cC', 'cc', lambda: 'callable called',
+                'callable called',
+            ),
+            # Even if the 'default' argument is a str that matches a q=0 range
+            # in the header, it is still returned.
+            (
+                'aa, *;q=0',
+                ['bb'],
+                None, None, 'cc',
+                'cc',
+            ),
+            (
+                'aa, cc;q=0',
+                ['bb'],
+                None, None, 'cc',
+                'cc',
+            ),
+            # If the `default_tag` argument is not acceptable because of a q=0
+            # range in the header, and the `default` argument is None, then
+            # None is returned.
+            (
+                'aa, Bb;q=0',
+                ['cc'],
+                None, 'bB', None,
+                None,
+            ),
+            (
+                'aa, *;q=0',
+                ['cc'],
+                None, 'bb', None,
+                None,
+            ),
+            # Test that method works with empty `language_tags`:
+            (
+                'range',
+                [],
+                None, 'default-tag', None,
+                'default-tag',
+            ),
+            # Test that method works with empty `default_range`:
+            (
+                'range',
+                [],
+                '', 'default-tag', None,
+                'default-tag',
+            ),
+            (
+                'range',
+                ['tag'],
+                '', 'default-tag', None,
+                'default-tag',
+            ),
+            # Test that method works with empty `default_tag`:
+            (
+                'range',
+                [],
+                '', '', None,
+                '',
+            ),
+            (
+                'range',
+                ['tag'],
+                'default-range', '', None,
+                '',
+            ),
+        ]
+    )
+    def test_lookup(
+            self, header_value, language_tags, default_range, default_tag,
+            default, expected,
+        ):
+        instance = self._get_class()(header_value=header_value)
+        returned = instance.lookup(
+            language_tags=language_tags,
+            default_range=default_range,
+            default_tag=default_tag,
+            default=default,
+        )
+        assert returned == expected
