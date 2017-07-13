@@ -532,6 +532,26 @@ class TestAcceptLanguageValidHeader(object):
             ('de', 1.0)
         ]
 
+    @pytest.mark.parametrize('header_value, expected_list', [
+        ('fr;q=0, jp;q=0', []),
+        ('en-gb, da', ['en-gb', 'da']),
+        ('en-gb;q=0.5, da;q=0.5', ['en-gb', 'da']),
+        (
+            'de;q=0.8, de-DE-1996;q=0.5, de-Deva;q=0, de-Latn-DE',
+            ['de-Latn-DE', 'de', 'de-DE-1996']
+        ),
+        # __iter__ currently a simple filter and does not handle q=0 and *
+        # well:
+        ('en-gb;q=0, *', ['*']),
+        # Edge case of a range in the header with non-0 qvalue, which should be
+        # overruled by the same range elsewhere in the header with q=0.
+        # __iter__ does not currently handle cases like this.
+        ('de, de;q=0', ['de']),
+    ])
+    def test___iter__(self, header_value, expected_list):
+        instance = self._get_class()(header_value=header_value)
+        assert list(instance) == expected_list
+
     @pytest.mark.parametrize(
         'header_value, language_tags, expected_returned',
         [
