@@ -10,6 +10,7 @@ exists, but this ignores them.
 """
 
 import re
+import warnings
 
 from webob.headers import _trans_name as header_to_key
 from webob.util import (
@@ -366,6 +367,56 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                     qvalue = float(qvalue) if qvalue else 1.0
                     yield (lang_range, qvalue)
             return generator(value=value)
+
+    def __contains__(self, offer):
+        """
+        Return True if the `offer` is acceptable according to the header.
+
+        .. warning::
+
+           The behavior of :meth:`AcceptLanguageValidHeader.__contains__` is
+           currently being maintained for backward compatibility, but it may
+           change in future to better conform to the RFC.
+
+           What is 'acceptable' depends on the needs of your application.
+           :rfc:`RFC 7231, section 5.3.5 <7231#section-5.3.5>` suggests three
+           matching schemes from :rfc:`RFC 4647 <4647>`, two of which WebOb
+           supports with :meth:`AcceptLanguageValidHeader.basic_filtering` and
+           :meth:`AcceptLanguageValidHeader.lookup` (we interpret the RFC to
+           mean that Extended Filtering cannot apply for the
+           ``Accept-Language`` header, as the header only accepts basic
+           language ranges.) If these are not suitable for the needs of your
+           application, you may need to write your old matching using
+           :attr:`AcceptLanguageValidHeader.parsed`.
+
+        :param offer: (``str``) language tag offer
+        :return: (``bool``) Whether ``offer`` is acceptable according to the
+                 header.
+
+        This uses the old criterion of a match in
+        :meth:`AcceptLanguageValidHeader._old_match`, which does not conform to
+        :rfc:`RFC 7231, section 5.3.5 <7231#section-5.3.5>` or any of the
+        matching schemes suggested there. It also does not properly take into
+        account ranges with ``q=0`` in the header::
+
+            >>> 'en-gb' in AcceptLanguageValidHeader('en, en-gb;q=0')
+            True
+            >>> 'en' in AcceptLanguageValidHeader('en;q=0, *')
+            True
+
+        (See the docstring for :meth:`AcceptLanguageValidHeader._old_match` for
+        other problems with the old criterion for a match.)
+        """
+        warnings.warn(
+            'The behavior of AcceptLanguageValidHeader.__contains__ is'
+            'currently being maintained for backward compatibility, but it may'
+            ' change in future to better conform to the RFC.',
+            PendingDeprecationWarning,
+        )
+        for mask, quality in self._parsed_nonzero:
+            if self._old_match(mask, offer):
+                return True
+        return False
 
     def __iter__(self):
         """

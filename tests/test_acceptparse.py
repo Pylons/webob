@@ -6,7 +6,6 @@ from webob.acceptparse import MIMEAccept
 from webob.acceptparse import NilAccept
 from webob.acceptparse import NoAccept
 from webob.acceptparse import accept_property
-from webob.acceptparse import AcceptLanguage
 from webob.acceptparse import AcceptCharset
 
 def test_parse_accept_badq():
@@ -145,24 +144,6 @@ def test_accept_match():
     for mask in ['*', 'text/html', 'TEXT/HTML']:
         assert 'text/html' in Accept(mask)
     assert 'text/html' not in Accept('foo/bar')
-
-def test_accept_match_lang():
-    for mask, lang in [
-        ('*', 'da'),
-        ('da', 'DA'),
-        ('en', 'en-gb'),
-        ('en-gb', 'en-gb'),
-        ('en-gb', 'en'),
-        ('en-gb', 'en_GB'),
-    ]:
-        assert lang in AcceptLanguage(mask)
-    for mask, lang in [
-        ('en-gb', 'en-us'),
-        ('en-gb', 'fr-fr'),
-        ('en-gb', 'fr'),
-        ('en', 'fr-fr'),
-    ]:
-        assert lang not in AcceptLanguage(mask)
 
 # NilAccept tests
 
@@ -531,6 +512,28 @@ class TestAcceptLanguageValidHeader(object):
             ('zh-Hant', 0.372), ('zh-CN-a-myExt-x-private', 0.977),
             ('de', 1.0)
         ]
+
+    @pytest.mark.parametrize('header_value, offer', [
+        ('*', 'da'),
+        ('da', 'DA'),
+        ('en', 'en-gb'),
+        ('en-gb', 'en-gb'),
+        ('en-gb', 'en'),
+        ('en-gb', 'en_GB'),
+    ])
+    def test___contains___in(self, header_value, offer):
+        instance = self._get_class()(header_value=header_value)
+        assert offer in instance
+
+    @pytest.mark.parametrize('header_value, offer', [
+        ('en-gb', 'en-us'),
+        ('en-gb', 'fr-fr'),
+        ('en-gb', 'fr'),
+        ('en', 'fr-fr'),
+    ])
+    def test___contains___not_in(self, header_value, offer):
+        instance = self._get_class()(header_value=header_value)
+        assert offer not in instance
 
     @pytest.mark.parametrize('header_value, expected_list', [
         ('fr;q=0, jp;q=0', []),
