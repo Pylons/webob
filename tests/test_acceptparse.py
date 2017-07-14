@@ -543,12 +543,10 @@ class TestAcceptLanguageValidHeader(object):
             'de;q=0.8, de-DE-1996;q=0.5, de-Deva;q=0, de-Latn-DE',
             ['de-Latn-DE', 'de', 'de-DE-1996']
         ),
-        # __iter__ currently a simple filter and does not handle q=0 and *
-        # well:
+        # __iter__ is currently a simple filter for the ranges in the header
+        # with non-0 qvalues, and does not attempt to account for the special
+        # meanings of q=0 and *:
         ('en-gb;q=0, *', ['*']),
-        # Edge case of a range in the header with non-0 qvalue, which should be
-        # overruled by the same range elsewhere in the header with q=0.
-        # __iter__ does not currently handle cases like this.
         ('de, de;q=0', ['de']),
     ])
     def test___iter__(self, header_value, expected_list):
