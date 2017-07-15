@@ -386,7 +386,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
            mean that Extended Filtering cannot apply for the
            ``Accept-Language`` header, as the header only accepts basic
            language ranges.) If these are not suitable for the needs of your
-           application, you may need to write your old matching using
+           application, you may need to write your own matching using
            :attr:`AcceptLanguageValidHeader.parsed`.
 
         :param offer: (``str``) language tag offer
