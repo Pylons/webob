@@ -674,6 +674,141 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         # easily with a set or a list without e.g. making a member of the set
         # or list a sequence.
 
+    def best_match(self, offers, default_match=None):
+        """
+        Return the best match from the sequence of language tag `offers`.
+
+        .. warning::
+
+           This is currently maintained for backward compatibility, and may be
+           deprecated in future.
+
+           :meth:`AcceptLanguageValidHeader.best_match` uses its own algorithm
+           to determine what is a best match -- one that has many issues, and
+           does not conform to :rfc:`RFC 7231 <7231>`.
+
+           :meth:`AcceptLanguageValidHeader.lookup` is a possible alternative
+           for finding a best match -- it conforms to, and is suggested as a
+           matching scheme for the ``Accept-Language`` header in, :rfc:`RFC
+           7231, section 5.3.5 <7231#section-5.3.5>` -- but please be aware
+           that there are differences in how it determines what is a best
+           match. If that is not suitable for the needs of your application,
+           you may need to write your own matching using
+           :attr:`AcceptLanguageValidHeader.parsed`.
+
+        Each language tag in `offers` is checked against each non-0 range in
+        the header. If the two are a match according to WebOb's old criterion
+        for a match, the quality value of the match is the qvalue of the
+        language range from the header multiplied by the server quality value
+        of the offer (if the server quality value is not supplied, it is 1).
+
+        The offer in the match with the highest quality value is the best
+        match. If there is more than one match with the highest qvalue, the
+        match where the language range has a lower number of '*'s is the best
+        match. If the two have the same number of '*'s, the one that shows up
+        first in `offers` is the best match.
+
+        :param offers: (iterable)
+
+                       | Each item in the iterable may be a ``str`` language
+                         tag, or a (language tag, server quality value)
+                         ``tuple`` or ``list``. (The two may be mixed in the
+                         iterable.)
+
+        :param default_match: (optional, any type) the value to be returned if
+                              there is no match
+
+        :return: (``str``, or the type of `default_match`)
+
+                 | The language tag that is the best match. If there is no
+                   match, the value of `default_match` is returned.
+
+
+        **Issues**
+
+        - Incorrect tiebreaking when quality values of two matches are the same
+          (https://github.com/Pylons/webob/issues/256)::
+
+              >>> header = AcceptLanguageValidHeader(
+              ...     header_value='en-gb;q=1, en;q=0.8'
+              ... )
+              >>> header.best_match(offers=['en', 'en-GB'])
+              'en'
+              >>> header.best_match(offers=['en-GB', 'en'])
+              'en-GB'
+
+              >>> header = AcceptLanguageValidHeader(header_value='en-gb, en')
+              >>> header.best_match(offers=['en', 'en-gb'])
+              'en'
+              >>> header.best_match(offers=['en-gb', 'en'])
+              'en-gb'
+
+        - Incorrect handling of ``q=0``::
+
+              >>> header = AcceptLanguageValidHeader(header_value='en;q=0, *')
+              >>> header.best_match(offers=['en'])
+              'en'
+
+              >>> header = AcceptLanguageValidHeader(header_value='fr, en;q=0')
+              >>> header.best_match(offers=['en-gb'], default_match='en')
+              'en'
+
+        - Matching only takes into account the first subtag when matching a
+          range with more specific or less specific tags::
+
+              >>> header = AcceptLanguageValidHeader(header_value='zh')
+              >>> header.best_match(offers=['zh-Hans-CN'])
+              'zh-Hans-CN'
+              >>> header = AcceptLanguageValidHeader(header_value='zh-Hans')
+              >>> header.best_match(offers=['zh-Hans-CN'])
+              >>> header.best_match(offers=['zh-Hans-CN']) is None
+              True
+
+              >>> header = AcceptLanguageValidHeader(header_value='zh-Hans-CN')
+              >>> header.best_match(offers=['zh'])
+              'zh'
+              >>> header.best_match(offers=['zh-Hans'])
+              >>> header.best_match(offers=['zh-Hans']) is None
+              True
+
+        """
+        best_quality = -1
+        best_offer = default_match
+        matched_by = '*/*'
+        # [We can see that this was written for the ``Accept`` header and not
+        # the ``Accept-Language`` header, as there are no '/'s in a valid
+        # ``Accept-Language`` header.]
+        for offer in offers:
+            if isinstance(offer, (tuple, list)):
+                offer, server_quality = offer
+            else:
+                server_quality = 1
+            for mask, quality in self._parsed_nonzero:
+                possible_quality = server_quality * quality
+                if possible_quality < best_quality:
+                    continue
+                elif possible_quality == best_quality:
+                    # 'text/plain' overrides 'message/*' overrides '*/*'
+                    # (if all match w/ the same q=)
+                    if matched_by.count('*') <= mask.count('*'):
+                        continue
+                    # [This tiebreaking was written for the `Accept` header. A
+                    # basic language range in a valid ``Accept-Language``
+                    # header can only be either '*' or a range with no '*' in
+                    # it. This happens to work here, but is not sufficient as a
+                    # tiebreaker.
+                    #
+                    # A best match here, given this algorithm uses
+                    # self._old_match() which matches both more *and* less
+                    # specific tags, should be the match where the absolute
+                    # value of the difference between the subtag counts of
+                    # `mask` and `offer` is the lowest.]
+                if self._old_match(mask, offer):
+                    best_quality = possible_quality
+                    best_offer = offer
+                    matched_by = mask
+        return best_offer
+
     def lookup(
         self, language_tags, default_range=None, default_tag=None,
         default=None,
