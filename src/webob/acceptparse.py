@@ -915,7 +915,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                  | The best match according to the Lookup matching scheme, or a
                    return value from one of the default arguments.
 
-        *Notes*:
+        **Notes**:
 
         .. _acceptparse-lookup-asterisk-note:
 
