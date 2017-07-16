@@ -684,8 +684,9 @@ class AcceptLanguageValidHeader(AcceptLanguage):
            deprecated in future.
 
            :meth:`AcceptLanguageValidHeader.best_match` uses its own algorithm
-           to determine what is a best match -- one that has many issues, and
-           does not conform to :rfc:`RFC 7231 <7231>`.
+           (one not specified in :rfc:`RFC 7231 <7231>`) to determine what is a
+           best match. The algorithm has many issues, and does not conform to
+           :rfc:`RFC 7231 <7231>`.
 
            :meth:`AcceptLanguageValidHeader.lookup` is a possible alternative
            for finding a best match -- it conforms to, and is suggested as a
