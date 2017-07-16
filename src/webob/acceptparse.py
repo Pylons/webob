@@ -725,7 +725,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                    match, the value of `default_match` is returned.
 
 
-        **Issues**
+        **Issues**:
 
         - Incorrect tiebreaking when quality values of two matches are the same
           (https://github.com/Pylons/webob/issues/256)::
