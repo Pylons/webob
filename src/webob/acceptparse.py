@@ -370,7 +370,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
     def __contains__(self, offer):
         """
-        Return True if the `offer` is acceptable according to the header.
+        Return ``bool`` indicating whether `offer` is acceptable.
 
         .. warning::
 
