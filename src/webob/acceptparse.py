@@ -773,6 +773,12 @@ class AcceptLanguageValidHeader(AcceptLanguage):
               True
 
         """
+        warnings.warn(
+            'The behavior of AcceptLanguageValidHeader.best_match is'
+            'currently being maintained for backward compatibility, but it may'
+            ' be deprecated in future as it does not conform to the RFC.',
+            PendingDeprecationWarning,
+        )
         best_quality = -1
         best_offer = default_match
         matched_by = '*/*'
@@ -1118,6 +1124,12 @@ class AcceptLanguageValidHeader(AcceptLanguage):
               True
 
         """
+        warnings.warn(
+            'The behavior of AcceptLanguageValidHeader.quality is'
+            'currently being maintained for backward compatibility, but it may'
+            ' be deprecated in future as it does not conform to the RFC.',
+            PendingDeprecationWarning,
+        )
         # [If ``modifier`` is positive, it would not change the result of the
         # comparison using ``max()`` (apart from the first comparison with
         # bestq, when it is 0), because all the ``q``s are multiplied by the
