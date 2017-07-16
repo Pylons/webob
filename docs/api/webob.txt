@@ -27,7 +27,8 @@ Accept-*
 .. autoclass:: AcceptLanguage
 
 .. autoclass:: AcceptLanguageValidHeader
-   :members: __init__, __contains__, __iter__, parse, basic_filtering, best_match, lookup
+   :members: __init__, __contains__, __iter__, parse, basic_filtering,
+             best_match, lookup, quality
 
    .. autoinstanceattribute:: header_value
       :annotation:

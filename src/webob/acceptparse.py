@@ -1050,6 +1050,96 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         except TypeError:  # default is not a callable
             return default
 
+    def quality(self, offer, modifier=1):
+        """
+        Return quality value of given offer, or ``None`` if there is no match.
+
+        .. warning::
+
+           This is currently maintained for backward compatibility, and may be
+           deprecated in future.
+
+           :meth:`AcceptLanguageValidHeader.quality` uses its own algorithm
+           (one not specified in :rfc:`RFC 7231 <7231>`) to determine what is a
+           best match. The algorithm has many issues, and does not conform to
+           :rfc:`RFC 7231 <7231>`.
+
+           What should be considered a match depends on the needs of your
+           application (for example, should a language range in the header
+           match a more specific language tag offer, or a less specific tag
+           offer?) :rfc:`RFC 7231, section 5.3.5 <7231#section-5.3.5>` suggests
+           three matching schemes from :rfc:`RFC 4647 <4647>`, two of which
+           WebOb supports with
+           :meth:`AcceptLanguageValidHeader.basic_filtering` and
+           :meth:`AcceptLanguageValidHeader.lookup` (we interpret the RFC to
+           mean that Extended Filtering cannot apply for the
+           ``Accept-Language`` header, as the header only accepts basic
+           language ranges.) :meth:`AcceptLanguageValidHeader.basic_filtering`
+           returns quality values with the matched language tags.
+           :meth:`AcceptLanguageValidHeader.lookup` returns a language tag
+           without the quality value, but the quality value is less likely to
+           be useful when we are looking for a best match.
+
+           If these are not suitable or sufficient for the needs of your
+           application, you may need to write your own matching using
+           :attr:`AcceptLanguageValidHeader.parsed`.
+
+        :param offer: (``str``) language tag offer
+        :return: (``float`` or ``None``)
+
+                 | The highest quality value from the language range(s) that
+                   match the `offer`, or ``None`` if there is no match.
+
+
+        **Issues**:
+
+        - Incorrect handling of ``q=0`` and ``*``::
+
+              >>> header = AcceptLanguageValidHeader(header_value='en;q=0, *')
+              >>> header.quality(offer='en')
+              1.0
+
+        - Matching only takes into account the first subtag when matching a
+          range with more specific or less specific tags::
+
+              >>> header = AcceptLanguageValidHeader(header_value='zh')
+              >>> header.quality(offer='zh-Hans-CN')
+              1.0
+              >>> header = AcceptLanguageValidHeader(header_value='zh-Hans')
+              >>> header.quality(offer='zh-Hans-CN')
+              >>> header.quality(offer='zh-Hans-CN') is None
+              True
+
+              >>> header = AcceptLanguageValidHeader(header_value='zh-Hans-CN')
+              >>> header.quality(offer='zh')
+              1.0
+              >>> header.quality(offer='zh-Hans')
+              >>> header.quality(offer='zh-Hans') is None
+              True
+
+        """
+        # [If ``modifier`` is positive, it would not change the result of the
+        # comparison using ``max()`` (apart from the first comparison with
+        # bestq, when it is 0), because all the ``q``s are multiplied by the
+        # same modifier. So in effect, it is just multiplying the highest
+        # quality value by the ``modifier``.
+        #
+        # If ``modifier`` is negative, bestq would always be 0, because it
+        # starts off as 0, and max(0, negative number) is always 0. So the
+        # method would always return None.
+        #
+        # If ``modifier`` is 0, bestq would always be 0, so the method would
+        # always return None.
+        #
+        # There was no explanation of the parameter in the existing
+        # documentation, and it is unclear what it was intended to do, so I
+        # have left it undocumented for now.]
+        bestq = 0
+        for mask, q in self.parsed:
+            if self._old_match(mask, offer):
+                bestq = max(bestq, q * modifier)
+        return bestq or None
+
 
 class MIMEAccept(Accept):
     """
