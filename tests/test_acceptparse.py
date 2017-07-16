@@ -513,6 +513,11 @@ class TestAcceptLanguageValidHeader(object):
             ('de', 1.0)
         ]
 
+    def test___bool__(self):
+        instance = self._get_class()(header_value='valid-header')
+        returned = bool(instance)
+        assert returned is True
+
     @pytest.mark.parametrize('header_value, offer', [
         ('*', 'da'),
         ('da', 'DA'),

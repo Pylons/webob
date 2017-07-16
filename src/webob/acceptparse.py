@@ -368,6 +368,19 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                     yield (lang_range, qvalue)
             return generator(value=value)
 
+    def __nonzero__(self):
+        """
+        Return whether ``self`` represents a valid ``Accept-Language`` header.
+
+        Return ``True`` if ``self`` represents a valid header, and ``False`` if
+        it represents an invalid header, or the header not being in the
+        request.
+
+        For this class, it always returns ``True``.
+        """
+        return True
+    __bool__ = __nonzero__  # Python 3
+
     def __contains__(self, offer):
         """
         Return ``bool`` indicating whether `offer` is acceptable.
