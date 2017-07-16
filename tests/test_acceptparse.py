@@ -1196,3 +1196,14 @@ class TestAcceptLanguageValidHeader(object):
             default=default,
         )
         assert returned == expected
+
+
+class Test__AcceptLanguageInvalidOrNoHeader(object):
+    def _get_class(self):
+        from webob.acceptparse import _AcceptLanguageInvalidOrNoHeader
+        return _AcceptLanguageInvalidOrNoHeader
+
+    def test___contains__(self):
+        instance = self._get_class()(header_value='')
+        returned = ('any-tag' in instance)
+        assert returned is True

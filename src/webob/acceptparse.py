@@ -1170,6 +1170,31 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
 
     HeaderClass = AcceptLanguage
 
+    def __contains__(self, offer):
+        """
+        Return ``bool`` indicating whether `offer` is acceptable.
+
+        .. warning::
+
+           The behavior of ``.__contains__`` for the ``AcceptLanguage`` classes
+           is currently being maintained for backward compatibility, but it may
+           change in future to better conform to the RFC.
+
+        :param offer: (``str``) language tag offer
+        :return: (``bool``) Whether ``offer`` is acceptable according to the
+                 header.
+
+        For this class, either there is no ``Accept-Language`` header in the
+        request, or the header is invalid, so any language tag is acceptable,
+        and this always returns ``True``.
+        """
+        warnings.warn(
+            'The behavior of .__contains__ for the AcceptLanguage classes is'
+            'currently being maintained for backward compatibility, but it may'
+            ' change in future to better conform to the RFC.',
+            PendingDeprecationWarning,
+        )
+        return True
 class MIMEAccept(Accept):
     """
     Represents an ``Accept`` header, which is a list of mimetypes.
