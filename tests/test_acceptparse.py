@@ -1203,6 +1203,11 @@ class Test__AcceptLanguageInvalidOrNoHeader(object):
         from webob.acceptparse import _AcceptLanguageInvalidOrNoHeader
         return _AcceptLanguageInvalidOrNoHeader
 
+    def test___bool__(self):
+        instance = self._get_class()(header_value='')
+        returned = bool(instance)
+        assert returned is False
+
     def test___contains__(self):
         instance = self._get_class()(header_value='')
         returned = ('any-tag' in instance)
@@ -1212,3 +1217,4 @@ class Test__AcceptLanguageInvalidOrNoHeader(object):
         instance = self._get_class()(header_value='')
         returned = list(instance)
         assert returned == []
+
