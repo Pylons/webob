@@ -422,7 +422,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         """
         Return all the ranges with non-0 qvalues, in order of preference.
 
-        :return: ``list`` of all the language ranges in the header with non-0
+        :return: iterator of all the language ranges in the header with non-0
                  qvalues, in descending order of qvalue. If two ranges have the
                  same qvalue, they are returned in the order of their positions
                  in the header, from left to right.
@@ -430,7 +430,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         Please note that this is a simple filter for the ranges in the header
         with non-0 qvalues, and is not necessarily the same as what the client
         prefers, e.g. ``'en-gb;q=0, *'`` means 'everything but British
-        English', but this method would return only ``['*']``.
+        English', but ``list(instance)`` would return only ``['*']``.
         """
         for m, q in sorted(
             self._parsed_nonzero,
