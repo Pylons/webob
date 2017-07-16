@@ -1223,3 +1223,7 @@ class Test__AcceptLanguageInvalidOrNoHeader(object):
         returned = list(instance)
         assert returned == []
 
+    def test_basic_filtering(self):
+        instance = self._get_class()(header_value='')
+        returned = instance.basic_filtering(language_tags=['tag1', 'tag2'])
+        assert returned == []
