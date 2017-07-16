@@ -1195,6 +1195,21 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
             PendingDeprecationWarning,
         )
         return True
+
+    def __iter__(self):
+        """
+        Return all the ranges with non-0 qvalues, in order of preference.
+
+        :return: iterator of all the language ranges in the header with non-0
+                 qvalues, in descending order of qvalue. If two ranges have the
+                 same qvalue, they are returned in the order of their positions
+                 in the header, from left to right.
+
+        For this class, either there is no ``Accept-Language`` header in the
+        request, or the header is invalid, so there are no language ranges, and
+        this always returns an empty iterator.
+        """
+        return iter(())
 class MIMEAccept(Accept):
     """
     Represents an ``Accept`` header, which is a list of mimetypes.

@@ -1207,3 +1207,8 @@ class Test__AcceptLanguageInvalidOrNoHeader(object):
         instance = self._get_class()(header_value='')
         returned = ('any-tag' in instance)
         assert returned is True
+
+    def test___iter__(self):
+        instance = self._get_class()(header_value='')
+        returned = list(instance)
+        assert returned == []
