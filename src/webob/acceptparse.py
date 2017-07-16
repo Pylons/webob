@@ -1153,6 +1153,23 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         return bestq or None
 
 
+class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
+    """
+    Represent when an ``Accept-Language`` header is invalid or not in request.
+
+    This is the base class for the behaviour that
+    :class:`.AcceptLanguageInvalidHeader` and :class:`.AcceptLanguageNoHeader`
+    have in common.
+
+    :rfc:`7231` does not provide any guidance on what should happen if the
+    ``Accept-Language`` header has an invalid value. This implementation
+    disregards the header when the header is invalid, so
+    :class:`.AcceptLanguageInvalidHeader` and :class:`.AcceptLanguageNoHeader`
+    have much behaviour in common.
+    """
+
+    HeaderClass = AcceptLanguage
+
 class MIMEAccept(Accept):
     """
     Represents an ``Accept`` header, which is a list of mimetypes.
