@@ -787,7 +787,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
         """
         warnings.warn(
-            'The behavior of AcceptLanguageValidHeader.best_match is'
+            'The behavior of AcceptLanguageValidHeader.best_match is '
             'currently being maintained for backward compatibility, but it may'
             ' be deprecated in future as it does not conform to the RFC.',
             PendingDeprecationWarning,
