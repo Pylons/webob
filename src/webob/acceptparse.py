@@ -1300,7 +1300,6 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         best_quality = -1
         best_offer = default_match
         for offer in offers:
-            _check_offer(offer)
             if isinstance(offer, (list, tuple)):
                 offer, quality = offer
             else:
