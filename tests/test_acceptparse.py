@@ -1227,3 +1227,26 @@ class Test__AcceptLanguageInvalidOrNoHeader(object):
         instance = self._get_class()(header_value='')
         returned = instance.basic_filtering(language_tags=['tag1', 'tag2'])
         assert returned == []
+
+    def test_lookup_default_tag_and_default_cannot_both_be_None(self):
+        instance = self._get_class()(header_value='')
+        with pytest.raises(AssertionError):
+            instance.lookup(default_tag=None, default=None)
+
+    @pytest.mark.parametrize('default_tag, default, expected', [
+        # If `default_tag` is not None, it is returned.
+        ('default-tag', 'default', 'default-tag'),
+        # If `default_tag` is None, we proceed to the `default` argument. If
+        # `default` is not a callable, the argument itself is returned.
+        (None, 0, 0),
+        # If `default` is a callable, it is called, and the callable's return
+        # value is returned by the method.
+        (None, lambda: 'callable called', 'callable called'),
+    ])
+    def test_lookup(self, default_tag, default, expected):
+        instance = self._get_class()(header_value='')
+        returned = instance.lookup(
+            default_tag=default_tag,
+            default=default,
+        )
+        assert returned == expected

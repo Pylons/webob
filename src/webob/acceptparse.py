@@ -1309,6 +1309,84 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
                 best_quality = quality
         return best_offer
 
+    def lookup(
+        self, language_tags=None, default_range=None, default_tag=None,
+        default=None,
+    ):
+        """
+        Return the language tag that best matches the header, using Lookup.
+
+        When the header is invalid, or there is no ``Accept-Language`` header
+        in the request, all language tags are considered acceptable, so it is
+        as if the header is '*'. As specified for the Lookup matching scheme in
+        :rfc:`RFC 4647, section 3.4 <4647#section-3.4>`, when the header is
+        '*', the default value is to be computed and returned. So this method
+        will ignore the `language_tags` and `default_range` arguments, and
+        proceed to `default_tag`, then `default`.
+
+        :param language_tags: (optional, any type)
+
+                              | This argument is ignored, and is only used as a
+                                placeholder so that the method signature
+                                corresponds to that of
+                                :meth:`AcceptLanguageValidHeader.lookup`.
+
+        :param default_range: (optional, any type)
+
+                              | This argument is ignored, and is only used as a
+                                placeholder so that the method signature
+                                corresponds to that of
+                                :meth:`AcceptLanguageValidHeader.lookup`.
+
+        :param default_tag: (optional, ``None`` or ``str``)
+
+                            | At least one of `default_tag` or `default` must
+                              be supplied as an argument to the method, to
+                              define the defaulting behaviour.
+
+                            | If this argument is not ``None``, then it is
+                              returned.
+
+                            | This parameter corresponds to "return a
+                              particular language tag designated for the
+                              operation", one of the examples of "defaulting
+                              behavior" described in :rfc:`RFC 4647, section
+                              3.4.1 <4647#section-3.4.1>`.
+
+        :param default: (optional, ``None`` or any type, including a callable)
+
+                        | At least one of `default_tag` or `default` must be
+                          supplied as an argument to the method, to define the
+                          defaulting behaviour.
+
+                        | If `default_tag` is ``None``, then Lookup will next
+                          examine the `default` argument.
+
+                        | If `default` is a callable, it will be called, and
+                          the callable's return value will be returned.
+
+                        | If `default` is not a callable, the value itself will
+                          be returned.
+
+                        | This parameter corresponds to the "defaulting
+                          behavior" described in :rfc:`RFC 4647, section 3.4.1
+                          <4647#section-3.4.1>`
+
+        :return: (``str``, or any type)
+
+                 | the return value from `default_tag` or `default`.
+        """
+        assert not (default_tag is None and default is None), \
+            '`default_tag` and `default` arguments cannot both be None.'
+
+        if default_tag is not None:
+            return default_tag
+
+        try:
+            return default()
+        except TypeError:  # default is not a callable
+            return default
+
     def quality(self, offer):
         """
         Return quality value of given offer, or ``None`` if there is no match.
