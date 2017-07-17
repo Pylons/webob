@@ -1308,6 +1308,35 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
                 best_offer = offer
                 best_quality = quality
         return best_offer
+
+    def quality(self, offer):
+        """
+        Return quality value of given offer, or ``None`` if there is no match.
+
+        This is the ``.quality()`` method for when the header is invalid or not
+        found in the request, corresponding to
+        :meth:`AcceptLanguageValidHeader.quality`.
+
+        .. warning::
+
+           This is currently maintained for backward compatibility, and may be
+           deprecated in future (see the documentation for
+           :meth:`AcceptLanguageValidHeader.quality`).
+
+        :param offer: (``str``) language tag offer
+        :return: (``float``) ``1.0``.
+
+        When the ``Accept-Language`` header is invalid or not in the request,
+        all offers are equally acceptable, so 1.0 is always returned.
+        """
+        warnings.warn(
+            'The behavior of .quality for the AcceptLanguage classes is '
+            'currently being maintained for backward compatibility, but the '
+            'method may be deprecated in future, as its behavior is not '
+            'specified in (and currently does not conform to) RFC 7231.',
+            PendingDeprecationWarning,
+        )
+        return 1.0
 class MIMEAccept(Accept):
     """
     Represents an ``Accept`` header, which is a list of mimetypes.
