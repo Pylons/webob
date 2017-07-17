@@ -37,6 +37,13 @@ Accept-*
 
    :members:
    :inherited-members:
+.. autoclass:: AcceptLanguageNoHeader
+   :members: __init__
+
+   .. autoinstanceattribute:: header_value
+      :annotation:
+   .. autoinstanceattribute:: parsed
+      :annotation:
 
 .. autoclass:: MIMEAccept
    :members:

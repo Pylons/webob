@@ -1250,3 +1250,15 @@ class Test__AcceptLanguageInvalidOrNoHeader(object):
             default=default,
         )
         assert returned == expected
+
+
+class TestAcceptLanguageNoHeader(object):
+    def _get_class(self):
+        from webob.acceptparse import AcceptLanguageNoHeader
+        return AcceptLanguageNoHeader
+
+    def test_init(self):
+        accept_language = self._get_class()()
+        assert accept_language.header_value is None
+        assert accept_language.parsed is None
+        assert accept_language._parsed_nonzero is None

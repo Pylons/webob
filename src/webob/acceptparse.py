@@ -1415,6 +1415,25 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
             PendingDeprecationWarning,
         )
         return 1.0
+
+
+class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
+    """
+    Represent when there is no ``Accept-Language`` header in the request.
+    """
+    def __init__(self):
+        """
+        Create an :class:`AcceptLanguageNoHeader` instance.
+        """
+        self.header_value = None
+        """(``str``) The header value. As there is no header in the request,
+        this is ``None``."""
+
+        self.parsed = None
+        """(``list``) Parsed form of the header. As there is no header in the
+        request, this is ``None``."""
+
+        self._parsed_nonzero = None
 class MIMEAccept(Accept):
     """
     Represents an ``Accept`` header, which is a list of mimetypes.
