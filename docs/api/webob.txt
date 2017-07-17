@@ -25,6 +25,8 @@ Accept-*
    :inherited-members:
 
 .. autoclass:: AcceptLanguage
+   :members:
+   :inherited-members:
 
 .. autoclass:: AcceptLanguageValidHeader
    :members: __init__, __contains__, __iter__, parse, basic_filtering,
@@ -35,9 +37,15 @@ Accept-*
    .. autoinstanceattribute:: parsed
       :annotation:
 
-   :members:
-   :inherited-members:
 .. autoclass:: AcceptLanguageNoHeader
+   :members: __init__
+
+   .. autoinstanceattribute:: header_value
+      :annotation:
+   .. autoinstanceattribute:: parsed
+      :annotation:
+
+.. autoclass:: AcceptLanguageInvalidHeader
    :members: __init__
 
    .. autoinstanceattribute:: header_value

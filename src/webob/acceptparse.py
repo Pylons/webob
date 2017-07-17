@@ -1434,6 +1434,33 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
         request, this is ``None``."""
 
         self._parsed_nonzero = None
+
+
+class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
+    """
+    Represent an invalid ``Accept-Language`` header.
+
+    An invalid header is one that does not conform to
+    :rfc:`7231#section-5.3.5`. As specified in the RFC, an empty header is an
+    invalid ``Accept-Language`` header.
+
+    :rfc:`7231` does not provide any guidance on what should happen if the
+    ``Accept-Language`` has an invalid value. This implementation disregards
+    the header, and treats it as if there is no ``Accept-Language`` header in
+    the request.
+    """
+    def __init__(self, header_value):
+        """
+        Create an :class:`AcceptLanguageInvalidHeader` instance.
+        """
+        self.header_value = header_value
+        """(``str``) The header value."""
+
+        self.parsed = None
+        """(``list``) Parsed form of the header. As the header is invalid and
+        cannot be parsed, this is ``None``."""
+
+        self._parsed_nonzero = None
 class MIMEAccept(Accept):
     """
     Represents an ``Accept`` header, which is a list of mimetypes.

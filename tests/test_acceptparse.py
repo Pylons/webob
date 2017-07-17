@@ -1252,6 +1252,7 @@ class Test__AcceptLanguageInvalidOrNoHeader(object):
         assert returned == expected
 
 
+
 class TestAcceptLanguageNoHeader(object):
     def _get_class(self):
         from webob.acceptparse import AcceptLanguageNoHeader
@@ -1260,5 +1261,18 @@ class TestAcceptLanguageNoHeader(object):
     def test_init(self):
         accept_language = self._get_class()()
         assert accept_language.header_value is None
+        assert accept_language.parsed is None
+        assert accept_language._parsed_nonzero is None
+
+
+class TestAcceptLanguageInvalidHeader(object):
+    def _get_class(self):
+        from webob.acceptparse import AcceptLanguageInvalidHeader
+        return AcceptLanguageInvalidHeader
+
+    def test_init(self):
+        header_value = 'invalid header'
+        accept_language = self._get_class()(header_value=header_value)
+        assert accept_language.header_value == header_value
         assert accept_language.parsed is None
         assert accept_language._parsed_nonzero is None
