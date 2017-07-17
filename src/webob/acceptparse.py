@@ -1249,6 +1249,66 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         there are no matches, so this method always returns an empty list.
         """
         return []
+
+    def best_match(self, offers, default_match=None):
+        """
+        Return the best match from the sequence of language tag `offers`.
+
+        This is the ``.best_match()`` method for when the header is invalid or
+        not found in the request, corresponding to
+        :meth:`AcceptLanguageValidHeader.best_match`.
+
+        .. warning::
+
+           This is currently maintained for backward compatibility, and may be
+           deprecated in future (see the documentation for
+           :meth:`AcceptLanguageValidHeader.best_match`).
+
+        When the header is invalid, or there is no `Accept-Language` header in
+        the request, any of the language tags in `offers` are considered
+        acceptable, so the best match is the tag in `offers` with the highest
+        server quality value (if the server quality value is not supplied, it
+        is 1).
+
+        If more than one language tags in `offers` have the same highest server
+        quality value, then the one that shows up first in `offers` is the best
+        match.
+
+        :param offers: (iterable)
+
+                       | Each item in the iterable may be a ``str`` language
+                         tag, or a (language tag, server quality value)
+                         ``tuple`` or ``list``. (The two may be mixed in the
+                         iterable.)
+
+        :param default_match: (optional, any type) the value to be returned if
+                              `offers` is empty.
+
+        :return: (``str``, or the type of `default_match`)
+
+                 | The language tag that has the highest server quality value.
+                   If `offers` is empty, the value of `default_match` is
+                   returned.
+        """
+        warnings.warn(
+            'The behavior of .best_match for the AcceptLanguage classes is '
+            'currently being maintained for backward compatibility, but the '
+            'method may be deprecated in future, as its behavior is not '
+            'specified in (and currently does not conform to) RFC 7231.',
+            PendingDeprecationWarning,
+        )
+        best_quality = -1
+        best_offer = default_match
+        for offer in offers:
+            _check_offer(offer)
+            if isinstance(offer, (list, tuple)):
+                offer, quality = offer
+            else:
+                quality = 1
+            if quality > best_quality:
+                best_offer = offer
+                best_quality = quality
+        return best_offer
 class MIMEAccept(Accept):
     """
     Represents an ``Accept`` header, which is a list of mimetypes.
