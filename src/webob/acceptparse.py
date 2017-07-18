@@ -452,6 +452,13 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         ):
             yield m
 
+    def __repr__(self):
+        return "{}(header_value={!r})".format(
+            # ``!r`` escapes the header value
+            self.__class__.__name__,
+            self.header_value,
+        )
+
     def _old_match(self, mask, item):
         """
         Return whether a language tag matches a language range.
@@ -1435,6 +1442,9 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
 
         self._parsed_nonzero = None
 
+    def __repr__(self):
+        return '{}()'.format(self.__class__.__name__)
+
 
 class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
     """
@@ -1461,6 +1471,15 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         cannot be parsed, this is ``None``."""
 
         self._parsed_nonzero = None
+
+    def __repr__(self):
+        return "{}(header_value={!r})".format(
+            # ``!r`` escapes the header value
+            self.__class__.__name__,
+            self.header_value,
+        )
+
+
 class MIMEAccept(Accept):
     """
     Represents an ``Accept`` header, which is a list of mimetypes.

@@ -1202,6 +1202,15 @@ class TestAcceptLanguageValidHeader(object):
         )
         assert returned == expected
 
+    def test_repr(self):
+        header_value = ',da;q=0.2,en-gb;q=0.3'
+        instance = self._get_class()(header_value=header_value)
+        assert repr(instance) == (
+            "AcceptLanguageValidHeader(header_value={!r})".format(
+                header_value
+            )
+        )
+
 
 class Test__AcceptLanguageInvalidOrNoHeader(object):
     def _get_class(self):
@@ -1264,6 +1273,10 @@ class TestAcceptLanguageNoHeader(object):
         assert accept_language.parsed is None
         assert accept_language._parsed_nonzero is None
 
+    def test_repr(self):
+        instance = self._get_class()()
+        assert repr(instance) == 'AcceptLanguageNoHeader()'
+
 
 class TestAcceptLanguageInvalidHeader(object):
     def _get_class(self):
@@ -1276,3 +1289,12 @@ class TestAcceptLanguageInvalidHeader(object):
         assert accept_language.header_value == header_value
         assert accept_language.parsed is None
         assert accept_language._parsed_nonzero is None
+
+    def test_repr(self):
+        header_value = """\"\"\"invalid\n\x00'header\""""
+        instance = self._get_class()(header_value=header_value)
+        assert repr(instance) == (
+            "AcceptLanguageInvalidHeader(header_value={!r})".format(
+                header_value
+            )
+        )
