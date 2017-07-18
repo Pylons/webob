@@ -1211,6 +1211,12 @@ class TestAcceptLanguageValidHeader(object):
             )
         )
 
+    def test_str(self):
+        header_value = \
+            ', \t,de;q=0.000 \t, es;q=1.000, zh, jp;q=0.210  ,'
+        instance = self._get_class()(header_value=header_value)
+        assert str(instance) == 'de;q=0, es, zh, jp;q=0.21'
+
 
 class Test__AcceptLanguageInvalidOrNoHeader(object):
     def _get_class(self):
@@ -1277,6 +1283,9 @@ class TestAcceptLanguageNoHeader(object):
         instance = self._get_class()()
         assert repr(instance) == 'AcceptLanguageNoHeader()'
 
+    def test_str(self):
+        instance = self._get_class()()
+        assert str(instance) == '<no header in request>'
 
 class TestAcceptLanguageInvalidHeader(object):
     def _get_class(self):
@@ -1298,3 +1307,7 @@ class TestAcceptLanguageInvalidHeader(object):
                 header_value
             )
         )
+
+    def test_str(self):
+        instance = self._get_class()(header_value="invalid header")
+        assert str(instance) == '<invalid header value>'

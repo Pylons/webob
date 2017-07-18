@@ -459,6 +459,26 @@ class AcceptLanguageValidHeader(AcceptLanguage):
             self.header_value,
         )
 
+    def __str__(self):
+        """
+        Return a tidied up version of the header value.
+
+        e.g. If the ``header_value`` is ``', \t,de;q=0.000 \t, es;q=1.000, zh,
+        jp;q=0.210  ,'``, ``str(instance)`` returns ``'de;q=0, es, zh,
+        jp;q=0.21'``.
+
+        """
+        result = []
+        for range_, qvalue in self.parsed:
+            if qvalue == 1.0:
+                item = range_
+            elif qvalue == 0.0:
+                item = '{};q=0'.format(range_)
+            else:
+                item = '{};q={}'.format(range_, qvalue)
+            result.append(item)
+        return ', '.join(result)
+
     def _old_match(self, mask, item):
         """
         Return whether a language tag matches a language range.
@@ -1445,6 +1465,9 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
     def __repr__(self):
         return '{}()'.format(self.__class__.__name__)
 
+    def __str__(self):
+        return '<no header in request>'
+
 
 class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
     """
@@ -1478,6 +1501,9 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
             self.__class__.__name__,
             self.header_value,
         )
+
+    def __str__(self):
+        return '<invalid header value>'
 
 
 class MIMEAccept(Accept):
