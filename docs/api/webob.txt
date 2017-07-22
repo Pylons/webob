@@ -24,6 +24,8 @@ Accept-*
    :members:
    :inherited-members:
 
+.. autofunction:: create_accept_language_header
+
 .. autoclass:: AcceptLanguage
    :members:
    :inherited-members:

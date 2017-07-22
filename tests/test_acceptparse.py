@@ -1311,3 +1311,33 @@ class TestAcceptLanguageInvalidHeader(object):
     def test_str(self):
         instance = self._get_class()(header_value="invalid header")
         assert str(instance) == '<invalid header value>'
+
+
+class TestCreateAcceptLanguageHeader(object):
+    def _get_function(self):
+        from webob.acceptparse import create_accept_language_header
+        return create_accept_language_header
+
+    def test_header_value_is_None(self):
+        from webob.acceptparse import AcceptLanguageNoHeader
+        function = self._get_function()
+        header_value = None
+        returned = function(header_value=header_value)
+        assert isinstance(returned, AcceptLanguageNoHeader)
+        assert returned.header_value == header_value
+
+    def test_header_value_is_valid(self):
+        from webob.acceptparse import AcceptLanguageValidHeader
+        function = self._get_function()
+        header_value = 'es, ja'
+        returned = function(header_value=header_value)
+        assert isinstance(returned, AcceptLanguageValidHeader)
+        assert returned.header_value == header_value
+
+    @pytest.mark.parametrize('header_value', ['', 'en_gb'])
+    def test_header_value_is_invalid(self, header_value):
+        from webob.acceptparse import AcceptLanguageInvalidHeader
+        function = self._get_function()
+        returned = function(header_value=header_value)
+        assert isinstance(returned, AcceptLanguageInvalidHeader)
+        assert returned.header_value == header_value
