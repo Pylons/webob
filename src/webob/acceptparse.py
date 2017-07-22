@@ -244,6 +244,7 @@ class NilAccept(object):
                 best_quality = quality
         return best_offer
 
+
 class NoAccept(NilAccept):
     """
     Represents an ``Accept-Encoding`` header when it is not present in the
