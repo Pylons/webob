@@ -1463,56 +1463,6 @@ class TestAcceptLanguageValidHeader(object):
         assert str(instance) == 'de;q=0, es, zh, jp;q=0.21'
 
 
-class Test__AcceptLanguageInvalidOrNoHeader(object):
-    def _get_class(self):
-        from webob.acceptparse import _AcceptLanguageInvalidOrNoHeader
-        return _AcceptLanguageInvalidOrNoHeader
-
-    def test___bool__(self):
-        instance = self._get_class()(header_value='')
-        returned = bool(instance)
-        assert returned is False
-
-    def test___contains__(self):
-        instance = self._get_class()(header_value='')
-        returned = ('any-tag' in instance)
-        assert returned is True
-
-    def test___iter__(self):
-        instance = self._get_class()(header_value='')
-        returned = list(instance)
-        assert returned == []
-
-    def test_basic_filtering(self):
-        instance = self._get_class()(header_value='')
-        returned = instance.basic_filtering(language_tags=['tag1', 'tag2'])
-        assert returned == []
-
-    def test_lookup_default_tag_and_default_cannot_both_be_None(self):
-        instance = self._get_class()(header_value='')
-        with pytest.raises(AssertionError):
-            instance.lookup(default_tag=None, default=None)
-
-    @pytest.mark.parametrize('default_tag, default, expected', [
-        # If `default_tag` is not None, it is returned.
-        ('default-tag', 'default', 'default-tag'),
-        # If `default_tag` is None, we proceed to the `default` argument. If
-        # `default` is not a callable, the argument itself is returned.
-        (None, 0, 0),
-        # If `default` is a callable, it is called, and the callable's return
-        # value is returned by the method.
-        (None, lambda: 'callable called', 'callable called'),
-    ])
-    def test_lookup(self, default_tag, default, expected):
-        instance = self._get_class()(header_value='')
-        returned = instance.lookup(
-            default_tag=default_tag,
-            default=default,
-        )
-        assert returned == expected
-
-
-
 class TestAcceptLanguageNoHeader(object):
     def _get_class(self):
         from webob.acceptparse import AcceptLanguageNoHeader
@@ -1630,6 +1580,21 @@ class TestAcceptLanguageNoHeader(object):
         assert result.header_value == invalid_header_instance.header_value
         assert result is not invalid_header_instance
 
+    def test___bool__(self):
+        instance = self._get_class()()
+        returned = bool(instance)
+        assert returned is False
+
+    def test___contains__(self):
+        instance = self._get_class()()
+        returned = ('any-tag' in instance)
+        assert returned is True
+
+    def test___iter__(self):
+        instance = self._get_class()()
+        returned = list(instance)
+        assert returned == []
+
     def test___radd___None(self):
         Cls = self._get_class()
         instance = Cls()
@@ -1714,6 +1679,35 @@ class TestAcceptLanguageNoHeader(object):
     def test_str(self):
         instance = self._get_class()()
         assert str(instance) == '<no header in request>'
+
+    def test_basic_filtering(self):
+        instance = self._get_class()()
+        returned = instance.basic_filtering(language_tags=['tag1', 'tag2'])
+        assert returned == []
+
+    def test_lookup_default_tag_and_default_cannot_both_be_None(self):
+        instance = self._get_class()()
+        with pytest.raises(AssertionError):
+            instance.lookup(default_tag=None, default=None)
+
+    @pytest.mark.parametrize('default_tag, default, expected', [
+        # If `default_tag` is not None, it is returned.
+        ('default-tag', 'default', 'default-tag'),
+        # If `default_tag` is None, we proceed to the `default` argument. If
+        # `default` is not a callable, the argument itself is returned.
+        (None, 0, 0),
+        # If `default` is a callable, it is called, and the callable's return
+        # value is returned by the method.
+        (None, lambda: 'callable called', 'callable called'),
+    ])
+    def test_lookup(self, default_tag, default, expected):
+        instance = self._get_class()()
+        returned = instance.lookup(
+            default_tag=default_tag,
+            default=default,
+        )
+        assert returned == expected
+
 
 class TestAcceptLanguageInvalidHeader(object):
     def _get_class(self):
@@ -1981,6 +1975,21 @@ class TestAcceptLanguageInvalidHeader(object):
         assert result.header_value == left_operand.header_value + ', ' + \
             right_operand.header_value
 
+    def test___bool__(self):
+        instance = self._get_class()(header_value='')
+        returned = bool(instance)
+        assert returned is False
+
+    def test___contains__(self):
+        instance = self._get_class()(header_value='')
+        returned = ('any-tag' in instance)
+        assert returned is True
+
+    def test___iter__(self):
+        instance = self._get_class()(header_value='')
+        returned = list(instance)
+        assert returned == []
+
     @pytest.mark.parametrize('right_operand_header, left_operand', [
         ('', None),
         ('', ''),
@@ -2167,6 +2176,34 @@ class TestAcceptLanguageInvalidHeader(object):
     def test_str(self):
         instance = self._get_class()(header_value="invalid header")
         assert str(instance) == '<invalid header value>'
+
+    def test_basic_filtering(self):
+        instance = self._get_class()(header_value='')
+        returned = instance.basic_filtering(language_tags=['tag1', 'tag2'])
+        assert returned == []
+
+    def test_lookup_default_tag_and_default_cannot_both_be_None(self):
+        instance = self._get_class()(header_value='')
+        with pytest.raises(AssertionError):
+            instance.lookup(default_tag=None, default=None)
+
+    @pytest.mark.parametrize('default_tag, default, expected', [
+        # If `default_tag` is not None, it is returned.
+        ('default-tag', 'default', 'default-tag'),
+        # If `default_tag` is None, we proceed to the `default` argument. If
+        # `default` is not a callable, the argument itself is returned.
+        (None, 0, 0),
+        # If `default` is a callable, it is called, and the callable's return
+        # value is returned by the method.
+        (None, lambda: 'callable called', 'callable called'),
+    ])
+    def test_lookup(self, default_tag, default, expected):
+        instance = self._get_class()(header_value='')
+        returned = instance.lookup(
+            default_tag=default_tag,
+            default=default,
+        )
+        assert returned == expected
 
 
 class TestCreateAcceptLanguageHeader(object):
