@@ -31,8 +31,8 @@ Accept-*
    :inherited-members:
 
 .. autoclass:: AcceptLanguageValidHeader
-   :members: __init__, __contains__, __iter__, parse, basic_filtering,
-             best_match, lookup, quality
+   :members: __init__, __add__, __contains__, __iter__, __radd__, __str__,
+             parse, basic_filtering, best_match, lookup, quality
 
    .. autoinstanceattribute:: header_value
       :annotation:
@@ -40,7 +40,8 @@ Accept-*
       :annotation:
 
 .. autoclass:: AcceptLanguageNoHeader
-   :members: __init__
+   :members: __init__, __add__, __contains__, __iter__, __radd__, __str__,
+             basic_filtering, best_match, lookup, quality
 
    .. autoinstanceattribute:: header_value
       :annotation:
@@ -48,7 +49,8 @@ Accept-*
       :annotation:
 
 .. autoclass:: AcceptLanguageInvalidHeader
-   :members: __init__
+   :members: __init__, __add__, __contains__, __iter__, __radd__, __str__,
+             basic_filtering, best_match, lookup, quality
 
    .. autoinstanceattribute:: header_value
       :annotation:
