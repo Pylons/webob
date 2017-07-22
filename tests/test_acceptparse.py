@@ -1524,6 +1524,189 @@ class TestAcceptLanguageNoHeader(object):
         assert accept_language.parsed is None
         assert accept_language._parsed_nonzero is None
 
+    def test___add___None(self):
+        Cls = self._get_class()
+        instance = Cls()
+        result = instance + None
+        assert isinstance(result, Cls)
+        assert result is not instance
+
+    @pytest.mark.parametrize('right_operand', ['', (), [], {}])
+    def test___add___non_accept_language_instance_non_None_falsy_value(
+        self, right_operand,
+    ):
+        from webob.acceptparse import AcceptLanguageInvalidHeader
+        Cls = self._get_class()
+        instance = Cls()
+        result = instance + right_operand
+        assert isinstance(result, AcceptLanguageInvalidHeader)
+        assert result.header_value == ''
+
+    def test___add___other_type_with_empty___str__(self):
+        from webob.acceptparse import AcceptLanguageInvalidHeader
+        Cls = self._get_class()
+        instance = Cls()
+        class Other(object):
+            def __str__(self):
+                return ''
+        result = instance + Other()
+        assert isinstance(result, AcceptLanguageInvalidHeader)
+        assert result.header_value == ''
+
+    @pytest.mark.parametrize('value, value_as_header', [
+        ('en-gb;q=0.5, fr;q=0, es', 'en-gb;q=0.5, fr;q=0, es'),
+        ([('en-gb', 0.5), ('fr', 0.0), 'es'], 'en-gb;q=0.5, fr;q=0, es'),
+        ((('en-gb', 0.5), ('fr', 0.0), 'es'), 'en-gb;q=0.5, fr;q=0, es'),
+        ({'en-gb': 0.5, 'fr': 0.0, 'es': 1.0}, 'es, en-gb;q=0.5, fr;q=0'),
+    ])
+    def test___add___valid_value(self, value, value_as_header):
+        from webob.acceptparse import AcceptLanguageValidHeader
+        Cls = self._get_class()
+        result = Cls() + value
+        assert isinstance(result, AcceptLanguageValidHeader)
+        assert result.header_value == value_as_header
+
+    def test___add___other_type_with_valid___str__(self):
+        from webob.acceptparse import AcceptLanguageValidHeader
+        Cls = self._get_class()
+        class Other(object):
+            def __str__(self):
+                return 'en-gb;q=0.5, fr;q=0, es'
+        right_operand = Other()
+        result = Cls() + right_operand
+        assert isinstance(result, AcceptLanguageValidHeader)
+        assert result.header_value == str(right_operand)
+
+    @pytest.mark.parametrize('right_operand', [
+        'en_gb',
+        ['en_gb'],
+        ('en_gb'),
+        {'en_gb': 1.0},
+    ])
+    def test___add___non_empty_invalid_value(self, right_operand):
+        from webob.acceptparse import AcceptLanguageInvalidHeader
+        Cls = self._get_class()
+        result = Cls() + right_operand
+        assert isinstance(result, AcceptLanguageInvalidHeader)
+        assert result.header_value == 'en_gb'
+
+    def test___add___other_type_with_non_empty_invalid___str__(self):
+        from webob.acceptparse import AcceptLanguageInvalidHeader
+        Cls = self._get_class()
+        class Other(object):
+            def __str__(self):
+                return '/'
+        right_operand = Other()
+        result = Cls() + right_operand
+        assert isinstance(result, AcceptLanguageInvalidHeader)
+        assert result.header_value == str(right_operand)
+
+    def test___add___AcceptLanguageValidHeader(self):
+        from webob.acceptparse import AcceptLanguageValidHeader
+        Cls = self._get_class()
+        header = ', ,fr;q=0, \tes;q=1,'
+        result = Cls() + AcceptLanguageValidHeader(header_value=header)
+        assert isinstance(result, AcceptLanguageValidHeader)
+        assert result.header_value == header
+
+    def test___add___AcceptLanguageNoHeader(self):
+        Cls = self._get_class()
+        left_operand_instance = Cls()
+        right_operand_instance = Cls()
+        result = left_operand_instance + right_operand_instance
+        assert isinstance(result, Cls)
+        assert result is not left_operand_instance
+        assert result is not right_operand_instance
+
+    @pytest.mark.parametrize('invalid_header_value', ['', '/'])
+    def test___add___AcceptLanguageInvalidHeader(self, invalid_header_value):
+        from webob.acceptparse import AcceptLanguageInvalidHeader
+        Cls = self._get_class()
+        invalid_header_instance = AcceptLanguageInvalidHeader(
+            header_value=invalid_header_value,
+        )
+        result = Cls() + invalid_header_instance
+        assert isinstance(result, AcceptLanguageInvalidHeader)
+        assert result.header_value == invalid_header_instance.header_value
+        assert result is not invalid_header_instance
+
+    def test___radd___None(self):
+        Cls = self._get_class()
+        instance = Cls()
+        result = instance + None
+        assert isinstance(result, Cls)
+        assert result is not instance
+
+    @pytest.mark.parametrize('left_operand', ['', (), [], {}])
+    def test___radd___non_accept_language_instance_non_None_falsy_value(
+        self, left_operand,
+    ):
+        from webob.acceptparse import AcceptLanguageInvalidHeader
+        Cls = self._get_class()
+        instance = Cls()
+        result = left_operand + instance
+        assert isinstance(result, AcceptLanguageInvalidHeader)
+        assert result.header_value == ''
+
+    def test___radd___other_type_with_empty___str__(self):
+        from webob.acceptparse import AcceptLanguageInvalidHeader
+        Cls = self._get_class()
+        instance = Cls()
+        class Other(object):
+            def __str__(self):
+                return ''
+        result = Other() + instance
+        assert isinstance(result, AcceptLanguageInvalidHeader)
+        assert result.header_value == ''
+
+    @pytest.mark.parametrize('value, value_as_header', [
+        ('en-gb;q=0.5, fr;q=0, es', 'en-gb;q=0.5, fr;q=0, es'),
+        ([('en-gb', 0.5), ('fr', 0.0), 'es'], 'en-gb;q=0.5, fr;q=0, es'),
+        ((('en-gb', 0.5), ('fr', 0.0), 'es'), 'en-gb;q=0.5, fr;q=0, es'),
+        ({'en-gb': 0.5, 'fr': 0.0, 'es': 1.0}, 'es, en-gb;q=0.5, fr;q=0'),
+    ])
+    def test___radd___valid_value(self, value, value_as_header):
+        from webob.acceptparse import AcceptLanguageValidHeader
+        Cls = self._get_class()
+        result = value + Cls()
+        assert isinstance(result, AcceptLanguageValidHeader)
+        assert result.header_value == value_as_header
+
+    def test___radd___other_type_with_valid___str__(self):
+        from webob.acceptparse import AcceptLanguageValidHeader
+        Cls = self._get_class()
+        class Other(object):
+            def __str__(self):
+                return 'en-gb;q=0.5, fr;q=0, es'
+        left_operand = Other()
+        result = left_operand + Cls()
+        assert isinstance(result, AcceptLanguageValidHeader)
+        assert result.header_value == str(left_operand)
+
+    @pytest.mark.parametrize('left_operand', [
+        'en_gb',
+        ['en_gb'],
+        ('en_gb'),
+        {'en_gb': 1.0},
+    ])
+    def test___radd___non_empty_invalid_value(self, left_operand):
+        from webob.acceptparse import AcceptLanguageInvalidHeader
+        Cls = self._get_class()
+        result = left_operand + Cls()
+        assert isinstance(result, AcceptLanguageInvalidHeader)
+        assert result.header_value == 'en_gb'
+
+    def test___radd___other_type_with_non_empty_invalid___str__(self):
+        from webob.acceptparse import AcceptLanguageInvalidHeader
+        Cls = self._get_class()
+        class Other(object):
+            def __str__(self):
+                return '/'
+        left_operand = Other()
+        result = left_operand + Cls()
+        assert isinstance(result, AcceptLanguageInvalidHeader)
+        assert result.header_value == str(left_operand)
+
     def test_repr(self):
         instance = self._get_class()()
         assert repr(instance) == 'AcceptLanguageNoHeader()'

@@ -1542,6 +1542,10 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
 class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
     """
     Represent when there is no ``Accept-Language`` header in the request.
+
+    This object should not be modified. To add to the header, we can use the
+    addition operators (``+`` and ``+=``), which return a new object (see the
+    docstring for :meth:`AcceptLanguageNoHeader.__add__`).
     """
     def __init__(self):
         """
@@ -1557,11 +1561,85 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
 
         self._parsed_nonzero = None
 
+    def __add__(self, other):
+        """
+        Add to header, creating a new header object.
+
+        `other` can be:
+
+        * a ``str``
+        * a ``dict``, with language ranges as keys and qvalues as values
+        * a ``tuple`` or ``list``, of language range ``str``s or of ``tuple``
+          or ``list`` (language range, qvalue) pairs (``str``s and pairs can be
+          mixed within the ``tuple`` or ``list``)
+        * any object that returns a value for `__str__`
+        * an :class:`AcceptLanguageValidHeader`,
+          :class:`AcceptLanguageNoHeader`, or
+          :class:`AcceptLanguageInvalidHeader` instance
+
+        If neither operands are empty (header value ``''``) or
+        ``None``/:class:`AcceptLanguageNoHeader`, the two header values are
+        joined with ``', '``.
+        """
+        if isinstance(other, AcceptLanguageNoHeader):
+            return self.__class__()
+
+        if isinstance(other, AcceptLanguageValidHeader):
+            return create_accept_language_header(
+                header_value=other.header_value
+            )
+
+        if isinstance(other, AcceptLanguageInvalidHeader):
+            return AcceptLanguageInvalidHeader(header_value=other.header_value)
+
+        return self._add_instance_and_non_accept_language_type(
+            instance=self, other=other,
+        )
+
+    def __radd__(self, other):
+        """
+        Add to header, creating a new header object.
+
+        See the docstring for :meth:`AcceptLanguageNoHeader.__add__`.
+        """
+        return self.__add__(other=other)
+
     def __repr__(self):
         return '{}()'.format(self.__class__.__name__)
 
     def __str__(self):
         return '<no header in request>'
+
+    def _add_instance_and_non_accept_language_type(self, instance, other):
+        if other is None:
+            return self.__class__()
+        if other in ('', (), [], {}):
+            return AcceptLanguageInvalidHeader(header_value='')
+
+        if isinstance(other, str):
+            other_header_value = other
+        else:
+            if hasattr(other, 'items'):
+                other = sorted(
+                    other.items(),
+                    key=lambda item: item[1],
+                    reverse=True,
+                )
+            if isinstance(other, (tuple, list)):
+                result = []
+                for element in other:
+                    if isinstance(element, (tuple, list)):
+                        element = _item_qvalue_pair_to_header_element(
+                            pair=element
+                        )
+                    result.append(element)
+                other_header_value = ', '.join(result)
+            else:
+                other_header_value = str(other)
+                if other_header_value == '':
+                    return AcceptLanguageInvalidHeader(header_value='')
+
+        return create_accept_language_header(header_value=other_header_value)
 
 
 class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
