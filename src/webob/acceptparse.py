@@ -32,6 +32,17 @@ qvalue_re = r"""
 weight_re = r'[ \t]*;[ \t]*[qQ]=(' + qvalue_re + r')'
 
 
+def _item_qvalue_pair_to_header_element(pair):
+    item, qvalue = pair
+    if qvalue == 1.0:
+        element = item
+    elif qvalue == 0.0:
+        element = '{};q=0'.format(item)
+    else:
+        element = '{};q={}'.format(item, qvalue)
+    return element
+
+
 class Accept(object):
     """
     Represents a generic ``Accept-*`` style header.
@@ -468,16 +479,10 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         jp;q=0.21'``.
 
         """
-        result = []
-        for range_, qvalue in self.parsed:
-            if qvalue == 1.0:
-                item = range_
-            elif qvalue == 0.0:
-                item = '{};q=0'.format(range_)
-            else:
-                item = '{};q={}'.format(range_, qvalue)
-            result.append(item)
-        return ', '.join(result)
+        return ', '.join(
+            _item_qvalue_pair_to_header_element(pair=tuple_)
+            for tuple_ in self.parsed
+        )
 
     def _old_match(self, mask, item):
         """
