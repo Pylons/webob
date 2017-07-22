@@ -1654,6 +1654,10 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
     ``Accept-Language`` has an invalid value. This implementation disregards
     the header, and treats it as if there is no ``Accept-Language`` header in
     the request.
+
+    This object should not be modified. To add to the header, we can use the
+    addition operators (``+`` and ``+=``), which return a new object (see the
+    docstring for :meth:`AcceptLanguageInvalidHeader.__add__`).
     """
     def __init__(self, header_value):
         """
@@ -1668,6 +1672,61 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
 
         self._parsed_nonzero = None
 
+    def __add__(self, other):
+        """
+        Add to header, creating a new header object.
+
+        `other` can be:
+
+        * a ``str``
+        * a ``dict``, with language ranges as keys and qvalues as values
+        * a ``tuple`` or ``list``, of language range ``str``s or of ``tuple``
+          or ``list`` (language range, qvalue) pairs (``str``s and pairs can be
+          mixed within the ``tuple`` or ``list``)
+        * any object that returns a value for `__str__`
+        * an :class:`AcceptLanguageValidHeader`,
+          :class:`AcceptLanguageNoHeader`, or
+          :class:`AcceptLanguageInvalidHeader` instance
+
+        If neither operands are empty (header value ``''``) or
+        ``None``/:class:`AcceptLanguageNoHeader`, the two header values are
+        joined with ``', '``.
+        """
+        if isinstance(other, AcceptLanguageNoHeader):
+            return self.__class__(header_value=self.header_value)
+
+        if isinstance(other, AcceptLanguageValidHeader):
+            if self.header_value == '':
+                return AcceptLanguageValidHeader(
+                    header_value=other.header_value,
+                )
+            return create_accept_language_header(
+                header_value=self.header_value + ', ' + other.header_value
+            )
+
+        if isinstance(other, AcceptLanguageInvalidHeader):
+            if self.header_value == '':
+                return self.__class__(header_value=other.header_value)
+            if other.header_value == '':
+                return self.__class__(header_value=self.header_value)
+            return create_accept_language_header(
+                header_value=self.header_value + ', ' + other.header_value
+            )
+
+        return self._add_instance_and_non_accept_language_type(
+            instance=self, other=other,
+        )
+
+    def __radd__(self, other):
+        """
+        Add to header, creating a new header object.
+
+        See the docstring for :meth:`AcceptLanguageValidHeader.__add__`.
+        """
+        return self._add_instance_and_non_accept_language_type(
+            instance=self, other=other, instance_on_the_right=True,
+        )
+
     def __repr__(self):
         return "{}(header_value={!r})".format(
             # ``!r`` escapes the header value
@@ -1678,6 +1737,45 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
     def __str__(self):
         return '<invalid header value>'
 
+    def _add_instance_and_non_accept_language_type(
+        self, instance, other, instance_on_the_right=False,
+    ):
+        if not other:
+            return self.__class__(header_value=instance.header_value)
+
+        if isinstance(other, str):
+            other_header_value = other
+        else:
+            if hasattr(other, 'items'):
+                other = sorted(
+                    other.items(),
+                    key=lambda item: item[1],
+                    reverse=True,
+                )
+            if isinstance(other, (tuple, list)):
+                result = []
+                for element in other:
+                    if isinstance(element, (tuple, list)):
+                        element = _item_qvalue_pair_to_header_element(
+                            pair=element
+                        )
+                    result.append(element)
+                other_header_value = ', '.join(result)
+            else:
+                other_header_value = str(other)
+                if other_header_value == '':
+                    return self.__class__(header_value=instance.header_value)
+
+        if instance.header_value == '':
+            new_header_value = other_header_value
+        else:
+            new_header_value = (
+                (other_header_value + ', ' + instance.header_value)
+                if instance_on_the_right
+                else (instance.header_value + ', ' + other_header_value)
+            )
+
+        return create_accept_language_header(header_value=new_header_value)
 
 
 def create_accept_language_header(header_value):
