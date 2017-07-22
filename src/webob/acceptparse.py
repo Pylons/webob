@@ -1609,6 +1609,7 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
         return '{}()'.format(self.__class__.__name__)
 
     def __str__(self):
+        """Return the ``str`` ``'<no header in request>'``."""
         return '<no header in request>'
 
     def _add_instance_and_non_accept_language_type(self, instance, other):
@@ -1736,6 +1737,7 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         )
 
     def __str__(self):
+        """Return the ``str`` ``'<invalid header value>'``."""
         return '<invalid header value>'
 
     def _add_instance_and_non_accept_language_type(
