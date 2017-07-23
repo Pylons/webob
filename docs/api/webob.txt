@@ -28,7 +28,6 @@ Accept-*
 
 .. autoclass:: AcceptLanguage
    :members:
-   :inherited-members:
 
 .. autoclass:: AcceptLanguageValidHeader
    :members: __init__, __add__, __contains__, __iter__, __radd__, __str__,
