@@ -281,18 +281,13 @@ class AcceptEncoding(Accept):
     """
 
 
-class AcceptLanguage(Accept):
+class AcceptLanguage(object):
     """
-    Represents an ``Accept-Language`` header.
+    Represent an ``Accept-Language`` header.
+
+    Base class for :class:`AcceptLanguageValidHeader`,
+    :class:`AcceptLanguageNoHeader`, and :class:`AcceptLanguageInvalidHeader`.
     """
-    def _match(self, mask, item):
-        item = item.replace('_', '-').lower()
-        mask = mask.lower()
-        return (mask == '*'
-            or item == mask
-            or item.split('-')[0] == mask
-            or item == mask.split('-')[0]
-        )
 
 
 class AcceptLanguageValidHeader(AcceptLanguage):
