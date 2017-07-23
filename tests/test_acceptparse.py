@@ -2234,3 +2234,136 @@ class TestCreateAcceptLanguageHeader(object):
         returned = function(header_value=header_value)
         assert isinstance(returned, AcceptLanguageInvalidHeader)
         assert returned.header_value == header_value
+
+
+class TestAcceptLanguageProperty(object):
+    def _get_function(self):
+        from webob.acceptparse import accept_language_property
+        return accept_language_property
+
+    def test_fget_header_is_None(self):
+        from webob.acceptparse import AcceptLanguageNoHeader
+        function = self._get_function()
+        request = Request.blank('/', environ={'HTTP_ACCEPT_LANGUAGE': None})
+        property_ = function()
+        returned = property_.fget(request=request)
+        assert isinstance(returned, AcceptLanguageNoHeader)
+
+    def test_fget_header_is_valid(self):
+        from webob.acceptparse import AcceptLanguageValidHeader
+        function = self._get_function()
+        request = Request.blank('/', environ={'HTTP_ACCEPT_LANGUAGE': 'es'})
+        property_ = function()
+        returned = property_.fget(request=request)
+        assert isinstance(returned, AcceptLanguageValidHeader)
+
+    def test_fget_header_is_invalid(self):
+        from webob.acceptparse import AcceptLanguageInvalidHeader
+        function = self._get_function()
+        request = Request.blank('/', environ={'HTTP_ACCEPT_LANGUAGE': 'en_gb'})
+        property_ = function()
+        returned = property_.fget(request=request)
+        assert isinstance(returned, AcceptLanguageInvalidHeader)
+
+    def test_fset_value_is_None(self):
+        from webob.acceptparse import AcceptLanguageNoHeader
+        function = self._get_function()
+        request = Request.blank('/', environ={'HTTP_ACCEPT_LANGUAGE': 'es'})
+        property_ = function()
+        property_.fset(request=request, value=None)
+        assert isinstance(request.accept_language, AcceptLanguageNoHeader)
+        assert 'HTTP_ACCEPT_LANGUAGE' not in request.environ
+
+    def test_fset_value_is_invalid(self):
+        from webob.acceptparse import AcceptLanguageInvalidHeader
+        function = self._get_function()
+        request = Request.blank('/', environ={'HTTP_ACCEPT_LANGUAGE': 'es'})
+        property_ = function()
+        property_.fset(request=request, value='en_GB')
+        assert isinstance(request.accept_language, AcceptLanguageInvalidHeader)
+        assert request.environ['HTTP_ACCEPT_LANGUAGE'] == 'en_GB'
+
+    def test_fset_value_is_valid(self):
+        from webob.acceptparse import AcceptLanguageValidHeader
+        function = self._get_function()
+        request = Request.blank('/', environ={'HTTP_ACCEPT_LANGUAGE': 'es'})
+        property_ = function()
+        property_.fset(request=request, value='en-GB')
+        assert isinstance(request.accept_language, AcceptLanguageValidHeader)
+        assert request.environ['HTTP_ACCEPT_LANGUAGE'] == 'en-GB'
+
+    @pytest.mark.parametrize('value, value_as_header', [
+        ('en-gb;q=0.5, fr;q=0, es', 'en-gb;q=0.5, fr;q=0, es'),
+        ([('en-gb', 0.5), ('fr', 0.0), 'es'], 'en-gb;q=0.5, fr;q=0, es'),
+        ((('en-gb', 0.5), ('fr', 0.0), 'es'), 'en-gb;q=0.5, fr;q=0, es'),
+        ({'en-gb': 0.5, 'fr': 0.0, 'es': 1.0}, 'es, en-gb;q=0.5, fr;q=0'),
+    ])
+    def test_fset_value_types(self, value, value_as_header):
+        from webob.acceptparse import AcceptLanguageValidHeader
+        function = self._get_function()
+        request = Request.blank('/', environ={'HTTP_ACCEPT_LANGUAGE': ''})
+        property_ = function()
+        property_.fset(request=request, value=value)
+        assert isinstance(request.accept_language, AcceptLanguageValidHeader)
+        assert request.environ['HTTP_ACCEPT_LANGUAGE'] == value_as_header
+
+    def test_fset_other_type_with_valid___str__(self):
+        from webob.acceptparse import AcceptLanguageValidHeader
+        function = self._get_function()
+        request = Request.blank('/', environ={'HTTP_ACCEPT_LANGUAGE': ''})
+        property_ = function()
+        class Other(object):
+            def __str__(self):
+                return 'en-gb;q=0.5, fr;q=0, es'
+        value = Other()
+        property_.fset(request=request, value=value)
+        assert isinstance(request.accept_language, AcceptLanguageValidHeader)
+        assert request.environ['HTTP_ACCEPT_LANGUAGE'] == str(value)
+
+    def test_fset_AcceptLanguageNoHeader(self):
+        from webob.acceptparse import AcceptLanguageNoHeader
+        function = self._get_function()
+        request = Request.blank('/', environ={'HTTP_ACCEPT_LANGUAGE': 'en'})
+        property_ = function()
+        header = AcceptLanguageNoHeader()
+        property_.fset(request=request, value=header)
+        assert isinstance(request.accept_language, AcceptLanguageNoHeader)
+        assert 'HTTP_ACCEPT_LANGUAGE' not in request.environ
+
+    def test_fset_AcceptLanguageValidHeader(self):
+        from webob.acceptparse import AcceptLanguageValidHeader
+        function = self._get_function()
+        request = Request.blank('/', environ={'HTTP_ACCEPT_LANGUAGE': ''})
+        property_ = function()
+        header = AcceptLanguageValidHeader('es')
+        property_.fset(request=request, value=header)
+        assert isinstance(request.accept_language, AcceptLanguageValidHeader)
+        assert request.environ['HTTP_ACCEPT_LANGUAGE'] == header.header_value
+
+    def test_fset_AcceptLanguageInvalidHeader(self):
+        from webob.acceptparse import AcceptLanguageInvalidHeader
+        function = self._get_function()
+        request = Request.blank('/', environ={'HTTP_ACCEPT_LANGUAGE': ''})
+        property_ = function()
+        header = AcceptLanguageInvalidHeader('en_gb')
+        property_.fset(request=request, value=header)
+        assert isinstance(request.accept_language, AcceptLanguageInvalidHeader)
+        assert request.environ['HTTP_ACCEPT_LANGUAGE'] == header.header_value
+
+    def test_fdel_header_key_in_environ(self):
+        from webob.acceptparse import AcceptLanguageNoHeader
+        function = self._get_function()
+        request = Request.blank('/', environ={'HTTP_ACCEPT_LANGUAGE': 'es'})
+        property_ = function()
+        property_.fdel(request=request)
+        assert isinstance(request.accept_language, AcceptLanguageNoHeader)
+        assert 'HTTP_ACCEPT_LANGUAGE' not in request.environ
+
+    def test_fdel_header_key_not_in_environ(self):
+        from webob.acceptparse import AcceptLanguageNoHeader
+        function = self._get_function()
+        request = Request.blank('/')
+        property_ = function()
+        property_.fdel(request=request)
+        assert isinstance(request.accept_language, AcceptLanguageNoHeader)
+        assert 'HTTP_ACCEPT_LANGUAGE' not in request.environ

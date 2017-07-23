@@ -10,6 +10,7 @@ exists, but this ignores them.
 """
 
 import re
+import textwrap
 import warnings
 
 from webob.headers import _trans_name as header_to_key
@@ -1801,6 +1802,63 @@ def create_accept_language_header(header_value):
         return AcceptLanguageValidHeader(header_value=header_value)
     except ValueError:
         return AcceptLanguageInvalidHeader(header_value=header_value)
+
+
+def accept_language_property():
+    doc = """
+        Property representing the ``Accept-Language`` header.
+
+        (:rfc:`RFC 7231, section 5.3.5 <7231#section-5.3.5>`)
+
+        The header value in the request environ is parsed and a new object
+        representing the header is created every time we *get* the value of the
+        property. (*set* and *del* change the header value in the request
+        environ, and do not involve parsing.)'
+    """
+
+    ENVIRON_KEY = 'HTTP_ACCEPT_LANGUAGE'
+
+    def fget(request):
+        """
+        Get an object representing the header in the request.
+
+        This creates a new object (and re-parses the header) on every call.
+        """
+        return create_accept_language_header(
+            header_value=request.environ.get(ENVIRON_KEY)
+        )
+
+    def fset(request, value):
+        """
+        Set the corresponding key in the request environ.
+
+        `value` can be:
+
+        * a ``str``
+        * a ``dict``, with language ranges as keys and qvalues as values
+        * a ``tuple`` or ``list``, of language range ``str``s or of ``tuple``
+          or ``list`` (language range, qvalue) pairs (``str``s and pairs can be
+          mixed within the ``tuple`` or ``list``)
+        * any object that returns a value for `__str__`
+        * an :class:`AcceptLanguageValidHeader`,
+          :class:`AcceptLanguageNoHeader`, or
+          :class:`AcceptLanguageInvalidHeader` instance
+        """
+        if value is None or isinstance(value, AcceptLanguageNoHeader):
+            fdel(request=request)
+        else:
+            request.environ[ENVIRON_KEY] = (
+                AcceptLanguageNoHeader() + value
+            ).header_value
+
+    def fdel(request):
+        """Delete the corresponding key from the request environ."""
+        try:
+            del request.environ[ENVIRON_KEY]
+        except KeyError:
+            pass
+
+    return property(fget, fset, fdel, textwrap.dedent(doc))
 
 
 class MIMEAccept(Accept):
