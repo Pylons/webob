@@ -521,7 +521,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         )
 
     def __str__(self):
-        """
+        r"""
         Return a tidied up version of the header value.
 
         e.g. If the ``header_value`` is ``', \t,de;q=0.000 \t, es;q=1.000, zh,
