@@ -495,11 +495,11 @@ class TestAcceptLanguageValidHeader(object):
         '',
         ', da;q=0.2, en-gb;q=0.3 ',
     ])
-    def test_init_invalid_header(self, header_value):
+    def test___init___invalid_header(self, header_value):
         with pytest.raises(ValueError):
             self._get_class()(header_value=header_value)
 
-    def test_init_valid_header(self):
+    def test___init___valid_header(self):
         header_value = \
             'zh-Hant;q=0.372,zh-CN-a-myExt-x-private;q=0.977,de,*;q=0.000'
         accept_language = self._get_class()(header_value=header_value)
@@ -802,6 +802,21 @@ class TestAcceptLanguageValidHeader(object):
     def test___iter__(self, header_value, expected_list):
         instance = self._get_class()(header_value=header_value)
         assert list(instance) == expected_list
+
+    def test___repr__(self):
+        header_value = ',da;q=0.2,en-gb;q=0.3'
+        instance = self._get_class()(header_value=header_value)
+        assert repr(instance) == (
+            "AcceptLanguageValidHeader(header_value={!r})".format(
+                header_value
+            )
+        )
+
+    def test___str__(self):
+        header_value = \
+            ', \t,de;q=0.000 \t, es;q=1.000, zh, jp;q=0.210  ,'
+        instance = self._get_class()(header_value=header_value)
+        assert str(instance) == 'de;q=0, es, zh, jp;q=0.21'
 
     @pytest.mark.parametrize(
         'header_value, language_tags, expected_returned',
@@ -1447,28 +1462,13 @@ class TestAcceptLanguageValidHeader(object):
         )
         assert returned == expected
 
-    def test_repr(self):
-        header_value = ',da;q=0.2,en-gb;q=0.3'
-        instance = self._get_class()(header_value=header_value)
-        assert repr(instance) == (
-            "AcceptLanguageValidHeader(header_value={!r})".format(
-                header_value
-            )
-        )
-
-    def test_str(self):
-        header_value = \
-            ', \t,de;q=0.000 \t, es;q=1.000, zh, jp;q=0.210  ,'
-        instance = self._get_class()(header_value=header_value)
-        assert str(instance) == 'de;q=0, es, zh, jp;q=0.21'
-
 
 class TestAcceptLanguageNoHeader(object):
     def _get_class(self):
         from webob.acceptparse import AcceptLanguageNoHeader
         return AcceptLanguageNoHeader
 
-    def test_init(self):
+    def test___init__(self):
         accept_language = self._get_class()()
         assert accept_language.header_value is None
         assert accept_language.parsed is None
@@ -1672,11 +1672,11 @@ class TestAcceptLanguageNoHeader(object):
         assert isinstance(result, AcceptLanguageInvalidHeader)
         assert result.header_value == str(left_operand)
 
-    def test_repr(self):
+    def test___repr__(self):
         instance = self._get_class()()
         assert repr(instance) == 'AcceptLanguageNoHeader()'
 
-    def test_str(self):
+    def test___str__(self):
         instance = self._get_class()()
         assert str(instance) == '<no header in request>'
 
@@ -1714,7 +1714,7 @@ class TestAcceptLanguageInvalidHeader(object):
         from webob.acceptparse import AcceptLanguageInvalidHeader
         return AcceptLanguageInvalidHeader
 
-    def test_init(self):
+    def test___init__(self):
         header_value = 'invalid header'
         accept_language = self._get_class()(header_value=header_value)
         assert accept_language.header_value == header_value
@@ -2164,7 +2164,7 @@ class TestAcceptLanguageInvalidHeader(object):
         assert result.header_value == str(left_operand) + ', ' + \
             right_operand.header_value
 
-    def test_repr(self):
+    def test___repr__(self):
         header_value = """\"\"\"invalid\n\x00'header\""""
         instance = self._get_class()(header_value=header_value)
         assert repr(instance) == (
@@ -2173,7 +2173,7 @@ class TestAcceptLanguageInvalidHeader(object):
             )
         )
 
-    def test_str(self):
+    def test___str__(self):
         instance = self._get_class()(header_value="invalid header")
         assert str(instance) == '<invalid header value>'
 
