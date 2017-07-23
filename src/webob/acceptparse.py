@@ -1300,8 +1300,6 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
     have much behaviour in common.
     """
 
-    HeaderClass = AcceptLanguage
-
     def __nonzero__(self):
         """
         Return whether ``self`` represents a valid ``Accept-Language`` header.
