@@ -1542,6 +1542,7 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
     addition operators (``+`` and ``+=``), which return a new object (see the
     docstring for :meth:`AcceptLanguageNoHeader.__add__`).
     """
+
     def __init__(self):
         """
         Create an :class:`AcceptLanguageNoHeader` instance.
@@ -1655,6 +1656,7 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
     addition operators (``+`` and ``+=``), which return a new object (see the
     docstring for :meth:`AcceptLanguageInvalidHeader.__add__`).
     """
+
     def __init__(self, header_value):
         """
         Create an :class:`AcceptLanguageInvalidHeader` instance.
