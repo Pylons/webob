@@ -440,7 +440,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
            The behavior of :meth:`AcceptLanguageValidHeader.__contains__` is
            currently being maintained for backward compatibility, but it may
-           change in future to better conform to the RFC.
+           change in the future to better conform to the RFC.
 
            What is 'acceptable' depends on the needs of your application.
            :rfc:`RFC 7231, section 5.3.5 <7231#section-5.3.5>` suggests three
@@ -474,7 +474,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         warnings.warn(
             'The behavior of AcceptLanguageValidHeader.__contains__ is'
             'currently being maintained for backward compatibility, but it may'
-            ' change in future to better conform to the RFC.',
+            ' change in the future to better conform to the RFC.',
             PendingDeprecationWarning,
         )
         for mask, quality in self._parsed_nonzero:
@@ -590,7 +590,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         .. warning::
 
            This is maintained for backward compatibility, and may be deprecated
-           in future.
+           in the future.
 
         This method was WebOb's old criteron for deciding whether a language
         tag matches a language range, used in
@@ -825,7 +825,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         .. warning::
 
            This is currently maintained for backward compatibility, and may be
-           deprecated in future.
+           deprecated in the future.
 
            :meth:`AcceptLanguageValidHeader.best_match` uses its own algorithm
            (one not specified in :rfc:`RFC 7231 <7231>`) to determine what is a
@@ -920,7 +920,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         warnings.warn(
             'The behavior of AcceptLanguageValidHeader.best_match is '
             'currently being maintained for backward compatibility, but it may'
-            ' be deprecated in future as it does not conform to the RFC.',
+            ' be deprecated in the future as it does not conform to the RFC.',
             PendingDeprecationWarning,
         )
         best_quality = -1
@@ -1207,7 +1207,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         .. warning::
 
            This is currently maintained for backward compatibility, and may be
-           deprecated in future.
+           deprecated in the future.
 
            :meth:`AcceptLanguageValidHeader.quality` uses its own algorithm
            (one not specified in :rfc:`RFC 7231 <7231>`) to determine what is a
@@ -1271,7 +1271,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         warnings.warn(
             'The behavior of AcceptLanguageValidHeader.quality is'
             'currently being maintained for backward compatibility, but it may'
-            ' be deprecated in future as it does not conform to the RFC.',
+            ' be deprecated in the future as it does not conform to the RFC.',
             PendingDeprecationWarning,
         )
         # [If ``modifier`` is positive, it would not change the result of the
@@ -1333,7 +1333,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
 
            The behavior of ``.__contains__`` for the ``AcceptLanguage`` classes
            is currently being maintained for backward compatibility, but it may
-           change in future to better conform to the RFC.
+           change in the future to better conform to the RFC.
 
         :param offer: (``str``) language tag offer
         :return: (``bool``) Whether ``offer`` is acceptable according to the
@@ -1346,7 +1346,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         warnings.warn(
             'The behavior of .__contains__ for the AcceptLanguage classes is'
             'currently being maintained for backward compatibility, but it may'
-            ' change in future to better conform to the RFC.',
+            ' change in the future to better conform to the RFC.',
             PendingDeprecationWarning,
         )
         return True
@@ -1401,7 +1401,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         .. warning::
 
            This is currently maintained for backward compatibility, and may be
-           deprecated in future (see the documentation for
+           deprecated in the future (see the documentation for
            :meth:`AcceptLanguageValidHeader.best_match`).
 
         When the header is invalid, or there is no `Accept-Language` header in
@@ -1433,7 +1433,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         warnings.warn(
             'The behavior of .best_match for the AcceptLanguage classes is '
             'currently being maintained for backward compatibility, but the '
-            'method may be deprecated in future, as its behavior is not '
+            'method may be deprecated in the future, as its behavior is not '
             'specified in (and currently does not conform to) RFC 7231.',
             PendingDeprecationWarning,
         )
@@ -1538,7 +1538,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         .. warning::
 
            This is currently maintained for backward compatibility, and may be
-           deprecated in future (see the documentation for
+           deprecated in the future (see the documentation for
            :meth:`AcceptLanguageValidHeader.quality`).
 
         :param offer: (``str``) language tag offer
@@ -1550,7 +1550,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         warnings.warn(
             'The behavior of .quality for the AcceptLanguage classes is '
             'currently being maintained for backward compatibility, but the '
-            'method may be deprecated in future, as its behavior is not '
+            'method may be deprecated in the future, as its behavior is not '
             'specified in (and currently does not conform to) RFC 7231.',
             PendingDeprecationWarning,
         )
