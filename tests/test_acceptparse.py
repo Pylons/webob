@@ -1495,6 +1495,16 @@ class TestAcceptLanguageValidHeader(object):
         )
         assert returned == expected
 
+    @pytest.mark.parametrize('header_value, offer, expected_returned', [
+        ('en-gb', 'en-gb', 1),
+        ('en-gb;q=0.5', 'en-gb', 0.5),
+        ('en-gb', 'sr-Cyrl', None),
+    ])
+    def test_quality(self, header_value, offer, expected_returned):
+        instance = self._get_class()(header_value=header_value)
+        returned = instance.quality(offer=offer)
+        assert returned == expected_returned
+
 
 class TestAcceptLanguageNoHeader(object):
     def _get_class(self):
@@ -1757,6 +1767,11 @@ class TestAcceptLanguageNoHeader(object):
             default=default,
         )
         assert returned == expected
+
+    def test_quality(self):
+        instance = self._get_class()()
+        returned = instance.quality(offer='any-tag')
+        assert returned == 1.0
 
 
 class TestAcceptLanguageInvalidHeader(object):
@@ -2271,6 +2286,11 @@ class TestAcceptLanguageInvalidHeader(object):
             default=default,
         )
         assert returned == expected
+
+    def test_quality(self):
+        instance = self._get_class()(header_value='')
+        returned = instance.quality(offer='any-tag')
+        assert returned == 1.0
 
 
 class TestCreateAcceptLanguageHeader(object):
