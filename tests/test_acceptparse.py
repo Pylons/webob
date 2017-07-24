@@ -965,6 +965,37 @@ class TestAcceptLanguageValidHeader(object):
         returned = instance.basic_filtering(language_tags=language_tags)
         assert returned == expected_returned
 
+    @pytest.mark.parametrize(
+        'header_value, offers, default_match, expected_returned', [
+            ('bar, *;q=0', ['foo'], None, None),
+            ('en-gb, sr-Cyrl', ['sr-Cyrl', 'en-gb'], None, 'sr-Cyrl'),
+            ('en-gb, sr-Cyrl', ['en-gb', 'sr-Cyrl'], None, 'en-gb'),
+            ('en-gb, sr-Cyrl', [('sr-Cyrl', 0.5), 'en-gb'], None, 'en-gb'),
+            (
+                'en-gb, sr-Cyrl', [('sr-Cyrl', 0.5), ('en-gb', 0.4)], None,
+                'sr-Cyrl',
+            ),
+            ('en-gb, sr-Cyrl;q=0.5', ['en-gb', 'sr-Cyrl'], None, 'en-gb'),
+            ('en-gb;q=0.5, sr-Cyrl', ['en-gb', 'sr-Cyrl'], None, 'sr-Cyrl'),
+            (
+                'en-gb, sr-Cyrl;q=0.55, es;q=0.59', ['en-gb', 'sr-Cyrl'], None,
+                'en-gb',
+            ),
+            (
+                'en-gb;q=0.5, sr-Cyrl;q=0.586, es-419;q=0.597',
+                ['en-gb', 'es-419'], None, 'es-419',
+            ),
+        ]
+    )
+    def test_best_match(
+        self, header_value, offers, default_match, expected_returned,
+    ):
+        instance = self._get_class()(header_value=header_value)
+        returned = instance.best_match(
+            offers=offers, default_match=default_match,
+        )
+        assert returned == expected_returned
+
     def test_lookup_default_tag_and_default_cannot_both_be_None(self):
         instance = self._get_class()(header_value='valid-header')
         with pytest.raises(AssertionError):
