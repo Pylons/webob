@@ -145,6 +145,14 @@ def test_accept_match():
         assert 'text/html' in Accept(mask)
     assert 'text/html' not in Accept('foo/bar')
 
+
+def test_accept_iter():
+    accept = Accept(
+        'text/plain; q=0.5, text/html; q=0, text/x-dvi; q=0.8, text/x-c'
+    )
+    assert list(accept) == ['text/x-c', 'text/x-dvi', 'text/plain']
+
+
 # NilAccept tests
 
 def test_nil():
@@ -194,6 +202,10 @@ def test_nil_best_match():
     assert nilaccept.best_match([('foo', 0.5), 'bar'],
                                 default_match=False) == 'bar'
     assert nilaccept.best_match([], default_match='fallback') == 'fallback'
+
+def test_nil_iter():
+    nilaccept = NilAccept()
+    assert list(nilaccept) == []
 
 
 # NoAccept tests
