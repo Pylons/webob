@@ -1720,6 +1720,21 @@ class TestAcceptLanguageNoHeader(object):
         returned = instance.basic_filtering(language_tags=['tag1', 'tag2'])
         assert returned == []
 
+    @pytest.mark.parametrize('offers, default_match, expected_returned', [
+        (['foo', 'bar'], None, 'foo'),
+        ([('foo', 1), ('bar', 0.5)], None, 'foo'),
+        ([('foo', 0.5), ('bar', 1)], None, 'bar'),
+        ([('foo', 0.5), 'bar'], None, 'bar'),
+        ([('foo', 0.5), 'bar'], object(), 'bar'),
+        ([], 'fallback', 'fallback'),
+    ])
+    def test_best_match(self, offers, default_match, expected_returned):
+        instance = self._get_class()()
+        returned = instance.best_match(
+            offers=offers, default_match=default_match,
+        )
+        assert returned == expected_returned
+
     def test_lookup_default_tag_and_default_cannot_both_be_None(self):
         instance = self._get_class()()
         with pytest.raises(AssertionError):
@@ -2218,6 +2233,21 @@ class TestAcceptLanguageInvalidHeader(object):
         instance = self._get_class()(header_value='')
         returned = instance.basic_filtering(language_tags=['tag1', 'tag2'])
         assert returned == []
+
+    @pytest.mark.parametrize('offers, default_match, expected_returned', [
+        (['foo', 'bar'], None, 'foo'),
+        ([('foo', 1), ('bar', 0.5)], None, 'foo'),
+        ([('foo', 0.5), ('bar', 1)], None, 'bar'),
+        ([('foo', 0.5), 'bar'], None, 'bar'),
+        ([('foo', 0.5), 'bar'], object(), 'bar'),
+        ([], 'fallback', 'fallback'),
+    ])
+    def test_best_match(self, offers, default_match, expected_returned):
+        instance = self._get_class()(header_value='')
+        returned = instance.best_match(
+            offers=offers, default_match=default_match,
+        )
+        assert returned == expected_returned
 
     def test_lookup_default_tag_and_default_cannot_both_be_None(self):
         instance = self._get_class()(header_value='')
