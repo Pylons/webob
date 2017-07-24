@@ -67,8 +67,6 @@ class Accept(object):
         """
         for match in part_re.finditer(','+value):
             name = match.group(1)
-            if name == 'q':
-                continue
             quality = match.group(2) or ''
             if quality:
                 try:
