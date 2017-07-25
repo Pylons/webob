@@ -2244,13 +2244,8 @@ class TestAcceptLanguageInvalidHeader(object):
             right_operand.header_value
 
     def test___repr__(self):
-        header_value = """\"\"\"invalid\n\x00'header\""""
-        instance = self._get_class()(header_value=header_value)
-        assert repr(instance) == (
-            "AcceptLanguageInvalidHeader(header_value={!r})".format(
-                header_value
-            )
-        )
+        instance = self._get_class()(header_value='\x00')
+        assert repr(instance) == '<AcceptLanguageInvalidHeader instance>'
 
     def test___str__(self):
         instance = self._get_class()(header_value="invalid header")
