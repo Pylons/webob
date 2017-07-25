@@ -6,14 +6,6 @@ Headers
 
 Accept-*
 ~~~~~~~~
-
-.. # We use ``autoinstanceattribute`` instead of  ``members`` to document
-   # instance attributes for now, because of
-   # https://github.com/sphinx-doc/sphinx/issues/904
-   # (``autoattribute`` and ``autodata`` do not work with instance attributes.)
-   # As mentioned there, ``autoinstanceattribute`` is undocumented. However, it
-   # has been around for years, and works.
-
 .. automodule:: webob.acceptparse
 
 .. autoclass:: AcceptCharset
