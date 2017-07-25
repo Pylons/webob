@@ -341,14 +341,25 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         :raises ValueError: if `header_value` is an invalid value for an
                             ``Accept-Language`` header.
         """
-        self.header_value = header_value
-        """(``str``) The header value."""
+        self._header_value = header_value
 
-        self.parsed = list(self.parse(header_value))
-        """(``list``) Parsed form of the header: a list of (language range,
-        quality value) tuples."""
+        self._parsed = list(self.parse(header_value))
 
         self._parsed_nonzero = [(m, q) for (m, q) in self.parsed if q]
+
+    @property
+    def header_value(self):
+        """(``str``) The header value."""
+        return self._header_value
+
+    @property
+    def parsed(self):
+        """
+        (``list``) Parsed form of the header.
+
+        A list of (language range, quality value) tuples.
+        """
+        return self._parsed
 
     @classmethod
     def parse(cls, value):
@@ -1568,15 +1579,29 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
         """
         Create an :class:`AcceptLanguageNoHeader` instance.
         """
-        self.header_value = None
-        """(``str``) The header value. As there is no header in the request,
-        this is ``None``."""
+        self._header_value = None
 
-        self.parsed = None
-        """(``list``) Parsed form of the header. As there is no header in the
-        request, this is ``None``."""
+        self._parsed = None
 
         self._parsed_nonzero = None
+
+    @property
+    def header_value(self):
+        """
+        (``str``) The header value.
+
+        As there is no header in the request, this is ``None``.
+        """
+        return self._header_value
+
+    @property
+    def parsed(self):
+        """
+        (``list``) Parsed form of the header.
+
+        As there is no header in the request, this is ``None``.
+        """
+        return self._parsed
 
     def __add__(self, other):
         """
@@ -1682,14 +1707,25 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         """
         Create an :class:`AcceptLanguageInvalidHeader` instance.
         """
-        self.header_value = header_value
-        """(``str``) The header value."""
+        self._header_value = header_value
 
-        self.parsed = None
-        """(``list``) Parsed form of the header. As the header is invalid and
-        cannot be parsed, this is ``None``."""
+        self._parsed = None
 
         self._parsed_nonzero = None
+
+    @property
+    def header_value(self):
+        """(``str``) The header value."""
+        return self._header_value
+
+    @property
+    def parsed(self):
+        """
+        (``list``) Parsed form of the header.
+
+        As the header is invalid and cannot be parsed, this is ``None``.
+        """
+        return self._parsed
 
     def __add__(self, other):
         """
