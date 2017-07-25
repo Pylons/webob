@@ -535,17 +535,12 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         )
 
     def __repr__(self):
-        return "<{} header_value={!r}>".format(
-            # We use angle brackets to indicate that it is not in eval()-able
-            # form. The header_value is untrusted input; there could be a
-            # mistake in the validating regex or elsewhere, and it is not worth
-            # the risk.
-            # ``!r`` escapes the header value and places it inside quotes
-            # There should be no escaping involved, given that the header value
-            # has been validated by the regex, but just in case.
-            self.__class__.__name__,
-            self.header_value,
-        )
+        return "<{}>".format(self.__class__.__name__)
+        # We use angle brackets to indicate that it is not in eval()-able form.
+        # We do not display the header_value, as it is untrusted input; there
+        # could be a mistake in the validating regex or elsewhere. The
+        # header_value could always be easily obtained from the .header_value
+        # property.
 
     def __str__(self):
         r"""

@@ -818,12 +818,8 @@ class TestAcceptLanguageValidHeader(object):
         assert list(instance) == expected_list
 
     def test___repr__(self):
-        header_value = ',da;q=0.2,en-gb;q=0.3'
-        instance = self._get_class()(header_value=header_value)
-        assert repr(instance) == (
-            '<AcceptLanguageValidHeader '
-            "header_value=',da;q=0.2,en-gb;q=0.3'>"
-        )
+        instance = self._get_class()(header_value=',da;q=0.2,en-gb;q=0.3')
+        assert repr(instance) == '<AcceptLanguageValidHeader>'
 
     def test___str__(self):
         header_value = \
