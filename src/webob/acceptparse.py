@@ -1653,7 +1653,7 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
         return self.__add__(other=other)
 
     def __repr__(self):
-        return '{}()'.format(self.__class__.__name__)
+        return '<{}>'.format(self.__class__.__name__)
 
     def __str__(self):
         """Return the ``str`` ``'<no header in request>'``."""
@@ -1791,7 +1791,7 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
     def __repr__(self):
         # The header value is untrusted input, so if it is not valid, we will
         # not risk returning it in an eval()-able form
-        return '<AcceptLanguageInvalidHeader instance>'
+        return '<{}>'.format(self.__class__.__name__)
 
     def __str__(self):
         """Return the ``str`` ``'<invalid header value>'``."""

@@ -1730,7 +1730,7 @@ class TestAcceptLanguageNoHeader(object):
 
     def test___repr__(self):
         instance = self._get_class()()
-        assert repr(instance) == 'AcceptLanguageNoHeader()'
+        assert repr(instance) == '<AcceptLanguageNoHeader>'
 
     def test___str__(self):
         instance = self._get_class()()
@@ -2244,7 +2244,7 @@ class TestAcceptLanguageInvalidHeader(object):
 
     def test___repr__(self):
         instance = self._get_class()(header_value='\x00')
-        assert repr(instance) == '<AcceptLanguageInvalidHeader instance>'
+        assert repr(instance) == '<AcceptLanguageInvalidHeader>'
 
     def test___str__(self):
         instance = self._get_class()(header_value="invalid header")
