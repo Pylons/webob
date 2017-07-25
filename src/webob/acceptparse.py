@@ -1784,9 +1784,11 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         )
 
     def __repr__(self):
-        # The header value is untrusted input, so if it is not valid, we will
-        # not risk returning it in an eval()-able form
         return '<{}>'.format(self.__class__.__name__)
+        # We use angle brackets to indicate that it is not in eval()-able form.
+        # We do not display the header_value, as it is untrusted input. The
+        # header_value could always be easily obtained from the .header_value
+        # property.
 
     def __str__(self):
         """Return the ``str`` ``'<invalid header value>'``."""
