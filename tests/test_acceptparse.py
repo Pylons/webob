@@ -515,17 +515,17 @@ class TestAcceptLanguageValidHeader(object):
         from webob.acceptparse import AcceptLanguage
         header_value = \
             'zh-Hant;q=0.372,zh-CN-a-myExt-x-private;q=0.977,de,*;q=0.000'
-        accept_language = self._get_class()(header_value=header_value)
-        assert accept_language.header_value == header_value
-        assert accept_language.parsed == [
+        instance = self._get_class()(header_value=header_value)
+        assert instance.header_value == header_value
+        assert instance.parsed == [
             ('zh-Hant', 0.372), ('zh-CN-a-myExt-x-private', 0.977),
             ('de', 1.0), ('*', 0.0)
         ]
-        assert accept_language._parsed_nonzero == [
+        assert instance._parsed_nonzero == [
             ('zh-Hant', 0.372), ('zh-CN-a-myExt-x-private', 0.977),
             ('de', 1.0)
         ]
-        assert isinstance(accept_language, AcceptLanguage)
+        assert isinstance(instance, AcceptLanguage)
 
     @pytest.mark.parametrize('right_operand', [None, '', (), [], {}])
     def test___add___non_accept_language_instance_falsy_value(
@@ -1525,11 +1525,11 @@ class TestAcceptLanguageNoHeader(object):
 
     def test___init__(self):
         from webob.acceptparse import AcceptLanguage
-        accept_language = self._get_class()()
-        assert accept_language.header_value is None
-        assert accept_language.parsed is None
-        assert accept_language._parsed_nonzero is None
-        assert isinstance(accept_language, AcceptLanguage)
+        instance = self._get_class()()
+        assert instance.header_value is None
+        assert instance.parsed is None
+        assert instance._parsed_nonzero is None
+        assert isinstance(instance, AcceptLanguage)
 
     def test___add___None(self):
         Cls = self._get_class()
@@ -1794,11 +1794,11 @@ class TestAcceptLanguageInvalidHeader(object):
     def test___init__(self):
         from webob.acceptparse import AcceptLanguage
         header_value = 'invalid header'
-        accept_language = self._get_class()(header_value=header_value)
-        assert accept_language.header_value == header_value
-        assert accept_language.parsed is None
-        assert accept_language._parsed_nonzero is None
-        assert isinstance(accept_language, AcceptLanguage)
+        instance = self._get_class()(header_value=header_value)
+        assert instance.header_value == header_value
+        assert instance.parsed is None
+        assert instance._parsed_nonzero is None
+        assert isinstance(instance, AcceptLanguage)
 
     @pytest.mark.parametrize('left_operand_header, right_operand', [
         ('', None),
