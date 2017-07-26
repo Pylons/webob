@@ -342,9 +342,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                             ``Accept-Language`` header.
         """
         self._header_value = header_value
-
         self._parsed = list(self.parse(header_value))
-
         self._parsed_nonzero = [(m, q) for (m, q) in self.parsed if q]
 
     @property
@@ -1581,9 +1579,7 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
         Create an :class:`AcceptLanguageNoHeader` instance.
         """
         self._header_value = None
-
         self._parsed = None
-
         self._parsed_nonzero = None
 
     @property
@@ -1709,9 +1705,7 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         Create an :class:`AcceptLanguageInvalidHeader` instance.
         """
         self._header_value = header_value
-
         self._parsed = None
-
         self._parsed_nonzero = None
 
     @property
