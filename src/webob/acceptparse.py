@@ -33,6 +33,10 @@ qvalue_re = r"""
 weight_re = r'[ \t]*;[ \t]*[qQ]=(' + qvalue_re + r')'
 
 
+def _item_n_weight_re(item_re):
+    return '(' + item_re + ')(?:' + weight_re + ')?'
+
+
 def _item_qvalue_pair_to_header_element(pair):
     item, qvalue = pair
     if qvalue == 1.0:
@@ -42,6 +46,17 @@ def _item_qvalue_pair_to_header_element(pair):
     else:
         element = '{};q={}'.format(item, qvalue)
     return element
+
+
+def _list_1_or_more__compiled_re(element_re):
+    # RFC 7230 Section 7 "ABNF List Extension: #rule":
+    # 1#element => *( "," OWS ) element *( OWS "," [ OWS element ] )
+    # and RFC 7230 Errata ID: 4169
+    return re.compile(
+        r'^(?:,[ \t]*)*' + element_re +
+        r'(?:[ \t]*,(?:[ \t]*' + element_re + r')?)*$',
+        re.VERBOSE
+    )
 
 
 class Accept(object):
@@ -319,18 +334,13 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         (?:-[A-Za-z0-9]{1,8})*
         )
     """
-    lang_range_n_weight_re = r'(' + lang_range_re + r')(?:' + weight_re + r')?'
+    lang_range_n_weight_re = _item_n_weight_re(item_re=lang_range_re)
     lang_range_n_weight_compiled_re = re.compile(
         lang_range_n_weight_re,
         re.VERBOSE
     )
-    # RFC 7230 Section 7 "ABNF List Extension: #rule":
-    # 1#element => *( "," OWS ) element *( OWS "," [ OWS element ] )
-    # and RFC 7230 Errata ID: 4169
-    accept_language_compiled_re = re.compile(
-        r'^(?:,[ \t]*)*' + lang_range_n_weight_re +
-        r'(?:[ \t]*,(?:[ \t]*' + lang_range_n_weight_re + r')?)*$',
-        re.VERBOSE
+    accept_language_compiled_re = _list_1_or_more__compiled_re(
+        element_re=lang_range_n_weight_re,
     )
 
     def __init__(self, header_value):

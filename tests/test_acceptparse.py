@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from webob.request import Request
@@ -7,6 +9,103 @@ from webob.acceptparse import NilAccept
 from webob.acceptparse import NoAccept
 from webob.acceptparse import accept_property
 from webob.acceptparse import AcceptCharset
+
+
+class Test_ItemNWeightRe(object):
+    def _get_function(self):
+        from webob.acceptparse import _item_n_weight_re
+        return _item_n_weight_re
+
+    @pytest.mark.parametrize('header_value', [
+        'q=',
+        'q=1',
+        ';q',
+        ';q=',
+        ';q=1',
+        'foo;',
+        'foo;q',
+        'foo;q1',
+        'foo;q=',
+        'foo;q=-1',
+        'foo;q=2',
+        'foo;q=1.001',
+        'foo;q=0.0001',
+        'foo;q=00',
+        'foo;q=01',
+        'foo;q=00.1',
+        'foo,q=0.1',
+        'foo;q =1',
+        'foo;q= 1',
+    ])
+    def test_invalid(self, header_value):
+        regex = self._get_function()(item_re='foo')
+        assert re.match('^' + regex + '$', header_value, re.VERBOSE) is None
+
+    @pytest.mark.parametrize('header_value, groups', [
+        ('foo', ('foo', None)),
+        ('foo;q=0', ('foo', '0')),
+        ('foo;q=0.0', ('foo', '0.0')),
+        ('foo;q=0.00', ('foo', '0.00')),
+        ('foo;q=0.000', ('foo', '0.000')),
+        ('foo;q=1', ('foo', '1')),
+        ('foo;q=1.0', ('foo', '1.0')),
+        ('foo;q=1.00', ('foo', '1.00')),
+        ('foo;q=1.000', ('foo', '1.000')),
+        ('foo;q=0.1', ('foo', '0.1')),
+        ('foo;q=0.87', ('foo', '0.87')),
+        ('foo;q=0.382', ('foo', '0.382')),
+        ('foo;Q=0.382', ('foo', '0.382')),
+        ('foo ;Q=0.382', ('foo', '0.382')),
+        ('foo; Q=0.382', ('foo', '0.382')),
+        ('foo  ;  Q=0.382', ('foo', '0.382')),
+    ])
+    def test_valid(self, header_value, groups):
+        regex = self._get_function()(item_re='foo')
+        assert re.match(
+            '^' + regex + '$', header_value, re.VERBOSE,
+        ).groups() == groups
+
+
+class Test_List1OrMoreCompiledRe(object):
+    def _get_function(self):
+        from webob.acceptparse import _list_1_or_more__compiled_re
+        return _list_1_or_more__compiled_re
+
+    @pytest.mark.parametrize('header_value', [
+        # RFC 7230 Section 7
+        ',',
+        ',   ,',
+        # RFC 7230 Errata ID: 4169
+        'foo , ,bar,charlie   ',
+        # Our tests
+        ' foo , ,bar,charlie',
+        ' ,foo , ,bar,charlie',
+        ',foo , ,bar,charlie, ',
+        '\tfoo , ,bar,charlie',
+        '\t,foo , ,bar,charlie',
+        ',foo , ,bar,charlie\t',
+        ',foo , ,bar,charlie,\t',
+    ])
+    def test_invalid(self, header_value):
+        regex = self._get_function()(element_re='([a-z]+)')
+        assert regex.match(header_value) is None
+
+    @pytest.mark.parametrize('header_value', [
+        # RFC 7230 Section 7
+        'foo,bar',
+        'foo, bar,',
+        # RFC 7230 Errata ID: 4169
+        'foo , ,bar,charlie',
+        # Our tests
+        'foo , ,bar,charlie',
+        ',foo , ,bar,charlie',
+        ',foo , ,bar,charlie,',
+        ',\t ,,,  \t \t,   ,\t\t\t,foo \t\t,, bar,  ,\tcharlie \t,,  ,',
+    ])
+    def test_valid(self, header_value):
+        regex = self._get_function()(element_re='([a-z]+)')
+        assert regex.match(header_value)
+
 
 def test_parse_accept_badq():
     assert list(Accept.parse("value1; q=0.1.2")) == [('value1', 1)]
@@ -386,39 +485,9 @@ class TestAcceptLanguageValidHeader(object):
         '--a',
         '1-a',
         '1-a-a',
-        'q=1',
-        'a;q=',
-        'a;q=-1',
-        'a;q=2',
-        'a;q=1.001',
-        'a;q=0.0001',
-        'a;q=1.0001',
-        'a;q=00',
-        'a;q=01',
-        'a,q=0.1',
-        'da, en-gb;q=',
-        'da, en-gb;q=-1',
-        'da, en-gb;q=2',
-        'da, en-gb;q=1.001',
-        'da, en-gb;q=0.0001',
-        'da, en-gb;q=1.0001',
-        'da, en-gb;q=00',
-        'da, en-gb;q=01',
-        'da, en-gb,q=01',
-        'q=,en-gb;q=1',
-        'en-gb;q=1,q=',
-        'da;q=0.2, en/gb;q=0.3',
-        'en/gb;q=0.2, da;q=0.3',
-        ' da;q=0.2, en-gb;q=0.3',
-        ', da;q=0.2, en-gb;q=0.3 ',
-        ', da;q= 0.2, en-gb;q=0.3',
-        ', da;q =0.2, en-gb;q=0.3',
-        ', da;q=0.2, en-gb;q= 0.3',
-        ', da;q=0.2, en-gb;q =0.3',
-        # RFC 7230 Section 7
-        ',',
-        ',   ,',
-        # RFC 7230 Errata ID: 4169
+        'en_gb',
+        'en/gb',
+        'foo, bar, baz;q= 0.001',
         'foo , ,bar,charlie   ',
     ])
     def test_parse__invalid_header(self, value):
@@ -427,51 +496,17 @@ class TestAcceptLanguageValidHeader(object):
 
     @pytest.mark.parametrize('value, expected_list', [
         ('*', [('*', 1.0)]),
-        ('de', [('de', 1.0)]),
-        ('fR', [('fR', 1.0)]),
-        ('JA', [('JA', 1.0)]),
-        ('zh-Hant', [('zh-Hant', 1.0)]),
-        ('Sr-cYrL', [('Sr-cYrL', 1.0)]),
-        ('es-419', [('es-419', 1.0)]),
-        ('zh-Hans-CN', [('zh-Hans-CN', 1.0)]),
-        ('de-CH-1901', [('de-CH-1901', 1.0)]),
-        ('de-CH-x-phonebk', [('de-CH-x-phonebk', 1.0)]),
-        ('az-Arab-x-AZE-derbend', [('az-Arab-x-AZE-derbend', 1.0)]),
-        ('zh-CN-a-myExt-x-private', [('zh-CN-a-myExt-x-private', 1.0)]),
-        ('ar-a-aaa-b-bbb-a-ccc', [('ar-a-aaa-b-bbb-a-ccc', 1.0)]),
-        ('de;q=0', [('de', 0.0)]),
-        ('fR;q=0.0', [('fR', 0.0)]),
-        ('JA;q=0.00', [('JA', 0.0)]),
-        ('zh-Hant;q=0.000', [('zh-Hant', 0.0)]),
+        ('fR;q=0.5', [('fR', 0.5)]),
+        ('zh-Hant;q=0.500', [('zh-Hant', 0.5)]),
         ('zh-Hans-CN;q=1', [('zh-Hans-CN', 1.0)]),
         ('de-CH-x-phonebk;q=1.0', [('de-CH-x-phonebk', 1.0)]),
         ('az-Arab-x-AZE-derbend;q=1.00', [('az-Arab-x-AZE-derbend', 1.0)]),
         ('zh-CN-a-myExt-x-private;q=1.000', [('zh-CN-a-myExt-x-private', 1.0)]),
-        ('de;q=0.1', [('de', 0.1)]),
-        ('de;q=0.87', [('de', 0.87)]),
-        ('de;q=0.382', [('de', 0.382)]),
-        ('de,ar;q=0.7', [('de', 1.0), ('ar', 0.7)]),
-        ('de;q=0.8,ar', [('de', 0.8), ('ar', 1.0)]),
-        ('de;q=0.8,ar;q=1', [('de', 0.8), ('ar', 1.0)]),
-        ('de;q=0.8,ar;q=1.0', [('de', 0.8), ('ar', 1.0)]),
-        ('de;q=0.8,ar;q=1.00', [('de', 0.8), ('ar', 1.0)]),
-        ('de;q=0.8,ar;q=1.000', [('de', 0.8), ('ar', 1.0)]),
-        ('de;q=0.8,ar;q=0', [('de', 0.8), ('ar', 0.0)]),
-        ('de;q=0.8,ar;q=0.0', [('de', 0.8), ('ar', 0.0)]),
-        ('de;q=0.8,ar;q=0.00', [('de', 0.8), ('ar', 0.0)]),
-        ('de;q=0.8,ar;q=0.000', [('de', 0.8), ('ar', 0.0)]),
-        ('de;q=0.8,ar;q=0.7', [('de', 0.8), ('ar', 0.7)]),
-        ('de;q=0.8,ar;q=0.72', [('de', 0.8), ('ar', 0.72)]),
-        ('de;q=0.8,ar;q=0.723', [('de', 0.8), ('ar', 0.723)]),
-        ('de,zh,az,es', [('de', 1.0), ('zh', 1.0), ('az', 1.0), ('es', 1.0)]),
-        (
-            'da, en-gb;q=0.8, en;q=0.7',
-            [('da', 1.0), ('en-gb', 0.8), ('en', 0.7)]
-        ),
-        (
-            'de \t;\t  Q=0.3 ,zh ;\tq=0.5,az\t; Q=0.6',
-            [('de', 0.3), ('zh', 0.5), ('az', 0.6)]
-        ),
+        ('aaaaaaaa', [('aaaaaaaa', 1.0)]),
+        ('aaaaaaaa-a', [('aaaaaaaa-a', 1.0)]),
+        ('aaaaaaaa-aaaaaaaa', [('aaaaaaaa-aaaaaaaa', 1.0)]),
+        ('a-aaaaaaaa-aaaaaaaa', [('a-aaaaaaaa-aaaaaaaa', 1.0)]),
+        ('aaaaaaaa-a-aaaaaaaa', [('aaaaaaaa-a-aaaaaaaa', 1.0)]),
         (
             'zh-Hant;q=0.372,zh-CN-a-myExt-x-private;q=0.977,de,*;q=0.000',
             [
@@ -479,24 +514,15 @@ class TestAcceptLanguageValidHeader(object):
                 ('de', 1.0), ('*', 0.0)
             ]
         ),
-        ('aaaaaaaa', [('aaaaaaaa', 1.0)]),
-        ('aaaaaaaa-a', [('aaaaaaaa-a', 1.0)]),
-        ('aaaaaaaa-aaaaaaaa', [('aaaaaaaa-aaaaaaaa', 1.0)]),
-        ('a-aaaaaaaa-aaaaaaaa', [('a-aaaaaaaa-aaaaaaaa', 1.0)]),
-        ('aaaaaaaa-a-aaaaaaaa', [('aaaaaaaa-a-aaaaaaaa', 1.0)]),
+        (
+            ',\t foo \t;\t q=0.345,, bar ; Q=0.456 \t,  ,\tcharlie \t,,  ,',
+            [('foo', 0.345), ('bar', 0.456), ('charlie', 1.0)]
+        ),
         # RFC 7230 Section 7
         ('foo,bar', [('foo', 1.0), ('bar', 1.0)]),
         ('foo, bar,', [('foo', 1.0), ('bar', 1.0)]),
         # RFC 7230 Errata ID: 4169
         ('foo , ,bar,charlie', [('foo', 1.0), ('bar', 1.0), ('charlie', 1.0)]),
-        (
-            ',\t ,,,  \t \t,   ,\t\t\t,foo \t\t,, bar,  ,\tcharlie \t,,  ,',
-            [('foo', 1.0), ('bar', 1.0), ('charlie', 1.0)]
-        ),
-        (
-            ',\t foo \t;\t q=0.3,, bar ; Q=0.4 \t,  ,\tcharlie \t; q=0.8,,  ,',
-            [('foo', 0.3), ('bar', 0.4), ('charlie', 0.8)]
-        ),
     ])
     def test_parse__valid_header(self, value, expected_list):
         returned = self._get_class().parse(value=value)
