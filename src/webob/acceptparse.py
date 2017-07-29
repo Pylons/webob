@@ -533,12 +533,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         )
 
     def __repr__(self):
-        return '<{}>'.format(self.__class__.__name__)
-        # We use angle brackets to indicate that it is not in eval()-able form.
-        # We do not display the header_value, as it is untrusted input; there
-        # could be a mistake in the validating regex or elsewhere. The
-        # header_value could always be easily obtained from the .header_value
-        # property.
+        return '<{} ({!r})>'.format(self.__class__.__name__, str(self))
 
     def __str__(self):
         r"""
@@ -1779,7 +1774,6 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
 
     def __repr__(self):
         return '<{}>'.format(self.__class__.__name__)
-        # We use angle brackets to indicate that it is not in eval()-able form.
         # We do not display the header_value, as it is untrusted input. The
         # header_value could always be easily obtained from the .header_value
         # property.
