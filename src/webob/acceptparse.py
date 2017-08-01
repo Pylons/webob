@@ -1870,11 +1870,7 @@ def accept_language_property():
     ENVIRON_KEY = 'HTTP_ACCEPT_LANGUAGE'
 
     def fget(request):
-        """
-        Get an object representing the header in the request.
-
-        This creates a new object (and re-parses the header) on every call.
-        """
+        """Get an object representing the header in the request."""
         return create_accept_language_header(
             header_value=request.environ.get(ENVIRON_KEY)
         )
