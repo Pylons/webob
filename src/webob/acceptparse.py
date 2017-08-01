@@ -388,7 +388,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         # the match *and* get all the groups using the same regex, so we have
         # to use one regex to check the match, and another to get the groups.
         if cls.accept_language_compiled_re.match(value) is None:
-            raise ValueError  # invalid header
+            raise ValueError('Invalid value for an Accept-Language header.')
         def generator(value):
             for match in (
                 cls.lang_range_n_weight_compiled_re.finditer(value)
