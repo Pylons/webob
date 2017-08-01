@@ -378,9 +378,9 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         Parse an ``Accept-Language`` header.
 
         :param value: (``str``) header value
-        :return: If `value` is a valid ``Accept-Language`` header, returns a
-                 generator iterator that yields (language range, quality value)
-                 tuples, as parsed from the header from left to right.
+        :return: If `value` is a valid ``Accept-Language`` header, returns an
+                 iterator of (language range, quality value) tuples, as parsed
+                 from the header from left to right.
         :raises ValueError: if `value` is an invalid header
         """
         # Check if header is valid
