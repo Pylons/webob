@@ -491,7 +491,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         other problems with the old criterion for a match.)
         """
         warnings.warn(
-            'The behavior of AcceptLanguageValidHeader.__contains__ is'
+            'The behavior of AcceptLanguageValidHeader.__contains__ is '
             'currently being maintained for backward compatibility, but it may'
             ' change in the future to better conform to the RFC.',
             PendingDeprecationWarning,
@@ -1359,7 +1359,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         and this always returns ``True``.
         """
         warnings.warn(
-            'The behavior of .__contains__ for the AcceptLanguage classes is'
+            'The behavior of .__contains__ for the AcceptLanguage classes is '
             'currently being maintained for backward compatibility, but it may'
             ' change in the future to better conform to the RFC.',
             PendingDeprecationWarning,
