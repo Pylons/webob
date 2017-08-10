@@ -302,6 +302,30 @@ class AcceptLanguage(object):
     :class:`AcceptLanguageNoHeader`, and :class:`AcceptLanguageInvalidHeader`.
     """
 
+    @classmethod
+    def python_value_to_header_str(cls, value):
+        if isinstance(value, str):
+            header_str = value
+        else:
+            if hasattr(value, 'items'):
+                value = sorted(
+                    value.items(),
+                    key=lambda item: item[1],
+                    reverse=True,
+                )
+            if isinstance(value, (tuple, list)):
+                result = []
+                for element in value:
+                    if isinstance(element, (tuple, list)):
+                        element = _item_qvalue_pair_to_header_element(
+                            pair=element
+                        )
+                    result.append(element)
+                header_str = ', '.join(result)
+            else:
+                header_str = str(value)
+        return header_str
+
 
 class AcceptLanguageValidHeader(AcceptLanguage):
     """
@@ -405,34 +429,36 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
         `other` can be:
 
+        * ``None``
         * a ``str``
         * a ``dict``, with language ranges as keys and qvalues as values
         * a ``tuple`` or ``list``, of language range ``str``s or of ``tuple``
           or ``list`` (language range, qvalue) pairs (``str``s and pairs can be
           mixed within the ``tuple`` or ``list``)
-        * any object that returns a value for `__str__`
         * an :class:`AcceptLanguageValidHeader`,
           :class:`AcceptLanguageNoHeader`, or
           :class:`AcceptLanguageInvalidHeader` instance
+        * object of any other type that returns a value for `__str__`
 
-        If neither operands are empty (header value ``''``) or
-        ``None``/:class:`AcceptLanguageNoHeader`, the two header values are
-        joined with ``', '``.
+        If `other` is a valid header value or another
+        :class:`AcceptLanguageValidHeader` instance, the two header values are
+        joined with ``', '``, and a new :class:`AcceptLanguageValidHeader`
+        instance with the new header value is returned.
+
+        If `other` is ``None``, an :class:`AcceptLanguageNoHeader` instance, an
+        invalid header value, or an :class:`AcceptLanguageInvalidHeader`
+        instance, a new :class:`AcceptLanguageValidHeader` instance with the
+        same header value as ``self`` is returned.
         """
-        if isinstance(other, AcceptLanguageNoHeader):
-            return self.__class__(header_value=self.header_value)
-
         if isinstance(other, AcceptLanguageValidHeader):
             return create_accept_language_header(
                 header_value=self.header_value + ', ' + other.header_value,
             )
 
-        if isinstance(other, AcceptLanguageInvalidHeader):
-            if other.header_value == '':
-                return self.__class__(header_value=self.header_value)
-            return create_accept_language_header(
-                header_value=self.header_value + ', ' + other.header_value,
-            )
+        if isinstance(
+            other, (AcceptLanguageNoHeader, AcceptLanguageInvalidHeader)
+        ):
+            return self.__class__(header_value=self.header_value)
 
         return self._add_instance_and_non_accept_language_type(
             instance=self, other=other,
@@ -567,36 +593,19 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         if not other:
             return self.__class__(header_value=instance.header_value)
 
-        if isinstance(other, str):
-            other_header_value = other
-        else:
-            if hasattr(other, 'items'):
-                other = sorted(
-                    other.items(),
-                    key=lambda item: item[1],
-                    reverse=True,
-                )
-            if isinstance(other, (tuple, list)):
-                result = []
-                for element in other:
-                    if isinstance(element, (tuple, list)):
-                        element = _item_qvalue_pair_to_header_element(
-                            pair=element
-                        )
-                    result.append(element)
-                other_header_value = ', '.join(result)
-            else:
-                other_header_value = str(other)
-                if other_header_value == '':
-                    return self.__class__(header_value=instance.header_value)
+        other_header_value = self.python_value_to_header_str(value=other)
+
+        try:
+            self.parse(value=other_header_value)
+        except ValueError:  # invalid header value
+            return self.__class__(header_value=instance.header_value)
 
         new_header_value = (
             (other_header_value + ', ' + instance.header_value)
             if instance_on_the_right
             else (instance.header_value + ', ' + other_header_value)
         )
-
-        return create_accept_language_header(header_value=new_header_value)
+        return self.__class__(header_value=new_header_value)
 
     def _old_match(self, mask, item):
         """
@@ -1613,30 +1622,33 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
 
         `other` can be:
 
+        * ``None``
         * a ``str``
         * a ``dict``, with language ranges as keys and qvalues as values
         * a ``tuple`` or ``list``, of language range ``str``s or of ``tuple``
           or ``list`` (language range, qvalue) pairs (``str``s and pairs can be
           mixed within the ``tuple`` or ``list``)
-        * any object that returns a value for `__str__`
         * an :class:`AcceptLanguageValidHeader`,
           :class:`AcceptLanguageNoHeader`, or
           :class:`AcceptLanguageInvalidHeader` instance
+        * object of any other type that returns a value for `__str__`
 
-        If neither operands are empty (header value ``''``) or
-        ``None``/:class:`AcceptLanguageNoHeader`, the two header values are
-        joined with ``', '``.
+        If `other` is a valid header value or an
+        :class:`AcceptLanguageValidHeader` instance, a new
+        :class:`AcceptLanguageValidHeader` instance with the valid header value
+        is returned.
+
+        If `other` is ``None``, an :class:`AcceptLanguageNoHeader` instance, an
+        invalid header value, or an :class:`AcceptLanguageInvalidHeader`
+        instance, a new :class:`AcceptLanguageNoHeader` instance is returned.
         """
-        if isinstance(other, AcceptLanguageNoHeader):
-            return self.__class__()
-
         if isinstance(other, AcceptLanguageValidHeader):
-            return create_accept_language_header(
-                header_value=other.header_value
-            )
+            return AcceptLanguageValidHeader(header_value=other.header_value)
 
-        if isinstance(other, AcceptLanguageInvalidHeader):
-            return AcceptLanguageInvalidHeader(header_value=other.header_value)
+        if isinstance(
+            other, (AcceptLanguageNoHeader, AcceptLanguageInvalidHeader)
+        ):
+            return self.__class__()
 
         return self._add_instance_and_non_accept_language_type(
             instance=self, other=other,
@@ -1658,35 +1670,15 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
         return '<no header in request>'
 
     def _add_instance_and_non_accept_language_type(self, instance, other):
-        if other is None:
+        if not other:
             return self.__class__()
-        if other in ('', (), [], {}):
-            return AcceptLanguageInvalidHeader(header_value='')
 
-        if isinstance(other, str):
-            other_header_value = other
-        else:
-            if hasattr(other, 'items'):
-                other = sorted(
-                    other.items(),
-                    key=lambda item: item[1],
-                    reverse=True,
-                )
-            if isinstance(other, (tuple, list)):
-                result = []
-                for element in other:
-                    if isinstance(element, (tuple, list)):
-                        element = _item_qvalue_pair_to_header_element(
-                            pair=element
-                        )
-                    result.append(element)
-                other_header_value = ', '.join(result)
-            else:
-                other_header_value = str(other)
-                if other_header_value == '':
-                    return AcceptLanguageInvalidHeader(header_value='')
+        other_header_value = self.python_value_to_header_str(value=other)
 
-        return create_accept_language_header(header_value=other_header_value)
+        try:
+            return AcceptLanguageValidHeader(header_value=other_header_value)
+        except ValueError:  # invalid header value
+            return self.__class__()
 
 
 class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
@@ -1735,40 +1727,33 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
 
         `other` can be:
 
+        * ``None``
         * a ``str``
         * a ``dict``, with language ranges as keys and qvalues as values
         * a ``tuple`` or ``list``, of language range ``str``s or of ``tuple``
           or ``list`` (language range, qvalue) pairs (``str``s and pairs can be
           mixed within the ``tuple`` or ``list``)
-        * any object that returns a value for `__str__`
         * an :class:`AcceptLanguageValidHeader`,
           :class:`AcceptLanguageNoHeader`, or
           :class:`AcceptLanguageInvalidHeader` instance
+        * object of any other type that returns a value for `__str__`
 
-        If neither operands are empty (header value ``''``) or
-        ``None``/:class:`AcceptLanguageNoHeader`, the two header values are
-        joined with ``', '``.
+        If `other` is a valid header value or an
+        :class:`AcceptLanguageValidHeader` instance, a new
+        :class:`AcceptLanguageValidHeader` instance with the valid header value
+        is returned.
+
+        If `other` is ``None``, an :class:`AcceptLanguageNoHeader` instance, an
+        invalid header value, or an :class:`AcceptLanguageInvalidHeader`
+        instance, a new :class:`AcceptLanguageNoHeader` instance is returned.
         """
-        if isinstance(other, AcceptLanguageNoHeader):
-            return self.__class__(header_value=self.header_value)
-
         if isinstance(other, AcceptLanguageValidHeader):
-            if self.header_value == '':
-                return AcceptLanguageValidHeader(
-                    header_value=other.header_value,
-                )
-            return create_accept_language_header(
-                header_value=self.header_value + ', ' + other.header_value
-            )
+            return AcceptLanguageValidHeader(header_value=other.header_value)
 
-        if isinstance(other, AcceptLanguageInvalidHeader):
-            if self.header_value == '':
-                return self.__class__(header_value=other.header_value)
-            if other.header_value == '':
-                return self.__class__(header_value=self.header_value)
-            return create_accept_language_header(
-                header_value=self.header_value + ', ' + other.header_value
-            )
+        if isinstance(
+            other, (AcceptLanguageNoHeader, AcceptLanguageInvalidHeader)
+        ):
+            return AcceptLanguageNoHeader()
 
         return self._add_instance_and_non_accept_language_type(
             instance=self, other=other,
@@ -1798,41 +1783,14 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         self, instance, other, instance_on_the_right=False,
     ):
         if not other:
-            return self.__class__(header_value=instance.header_value)
+            return AcceptLanguageNoHeader()
 
-        if isinstance(other, str):
-            other_header_value = other
-        else:
-            if hasattr(other, 'items'):
-                other = sorted(
-                    other.items(),
-                    key=lambda item: item[1],
-                    reverse=True,
-                )
-            if isinstance(other, (tuple, list)):
-                result = []
-                for element in other:
-                    if isinstance(element, (tuple, list)):
-                        element = _item_qvalue_pair_to_header_element(
-                            pair=element
-                        )
-                    result.append(element)
-                other_header_value = ', '.join(result)
-            else:
-                other_header_value = str(other)
-                if other_header_value == '':
-                    return self.__class__(header_value=instance.header_value)
+        other_header_value = self.python_value_to_header_str(value=other)
 
-        if instance.header_value == '':
-            new_header_value = other_header_value
-        else:
-            new_header_value = (
-                (other_header_value + ', ' + instance.header_value)
-                if instance_on_the_right
-                else (instance.header_value + ', ' + other_header_value)
-            )
-
-        return create_accept_language_header(header_value=new_header_value)
+        try:
+            return AcceptLanguageValidHeader(header_value=other_header_value)
+        except ValueError:  # invalid header value
+            return AcceptLanguageNoHeader()
 
 
 def create_accept_language_header(header_value):
@@ -1883,22 +1841,29 @@ def accept_language_property():
 
         `value` can be:
 
+        * ``None``
         * a ``str``
         * a ``dict``, with language ranges as keys and qvalues as values
         * a ``tuple`` or ``list``, of language range ``str``s or of ``tuple``
           or ``list`` (language range, qvalue) pairs (``str``s and pairs can be
           mixed within the ``tuple`` or ``list``)
-        * any object that returns a value for `__str__`
         * an :class:`AcceptLanguageValidHeader`,
           :class:`AcceptLanguageNoHeader`, or
           :class:`AcceptLanguageInvalidHeader` instance
+        * object of any other type that returns a value for `__str__`
         """
         if value is None or isinstance(value, AcceptLanguageNoHeader):
             fdel(request=request)
         else:
-            request.environ[ENVIRON_KEY] = (
-                AcceptLanguageNoHeader() + value
-            ).header_value
+            if isinstance(
+                value, (AcceptLanguageValidHeader, AcceptLanguageInvalidHeader)
+            ):
+                header_value = value.header_value
+            else:
+                header_value = AcceptLanguage.python_value_to_header_str(
+                    value=value,
+                )
+            request.environ[ENVIRON_KEY] = header_value
 
     def fdel(request):
         """Delete the corresponding key from the request environ."""
