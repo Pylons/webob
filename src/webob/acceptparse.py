@@ -241,7 +241,7 @@ class NilAccept(object):
         _check_offer(item)
         return True
 
-    def quality(self, offer, default_quality=1):
+    def quality(self, offer):
         return 0
 
     def best_match(self, offers, default_match=None):
