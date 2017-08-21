@@ -686,10 +686,16 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         suggested as a matching scheme for the ``Accept-Language`` header in
         :rfc:`RFC 7231, section 5.3.5 <7231#section-5.3.5>`, and defined in
         :rfc:`RFC 4647, section 3.3.1 <4647#section-3.3.1>`. It filters the
-        tags in the `language_tags` argument, and returns a list of the tags
-        that match the language ranges in the header according to the Basic
-        Filtering matching scheme, in descending order of preference, together
-        with the qvalue of the range each tag matched.
+        tags in the `language_tags` argument and returns the ones that match
+        the header according to the matching scheme. The returned list is a
+        list of (language tag, qvalue) tuples, in descending order of qvalue;
+        if two or more tags have the same qvalue, they are returned in the same
+        order as the order in the header of the ranges they matched. If the
+        matched range is the same for two or more tags (i.e. their matched
+        ranges have the same qvalue and the same position in the header), then
+        they are returned in the same order as their order in the
+        `language_tags` argument. (If `language_tags` is unordered, e.g. if it
+        is a set or a dict, then that order may not be reliable.)
 
         :param language_tags: (``iterable``) language tags
         :return: A list of tuples of the form (language tag, qvalue), in
@@ -701,29 +707,18 @@ class AcceptLanguageValidHeader(AcceptLanguage):
            (meaning "not acceptable", see :rfc:`RFC 7231, section 5.3.1
            <7231#section-5.3.1>`), the tag is filtered out.
         2. The language ranges in the header that do not have ``q=0`` and are
-           not ``*`` are considered in descending order of preference: first in
-           descending order of qvalue; where two or more language ranges have
-           the same qvalue, we consider the language range that appears earlier
-           in the header to have higher preference.
+           not ``*`` are considered in descending order of qvalue; where two or
+           more language ranges have the same qvalue, they are considered in
+           the order in which they appear in the header.
         3. A language range 'matches a particular language tag if, in a
            case-insensitive comparison, it exactly equals the tag, or if it
            exactly equals a prefix of the tag such that the first character
            following the prefix is "-".' (:rfc:`RFC 4647, section 3.3.1
            <4647#section-3.3.1>`)
         4. If a language tag has not matched any of the language ranges so far,
-           and there is one or more ``*`` language ranges in the header: if any
-           of the ``*`` language ranges have ``q=0``, the language tag is
-           filtered out. Otherwise, the language tag is considered a match.
-
-        The method returns a list of tuples of the form (language tag, qvalue),
-        in descending order of preference: in descending order of qvalue, and
-        if two tags have equal qvalues, we consider the tag whose matched range
-        appears earlier in the header to have higher preference. If the matched
-        range is the same for two or more tags (i.e. their matched ranges have
-        the same qvalue and the same position in the header), their order in
-        the `language_tags` argument is used as tiebreaker. (If `language_tags`
-        is unordered, e.g. if it is a set or a dict, then that order may not be
-        reliable.)
+           and there is one or more ``*`` language range in the header, then:
+           if any of the ``*`` language ranges have ``q=0``, the language tag
+           is filtered out. Otherwise, the language tag is considered a match.
         """
         # The Basic Filtering matching scheme as applied to the Accept-Language
         # header is very under-specified by RFCs 7231 and 4647. This
@@ -996,9 +991,9 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         :rfc:`RFC 7231, section 5.3.5 <7231#section-5.3.5>`, and described in
         :rfc:`RFC 4647, section 3.4 <4647#section-3.4>`.
 
-        Each language range in the header is considered in turn, in descending
-        order of qvalue; where qvalue is tied, ranges are considered from left
-        to right.
+        Each language range in the header is considered in turn, by descending
+        order of qvalue; where qvalues are tied, ranges are considered from
+        left to right.
 
         Each language range in the header represents the most specific tag that
         is an acceptable match: Lookup progressively truncates subtags from the
