@@ -564,11 +564,11 @@ class TestAcceptLanguageValidHeader(object):
         {},
         'en_gb',
         ['en_gb'],
-        ('en_gb'),
+        ('en_gb',),
         {'en_gb': 1.0},
         ',',
         [','],
-        (','),
+        (',',),
         {',': 1.0},
     ])
     def test___add___invalid_value(self, right_operand):
@@ -653,11 +653,11 @@ class TestAcceptLanguageValidHeader(object):
         {},
         'en_gb',
         ['en_gb'],
-        ('en_gb'),
+        ('en_gb',),
         {'en_gb': 1.0},
         ',',
         [','],
-        (','),
+        (',',),
         {',': 1.0},
     ])
     def test___radd___invalid_value(self, left_operand):
@@ -1471,7 +1471,7 @@ class TestAcceptLanguageNoHeader(object):
         {},
         'en_gb',
         ['en_gb'],
-        ('en_gb'),
+        ('en_gb',),
         {'en_gb': 1.0},
     ])
     def test___add___invalid_value(self, right_operand):
@@ -1563,7 +1563,7 @@ class TestAcceptLanguageNoHeader(object):
         {},
         'en_gb',
         ['en_gb'],
-        ('en_gb'),
+        ('en_gb',),
         {'en_gb': 1.0},
     ])
     def test___radd___invalid_value(self, left_operand):
@@ -1680,7 +1680,7 @@ class TestAcceptLanguageInvalidHeader(object):
         {},
         'en_gb',
         ['en_gb'],
-        ('en_gb'),
+        ('en_gb',),
         {'en_gb': 1.0},
     ])
     def test___add___invalid_value(self, right_operand):
@@ -1698,7 +1698,7 @@ class TestAcceptLanguageInvalidHeader(object):
     @pytest.mark.parametrize('value', [
         'en',
         ['en'],
-        ('en', ),
+        ('en',),
         {'en': 1.0},
     ])
     def test___add___valid_header_value(self, value):
@@ -1759,7 +1759,7 @@ class TestAcceptLanguageInvalidHeader(object):
         {},
         'en_gb',
         ['en_gb'],
-        ('en_gb'),
+        ('en_gb',),
         {'en_gb': 1.0},
     ])
     def test___radd___invalid_value(self, left_operand):
@@ -1777,7 +1777,7 @@ class TestAcceptLanguageInvalidHeader(object):
     @pytest.mark.parametrize('value', [
         'en',
         ['en'],
-        ('en', ),
+        ('en',),
         {'en': 1.0},
     ])
     def test___radd___valid_header_value(self, value):
