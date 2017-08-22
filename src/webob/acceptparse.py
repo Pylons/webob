@@ -688,14 +688,14 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         :rfc:`RFC 4647, section 3.3.1 <4647#section-3.3.1>`. It filters the
         tags in the `language_tags` argument and returns the ones that match
         the header according to the matching scheme. The returned list is a
-        list of (language tag, qvalue) tuples, in descending order of qvalue;
-        if two or more tags have the same qvalue, they are returned in the same
-        order as the order in the header of the ranges they matched. If the
-        matched range is the same for two or more tags (i.e. their matched
-        ranges have the same qvalue and the same position in the header), then
-        they are returned in the same order as their order in the
-        `language_tags` argument. (If `language_tags` is unordered, e.g. if it
-        is a set or a dict, then that order may not be reliable.)
+        list of (language tag, qvalue) tuples, in descending order of qvalue.
+        If two or more tags have the same qvalue, they are returned in the same
+        order as that in the header of the ranges they matched. If the matched
+        range is the same for two or more tags (i.e. their matched ranges have
+        the same qvalue and the same position in the header), then they are
+        returned in the same order as that in the `language_tags` argument. If
+        `language_tags` is unordered, e.g. if it is a set or a dict, then that
+        order may not be reliable.
 
         :param language_tags: (``iterable``) language tags
         :return: A list of tuples of the form (language tag, qvalue), in
@@ -716,9 +716,9 @@ class AcceptLanguageValidHeader(AcceptLanguage):
            following the prefix is "-".' (:rfc:`RFC 4647, section 3.3.1
            <4647#section-3.3.1>`)
         4. If a language tag has not matched any of the language ranges so far,
-           and there is one or more ``*`` language range in the header, then:
-           if any of the ``*`` language ranges have ``q=0``, the language tag
-           is filtered out. Otherwise, the language tag is considered a match.
+           and there is one or more ``*`` language range in the header, then if
+           any of the ``*`` language ranges have ``q=0``, the language tag is
+           filtered out, else the language tag is considered a match.
         """
         # The Basic Filtering matching scheme as applied to the Accept-Language
         # header is very under-specified by RFCs 7231 and 4647. This
