@@ -21,16 +21,21 @@ from webob.util import (
 part_re = re.compile(
     r',\s*([^\s;,\n]+)(?:[^,]*?;\s*q=([0-9.]*))?')
 
+# RFC 7230 Section 3.2.3 "Whitespace"
+# OWS            = *( SP / HTAB )
+#                ; optional whitespace
+OWS_re = '[ \t]*'
+
 # RFC 7231 Section 5.3.1 "Quality Values"
 # qvalue = ( "0" [ "." 0*3DIGIT ] )
 #        / ( "1" [ "." 0*3("0") ] )
-qvalue_re = r"""
-    (?:0(?:\.[0-9]{0,3})?)
-    |
-    (?:1(?:\.0{0,3})?)
-    """
+qvalue_re = (
+    r'(?:0(?:\.[0-9]{0,3})?)'
+    '|'
+    r'(?:1(?:\.0{0,3})?)'
+)
 # weight = OWS ";" OWS "q=" qvalue
-weight_re = r'[ \t]*;[ \t]*[qQ]=(' + qvalue_re + r')'
+weight_re = OWS_re + ';' + OWS_re + '[qQ]=(' + qvalue_re + ')'
 
 
 def _item_n_weight_re(item_re):
@@ -53,9 +58,8 @@ def _list_1_or_more__compiled_re(element_re):
     # 1#element => *( "," OWS ) element *( OWS "," [ OWS element ] )
     # and RFC 7230 Errata ID: 4169
     return re.compile(
-        r'^(?:,[ \t]*)*' + element_re +
-        r'(?:[ \t]*,(?:[ \t]*' + element_re + r')?)*$',
-        re.VERBOSE
+        '^(?:,' + OWS_re + ')*' + element_re +
+        '(?:' + OWS_re + ',(?:' + OWS_re + element_re + ')?)*$',
     )
 
 
@@ -351,18 +355,15 @@ class AcceptLanguageValidHeader(AcceptLanguage):
     # RFC 4647 Section 2.1 "Basic Language Range":
     # language-range   = (1*8ALPHA *("-" 1*8alphanum)) / "*"
     # alphanum         = ALPHA / DIGIT
-    lang_range_re = r"""
-        \*|
-        (?:
-        [A-Za-z]{1,8}
-        (?:-[A-Za-z0-9]{1,8})*
-        )
-    """
-    lang_range_n_weight_re = _item_n_weight_re(item_re=lang_range_re)
-    lang_range_n_weight_compiled_re = re.compile(
-        lang_range_n_weight_re,
-        re.VERBOSE
+    lang_range_re = (
+        r'\*|'
+        '(?:'
+        '[A-Za-z]{1,8}'
+        '(?:-[A-Za-z0-9]{1,8})*'
+        ')'
     )
+    lang_range_n_weight_re = _item_n_weight_re(item_re=lang_range_re)
+    lang_range_n_weight_compiled_re = re.compile(lang_range_n_weight_re)
     accept_language_compiled_re = _list_1_or_more__compiled_re(
         element_re=lang_range_n_weight_re,
     )
