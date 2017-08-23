@@ -154,7 +154,7 @@ class Accept(object):
             if self._match(mask, offer):
                 return True
 
-    def quality(self, offer, modifier=1):
+    def quality(self, offer):
         """
         Return the quality of the given offer.  Returns None if there
         is no match (not 0).
@@ -162,7 +162,7 @@ class Accept(object):
         bestq = 0
         for mask, q in self.parsed:
             if self._match(mask, offer):
-                bestq = max(bestq, q * modifier)
+                bestq = max(bestq, q)
         return bestq or None
 
     def best_match(self, offers, default_match=None):
@@ -1224,7 +1224,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         except TypeError:  # default is not a callable
             return default
 
-    def quality(self, offer, modifier=1):
+    def quality(self, offer):
         """
         Return quality value of given offer, or ``None`` if there is no match.
 
@@ -1299,26 +1299,10 @@ class AcceptLanguageValidHeader(AcceptLanguage):
             'RFC.',
             DeprecationWarning,
         )
-        # [If ``modifier`` is positive, it would not change the result of the
-        # comparison using ``max()`` (apart from the first comparison with
-        # bestq, when it is 0), because all the ``q``s are multiplied by the
-        # same modifier. So in effect, it is just multiplying the highest
-        # quality value by the ``modifier``.
-        #
-        # If ``modifier`` is negative, bestq would always be 0, because it
-        # starts off as 0, and max(0, negative number) is always 0. So the
-        # method would always return None.
-        #
-        # If ``modifier`` is 0, bestq would always be 0, so the method would
-        # always return None.
-        #
-        # There was no explanation of the parameter in the existing
-        # documentation, and it is unclear what it was intended to do, so I
-        # have left it undocumented for now.]
         bestq = 0
         for mask, q in self.parsed:
             if self._old_match(mask, offer):
-                bestq = max(bestq, q * modifier)
+                bestq = max(bestq, q)
         return bestq or None
 
 
