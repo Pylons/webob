@@ -1119,8 +1119,10 @@ class AcceptLanguageValidHeader(AcceptLanguage):
           not already matched by other ranges within the header are
           unacceptable.
         """
-        assert not (default_tag is None and default is None), \
-            '`default_tag` and `default` arguments cannot both be None.'
+        if default_tag is None and default is None:
+            raise TypeError(
+                '`default_tag` and `default` arguments cannot both be None.'
+            )
 
         # We need separate `default_tag` and `default` arguments because if we
         # only had the `default` argument, there would be no way to tell
@@ -1128,7 +1130,8 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         # whether it has been specified as not acceptable with a q=0 range in
         # the header) or not (in which case we can just return the value).
 
-        assert default_range != '*', 'default_range cannot be *.'
+        if default_range == '*':
+            raise ValueError('default_range cannot be *.')
 
         parsed = list(self.parsed)
 
@@ -1538,8 +1541,10 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
 
                  | the return value from `default_tag` or `default`.
         """
-        assert not (default_tag is None and default is None), \
-            '`default_tag` and `default` arguments cannot both be None.'
+        if default_tag is None and default is None:
+            raise TypeError(
+                '`default_tag` and `default` arguments cannot both be None.'
+            )
 
         if default_tag is not None:
             return default_tag

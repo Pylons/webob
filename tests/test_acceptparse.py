@@ -942,7 +942,7 @@ class TestAcceptLanguageValidHeader(object):
 
     def test_lookup_default_tag_and_default_cannot_both_be_None(self):
         instance = AcceptLanguageValidHeader(header_value='valid-header')
-        with pytest.raises(AssertionError):
+        with pytest.raises(TypeError):
             instance.lookup(
                 language_tags=['tag'],
                 default_range='language-range',
@@ -952,7 +952,7 @@ class TestAcceptLanguageValidHeader(object):
 
     def test_lookup_default_range_cannot_be_asterisk(self):
         instance = AcceptLanguageValidHeader(header_value='valid-header')
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             instance.lookup(
                 language_tags=['tag'],
                 default_range='*',
@@ -1632,7 +1632,7 @@ class TestAcceptLanguageNoHeader(object):
 
     def test_lookup_default_tag_and_default_cannot_both_be_None(self):
         instance = AcceptLanguageNoHeader()
-        with pytest.raises(AssertionError):
+        with pytest.raises(TypeError):
             instance.lookup(default_tag=None, default=None)
 
     @pytest.mark.parametrize('default_tag, default, expected', [
@@ -1823,7 +1823,7 @@ class TestAcceptLanguageInvalidHeader(object):
 
     def test_lookup_default_tag_and_default_cannot_both_be_None(self):
         instance = AcceptLanguageInvalidHeader(header_value='')
-        with pytest.raises(AssertionError):
+        with pytest.raises(TypeError):
             instance.lookup(default_tag=None, default=None)
 
     @pytest.mark.parametrize('default_tag, default, expected', [
