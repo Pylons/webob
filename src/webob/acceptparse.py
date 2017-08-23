@@ -485,7 +485,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         .. warning::
 
            The behavior of :meth:`AcceptLanguageValidHeader.__contains__` is
-           currently being maintained for backward compatibility, but it may
+           currently being maintained for backward compatibility, but it will
            change in the future to better conform to the RFC.
 
            What is 'acceptable' depends on the needs of your application.
@@ -519,9 +519,9 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         """
         warnings.warn(
             'The behavior of AcceptLanguageValidHeader.__contains__ is '
-            'currently being maintained for backward compatibility, but it may'
-            ' change in the future to better conform to the RFC.',
-            PendingDeprecationWarning,
+            'currently being maintained for backward compatibility, but it '
+            'will change in the future to better conform to the RFC.',
+            DeprecationWarning,
         )
         for mask, quality in self._parsed_nonzero:
             if self._old_match(mask, offer):
@@ -535,7 +535,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         .. warning::
 
            The behavior of this method is currently maintained for backward
-           compatibility, but may change in the future.
+           compatibility, but will change in the future.
 
         :return: iterator of all the language ranges in the header with non-0
                  qvalues, in descending order of qvalue. If two ranges have the
@@ -549,9 +549,9 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         """
         warnings.warn(
             'The behavior of AcceptLanguageValidHeader.__iter__ is currently '
-            'maintained for backward compatibility, but may change in the '
+            'maintained for backward compatibility, but will change in the '
             'future.',
-            PendingDeprecationWarning,
+            DeprecationWarning,
         )
 
         for m, q in sorted(
@@ -844,7 +844,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
         .. warning::
 
-           This is currently maintained for backward compatibility, and may be
+           This is currently maintained for backward compatibility, and will be
            deprecated in the future.
 
            :meth:`AcceptLanguageValidHeader.best_match` uses its own algorithm
@@ -939,9 +939,10 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         """
         warnings.warn(
             'The behavior of AcceptLanguageValidHeader.best_match is '
-            'currently being maintained for backward compatibility, but it may'
-            ' be deprecated in the future as it does not conform to the RFC.',
-            PendingDeprecationWarning,
+            'currently being maintained for backward compatibility, but it '
+            'will be deprecated in the future as it does not conform to the '
+            'RFC.',
+            DeprecationWarning,
         )
         best_quality = -1
         best_offer = default_match
@@ -1226,7 +1227,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
         .. warning::
 
-           This is currently maintained for backward compatibility, and may be
+           This is currently maintained for backward compatibility, and will be
            deprecated in the future.
 
            :meth:`AcceptLanguageValidHeader.quality` uses its own algorithm
@@ -1290,9 +1291,10 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         """
         warnings.warn(
             'The behavior of AcceptLanguageValidHeader.quality is'
-            'currently being maintained for backward compatibility, but it may'
-            ' be deprecated in the future as it does not conform to the RFC.',
-            PendingDeprecationWarning,
+            'currently being maintained for backward compatibility, but it '
+            'will be deprecated in the future as it does not conform to the '
+            'RFC.',
+            DeprecationWarning,
         )
         # [If ``modifier`` is positive, it would not change the result of the
         # comparison using ``max()`` (apart from the first comparison with
@@ -1352,8 +1354,8 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         .. warning::
 
            The behavior of ``.__contains__`` for the ``AcceptLanguage`` classes
-           is currently being maintained for backward compatibility, but it may
-           change in the future to better conform to the RFC.
+           is currently being maintained for backward compatibility, but it
+           will change in the future to better conform to the RFC.
 
         :param offer: (``str``) language tag offer
         :return: (``bool``) Whether ``offer`` is acceptable according to the
@@ -1365,9 +1367,9 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         """
         warnings.warn(
             'The behavior of .__contains__ for the AcceptLanguage classes is '
-            'currently being maintained for backward compatibility, but it may'
-            ' change in the future to better conform to the RFC.',
-            PendingDeprecationWarning,
+            'currently being maintained for backward compatibility, but it '
+            'will change in the future to better conform to the RFC.',
+            DeprecationWarning,
         )
         return True
 
@@ -1378,7 +1380,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         .. warning::
 
            The behavior of this method is currently maintained for backward
-           compatibility, but may change in the future.
+           compatibility, but will change in the future.
 
         :return: iterator of all the language ranges in the header with non-0
                  qvalues, in descending order of qvalue. If two ranges have the
@@ -1391,9 +1393,9 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         """
         warnings.warn(
             'The behavior of AcceptLanguageValidHeader.__iter__ is currently '
-            'maintained for backward compatibility, but may change in the '
+            'maintained for backward compatibility, but will change in the '
             'future.',
-            PendingDeprecationWarning,
+            DeprecationWarning,
         )
         return iter(())
 
@@ -1420,7 +1422,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
 
         .. warning::
 
-           This is currently maintained for backward compatibility, and may be
+           This is currently maintained for backward compatibility, and will be
            deprecated in the future (see the documentation for
            :meth:`AcceptLanguageValidHeader.best_match`).
 
@@ -1453,9 +1455,9 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         warnings.warn(
             'The behavior of .best_match for the AcceptLanguage classes is '
             'currently being maintained for backward compatibility, but the '
-            'method may be deprecated in the future, as its behavior is not '
+            'method will be deprecated in the future, as its behavior is not '
             'specified in (and currently does not conform to) RFC 7231.',
-            PendingDeprecationWarning,
+            DeprecationWarning,
         )
         best_quality = -1
         best_offer = default_match
@@ -1557,7 +1559,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
 
         .. warning::
 
-           This is currently maintained for backward compatibility, and may be
+           This is currently maintained for backward compatibility, and will be
            deprecated in the future (see the documentation for
            :meth:`AcceptLanguageValidHeader.quality`).
 
@@ -1570,9 +1572,9 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         warnings.warn(
             'The behavior of .quality for the AcceptLanguage classes is '
             'currently being maintained for backward compatibility, but the '
-            'method may be deprecated in the future, as its behavior is not '
+            'method will be deprecated in the future, as its behavior is not '
             'specified in (and currently does not conform to) RFC 7231.',
-            PendingDeprecationWarning,
+            DeprecationWarning,
         )
         return 1.0
 
