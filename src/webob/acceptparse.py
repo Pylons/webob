@@ -307,7 +307,7 @@ class AcceptLanguage(object):
     """
 
     @classmethod
-    def python_value_to_header_str(cls, value):
+    def _python_value_to_header_str(cls, value):
         if isinstance(value, str):
             header_str = value
         else:
@@ -594,7 +594,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         if not other:
             return self.__class__(header_value=instance.header_value)
 
-        other_header_value = self.python_value_to_header_str(value=other)
+        other_header_value = self._python_value_to_header_str(value=other)
 
         try:
             self.parse(value=other_header_value)
@@ -1669,7 +1669,7 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
         if not other:
             return self.__class__()
 
-        other_header_value = self.python_value_to_header_str(value=other)
+        other_header_value = self._python_value_to_header_str(value=other)
 
         try:
             return AcceptLanguageValidHeader(header_value=other_header_value)
@@ -1781,7 +1781,7 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         if not other:
             return AcceptLanguageNoHeader()
 
-        other_header_value = self.python_value_to_header_str(value=other)
+        other_header_value = self._python_value_to_header_str(value=other)
 
         try:
             return AcceptLanguageValidHeader(header_value=other_header_value)
@@ -1856,7 +1856,7 @@ def accept_language_property():
             ):
                 header_value = value.header_value
             else:
-                header_value = AcceptLanguage.python_value_to_header_str(
+                header_value = AcceptLanguage._python_value_to_header_str(
                     value=value,
                 )
             request.environ[ENVIRON_KEY] = header_value
