@@ -581,7 +581,6 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         e.g. If the ``header_value`` is ``', \t,de;q=0.000 \t, es;q=1.000, zh,
         jp;q=0.210  ,'``, ``str(instance)`` returns ``'de;q=0, es, zh,
         jp;q=0.21'``.
-
         """
         return ', '.join(
             _item_qvalue_pair_to_header_element(pair=tuple_)
