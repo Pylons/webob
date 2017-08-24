@@ -19,6 +19,7 @@ Accept-*
 .. autofunction:: create_accept_language_header
 
 .. autoclass:: AcceptLanguage
+   :members: parse
 
 .. autoclass:: AcceptLanguageValidHeader
    :members: header_value, parsed, __init__, __add__, __contains__, __iter__,
@@ -27,11 +28,13 @@ Accept-*
 
 .. autoclass:: AcceptLanguageNoHeader
    :members: header_value, parsed, __init__, __add__, __contains__, __iter__,
-	     __radd__, __str__, basic_filtering, best_match, lookup, quality
+	     __radd__, __str__, parse, basic_filtering, best_match, lookup,
+             quality
 
 .. autoclass:: AcceptLanguageInvalidHeader
    :members: header_value, parsed, __init__, __add__, __contains__, __iter__,
-	     __radd__, __str__, basic_filtering, best_match, lookup, quality
+	     __radd__, __str__, parse, basic_filtering, best_match, lookup,
+             quality
 
 .. autoclass:: MIMEAccept
    :members:

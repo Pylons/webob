@@ -306,6 +306,26 @@ class AcceptLanguage(object):
     :class:`AcceptLanguageNoHeader`, and :class:`AcceptLanguageInvalidHeader`.
     """
 
+    # RFC 7231 Section 5.3.5 "Accept-Language":
+    # Accept-Language = 1#( language-range [ weight ] )
+    # language-range  =
+    #           <language-range, see [RFC4647], Section 2.1>
+    # RFC 4647 Section 2.1 "Basic Language Range":
+    # language-range   = (1*8ALPHA *("-" 1*8alphanum)) / "*"
+    # alphanum         = ALPHA / DIGIT
+    lang_range_re = (
+        r'\*|'
+        '(?:'
+        '[A-Za-z]{1,8}'
+        '(?:-[A-Za-z0-9]{1,8})*'
+        ')'
+    )
+    lang_range_n_weight_re = _item_n_weight_re(item_re=lang_range_re)
+    lang_range_n_weight_compiled_re = re.compile(lang_range_n_weight_re)
+    accept_language_compiled_re = _list_1_or_more__compiled_re(
+        element_re=lang_range_n_weight_re,
+    )
+
     @classmethod
     def _python_value_to_header_str(cls, value):
         if isinstance(value, str):
@@ -330,6 +350,33 @@ class AcceptLanguage(object):
                 header_str = str(value)
         return header_str
 
+    @classmethod
+    def parse(cls, value):
+        """
+        Parse an ``Accept-Language`` header.
+
+        :param value: (``str``) header value
+        :return: If `value` is a valid ``Accept-Language`` header, returns an
+                 iterator of (language range, quality value) tuples, as parsed
+                 from the header from left to right.
+        :raises ValueError: if `value` is an invalid header
+        """
+        # Check if header is valid
+        # Using Python stdlib's `re` module, there is currently no way to check
+        # the match *and* get all the groups using the same regex, so we have
+        # to use one regex to check the match, and another to get the groups.
+        if cls.accept_language_compiled_re.match(value) is None:
+            raise ValueError('Invalid value for an Accept-Language header.')
+        def generator(value):
+            for match in (
+                cls.lang_range_n_weight_compiled_re.finditer(value)
+            ):
+                lang_range = match.group(1)
+                qvalue = match.group(2)
+                qvalue = float(qvalue) if qvalue else 1.0
+                yield (lang_range, qvalue)
+        return generator(value=value)
+
 
 class AcceptLanguageValidHeader(AcceptLanguage):
     """
@@ -347,26 +394,6 @@ class AcceptLanguageValidHeader(AcceptLanguage):
     addition operators (``+`` and ``+=``), which return a new object (see the
     docstring for :meth:`AcceptLanguageValidHeader.__add__`).
     """
-
-    # RFC 7231 Section 5.3.5 "Accept-Language":
-    # Accept-Language = 1#( language-range [ weight ] )
-    # language-range  =
-    #           <language-range, see [RFC4647], Section 2.1>
-    # RFC 4647 Section 2.1 "Basic Language Range":
-    # language-range   = (1*8ALPHA *("-" 1*8alphanum)) / "*"
-    # alphanum         = ALPHA / DIGIT
-    lang_range_re = (
-        r'\*|'
-        '(?:'
-        '[A-Za-z]{1,8}'
-        '(?:-[A-Za-z0-9]{1,8})*'
-        ')'
-    )
-    lang_range_n_weight_re = _item_n_weight_re(item_re=lang_range_re)
-    lang_range_n_weight_compiled_re = re.compile(lang_range_n_weight_re)
-    accept_language_compiled_re = _list_1_or_more__compiled_re(
-        element_re=lang_range_n_weight_re,
-    )
 
     def __init__(self, header_value):
         """
@@ -396,33 +423,6 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         A list of (language range, quality value) tuples.
         """
         return self._parsed
-
-    @classmethod
-    def parse(cls, value):
-        """
-        Parse an ``Accept-Language`` header.
-
-        :param value: (``str``) header value
-        :return: If `value` is a valid ``Accept-Language`` header, returns an
-                 iterator of (language range, quality value) tuples, as parsed
-                 from the header from left to right.
-        :raises ValueError: if `value` is an invalid header
-        """
-        # Check if header is valid
-        # Using Python stdlib's `re` module, there is currently no way to check
-        # the match *and* get all the groups using the same regex, so we have
-        # to use one regex to check the match, and another to get the groups.
-        if cls.accept_language_compiled_re.match(value) is None:
-            raise ValueError('Invalid value for an Accept-Language header.')
-        def generator(value):
-            for match in (
-                cls.lang_range_n_weight_compiled_re.finditer(value)
-            ):
-                lang_range = match.group(1)
-                qvalue = match.group(2)
-                qvalue = float(qvalue) if qvalue else 1.0
-                yield (lang_range, qvalue)
-        return generator(value=value)
 
     def __add__(self, other):
         """

@@ -467,7 +467,7 @@ def test_accept_property_fdel():
     assert type(desc.fget(req)) == NilAccept
 
 
-class TestAcceptLanguageValidHeader(object):
+class TestAcceptLanguage(object):
     @pytest.mark.parametrize('value', [
         '',
         '*s',
@@ -490,7 +490,7 @@ class TestAcceptLanguageValidHeader(object):
     ])
     def test_parse__invalid_header(self, value):
         with pytest.raises(ValueError):
-            AcceptLanguageValidHeader.parse(value=value)
+            AcceptLanguage.parse(value=value)
 
     @pytest.mark.parametrize('value, expected_list', [
         ('*', [('*', 1.0)]),
@@ -523,10 +523,12 @@ class TestAcceptLanguageValidHeader(object):
         ('foo , ,bar,charlie', [('foo', 1.0), ('bar', 1.0), ('charlie', 1.0)]),
     ])
     def test_parse__valid_header(self, value, expected_list):
-        returned = AcceptLanguageValidHeader.parse(value=value)
+        returned = AcceptLanguage.parse(value=value)
         list_of_returned = list(returned)
         assert list_of_returned == expected_list
 
+
+class TestAcceptLanguageValidHeader(object):
     @pytest.mark.parametrize('header_value', [
         '',
         ', da;q=0.2, en-gb;q=0.3 ',
