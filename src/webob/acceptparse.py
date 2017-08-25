@@ -613,8 +613,8 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
         .. warning::
 
-           This is maintained for backward compatibility, and may be deprecated
-           in the future.
+           This is maintained for backward compatibility, and will be
+           deprecated in the future.
 
         This method was WebOb's old criteron for deciding whether a language
         tag matches a language range, used in
