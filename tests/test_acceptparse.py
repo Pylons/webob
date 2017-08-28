@@ -1553,10 +1553,10 @@ class TestAcceptLanguageNoHeader(object):
         assert returned == []
 
     def test___radd___None(self):
-        instance = AcceptLanguageNoHeader()
-        result = instance + None
+        right_operand = AcceptLanguageNoHeader()
+        result = None + right_operand
         assert isinstance(result, AcceptLanguageNoHeader)
-        assert result is not instance
+        assert result is not right_operand
 
     @pytest.mark.parametrize('left_operand', [
         '',
