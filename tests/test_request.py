@@ -11,6 +11,11 @@ from io import (
 
 import pytest
 
+from webob.acceptparse import (
+    AcceptLanguageInvalidHeader,
+    AcceptLanguageNoHeader,
+    AcceptLanguageValidHeader,
+    )
 from webob.compat import (
     bytes_,
     native_,
@@ -701,7 +706,29 @@ class TestRequestCommon(object):
     # accept
     # accept_charset
     # accept_encoding
+
     # accept_language
+    def test_accept_language_no_header(self):
+        req = self._makeOne(environ={})
+        header = req.accept_language
+        assert isinstance(header, AcceptLanguageNoHeader)
+        assert header.header_value is None
+
+    @pytest.mark.parametrize('header_value', ['', ', da;q=0.2, en-gb;q =0.3'])
+    def test_accept_language_invalid_header(self, header_value):
+        req = self._makeOne(environ={'HTTP_ACCEPT_LANGUAGE': header_value})
+        header = req.accept_language
+        assert isinstance(header, AcceptLanguageInvalidHeader)
+        assert header.header_value == header_value
+
+    def test_accept_language_valid_header(self):
+        header_value = \
+            'zh-Hant;q=0.372,zh-CN-a-myExt-x-private;q=0.977,de,*;q=0.000'
+        req = self._makeOne(environ={'HTTP_ACCEPT_LANGUAGE': header_value})
+        header = req.accept_language
+        assert isinstance(header, AcceptLanguageValidHeader)
+        assert header.header_value == header_value
+
     # authorization
 
     # cache_control

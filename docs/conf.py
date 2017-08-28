@@ -48,6 +48,8 @@ todo_include_todos = False
 
 modindex_common_prefix = ['webob.']
 
+autodoc_member_order = 'bysource'
+
 # -- Options for HTML output ---------------------------------------------
 
 html_theme = 'alabaster'

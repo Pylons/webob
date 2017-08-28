@@ -13,12 +13,12 @@ import warnings
 
 from webob.acceptparse import (
     AcceptEncoding,
-    AcceptLanguage,
     AcceptCharset,
     MIMEAccept,
     MIMENilAccept,
     NoAccept,
     accept_property,
+    accept_language_property,
     )
 
 from webob.cachecontrol import (
@@ -1044,7 +1044,7 @@ class BaseRequest(object):
     accept_encoding = accept_property('Accept-Encoding', '14.3',
                                       AcceptClass=AcceptEncoding,
                                       NilClass=NoAccept)
-    accept_language = accept_property('Accept-Language', '14.4', AcceptLanguage)
+    accept_language = accept_language_property()
 
     authorization = converter(
         environ_getter('HTTP_AUTHORIZATION', None, '14.8'),
