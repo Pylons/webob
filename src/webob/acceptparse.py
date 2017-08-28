@@ -1676,9 +1676,9 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
     invalid ``Accept-Language`` header.
 
     :rfc:`7231` does not provide any guidance on what should happen if the
-    ``Accept-Language`` has an invalid value. This implementation disregards
-    the header, and treats it as if there is no ``Accept-Language`` header in
-    the request.
+    ``Accept-Language`` header has an invalid value. This implementation
+    disregards the header, and treats it as if there is no ``Accept-Language``
+    header in the request.
 
     This object should not be modified. To add to the header, we can use the
     addition operators (``+`` and ``+=``), which return a new object (see the
