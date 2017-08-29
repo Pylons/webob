@@ -12,6 +12,9 @@ from io import (
 import pytest
 
 from webob.acceptparse import (
+    AcceptCharsetInvalidHeader,
+    AcceptCharsetNoHeader,
+    AcceptCharsetValidHeader,
     AcceptEncodingInvalidHeader,
     AcceptEncodingNoHeader,
     AcceptEncodingValidHeader,
@@ -708,6 +711,29 @@ class TestRequestCommon(object):
     # remove_conditional_headers
     # accept
     # accept_charset
+    def test_accept_charset_no_header(self):
+        req = self._makeOne(environ={})
+        header = req.accept_charset
+        assert isinstance(header, AcceptCharsetNoHeader)
+        assert header.header_value is None
+
+    @pytest.mark.parametrize('header_value', [
+        '', ', utf-7;q=0.2, utf-8;q =0.3'
+    ])
+    def test_accept_charset_invalid_header(self, header_value):
+        req = self._makeOne(environ={'HTTP_ACCEPT_CHARSET': header_value})
+        header = req.accept_charset
+        assert isinstance(header, AcceptCharsetInvalidHeader)
+        assert header.header_value == header_value
+
+    def test_accept_charset_valid_header(self):
+        header_value = \
+            'iso-8859-5;q=0.372,unicode-1-1;q=0.977,UTF-8, *;q=0.000'
+        req = self._makeOne(environ={'HTTP_ACCEPT_CHARSET': header_value})
+        header = req.accept_charset
+        assert isinstance(header, AcceptCharsetValidHeader)
+        assert header.header_value == header_value
+
     # accept_encoding
     def test_accept_encoding_no_header(self):
         req = self._makeOne(environ={})
