@@ -26,6 +26,16 @@ part_re = re.compile(
 #                ; optional whitespace
 OWS_re = '[ \t]*'
 
+# RFC 7230 Section 3.2.6 "Field Value Components":
+# tchar          = "!" / "#" / "$" / "%" / "&" / "'" / "*"
+#                / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
+#                / DIGIT / ALPHA
+tchar_re = r"[!#$%&'*+\-.^_`|~0-9A-Za-z]"
+
+# token          = 1*tchar
+token_re = tchar_re + '+'
+token_compiled_re = re.compile('^' + token_re + '$')
+
 # RFC 7231 Section 5.3.1 "Quality Values"
 # qvalue = ( "0" [ "." 0*3DIGIT ] )
 #        / ( "1" [ "." 0*3("0") ] )
