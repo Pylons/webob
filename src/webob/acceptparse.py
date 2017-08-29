@@ -292,10 +292,74 @@ class AcceptCharset(Accept):
             yield ('iso-8859-1', 1)
 
 
-class AcceptEncoding(Accept):
+class AcceptEncoding(object):
     """
-    Represents an ``Accept-Encoding`` header.
+    Represent an ``Accept-Encoding`` header.
+
+    Base class for :class:`AcceptEncodingValidHeader`,
+    :class:`AcceptEncodingNoHeader`, and :class:`AcceptEncodingInvalidHeader`.
     """
+
+    # RFC 7231 Section 3.1.2.1 "Content Codings":
+    # content-coding = token
+    # Section 5.3.4 "Accept-Encoding":
+    # Accept-Encoding  = #( codings [ weight ] )
+    # codings          = content-coding / "identity" / "*"
+    codings_re = token_re
+    # "identity" (case-insensitive) and "*" are both already included in token
+    # rule
+    codings_n_weight_re = _item_n_weight_re(item_re=codings_re)
+    codings_n_weight_compiled_re = re.compile(codings_n_weight_re)
+    accept_encoding_compiled_re = _list_0_or_more__compiled_re(
+        element_re=codings_n_weight_re,
+    )
+
+    @classmethod
+    def _python_value_to_header_str(cls, value):
+        if isinstance(value, str):
+            header_str = value
+        else:
+            if hasattr(value, 'items'):
+                value = sorted(
+                    value.items(),
+                    key=lambda item: item[1],
+                    reverse=True,
+                )
+            if isinstance(value, (tuple, list)):
+                result = []
+                for item in value:
+                    if isinstance(item, (tuple, list)):
+                        item = _item_qvalue_pair_to_header_element(pair=item)
+                    result.append(item)
+                header_str = ', '.join(result)
+            else:
+                header_str = str(value)
+        return header_str
+
+    @classmethod
+    def parse(cls, value):
+        """
+        Parse an ``Accept-Encoding`` header.
+
+        :param value: (``str``) header value
+        :return: If `value` is a valid ``Accept-Encoding`` header, returns an
+                 iterator of (codings, quality value) tuples, as parsed from
+                 the header from left to right.
+        :raises ValueError: if `value` is an invalid header
+        """
+        # Check if header is valid
+        # Using Python stdlib's `re` module, there is currently no way to check
+        # the match *and* get all the groups using the same regex, so we have
+        # to use one regex to check the match, and another to get the groups.
+        if cls.accept_encoding_compiled_re.match(value) is None:
+            raise ValueError('Invalid value for an Accept-Encoding header.')
+        def generator(value):
+            for match in (cls.codings_n_weight_compiled_re.finditer(value)):
+                codings = match.group(1)
+                qvalue = match.group(2)
+                qvalue = float(qvalue) if qvalue else 1.0
+                yield (codings, qvalue)
+        return generator(value=value)
 
 
 class AcceptLanguage(object):

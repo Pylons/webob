@@ -7,6 +7,7 @@ from webob.acceptparse import (
     _list_1_or_more__compiled_re,
     Accept,
     AcceptCharset,
+    AcceptEncoding,
     AcceptLanguage,
     AcceptLanguageInvalidHeader,
     AcceptLanguageNoHeader,
@@ -465,6 +466,58 @@ def test_accept_property_fdel():
     assert desc.fget(req).header_value == 'val'
     desc.fdel(req)
     assert type(desc.fget(req)) == NilAccept
+
+
+class TestAcceptEncoding(object):
+    @pytest.mark.parametrize('value', [
+        '"',
+        '(',
+        ')',
+        '/',
+        ':',
+        ';',
+        '<',
+        '=',
+        '>',
+        '?',
+        '@',
+        '[',
+        '\\',
+        ']',
+        '{',
+        '}',
+        ', ',
+        ', , ',
+        'gzip;q=1.0, identity; q =0.5, *;q=0',
+    ])
+    def test_parse__invalid_header(self, value):
+        with pytest.raises(ValueError):
+            AcceptEncoding.parse(value=value)
+
+    @pytest.mark.parametrize('value, expected_list', [
+        (',', []),
+        (', ,', []),
+        ('*', [('*', 1.0)]),
+        ("!#$%&'*+-.^_`|~;q=0.5", [("!#$%&'*+-.^_`|~", 0.5)]),
+        ('0123456789', [('0123456789', 1.0)]),
+        (
+            ',,\t foo \t;\t q=0.345,, bar ; Q=0.456 \t,  ,\tCHARLIE \t,,  ,',
+            [('foo', 0.345), ('bar', 0.456), ('CHARLIE', 1.0)]
+        ),
+        # RFC 7231, section 5.3.4
+        ('compress, gzip', [('compress', 1.0), ('gzip', 1.0)]),
+        ('', []),
+        ('*', [('*', 1.0)]),
+        ('compress;q=0.5, gzip;q=1.0', [('compress', 0.5), ('gzip', 1.0)]),
+        (
+            'gzip;q=1.0, identity; q=0.5, *;q=0',
+            [('gzip', 1.0), ('identity', 0.5), ('*', 0.0)],
+        ),
+    ])
+    def test_parse__valid_header(self, value, expected_list):
+        returned = AcceptEncoding.parse(value=value)
+        list_of_returned = list(returned)
+        assert list_of_returned == expected_list
 
 
 class TestAcceptLanguage(object):

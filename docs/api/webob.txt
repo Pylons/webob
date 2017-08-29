@@ -13,8 +13,8 @@ Accept-*
    :inherited-members:
 
 .. autoclass:: AcceptEncoding
-   :members:
-   :inherited-members:
+   :members: parse
+
 
 .. autofunction:: create_accept_language_header
 
