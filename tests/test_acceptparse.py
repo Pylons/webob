@@ -19,6 +19,7 @@ from webob.acceptparse import (
     AcceptValidHeader,
     accept_language_property,
     accept_property,
+    create_accept_charset_header,
     create_accept_header,
     create_accept_language_header,
     MIMEAccept,
@@ -3295,6 +3296,26 @@ class TestAcceptCharsetInvalidHeader(object):
         instance = AcceptCharsetInvalidHeader(header_value='')
         returned = instance.quality(offer='char-set')
         assert returned == 1.0
+
+
+class TestCreateAcceptCharsetHeader(object):
+    def test_header_value_is_valid(self):
+        header_value = 'iso-8859-5, unicode-1-1;q=0.8'
+        returned = create_accept_charset_header(header_value=header_value)
+        assert isinstance(returned, AcceptCharsetValidHeader)
+        assert returned.header_value == header_value
+
+    def test_header_value_is_None(self):
+        header_value = None
+        returned = create_accept_charset_header(header_value=header_value)
+        assert isinstance(returned, AcceptCharsetNoHeader)
+        assert returned.header_value == header_value
+
+    @pytest.mark.parametrize('header_value', ['', 'iso-8859-5, unicode/1'])
+    def test_header_value_is_invalid(self, header_value):
+        returned = create_accept_charset_header(header_value=header_value)
+        assert isinstance(returned, AcceptCharsetInvalidHeader)
+        assert returned.header_value == header_value
 
 
 
