@@ -2634,7 +2634,7 @@ class TestRequest_functional(object):
     def test_accept_best_match(self):
         accept = self._blankOne('/').accept
         assert not accept
-        assert not self._blankOne('/', headers={'Accept': ''}).accept
+        assert self._blankOne('/', headers={'Accept': ''}).accept
         req = self._blankOne('/', headers={'Accept':'text/plain'})
         assert req.accept
         req = self._blankOne('/', accept=['*/*','text/*'])
@@ -3364,7 +3364,7 @@ class TestRequest_functional(object):
         from datetime import datetime
         from webob import Response
         from webob import UTC
-        from webob.acceptparse import MIMEAccept
+        from webob.acceptparse import Accept
         from webob.byterange import Range
         from webob.etag import ETagMatcher
         from webob.multidict import MultiDict
@@ -3400,7 +3400,7 @@ class TestRequest_functional(object):
         # Accept-* headers
         assert 'text/html' in req.accept
         req.accept = 'text/html;q=0.5, application/xhtml+xml;q=1'
-        assert isinstance(req.accept, MIMEAccept)
+        assert isinstance(req.accept, Accept)
         assert 'text/html' in req.accept
 
         assert req.accept.best_match(['text/html', 'application/xhtml+xml']) == 'application/xhtml+xml'
