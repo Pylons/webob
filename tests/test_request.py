@@ -12,6 +12,9 @@ from io import (
 import pytest
 
 from webob.acceptparse import (
+    AcceptEncodingInvalidHeader,
+    AcceptEncodingNoHeader,
+    AcceptEncodingValidHeader,
     AcceptLanguageInvalidHeader,
     AcceptLanguageNoHeader,
     AcceptLanguageValidHeader,
@@ -706,6 +709,28 @@ class TestRequestCommon(object):
     # accept
     # accept_charset
     # accept_encoding
+    def test_accept_encoding_no_header(self):
+        req = self._makeOne(environ={})
+        header = req.accept_encoding
+        assert isinstance(header, AcceptEncodingNoHeader)
+        assert header.header_value is None
+
+    @pytest.mark.parametrize('header_value', [
+        ', ', ', gzip;q=0.2, compress;q =0.3',
+    ])
+    def test_accept_encoding_invalid_header(self, header_value):
+        req = self._makeOne(environ={'HTTP_ACCEPT_ENCODING': header_value})
+        header = req.accept_encoding
+        assert isinstance(header, AcceptEncodingInvalidHeader)
+        assert header.header_value == header_value
+
+    def test_accept_encoding_valid_header(self):
+        header_value = \
+            'compress;q=0.372,gzip;q=0.977,, *;q=0.000'
+        req = self._makeOne(environ={'HTTP_ACCEPT_ENCODING': header_value})
+        header = req.accept_encoding
+        assert isinstance(header, AcceptEncodingValidHeader)
+        assert header.header_value == header_value
 
     # accept_language
     def test_accept_language_no_header(self):
