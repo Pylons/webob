@@ -14,9 +14,6 @@ import textwrap
 import warnings
 
 
-part_re = re.compile(
-    r',\s*([^\s;,\n]+)(?:[^,]*?;\s*q=([0-9.]*))?')
-
 # RFC 7230 Section 3.2.3 "Whitespace"
 # OWS            = *( SP / HTAB )
 #                ; optional whitespace
