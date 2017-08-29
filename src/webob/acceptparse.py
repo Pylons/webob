@@ -5111,6 +5111,3 @@ def accept_language_property():
             pass
 
     return property(fget, fset, fdel, textwrap.dedent(doc))
-def _check_offer(offer):
-    if '*' in offer:
-        raise ValueError("The application should offer specific types, got %r" % offer)
