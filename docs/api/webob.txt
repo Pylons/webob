@@ -9,8 +9,7 @@ Accept-*
 .. automodule:: webob.acceptparse
 
 .. autoclass:: AcceptCharset
-   :members:
-   :inherited-members:
+   :members: parse
 
 
 .. autofunction:: create_accept_encoding_header
