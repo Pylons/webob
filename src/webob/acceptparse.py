@@ -433,13 +433,13 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         * ``None``
         * a ``str``
         * a ``dict``, with language ranges as keys and qvalues as values
-        * a ``tuple`` or ``list``, of language range ``str``s or of ``tuple``
-          or ``list`` (language range, qvalue) pairs (``str``s and pairs can be
-          mixed within the ``tuple`` or ``list``)
+        * a ``tuple`` or ``list``, of language range ``str``\ s or of ``tuple``
+          or ``list`` (language range, qvalue) pairs (``str``\ s and pairs can
+          be mixed within the ``tuple`` or ``list``)
         * an :class:`AcceptLanguageValidHeader`,
           :class:`AcceptLanguageNoHeader`, or
           :class:`AcceptLanguageInvalidHeader` instance
-        * object of any other type that returns a value for `__str__`
+        * object of any other type that returns a value for ``__str__``
 
         If `other` is a valid header value or another
         :class:`AcceptLanguageValidHeader` instance, the two header values are
@@ -1615,13 +1615,13 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
         * ``None``
         * a ``str``
         * a ``dict``, with language ranges as keys and qvalues as values
-        * a ``tuple`` or ``list``, of language range ``str``s or of ``tuple``
-          or ``list`` (language range, qvalue) pairs (``str``s and pairs can be
+        * a ``tuple`` or ``list``, of language range ``str``\ s or of ``tuple``
+          or ``list`` (language range, qvalue) pairs (``str``\ s and pairs can be
           mixed within the ``tuple`` or ``list``)
         * an :class:`AcceptLanguageValidHeader`,
           :class:`AcceptLanguageNoHeader`, or
           :class:`AcceptLanguageInvalidHeader` instance
-        * object of any other type that returns a value for `__str__`
+        * object of any other type that returns a value for ``__str__``
 
         If `other` is a valid header value or an
         :class:`AcceptLanguageValidHeader` instance, a new
@@ -1720,13 +1720,13 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         * ``None``
         * a ``str``
         * a ``dict``, with language ranges as keys and qvalues as values
-        * a ``tuple`` or ``list``, of language range ``str``s or of ``tuple``
-          or ``list`` (language range, qvalue) pairs (``str``s and pairs can be
-          mixed within the ``tuple`` or ``list``)
+        * a ``tuple`` or ``list``, of language range ``str``\ s or of ``tuple``
+          or ``list`` (language range, qvalue) pairs (``str``\ s and pairs can
+          be mixed within the ``tuple`` or ``list``)
         * an :class:`AcceptLanguageValidHeader`,
           :class:`AcceptLanguageNoHeader`, or
           :class:`AcceptLanguageInvalidHeader` instance
-        * object of any other type that returns a value for `__str__`
+        * object of any other type that returns a value for ``__str__``
 
         If `other` is a valid header value or an
         :class:`AcceptLanguageValidHeader` instance, a new
@@ -1814,7 +1814,7 @@ def accept_language_property():
         The header value in the request environ is parsed and a new object
         representing the header is created every time we *get* the value of the
         property. (*set* and *del* change the header value in the request
-        environ, and do not involve parsing.)'
+        environ, and do not involve parsing.)
     """
 
     ENVIRON_KEY = 'HTTP_ACCEPT_LANGUAGE'
@@ -1834,13 +1834,13 @@ def accept_language_property():
         * ``None``
         * a ``str``
         * a ``dict``, with language ranges as keys and qvalues as values
-        * a ``tuple`` or ``list``, of language range ``str``s or of ``tuple``
-          or ``list`` (language range, qvalue) pairs (``str``s and pairs can be
-          mixed within the ``tuple`` or ``list``)
+        * a ``tuple`` or ``list``, of language range ``str``\ s or of ``tuple``
+          or ``list`` (language range, qvalue) pairs (``str``\ s and pairs can
+          be mixed within the ``tuple`` or ``list``)
         * an :class:`AcceptLanguageValidHeader`,
           :class:`AcceptLanguageNoHeader`, or
           :class:`AcceptLanguageInvalidHeader` instance
-        * object of any other type that returns a value for `__str__`
+        * object of any other type that returns a value for ``__str__``
         """
         if value is None or isinstance(value, AcceptLanguageNoHeader):
             fdel(request=request)
