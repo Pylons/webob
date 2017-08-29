@@ -1818,7 +1818,7 @@ class TestAcceptLanguageInvalidHeader(object):
         assert repr(instance) == '<AcceptLanguageInvalidHeader>'
 
     def test___str__(self):
-        instance = AcceptLanguageInvalidHeader(header_value="invalid header")
+        instance = AcceptLanguageInvalidHeader(header_value='')
         assert str(instance) == '<invalid header value>'
 
     def test_basic_filtering(self):
