@@ -121,21 +121,6 @@ def test_init_accept_content_type():
     accept = Accept('text/html')
     assert accept.parsed == [('text/html', 1)]
 
-def test_init_accept_accept_charset():
-    accept = AcceptCharset('iso-8859-5, unicode-1-1;q=0.8')
-    assert accept.parsed == [('iso-8859-5', 1),
-                             ('unicode-1-1', 0.80000000000000004),
-                             ('iso-8859-1', 1)]
-
-def test_init_accept_accept_charset_mixedcase():
-    """3.4 Character Sets
-           [...]
-           HTTP character sets are identified by case-insensitive tokens."""
-    accept = AcceptCharset('ISO-8859-5, UNICODE-1-1;q=0.8')
-    assert accept.parsed == [('iso-8859-5', 1),
-                             ('unicode-1-1', 0.80000000000000004),
-                             ('iso-8859-1', 1)]
-
 def test_init_accept_accept_charset_with_iso_8859_1():
     accept = Accept('iso-8859-1')
     assert accept.parsed == [('iso-8859-1', 1)]
