@@ -1441,6 +1441,26 @@ class TestAcceptEncodingInvalidHeader(object):
         assert returned == 1.0
 
 
+class TestCreateAcceptEncodingHeader(object):
+    def test_header_value_is_None(self):
+        header_value = None
+        returned = create_accept_encoding_header(header_value=header_value)
+        assert isinstance(returned, AcceptEncodingNoHeader)
+        assert returned.header_value == header_value
+
+    def test_header_value_is_valid(self):
+        header_value = 'gzip, identity;q=0.9'
+        returned = create_accept_encoding_header(header_value=header_value)
+        assert isinstance(returned, AcceptEncodingValidHeader)
+        assert returned.header_value == header_value
+
+    @pytest.mark.parametrize('header_value', [', ', 'gzip;q= 1'])
+    def test_header_value_is_invalid(self, header_value):
+        returned = create_accept_encoding_header(header_value=header_value)
+        assert isinstance(returned, AcceptEncodingInvalidHeader)
+        assert returned.header_value == header_value
+
+
 class TestAcceptLanguage(object):
     @pytest.mark.parametrize('value', [
         '',
