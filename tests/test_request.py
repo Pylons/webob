@@ -2634,7 +2634,7 @@ class TestRequest_functional(object):
     def test_accept_best_match(self):
         accept = self._blankOne('/').accept
         assert not accept
-        assert not self._blankOne('/', headers={'Accept': ''}).accept
+        assert self._blankOne('/', headers={'Accept': ''}).accept
         req = self._blankOne('/', headers={'Accept':'text/plain'})
         assert req.accept
         req = self._blankOne('/', accept=['*/*','text/*'])
