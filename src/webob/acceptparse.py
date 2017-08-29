@@ -88,6 +88,339 @@ def _list_1_or_more__compiled_re(element_re):
 class Accept(object):
     """
     Represents a generic ``Accept-*`` style header.
+class Accept(object):
+    """
+    Represent an ``Accept`` header.
+
+    Base class for :class:`AcceptValidHeader`, :class:`AcceptNoHeader`, and
+    :class:`AcceptInvalidHeader`.
+    """
+
+    # RFC 6838 describes syntax rules for media types that are different to
+    # (and stricter than) those in RFC 7231, but if RFC 7231 intended us to
+    # follow the rules in RFC 6838 for media ranges, it would not have
+    # specified its own syntax rules for media ranges, so it appears we should
+    # use the rules in RFC 7231 for now.
+
+    # RFC 5234 Appendix B.1 "Core Rules":
+    # VCHAR         =  %x21-7E
+    #                       ; visible (printing) characters
+    vchar_re = '\x21-\x7e'
+    # RFC 7230 Section 3.2.6 "Field Value Components":
+    # quoted-string = DQUOTE *( qdtext / quoted-pair ) DQUOTE
+    # qdtext        = HTAB / SP /%x21 / %x23-5B / %x5D-7E / obs-text
+    # obs-text      = %x80-FF
+    # quoted-pair   = "\" ( HTAB / SP / VCHAR / obs-text )
+    obs_text_re = '\x80-\xff'
+    qdtext_re = '[\t \x21\x23-\x5b\\\x5d-\x7e' + obs_text_re + ']'
+    # The '\\' between \x5b and \x5d is needed to escape \x5d (']')
+    quoted_pair_re = r'\\' + '[\t ' + vchar_re + obs_text_re + ']'
+    quoted_string_re = \
+        '"(?:(?:' + qdtext_re + ')|(?:' + quoted_pair_re + '))*"'
+
+    # RFC 7231 Section 3.1.1.1 "Media Type":
+    # type       = token
+    # subtype    = token
+    # parameter  = token "=" ( token / quoted-string )
+    type_re = token_re
+    subtype_re = token_re
+    parameter_re = token_re + '=' + \
+        '(?:(?:' + token_re + ')|(?:' + quoted_string_re + '))'
+
+    # Section 5.3.2 "Accept":
+    # media-range    = ( "*/*"
+    #                  / ( type "/" "*" )
+    #                  / ( type "/" subtype )
+    #                  ) *( OWS ";" OWS parameter )
+    media_range_re = (
+        '(' +
+        '(?:' + type_re + '/' + subtype_re + ')' +
+        # '*' is included through type_re and subtype_re, so this covers */*
+        # and type/*
+        ')' +
+        '(' +
+        '(?:' + OWS_re + ';' + OWS_re +
+        '(?![qQ]=)' +  # media type parameter cannot be named "q"
+        parameter_re + ')*' +
+        ')'
+    )
+    # accept-params  = weight *( accept-ext )
+    # accept-ext = OWS ";" OWS token [ "=" ( token / quoted-string ) ]
+    accept_ext_re = (
+        OWS_re + ';' + OWS_re + token_re + '(?:' +
+        '=(?:' +
+        '(?:' + token_re + ')|(?:' + quoted_string_re + ')' +
+        ')' +
+        ')?'
+    )
+    accept_params_re = weight_re + '((?:' + accept_ext_re + ')*)'
+
+    media_range_n_accept_params_re = media_range_re + '(?:' + \
+        accept_params_re + ')?'
+    media_range_n_accept_params_compiled_re = re.compile(
+        media_range_n_accept_params_re,
+    )
+
+    accept_compiled_re = _list_0_or_more__compiled_re(
+        element_re=media_range_n_accept_params_re,
+    )
+
+    # For parsing repeated groups within the media type parameters and
+    # extension parameters segments
+    parameters_compiled_re = re.compile(
+        OWS_re + ';' + OWS_re + '(' + token_re + ')=(' + token_re + '|' +
+        quoted_string_re + ')',
+    )
+    accept_ext_compiled_re = re.compile(
+        OWS_re + ';' + OWS_re + '(' + token_re + ')' +
+        '(?:' +
+        '=(' +
+        '(?:' +
+        '(?:' + token_re + ')|(?:' + quoted_string_re + ')' +
+        ')' +
+        ')' +
+        ')?',
+    )
+
+    # For parsing the media types in the `offers` argument to
+    # .acceptable_offers(), we re-use the media range regex for media types.
+    # This is not intended to be a validation of the offers; its main purpose
+    # is to extract the media type and any media type parameters.
+    media_type_re = media_range_re
+    media_type_compiled_re = re.compile('^' + media_type_re + '$')
+
+    @classmethod
+    def _escape_and_quote_parameter_value(cls, param_value):
+        """
+        Escape and quote parameter value where necessary.
+
+        For media type and extension parameter values.
+        """
+        if param_value == '':
+            param_value = '""'
+        else:
+            param_value = param_value.replace('\\', '\\\\').replace(
+                '"', r'\"',
+            )
+            if not token_compiled_re.match(param_value):
+                param_value = '"' + param_value + '"'
+        return param_value
+
+    @classmethod
+    def _form_extension_params_segment(cls, extension_params):
+        """
+        Convert iterable of extension parameters to str segment for header.
+
+        `extension_params` is an iterable where each item is either a parameter
+        string or a (name, value) tuple.
+        """
+        extension_params_segment = ''
+        for item in extension_params:
+            try:
+                extension_params_segment += (';' + item)
+            except TypeError:
+                param_name, param_value = item
+                param_value = cls._escape_and_quote_parameter_value(
+                    param_value=param_value,
+                )
+                extension_params_segment += (
+                    ';' + param_name + '=' + param_value
+                )
+        return extension_params_segment
+
+    @classmethod
+    def _form_media_range(cls, type_subtype, media_type_params):
+        """
+        Combine `type_subtype` and `media_type_params` to form a media range.
+
+        `type_subtype` is a ``str``, and `media_type_params` is an iterable of
+        (parameter name, parameter value) tuples.
+        """
+        media_type_params_segment = ''
+        for param_name, param_value in media_type_params:
+            param_value = cls._escape_and_quote_parameter_value(
+                param_value=param_value,
+            )
+            media_type_params_segment += (';' + param_name + '=' + param_value)
+        return type_subtype + media_type_params_segment
+
+    @classmethod
+    def _iterable_to_header_element(cls, iterable):
+        """
+        Convert iterable of tuples into header element ``str``.
+
+        Each tuple is expected to be in one of two forms: (media_range, qvalue,
+        extension_params_segment), or (media_range, qvalue).
+        """
+        try:
+            media_range, qvalue, extension_params_segment = iterable
+        except ValueError:
+            media_range, qvalue = iterable
+            extension_params_segment = ''
+
+        if qvalue == 1.0:
+            if extension_params_segment:
+                element = '{};q=1{}'.format(
+                    media_range, extension_params_segment,
+                )
+            else:
+                element = media_range
+        elif qvalue == 0.0:
+            element = '{};q=0{}'.format(media_range, extension_params_segment)
+        else:
+            element = '{};q={}{}'.format(
+                media_range, qvalue, extension_params_segment,
+            )
+        return element
+
+    @classmethod
+    def _parse_media_type_params(cls, media_type_params_segment):
+        """
+        Parse media type parameters segment into list of (name, value) tuples.
+        """
+        media_type_params = cls.parameters_compiled_re.findall(
+            media_type_params_segment,
+        )
+        for index, (name, value) in enumerate(media_type_params):
+            if value.startswith('"') and value.endswith('"'):
+                value = cls._process_quoted_string_token(token=value)
+                media_type_params[index] = (name, value)
+        return media_type_params
+
+    @classmethod
+    def _process_quoted_string_token(cls, token):
+        """
+        Return unescaped and unquoted value from quoted token.
+        """
+        # RFC 7230, section 3.2.6 "Field Value Components": "Recipients that
+        # process the value of a quoted-string MUST handle a quoted-pair as if
+        # it were replaced by the octet following the backslash."
+        return re.sub(r'\\(?![\\])', '', token[1:-1]).replace('\\\\', '\\')
+
+    @classmethod
+    def _python_value_to_header_str(cls, value):
+        """
+        Convert Python value to header string for __add__/__radd__.
+        """
+        if isinstance(value, str):
+            return value
+        if hasattr(value, 'items'):
+            if value == {}:
+                value = []
+            else:
+                value_list = []
+                for media_range, item in value.items():
+                    # item is either (media range, (qvalue, extension
+                    # parameters segment)), or (media range, qvalue) (supported
+                    # for backward compatibility)
+                    if isinstance(item, (float, int)):
+                        value_list.append((media_range, item, ''))
+                    else:
+                        value_list.append((media_range, item[0], item[1]))
+                value = sorted(
+                    value_list,
+                    key=lambda item: item[1],  # qvalue
+                    reverse=True,
+                )
+        if isinstance(value, (tuple, list)):
+            header_elements = []
+            for item in value:
+                if isinstance(item, (tuple, list)):
+                    item = cls._iterable_to_header_element(iterable=item)
+                header_elements.append(item)
+            header_str = ', '.join(header_elements)
+        else:
+            header_str = str(value)
+        return header_str
+
+    @classmethod
+    def parse(cls, value):
+        """
+        Parse an ``Accept`` header.
+
+        :param value: (``str``) header value
+        :return: If `value` is a valid ``Accept`` header, returns an iterator
+                 of (*media_range*, *qvalue*, *media_type_params*,
+                 *extension_params*) tuples, as parsed from the header from
+                 left to right.
+
+                 | *media_range* is the media range, including any media type
+                   parameters. The media range is returned in a canonicalised
+                   form (except the case of the characters are unchanged):
+                   unnecessary spaces around the semicolons before media type
+                   parameters are removed; the parameter values are returned in
+                   a form where only the '``\``' and '``"``' characters are
+                   escaped, and the values are quoted with double quotes only
+                   if they need to be quoted.
+
+                 | *qvalue* is the quality value of the media range.
+
+                 | *media_type_params* is the media type parameters, as a list
+                   of (parameter name, value) tuples.
+
+                 | *extension_params* is the extension parameters, as a list
+                   where each item is either a parameter string or a (parameter
+                   name, value) tuple.
+        :raises ValueError: if `value` is an invalid header
+        """
+        # Check if header is valid
+        # Using Python stdlib's `re` module, there is currently no way to check
+        # the match *and* get all the groups using the same regex, so we have
+        # to do this in steps using multiple regexes.
+        if cls.accept_compiled_re.match(value) is None:
+            raise ValueError('Invalid value for an Accept header.')
+        def generator(value):
+            for match in (
+                cls.media_range_n_accept_params_compiled_re.finditer(value)
+            ):
+                groups = match.groups()
+
+                type_subtype = groups[0]
+
+                media_type_params = cls._parse_media_type_params(
+                    media_type_params_segment=groups[1],
+                )
+
+                media_range = cls._form_media_range(
+                    type_subtype=type_subtype,
+                    media_type_params=media_type_params,
+                )
+
+                # qvalue (groups[2]) and extension_params (groups[3]) are both
+                # None if neither qvalue or extension parameters are found in
+                # the match.
+
+                qvalue = groups[2]
+                qvalue = float(qvalue) if qvalue else 1.0
+
+                extension_params = groups[3]
+                if extension_params:
+                    extension_params = cls.accept_ext_compiled_re.findall(
+                        extension_params,
+                    )
+                    for index, (token_key, token_value) in enumerate(
+                        extension_params
+                    ):
+                        if token_value:
+                            if (
+                                token_value.startswith('"') and
+                                token_value.endswith('"')
+                            ):
+                                token_value = cls._process_quoted_string_token(
+                                    token=token_value,
+                                )
+                                extension_params[index] = (
+                                    token_key, token_value,
+                                )
+                        else:
+                            extension_params[index] = token_key
+                else:
+                    extension_params = []
+
+                yield (
+                    media_range, qvalue, media_type_params, extension_params,
+                )
+        return generator(value=value)
 
     This object should not be modified.  To add items you can use
     ``accept_obj + 'accept_thing'`` to get a new object

@@ -465,6 +465,262 @@ def test_accept_property_fdel():
     assert desc.fget(req).header_value == 'val'
     desc.fdel(req)
     assert type(desc.fget(req)) == NilAccept
+class TestAccept(object):
+    @pytest.mark.parametrize('value', [
+        ', ',
+        ', , ',
+        'noslash',
+        '/',
+        'text/',
+        '/html',
+        'text/html;',
+        'text/html;param',
+        'text/html;param=',
+        'text/html ;param=val;',
+        'text/html; param=val;',
+        'text/html;param=val;',
+        'text/html;param=\x19',
+        'text/html;param=\x22',
+        'text/html;param=\x5c',
+        'text/html;param=\x7f',
+        r'text/html;param="\"',
+        r'text/html;param="\\\"',
+        r'text/html;param="\\""',
+        'text/html;param="\\\x19"',
+        'text/html;param="\\\x7f"',
+        'text/html;q',
+        'text/html;q=',
+        'text/html;q=-1',
+        'text/html;q=2',
+        'text/html;q=1.001',
+        'text/html;q=0.0001',
+        'text/html;q=00',
+        'text/html;q=01',
+        'text/html;q=00.1',
+        'text/html,q=0.1',
+        'text/html;q =1',
+        'text/html;q= 1',
+        'text/html;q=1;',
+        'text/html;param;q=1',
+        'text/html;q=1;extparam;',
+        'text/html;q=1;extparam=val;',
+        'text/html;q=1;extparam="val";',
+        'text/html;q=1;extparam="',
+        'text/html;q=1;extparam="val',
+        'text/html;q=1;extparam=val"',
+        'text/html;q=1;extparam=\x19',
+        'text/html;q=1;extparam=\x22',
+        'text/html;q=1;extparam=\x5c',
+        'text/html;q=1;extparam=\x7f',
+        r'text/html;q=1;extparam="\"',
+        r'text/html;q=1;extparam="\\\"',
+        r'text/html;q=1;extparam="\\""',
+        'text/html;q=1;extparam="\\\x19"',
+        'text/html;q=1;extparam="\\\x7f"',
+        'text/html;param=\x19;q=1;extparam',
+        'text/html;param=val;q=1;extparam=\x19',
+    ])
+    def test_parse__invalid_header(self, value):
+        with pytest.raises(ValueError):
+            AcceptValidHeader.parse(value=value)
+
+    @pytest.mark.parametrize('value, expected_list', [
+        # Examples from RFC 7231, Section 5.3.2 "Accept":
+        (
+            'audio/*; q=0.2, audio/basic',
+            [('audio/*', 0.2, [], []), ('audio/basic', 1.0, [], [])],
+        ),
+        (
+            'text/plain; q=0.5, text/html, text/x-dvi; q=0.8, text/x-c',
+            [
+                ('text/plain', 0.5, [], []),
+                ('text/html', 1.0, [], []),
+                ('text/x-dvi', 0.8, [], []),
+                ('text/x-c', 1.0, [], []),
+            ],
+        ),
+        (
+            'text/*, text/plain, text/plain;format=flowed, */*',
+            [
+                ('text/*', 1.0, [], []),
+                ('text/plain', 1.0, [], []),
+                ('text/plain;format=flowed', 1.0, [('format', 'flowed')], []),
+                ('*/*', 1.0, [], []),
+            ],
+        ),
+        (
+            'text/*;q=0.3, text/html;q=0.7, text/html;level=1, '
+            'text/html;level=2;q=0.4, */*;q=0.5',
+            [
+                ('text/*', 0.3, [], []),
+                ('text/html', 0.7, [], []),
+                ('text/html;level=1', 1.0, [('level', '1')], []),
+                ('text/html;level=2', 0.4, [('level', '2')], []),
+                ('*/*', 0.5, [], []),
+            ],
+        ),
+        # Our tests
+        ('', []),
+        (',', []),
+        (', ,', []),
+        (
+            '*/*, text/*, text/html',
+            [
+                ('*/*', 1.0, [], []),
+                ('text/*', 1.0, [], []),
+                ('text/html', 1.0, [], []),
+            ]
+        ),
+        # It does not seem from RFC 7231, section 5.3.2 "Accept" that the '*'
+        # in a range like '*/html' was intended to have any special meaning
+        # (the section lists '*/*', 'type/*' and 'type/subtype', but not
+        # '*/subtype'). However, because type and subtype are tokens (section
+        # 3.1.1.1), and a token may contain '*'s, '*/subtype' is valid.
+        ('*/html', [('*/html', 1.0, [], [])]),
+        (
+            'text/html \t;\t param1=val1\t; param2="val2" ' +
+            r'; param3="\"\\\\"',
+            [(
+                r'text/html;param1=val1;param2=val2;param3="\"\\\\"', 1.0,
+                [('param1', 'val1'), ('param2', 'val2'), ('param3', r'"\\')],
+                [],
+            )],
+        ),
+        (
+            'text/html;param=!#$%&\'*+-.^_`|~09AZaz',
+            [(
+                'text/html;param=!#$%&\'*+-.^_`|~09AZaz', 1.0,
+                [('param', '!#$%&\'*+-.^_`|~09AZaz')], [],
+            )],
+        ),
+        (
+            'text/html;param=""',
+            [('text/html;param=""', 1.0, [('param', '')], [])],
+        ),
+        (
+            'text/html;param="\t \x21\x23\x24\x5a\x5b\x5d\x5e\x7d\x7e"',
+            [(
+                'text/html;param="\t \x21\x23\x24\x5a\x5b\x5d\x5e\x7d\x7e"',
+                1.0,
+                [('param', '\t \x21\x23\x24\x5a\x5b\x5d\x5e\x7d\x7e')], [],
+            )],
+        ),
+        (
+            'text/html;param="\x80\x81\xfe\xff\\\x22\\\x5c"',
+            [(
+                'text/html;param="\x80\x81\xfe\xff\\\x22\\\x5c"', 1.0,
+                [('param', '\x80\x81\xfe\xff\x22\x5c')], [],
+            )],
+        ),
+        (
+            'text/html;param="\\\t\\ \\\x21\\\x7e\\\x80\\\xff"',
+            [(
+                'text/html;param="\t \x21\x7e\x80\xff"', 1.0,
+                [('param', '\t \x21\x7e\x80\xff')], [],
+            )],
+        ),
+        (
+            "text/html;param='val'",
+            # This makes it look like the media type parameter value could be
+            # surrounded with single quotes instead of double quotes, but the
+            # single quotes are actually part of the media type parameter value
+            # token
+            [("text/html;param='val'", 1.0, [('param', "'val'")], [])],
+        ),
+        ('text/html;q=0.9', [('text/html', 0.9, [], [])]),
+        ('text/html;q=0', [('text/html', 0.0, [], [])]),
+        ('text/html;q=0.0', [('text/html', 0.0, [], [])]),
+        ('text/html;q=0.00', [('text/html', 0.0, [], [])]),
+        ('text/html;q=0.000', [('text/html', 0.0, [], [])]),
+        ('text/html;q=1', [('text/html', 1.0, [], [])]),
+        ('text/html;q=1.0', [('text/html', 1.0, [], [])]),
+        ('text/html;q=1.00', [('text/html', 1.0, [], [])]),
+        ('text/html;q=1.000', [('text/html', 1.0, [], [])]),
+        ('text/html;q=0.1', [('text/html', 0.1, [], [])]),
+        ('text/html;q=0.87', [('text/html', 0.87, [], [])]),
+        ('text/html;q=0.382', [('text/html', 0.382, [], [])]),
+        ('text/html;Q=0.382', [('text/html', 0.382, [], [])]),
+        ('text/html ;Q=0.382', [('text/html', 0.382, [], [])]),
+        ('text/html; Q=0.382', [('text/html', 0.382, [], [])]),
+        ('text/html  ;  Q=0.382', [('text/html', 0.382, [], [])]),
+        ('text/html;q=0.9;q=0.8', [('text/html', 0.9, [], [('q', '0.8')])]),
+        (
+            'text/html;q=1;q=1;q=1',
+            [('text/html', 1.0, [], [('q', '1'), ('q', '1')])],
+        ),
+        (
+            'text/html;q=0.9;extparam1;extparam2=val2;extparam3="val3"',
+            [(
+                'text/html', 0.9, [],
+                ['extparam1', ('extparam2', 'val2'), ('extparam3', 'val3')]
+            )],
+        ),
+        (
+            'text/html;q=1;extparam=!#$%&\'*+-.^_`|~09AZaz',
+            [('text/html', 1.0, [], [('extparam', '!#$%&\'*+-.^_`|~09AZaz')])],
+        ),
+        (
+            'text/html;q=1;extparam=""',
+            [('text/html', 1.0, [], [('extparam', '')])],
+        ),
+        (
+            'text/html;q=1;extparam="\t \x21\x23\x24\x5a\x5b\x5d\x5e\x7d\x7e"',
+            [(
+                'text/html', 1.0, [],
+                [('extparam', '\t \x21\x23\x24\x5a\x5b\x5d\x5e\x7d\x7e')],
+            )],
+        ),
+        (
+            'text/html;q=1;extparam="\x80\x81\xfe\xff\\\x22\\\x5c"',
+            [(
+                'text/html', 1.0, [],
+                [('extparam', '\x80\x81\xfe\xff\x22\x5c')],
+            )],
+        ),
+        (
+            'text/html;q=1;extparam="\\\t\\ \\\x21\\\x7e\\\x80\\\xff"',
+            [('text/html', 1.0, [], [('extparam', '\t \x21\x7e\x80\xff')])],
+        ),
+        (
+            "text/html;q=1;extparam='val'",
+            # This makes it look like the extension parameter value could be
+            # surrounded with single quotes instead of double quotes, but the
+            # single quotes are actually part of the extension parameter value
+            # token
+            [('text/html', 1.0, [], [('extparam', "'val'")])],
+        ),
+        (
+            'text/html;param1="val1";param2=val2;q=0.9;extparam1="val1"'
+            ';extparam2;extparam3=val3',
+            [(
+                'text/html;param1=val1;param2=val2', 0.9,
+                [('param1', 'val1'), ('param2', 'val2')],
+                [('extparam1', 'val1'), 'extparam2', ('extparam3', 'val3')],
+            )],
+        ),
+        (
+            ', ,, a/b \t;\t p1=1  ;\t\tp2=2  ;  q=0.6\t \t;\t\t e1\t; e2,  ,',
+            [('a/b;p1=1;p2=2', 0.6, [('p1', '1'), ('p2', '2')], ['e1', 'e2'])],
+        ),
+        (
+            (
+                ',\t , a/b;q=1;e1;e2=v2 \t,\t\t c/d, e/f;p1=v1;q=0;e1, ' +
+                'g/h;p1=v1\t ;\t\tp2=v2;q=0.5 \t,'
+            ),
+            [
+                ('a/b', 1.0, [], ['e1', ('e2', 'v2')]),
+                ('c/d', 1.0, [], []),
+                ('e/f;p1=v1', 0.0, [('p1', 'v1')], ['e1']),
+                ('g/h;p1=v1;p2=v2', 0.5, [('p1', 'v1'), ('p2', 'v2')], []),
+            ],
+        ),
+    ])
+    def test_parse__valid_header(self, value, expected_list):
+        returned = AcceptValidHeader.parse(value=value)
+        list_of_returned = list(returned)
+        assert list_of_returned == expected_list
+
+
 
 
 class TestAcceptLanguage(object):
