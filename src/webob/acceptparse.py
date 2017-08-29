@@ -285,14 +285,6 @@ class NilAccept(object):
         return best_offer
 
 
-class NoAccept(NilAccept):
-    """
-    Represents an ``Accept-Encoding`` header when it is not present in the
-    request or is empty.
-    """
-    def __contains__(self, item):
-        return False
-
 class AcceptCharset(Accept):
     """
     Represents an ``Accept-Charset`` header.

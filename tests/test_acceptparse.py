@@ -22,7 +22,6 @@ from webob.acceptparse import (
     create_accept_language_header,
     MIMEAccept,
     NilAccept,
-    NoAccept,
 )
 from webob.request import Request
 
@@ -313,11 +312,6 @@ def test_nil_best_match():
 def test_nil_iter():
     nilaccept = NilAccept()
     assert list(nilaccept) == []
-
-
-# NoAccept tests
-def test_noaccept_contains():
-    assert 'text/plain' not in NoAccept()
 
 
 # MIMEAccept tests

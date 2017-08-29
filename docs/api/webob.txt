@@ -66,9 +66,6 @@ Accept-*
    :members:
    :inherited-members:
 
-.. autoclass:: NoAccept
-   :members:
-   :inherited-members:
 
 Cache-Control
 ~~~~~~~~~~~~~
