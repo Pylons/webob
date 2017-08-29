@@ -5053,7 +5053,7 @@ def accept_language_property():
         The header value in the request environ is parsed and a new object
         representing the header is created every time we *get* the value of the
         property. (*set* and *del* change the header value in the request
-        environ, and do not involve parsing.)'
+        environ, and do not involve parsing.)
     """
 
     ENVIRON_KEY = 'HTTP_ACCEPT_LANGUAGE'
