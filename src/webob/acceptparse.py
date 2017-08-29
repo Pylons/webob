@@ -87,9 +87,6 @@ def _list_1_or_more__compiled_re(element_re):
 
 class Accept(object):
     """
-    Represents a generic ``Accept-*`` style header.
-class Accept(object):
-    """
     Represent an ``Accept`` header.
 
     Base class for :class:`AcceptValidHeader`, :class:`AcceptNoHeader`, and
@@ -422,8 +419,6 @@ class Accept(object):
                 )
         return generator(value=value)
 
-    This object should not be modified.  To add items you can use
-    ``accept_obj + 'accept_thing'`` to get a new object
 
 class AcceptValidHeader(Accept):
     """
@@ -469,9 +464,6 @@ class AcceptValidHeader(Accept):
         return self._parsed
 
     def __init__(self, header_value):
-        self.header_value = header_value
-        self.parsed = list(self.parse(header_value))
-        self._parsed_nonzero = [(m,q) for (m,q) in self.parsed if q]
         """
         Create an :class:`AcceptValidHeader` instance.
 
@@ -1575,178 +1567,6 @@ def accept_property():
             pass
 
     return property(fget, fset, fdel, textwrap.dedent(doc))
-
-
-        """
-        if isinstance(other, AcceptValidHeader):
-            return AcceptValidHeader(header_value=other.header_value)
-
-        if isinstance(other, (AcceptNoHeader, AcceptInvalidHeader)):
-            return self.__class__()
-
-        return self._add_instance_and_non_accept_type(
-            instance=self, other=other,
-        )
-
-    def __radd__(self, other):
-        """
-        Add to header, creating a new header object.
-
-        See the docstring for :meth:`AcceptNoHeader.__add__`.
-        """
-        return self.__add__(other=other)
-
-    def __repr__(self):
-        return '<{}>'.format(self.__class__.__name__)
-
-    def __str__(self):
-        """Return the ``str`` ``'<no header in request>'``."""
-        return '<no header in request>'
-
-    def _add_instance_and_non_accept_type(self, instance, other):
-        if other is None:
-            return self.__class__()
-
-        other_header_value = self._python_value_to_header_str(value=other)
-
-        try:
-            return AcceptValidHeader(header_value=other_header_value)
-        except ValueError:  # invalid header value
-            return self.__class__()
-
-
-
-    @staticmethod
-    def parse(value):
-        """
-        Parse ``Accept-*`` style header.
-
-        Return iterator of ``(value, quality)`` pairs.
-        ``quality`` defaults to 1.
-        """
-        for match in part_re.finditer(','+value):
-            name = match.group(1)
-            quality = match.group(2) or ''
-            if quality:
-                try:
-                    quality = max(min(float(quality), 1), 0)
-                    yield (name, quality)
-                    continue
-                except ValueError:
-                    pass
-            yield (name, 1)
-
-    def __repr__(self):
-        return '<%s(%r)>' % (self.__class__.__name__, str(self))
-
-    def __iter__(self):
-        for m,q in sorted(
-            self._parsed_nonzero,
-            key=lambda i: i[1],
-            reverse=True
-        ):
-            yield m
-
-    def __str__(self):
-        result = []
-        for mask, quality in self.parsed:
-            if quality != 1:
-                mask = '%s;q=%0.*f' % (
-                    mask, min(len(str(quality).split('.')[1]), 3), quality)
-            result.append(mask)
-        return ', '.join(result)
-
-    def __add__(self, other, reversed=False):
-        if isinstance(other, Accept):
-            other = other.header_value
-        if hasattr(other, 'items'):
-            other = sorted(other.items(), key=lambda item: -item[1])
-        if isinstance(other, (list, tuple)):
-            result = []
-            for item in other:
-                if isinstance(item, (list, tuple)):
-                    name, quality = item
-                    result.append('%s; q=%s' % (name, quality))
-                else:
-                    result.append(item)
-            other = ', '.join(result)
-        other = str(other)
-        my_value = self.header_value
-        if reversed:
-            other, my_value = my_value, other
-        if not other:
-            new_value = my_value
-        elif not my_value:
-            new_value = other
-        else:
-            new_value = my_value + ', ' + other
-        return self.__class__(new_value)
-
-    def __radd__(self, other):
-        return self.__add__(other, True)
-
-    def __contains__(self, offer):
-        """
-        Returns true if the given object is listed in the accepted
-        types.
-        """
-        for mask, quality in self._parsed_nonzero:
-            if self._match(mask, offer):
-                return True
-
-    def quality(self, offer):
-        """
-        Return the quality of the given offer.  Returns None if there
-        is no match (not 0).
-        """
-        bestq = 0
-        for mask, q in self.parsed:
-            if self._match(mask, offer):
-                bestq = max(bestq, q)
-        return bestq or None
-
-    def best_match(self, offers, default_match=None):
-        """
-        Returns the best match in the sequence of offered types.
-
-        The sequence can be a simple sequence, or you can have
-        ``(match, server_quality)`` items in the sequence.  If you
-        have these tuples then the client quality is multiplied by the
-        server_quality to get a total.  If two matches have equal
-        weight, then the one that shows up first in the `offers` list
-        will be returned.
-
-        But among matches with the same quality the match to a more specific
-        requested type will be chosen. For example a match to text/* trumps */*.
-
-        default_match (default None) is returned if there is no intersection.
-        """
-        best_quality = -1
-        best_offer = default_match
-        matched_by = '*/*'
-        for offer in offers:
-            if isinstance(offer, (tuple, list)):
-                offer, server_quality = offer
-            else:
-                server_quality = 1
-            for mask, quality in self._parsed_nonzero:
-                possible_quality = server_quality * quality
-                if possible_quality < best_quality:
-                    continue
-                elif possible_quality == best_quality:
-                    # 'text/plain' overrides 'message/*' overrides '*/*'
-                    # (if all match w/ the same q=)
-                    if matched_by.count('*') <= mask.count('*'):
-                        continue
-                if self._match(mask, offer):
-                    best_quality = possible_quality
-                    best_offer = offer
-                    matched_by = mask
-        return best_offer
-
-    def _match(self, mask, offer):
-        _check_offer(offer)
-        return mask == '*' or offer.lower() == mask.lower()
 
 
 class NilAccept(object):
