@@ -339,12 +339,10 @@ class AcceptLanguage(object):
                 )
             if isinstance(value, (tuple, list)):
                 result = []
-                for element in value:
-                    if isinstance(element, (tuple, list)):
-                        element = _item_qvalue_pair_to_header_element(
-                            pair=element
-                        )
-                    result.append(element)
+                for item in value:
+                    if isinstance(item, (tuple, list)):
+                        item = _item_qvalue_pair_to_header_element(pair=item)
+                    result.append(item)
                 header_str = ', '.join(result)
             else:
                 header_str = str(value)
