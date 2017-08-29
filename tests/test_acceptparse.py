@@ -4523,7 +4523,7 @@ class TestAcceptLanguageValidHeader(object):
             ),
             # If a tag matches a non-'*' range with q=0, tag is filtered out
             (
-                'b;q=1, b;q=0, a, b-c, d;q=0',
+                'b-c, a, b;q=0, d;q=0',
                 ['b-c', 'a', 'b-c-d', 'd-e-f'],
                 [('a', 1.0)]
             ),
@@ -4539,13 +4539,6 @@ class TestAcceptLanguageValidHeader(object):
                 'a-b-c-d, a-b-c-d-e, a-b-c-d-f-g-h',
                 ['a-b-c-d-f-g'],
                 [('a-b-c-d-f-g', 1.0)]
-            ),
-            # If a tag matches a '*' range with q=0, the tag is filtered out
-            # (and any other '*' ranges with non-0 qvalues have no effect)
-            (
-                'a, b, *;q=0.5, *;q=0',
-                ['a-a', 'b-a', 'c-a'],
-                [('a-a', 1.0), ('b-a', 1.0)]
             ),
             # '*', when it is the only range in the header, matches everything
             (
@@ -4573,21 +4566,6 @@ class TestAcceptLanguageValidHeader(object):
                 # fallback)
                 ['a', 'b'],
                 [('b', 0.9), ('a', 0.5)]
-            ),
-            # When there is more than one '*' range in the header, the one with
-            # the highest qvalue is matched
-            (
-                'a;q=0.5, *;q=0.6, b;q=0.7, *;q=0.9',
-                ['a', 'b', 'c'],
-                [('c', 0.9), ('b', 0.7), ('a', 0.5)]
-            ),
-            # When there is more than one '*' range in the header, and they
-            # have the same qvalue, the one that appears earlier in the header
-            # is matched
-            (
-                'a;q=0.5, *;q=0.9, b;q=0.9, *;q=0.9',
-                ['a', 'b', 'c'],
-                [('c', 0.9), ('b', 0.9), ('a', 0.5)]
             ),
             # More than one range matching the same tag: range with the highest
             # qvalue is matched
@@ -4623,6 +4601,46 @@ class TestAcceptLanguageValidHeader(object):
                 'a',
                 ['a-b', 'a', 'a-b-c'],
                 [('a-b', 1.0), ('a', 1.0), ('a-b-c', 1.0)]
+            ),
+            # When a non-'*' range appears in the header more than once, we use
+            # the first one for matching and ignore the others
+            (
+                'a;q=0.5, c;q=0.6, b;q=0.7, c;q=0.9',
+                ['a', 'b', 'c'],
+                [('b', 0.7), ('c', 0.6), ('a', 0.5)]
+            ),
+            (
+                'a, b, c;q=0.5, c;q=0',
+                ['a-a', 'b-a', 'c-a'],
+                [('a-a', 1.0), ('b-a', 1.0), ('c-a', 0.5)]
+            ),
+            (
+                'a;q=0.5, c;q=0.9, b;q=0.9, c;q=0.9',
+                ['a', 'b', 'c'],
+                [('c', 0.9), ('b', 0.9), ('a', 0.5)]
+            ),
+            # When the '*' range appears in the header more than once, we use
+            # the first one for matching and ignore the others
+            (
+                'a;q=0.5, *;q=0.6, b;q=0.7, *;q=0.9',
+                ['a', 'b', 'c'],
+                [('b', 0.7), ('c', 0.6), ('a', 0.5)]
+            ),
+            (
+                'a, b, *;q=0.5, *;q=0',
+                ['a-a', 'b-a', 'c-a'],
+                [('a-a', 1.0), ('b-a', 1.0), ('c-a', 0.5)]
+            ),
+            (
+                'a;q=0.5, *;q=0.9, b;q=0.9, *;q=0.9',
+                ['a', 'b', 'c'],
+                [('c', 0.9), ('b', 0.9), ('a', 0.5)]
+            ),
+            # Both '*' and non-'*' ranges appearing more than once
+            (
+                'a-b;q=0.5, c-d, *, a-b, c-d;q=0.3, *;q=0',
+                ['a-b-c', 'c-d-e', 'e-f-g'],
+                [('c-d-e', 1.0), ('e-f-g', 1.0), ('a-b-c', 0.5)]
             ),
         ]
     )

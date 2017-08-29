@@ -3926,38 +3926,42 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         :rfc:`RFC 7231, section 5.3.5 <7231#section-5.3.5>`, and defined in
         :rfc:`RFC 4647, section 3.3.1 <4647#section-3.3.1>`. It filters the
         tags in the `language_tags` argument and returns the ones that match
-        the header according to the matching scheme. The returned list is a
-        list of (language tag, qvalue) tuples, in descending order of qvalue.
-        If two or more tags have the same qvalue, they are returned in the same
-        order as that in the header of the ranges they matched. If the matched
-        range is the same for two or more tags (i.e. their matched ranges have
-        the same qvalue and the same position in the header), then they are
-        returned in the same order as that in the `language_tags` argument. If
-        `language_tags` is unordered, e.g. if it is a set or a dict, then that
-        order may not be reliable.
+        the header according to the matching scheme.
 
         :param language_tags: (``iterable``) language tags
         :return: A list of tuples of the form (language tag, qvalue), in
-                 descending order of preference.
+                 descending order of qvalue. If two or more tags have the same
+                 qvalue, they are returned in the same order as that in the
+                 header of the ranges they matched. If the matched range is the
+                 same for two or more tags (i.e. their matched ranges have the
+                 same qvalue and the same position in the header), then they
+                 are returned in the same order as that in the `language_tags`
+                 argument. If `language_tags` is unordered, e.g. if it is a set
+                 or a dict, then that order may not be reliable.
 
         For each tag in `language_tags`:
 
-        1. If the tag matches any language range in the header with ``q=0``
-           (meaning "not acceptable", see :rfc:`RFC 7231, section 5.3.1
+        1. If the tag matches a non-``*`` language range in the header with
+           ``q=0`` (meaning "not acceptable", see :rfc:`RFC 7231, section 5.3.1
            <7231#section-5.3.1>`), the tag is filtered out.
-        2. The language ranges in the header that do not have ``q=0`` and are
-           not ``*`` are considered in descending order of qvalue; where two or
-           more language ranges have the same qvalue, they are considered in
-           the order in which they appear in the header.
+        2. The non-``*`` language ranges in the header that do not have ``q=0``
+           are considered in descending order of qvalue; where two or more
+           language ranges have the same qvalue, they are considered in the
+           order in which they appear in the header.
         3. A language range 'matches a particular language tag if, in a
            case-insensitive comparison, it exactly equals the tag, or if it
            exactly equals a prefix of the tag such that the first character
            following the prefix is "-".' (:rfc:`RFC 4647, section 3.3.1
            <4647#section-3.3.1>`)
-        4. If a language tag has not matched any of the language ranges so far,
-           and there is one or more ``*`` language range in the header, then if
-           any of the ``*`` language ranges have ``q=0``, the language tag is
-           filtered out, else the language tag is considered a match.
+        4. If the tag does not match any of the non-``*`` language ranges, and
+           there is a ``*`` language range in the header, then if the ``*``
+           language range has ``q=0``, the language tag is filtered out,
+           otherwise the tag is considered a match.
+
+        (If a range (``*`` or non-``*``) appears in the header more than once
+        -- this would not make sense, but is nonetheless a valid header
+        according to the RFC -- the first in the header is used for matching,
+        and the others are ignored.)
         """
         # The Basic Filtering matching scheme as applied to the Accept-Language
         # header is very under-specified by RFCs 7231 and 4647. This
@@ -3966,55 +3970,56 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         # arrive at an algorithm for Basic Filtering as applied to the
         # Accept-Language header.
 
-        parsed = list(self.parsed)
-        tags = language_tags
+        lowercased_parsed = [
+            (range_.lower(), qvalue) for (range_, qvalue) in self.parsed
+        ]
+        lowercased_tags = [tag.lower() for tag in language_tags]
 
-        not_acceptable_ranges = []
-        acceptable_ranges = []
+        not_acceptable_ranges = set()
+        acceptable_ranges = dict()
+        asterisk_qvalue = None
 
-        asterisk_range_highest_qvalue = None
-        # The highest qvalue from '*' ranges in the header with non-0 qvalues
-
-        asterisk_q0_found = False
-        # Whether there is a '*' range in the header with q=0
-
-        for position_in_header, (range_, qvalue) in enumerate(parsed):
-            if qvalue == 0.0:
-                if range_ == '*':
-                    asterisk_q0_found = True
+        for position_in_header, (range_, qvalue) in enumerate(
+            lowercased_parsed
+        ):
+            if range_ == '*':
+                if asterisk_qvalue is None:
+                    asterisk_qvalue = qvalue
+                    asterisk_position = position_in_header
+            elif (
+                range_ not in acceptable_ranges and range_ not in
+                not_acceptable_ranges
+                # if we have not already encountered this range in the header
+            ):
+                if qvalue == 0.0:
+                    not_acceptable_ranges.add(range_)
                 else:
-                    not_acceptable_ranges.append(range_)
-            elif not asterisk_q0_found and range_ == '*':
-                if (
-                    (asterisk_range_highest_qvalue is None) or
-                    (qvalue > asterisk_range_highest_qvalue)
-                ):
-                    asterisk_range_highest_qvalue = qvalue
-                    asterisk_range_highest_qvalue_position = position_in_header
-                    # We take the highest qvalue to handle the case where there
-                    # is more than one '*' range in the header (which would not
-                    # make sense, but as it's still a valid header, we'll
-                    # handle it anyway)
-            else:
-                acceptable_ranges.append((range_, qvalue, position_in_header))
+                    acceptable_ranges[range_] = (qvalue, position_in_header)
+        acceptable_ranges = [
+            (range_, qvalue, position_in_header)
+            for range_, (qvalue, position_in_header)
+            in acceptable_ranges.items()
+        ]
+        # Sort acceptable_ranges by position_in_header, ascending order
+        acceptable_ranges.sort(key=lambda tuple_: tuple_[2])
         # Sort acceptable_ranges by qvalue, descending order
         acceptable_ranges.sort(key=lambda tuple_: tuple_[1], reverse=True)
+        # Sort guaranteed to be stable with Python >= 2.2, so position in
+        # header is tiebreaker when two ranges have the same qvalue
 
         def match(tag, range_):
-            tag = tag.lower()
-            range_ = range_.lower()
             # RFC 4647, section 2.1: 'A language range matches a particular
             # language tag if, in a case-insensitive comparison, it exactly
             # equals the tag, or if it exactly equals a prefix of the tag such
             # that the first character following the prefix is "-".'
-            return (range_ == tag) or tag.startswith(range_ + '-')
+            return (tag == range_) or tag.startswith(range_ + '-')
             # We can assume here that the language tags are valid tags, so we
             # do not have to worry about them being malformed and ending with
             # '-'.
 
         filtered_tags = []
-        for tag in tags:
-            # If tag matches a range with q=0, it is filtered out
+        for index, tag in enumerate(lowercased_tags):
+            # If tag matches a non-* range with q=0, it is filtered out
             if any((
                 match(tag=tag, range_=range_)
                 for range_ in not_acceptable_ranges
@@ -4023,33 +4028,31 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
             matched_range_qvalue = None
             for range_, qvalue, position_in_header in acceptable_ranges:
+                # acceptable_ranges is in descending order of qvalue, and tied
+                # ranges are in ascending order of position_in_header, so the
+                # first range_ that matches the tag is the best match
                 if match(tag=tag, range_=range_):
                     matched_range_qvalue = qvalue
                     matched_range_position = position_in_header
                     break
             else:
-                if (
-                    # there is no *;q=0 in header, and
-                    (not asterisk_q0_found) and
-                    # there is one or more * range in header
-                    (asterisk_range_highest_qvalue is not None)
-                ):
+                if asterisk_qvalue:
                     # From RFC 4647, section 3.3.1: '...HTTP/1.1 [RFC2616]
                     # specifies that the range "*" matches only languages not
                     # matched by any other range within an "Accept-Language"
-                    # header.'
-                    # (Though RFC 2616 is obsolete, and there is no mention of
-                    # the meaning of "*" in RFC 7231, as the ``language-range``
-                    # syntax rule in RFC 7231 section 5.3.1 directs us to RFC
-                    # 4647, we can only assume that the meaning of "*" in the
-                    # Accept-Language header remains the same).
-                    matched_range_qvalue = asterisk_range_highest_qvalue
-                    matched_range_position = \
-                        asterisk_range_highest_qvalue_position
+                    # header.' (Though RFC 2616 is obsolete, and there is no
+                    # mention of the meaning of "*" in RFC 7231, as the
+                    # ``language-range`` syntax rule in RFC 7231 section 5.3.1
+                    # directs us to RFC 4647, we can only assume that the
+                    # meaning of "*" in the Accept-Language header remains the
+                    # same).
+                    matched_range_qvalue = asterisk_qvalue
+                    matched_range_position = asterisk_position
             if matched_range_qvalue is not None:  # if there was a match
-                filtered_tags.append(
-                    (tag, matched_range_qvalue, matched_range_position)
-                )
+                filtered_tags.append((
+                    language_tags[index], matched_range_qvalue,
+                    matched_range_position
+                ))
 
         # sort by matched_range_position, ascending
         filtered_tags.sort(key=lambda tuple_: tuple_[2])
@@ -4060,6 +4063,8 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         filtered_tags.sort(key=lambda tuple_: tuple_[1], reverse=True)
 
         return [(item[0], item[1]) for item in filtered_tags]
+        # (tag, qvalue), dropping the matched_range_position
+
         # We return a list of tuples with qvalues, instead of just a set or
         # a list of language tags, because
         # RFC 4647 section 3.3: "If the language priority list contains more
@@ -4070,11 +4075,10 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         # the qvalue of the range that was their best match, as the ordering
         # and the qvalues may well be needed in some applications, and a simple
         # set or list of language tags can always be easily obtained from the
-        # returned list if the qvalues are not required.
-        # One use for qvalues, for example, would be to indicate that two tags
-        # are equally preferred (same qvalue), which we would not be able to do
-        # easily with a set or a list without e.g. making a member of the set
-        # or list a sequence.
+        # returned list if the qvalues are not required. One use for qvalues,
+        # for example, would be to indicate that two tags are equally preferred
+        # (same qvalue), which we would not be able to do easily with a set or
+        # a list without e.g. making a member of the set or list a sequence.
 
     def best_match(self, offers, default_match=None):
         """
