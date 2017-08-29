@@ -3085,6 +3085,218 @@ class TestAcceptCharsetNoHeader(object):
         assert returned == 1.0
 
 
+class TestAcceptCharsetInvalidHeader(object):
+    def test_parse__inherited(self):
+        returned = AcceptCharsetInvalidHeader.parse(
+            value=',iso-8859-5 ; q=0.333 , ,utf-8,unicode-1-1 ;q=0.90,',
+        )
+        list_of_returned = list(returned)
+        assert list_of_returned == [
+            ('iso-8859-5', 0.333),
+            ('utf-8', 1.0),
+            ('unicode-1-1', 0.9),
+        ]
+
+    def test___init__(self):
+        header_value = 'invalid header'
+        instance = AcceptCharsetInvalidHeader(header_value=header_value)
+        assert instance.header_value == header_value
+        assert instance.parsed is None
+        assert instance._parsed_nonzero is None
+        assert isinstance(instance, AcceptCharset)
+
+    def test___add___None(self):
+        instance = AcceptCharsetInvalidHeader(header_value='')
+        result = instance + None
+        assert isinstance(result, AcceptCharsetNoHeader)
+
+    @pytest.mark.parametrize('right_operand', [
+        '',
+        [],
+        (),
+        {},
+        'UTF/8',
+        ['UTF/8'],
+        ('UTF/8',),
+        {'UTF/8': 1.0},
+    ])
+    def test___add___invalid_value(self, right_operand):
+        result = AcceptCharsetInvalidHeader(header_value='') + right_operand
+        assert isinstance(result, AcceptCharsetNoHeader)
+
+    @pytest.mark.parametrize('str_', ['', 'UTF/8'])
+    def test___add___other_type_with_invalid___str__(self, str_):
+        class Other(object):
+            def __str__(self):
+                return str_
+        result = AcceptCharsetInvalidHeader(header_value='') + Other()
+        assert isinstance(result, AcceptCharsetNoHeader)
+
+    @pytest.mark.parametrize('value, value_as_header', [
+        (
+            'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8',
+            'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8',
+        ),
+        (
+            [('UTF-7', 0.5), ('unicode-1-1', 0.0), 'UTF-8'],
+            'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8',
+        ),
+        (
+            (('UTF-7', 0.5), ('unicode-1-1', 0.0), 'UTF-8'),
+            'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8',
+        ),
+        (
+            {'UTF-7': 0.5, 'unicode-1-1': 0.0, 'UTF-8': 1.0},
+            'UTF-8, UTF-7;q=0.5, unicode-1-1;q=0',
+        ),
+    ])
+    def test___add___valid_header_value(self, value, value_as_header):
+        result = AcceptCharsetInvalidHeader(header_value='') + value
+        assert isinstance(result, AcceptCharsetValidHeader)
+        assert result.header_value == value_as_header
+
+    def test___add___other_type_valid_header_value(self):
+        class Other(object):
+            def __str__(self):
+                return 'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8'
+        right_operand = Other()
+        result = AcceptCharsetInvalidHeader(header_value='') + right_operand
+        assert isinstance(result, AcceptCharsetValidHeader)
+        assert result.header_value == str(right_operand)
+
+    def test___add___AcceptCharsetValidHeader(self):
+        right_operand = AcceptCharsetValidHeader(
+            header_value=', ,utf-7;q=0, \tutf-8;q=1,',
+        )
+        result = AcceptCharsetInvalidHeader(header_value='') + right_operand
+        assert isinstance(result, AcceptCharsetValidHeader)
+        assert result.header_value == right_operand.header_value
+        assert result is not right_operand
+
+    def test___add___AcceptCharsetNoHeader(self):
+        right_operand = AcceptCharsetNoHeader()
+        result = AcceptCharsetInvalidHeader(header_value='') + right_operand
+        assert isinstance(result, AcceptCharsetNoHeader)
+        assert result is not right_operand
+
+    def test___add___AcceptCharsetInvalidHeader(self):
+        result = AcceptCharsetInvalidHeader(header_value='') + \
+            AcceptCharsetInvalidHeader(header_value='utf/8')
+        assert isinstance(result, AcceptCharsetNoHeader)
+
+    def test___bool__(self):
+        instance = AcceptCharsetInvalidHeader(header_value='')
+        returned = bool(instance)
+        assert returned is False
+
+    def test___contains__(self):
+        instance = AcceptCharsetInvalidHeader(header_value='')
+        returned = ('char-set' in instance)
+        assert returned is True
+
+    def test___iter__(self):
+        instance = AcceptCharsetInvalidHeader(header_value='')
+        returned = list(instance)
+        assert returned == []
+
+    def test___radd___None(self):
+        result = None + AcceptCharsetInvalidHeader(header_value='')
+        assert isinstance(result, AcceptCharsetNoHeader)
+
+    @pytest.mark.parametrize('left_operand', [
+        '',
+        [],
+        (),
+        {},
+        'UTF/8',
+        ['UTF/8'],
+        ('UTF/8',),
+        {'UTF/8': 1.0},
+    ])
+    def test___radd___invalid_value(self, left_operand):
+        result = left_operand + AcceptCharsetInvalidHeader(header_value='')
+        assert isinstance(result, AcceptCharsetNoHeader)
+
+    @pytest.mark.parametrize('str_', ['', 'UTF/8'])
+    def test___radd___other_type_with_invalid___str__(self, str_):
+        class Other(object):
+            def __str__(self):
+                return str_
+        result = Other() + AcceptCharsetInvalidHeader(header_value='')
+        assert isinstance(result, AcceptCharsetNoHeader)
+
+    @pytest.mark.parametrize('value, value_as_header', [
+        (
+            'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8',
+            'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8',
+        ),
+        (
+            [('UTF-7', 0.5), ('unicode-1-1', 0.0), 'UTF-8'],
+            'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8',
+        ),
+        (
+            (('UTF-7', 0.5), ('unicode-1-1', 0.0), 'UTF-8'),
+            'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8',
+        ),
+        (
+            {'UTF-7': 0.5, 'unicode-1-1': 0.0, 'UTF-8': 1.0},
+            'UTF-8, UTF-7;q=0.5, unicode-1-1;q=0',
+        ),
+    ])
+    def test___radd___valid_header_value(self, value, value_as_header):
+        result = value + AcceptCharsetInvalidHeader(header_value='')
+        assert isinstance(result, AcceptCharsetValidHeader)
+        assert result.header_value == value_as_header
+
+    def test___radd___other_type_valid_header_value(self):
+        class Other(object):
+            def __str__(self):
+                return 'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8'
+        left_operand = Other()
+        result = left_operand + AcceptCharsetInvalidHeader(header_value='')
+        assert isinstance(result, AcceptCharsetValidHeader)
+        assert result.header_value == str(left_operand)
+
+    def test___repr__(self):
+        instance = AcceptCharsetInvalidHeader(header_value='\x00')
+        assert repr(instance) == '<AcceptCharsetInvalidHeader>'
+
+    def test___str__(self):
+        instance = AcceptCharsetInvalidHeader(header_value='')
+        assert str(instance) == '<invalid header value>'
+
+    def test_acceptable_offers(self):
+        instance = AcceptCharsetInvalidHeader(header_value='')
+        returned = instance.acceptable_offers(
+            offers=['utf-8', 'utf-7', 'unicode-1-1'],
+        )
+        assert returned == [
+            ('utf-8', 1.0), ('utf-7', 1.0), ('unicode-1-1', 1.0)
+        ]
+
+    def test_best_match(self):
+        accept = AcceptCharsetInvalidHeader(header_value='')
+        assert accept.best_match(['utf-8', 'iso-8859-5']) == 'utf-8'
+        assert accept.best_match([('utf-8', 1), ('iso-8859-5', 0.5)]) == \
+            'utf-8'
+        assert accept.best_match([('utf-8', 0.5), ('iso-8859-5', 1)]) == \
+            'iso-8859-5'
+        assert accept.best_match([('utf-8', 0.5), 'iso-8859-5']) == \
+            'iso-8859-5'
+        assert accept.best_match(
+            [('utf-8', 0.5), 'iso-8859-5'], default_match=True
+        ) == 'iso-8859-5'
+        assert accept.best_match(
+            [('utf-8', 0.5), 'iso-8859-5'], default_match=False
+        ) == 'iso-8859-5'
+        assert accept.best_match([], default_match='fallback') == 'fallback'
+
+    def test_quality(self):
+        instance = AcceptCharsetInvalidHeader(header_value='')
+        returned = instance.quality(offer='char-set')
+        assert returned == 1.0
+
+
 
 
 class TestAcceptLanguage(object):
