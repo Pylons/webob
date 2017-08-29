@@ -1,12 +1,8 @@
 """
-Parses a variety of ``Accept-*`` headers.
+Parse four ``Accept*`` headers used in server-driven content negotiation.
 
-These headers generally take the form of::
-
-    value1; q=0.5, value2; q=0
-
-Where the ``q`` parameter is optional.  In theory other parameters
-exists, but this ignores them.
+The four headers are ``Accept``, ``Accept-Charset``, ``Accept-Encoding`` and
+``Accept-Language``.
 """
 
 import re
