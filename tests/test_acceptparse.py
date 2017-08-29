@@ -2857,6 +2857,234 @@ class TestAcceptCharsetValidHeader(object):
         assert accept.quality('iso-8859-5') is None
 
 
+class TestAcceptCharsetNoHeader(object):
+    def test_parse__inherited(self):
+        returned = AcceptCharsetNoHeader.parse(
+            value=',iso-8859-5 ; q=0.333 , ,utf-8,unicode-1-1 ;q=0.90,',
+        )
+        list_of_returned = list(returned)
+        assert list_of_returned == [
+            ('iso-8859-5', 0.333),
+            ('utf-8', 1.0),
+            ('unicode-1-1', 0.9),
+        ]
+
+    def test___init__(self):
+        instance = AcceptCharsetNoHeader()
+        assert instance.header_value is None
+        assert instance.parsed is None
+        assert instance._parsed_nonzero is None
+        assert isinstance(instance, AcceptCharset)
+
+    def test___add___None(self):
+        instance = AcceptCharsetNoHeader()
+        result = instance + None
+        assert isinstance(result, AcceptCharsetNoHeader)
+        assert result is not instance
+
+    @pytest.mark.parametrize('right_operand', [
+        '',
+        [],
+        (),
+        {},
+        'UTF/8',
+        ['UTF/8'],
+        ('UTF/8',),
+        {'UTF/8': 1.0},
+    ])
+    def test___add___invalid_value(self, right_operand):
+        left_operand = AcceptCharsetNoHeader()
+        result = left_operand + right_operand
+        assert isinstance(result, AcceptCharsetNoHeader)
+        assert result is not left_operand
+
+    @pytest.mark.parametrize('str_', ['', 'UTF/8'])
+    def test___add___other_type_with_invalid___str__(self, str_,):
+        left_operand = AcceptCharsetNoHeader()
+        class Other(object):
+            def __str__(self):
+                return str_
+        result = left_operand + Other()
+        assert isinstance(result, AcceptCharsetNoHeader)
+        assert result is not left_operand
+
+    @pytest.mark.parametrize('value, value_as_header', [
+        (
+            'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8',
+            'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8',
+        ),
+        (
+            [('UTF-7', 0.5), ('unicode-1-1', 0.0), 'UTF-8'],
+            'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8',
+        ),
+        (
+            (('UTF-7', 0.5), ('unicode-1-1', 0.0), 'UTF-8'),
+            'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8',
+        ),
+        (
+            {'UTF-7': 0.5, 'unicode-1-1': 0.0, 'UTF-8': 1.0},
+            'UTF-8, UTF-7;q=0.5, unicode-1-1;q=0',
+        ),
+    ])
+    def test___add___valid_value(self, value, value_as_header):
+        result = AcceptCharsetNoHeader() + value
+        assert isinstance(result, AcceptCharsetValidHeader)
+        assert result.header_value == value_as_header
+
+    def test___add___other_type_with_valid___str__(self):
+        class Other(object):
+            def __str__(self):
+                return 'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8'
+        right_operand = Other()
+        result = AcceptCharsetNoHeader() + right_operand
+        assert isinstance(result, AcceptCharsetValidHeader)
+        assert result.header_value == str(right_operand)
+
+    def test___add___AcceptCharsetValidHeader(self):
+        right_operand = AcceptCharsetValidHeader(
+            header_value=', ,utf-7;q=0, \tutf-8;q=1,',
+        )
+        result = AcceptCharsetNoHeader() + right_operand
+        assert isinstance(result, AcceptCharsetValidHeader)
+        assert result.header_value == right_operand.header_value
+        assert result is not right_operand
+
+    def test___add___AcceptCharsetNoHeader(self):
+        left_operand = AcceptCharsetNoHeader()
+        right_operand = AcceptCharsetNoHeader()
+        result = left_operand + right_operand
+        assert isinstance(result, AcceptCharsetNoHeader)
+        assert result is not left_operand
+        assert result is not right_operand
+
+    @pytest.mark.parametrize('header_value', ['', 'utf/8'])
+    def test___add___AcceptCharsetInvalidHeader(self, header_value):
+        left_operand = AcceptCharsetNoHeader()
+        result = left_operand + AcceptCharsetInvalidHeader(
+            header_value=header_value,
+        )
+        assert isinstance(result, AcceptCharsetNoHeader)
+        assert result is not left_operand
+
+    def test___bool__(self):
+        instance = AcceptCharsetNoHeader()
+        returned = bool(instance)
+        assert returned is False
+
+    def test___contains__(self):
+        instance = AcceptCharsetNoHeader()
+        returned = ('char-set' in instance)
+        assert returned is True
+
+    def test___iter__(self):
+        instance = AcceptCharsetNoHeader()
+        returned = list(instance)
+        assert returned == []
+
+    def test___radd___None(self):
+        right_operand = AcceptCharsetNoHeader()
+        result = None + right_operand
+        assert isinstance(result, AcceptCharsetNoHeader)
+        assert result is not right_operand
+
+    @pytest.mark.parametrize('left_operand', [
+        '',
+        [],
+        (),
+        {},
+        'UTF/8',
+        ['UTF/8'],
+        ('UTF/8',),
+        {'UTF/8': 1.0},
+    ])
+    def test___radd___invalid_value(self, left_operand):
+        right_operand = AcceptCharsetNoHeader()
+        result = left_operand + right_operand
+        assert isinstance(result, AcceptCharsetNoHeader)
+        assert result is not right_operand
+
+    @pytest.mark.parametrize('str_', ['', 'UTF/8'])
+    def test___radd___other_type_with_invalid___str__(self, str_,):
+        right_operand = AcceptCharsetNoHeader()
+        class Other(object):
+            def __str__(self):
+                return str_
+        result = Other() + right_operand
+        assert isinstance(result, AcceptCharsetNoHeader)
+        assert result is not right_operand
+
+    @pytest.mark.parametrize('value, value_as_header', [
+        (
+            'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8',
+            'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8',
+        ),
+        (
+            [('UTF-7', 0.5), ('unicode-1-1', 0.0), 'UTF-8'],
+            'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8',
+        ),
+        (
+            (('UTF-7', 0.5), ('unicode-1-1', 0.0), 'UTF-8'),
+            'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8',
+        ),
+        (
+            {'UTF-7': 0.5, 'unicode-1-1': 0.0, 'UTF-8': 1.0},
+            'UTF-8, UTF-7;q=0.5, unicode-1-1;q=0',
+        ),
+    ])
+    def test___radd___valid_value(self, value, value_as_header):
+        result = value + AcceptCharsetNoHeader()
+        assert isinstance(result, AcceptCharsetValidHeader)
+        assert result.header_value == value_as_header
+
+    def test___radd___other_type_with_valid___str__(self):
+        class Other(object):
+            def __str__(self):
+                return 'UTF-7;q=0.5, unicode-1-1;q=0, UTF-8'
+        left_operand = Other()
+        result = left_operand + AcceptCharsetNoHeader()
+        assert isinstance(result, AcceptCharsetValidHeader)
+        assert result.header_value == str(left_operand)
+
+    def test___repr__(self):
+        instance = AcceptCharsetNoHeader()
+        assert repr(instance) == '<AcceptCharsetNoHeader>'
+
+    def test___str__(self):
+        instance = AcceptCharsetNoHeader()
+        assert str(instance) == '<no header in request>'
+
+    def test_acceptable_offers(self):
+        instance = AcceptNoHeader()
+        returned = instance.acceptable_offers(
+            offers=['utf-8', 'utf-7', 'unicode-1-1'],
+        )
+        assert returned == [
+            ('utf-8', 1.0), ('utf-7', 1.0), ('unicode-1-1', 1.0)
+        ]
+
+    def test_best_match(self):
+        accept = AcceptCharsetNoHeader()
+        assert accept.best_match(['utf-8', 'iso-8859-5']) == 'utf-8'
+        assert accept.best_match([('utf-8', 1), ('iso-8859-5', 0.5)]) == \
+            'utf-8'
+        assert accept.best_match([('utf-8', 0.5), ('iso-8859-5', 1)]) == \
+            'iso-8859-5'
+        assert accept.best_match([('utf-8', 0.5), 'iso-8859-5']) == \
+            'iso-8859-5'
+        assert accept.best_match(
+            [('utf-8', 0.5), 'iso-8859-5'], default_match=True
+        ) == 'iso-8859-5'
+        assert accept.best_match(
+            [('utf-8', 0.5), 'iso-8859-5'], default_match=False
+        ) == 'iso-8859-5'
+        assert accept.best_match([], default_match='fallback') == 'fallback'
+
+    def test_quality(self):
+        instance = AcceptCharsetNoHeader()
+        returned = instance.quality(offer='char-set')
+        assert returned == 1.0
+
+
 
 
 class TestAcceptLanguage(object):
