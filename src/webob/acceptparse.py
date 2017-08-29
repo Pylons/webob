@@ -3646,10 +3646,8 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         """
         self._header_value = header_value
         self._parsed = list(self.parse(header_value))
-        self._parsed_nonzero = [
-            (language_range, qvalue) for language_range, qvalue in self.parsed
-            if qvalue
-        ]
+        self._parsed_nonzero = [item for item in self.parsed if item[1]]
+        # item[1] is the qvalue
 
     @property
     def header_value(self):
