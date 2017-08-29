@@ -292,10 +292,6 @@ class AcceptCharset(Accept):
             yield ('iso-8859-1', 1)
 
 
-class AcceptEncoding(Accept):
-    """
-    Represents an ``Accept-Encoding`` header.
-    """
 
 
 class AcceptLanguage(object):
