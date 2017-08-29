@@ -3900,9 +3900,9 @@ class AcceptLanguageValidHeader(AcceptLanguage):
           and ranges with at most two subtags. So with an `item`/language tag
           with more than two subtags like ``zh-Hans-CN``::
 
-              >>> instance._match(mask='zh', item='zh-Hans-CN')
+              >>> instance._old_match(mask='zh', item='zh-Hans-CN')
               True
-              >>> instance._match(mask='zh-Hans', item='zh-Hans-CN')
+              >>> instance._old_match(mask='zh-Hans', item='zh-Hans-CN')
               False
 
           From commit history, this does not appear to have been from a
