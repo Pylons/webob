@@ -11,6 +11,7 @@ from webob.acceptparse import (
     AcceptLanguageInvalidHeader,
     AcceptLanguageNoHeader,
     AcceptLanguageValidHeader,
+    AcceptValidHeader,
     accept_language_property,
     accept_property,
     create_accept_language_header,
@@ -719,6 +720,727 @@ class TestAccept(object):
         returned = AcceptValidHeader.parse(value=value)
         list_of_returned = list(returned)
         assert list_of_returned == expected_list
+
+
+class TestAcceptValidHeader(object):
+    def test_parse__inherited(self):
+        returned = AcceptValidHeader.parse(
+            value=(
+                ',\t , a/b;q=1;e1;e2=v2 \t,\t\t c/d, e/f;p1=v1;q=0;e1, '
+                + 'g/h;p1=v1\t ;\t\tp2=v2;q=0.5 \t,'
+            ),
+        )
+        list_of_returned = list(returned)
+        assert list_of_returned == [
+            ('a/b', 1.0, [], ['e1', ('e2', 'v2')]),
+            ('c/d', 1.0, [], []),
+            ('e/f;p1=v1', 0.0, [('p1', 'v1')], ['e1']),
+            ('g/h;p1=v1;p2=v2', 0.5, [('p1', 'v1'), ('p2', 'v2')], []),
+        ]
+
+    @pytest.mark.parametrize('header_value', [
+        ', ',
+        'text/html;param=val;q=1;extparam=\x19',
+    ])
+    def test___init___invalid_header(self, header_value):
+        with pytest.raises(ValueError):
+            AcceptValidHeader(header_value=header_value)
+
+    def test___init___valid_header(self):
+        header_value = (
+            ',\t , a/b;q=1;e1;e2=v2 \t,\t\t c/d, e/f;p1=v1;q=0;e1, ' +
+            'g/h;p1=v1\t ;\t\tp2=v2;q=0.5 \t,'
+        )
+        instance = AcceptValidHeader(header_value=header_value)
+        assert instance.header_value == header_value
+        assert instance.parsed == [
+            ('a/b', 1.0, [], ['e1', ('e2', 'v2')]),
+            ('c/d', 1.0, [], []),
+            ('e/f;p1=v1', 0.0, [('p1', 'v1')], ['e1']),
+            ('g/h;p1=v1;p2=v2', 0.5, [('p1', 'v1'), ('p2', 'v2')], []),
+        ]
+        assert instance._parsed_nonzero == [
+            ('a/b', 1.0, [], ['e1', ('e2', 'v2')]),
+            ('c/d', 1.0, [], []),
+            ('g/h;p1=v1;p2=v2', 0.5, [('p1', 'v1'), ('p2', 'v2')], []),
+        ]
+        assert isinstance(instance, Accept)
+
+    def test___add___None(self):
+        left_operand = AcceptValidHeader(header_value='text/html')
+        result = left_operand + None
+        assert isinstance(result, AcceptValidHeader)
+        assert result.header_value == left_operand.header_value
+        assert result is not left_operand
+
+    @pytest.mark.parametrize('right_operand', [
+        ', ',
+        [', '],
+        (', ',),
+        {', ': 1.0},
+        {', ;level=1': (1.0, ';e1=1')},
+        'a/b, c/d;q=1;e1;',
+        ['a/b', 'c/d;q=1;e1;'],
+        ('a/b', 'c/d;q=1;e1;',),
+        {'a/b': 1.0, 'cd': 1.0},
+        {'a/b': (1.0, ';e1=1'), 'c/d': (1.0, ';e2=2;')},
+    ])
+    def test___add___invalid_value(self, right_operand):
+        left_operand = AcceptValidHeader(header_value='text/html')
+        result = left_operand + right_operand
+        assert isinstance(result, AcceptValidHeader)
+        assert result.header_value == left_operand.header_value
+        assert result is not left_operand
+
+    @pytest.mark.parametrize('str_', [', ', 'a/b, c/d;q=1;e1;'])
+    def test___add___other_type_with_invalid___str__(self, str_,):
+        left_operand = AcceptValidHeader(header_value='text/html')
+        class Other(object):
+            def __str__(self):
+                return str_
+        right_operand = Other()
+        result = left_operand + right_operand
+        assert isinstance(result, AcceptValidHeader)
+        assert result.header_value == left_operand.header_value
+        assert result is not left_operand
+
+    @pytest.mark.parametrize('value', [
+        '',
+        [],
+        (),
+        {},
+    ])
+    def test___add___valid_empty_value(self, value):
+        left_operand = AcceptValidHeader(header_value=',\t ,i/j, k/l;q=0.333,')
+        result = left_operand + value
+        assert isinstance(result, AcceptValidHeader)
+        assert result.header_value == left_operand.header_value
+        assert result is not left_operand
+
+    def test___add___other_type_with_valid___str___empty(self):
+        left_operand = AcceptValidHeader(header_value=',\t ,i/j, k/l;q=0.333,')
+        class Other(object):
+            def __str__(self):
+                return ''
+        result = left_operand + Other()
+        assert isinstance(result, AcceptValidHeader)
+        assert result.header_value == left_operand.header_value
+        assert result is not left_operand
+
+    @pytest.mark.parametrize('value, value_as_header', [
+        # str
+        (
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # list of strs
+        (
+            ['a/b;q=0.5', 'c/d;p1=1;q=0', 'e/f', 'g/h;p1=1;q=1;e1=1'],
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # list of 3-item tuples, with extension parameters
+        (
+            [
+                ('a/b', 0.5, ''), ('c/d;p1=1', 0.0, ''),
+                ('e/f', 1.0, ''), ('g/h;p1=1', 1.0, ';e1=1'),
+            ],
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # list of 2-item tuples, without extension parameters
+        (
+            [
+                ('a/b', 0.5), ('c/d;p1=1', 0.0),
+                ('e/f', 1.0), ('g/h;p1=1', 1.0),
+            ],
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1',
+        ),
+        # list of a mixture of strs, 3-item tuples and 2-item tuples
+        (
+            [
+                ('a/b', 0.5), ('c/d;p1=1', 0.0, ''),
+                'e/f', ('g/h;p1=1', 1.0, ';e1=1'),
+            ],
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # tuple of strs
+        (
+            ('a/b;q=0.5', 'c/d;p1=1;q=0', 'e/f', 'g/h;p1=1;q=1;e1=1'),
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # tuple of 3-item tuples, with extension parameters
+        (
+            (
+                ('a/b', 0.5, ''), ('c/d;p1=1', 0.0, ''),
+                ('e/f', 1.0, ''), ('g/h;p1=1', 1.0, ';e1=1'),
+            ),
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # tuple of 2-item tuples, without extension parameters
+        (
+            (
+                ('a/b', 0.5), ('c/d;p1=1', 0.0),
+                ('e/f', 1.0), ('g/h;p1=1', 1.0),
+            ),
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1',
+        ),
+        # tuple of a mixture of strs, 3-item tuples and 2-item tuples
+        (
+            (
+                ('a/b', 0.5), ('c/d;p1=1', 0.0, ''),
+                'e/f', ('g/h;p1=1', 1.0, ';e1=1'),
+            ),
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # dict
+        (
+            {
+                'a/b': (0.5, ';e1=1'), 'c/d': 0.0,
+                'e/f;p1=1': (1.0, ';e1=1;e2=2')
+            },
+            'e/f;p1=1;q=1;e1=1;e2=2, a/b;q=0.5;e1=1, c/d;q=0',
+        ),
+    ])
+    def test___add___valid_value(self, value, value_as_header):
+        header = ',\t ,i/j, k/l;q=0.333,'
+        result = AcceptValidHeader(header_value=header) + value
+        assert isinstance(result, AcceptValidHeader)
+        assert result.header_value == header + ', ' + value_as_header
+
+    def test___add___other_type_with_valid___str___not_empty(self):
+        header = ',\t ,i/j, k/l;q=0.333,'
+        class Other(object):
+            def __str__(self):
+                return 'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1'
+        right_operand = Other()
+        result = AcceptValidHeader(header_value=header) + right_operand
+        assert isinstance(result, AcceptValidHeader)
+        assert result.header_value == header + ', ' + str(right_operand)
+
+    def test___add___AcceptValidHeader_header_value_empty(self):
+        left_operand = AcceptValidHeader(
+            header_value='a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        )
+        right_operand = AcceptValidHeader(header_value='')
+        result = left_operand + right_operand
+        assert isinstance(result, AcceptValidHeader)
+        assert result.header_value == left_operand.header_value
+        assert result is not left_operand
+
+    def test___add___AcceptValidHeader_header_value_not_empty(self):
+        left_operand = AcceptValidHeader(
+            header_value='a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        )
+        right_operand = AcceptValidHeader(
+            header_value=',\t ,i/j, k/l;q=0.333,',
+        )
+        result = left_operand + right_operand
+        assert isinstance(result, AcceptValidHeader)
+        assert result.header_value == left_operand.header_value + ', ' + \
+            right_operand.header_value
+
+    def test___add___AcceptNoHeader(self):
+        valid_header_instance = AcceptValidHeader(header_value='a/b')
+        result = valid_header_instance + AcceptNoHeader()
+        assert isinstance(result, AcceptValidHeader)
+        assert result.header_value == valid_header_instance.header_value
+        assert result is not valid_header_instance
+
+    @pytest.mark.parametrize('header_value', [
+        ', ',
+        'a/b;p1=1;p2=2;q=0.8;e1;e2="',
+    ])
+    def test___add___AcceptInvalidHeader(self, header_value):
+        valid_header_instance = AcceptValidHeader(header_value='a/b')
+        result = valid_header_instance + AcceptInvalidHeader(
+            header_value=header_value,
+        )
+        assert isinstance(result, AcceptValidHeader)
+        assert result.header_value == valid_header_instance.header_value
+        assert result is not valid_header_instance
+
+    def test___bool__(self):
+        instance = AcceptValidHeader(header_value='type/subtype')
+        returned = bool(instance)
+        assert returned is True
+
+    def test___contains__(self):
+        accept = AcceptValidHeader('A/a, B/b, C/c')
+        assert 'A/a' in accept
+        assert 'A/*' in accept
+        assert '*/a' in accept
+        assert 'A/b' not in accept
+        assert 'B/a' not in accept
+        for mask in ['*/*', 'text/html', 'TEXT/HTML']:
+            assert 'text/html' in AcceptValidHeader(mask)
+
+    def test___iter__(self):
+        instance = AcceptValidHeader(
+            header_value=(
+                'text/plain; q=0.5, text/html; q=0, text/x-dvi; q=0.8, '
+                'text/x-c'
+            ),
+        )
+        assert list(instance) == ['text/x-c', 'text/x-dvi', 'text/plain']
+
+    def test___radd___None(self):
+        right_operand = AcceptValidHeader(header_value='a/b')
+        result = None + right_operand
+        assert isinstance(result, AcceptValidHeader)
+        assert result.header_value == right_operand.header_value
+        assert result is not right_operand
+
+    @pytest.mark.parametrize('left_operand', [
+        ', ',
+        [', '],
+        (', ',),
+        {', ': 1.0},
+        {', ;level=1': (1.0, ';e1=1')},
+        'a/b, c/d;q=1;e1;',
+        ['a/b', 'c/d;q=1;e1;'],
+        ('a/b', 'c/d;q=1;e1;',),
+        {'a/b': 1.0, 'cd': 1.0},
+        {'a/b': (1.0, ';e1=1'), 'c/d': (1.0, ';e2=2;')},
+    ])
+    def test___radd___invalid_value(self, left_operand):
+        right_operand = AcceptValidHeader(header_value='a/b')
+        result = left_operand + right_operand
+        assert isinstance(result, AcceptValidHeader)
+        assert result.header_value == right_operand.header_value
+        assert result is not right_operand
+
+    @pytest.mark.parametrize('str_', [', ', 'a/b, c/d;q=1;e1;'])
+    def test___radd___other_type_with_invalid___str__(self, str_,):
+        right_operand = AcceptValidHeader(header_value='a/b')
+        class Other(object):
+            def __str__(self):
+                return str_
+        result = Other() + right_operand
+        assert isinstance(result, AcceptValidHeader)
+        assert result.header_value == right_operand.header_value
+        assert result is not right_operand
+
+    @pytest.mark.parametrize('value', [
+        '',
+        [],
+        (),
+        {},
+    ])
+    def test___radd___valid_empty_value(self, value):
+        right_operand = AcceptValidHeader(header_value='a/b')
+        result = value + right_operand
+        assert isinstance(result, AcceptValidHeader)
+        assert result.header_value == right_operand.header_value
+        assert result is not right_operand
+
+    def test___radd___other_type_with_valid___str___empty(self):
+        right_operand = AcceptValidHeader(
+            header_value=',\t ,i/j, k/l;q=0.333,',
+        )
+        class Other(object):
+            def __str__(self):
+                return ''
+        result = Other() + right_operand
+        assert isinstance(result, AcceptValidHeader)
+        assert result.header_value == right_operand.header_value
+        assert result is not right_operand
+
+    @pytest.mark.parametrize('value, value_as_header', [
+        # str
+        (
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # list of strs
+        (
+            ['a/b;q=0.5', 'c/d;p1=1;q=0', 'e/f', 'g/h;p1=1;q=1;e1=1'],
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # list of 3-item tuples, with extension parameters
+        (
+            [
+                ('a/b', 0.5, ''), ('c/d;p1=1', 0.0, ''),
+                ('e/f', 1.0, ''), ('g/h;p1=1', 1.0, ';e1=1'),
+            ],
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # list of 2-item tuples, without extension parameters
+        (
+            [
+                ('a/b', 0.5), ('c/d;p1=1', 0.0),
+                ('e/f', 1.0), ('g/h;p1=1', 1.0),
+            ],
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1',
+        ),
+        # list of a mixture of strs, 3-item tuples and 2-item tuples
+        (
+            [
+                ('a/b', 0.5), ('c/d;p1=1', 0.0, ''),
+                'e/f', ('g/h;p1=1', 1.0, ';e1=1'),
+            ],
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # tuple of strs
+        (
+            ('a/b;q=0.5', 'c/d;p1=1;q=0', 'e/f', 'g/h;p1=1;q=1;e1=1'),
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # tuple of 3-item tuples, with extension parameters
+        (
+            (
+                ('a/b', 0.5, ''), ('c/d;p1=1', 0.0, ''),
+                ('e/f', 1.0, ''), ('g/h;p1=1', 1.0, ';e1=1'),
+            ),
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # tuple of 2-item tuples, without extension parameters
+        (
+            (
+                ('a/b', 0.5), ('c/d;p1=1', 0.0),
+                ('e/f', 1.0), ('g/h;p1=1', 1.0),
+            ),
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1',
+        ),
+        # tuple of a mixture of strs, 3-item tuples and 2-item tuples
+        (
+            (
+                ('a/b', 0.5), ('c/d;p1=1', 0.0, ''),
+                'e/f', ('g/h;p1=1', 1.0, ';e1=1'),
+            ),
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # dict
+        (
+            {
+                'a/b': (0.5, ';e1=1'), 'c/d': 0.0,
+                'e/f;p1=1': (1.0, ';e1=1;e2=2')
+            },
+            'e/f;p1=1;q=1;e1=1;e2=2, a/b;q=0.5;e1=1, c/d;q=0',
+        ),
+    ])
+    def test___radd___valid_non_empty_value(self, value, value_as_header):
+        header = ',\t ,i/j, k/l;q=0.333,'
+        result = value + AcceptValidHeader(header_value=header)
+        assert isinstance(result, AcceptValidHeader)
+        assert result.header_value == value_as_header + ', ' + header
+
+    def test___radd___other_type_with_valid___str___not_empty(self):
+        header = ',\t ,i/j, k/l;q=0.333,'
+        class Other(object):
+            def __str__(self):
+                return 'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1'
+        left_operand = Other()
+        result = left_operand + AcceptValidHeader(header_value=header)
+        assert isinstance(result, AcceptValidHeader)
+        assert result.header_value == str(left_operand) + ', ' + header
+
+    @pytest.mark.parametrize('header_value, expected_returned', [
+        ('', "<AcceptValidHeader ('')>"),
+        (
+            r',,text/html ; p1="\"\1\"" ; q=0.50; e1=1 ;e2  ,  text/plain ,',
+            r'''<AcceptValidHeader ('text/html;p1="\\"1\\"";q=0.5;e1=1;e2''' +
+            ", text/plain')>",
+        ),
+        (
+            ',\t, a/b ;  p1=1 ; p2=2 ;\t q=0.20 ;\te1="\\"\\1\\""\t; e2 ; ' +
+            'e3=3, c/d ,,',
+            r'''<AcceptValidHeader ('a/b;p1=1;p2=2;q=0.2;e1="\\"1\\"";e2''' +
+            ";e3=3, c/d')>"
+        ),
+    ])
+    def test___repr__(self, header_value, expected_returned):
+        instance = AcceptValidHeader(header_value=header_value)
+        assert repr(instance) == expected_returned
+
+    @pytest.mark.parametrize('header_value, expected_returned', [
+        ('', ''),
+        (
+            r',,text/html ; p1="\"\1\"" ; q=0.50; e1=1 ;e2  ,  text/plain ,',
+            r'text/html;p1="\"1\"";q=0.5;e1=1;e2, text/plain',
+        ),
+        (
+            ',\t, a/b ;  p1=1 ; p2=2 ;\t q=0.20 ;\te1="\\"\\1\\""\t; e2 ; ' +
+            'e3=3, c/d ,,',
+            'a/b;p1=1;p2=2;q=0.2;e1="\\"1\\"";e2;e3=3, c/d'
+        ),
+    ])
+    def test___str__(self, header_value, expected_returned):
+        instance = AcceptValidHeader(header_value=header_value)
+        assert str(instance) == expected_returned
+
+    def test__old_match(self):
+        accept = AcceptValidHeader('image/jpg')
+        assert accept._old_match('image/jpg', 'image/jpg')
+        assert accept._old_match('image/*', 'image/jpg')
+        assert accept._old_match('*/*', 'image/jpg')
+        assert not accept._old_match('text/html', 'image/jpg')
+
+        mismatches = [
+            ('B/b', 'A/a'),
+            ('B/b', 'B/a'),
+            ('B/b', 'A/b'),
+            ('A/a', 'B/b'),
+            ('B/a', 'B/b'),
+            ('A/b', 'B/b')
+        ]
+        for mask, offer in mismatches:
+            assert not accept._old_match(mask, offer)
+
+    def test__old_match_wildcard_matching(self):
+        """
+        Wildcard matching forces the match to take place against the type or
+        subtype of the mask and offer (depending on where the wildcard matches)
+        """
+        accept = AcceptValidHeader('type/subtype')
+        matches = [
+            ('*/*', '*/*'),
+            ('*/*', 'A/*'),
+            ('*/*', '*/a'),
+            ('*/*', 'A/a'),
+            ('A/*', '*/*'),
+            ('A/*', 'A/*'),
+            ('A/*', '*/a'),
+            ('A/*', 'A/a'),
+            ('*/a', '*/*'),
+            ('*/a', 'A/*'),
+            ('*/a', '*/a'),
+            ('*/a', 'A/a'),
+            ('A/a', '*/*'),
+            ('A/a', 'A/*'),
+            ('A/a', '*/a'),
+            ('A/a', 'A/a'),
+            # Offers might not contain a subtype
+            ('*/*', '*'),
+            ('A/*', '*'),
+            ('*/a', '*')]
+        for mask, offer in matches:
+            assert accept._old_match(mask, offer)
+            # Test malformed mask and offer variants where either is missing a
+            # type or subtype
+            assert accept._old_match('A', offer)
+            assert accept._old_match(mask, 'a')
+
+        mismatches = [
+            ('B/b', 'A/*'),
+            ('B/*', 'A/a'),
+            ('B/*', 'A/*'),
+            ('*/b', '*/a')]
+        for mask, offer in mismatches:
+            assert not accept._old_match(mask, offer)
+
+    @pytest.mark.parametrize('header_value, returned', [
+        ('tExt/HtMl', True),
+        ('APPlication/XHTML+xml', True),
+        ('appliCATION/xMl', True),
+        ('TeXt/XmL', True),
+        ('image/jpg', False),
+        ('TeXt/Plain', False),
+        ('image/jpg, text/html', True),
+    ])
+    def test_accept_html(self, header_value, returned):
+        instance = AcceptValidHeader(header_value=header_value)
+        assert instance.accept_html() is returned
+
+    @pytest.mark.parametrize('header_value, returned', [
+        ('tExt/HtMl', True),
+        ('APPlication/XHTML+xml', True),
+        ('appliCATION/xMl', True),
+        ('TeXt/XmL', True),
+        ('image/jpg', False),
+        ('TeXt/Plain', False),
+        ('image/jpg, text/html', True),
+    ])
+    def test_accepts_html(self, header_value, returned):
+        instance = AcceptValidHeader(header_value=header_value)
+        assert instance.accepts_html is returned
+
+    @pytest.mark.parametrize('offers', [
+        ['text/html;p=1;q=0.5'],
+        ['text/html;q=0.5'],
+        ['text/html;q=0.5;e=1'],
+        ['text/html', 'text/plain;p=1;q=0.5;e=1'],
+    ])
+    def test_acceptable_offers__invalid_offers(self, offers):
+        instance = AcceptValidHeader(header_value='text/html')
+        with pytest.raises(ValueError):
+            instance.acceptable_offers(offers=offers)
+
+    @pytest.mark.parametrize('header_value, offers, expected_returned', [
+        # RFC 7231, section 5.3.2
+        (
+            'audio/*; q=0.2, audio/basic',
+            ['audio/mpeg', 'audio/basic'],
+            [('audio/basic', 1.0), ('audio/mpeg', 0.2)],
+        ),
+        (
+            'text/plain; q=0.5, text/html, text/x-dvi; q=0.8, text/x-c',
+            ['text/x-dvi', 'text/x-c', 'text/html', 'text/plain'],
+            [
+                ('text/x-c', 1.0), ('text/html', 1.0), ('text/x-dvi', 0.8),
+                ('text/plain', 0.5),
+            ],
+        ),
+        (
+            'text/*;q=0.3, text/html;q=0.7, text/html;level=1, ' +
+            'text/html;level=2;q=0.4, */*;q=0.5',
+            [
+                'text/html;level=1',
+                'text/html',
+                'text/plain',
+                'image/jpeg',
+                'text/html;level=2',
+                'text/html;level=3',
+            ],
+            [
+                ('text/html;level=1', 1.0),
+                ('text/html', 0.7),
+                ('text/html;level=3', 0.7),
+                ('image/jpeg', 0.5),
+                ('text/html;level=2', 0.4),
+                ('text/plain', 0.3),
+            ],
+        ),
+        # Our tests
+        (
+            'teXT/*;Q=0.5, TeXt/hTmL;LeVeL=1',
+            ['tExT/HtMl;lEvEl=1', 'TExt/PlAiN'],
+            [('tExT/HtMl;lEvEl=1', 1.0), ('TExt/PlAiN', 0.5)],
+        ),
+        (
+            'text/html, application/json',
+            ['text/html', 'application/json'],
+            [('text/html', 1.0), ('application/json', 1.0)],
+        ),
+        (
+            'text/html  ;\t level=1',
+            ['text/html\t\t ; \tlevel=1'],
+            [('text/html\t\t ; \tlevel=1', 1.0)],
+        ),
+        ('', ['text/html'], []),
+        ('text/html, image/jpeg', ['audio/basic', 'text/plain'], []),
+        (
+            r'text/html;p1=1;p2=2;p3="\""', [r'text/html;p1=1;p2="2";p3="\""'],
+            [(r'text/html;p1=1;p2="2";p3="\""', 1.0)],
+        ),
+        ('text/html;p1=1', ['text/html;p1=2'], []),
+        ('text/html', ['text/html;p1=1'], [('text/html;p1=1', 1.0)]),
+        ('text/html;p1=1', ['text/html'], []),
+        ('text/html', ['text/html'], [('text/html', 1.0)]),
+        ('text/*', ['text/html;p=1'], [('text/html;p=1', 1.0)]),
+        ('*/*', ['text/html;p=1'], [('text/html;p=1', 1.0)]),
+        ('text/*', ['text/html'], [('text/html', 1.0)]),
+        ('*/*', ['text/html'], [('text/html', 1.0)]),
+        ('text/html;p1=1;q=0', ['text/html;p1=1'], []),
+        ('text/html;q=0', ['text/html;p1=1', 'text/html'], []),
+        ('text/*;q=0', ['text/html;p1=1', 'text/html', 'text/plain'], []),
+        (
+            '*/*;q=0',
+            ['text/html;p1=1', 'text/html', 'text/plain', 'image/jpeg'], [],
+        ),
+        (
+            '*/*;q=0, audio/mpeg',
+            [
+                'text/html;p1=1', 'audio/mpeg', 'text/html', 'text/plain',
+                'image/jpeg',
+            ],
+            [('audio/mpeg', 1.0)],
+        ),
+        (
+            'text/html;p1=1, text/html;q=0',
+            ['text/html;p1=1'],
+            [('text/html;p1=1', 1.0)],
+        ),
+        ('text/html, text/*;q=0', ['text/html'], [('text/html', 1.0)]),
+        ('text/*, */*;q=0', ['text/html'], [('text/html', 1.0)]),
+        ('text/html;q=0, text/html', ['text/html'], []),
+        (
+            'text/html',
+            ['text/html;level=1', 'text/html', 'text/html;level=2'],
+            [
+                ('text/html;level=1', 1.0),
+                ('text/html', 1.0),
+                ('text/html;level=2', 1.0),
+            ],
+        ),
+        (
+            'text/*;q=0.3, text/html;q=0, image/png, text/html;level=1, ' +
+            'text/html;level=2;q=0.4, image/jpeg;q=0.5',
+            [
+                'text/html;level=1',
+                'text/html',
+                'text/plain',
+                'image/jpeg',
+                'text/html;level=2',
+                'text/html;level=3',
+                'audio/basic',
+            ],
+            [
+                ('text/html;level=1', 1.0),
+                ('image/jpeg', 0.5),
+                ('text/html;level=2', 0.4),
+                ('text/plain', 0.3),
+            ],
+        ),
+    ])
+    def test_acceptable_offers__valid_offers(
+        self, header_value, offers, expected_returned,
+    ):
+        instance = AcceptValidHeader(header_value=header_value)
+        returned = instance.acceptable_offers(offers=offers)
+        assert returned == expected_returned
+
+    def test_best_match(self):
+        accept = AcceptValidHeader('text/html, foo/bar')
+        assert accept.best_match(['text/html', 'foo/bar']) == 'text/html'
+        assert accept.best_match(['foo/bar', 'text/html']) == 'foo/bar'
+        assert accept.best_match([('foo/bar', 0.5),
+                                  'text/html']) == 'text/html'
+        assert accept.best_match([('foo/bar', 0.5),
+                                  ('text/html', 0.4)]) == 'foo/bar'
+
+    def test_best_match_with_one_lower_q(self):
+        accept = AcceptValidHeader('text/html, foo/bar;q=0.5')
+        assert accept.best_match(['text/html', 'foo/bar']) == 'text/html'
+        accept = AcceptValidHeader('text/html;q=0.5, foo/bar')
+        assert accept.best_match(['text/html', 'foo/bar']) == 'foo/bar'
+
+    def test_best_match_with_complex_q(self):
+        accept = AcceptValidHeader(
+            'text/html, foo/bar;q=0.55, baz/gort;q=0.59'
+        )
+        assert accept.best_match(['text/html', 'foo/bar']) == 'text/html'
+        accept = AcceptValidHeader(
+            'text/html;q=0.5, foo/bar;q=0.586, baz/gort;q=0.596'
+        )
+        assert accept.best_match(['text/html', 'baz/gort']) == 'baz/gort'
+
+    def test_best_match_json(self):
+        accept = AcceptValidHeader('text/html, */*; q=0.2')
+        assert accept.best_match(['application/json']) == 'application/json'
+
+    def test_best_match_mixedcase(self):
+        accept = AcceptValidHeader(
+            'image/jpg; q=0.2, Image/pNg; Q=0.4, image/*; q=0.05'
+        )
+        assert accept.best_match(['Image/JpG']) == 'Image/JpG'
+        assert accept.best_match(['image/Tiff']) == 'image/Tiff'
+        assert accept.best_match(['image/Tiff', 'image/PnG', 'image/jpg']) == \
+            'image/PnG'
+
+    def test_best_match_zero_quality(self):
+        assert AcceptValidHeader('text/plain, */*;q=0').best_match(
+            ['text/html']
+        ) is None
+        assert 'audio/basic' not in AcceptValidHeader('*/*;q=0')
+
+    def test_quality(self):
+        accept = AcceptValidHeader('text/html')
+        assert accept.quality('text/html') == 1
+        accept = AcceptValidHeader('text/html;q=0.5')
+        assert accept.quality('text/html') == 0.5
+
+    def test_quality_not_found(self):
+        accept = AcceptValidHeader('text/html')
+        assert accept.quality('foo/bar') is None
 
 
 
