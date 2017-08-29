@@ -3651,13 +3651,13 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
     @property
     def header_value(self):
-        """(``str``) The header value."""
+        """(``str`` or ``None``) The header value."""
         return self._header_value
 
     @property
     def parsed(self):
         """
-        (``list``) Parsed form of the header.
+        (``list`` or ``None``) Parsed form of the header.
 
         A list of (language range, quality value) tuples.
         """
@@ -4830,7 +4830,7 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
     @property
     def header_value(self):
         """
-        (``str``) The header value.
+        (``str`` or ``None``) The header value.
 
         As there is no header in the request, this is ``None``.
         """
@@ -4839,7 +4839,7 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
     @property
     def parsed(self):
         """
-        (``list``) Parsed form of the header.
+        (``list`` or ``None``) Parsed form of the header.
 
         As there is no header in the request, this is ``None``.
         """
@@ -4938,13 +4938,13 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
 
     @property
     def header_value(self):
-        """(``str``) The header value."""
+        """(``str`` or ``None``) The header value."""
         return self._header_value
 
     @property
     def parsed(self):
         """
-        (``list``) Parsed form of the header.
+        (``list`` or ``None``) Parsed form of the header.
 
         As the header is invalid and cannot be parsed, this is ``None``.
         """
