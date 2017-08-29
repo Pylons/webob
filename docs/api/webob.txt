@@ -8,6 +8,9 @@ Accept-*
 ~~~~~~~~
 .. automodule:: webob.acceptparse
 
+
+.. autofunction:: create_accept_charset_header
+
 .. autoclass:: AcceptCharset
    :members: parse
 
