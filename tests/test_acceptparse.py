@@ -1461,6 +1461,121 @@ class TestCreateAcceptEncodingHeader(object):
         assert returned.header_value == header_value
 
 
+class TestAcceptEncodingProperty(object):
+    def test_fget_header_is_None(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_ENCODING': None})
+        property_ = accept_encoding_property()
+        returned = property_.fget(request=request)
+        assert isinstance(returned, AcceptEncodingNoHeader)
+
+    def test_fget_header_is_valid(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_ENCODING': 'gzip'})
+        property_ = accept_encoding_property()
+        returned = property_.fget(request=request)
+        assert isinstance(returned, AcceptEncodingValidHeader)
+
+    def test_fget_header_is_invalid(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_ENCODING': ', '})
+        property_ = accept_encoding_property()
+        returned = property_.fget(request=request)
+        assert isinstance(returned, AcceptEncodingInvalidHeader)
+
+    def test_fset_value_is_None(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_ENCODING': 'gzip'})
+        property_ = accept_encoding_property()
+        property_.fset(request=request, value=None)
+        assert isinstance(request.accept_encoding, AcceptEncodingNoHeader)
+        assert 'HTTP_ACCEPT_ENCODING' not in request.environ
+
+    def test_fset_value_is_invalid(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_ENCODING': 'gzip'})
+        property_ = accept_encoding_property()
+        property_.fset(request=request, value=', ')
+        assert isinstance(request.accept_encoding, AcceptEncodingInvalidHeader)
+        assert request.environ['HTTP_ACCEPT_ENCODING'] == ', '
+
+    def test_fset_value_is_valid(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_ENCODING': 'gzip'})
+        property_ = accept_encoding_property()
+        property_.fset(request=request, value='compress')
+        assert isinstance(request.accept_encoding, AcceptEncodingValidHeader)
+        assert request.environ['HTTP_ACCEPT_ENCODING'] == 'compress'
+
+    @pytest.mark.parametrize('value, value_as_header', [
+        (
+            'gzip;q=0.5, compress;q=0, deflate',
+            'gzip;q=0.5, compress;q=0, deflate',
+        ),
+        (
+            [('gzip', 0.5), ('compress', 0.0), 'deflate'],
+            'gzip;q=0.5, compress;q=0, deflate',
+        ),
+        (
+            (('gzip', 0.5), ('compress', 0.0), 'deflate'),
+            'gzip;q=0.5, compress;q=0, deflate',
+        ),
+        (
+            {'gzip': 0.5, 'compress': 0.0, 'deflate': 1.0},
+            'deflate, gzip;q=0.5, compress;q=0',
+        ),
+    ])
+    def test_fset_value_types(self, value, value_as_header):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_ENCODING': ''})
+        property_ = accept_encoding_property()
+        property_.fset(request=request, value=value)
+        assert isinstance(request.accept_encoding, AcceptEncodingValidHeader)
+        assert request.environ['HTTP_ACCEPT_ENCODING'] == value_as_header
+
+    def test_fset_other_type_with_valid___str__(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_ENCODING': ''})
+        property_ = accept_encoding_property()
+        class Other(object):
+            def __str__(self):
+                return 'gzip;q=0.5, compress;q=0, deflate'
+        value = Other()
+        property_.fset(request=request, value=value)
+        assert isinstance(request.accept_encoding, AcceptEncodingValidHeader)
+        assert request.environ['HTTP_ACCEPT_ENCODING'] == str(value)
+
+    def test_fset_AcceptEncodingNoHeader(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_ENCODING': ''})
+        property_ = accept_encoding_property()
+        header = AcceptEncodingNoHeader()
+        property_.fset(request=request, value=header)
+        assert isinstance(request.accept_encoding, AcceptEncodingNoHeader)
+        assert 'HTTP_ACCEPT_ENCODING' not in request.environ
+
+    def test_fset_AcceptEncodingValidHeader(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_ENCODING': ''})
+        property_ = accept_encoding_property()
+        header = AcceptEncodingValidHeader('gzip')
+        property_.fset(request=request, value=header)
+        assert isinstance(request.accept_encoding, AcceptEncodingValidHeader)
+        assert request.environ['HTTP_ACCEPT_ENCODING'] == header.header_value
+
+    def test_fset_AcceptEncodingInvalidHeader(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_ENCODING': 'gzip'})
+        property_ = accept_encoding_property()
+        header = AcceptEncodingInvalidHeader(', ')
+        property_.fset(request=request, value=header)
+        assert isinstance(request.accept_encoding, AcceptEncodingInvalidHeader)
+        assert request.environ['HTTP_ACCEPT_ENCODING'] == header.header_value
+
+    def test_fdel_header_key_in_environ(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_ENCODING': 'gzip'})
+        property_ = accept_encoding_property()
+        property_.fdel(request=request)
+        assert isinstance(request.accept_encoding, AcceptEncodingNoHeader)
+        assert 'HTTP_ACCEPT_ENCODING' not in request.environ
+
+    def test_fdel_header_key_not_in_environ(self):
+        request = Request.blank('/')
+        property_ = accept_encoding_property()
+        property_.fdel(request=request)
+        assert isinstance(request.accept_encoding, AcceptEncodingNoHeader)
+        assert 'HTTP_ACCEPT_ENCODING' not in request.environ
+
+
 class TestAcceptLanguage(object):
     @pytest.mark.parametrize('value', [
         '',
