@@ -4363,6 +4363,51 @@ class TestAcceptLanguageValidHeader(object):
         assert result.header_value == valid_header_instance.header_value
         assert result is not valid_header_instance
 
+    def test___bool__(self):
+        instance = AcceptLanguageValidHeader(header_value='valid-header')
+        returned = bool(instance)
+        assert returned is True
+
+    @pytest.mark.parametrize('header_value, offer', [
+        ('*', 'da'),
+        ('da', 'DA'),
+        ('en', 'en-gb'),
+        ('en-gb', 'en-gb'),
+        ('en-gb', 'en'),
+        ('en-gb', 'en_GB'),
+    ])
+    def test___contains___in(self, header_value, offer):
+        instance = AcceptLanguageValidHeader(header_value=header_value)
+        assert offer in instance
+
+    @pytest.mark.parametrize('header_value, offer', [
+        ('en-gb', 'en-us'),
+        ('en-gb', 'fr-fr'),
+        ('en-gb', 'fr'),
+        ('en', 'fr-fr'),
+    ])
+    def test___contains___not_in(self, header_value, offer):
+        instance = AcceptLanguageValidHeader(header_value=header_value)
+        assert offer not in instance
+
+    @pytest.mark.parametrize('header_value, expected_list', [
+        ('fr;q=0, jp;q=0', []),
+        ('en-gb, da', ['en-gb', 'da']),
+        ('en-gb;q=0.5, da;q=0.5', ['en-gb', 'da']),
+        (
+            'de;q=0.8, de-DE-1996;q=0.5, de-Deva;q=0, de-Latn-DE',
+            ['de-Latn-DE', 'de', 'de-DE-1996']
+        ),
+        # __iter__ is currently a simple filter for the ranges in the header
+        # with non-0 qvalues, and does not attempt to account for the special
+        # meanings of q=0 and *:
+        ('en-gb;q=0, *', ['*']),
+        ('de, de;q=0', ['de']),
+    ])
+    def test___iter__(self, header_value, expected_list):
+        instance = AcceptLanguageValidHeader(header_value=header_value)
+        assert list(instance) == expected_list
+
     def test___radd___None(self):
         right_operand = AcceptLanguageValidHeader(header_value='en')
         result = None + right_operand
@@ -4429,51 +4474,6 @@ class TestAcceptLanguageValidHeader(object):
         assert isinstance(result, AcceptLanguageValidHeader)
         assert result.header_value == str(left_operand) + ', ' + \
             right_operand.header_value
-
-    def test___bool__(self):
-        instance = AcceptLanguageValidHeader(header_value='valid-header')
-        returned = bool(instance)
-        assert returned is True
-
-    @pytest.mark.parametrize('header_value, offer', [
-        ('*', 'da'),
-        ('da', 'DA'),
-        ('en', 'en-gb'),
-        ('en-gb', 'en-gb'),
-        ('en-gb', 'en'),
-        ('en-gb', 'en_GB'),
-    ])
-    def test___contains___in(self, header_value, offer):
-        instance = AcceptLanguageValidHeader(header_value=header_value)
-        assert offer in instance
-
-    @pytest.mark.parametrize('header_value, offer', [
-        ('en-gb', 'en-us'),
-        ('en-gb', 'fr-fr'),
-        ('en-gb', 'fr'),
-        ('en', 'fr-fr'),
-    ])
-    def test___contains___not_in(self, header_value, offer):
-        instance = AcceptLanguageValidHeader(header_value=header_value)
-        assert offer not in instance
-
-    @pytest.mark.parametrize('header_value, expected_list', [
-        ('fr;q=0, jp;q=0', []),
-        ('en-gb, da', ['en-gb', 'da']),
-        ('en-gb;q=0.5, da;q=0.5', ['en-gb', 'da']),
-        (
-            'de;q=0.8, de-DE-1996;q=0.5, de-Deva;q=0, de-Latn-DE',
-            ['de-Latn-DE', 'de', 'de-DE-1996']
-        ),
-        # __iter__ is currently a simple filter for the ranges in the header
-        # with non-0 qvalues, and does not attempt to account for the special
-        # meanings of q=0 and *:
-        ('en-gb;q=0, *', ['*']),
-        ('de, de;q=0', ['de']),
-    ])
-    def test___iter__(self, header_value, expected_list):
-        instance = AcceptLanguageValidHeader(header_value=header_value)
-        assert list(instance) == expected_list
 
     def test___repr__(self):
         instance = AcceptLanguageValidHeader(
