@@ -17,6 +17,7 @@ from webob.acceptparse import (
     AcceptInvalidHeader,
     AcceptNoHeader,
     AcceptValidHeader,
+    accept_charset_property,
     accept_language_property,
     accept_property,
     create_accept_charset_header,
@@ -3316,6 +3317,121 @@ class TestCreateAcceptCharsetHeader(object):
         returned = create_accept_charset_header(header_value=header_value)
         assert isinstance(returned, AcceptCharsetInvalidHeader)
         assert returned.header_value == header_value
+
+
+class TestAcceptCharsetProperty(object):
+    def test_fget_header_is_None(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_CHARSET': None})
+        property_ = accept_charset_property()
+        returned = property_.fget(request=request)
+        assert isinstance(returned, AcceptCharsetNoHeader)
+
+    def test_fget_header_is_valid(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_CHARSET': 'UTF-8'})
+        property_ = accept_charset_property()
+        returned = property_.fget(request=request)
+        assert isinstance(returned, AcceptCharsetValidHeader)
+
+    def test_fget_header_is_invalid(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_CHARSET': ''})
+        property_ = accept_charset_property()
+        returned = property_.fget(request=request)
+        assert isinstance(returned, AcceptCharsetInvalidHeader)
+
+    def test_fset_value_is_None(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_CHARSET': 'UTF-8'})
+        property_ = accept_charset_property()
+        property_.fset(request=request, value=None)
+        assert isinstance(request.accept_charset, AcceptCharsetNoHeader)
+        assert 'HTTP_ACCEPT_CHARSET' not in request.environ
+
+    def test_fset_value_is_invalid(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_CHARSET': 'UTF-8'})
+        property_ = accept_charset_property()
+        property_.fset(request=request, value='')
+        assert isinstance(request.accept_charset, AcceptCharsetInvalidHeader)
+        assert request.environ['HTTP_ACCEPT_CHARSET'] == ''
+
+    def test_fset_value_is_valid(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_CHARSET': 'UTF-8'})
+        property_ = accept_charset_property()
+        property_.fset(request=request, value='UTF-7')
+        assert isinstance(request.accept_charset, AcceptCharsetValidHeader)
+        assert request.environ['HTTP_ACCEPT_CHARSET'] == 'UTF-7'
+
+    @pytest.mark.parametrize('value, value_as_header', [
+        (
+            'utf-8;q=0.5, iso-8859-5;q=0, utf-7',
+            'utf-8;q=0.5, iso-8859-5;q=0, utf-7',
+        ),
+        (
+            [('utf-8', 0.5), ('iso-8859-5', 0.0), 'utf-7'],
+            'utf-8;q=0.5, iso-8859-5;q=0, utf-7',
+        ),
+        (
+            (('utf-8', 0.5), ('iso-8859-5', 0.0), 'utf-7'),
+            'utf-8;q=0.5, iso-8859-5;q=0, utf-7',
+        ),
+        (
+            {'utf-8': 0.5, 'iso-8859-5': 0.0, 'utf-7': 1.0},
+            'utf-7, utf-8;q=0.5, iso-8859-5;q=0',
+        ),
+    ])
+    def test_fset_value_types(self, value, value_as_header):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_CHARSET': ''})
+        property_ = accept_charset_property()
+        property_.fset(request=request, value=value)
+        assert isinstance(request.accept_charset, AcceptCharsetValidHeader)
+        assert request.environ['HTTP_ACCEPT_CHARSET'] == value_as_header
+
+    def test_fset_other_type_with_valid___str__(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_CHARSET': ''})
+        property_ = accept_charset_property()
+        class Other(object):
+            def __str__(self):
+                return 'utf-8;q=0.5, iso-8859-5;q=0, utf-7'
+        value = Other()
+        property_.fset(request=request, value=value)
+        assert isinstance(request.accept_charset, AcceptCharsetValidHeader)
+        assert request.environ['HTTP_ACCEPT_CHARSET'] == str(value)
+
+    def test_fset_AcceptCharsetNoHeader(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_CHARSET': 'utf-8'})
+        property_ = accept_charset_property()
+        header = AcceptCharsetNoHeader()
+        property_.fset(request=request, value=header)
+        assert isinstance(request.accept_charset, AcceptCharsetNoHeader)
+        assert 'HTTP_ACCEPT_CHARSET' not in request.environ
+
+    def test_fset_AcceptCharsetValidHeader(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_CHARSET': 'utf-8'})
+        property_ = accept_charset_property()
+        header = AcceptCharsetValidHeader('utf-7')
+        property_.fset(request=request, value=header)
+        assert isinstance(request.accept_charset, AcceptCharsetValidHeader)
+        assert request.environ['HTTP_ACCEPT_CHARSET'] == header.header_value
+
+    def test_fset_AcceptCharsetInvalidHeader(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_CHARSET': 'utf-8'})
+        property_ = accept_charset_property()
+        header = AcceptCharsetInvalidHeader('')
+        property_.fset(request=request, value=header)
+        assert isinstance(request.accept_charset, AcceptCharsetInvalidHeader)
+        assert request.environ['HTTP_ACCEPT_CHARSET'] == header.header_value
+
+    def test_fdel_header_key_in_environ(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT_CHARSET': 'utf-8'})
+        property_ = accept_charset_property()
+        property_.fdel(request=request)
+        assert isinstance(request.accept_charset, AcceptCharsetNoHeader)
+        assert 'HTTP_ACCEPT_CHARSET' not in request.environ
+
+    def test_fdel_header_key_not_in_environ(self):
+        request = Request.blank('/')
+        property_ = accept_charset_property()
+        property_.fdel(request=request)
+        assert isinstance(request.accept_charset, AcceptCharsetNoHeader)
+        assert 'HTTP_ACCEPT_CHARSET' not in request.environ
 
 
 
