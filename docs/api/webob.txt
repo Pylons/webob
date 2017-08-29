@@ -17,6 +17,11 @@ Accept-*
 	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
 	     accept_html, accepts_html, acceptable_offers, best_match, quality
 
+.. autoclass:: AcceptNoHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+             accept_html, accepts_html, acceptable_offers, best_match, quality
+
 
 .. autofunction:: create_accept_charset_header
 

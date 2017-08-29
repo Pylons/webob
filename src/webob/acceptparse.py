@@ -1269,6 +1269,109 @@ class _AcceptInvalidOrNoHeader(Accept):
         return 1.0
 
 
+class AcceptNoHeader(_AcceptInvalidOrNoHeader):
+    """
+    Represent when there is no ``Accept`` header in the request.
+
+    This object should not be modified. To add to the header, we can use the
+    addition operators (``+`` and ``+=``), which return a new object (see the
+    docstring for :meth:`AcceptNoHeader.__add__`).
+    """
+
+    @property
+    def header_value(self):
+        """
+        (``str`` or ``None``) The header value.
+
+        As there is no header in the request, this is ``None``.
+        """
+        return self._header_value
+
+    @property
+    def parsed(self):
+        """
+        (``list`` or ``None``) Parsed form of the header.
+
+        As there is no header in the request, this is ``None``.
+        """
+        return self._parsed
+
+    def __init__(self):
+        """
+        Create an :class:`AcceptNoHeader` instance.
+        """
+        self._header_value = None
+        self._parsed = None
+        self._parsed_nonzero = None
+
+    def __add__(self, other):
+        """
+        Add to header, creating a new header object.
+
+        `other` can be:
+
+        * ``None``
+        * a ``str`` header value
+        * a ``dict``, with media ranges ``str``\ s (including any media type
+          parameters) as keys, and either qvalues ``float``\ s or (*qvalues*,
+          *extension_params*) tuples as values, where *extension_params* is a
+          ``str`` of the extension parameters segment of the header element,
+          starting with the first '``;``'
+        * a ``tuple`` or ``list``, where each item is either a header element
+          ``str``, or a (*media_range*, *qvalue*, *extension_params*) ``tuple``
+          or ``list`` where *media_range* is a ``str`` of the media range
+          including any media type parameters, and *extension_params* is a
+          ``str`` of the extension parameters segment of the header element,
+          starting with the first '``;``'
+        * an :class:`AcceptValidHeader`, :class:`AcceptNoHeader`, or
+          :class:`AcceptInvalidHeader` instance
+        * object of any other type that returns a value for ``__str__``
+
+        If `other` is a valid header value or an :class:`AcceptValidHeader`
+        instance, a new :class:`AcceptValidHeader` instance with the valid
+        header value is returned.
+
+        If `other` is ``None``, an :class:`AcceptNoHeader` instance, an invalid
+        header value, or an :class:`AcceptInvalidHeader` instance, a new
+        :class:`AcceptNoHeader` instance is returned.
+        """
+        if isinstance(other, AcceptValidHeader):
+            return AcceptValidHeader(header_value=other.header_value)
+
+        if isinstance(other, (AcceptNoHeader, AcceptInvalidHeader)):
+            return self.__class__()
+
+        return self._add_instance_and_non_accept_type(
+            instance=self, other=other,
+        )
+
+    def __radd__(self, other):
+        """
+        Add to header, creating a new header object.
+
+        See the docstring for :meth:`AcceptNoHeader.__add__`.
+        """
+        return self.__add__(other=other)
+
+    def __repr__(self):
+        return '<{}>'.format(self.__class__.__name__)
+
+    def __str__(self):
+        """Return the ``str`` ``'<no header in request>'``."""
+        return '<no header in request>'
+
+    def _add_instance_and_non_accept_type(self, instance, other):
+        if other is None:
+            return self.__class__()
+
+        other_header_value = self._python_value_to_header_str(value=other)
+
+        try:
+            return AcceptValidHeader(header_value=other_header_value)
+        except ValueError:  # invalid header value
+            return self.__class__()
+
+
 class NilAccept(object):
     """
     Represents a generic ``Accept-*`` style header when it is not present in
