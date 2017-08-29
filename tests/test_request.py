@@ -12,18 +12,18 @@ from io import (
 import pytest
 
 from webob.acceptparse import (
-    AcceptInvalidHeader,
-    AcceptNoHeader,
-    AcceptValidHeader,
     AcceptCharsetInvalidHeader,
     AcceptCharsetNoHeader,
     AcceptCharsetValidHeader,
     AcceptEncodingInvalidHeader,
     AcceptEncodingNoHeader,
     AcceptEncodingValidHeader,
+    AcceptInvalidHeader,
     AcceptLanguageInvalidHeader,
     AcceptLanguageNoHeader,
     AcceptLanguageValidHeader,
+    AcceptNoHeader,
+    AcceptValidHeader,
     )
 from webob.compat import (
     bytes_,
