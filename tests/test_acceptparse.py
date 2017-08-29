@@ -907,6 +907,272 @@ class TestAcceptEncodingValidHeader(object):
         assert accept.quality('compress') is None
 
 
+class TestAcceptEncodingNoHeader(object):
+    def test_parse__inherited(self):
+        returned = AcceptEncodingNoHeader.parse(
+            value=',,\t gzip;q=1.0, identity; q=0.5, *;q=0 \t ,',
+        )
+        list_of_returned = list(returned)
+        assert list_of_returned == \
+            [('gzip', 1.0), ('identity', 0.5), ('*', 0.0)]
+
+    def test___init__(self):
+        instance = AcceptEncodingNoHeader()
+        assert instance.header_value is None
+        assert instance.parsed is None
+        assert instance._parsed_nonzero is None
+        assert isinstance(instance, AcceptEncoding)
+
+    def test___add___None(self):
+        left_operand = AcceptEncodingNoHeader()
+        result = left_operand + None
+        assert isinstance(result, AcceptEncodingNoHeader)
+
+    @pytest.mark.parametrize('right_operand', [
+        ', ',
+        [', '],
+        (', ',),
+        {', ': 1.0},
+    ])
+    def test___add___invalid_value(self, right_operand):
+        left_operand = AcceptEncodingNoHeader()
+        result = left_operand + right_operand
+        assert isinstance(result, AcceptEncodingNoHeader)
+
+    def test___add___other_type_with_invalid___str__(self):
+        left_operand = AcceptEncodingNoHeader()
+        class Other(object):
+            def __str__(self):
+                return ', '
+        right_operand = Other()
+        result = left_operand + right_operand
+        assert isinstance(result, AcceptEncodingNoHeader)
+
+    @pytest.mark.parametrize('value', [
+        '',
+        [],
+        (),
+        {},
+    ])
+    def test___add___valid_empty_value(self, value):
+        left_operand = AcceptEncodingNoHeader()
+        result = left_operand + value
+        assert isinstance(result, AcceptEncodingValidHeader)
+        assert result.header_value == ''
+
+    def test___add___other_type_with_valid___str___empty(self):
+        left_operand = AcceptEncodingNoHeader()
+        class Other(object):
+            def __str__(self):
+                return ''
+        result = left_operand + Other()
+        assert isinstance(result, AcceptEncodingValidHeader)
+        assert result.header_value == ''
+
+    @pytest.mark.parametrize('value, value_as_header', [
+        ('compress;q=0.5, deflate;q=0, *', 'compress;q=0.5, deflate;q=0, *'),
+        (
+            ['compress;q=0.5', 'deflate;q=0', '*'],
+            'compress;q=0.5, deflate;q=0, *',
+        ),
+        (
+            [('compress', 0.5), ('deflate', 0.0), ('*', 1.0)],
+            'compress;q=0.5, deflate;q=0, *',
+        ),
+        (
+            ('compress;q=0.5', 'deflate;q=0', '*'),
+            'compress;q=0.5, deflate;q=0, *',
+        ),
+        (
+            (('compress', 0.5), ('deflate', 0.0), ('*', 1.0)),
+            'compress;q=0.5, deflate;q=0, *',
+        ),
+        (
+            {'compress': 0.5, 'deflate': 0.0, '*': 1.0},
+            '*, compress;q=0.5, deflate;q=0',
+        ),
+    ])
+    def test___add___valid_value(self, value, value_as_header):
+        result = AcceptEncodingNoHeader() + value
+        assert isinstance(result, AcceptEncodingValidHeader)
+        assert result.header_value == value_as_header
+
+    def test___add___other_type_with_valid___str___not_empty(self):
+        class Other(object):
+            def __str__(self):
+                return 'compress;q=0.5, deflate;q=0, *'
+        right_operand = Other()
+        result = AcceptEncodingNoHeader() + right_operand
+        assert isinstance(result, AcceptEncodingValidHeader)
+        assert result.header_value == str(right_operand)
+
+    def test___add___AcceptEncodingValidHeader_header_value_empty(self):
+        right_operand = AcceptEncodingValidHeader(header_value='')
+        result = AcceptEncodingNoHeader() + right_operand
+        assert isinstance(result, AcceptEncodingValidHeader)
+        assert result.header_value == right_operand.header_value
+        assert result is not right_operand
+
+    def test___add___AcceptEncodingValidHeader_header_value_not_empty(self):
+        right_operand = AcceptEncodingValidHeader(
+            header_value='compress;q=0.5, deflate;q=0, *',
+        )
+        result = AcceptEncodingNoHeader() + right_operand
+        assert isinstance(result, AcceptEncodingValidHeader)
+        assert result.header_value == right_operand.header_value
+
+    def test___add___AcceptEncodingNoHeader(self):
+        left_operand = AcceptEncodingNoHeader()
+        right_operand = AcceptEncodingNoHeader()
+        result = left_operand + right_operand
+        assert isinstance(result, AcceptEncodingNoHeader)
+        assert result is not left_operand
+        assert result is not right_operand
+
+    @pytest.mark.parametrize('header_value', [
+        ', ',
+        'compress;q=1.001',
+    ])
+    def test___add___AcceptEncodingInvalidHeader(self, header_value):
+        left_operand = AcceptEncodingNoHeader()
+        result = left_operand + AcceptEncodingInvalidHeader(
+            header_value=header_value,
+        )
+        assert isinstance(result, AcceptEncodingNoHeader)
+        assert result is not left_operand
+
+    def test___bool__(self):
+        instance = AcceptEncodingNoHeader()
+        returned = bool(instance)
+        assert returned is False
+
+    def test___contains__(self):
+        instance = AcceptEncodingNoHeader()
+        returned = ('content-coding' in instance)
+        assert returned is True
+
+    def test___iter__(self):
+        instance = AcceptEncodingNoHeader()
+        returned = list(instance)
+        assert returned == []
+
+    def test___radd___None(self):
+        right_operand = AcceptEncodingNoHeader()
+        result = None + right_operand
+        assert isinstance(result, AcceptEncodingNoHeader)
+        assert result is not right_operand
+
+    @pytest.mark.parametrize('left_operand', [
+        ', ',
+        [', '],
+        (', ',),
+        {', ': 1.0},
+    ])
+    def test___radd___invalid_value(self, left_operand):
+        right_operand = AcceptEncodingNoHeader()
+        result = left_operand + right_operand
+        assert isinstance(result, AcceptEncodingNoHeader)
+        assert result is not right_operand
+
+    def test___radd___other_type_with_invalid___str__(self):
+        right_operand = AcceptEncodingNoHeader()
+        class Other(object):
+            def __str__(self):
+                return ', '
+        result = Other() + right_operand
+        assert isinstance(result, AcceptEncodingNoHeader)
+        assert result is not right_operand
+
+    @pytest.mark.parametrize('value', [
+        '',
+        [],
+        (),
+        {},
+    ])
+    def test___radd___valid_empty_value(self, value):
+        result = value + AcceptEncodingNoHeader()
+        assert isinstance(result, AcceptEncodingValidHeader)
+        assert result.header_value == ''
+
+    def test___radd___other_type_with_valid___str___empty(self):
+        class Other(object):
+            def __str__(self):
+                return ''
+        result = Other() + AcceptEncodingNoHeader()
+        assert isinstance(result, AcceptEncodingValidHeader)
+        assert result.header_value == ''
+
+    @pytest.mark.parametrize('value, value_as_header', [
+        ('compress;q=0.5, deflate;q=0, *', 'compress;q=0.5, deflate;q=0, *'),
+        (
+            ['compress;q=0.5', 'deflate;q=0', '*'],
+            'compress;q=0.5, deflate;q=0, *',
+        ),
+        (
+            [('compress', 0.5), ('deflate', 0.0), ('*', 1.0)],
+            'compress;q=0.5, deflate;q=0, *',
+        ),
+        (
+            ('compress;q=0.5', 'deflate;q=0', '*'),
+            'compress;q=0.5, deflate;q=0, *',
+        ),
+        (
+            (('compress', 0.5), ('deflate', 0.0), ('*', 1.0)),
+            'compress;q=0.5, deflate;q=0, *',
+        ),
+        (
+            {'compress': 0.5, 'deflate': 0.0, '*': 1.0},
+            '*, compress;q=0.5, deflate;q=0',
+        ),
+    ])
+    def test___radd___valid_non_empty_value(self, value, value_as_header):
+        result = value + AcceptEncodingNoHeader()
+        assert isinstance(result, AcceptEncodingValidHeader)
+        assert result.header_value == value_as_header
+
+    def test___radd___other_type_with_valid___str___not_empty(self):
+        class Other(object):
+            def __str__(self):
+                return 'compress;q=0.5, deflate;q=0, *'
+        left_operand = Other()
+        result = left_operand + AcceptEncodingNoHeader()
+        assert isinstance(result, AcceptEncodingValidHeader)
+        assert result.header_value == str(left_operand)
+
+    def test___repr__(self):
+        instance = AcceptEncodingNoHeader()
+        assert repr(instance) == '<AcceptEncodingNoHeader>'
+
+    def test___str__(self):
+        instance = AcceptEncodingNoHeader()
+        assert str(instance) == '<no header in request>'
+
+    def test_acceptable_offers(self):
+        instance = AcceptEncodingNoHeader()
+        returned = instance.acceptable_offers(offers=['a', 'b', 'c'])
+        assert returned == [('a', 1.0), ('b', 1.0), ('c', 1.0)]
+
+    def test_best_match(self):
+        accept = AcceptEncodingNoHeader()
+        assert accept.best_match(['gzip', 'compress']) == 'gzip'
+        assert accept.best_match([('gzip', 1), ('compress', 0.5)]) == 'gzip'
+        assert accept.best_match([('gzip', 0.5), ('compress', 1)]) == \
+            'compress'
+        assert accept.best_match([('gzip', 0.5), 'compress']) == 'compress'
+        assert accept.best_match(
+            [('gzip', 0.5), 'compress'], default_match=True
+        ) == 'compress'
+        assert accept.best_match(
+            [('gzip', 0.5), 'compress'], default_match=False
+        ) == 'compress'
+        assert accept.best_match([], default_match='fallback') == 'fallback'
+
+    def test_quality(self):
+        instance = AcceptEncodingNoHeader()
+        returned = instance.quality(offer='content-coding')
+        assert returned == 1.0
+
+
 class TestAcceptLanguage(object):
     @pytest.mark.parametrize('value', [
         '',
