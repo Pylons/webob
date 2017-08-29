@@ -468,7 +468,9 @@ class AcceptEncodingValidHeader(AcceptEncoding):
                     header_value=self.header_value + ', ' + other.header_value,
                 )
 
-        if isinstance(other, (AcceptEncodingNoHeader, AcceptInvalidHeader)):
+        if isinstance(
+            other, (AcceptEncodingNoHeader, AcceptEncodingInvalidHeader)
+        ):
             return self.__class__(header_value=self.header_value)
 
         return self._add_instance_and_non_accept_encoding_type(
@@ -1097,7 +1099,9 @@ class AcceptEncodingNoHeader(_AcceptEncodingInvalidOrNoHeader):
         if isinstance(other, AcceptEncodingValidHeader):
             return AcceptEncodingValidHeader(header_value=other.header_value)
 
-        if isinstance(other, (AcceptEncodingNoHeader, AcceptInvalidHeader)):
+        if isinstance(
+            other, (AcceptEncodingNoHeader, AcceptEncodingInvalidHeader)
+        ):
             return self.__class__()
 
         return self._add_instance_and_non_accept_encoding_type(
@@ -1200,7 +1204,9 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
         if isinstance(other, AcceptEncodingValidHeader):
             return AcceptEncodingValidHeader(header_value=other.header_value)
 
-        if isinstance(other, (AcceptEncodingNoHeader, AcceptInvalidHeader)):
+        if isinstance(
+            other, (AcceptEncodingNoHeader, AcceptEncodingInvalidHeader)
+        ):
             return AcceptEncodingNoHeader()
 
         return self._add_instance_and_non_accept_encoding_type(
