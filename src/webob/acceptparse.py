@@ -63,6 +63,18 @@ def _item_qvalue_pair_to_header_element(pair):
     return element
 
 
+def _list_0_or_more__compiled_re(element_re):
+    # RFC 7230 Section 7 "ABNF List Extension: #rule":
+    # #element => [ ( "," / element ) *( OWS "," [ OWS element ] ) ]
+    return re.compile(
+        '^(?:$)|' +
+        '(?:' +
+        '(?:,|(?:' + element_re + '))' +
+        '(?:' + OWS_re + ',(?:' + OWS_re + element_re + ')?)*' +
+        ')$',
+    )
+
+
 def _list_1_or_more__compiled_re(element_re):
     # RFC 7230 Section 7 "ABNF List Extension: #rule":
     # 1#element => *( "," OWS ) element *( OWS "," [ OWS element ] )
