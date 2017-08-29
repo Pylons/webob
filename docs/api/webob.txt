@@ -9,6 +9,8 @@ Accept-*
 .. automodule:: webob.acceptparse
 
 
+.. autofunction:: create_accept_header
+
 .. autoclass:: Accept
    :members: parse
 

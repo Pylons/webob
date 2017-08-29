@@ -27,6 +27,7 @@ from webob.acceptparse import (
     accept_property,
     create_accept_charset_header,
     create_accept_encoding_header,
+    create_accept_header,
     create_accept_language_header,
     MIMEAccept,
     NilAccept,
@@ -2228,6 +2229,26 @@ class TestAcceptInvalidHeader(object):
         instance = AcceptInvalidHeader(header_value=', ')
         returned = instance.quality(offer='type/subtype')
         assert returned == 1.0
+
+
+class TestCreateAcceptHeader(object):
+    def test_header_value_is_None(self):
+        header_value = None
+        returned = create_accept_header(header_value=header_value)
+        assert isinstance(returned, AcceptNoHeader)
+        assert returned.header_value == header_value
+
+    def test_header_value_is_valid(self):
+        header_value = 'text/html, text/plain;q=0.9'
+        returned = create_accept_header(header_value=header_value)
+        assert isinstance(returned, AcceptValidHeader)
+        assert returned.header_value == header_value
+
+    @pytest.mark.parametrize('header_value', [', ', 'noslash'])
+    def test_header_value_is_invalid(self, header_value):
+        returned = create_accept_header(header_value=header_value)
+        assert isinstance(returned, AcceptInvalidHeader)
+        assert returned.header_value == header_value
 
 
 class TestAcceptCharset(object):
