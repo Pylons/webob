@@ -92,18 +92,6 @@ Accept-*
 	     __radd__, __str__, parse, basic_filtering, best_match, lookup,
              quality
 
-.. autoclass:: MIMEAccept
-   :members:
-   :inherited-members:
-
-.. autoclass:: MIMENilAccept
-   :members:
-   :inherited-members:
-
-.. autoclass:: NilAccept
-   :members:
-   :inherited-members:
-
 
 Cache-Control
 ~~~~~~~~~~~~~
