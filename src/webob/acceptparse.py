@@ -1507,6 +1507,68 @@ def create_accept_header(header_value):
         return AcceptInvalidHeader(header_value=header_value)
 
 
+def accept_property():
+    doc = """
+        Property representing the ``Accept`` header.
+
+        (:rfc:`RFC 7231, section 5.3.2 <7231#section-5.3.2>`)
+
+        The header value in the request environ is parsed and a new object
+        representing the header is created every time we *get* the value of the
+        property. (*set* and *del* change the header value in the request
+        environ, and do not involve parsing.)
+    """
+
+    ENVIRON_KEY = 'HTTP_ACCEPT'
+
+    def fget(request):
+        """Get an object representing the header in the request."""
+        return create_accept_header(
+            header_value=request.environ.get(ENVIRON_KEY)
+        )
+
+    def fset(request, value):
+        """
+        Set the corresponding key in the request environ.
+
+        `value` can be:
+
+        * ``None``
+        * a ``str`` header value
+        * a ``dict``, with media ranges ``str``\ s (including any media type
+          parameters) as keys, and either qvalues ``float``\ s or (*qvalues*,
+          *extension_params*) tuples as values, where *extension_params* is a
+          ``str`` of the extension parameters segment of the header element,
+          starting with the first '``;``'
+        * a ``tuple`` or ``list``, where each item is either a header element
+          ``str``, or a (*media_range*, *qvalue*, *extension_params*) ``tuple``
+          or ``list`` where *media_range* is a ``str`` of the media range
+          including any media type parameters, and *extension_params* is a
+          ``str`` of the extension parameters segment of the header element,
+          starting with the first '``;``'
+        * an :class:`AcceptValidHeader`, :class:`AcceptNoHeader`, or
+          :class:`AcceptInvalidHeader` instance
+        * object of any other type that returns a value for ``__str__``
+        """
+        if value is None or isinstance(value, AcceptNoHeader):
+            fdel(request=request)
+        else:
+            if isinstance(value, (AcceptValidHeader, AcceptInvalidHeader)):
+                header_value = value.header_value
+            else:
+                header_value = Accept._python_value_to_header_str(value=value)
+            request.environ[ENVIRON_KEY] = header_value
+
+    def fdel(request):
+        """Delete the corresponding key from the request environ."""
+        try:
+            del request.environ[ENVIRON_KEY]
+        except KeyError:
+            pass
+
+    return property(fget, fset, fdel, textwrap.dedent(doc))
+
+
 class NilAccept(object):
     """
     Represents a generic ``Accept-*`` style header when it is not present in
@@ -5209,25 +5271,3 @@ class MIMENilAccept(NilAccept):
 def _check_offer(offer):
     if '*' in offer:
         raise ValueError("The application should offer specific types, got %r" % offer)
-
-
-def accept_property(header, rfc_section,
-    AcceptClass=Accept, NilClass=NilAccept
-):
-    key = header_to_key(header)
-    doc = header_docstring(header, rfc_section)
-    # doc += "  Converts it as a %s." % convert_name
-    def fget(req):
-        value = req.environ.get(key)
-        if not value:
-            return NilClass()
-        return AcceptClass(value)
-    def fset(req, val):
-        if val:
-            if isinstance(val, (list, tuple, dict)):
-                val = AcceptClass('') + val
-            val = str(val)
-        req.environ[key] = val or None
-    def fdel(req):
-        del req.environ[key]
-    return property(fget, fset, fdel, doc)

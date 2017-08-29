@@ -2251,6 +2251,182 @@ class TestCreateAcceptHeader(object):
         assert returned.header_value == header_value
 
 
+class TestAcceptProperty(object):
+    def test_fget_header_is_valid(self):
+        header_value = 'text/html;p1="1";p2=v2;q=0.9;e1="1";e2, audio/basic'
+        request = Request.blank('/', environ={'HTTP_ACCEPT': header_value})
+        property_ = accept_property()
+        returned = property_.fget(request=request)
+        assert isinstance(returned, AcceptValidHeader)
+        assert returned.header_value == header_value
+
+    def test_fget_header_is_None(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT': None})
+        property_ = accept_property()
+        returned = property_.fget(request=request)
+        assert isinstance(returned, AcceptNoHeader)
+
+    def test_fget_header_is_invalid(self):
+        header_value = 'invalid'
+        request = Request.blank('/', environ={'HTTP_ACCEPT': header_value})
+        property_ = accept_property()
+        returned = property_.fget(request=request)
+        assert isinstance(returned, AcceptInvalidHeader)
+        assert returned.header_value == header_value
+
+    def test_fset_value_is_valid(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT': 'text/html'})
+        header_value = 'text/html;p1="1";p2=v2;q=0.9;e1="1";e2, audio/basic'
+        property_ = accept_property()
+        property_.fset(request=request, value=header_value)
+        assert request.environ['HTTP_ACCEPT'] == header_value
+
+    def test_fset_value_is_None(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT': 'text/html'})
+        property_ = accept_property()
+        property_.fset(request=request, value=None)
+        assert 'HTTP_ACCEPT' not in request.environ
+
+    def test_fset_value_is_invalid(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT': 'text/html'})
+        header_value = 'invalid'
+        property_ = accept_property()
+        property_.fset(request=request, value=header_value)
+        assert request.environ['HTTP_ACCEPT'] == header_value
+
+    @pytest.mark.parametrize('value, value_as_header', [
+        ('', ''),
+        ([], ''),
+        ((), ''),
+        ({}, ''),
+        # str
+        (
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # list of strs
+        (
+            ['a/b;q=0.5', 'c/d;p1=1;q=0', 'e/f', 'g/h;p1=1;q=1;e1=1'],
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # list of 3-item tuples, with extension parameters
+        (
+            [
+                ('a/b', 0.5, ''), ('c/d;p1=1', 0.0, ''),
+                ('e/f', 1.0, ''), ('g/h;p1=1', 1.0, ';e1=1'),
+            ],
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # list of 2-item tuples, without extension parameters
+        (
+            [
+                ('a/b', 0.5), ('c/d;p1=1', 0.0),
+                ('e/f', 1.0), ('g/h;p1=1', 1.0),
+            ],
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1',
+        ),
+        # list of a mixture of strs, 3-item tuples and 2-item tuples
+        (
+            [
+                ('a/b', 0.5), ('c/d;p1=1', 0.0, ''),
+                'e/f', ('g/h;p1=1', 1.0, ';e1=1'),
+            ],
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # tuple of strs
+        (
+            ('a/b;q=0.5', 'c/d;p1=1;q=0', 'e/f', 'g/h;p1=1;q=1;e1=1'),
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # tuple of 3-item tuples, with extension parameters
+        (
+            (
+                ('a/b', 0.5, ''), ('c/d;p1=1', 0.0, ''),
+                ('e/f', 1.0, ''), ('g/h;p1=1', 1.0, ';e1=1'),
+            ),
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # tuple of 2-item tuples, without extension parameters
+        (
+            (
+                ('a/b', 0.5), ('c/d;p1=1', 0.0),
+                ('e/f', 1.0), ('g/h;p1=1', 1.0),
+            ),
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1',
+        ),
+        # tuple of a mixture of strs, 3-item tuples and 2-item tuples
+        (
+            (
+                ('a/b', 0.5), ('c/d;p1=1', 0.0, ''),
+                'e/f', ('g/h;p1=1', 1.0, ';e1=1'),
+            ),
+            'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+        ),
+        # dict
+        (
+            {
+                'a/b': (0.5, ';e1=1'), 'c/d': 0.0,
+                'e/f;p1=1': (1.0, ';e1=1;e2=2')
+            },
+            'e/f;p1=1;q=1;e1=1;e2=2, a/b;q=0.5;e1=1, c/d;q=0',
+        ),
+    ])
+    def test_fset_value_types(self, value, value_as_header):
+        request = Request.blank('/', environ={'HTTP_ACCEPT': 'text/html'})
+        property_ = accept_property()
+        property_.fset(request=request, value=value)
+        assert request.environ['HTTP_ACCEPT'] == value_as_header
+
+    @pytest.mark.parametrize('header_value', [
+        '',
+        'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1',
+    ])
+    def test_fset_other_type_with___str__(self, header_value):
+        request = Request.blank('/', environ={'HTTP_ACCEPT': 'text/html'})
+        property_ = accept_property()
+        class Other(object):
+            def __str__(self):
+                return header_value
+        value = Other()
+        property_.fset(request=request, value=value)
+        assert request.environ['HTTP_ACCEPT'] == str(value)
+
+    def test_fset_AcceptValidHeader(self):
+        request = Request.blank('/', environ={})
+        header_value = 'a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1'
+        header = AcceptValidHeader(header_value=header_value)
+        property_ = accept_property()
+        property_.fset(request=request, value=header)
+        assert request.environ['HTTP_ACCEPT'] == header.header_value
+
+    def test_fset_AcceptNoHeader(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT': 'text/html'})
+        property_ = accept_property()
+        header = AcceptNoHeader()
+        property_.fset(request=request, value=header)
+        assert 'HTTP_ACCEPT' not in request.environ
+
+    def test_fset_AcceptInvalidHeader(self):
+        request = Request.blank('/', environ={})
+        header_value = 'invalid'
+        header = AcceptInvalidHeader(header_value=header_value)
+        property_ = accept_property()
+        property_.fset(request=request, value=header)
+        assert request.environ['HTTP_ACCEPT'] == header.header_value
+
+    def test_fdel_header_key_in_environ(self):
+        request = Request.blank('/', environ={'HTTP_ACCEPT': 'text/html'})
+        property_ = accept_property()
+        property_.fdel(request=request)
+        assert 'HTTP_ACCEPT' not in request.environ
+
+    def test_fdel_header_key_not_in_environ(self):
+        request = Request.blank('/')
+        property_ = accept_property()
+        property_.fdel(request=request)
+        assert 'HTTP_ACCEPT' not in request.environ
+
+
 class TestAcceptCharset(object):
     @pytest.mark.parametrize('value', [
         '',

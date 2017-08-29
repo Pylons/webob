@@ -12,12 +12,10 @@ except ImportError:
 import warnings
 
 from webob.acceptparse import (
-    MIMEAccept,
-    MIMENilAccept,
-    accept_property,
     accept_charset_property,
     accept_encoding_property,
     accept_language_property,
+    accept_property,
     )
 
 from webob.cachecontrol import (
@@ -1038,7 +1036,7 @@ class BaseRequest(object):
             if key in self.environ:
                 del self.environ[key]
 
-    accept = accept_property('Accept', '14.1', MIMEAccept, MIMENilAccept)
+    accept = accept_property()
     accept_charset = accept_charset_property()
     accept_encoding = accept_encoding_property()
     accept_language = accept_language_property()
