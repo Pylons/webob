@@ -1109,6 +1109,116 @@ class AcceptEncodingNoHeader(_AcceptEncodingInvalidOrNoHeader):
             return self.__class__()
 
 
+class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
+    """
+    Represent an invalid ``Accept-Encoding`` header.
+
+    An invalid header is one that does not conform to
+    :rfc:`7231#section-5.3.4`.
+
+    :rfc:`7231` does not provide any guidance on what should happen if the
+    ``Accept-Encoding`` header has an invalid value. This implementation
+    disregards the header, and treats it as if there is no ``Accept-Encoding``
+    header in the request.
+
+    This object should not be modified. To add to the header, we can use the
+    addition operators (``+`` and ``+=``), which return a new object (see the
+    docstring for :meth:`AcceptEncodingInvalidHeader.__add__`).
+    """
+
+    @property
+    def header_value(self):
+        """(``str`` or ``None``) The header value."""
+        return self._header_value
+
+    @property
+    def parsed(self):
+        """
+        (``list`` or ``None``) Parsed form of the header.
+
+        As the header is invalid and cannot be parsed, this is ``None``.
+        """
+        return self._parsed
+
+    def __init__(self, header_value):
+        """
+        Create an :class:`AcceptEncodingInvalidHeader` instance.
+        """
+        self._header_value = header_value
+        self._parsed = None
+        self._parsed_nonzero = None
+
+    def __add__(self, other):
+        """
+        Add to header, creating a new header object.
+
+        `other` can be:
+
+        * ``None``
+        * a ``str`` header value
+        * a ``dict``, with content-coding, ``identity`` or ``*`` ``str``\ s as
+          keys, and qvalue ``float``\ s as values
+        * a ``tuple`` or ``list``, where each item is either a header element
+          ``str``, or a (content-coding/``identity``/``*``, qvalue) ``tuple``
+          or ``list``
+        * an :class:`AcceptEncodingValidHeader`,
+          :class:`AcceptEncodingNoHeader`, or
+          :class:`AcceptEncodingInvalidHeader` instance
+        * object of any other type that returns a value for ``__str__``
+
+        If `other` is a valid header value or an
+        :class:`AcceptEncodingValidHeader` instance, then a new
+        :class:`AcceptEncodingValidHeader` instance with the valid header value
+        is returned.
+
+        If `other` is ``None``, an :class:`AcceptEncodingNoHeader` instance, an
+        invalid header value, or an :class:`AcceptEncodingInvalidHeader`
+        instance, a new :class:`AcceptEncodingNoHeader` instance is returned.
+        """
+        if isinstance(other, AcceptEncodingValidHeader):
+            return AcceptEncodingValidHeader(header_value=other.header_value)
+
+        if isinstance(other, (AcceptEncodingNoHeader, AcceptInvalidHeader)):
+            return AcceptEncodingNoHeader()
+
+        return self._add_instance_and_non_accept_encoding_type(
+            instance=self, other=other,
+        )
+
+    def __radd__(self, other):
+        """
+        Add to header, creating a new header object.
+
+        See the docstring for :meth:`AcceptEncodingValidHeader.__add__`.
+        """
+        return self._add_instance_and_non_accept_encoding_type(
+            instance=self, other=other, instance_on_the_right=True,
+        )
+
+    def __repr__(self):
+        return '<{}>'.format(self.__class__.__name__)
+        # We do not display the header_value, as it is untrusted input. The
+        # header_value could always be easily obtained from the .header_value
+        # property.
+
+    def __str__(self):
+        """Return the ``str`` ``'<invalid header value>'``."""
+        return '<invalid header value>'
+
+    def _add_instance_and_non_accept_encoding_type(
+        self, instance, other, instance_on_the_right=False,
+    ):
+        if other is None:
+            return AcceptEncodingNoHeader()
+
+        other_header_value = self._python_value_to_header_str(value=other)
+
+        try:
+            return AcceptEncodingValidHeader(header_value=other_header_value)
+        except ValueError:  # invalid header value
+            return AcceptEncodingNoHeader()
+
+
 class AcceptLanguage(object):
     """
     Represent an ``Accept-Language`` header.
