@@ -13,10 +13,6 @@ import re
 import textwrap
 import warnings
 
-from webob.headers import _trans_name as header_to_key
-from webob.util import (
-    header_docstring,
-    )
 
 part_re = re.compile(
     r',\s*([^\s;,\n]+)(?:[^,]*?;\s*q=([0-9.]*))?')
