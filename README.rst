@@ -9,7 +9,7 @@ WebOb
         :alt: Documentation Status
 
 WebOb provides objects for HTTP requests and responses.  Specifically
-it does this by wrapping the `WSGI <http://wsgi.org>`_ request
+it does this by wrapping the `WSGI <https://wsgi.readthedocs.io/en/latest/>`_ request
 environment and response status/headers/app_iter(body).
 
 The request and response objects provide many conveniences for parsing
