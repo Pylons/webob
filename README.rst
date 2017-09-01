@@ -5,7 +5,7 @@ WebOb
         :target: https://travis-ci.org/Pylons/webob
 
 .. image:: https://readthedocs.org/projects/webob/badge/?version=latest
-        :target: http://docs.pylonsproject.org/projects/webob/en/latest/
+        :target: https://docs.pylonsproject.org/projects/webob/en/latest/
         :alt: Documentation Status
 
 WebOb provides objects for HTTP requests and responses.  Specifically
@@ -33,5 +33,5 @@ Authors
 -------
 
 WebOb was authored by Ian Bicking and is currently maintained by the `Pylons
-Project <http://pylonsproject.org/>`_ and a team of contributors.
+Project <https://pylonsproject.org/>`_ and a team of contributors.
 
