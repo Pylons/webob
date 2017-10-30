@@ -26,7 +26,7 @@ Code
 
 The finished code for this is available in
 `docs/wiki-example-code/example.py
-<https://github.com/Pylons/webob/tree/master/docs/wiki-example-code/example.py>`_
+<https://github.com/Pylons/webob/blob/master/docs/wiki-example-code/example.py>`_
 -- you can run that file as a script to try it out.
 
 Creating an Application
@@ -88,8 +88,7 @@ interface:
 
 There's not much to talk about in this code block.  The application is
 instantiated and served with the built-in module
-`wsgiref.simple_server
-<http://www.python.org/doc/current/lib/module-wsgiref.simple_server.html>`_.
+:py:mod:`wsgiref.simple_server`.
 
 The WSGI Application
 --------------------
@@ -351,9 +350,9 @@ page doesn't exist.  ``exc.HTTPTemporaryRedirect`` is a response that
 gives a ``307 Temporary Redirect`` response with the given location.
 
 Otherwise we fill in a template.  The template language we're going to
-use in this example is `Tempita <http://pythonpaste.org/tempita/>`_, a
+use in this example is `Tempita <https://pypi.python.org/pypi/Tempita>`_, a
 very simple template language with a similar interface to
-`string.Template <http://python.org/doc/current/lib/node40.html>`_.
+:py:class:`string.Template`.
 
 The template actually looks like this:
 
@@ -413,8 +412,7 @@ To allow conditional responses we set ``resp.last_modified``.  You can
 set this attribute to a date, None (effectively removing the header),
 a time tuple (like produced by ``time.localtime()``), or as in this
 case to an integer timestamp.  If you get the value back it will
-always be a `datetime
-<http://python.org/doc/current/lib/datetime-datetime.html>`_ object
+always be a :py:class:`~datetime.datetime` object
 (or None).  With this header we can process requests with
 If-Modified-Since headers, and return ``304 Not Modified`` if
 appropriate.  It won't actually do that unless you set
@@ -479,7 +477,7 @@ In ``<form action="{{req.path_url}}" method="POST">`` we submit to
 POSTing right over the view page.  This has the nice side effect of
 automatically invalidating any caches of the original page.  It also
 is vaguely `RESTful
-<http://en.wikipedia.org/wiki/Representational_State_Transfer>`_.
+<https://en.wikipedia.org/wiki/Representational_State_Transfer>`_.
 
 We save the last modified time in a hidden ``mtime`` field.  This way
 we can detect concurrent updates.  If start editing the page who's

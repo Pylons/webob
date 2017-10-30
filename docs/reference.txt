@@ -11,8 +11,7 @@ Introduction
 ============
 
 This document covers all the details of the Request and Response
-objects.  It is written to be testable with `doctest
-<http://python.org/doc/current/lib/module-doctest.html>`_ -- this
+objects.  It is written to be testable with :py:mod:`doctest` -- this
 affects the flavor of the documentation, perhaps to its detriment.
 But it also means you can feel confident that the documentation is
 correct.
@@ -27,7 +26,7 @@ Request
 =======
 
 The primary object in WebOb is :py:class:`webob.Request`, a wrapper around a
-`WSGI environment <http://www.python.org/dev/peps/pep-0333/>`_.
+`WSGI environment <https://www.python.org/dev/peps/pep-0333/>`_.
 
 The basic way you create a request object is simple enough:
 
@@ -51,9 +50,9 @@ use this exclusively of other libraries.  If those other libraries
 also keep their state in the environment, multiple wrappers can
 coexist.  Examples of libraries that can coexist include
 `paste.wsgiwrappers.Request
-<http://pythonpaste.org/class-paste.wsgiwrappers.WSGIRequest.html>`_
+<https://bitbucket.org/ianb/paste/src/0e5a48796ab969d874c6b772c5c33561ac2d1b0d/paste/wsgiwrappers.py?at=default&fileviewer=file-view-default#wsgiwrappers.py-64>`_
 (used by Pylons) and `yaro.Request
-<http://lukearno.com/projects/yaro/>`_.
+<https://pypi.python.org/pypi/yaro>`_.
 
 The WSGI environment has a number of required variables.  To make it
 easier to test and play around with, the ``Request`` class has a
@@ -486,7 +485,7 @@ unchanged".
 
 For more on this kind of conditional request, see `Detecting the Lost
 Update Problem Using Unreserved Checkout
-<http://www.w3.org/1999/04/Editing/>`_.
+<https://www.w3.org/1999/04/Editing/>`_.
 
 Calling WSGI Applications
 -------------------------
@@ -811,8 +810,7 @@ You can also set Cache-Control related attributes with
     >>> res.headers['Expires']
     '... GMT'
 
-You can also use the `timedelta
-<http://python.org/doc/current/lib/datetime-timedelta.html>`_
+You can also use the :py:class:`~datetime.timedelta`
 constants defined, e.g.:
 
 .. code-block:: python
@@ -955,8 +953,8 @@ request will an HTML response be given:
 
 
 This is taken from `paste.httpexceptions
-<http://pythonpaste.org/modules/httpexceptions.html#module-paste.httpexceptions>`_, and if
-you have Paste installed then these exceptions will be subclasses of
+<https://bitbucket.org/ianb/paste/src/0e5a48796ab969d874c6b772c5c33561ac2d1b0d/paste/httpexceptions.py?at=default&fileviewer=file-view-default#httpexceptions.py-8>`_,
+and if you have Paste installed then these exceptions will be subclasses of
 the Paste exceptions.
 
 

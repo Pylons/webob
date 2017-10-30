@@ -159,8 +159,8 @@ Relative URLs in the location will be resolved to absolute.
 
 References:
 
-.. [1] http://www.python.org/peps/pep-0333.html#error-handling
-.. [2] http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5
+.. [1] https://www.python.org/dev/peps/pep-0333/#error-handling
+.. [2] https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5
 
 
 """
@@ -1009,7 +1009,7 @@ class HTTPUnavailableForLegalReasons(HTTPClientError):
     From the draft "A New HTTP Status Code for Legally-restricted Resources"
     by Tim Bray:
 
-    http://tools.ietf.org/html/draft-tbray-http-legally-restricted-status-00
+    https://tools.ietf.org/html/draft-tbray-http-legally-restricted-status-00
 
     code: 451, title: Unavailable For Legal Reasons
     """
