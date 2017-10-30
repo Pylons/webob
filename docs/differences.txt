@@ -71,7 +71,7 @@ Django
 ======
 
 This is a quick summary from reading `the Django documentation
-<http://www.djangoproject.com/documentation/request_response/>`_.
+<https://docs.djangoproject.com/en/1.11/ref/request-response/>`_.
 
 Request
 -------
@@ -183,7 +183,7 @@ CherryPy/TurboGears
 ===================
 
 The `CherryPy request object
-<http://www.cherrypy.org/wiki/RequestObject>`_ is also used by
+<https://bitbucket.org/cherrypy/cherrypy/wiki/CherryPySpec>`_ is also used by
 TurboGears 1.x.
 
 Request
@@ -284,7 +284,7 @@ Response
 --------
 
 From information `from the wiki
-<http://www.cherrypy.org/wiki/ResponseObject>`_.
+<https://bitbucket.org/cherrypy/cherrypy/wiki/CherryPySpec>`_.
 
 ``body``:
     This is an iterable in CherryPy, a string in WebOb;
@@ -321,7 +321,7 @@ From information `from the wiki
 Yaro
 ====
 
-`Yaro <http://lukearno.com/projects/yaro/>`_ is a small wrapper around
+`Yaro <https://pypi.python.org/pypi/yaro>`_ is a small wrapper around
 the WSGI environment, much like WebOb in scope.
 
 The WebOb objects have many more methods and attributes.  The Yaro
@@ -361,11 +361,11 @@ Request
 Werkzeug
 ========
 
-An offshoot of `Pocoo <http://pocoo.org>`_,
+An offshoot of `Pocoo <http://www.pocoo.org/>`_,
 this library is based around WSGI, similar to Paste and Yaro.
 
 This is taken from the `wrapper documentation
-<http://werkzeug.pocoo.org/documentation/wrappers>`_.
+<http://werkzeug.pocoo.org/docs/0.12/wrappers/>`_.
 
 Request
 -------
@@ -397,9 +397,9 @@ Zope 3
 ======
 
 From the Zope 3 interfaces for the `Request
-<http://apidoc.zope.org/++apidoc++/Interface/zope.publisher.interfaces.browser.IBrowserRequest/index.html>`_
+<https://zopepublisher.readthedocs.io/en/sphinx-docs/browser_api.html#zope.publisher.interfaces.browser.IBrowserRequest>`_
 and `Response
-<http://apidoc.zope.org/++apidoc++/Interface/zope.publisher.interfaces.http.IHTTPResponse/index.html>`_.
+<http://zopepublisher.readthedocs.io/en/sphinx-docs/http_api.html#zope.publisher.interfaces.http.IHTTPResponse>`_.
 
 Request
 -------
@@ -542,7 +542,7 @@ mod_python
 ==========
 
 Some key attributes from the `mod_python
-<http://modpython.org/live/current/doc-html/pyapi-mprequest-mem.html>`_
+<http://modpython.org/live/current/doc-html/pythonapi.html#request-members>`_
 request object.
 
 Request
@@ -585,8 +585,11 @@ Response
 webapp Response
 ===============
 
+.. note:: Google App Engine released the successor to webapp, `webapp2
+    <https://cloud.google.com/appengine/docs/standard/python/tools/webapp2>`_.
+
 The Google App Engine `webapp
-<http://code.google.com/appengine/docs/python/tools/webapp/>`_
+<https://cloud.google.com/appengine/docs/standard/python/tools/webapp/>`_
 framework uses the WebOb Request object, but does not use its Response
 object.
 
@@ -619,8 +622,7 @@ while the WebOb response does not set any cache headers.
     write to ``resp.body_file``, but it does not allow unicode.
 
 Besides exposing a ``.headers`` attribute (based on
-`wsgiref.headers.Headers
-<http://docs.python.org/library/wsgiref.html#wsgiref.headers.Headers>`_)
+:py:class:`wsgiref.headers.Headers`)
 there is no other API for the webapp response object.  This means the
 response lacks:
 

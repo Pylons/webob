@@ -6,7 +6,7 @@ Another Do-It-Yourself Framework
 Introduction and Audience
 -------------------------
 
-It's been over two years since I wrote the `first version of this tutorial <http://pythonpaste.org/do-it-yourself-framework.html>`_.  I decided to give it another run with some of the tools that have come about since then (particularly `WebOb <http://webob.org/>`_).
+It's been over two years since I wrote the `first version of this tutorial <https://bitbucket.org/ianb/paste/src/0e5a48796ab969d874c6b772c5c33561ac2d1b0d/docs/do-it-yourself-framework.txt?at=default&fileviewer=file-view-default>`_.  I decided to give it another run with some of the tools that have come about since then (particularly `WebOb <https://webob.org/>`_).
 
 Sometimes Python is accused of having too many web frameworks.  And it's true, there are a lot.  That said, I think writing a framework is a useful exercise.  It doesn't let you skip over too much without understanding it.  It removes the magic.  So even if you go on to use another existing framework (which I'd probably advise you do), you'll be able to understand it better if you've written something like it on your own.
 
@@ -84,7 +84,7 @@ These two pieces solve a lot of the more tedious parts of making a framework.  T
 Serving Your Application
 ------------------------
 
-While we can test the application using WebOb, you might want to serve the application.  Here's the basic recipe, using the `Paste <http://pythonpaste.org>`_ HTTP server:
+While we can test the application using WebOb, you might want to serve the application.  Here's the basic recipe, using the `Paste <https://pypi.python.org/pypi/Paste>`_ HTTP server:
 
 .. code-block:: python
 
@@ -92,7 +92,7 @@ While we can test the application using WebOb, you might want to serve the appli
         from paste import httpserver
         httpserver.serve(app, host='127.0.0.1', port=8080)
 
-you could also use `wsgiref <https://docs.python.org/3/library/wsgiref.html#module-wsgiref.simple_server>`_ from the standard library, but this is mostly appropriate for testing as it is single-threaded:
+You could also use :py:mod:`wsgiref.simple_server` from the standard library, but this is mostly appropriate for testing as it is single-threaded:
 
 .. code-block:: python
 
@@ -188,7 +188,7 @@ To do the matching, we'll compile those templates to regular expressions.
 
 **line 19**: And then we make the regular expression match the complete string (``^`` to force it to match from the start, ``$`` to make sure it matches up to the end).
 
-To test it we can try some translations.  You could put these directly in the docstring of the ``template_to_regex`` function and use `doctest <http://python.org/doc/current/lib/module-doctest.html>`_ to test that.  But I'm using doctest to test *this* document, so I can't put a docstring doctest inside the doctest itself.  Anyway, here's what a test looks like:
+To test it we can try some translations.  You could put these directly in the docstring of the ``template_to_regex`` function and use :py:mod:`doctest` to test that.  But I'm using doctest to test *this* document, so I can't put a docstring doctest inside the doctest itself.  Anyway, here's what a test looks like:
 
 .. code-block:: python
 
@@ -268,7 +268,7 @@ Controllers
 
 The router just passes the request on to the controller, so the controllers are themselves just WSGI applications.  But we'll want to set up something to make those applications friendlier to write.
 
-To do that we'll write a `decorator <http://www.ddj.com/web-development/184406073>`_.  A decorator is a function that wraps another function.  After decoration the function will be a WSGI application, but it will be decorating a function with a signature like ``controller_func(req, **urlvars)``.  The controller function will return a response object (which, remember, is a WSGI application on its own).
+To do that we'll write a `decorator <http://www.drdobbs.com/web-development/python-24-decorators/184406073>`_.  A decorator is a function that wraps another function.  After decoration the function will be a WSGI application, but it will be decorating a function with a signature like ``controller_func(req, **urlvars)``.  The controller function will return a response object (which, remember, is a WSGI application on its own).
 
 .. code-block:: python
    :linenos:
@@ -289,7 +289,7 @@ To do that we'll write a `decorator <http://www.ddj.com/web-development/18440607
 
 **line 3**: This is the typical signature for a decorator -- it takes one function as an argument, and returns a wrapped function.
 
-**line 4**: This is the replacement function we'll return.  This is called a `closure <http://en.wikipedia.org/wiki/Closure_(computer_science)>`_ -- this function will have access to ``func``, and everytime you decorate a new function there will be a new ``replacement`` function with its own value of ``func``.  As you can see, this is a WSGI application.
+**line 4**: This is the replacement function we'll return.  This is called a `closure <https://en.wikipedia.org/wiki/Closure_(computer_programming)>`_ -- this function will have access to ``func``, and everytime you decorate a new function there will be a new ``replacement`` function with its own value of ``func``.  As you can see, this is a WSGI application.
 
 **line 5**: We create a request.
 
@@ -361,7 +361,7 @@ Another Controller
 
 There's another pattern that might be interesting to try for a controller.  Instead of a function, we can make a class with methods like ``get``, ``post``, etc.  The ``urlvars`` will be used to instantiate the class.
 
-We could do this as a superclass, but the implementation will be more elegant as a wrapper, like the decorator is a wrapper.  Python 3.0 will add `class decorators <http://www.python.org/dev/peps/pep-3129/>`_ which will work like this.
+We could do this as a superclass, but the implementation will be more elegant as a wrapper, like the decorator is a wrapper.  Python 3.0 will add `class decorators <https://www.python.org/dev/peps/pep-3129/>`_ which will work like this.
 
 We'll allow an extra ``action`` variable, which will define the method (actually ``action_method``, where ``_method`` is the request method).  If no action is given, we'll use just the method (i.e., ``get``, ``post``, etc).
 
@@ -537,7 +537,7 @@ Well, we don't *really* need to factor templating into our framework.  After all
 
 But we'll add a little helper, because I think it shows a clever trick.
 
-We'll use `Tempita <http://pythonpaste.org/tempita/>`_ for templating, mostly because it's very simplistic about how it does loading.  The basic form is:
+We'll use `Tempita <https://pypi.python.org/pypi/Tempita>`_ for templating, mostly because it's very simplistic about how it does loading.  The basic form is:
 
 .. code-block:: python
 
