@@ -1056,6 +1056,9 @@ class AcceptValidHeader(Accept):
         return bestq or None
 
 
+MIMEAccept = AcceptValidHeader  # backward compat
+
+
 class _AcceptInvalidOrNoHeader(Accept):
     """
     Represent when an ``Accept`` header is invalid or not in request.
