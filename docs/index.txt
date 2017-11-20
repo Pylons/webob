@@ -115,18 +115,18 @@ of the request.  I'll show various values for an example URL
 ``http://localhost/app-root/doc?article_id=10``, where the application
 is mounted at ``http://localhost/app-root``.
 
- - ``req.url``:
+ - :attr:`req.url <webob.request.BaseRequest.url>`:
     The full request URL, with query string, e.g.,
     ``'http://localhost/app-root/doc?article_id=10'``.
 
- - ``req.application_url``:
+ - :attr:`req.application_url <webob.request.BaseRequest.application_url>`:
     The URL of the application (just the ``SCRIPT_NAME`` portion of the
     path, not ``PATH_INFO``), e.g., ``'http://localhost/app-root'``.
 
- - ``req.host_url``:
+ - :attr:`req.host_url <webob.request.BaseRequest.host_url>`:
     The URL with the host, e.g., ``'http://localhost'``.
 
- - ``req.relative_url(url, to_application=False)``:
+ - :func:`req.relative_url(url, to_application=False) <webob.request.BaseRequest.relative_url>`:
     Gives a URL, relative to the current URL.  If ``to_application``
     is True, then the URL is resolved relative to ``req.application_url``.
 
