@@ -13,25 +13,28 @@ from webob.util import header_docstring
 
 __all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'etag_property']
 
+
 def etag_property(key, default, rfc_section, strong=True):
     doc = header_docstring(key, rfc_section)
     doc += "  Converts it as a Etag."
+
     def fget(req):
         value = req.environ.get(key)
         if not value:
             return default
         else:
             return ETagMatcher.parse(value, strong=strong)
+
     def fset(req, val):
         if val is None:
             req.environ[key] = None
         else:
             req.environ[key] = str(val)
+
     def fdel(req):
         del req.environ[key]
+
     return property(fget, fset, fdel, doc=doc)
-
-
 
 
 class _AnyETag(object):
@@ -45,7 +48,7 @@ class _AnyETag(object):
     def __nonzero__(self):
         return False
 
-    __bool__ = __nonzero__ # python 3
+    __bool__ = __nonzero__  # python 3
 
     def __contains__(self, other):
         return True
@@ -53,7 +56,9 @@ class _AnyETag(object):
     def __str__(self):
         return '*'
 
+
 AnyETag = _AnyETag()
+
 
 class _NoETag(object):
     """
@@ -66,13 +71,14 @@ class _NoETag(object):
     def __nonzero__(self):
         return False
 
-    __bool__ = __nonzero__ # python 3
+    __bool__ = __nonzero__  # python 3
 
     def __contains__(self, other):
         return False
 
     def __str__(self):
         return ''
+
 
 NoETag = _NoETag()
 
@@ -102,9 +108,9 @@ class ETagMatcher(object):
         if not matches:
             return cls([value])
         elif strong:
-            return cls([t for w,t in matches if not w])
+            return cls([t for w, t in matches if not w])
         else:
-            return cls([t for w,t in matches])
+            return cls([t for w, t in matches])
 
     def __str__(self):
         return ', '.join(map('"%s"'.__mod__, self.etags))
@@ -145,8 +151,8 @@ class IfRange(object):
     def __str__(self):
         return str(self.etag) if self.etag else ''
 
+    __bool__ = __nonzero__  # python 3
 
-    __bool__ = __nonzero__ # python 3
 
 class IfRangeDate(object):
     def __init__(self, date):
@@ -154,15 +160,12 @@ class IfRangeDate(object):
 
     def __contains__(self, resp):
         last_modified = resp.last_modified
-        #if isinstance(last_modified, str):
-        #    last_modified = parse_date(last_modified)
         return last_modified and (last_modified <= self.date)
 
     def __repr__(self):
         return '%s(%r)' % (
             self.__class__.__name__,
             self.date
-            #serialize_date(self.date)
         )
 
     def __str__(self):
