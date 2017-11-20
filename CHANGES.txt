@@ -4,6 +4,16 @@ Unreleased
 Backwards Incompatibilities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+- Many changes have been made to the way WebOb does Accept handling, not just
+  for the Accept header itself, but also for Accept-Charset, Accept-Encoding
+  and Accept-Language. This was a `Google Summer of Code
+  <https://developers.google.com/open-source/gsoc/>`_ project completed by
+  Whiteroses (https://github.com/whiteroses). Many thanks to Google for running
+  GSoC, the Python Software Foundation for organising and a huge thanks to Ira
+  for completing the work. See https://github.com/Pylons/webob/pull/338 and
+  https://github.com/Pylons/webob/pull/335. Documentation is available at
+  https://docs.pylonsproject.org/projects/webob/en/master/api/webob.html
+
 - When calling a ``@wsgify`` decorated function, the default arguments passed
   to ``@wsgify`` are now used when called with the request, and not as a
   `start_response`
@@ -26,11 +36,6 @@ Backwards Incompatibilities
   is no longer cleared. This behaviour is odd and disallows setting the
   ``content_md5`` and then returning an iterator for chunked content encoded
   responses. See https://github.com/Pylons/webob/issues/86
-
-- The ``accept_encoding`` property on a ``Request`` object now returns an
-  instance of ``webob.acceptparse.AcceptEncoding`` rather than
-  ``webob.acceptparse.Accept`` when the ``Accept-Encoding`` header is a truthy
-  value. See https://github.com/Pylons/webob/issues/325
 
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
