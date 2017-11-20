@@ -175,7 +175,7 @@ class Cookie(dict):
 
     def add(self, key, val):
         if not isinstance(key, bytes):
-           key = key.encode('ascii', 'replace')
+            key = key.encode('ascii', 'replace')
         if not _valid_cookie_name(key):
             return {}
         r = Morsel(key, val)
