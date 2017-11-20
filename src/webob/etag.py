@@ -9,11 +9,7 @@ from webob.datetime_utils import (
     serialize_date,
     )
 from webob.descriptors import _rx_etag
-
-from webob.util import (
-    header_docstring,
-    warn_deprecation,
-    )
+from webob.util import header_docstring
 
 __all__ = ['AnyETag', 'NoETag', 'ETagMatcher', 'IfRange', 'etag_property']
 
@@ -35,11 +31,7 @@ def etag_property(key, default, rfc_section, strong=True):
         del req.environ[key]
     return property(fget, fset, fdel, doc=doc)
 
-def _warn_weak_match_deprecated():
-    warn_deprecation("weak_match is deprecated", '1.2', 3)
 
-def _warn_if_range_match_deprecated(*args, **kw): # pragma: no cover
-    raise DeprecationWarning("IfRange.match[_response] API is deprecated")
 
 
 class _AnyETag(object):
@@ -57,9 +49,6 @@ class _AnyETag(object):
 
     def __contains__(self, other):
         return True
-
-    def weak_match(self, other):
-        _warn_weak_match_deprecated()
 
     def __str__(self):
         return '*'
@@ -82,9 +71,6 @@ class _NoETag(object):
     def __contains__(self, other):
         return False
 
-    def weak_match(self, other): # pragma: no cover
-        _warn_weak_match_deprecated()
-
     def __str__(self):
         return ''
 
@@ -99,9 +85,6 @@ class ETagMatcher(object):
 
     def __contains__(self, other):
         return other in self.etags
-
-    def weak_match(self, other): # pragma: no cover
-        _warn_weak_match_deprecated()
 
     def __repr__(self):
         return '<ETag %s>' % (' or '.join(self.etags))
@@ -162,7 +145,6 @@ class IfRange(object):
     def __str__(self):
         return str(self.etag) if self.etag else ''
 
-    match = match_response = _warn_if_range_match_deprecated
 
     __bool__ = __nonzero__ # python 3
 
@@ -185,5 +167,3 @@ class IfRangeDate(object):
 
     def __str__(self):
         return serialize_date(self.date)
-
-    match = match_response = _warn_if_range_match_deprecated
