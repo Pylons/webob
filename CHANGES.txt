@@ -1,3 +1,15 @@
+1.7.4 (2017-11-20)
+
+Feature
+~~~~~~~
+
+- Add support for `wsgi.input_terminated` in the wsgi environ to allow for
+  Chunked Encoding to be used with WebOb: See
+  https://github.com/Pylons/webob/issues/278 and
+  https://gist.github.com/mitsuhiko/5721107 and
+  https://github.com/unbit/uwsgi/issues/1428 and
+  https://twitter.com/GrahamDumpleton/status/928712321127538688
+
 1.7.3 (2017-06-30)
 ------------------
 
