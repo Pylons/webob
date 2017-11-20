@@ -902,14 +902,25 @@ class BaseRequest(object):
         if clen is not None and clen != 0:
             return True
         elif clen is None:
-            # rely on the special flag
-            return self.environ.get('webob.is_body_readable', False)
+            # Rely on the special flag that signifies that either Chunked
+            # Encoding is allowed (and works) or we have replaced
+            # self.body_file with something that is readable and EOF's
+            # correctly.
+            return self.environ.get(
+                'wsgi.input_terminated',
+                # For backwards compatibility, we fall back to checking if
+                # webob.is_body_readable is set in the environ
+                self.environ.get(
+                    'webob.is_body_readable',
+                    False
+                )
+            )
 
         return False
 
     @is_body_readable.setter
     def is_body_readable(self, flag):
-        self.environ['webob.is_body_readable'] = bool(flag)
+        self.environ['wsgi.input_terminated'] = bool(flag)
 
     def make_body_seekable(self):
         """
