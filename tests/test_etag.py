@@ -75,11 +75,6 @@ class Test_AnyETag(object):
         etag = self._makeOne()
         assert 'anything' in etag
 
-    def test_weak_match_something(self):
-        etag = self._makeOne()
-        with pytest.raises(DeprecationWarning):
-            etag.weak_match('anything')
-
     def test___str__(self):
         etag = self._makeOne()
         assert str(etag) == '*'
