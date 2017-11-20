@@ -1,5 +1,12 @@
 .. _index:
 
+.. module:: webob
+
+.. toctree::
+   :hidden:
+
+   self
+
 WebOb
 +++++
 
@@ -7,12 +14,11 @@ WebOb provides objects for HTTP requests and responses.  Specifically
 it does this by wrapping the `WSGI <https://wsgi.readthedocs.io/en/latest/>`_ request
 environment and response status/headers/app_iter(body).
 
-The request and response objects provide many conveniences for parsing
-HTTP request and forming HTTP responses.  Both objects are read/write:
-as a result, WebOb is also a nice way to create HTTP requests and
-parse HTTP responses; however, we won't cover that use case in this
-document.  The `reference documentation <reference.html>`_ shows many
-examples of creating requests.
+The request and response objects provide many conveniences for parsing HTTP
+request and forming HTTP responses.  Both objects are read/write: as a result,
+WebOb is also a nice way to create HTTP requests and parse HTTP responses;
+however, we won't cover that use case in this document.  The :ref:`reference
+documentation <reference>` shows many examples of creating requests.
 
 .. toctree::
    :maxdepth: 2
@@ -39,7 +45,8 @@ Experimental API
 
 There are a variety of features that are considered experimental in WebOb,
 these features may change without any notice in future versions of WebOb, or be
-removed entirely.
+removed entirely. If you are relying on these features, please pin your version
+of WebOb and carefully watch for changes.
 
 .. toctree::
    :maxdepth: 1
@@ -53,58 +60,52 @@ Request
 
 The request object is a wrapper around the `WSGI environ dictionary
 <https://www.python.org/dev/peps/pep-0333/#environ-variables>`_.  This
-dictionary contains keys for each header, keys that describe the
-request (including the path and query string), a file-like object for
-the request body, and a variety of custom keys.  You can always access
-the environ with ``req.environ``.
+dictionary contains keys for each header, keys that describe the request
+(including the path and query string), a file-like object for the request body,
+and a variety of custom keys. You can always access the environ with
+``req.environ``.
 
 Some of the most important and interesting attributes of a request object are
 the following:
 
-``req.method``:
-    The request method, e.g., ``'GET'``, ``'POST'``
+ - :attr:`req.method <webob.request.BaseRequest.method>`
+    The request method, e.g., ``GET``, ``POST``, ``PUT``.
 
-``req.GET``:
-    A `dictionary-like object`_ with all the variables in the query
-    string.
+ - :attr:`req.GET <webob.request.BaseRequest.GET>`
+    A :mod:`dictionary-like object <webob.multidict>` with all the
+    variables in the query string.
 
-``req.POST``:
-    A `dictionary-like object`_ with all the variables in the request
-    body.  This only has variables if the request was a ``POST`` and
-    it is a form submission.
+ - :attr:`req.POST <webob.request.BaseRequest.POST>`
+    A :mod:`dictionary-like object <webob.multidict>` with all the
+    variables in the request body. This only has variables if the request was
+    a ``POST`` and it is a form submission.
 
-``req.params``:
-    A `dictionary-like object`_ with a combination of everything in
-    ``req.GET`` and ``req.POST``.
+ - :attr:`req.params <webob.request.BaseRequest.params>`:
+    A :mod:`dictionary-like object <webob.multidict>` with a
+    combination of everything in ``req.GET`` and ``req.POST``.
 
-``req.body``:
-    The contents of the body of the request.  This contains the entire
-    request body as a string.  This is useful when the request is a
-    ``POST`` that is *not* a form submission, or a request like a
-    ``PUT``.  You can also get ``req.body_file`` for a file-like
-    object.
+ - :attr:`req.body <webob.request.BaseRequest.body>`:
+    The contents of the body of the request.  This contains the entire request
+    body as a string.  This is useful when the request is a ``POST`` that is
+    *not* a form submission, or a request like a ``PUT``.  You can also get
+    ``req.body_file`` for a file-like object.
 
-``req.cookies``:
+ - :attr:`req.cookies <webob.request.BaseRequest.cookies>`:
     A simple dictionary of all the cookies.
 
-``req.headers``:
-    A dictionary of all the headers.  This dictionary is case-insensitive.
-
-``req.urlvars`` and ``req.urlargs``:
-    ``req.urlvars`` is the keyword parameters associated with the
-    request URL.  ``req.urlargs`` are the positional parameters.
-    These are set by products like `Routes
-    <http://routes.readthedocs.io/en/latest/>`_ and `Selector
-    <https://github.com/lukearno/selector>`_.
-
-.. _`dictionary-like object`: #multidict
+ - :attr:`req.headers <webob.request.BaseRequest.headers>`:
+    A dictionary of all the headers. This dictionary is case-insensitive.
 
 Also for standard HTTP request headers, there are usually attributes, e.g.,
-``req.accept_language``, ``req.content_length``, and ``req.user_agent``. These
-properties expose the *parsed* form of each header, for whatever parsing makes
-sense. For instance, ``req.if_modified_since`` returns a :py:class:`~datetime.datetime` object (or
-``None`` if the header is was not provided). Details are in the `Request
-reference <class-webob.Request.html>`_.
+:attr:`req.accept_language <webob.request.BaseRequest.accept_language>`,
+:attr:`req.content_length <webob.request.BaseRequest.content_length>`, and
+:attr:`req.user_agent <webob.request.BaseRequest.user_agent>`. These properties
+expose the *parsed* form of each header, for whatever parsing makes sense. For
+instance, :attr:`req.if_modified_since
+<webob.request.BaseRequest.if_modified_since>` returns a
+:class:`~datetime.datetime` object (or ``None`` if the header is was not
+provided). Details are in the :mod:`Request object API documentation
+<webob.request>`.
 
 URLs
 ----
@@ -114,28 +115,28 @@ of the request.  I'll show various values for an example URL
 ``http://localhost/app-root/doc?article_id=10``, where the application
 is mounted at ``http://localhost/app-root``.
 
-``req.url``:
+ - ``req.url``:
     The full request URL, with query string, e.g.,
     ``'http://localhost/app-root/doc?article_id=10'``.
 
-``req.application_url``:
+ - ``req.application_url``:
     The URL of the application (just the ``SCRIPT_NAME`` portion of the
     path, not ``PATH_INFO``), e.g., ``'http://localhost/app-root'``.
 
-``req.host_url``:
+ - ``req.host_url``:
     The URL with the host, e.g., ``'http://localhost'``.
 
-``req.relative_url(url, to_application=False)``:
+ - ``req.relative_url(url, to_application=False)``:
     Gives a URL, relative to the current URL.  If ``to_application``
     is True, then the URL is resolved relative to ``req.application_url``.
 
 Methods
 -------
 
-There are several methods in :class:`webob.Request` but only a few you'll use
+There are several methods in :class:`~webob.request.Request` but only a few you'll use
 often:
 
-``Request.blank(base_url)``:
+ - :func:`Request.blank(uri) <webob.request.BaseRequest.blank>`:
     Creates a new request with blank information, based at the given
     URL.  This can be useful for subrequests and artificial requests.
     You can also use ``req.copy()`` to copy an existing request, or
@@ -143,7 +144,7 @@ often:
     always turns it into a GET (which is safer to share for
     subrequests).
 
-``req.get_response(wsgi_application)``:
+ - :func:`req.get_response(wsgi_application) <webob.request.BaseRequest.get_response>`:
     This method calls the given WSGI application with this request,
     and returns a `Response`_ object.  You can also use this for
     subrequests or testing.
@@ -171,59 +172,55 @@ some differences.  The request object wraps a single ``environ``
 object; the response object has three fundamental parts (based on
 WSGI):
 
-``response.status``:
-    The response code plus message, like ``'200 OK'``.  To set the
-    code without the reason, use ``response.status_code = 200``.
+ - :attr:`response.status <webob.response.Response.status>`:
+    The response code plus message, like ``'200 OK'``.  To set the code without
+    the reason, use ``response.status_code = 200``.
 
-``response.headerlist``:
-    A list of all the headers, like ``[('Content-Type',
-    'text/html')]``.  There's a case-insensitive `dictionary-like
-    object`_ in ``response.headers`` that also allows you to access
-    these same headers.
+ - :attr:`response.headerlist <webob.response.Response.headerlist>`:
+    A list of all the headers, like ``[('Content-Type', 'text/html')]``.
+    There's a case-insensitive :mod:`dictionary-like object <webob.multidict>` in
+    ``response.headers`` that also allows you to access these same headers.
 
-``response.app_iter``:
-    An iterable (such as a list or generator) that will produce the
-    content of the response.  This is also accessible as
-    ``response.body`` (a string), ``response.unicode_body`` (a
-    unicode object, informed by ``response.charset``), and
-    ``response.body_file`` (a file-like object; writing to it appends
-    to ``app_iter``).
+ - :attr:`response.app_iter <webob.response.Response.app_iter>`:
+    An iterable (such as a list or generator) that will produce the content of
+    the response.  This is also accessible as ``response.body`` (a string),
+    ``response.unicode_body`` (a unicode object, informed by
+    ``response.charset``), and ``response.body_file`` (a file-like object;
+    writing to it appends to ``app_iter``).
 
 Everything else in the object derives from this underlying state.
 Here are the highlights:
 
-``response.content_type``:
-    The content type *not* including the ``charset`` parameter.
-    Typical use: ``response.content_type = 'text/html'``.  You can
-    subclass ``Response`` and add a class-level attribute
-    ``default_content_type`` to set this automatically on
-    instantiation.
+ - :attr:`response.content_type <webob.response.Response.content_type>`
+    The content type *not* including the ``charset`` parameter.  Typical use:
+    ``response.content_type = 'text/html'``.  You can subclass ``Response`` and
+    add a class-level attribute ``default_content_type`` to set this
+    automatically on instantiation.
 
-``response.charset``:
-    The ``charset`` parameter of the content-type, it also informs
-    encoding in ``response.unicode_body``.
-    ``response.content_type_params`` is a dictionary of all the
-    parameters.
+ - :attr:`response.charset <webob.response.Response.charset>`
+    The ``charset`` parameter of the content-type, it also informs encoding in
+    ``response.unicode_body``.  ``response.content_type_params`` is a
+    dictionary of all the parameters.
 
-``response.set_cookie(name=None, value='', max_age=None, path='/', domain=None, secure=False, httponly=False, comment=None, overwrite=False)``:
-    Set a cookie.  The keyword arguments control the various cookie
-    parameters.  The ``max_age`` argument is the length for the cookie
-    to live in seconds (you may also use a timedelta object). 
+ - :func:`response.set_cookie(name=None, value='', max_age=None, ...) <webob.response.Response.set_cookie>`
+    Set a cookie.  The keyword arguments control the various cookie parameters.
+    The ``max_age`` argument is the length for the cookie to live in seconds
+    (you may also use a timedelta object).
 
-``response.delete_cookie(key, path='/', domain=None)``:
-    Delete a cookie from the client.  This sets ``max_age`` to 0 and
-    the cookie value to ``''``.
+ - :func:`response.delete_cookie(name, ...) <webob.response.Response.delete_cookie>`
+    Delete a cookie from the client.  This sets ``max_age`` to 0 and the cookie
+    value to ``''``.
 
-``response.cache_expires(seconds=0)``:
-    This makes this response cacheable for the given number of seconds,
-    or if ``seconds`` is 0 then the response is uncacheable (this also
-    sets the ``Expires`` header).
+ - :func:`response.cache_expires(seconds=0) <webob.response.Response.cache_expires>`
+    This makes this response cacheable for the given number of seconds, or if
+    ``seconds`` is 0 then the response is uncacheable (this also sets the
+    ``Expires`` header).
 
-``response(environ, start_response)``: The response object is a WSGI
-    application.  As an application, it acts according to how you
-    create it.  It *can* do conditional responses if you pass
-    ``conditional_response=True`` when instantiating (or set that
-    attribute later).  It can also do HEAD and Range requests.
+ - :func:`response(environ, start_response) <webob.response.Response.__call__>`
+    The response object is a WSGI application.  As an application, it acts
+    according to how you create it.  It *can* do conditional responses if you
+    pass ``conditional_response=True`` when instantiating (or set that
+    attribute later). It can also do HEAD and Range requests.
 
 Headers
 -------
@@ -232,22 +229,26 @@ Like the request, most HTTP response headers are available as
 properties.  These are parsed, so you can do things like
 ``response.last_modified = os.path.getmtime(filename)``.
 
-.. seealso:: :class:`webob.response.Response`
+.. seealso::
+
+   The :class:`~webob.response.Response` object documentation for further
+   information.
 
 Instantiating the Response
 --------------------------
 
-Of course most of the time you just want to *make* a response.
-Generally any attribute of the response can be passed in as a keyword
-argument to the class, e.g.:
+Of course most of the time you just want to *make* a response.  Generally any
+attribute of the response can be passed in as a keyword argument to the class,
+e.g.:
 
 .. code-block:: python
 
-  response = Response(body='hello world!', content_type='text/plain')
+  response = Response(text='hello world!', content_type='text/plain')
 
 The status defaults to ``'200 OK'``. The ``content_type`` defaults to
-``default_content_type`` which is set to ``text/html``, although if you subclass
-``Response`` and set ``default_content_type``, you can override this behavior.
+``default_content_type`` which is set to ``text/html``, although if you
+subclass ``Response`` and set ``default_content_type``, you can override this
+behavior.
 
 Exceptions
 ==========
