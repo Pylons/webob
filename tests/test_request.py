@@ -12,9 +12,18 @@ from io import (
 import pytest
 
 from webob.acceptparse import (
+    AcceptCharsetInvalidHeader,
+    AcceptCharsetNoHeader,
+    AcceptCharsetValidHeader,
+    AcceptEncodingInvalidHeader,
+    AcceptEncodingNoHeader,
+    AcceptEncodingValidHeader,
+    AcceptInvalidHeader,
     AcceptLanguageInvalidHeader,
     AcceptLanguageNoHeader,
     AcceptLanguageValidHeader,
+    AcceptNoHeader,
+    AcceptValidHeader,
     )
 from webob.compat import (
     bytes_,
@@ -704,8 +713,73 @@ class TestRequestCommon(object):
     # make_tempfile
     # remove_conditional_headers
     # accept
+    def test_accept_no_header(self):
+        req = self._makeOne(environ={})
+        header = req.accept
+        assert isinstance(header, AcceptNoHeader)
+        assert header.header_value is None
+
+    def test_accept_invalid_header(self):
+        header_value = 'text/html;param=val;q=1;extparam=\x19'
+        req = self._makeOne(environ={'HTTP_ACCEPT': header_value})
+        header = req.accept
+        assert isinstance(header, AcceptInvalidHeader)
+        assert header.header_value == header_value
+
+    def test_accept_valid_header(self):
+        header_value = ',,text/html;p1="v1";p2=v2;q=0.9;e1="v1";e2;e3=v3,'
+        req = self._makeOne(environ={'HTTP_ACCEPT': header_value})
+        header = req.accept
+        assert isinstance(header, AcceptValidHeader)
+        assert header.header_value == header_value
+
     # accept_charset
+    def test_accept_charset_no_header(self):
+        req = self._makeOne(environ={})
+        header = req.accept_charset
+        assert isinstance(header, AcceptCharsetNoHeader)
+        assert header.header_value is None
+
+    @pytest.mark.parametrize('header_value', [
+        '', ', utf-7;q=0.2, utf-8;q =0.3'
+    ])
+    def test_accept_charset_invalid_header(self, header_value):
+        req = self._makeOne(environ={'HTTP_ACCEPT_CHARSET': header_value})
+        header = req.accept_charset
+        assert isinstance(header, AcceptCharsetInvalidHeader)
+        assert header.header_value == header_value
+
+    def test_accept_charset_valid_header(self):
+        header_value = \
+            'iso-8859-5;q=0.372,unicode-1-1;q=0.977,UTF-8, *;q=0.000'
+        req = self._makeOne(environ={'HTTP_ACCEPT_CHARSET': header_value})
+        header = req.accept_charset
+        assert isinstance(header, AcceptCharsetValidHeader)
+        assert header.header_value == header_value
+
     # accept_encoding
+    def test_accept_encoding_no_header(self):
+        req = self._makeOne(environ={})
+        header = req.accept_encoding
+        assert isinstance(header, AcceptEncodingNoHeader)
+        assert header.header_value is None
+
+    @pytest.mark.parametrize('header_value', [
+        ', ', ', gzip;q=0.2, compress;q =0.3',
+    ])
+    def test_accept_encoding_invalid_header(self, header_value):
+        req = self._makeOne(environ={'HTTP_ACCEPT_ENCODING': header_value})
+        header = req.accept_encoding
+        assert isinstance(header, AcceptEncodingInvalidHeader)
+        assert header.header_value == header_value
+
+    def test_accept_encoding_valid_header(self):
+        header_value = \
+            'compress;q=0.372,gzip;q=0.977,, *;q=0.000'
+        req = self._makeOne(environ={'HTTP_ACCEPT_ENCODING': header_value})
+        header = req.accept_encoding
+        assert isinstance(header, AcceptEncodingValidHeader)
+        assert header.header_value == header_value
 
     # accept_language
     def test_accept_language_no_header(self):
@@ -2560,7 +2634,7 @@ class TestRequest_functional(object):
     def test_accept_best_match(self):
         accept = self._blankOne('/').accept
         assert not accept
-        assert not self._blankOne('/', headers={'Accept': ''}).accept
+        assert self._blankOne('/', headers={'Accept': ''}).accept
         req = self._blankOne('/', headers={'Accept':'text/plain'})
         assert req.accept
         req = self._blankOne('/', accept=['*/*','text/*'])
@@ -3290,7 +3364,7 @@ class TestRequest_functional(object):
         from datetime import datetime
         from webob import Response
         from webob import UTC
-        from webob.acceptparse import MIMEAccept
+        from webob.acceptparse import Accept
         from webob.byterange import Range
         from webob.etag import ETagMatcher
         from webob.multidict import MultiDict
@@ -3326,7 +3400,7 @@ class TestRequest_functional(object):
         # Accept-* headers
         assert 'text/html' in req.accept
         req.accept = 'text/html;q=0.5, application/xhtml+xml;q=1'
-        assert isinstance(req.accept, MIMEAccept)
+        assert isinstance(req.accept, Accept)
         assert 'text/html' in req.accept
 
         assert req.accept.best_match(['text/html', 'application/xhtml+xml']) == 'application/xhtml+xml'
