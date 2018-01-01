@@ -40,6 +40,8 @@ Reference material for every public API exposed by WebOb:
    api/*
 
 
+.. _experimental-api:
+
 Experimental API
 ================
 
@@ -307,6 +309,7 @@ Change History
    whatsnew-1.5
    whatsnew-1.6
    whatsnew-1.7
+   whatsnew-1.8
    changes
 
 Status and License
