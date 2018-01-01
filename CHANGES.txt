@@ -1,6 +1,12 @@
 Unreleased
 ----------
 
+Compatability
+~~~~~~~~~~~~~
+
+- WebOb is no longer officially supported on Python 3.3 which was EOL'ed on
+  2017-09-29.
+
 Backwards Incompatibilities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
