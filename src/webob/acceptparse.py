@@ -1056,7 +1056,27 @@ class AcceptValidHeader(Accept):
         return bestq or None
 
 
-MIMEAccept = AcceptValidHeader  # backward compat
+class MIMEAccept(AcceptValidHeader):
+    """
+    Backwards compatibility shim for AcceptValidHeader that acts like the old
+    MIMEAccept from WebOb 1.7.
+
+    .. deprecated:: 1.8
+
+    Instead of directly creating the Accept object, please see:
+    :func:`create_accept_header(header_value)
+    <webob.acceptparse.create_accept_header>`, which will create the
+    appropriate object.
+    """
+
+    def __init__(self, *args, **kw):
+        warnings.warn(
+            'The MIMEAccept class has been replaced by'
+            'webob.acceptparse.create_accept_header. This compatibility shim'
+            'will be deprecated in a future version of WebOb.',
+            DeprecationWarning
+        )
+        super(MIMEAccept, self).__init__(*args, **kw)
 
 
 class _AcceptInvalidOrNoHeader(Accept):
