@@ -1,10 +1,8 @@
 import re
+import warnings
 
 import pytest
-
 from webob.acceptparse import (
-    _item_n_weight_re,
-    _list_1_or_more__compiled_re,
     Accept,
     AcceptCharset,
     AcceptCharsetInvalidHeader,
@@ -21,6 +19,9 @@ from webob.acceptparse import (
     AcceptLanguageValidHeader,
     AcceptNoHeader,
     AcceptValidHeader,
+    MIMEAccept,
+    _item_n_weight_re,
+    _list_1_or_more__compiled_re,
     accept_charset_property,
     accept_encoding_property,
     accept_language_property,
@@ -5713,3 +5714,14 @@ class TestAcceptLanguageProperty(object):
         property_.fdel(request=request)
         assert isinstance(request.accept_language, AcceptLanguageNoHeader)
         assert 'HTTP_ACCEPT_LANGUAGE' not in request.environ
+
+
+# Deprecated tests:
+
+
+def test_mime_init():
+    with warnings.catch_warnings(record=True) as warning:
+        warnings.simplefilter("always")
+        MIMEAccept('image/jpg')
+
+    assert len(warning) == 1
