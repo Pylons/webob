@@ -4,8 +4,11 @@
 Headers
 -------
 
+.. _acceptheader:
+
 Accept*
-~~~~~~~~
+~~~~~~~
+
 .. automodule:: webob.acceptparse
 
 
