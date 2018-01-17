@@ -1,11 +1,9 @@
+.. _reference:
+
 WebOb Reference
 +++++++++++++++
 
 .. contents::
-
-.. comment:
-
-    >>> from doctest import ELLIPSIS
 
 Introduction
 ============
@@ -15,6 +13,11 @@ objects.  It is written to be testable with :py:mod:`doctest` -- this
 affects the flavor of the documentation, perhaps to its detriment.
 But it also means you can feel confident that the documentation is
 correct.
+
+.. note::
+
+   All of the code samples below are for Python 3, and will not function as-is
+   on Python 2.
 
 This is a somewhat different approach to reference documentation compared to
 the extracted documentation for the :py:mod:`~webob.request` and
@@ -62,7 +65,7 @@ constructor that will fill in a minimal environment:
 
    >>> req = Request.blank('/article?id=1')
    >>> from pprint import pprint
-   >>> pprint(req.environ)
+   >>> pprint(req.environ)  # doctest: +ELLIPSIS
    {'HTTP_HOST': 'localhost:80',
     'PATH_INFO': '/article',
     'QUERY_STRING': 'id=1',
@@ -71,13 +74,14 @@ constructor that will fill in a minimal environment:
     'SERVER_NAME': 'localhost',
     'SERVER_PORT': '80',
     'SERVER_PROTOCOL': 'HTTP/1.0',
-    'wsgi.errors': <open file '<stderr>', mode 'w' at ...>,
-    'wsgi.input': <...IO... object at ...>,
+    'wsgi.errors': <...TextIOWrapper ...'<stderr>' ...>,
+    'wsgi.input': <...IO object at 0x...>,
     'wsgi.multiprocess': False,
     'wsgi.multithread': False,
     'wsgi.run_once': False,
     'wsgi.url_scheme': 'http',
     'wsgi.version': (1, 0)}
+
 
 Request Body
 ------------
@@ -93,13 +97,13 @@ turned into a file-like object.  You can read the entire body with
     >>> hasattr(req.body_file, 'read')
     True
     >>> req.body
-    ''
+    b''
     >>> req.method = 'PUT'
-    >>> req.body = 'test'
+    >>> req.body = b'test'
     >>> hasattr(req.body_file, 'read')
     True
     >>> req.body
-    'test'
+    b'test'
 
 Method & URL
 ------------
@@ -115,14 +119,14 @@ request object:
     'http'
     >>> req.script_name  # The base of the URL
     ''
-    >>> req.script_name = '/blog' # make it more interesting
-    >>> req.path_info    # The yet-to-be-consumed part of the URL
+    >>> req.script_name = '/blog'  # make it more interesting
+    >>> req.path_info  # The yet-to-be-consumed part of the URL
     '/article'
-    >>> req.content_type # Content-Type of the request body
+    >>> req.content_type  # Content-Type of the request body
     ''
-    >>> print req.remote_user  # The authenticated user (there is none set)
+    >>> print(req.remote_user)  # The authenticated user (there is none set)
     None
-    >>> print req.remote_addr  # The remote IP
+    >>> print(req.remote_addr)  # The remote IP
     None
     >>> req.host
     'localhost:80'
@@ -200,13 +204,13 @@ Some examples:
 
     >>> req = Request.blank('/test?check=a&check=b&name=Bob')
     >>> req.GET
-    MultiDict([(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob')])
+    GET([('check', 'a'), ('check', 'b'), ('name', 'Bob')])
     >>> req.GET['check']
-    u'b'
+    'b'
     >>> req.GET.getall('check')
-    [u'a', u'b']
-    >>> req.GET.items()
-    [(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob')]
+    ['a', 'b']
+    >>> list(req.GET.items())
+    [('check', 'a'), ('check', 'b'), ('name', 'Bob')]
 
 We'll have to create a request body and change the method to get ``POST``.
 Until we do that, the variables are boring:
@@ -215,14 +219,14 @@ Until we do that, the variables are boring:
 
     >>> req.POST
     <NoVars: Not a form request>
-    >>> req.POST.items()  # NoVars can be read like a dict, but not written
+    >>> list(req.POST.items())  # NoVars can be read like a dict, but not written
     []
     >>> req.method = 'POST'
-    >>> req.body = 'name=Joe&email=joe@example.com'
+    >>> req.body = b'name=Joe&email=joe@example.com'
     >>> req.POST
-    MultiDict([(u'name', u'Joe'), (u'email', u'joe@example.com')])
+    MultiDict([('name', 'Joe'), ('email', 'joe@example.com')])
     >>> req.POST['name']
-    u'Joe'
+    'Joe'
 
 Often you won't care where the variables come from.  (Even if you care about
 the method, the location of the variables might not be important.)  There is a
@@ -232,18 +236,18 @@ contains variables from both sources:
 .. code-block:: python
 
     >>> req.params
-    NestedMultiDict([(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob'), (u'name', u'Joe'), (u'email', u'joe@example.com')])
+    NestedMultiDict([('check', 'a'), ('check', 'b'), ('name', 'Bob'), ('name', 'Joe'), ('email', 'joe@example.com')])
     >>> req.params['name']
-    u'Bob'
+    'Bob'
     >>> req.params.getall('name')
-    [u'Bob', u'Joe']
+    ['Bob', 'Joe']
     >>> for name, value in req.params.items():
-    ...     print '%s: %r' % (name, value)
-    check: u'a'
-    check: u'b'
-    name: u'Bob'
-    name: u'Joe'
-    email: u'joe@example.com'
+    ...     print('%s: %r' % (name, value))
+    check: 'a'
+    check: 'b'
+    name: 'Bob'
+    name: 'Joe'
+    email: 'joe@example.com'
 
 The ``POST`` and ``GET`` nomenclature is historical -- :py:meth:`req.GET
 <webob.request.BaseRequest.GET>` can be used for non-GET requests to access
@@ -252,29 +256,30 @@ also be used for PUT requests with the appropriate Content-Type.
 
     >>> req = Request.blank('/test?check=a&check=b&name=Bob')
     >>> req.method = 'PUT'
-    >>> req.body = body = 'var1=value1&var2=value2&rep=1&rep=2'
+    >>> req.body = b'var1=value1&var2=value2&rep=1&rep=2'
     >>> req.environ['CONTENT_LENGTH'] = str(len(req.body))
     >>> req.environ['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
     >>> req.GET
-    MultiDict([(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob')])
+    GET([('check', 'a'), ('check', 'b'), ('name', 'Bob')])
     >>> req.POST
-    MultiDict([(u'var1', u'value1'), (u'var2', u'value2'), (u'rep', u'1'), (u'rep', u'2')])
+    MultiDict([('var1', 'value1'), ('var2', 'value2'), ('rep', '1'), ('rep', '2')])
 
 Unicode Variables
 ~~~~~~~~~~~~~~~~~
 
-Submissions are non-unicode (``str``) strings, unless some character set is
-indicated. A client can indicate the character set with ``Content-Type:
-application/x-www-form-urlencoded; charset=utf8``, but very few clients
-actually do this (sometimes XMLHttpRequest requests will do this, as JSON is
-always UTF8 even when a page is served with a different character set). You can
-force a charset, which will affect all the variables:
+Submissions are by default UTF-8, you can force a different character set by
+setting the charset on the ``Request`` object explicitly. A client can indicate
+the character set with ``Content-Type: application/x-www-form-urlencoded;
+charset=utf8``, but very few clients actually do this (sometimes XMLHttpRequest
+requests will do this, as JSON is always UTF8 even when a page is served with a
+different character set). You can force a charset, which will affect all the
+variables:
 
 .. code-block:: python
 
     >>> req.charset = 'utf8'
     >>> req.GET
-    MultiDict([(u'check', u'a'), (u'check', u'b'), (u'name', u'Bob')])
+    GET([('check', 'a'), ('check', 'b'), ('name', 'Bob')])
 
 Cookies
 -------
@@ -286,7 +291,7 @@ they will be decoded into Unicode strings if you set the charset.
 
     >>> req.headers['Cookie'] = 'test=value'
     >>> req.cookies
-    MultiDict([(u'test', u'value')])
+    <RequestCookies (dict-like) with values {'test': 'value'}>
 
 Modifying the request
 ---------------------
@@ -339,7 +344,7 @@ example means that ``text/html`` is okay, but
 
     >>> req.accept = 'text/html;q=0.5, application/xhtml+xml;q=1'
     >>> req.accept
-    <MIMEAccept('text/html;q=0.5, application/xhtml+xml')>
+    <AcceptValidHeader ('text/html;q=0.5, application/xhtml+xml')>
     >>> 'text/html' in req.accept
     True
 
@@ -431,29 +436,18 @@ range) should be returned:
 .. code-block:: python
 
     >>> req.if_range
-    <Empty If-Range>
-    >>> req.if_range.match(etag='some-etag', last_modified=datetime(2005, 1, 1, 12, 0))
-    True
+    IfRange(<ETag *>)
     >>> req.if_range = 'opaque-etag'
-    >>> req.if_range.match(etag='other-etag')
-    False
-    >>> req.if_range.match(etag='opaque-etag')
-    True
-
-You can also pass in a response object with:
-
-.. code-block:: python
-
     >>> from webob import Response
     >>> res = Response(etag='opaque-etag')
-    >>> req.if_range.match_response(res)
+    >>> res in req.if_range
     True
 
 To get the range information:
 
     >>> req.range = 'bytes=0-100'
     >>> req.range
-    <Range ranges=(0, 101)>
+    <Range bytes 0-101>
     >>> cr = req.range.content_range(length=1000)
     >>> cr.start, cr.stop, cr.length
     (0, 101, 1000)
@@ -516,7 +510,7 @@ A handier response can be had with:
 .. code-block:: python
 
     >>> res = req.get_response(wsgi_app)
-    >>> res
+    >>> res  # doctest: +ELLIPSIS
     <Response ... 200 OK>
     >>> res.status
     '200 OK'
@@ -571,7 +565,7 @@ The core attributes are unsurprising:
     >>> res.headerlist
     [('Content-Type', 'text/html; charset=UTF-8'), ('Content-Length', '0')]
     >>> res.body
-    ''
+    b''
 
 You can set any of these attributes, e.g.:
 
@@ -582,24 +576,19 @@ You can set any of these attributes, e.g.:
     '404 Not Found'
     >>> res.status_code
     404
-    >>> res.headerlist = [('Content-type', 'text/html')]
-    >>> res.body = 'test'
-    >>> print res
+    >>> res.headerlist = [('Content-Type', 'text/html')]
+    >>> res.body = b'test'
+    >>> print(res)
     404 Not Found
-    Content-type: text/html
+    Content-Type: text/html
     Content-Length: 4
     <BLANKLINE>
     test
-    >>> res.body = u"test"
+    >>> res.body = "test"  # doctest: +ELLIPSIS
     Traceback (most recent call last):
         ...
-    TypeError: You cannot set Response.body to a unicode object (use Response.text)
-    >>> res.text = u"test"
-    Traceback (most recent call last):
-        ...
-    AttributeError: You cannot access Response.text unless charset is set
-    >>> res.charset = 'utf8'
-    >>> res.text = u"test"
+    TypeError: You cannot set Response.body to a text object (use Response.text)
+    >>> res.text = "test"
     >>> res.body
     b'test'
 
@@ -615,7 +604,7 @@ the list in ``res.headers``:
 .. code-block:: python
 
     >>> res.headers
-    ResponseHeaders([('Content-Type', 'text/html; charset=utf8'), ('Content-Length', '4')])
+    ResponseHeaders([('Content-Type', 'text/html'), ('Content-Length', '4')])
 
 This is case-insensitive.  It can support multiple values for a key,
 though only if you use ``res.headers.add(key, value)`` or read them
@@ -645,20 +634,19 @@ app_iter in-place (turning the app_iter into a list if necessary):
 
     >>> res = Response(content_type='text/plain', charset=None)
     >>> f = res.body_file
-    >>> f.write('hey')
-    >>> f.write(u'test')
+    >>> f.write('hey')  # doctest: +ELLIPSIS
     Traceback (most recent call last):
-      . . .
-    TypeError: You can only write unicode to Response if charset has been set
+        ...
+    TypeError: You can only write text to Response if charset has been set
     >>> f.encoding
-    >>> res.charset = 'utf8'
+    >>> res.charset = 'UTF-8'
     >>> f.encoding
-    'utf8'
-    >>> f.write(u'test')
+    'UTF-8'
+    >>> f.write('test')
     >>> res.app_iter
-    ['', 'hey', 'test']
+    [b'', b'test']
     >>> res.body
-    'heytest'
+    b'test'
 
 Header Getters
 --------------
@@ -680,10 +668,10 @@ handled through two separate properties:
     'text/html; charset=utf8'
     >>> res.content_type = 'application/atom+xml'
     >>> res.content_type_params
-    {'charset': 'utf8'}
-    >>> res.content_type_params = {'type': 'entry', 'charset': 'utf8'}
+    {'charset': 'UTF-8'}
+    >>> res.content_type_params = {'type': 'entry', 'charset': 'UTF-8'}
     >>> res.headers['content-type']
-    'application/atom+xml; charset=utf8; type=entry'
+    'application/atom+xml; charset=UTF-8; type=entry'
 
 Other headers:
 
@@ -772,9 +760,9 @@ After setting all these headers, here's the result:
 
 .. code-block:: python
 
-    >>> for name, value in res.headerlist:
-    ...     print '%s: %s' % (name, value)
-    Content-Type: application/atom+xml; charset=utf8; type=entry
+    >>> for name, value in res.headerlist:  # doctest: +ELLIPSIS
+    ...     print('%s: %s' % (name, value))  # doctest: +ELLIPSIS
+    Content-Type: application/atom+xml; charset=UTF-8; type=entry
     Location: http://localhost/foo
     Accept-Ranges: bytes
     Age: 120
@@ -807,7 +795,7 @@ You can also set Cache-Control related attributes with
     >>> res.cache_expires(0)
     >>> res.headers['Cache-Control']
     'max-age=0, must-revalidate, no-cache, no-store'
-    >>> res.headers['Expires']
+    >>> res.headers['Expires']  # doctest: +ELLIPSIS
     '... GMT'
 
 You can also use the :py:class:`~datetime.timedelta`
@@ -831,11 +819,11 @@ methods.  Most importantly:
 
     >>> res.set_cookie('key', 'value', max_age=360, path='/',
     ...                domain='example.org', secure=True)
-    >>> res.headers['Set-Cookie']
+    >>> res.headers['Set-Cookie']  # doctest: +ELLIPSIS
     'key=value; Domain=example.org; Max-Age=360; Path=/; expires=... GMT; secure'
     >>> # To delete a cookie previously set in the client:
     >>> res.delete_cookie('bad_cookie')
-    >>> res.headers['Set-Cookie']
+    >>> res.headers['Set-Cookie']  # doctest: +ELLIPSIS
     'bad_cookie=; Max-Age=0; Path=/; expires=... GMT'
 
 The only other real method of note (note that this does *not* delete
@@ -845,7 +833,7 @@ the cookie from clients, only from the response object):
 
     >>> res.unset_cookie('key')
     >>> res.unset_cookie('bad_cookie')
-    >>> print res.headers.get('Set-Cookie')
+    >>> print(res.headers.get('Set-Cookie'))
     None
 
 Binding a Request
@@ -873,15 +861,16 @@ A possible pattern for your application might be:
     >>> def my_app(environ, start_response):
     ...     req = Request(environ)
     ...     res = Response()
+    ...     res.charset = 'UTF-8'
     ...     res.content_type = 'text/plain'
     ...     parts = []
     ...     for name, value in sorted(req.environ.items()):
     ...         parts.append('%s: %r' % (name, value))
-    ...     res.body = '\n'.join(parts)
+    ...     res.text = '\n'.join(parts)
     ...     return res(environ, start_response)
     >>> req = Request.blank('/')
     >>> res = req.get_response(my_app)
-    >>> print res
+    >>> print(res)  # doctest: +ELLIPSIS
     200 OK
     Content-Type: text/plain; charset=UTF-8
     Content-Length: ...
@@ -894,7 +883,7 @@ A possible pattern for your application might be:
     SERVER_NAME: 'localhost'
     SERVER_PORT: '80'
     SERVER_PROTOCOL: 'HTTP/1.0'
-    wsgi.errors: <open file '<stderr>', mode 'w' at ...>
+    wsgi.errors: <...>
     wsgi.input: <...IO... object at ...>
     wsgi.multiprocess: False
     wsgi.multithread: False
@@ -916,12 +905,12 @@ simple body is provided.
     >>> from webob.exc import *
     >>> exc = HTTPTemporaryRedirect(location='foo')
     >>> req = Request.blank('/path/to/something')
-    >>> print str(req.get_response(exc)).strip()
+    >>> print(str(req.get_response(exc)).strip())
     307 Temporary Redirect
     Location: http://localhost/path/to/foo
     Content-Length: 126
     Content-Type: text/plain; charset=UTF-8
-    <BLANKLINE>
+    \r
     307 Temporary Redirect
     <BLANKLINE>
     The resource has been moved to http://localhost/path/to/foo; you should be redirected automatically.
@@ -932,7 +921,7 @@ request will an HTML response be given:
 .. code-block:: python
 
     >>> req.accept += 'text/html'
-    >>> print str(req.get_response(exc)).strip()
+    >>> print(str(req.get_response(exc)).strip())
     307 Temporary Redirect
     Location: http://localhost/path/to/foo
     Content-Length: 270
@@ -950,13 +939,6 @@ request will an HTML response be given:
     <BLANKLINE>
      </body>
     </html>
-
-
-This is taken from `paste.httpexceptions
-<https://bitbucket.org/ianb/paste/src/0e5a48796ab969d874c6b772c5c33561ac2d1b0d/paste/httpexceptions.py?at=default&fileviewer=file-view-default#httpexceptions.py-8>`_,
-and if you have Paste installed then these exceptions will be subclasses of
-the Paste exceptions.
-
 
 Conditional WSGI Application
 ----------------------------
@@ -976,12 +958,12 @@ To enable this you must create the response like
     ...                   last_modified=datetime(2005, 1, 1, 12, 0, tzinfo=UTC))
     >>> req = Request.blank('/')
     >>> req.if_modified_since = datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
-    >>> req.get_response(res)
+    >>> req.get_response(res)  # doctest: +ELLIPSIS
     <Response ... 304 Not Modified>
     >>> del req.if_modified_since
     >>> res.etag = 'opaque-tag'
     >>> req.if_none_match = 'opaque-tag'
-    >>> req.get_response(res)
+    >>> req.get_response(res)  # doctest: +ELLIPSIS
     <Response ... 304 Not Modified>
 
     >>> req.if_none_match = '*'
@@ -1009,4 +991,4 @@ To enable this you must create the response like
     >>> result.headers['content-range']
     'bytes 1-4/10'
     >>> result.body
-    '1234'
+    b'1234'

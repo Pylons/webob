@@ -12,12 +12,9 @@ except ImportError:
 import warnings
 
 from webob.acceptparse import (
-    AcceptEncoding,
-    AcceptLanguage,
-    AcceptCharset,
-    MIMEAccept,
-    MIMENilAccept,
-    NoAccept,
+    accept_charset_property,
+    accept_encoding_property,
+    accept_language_property,
     accept_property,
     )
 
@@ -894,14 +891,25 @@ class BaseRequest(object):
         if clen is not None and clen != 0:
             return True
         elif clen is None:
-            # rely on the special flag
-            return self.environ.get('webob.is_body_readable', False)
+            # Rely on the special flag that signifies that either Chunked
+            # Encoding is allowed (and works) or we have replaced
+            # self.body_file with something that is readable and EOF's
+            # correctly.
+            return self.environ.get(
+                'wsgi.input_terminated',
+                # For backwards compatibility, we fall back to checking if
+                # webob.is_body_readable is set in the environ
+                self.environ.get(
+                    'webob.is_body_readable',
+                    False
+                )
+            )
 
         return False
 
     @is_body_readable.setter
     def is_body_readable(self, flag):
-        self.environ['webob.is_body_readable'] = bool(flag)
+        self.environ['wsgi.input_terminated'] = bool(flag)
 
     def make_body_seekable(self):
         """
@@ -1039,12 +1047,10 @@ class BaseRequest(object):
             if key in self.environ:
                 del self.environ[key]
 
-    accept = accept_property('Accept', '14.1', MIMEAccept, MIMENilAccept)
-    accept_charset = accept_property('Accept-Charset', '14.2', AcceptCharset)
-    accept_encoding = accept_property('Accept-Encoding', '14.3',
-                                      AcceptClass=AcceptEncoding,
-                                      NilClass=NoAccept)
-    accept_language = accept_property('Accept-Language', '14.4', AcceptLanguage)
+    accept = accept_property()
+    accept_charset = accept_charset_property()
+    accept_encoding = accept_encoding_property()
+    accept_language = accept_language_property()
 
     authorization = converter(
         environ_getter('HTTP_AUTHORIZATION', None, '14.8'),

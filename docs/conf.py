@@ -24,8 +24,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'WebOb'
-copyright = u'2015, Ian Bicking and contributors'
-author = u'Ian Bicking and contributors'
+copyright = u'2018, Ian Bicking, Pylons Project and contributors'
+author = u'Ian Bicking, Pylons Project, and contributors'
 
 version = release = pkg_resources.get_distribution('webob').version
 
@@ -47,6 +47,8 @@ pygments_style = 'sphinx'
 todo_include_todos = False
 
 modindex_common_prefix = ['webob.']
+
+autodoc_member_order = 'bysource'
 
 # -- Options for HTML output ---------------------------------------------
 

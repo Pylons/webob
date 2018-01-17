@@ -59,8 +59,6 @@ def test_matcher():
     matcher = ETagMatcher(['ETAGS'])
     matcher = ETagMatcher(['ETAGS'])
     assert matcher.etags == ['ETAGS']
-    with pytest.raises(DeprecationWarning):
-        matcher.weak_match("etag")
     assert "ETAGS" in matcher
     assert "WEAK" not in matcher
     assert "BEER" not in matcher

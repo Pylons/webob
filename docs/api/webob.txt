@@ -4,37 +4,101 @@
 Headers
 -------
 
-Accept-*
-~~~~~~~~
+.. _acceptheader:
+
+Accept*
+~~~~~~~
+
 .. automodule:: webob.acceptparse
 
+
+Convenience functions to automatically create the appropriate header objects of
+a certain type:
+
+.. autofunction:: create_accept_header
+.. autofunction:: create_accept_charset_header
+.. autofunction:: create_accept_encoding_header
+.. autofunction:: create_accept_language_header
+
+The classes that may be returned by one of the functions above, and their
+methods:
+
+.. autoclass:: Accept
+   :members: parse
+
+.. autoclass:: AcceptValidHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+	     accept_html, accepts_html, acceptable_offers, best_match, quality
+
+.. autoclass:: AcceptNoHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+             accept_html, accepts_html, acceptable_offers, best_match, quality
+
+.. autoclass:: AcceptInvalidHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+	     accept_html, accepts_html, acceptable_offers, best_match, quality
+
 .. autoclass:: AcceptCharset
-   :members:
-   :inherited-members:
+   :members: parse
+
+.. autoclass:: AcceptCharsetValidHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+             acceptable_offers, best_match, quality
+
+.. autoclass:: AcceptCharsetNoHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+             acceptable_offers, best_match, quality
+
+.. autoclass:: AcceptCharsetInvalidHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+             acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptEncoding
-   :members:
-   :inherited-members:
+   :members: parse
+
+.. autoclass:: AcceptEncodingValidHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+             acceptable_offers, best_match, quality
+
+.. autoclass:: AcceptEncodingNoHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+             acceptable_offers, best_match, quality
+
+.. autoclass:: AcceptEncodingInvalidHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+             acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptLanguage
-   :members:
-   :inherited-members:
+   :members: parse
+
+.. autoclass:: AcceptLanguageValidHeader
+   :members: header_value, parsed, __init__, __add__, __contains__, __iter__,
+	     __radd__, __str__, parse, basic_filtering, best_match, lookup,
+             quality
+
+.. autoclass:: AcceptLanguageNoHeader
+   :members: header_value, parsed, __init__, __add__, __contains__, __iter__,
+	     __radd__, __str__, parse, basic_filtering, best_match, lookup,
+             quality
+
+.. autoclass:: AcceptLanguageInvalidHeader
+   :members: header_value, parsed, __init__, __add__, __contains__, __iter__,
+	     __radd__, __str__, parse, basic_filtering, best_match, lookup,
+             quality
+
+Deprecated:
 
 .. autoclass:: MIMEAccept
-   :members:
-   :inherited-members:
 
-.. autoclass:: MIMENilAccept
-   :members:
-   :inherited-members:
-
-.. autoclass:: NilAccept
-   :members:
-   :inherited-members:
-
-.. autoclass:: NoAccept
-   :members:
-   :inherited-members:
 
 Cache-Control
 ~~~~~~~~~~~~~
