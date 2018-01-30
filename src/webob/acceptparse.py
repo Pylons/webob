@@ -1071,8 +1071,8 @@ class MIMEAccept(AcceptValidHeader):
 
     def __init__(self, *args, **kw):
         warnings.warn(
-            'The MIMEAccept class has been replaced by'
-            'webob.acceptparse.create_accept_header. This compatibility shim'
+            'The MIMEAccept class has been replaced by '
+            'webob.acceptparse.create_accept_header. This compatibility shim '
             'will be deprecated in a future version of WebOb.',
             DeprecationWarning
         )

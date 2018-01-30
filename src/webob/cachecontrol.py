@@ -205,6 +205,7 @@ class CacheControl(object):
     stale_while_revalidate = value_property(
         'stale-while-revalidate', type='response')
     stale_if_error = value_property('stale-if-error', type='response')
+    immutable = exists_property('immutable', type='response')
 
     def __str__(self):
         return serialize_cache_control(self.properties)

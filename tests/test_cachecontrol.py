@@ -227,10 +227,11 @@ class TestCacheControl(object):
 
     def test_parse(self):
         from webob.cachecontrol import CacheControl
-        cc = CacheControl.parse("public, max-age=315360000")
+        cc = CacheControl.parse("public, max-age=315360000, immutable")
         assert type(cc) == CacheControl
         assert cc.max_age == 315360000
         assert cc.public is True
+        assert cc.immutable is True
 
     def test_parse_updates_to(self):
         from webob.cachecontrol import CacheControl
