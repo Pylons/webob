@@ -1,3 +1,10 @@
+unreleased
+----------
+
+- Support setting the ``Cache-Control: immutable`` response header via
+  ``response.cache_control.immutable = True`` and
+  ``response.cache_expires(immutable=True)``.
+
 1.8.0rc1 (2018-01-01)
 ---------------------
 
