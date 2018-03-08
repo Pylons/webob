@@ -752,11 +752,11 @@ class BaseRequest(object):
         Return a MultiDict containing all the variables from a form
         request. Returns an empty dict-like object for non-form requests.
 
-        Form requests are typically POST requests, however PUT & PATCH requests
-        with an appropriate Content-Type are also supported.
+        Form requests are typically POST requests, however PUT, PATCH & DELETE
+        requests with an appropriate Content-Type are also supported.
         """
         env = self.environ
-        if self.method not in ('POST', 'PUT', 'PATCH'):
+        if self.method not in ('POST', 'PUT', 'PATCH', 'DELETE'):
             return NoVars('Not a form request')
         if 'webob._parsed_post_vars' in env:
             vars, body_file = env['webob._parsed_post_vars']
