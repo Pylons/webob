@@ -55,7 +55,7 @@ These features are experimental and may change at any point in the future.
 Feature
 ~~~~~~~
 
-- ``request.POST`` now supports DELETE requests with the appropriate
+- ``request.POST`` now supports any requests with the appropriate
   Content-Type (#351).
 
 Bugfix

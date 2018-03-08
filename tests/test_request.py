@@ -499,7 +499,7 @@ class TestRequestCommon(object):
         req = self._makeOne(environ)
         result = req.POST
         assert isinstance(result, NoVars)
-        assert result.reason.startswith('Not a form request')
+        assert result.reason.startswith('Not an HTML form')
 
     @pytest.mark.parametrize('method', ['POST', 'PUT', 'PATCH', 'DELETE'])
     def test_POST_existing_cache_hit(self, method):
@@ -2588,7 +2588,7 @@ class TestRequest_functional(object):
         res = b''.join(app_iter)
         assert b'Hello' in res
         assert b"MultiDict([])" in res
-        assert b"post is <NoVars: Not a form request>" in res
+        assert b"post is <NoVars: Not an HTML form" in res
 
     def test_gets_with_query_string(self):
         request = self._blankOne('/?name=george')
