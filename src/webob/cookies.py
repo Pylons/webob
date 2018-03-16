@@ -569,7 +569,7 @@ class SignedSerializer(object):
     ``secret``
       A string which is used to sign the cookie. The secret should be at
       least as long as the block size of the selected hash algorithm. For
-      ``sha512`` this would mean a 128 bit (64 character) secret.
+      ``sha512`` this would mean a 512 bit (64 character) secret.
 
     ``salt``
       A namespace to avoid collisions between different uses of a shared
@@ -886,7 +886,7 @@ class SignedCookieProfile(CookieProfile):
     ``secret``
       A string which is used to sign the cookie. The secret should be at
       least as long as the block size of the selected hash algorithm. For
-      ``sha512`` this would mean a 128 bit (64 character) secret.
+      ``sha512`` this would mean a 512 bit (64 character) secret.
 
     ``salt``
       A namespace to avoid collisions between different uses of a shared
