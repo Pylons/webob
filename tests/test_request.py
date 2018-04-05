@@ -31,9 +31,12 @@ from webob.compat import (
     text_type,
     text_,
     )
+from webob.multidict import NoVars
+
 
 py2only = pytest.mark.skipif("sys.version_info >= (3, 0)")
 py3only = pytest.mark.skipif("sys.version_info < (3, 0)")
+
 
 class TestRequestCommon(object):
     # unit tests of non-bytes-vs-text-specific methods of request object
@@ -492,43 +495,33 @@ class TestRequestCommon(object):
 
     # POST
     def test_POST_not_POST_or_PUT(self):
-        from webob.multidict import NoVars
-        environ = {'REQUEST_METHOD': 'GET',
-                  }
+        environ = {'REQUEST_METHOD': 'GET'}
         req = self._makeOne(environ)
         result = req.POST
         assert isinstance(result, NoVars)
-        assert result.reason.startswith('Not a form request')
+        assert result.reason.startswith('Not an HTML form')
 
-    def test_POST_existing_cache_hit(self):
+    @pytest.mark.parametrize('method', ['POST', 'PUT', 'PATCH', 'DELETE'])
+    def test_POST_existing_cache_hit(self, method):
         data = b'input'
-        INPUT = BytesIO(data)
-        environ = {'wsgi.input': INPUT,
-                   'REQUEST_METHOD': 'POST',
-                   'webob._parsed_post_vars': ({'foo': 'bar'}, INPUT),
-                  }
+        wsgi_input = BytesIO(data)
+        environ = {
+            'wsgi.input': wsgi_input,
+            'REQUEST_METHOD': method,
+            'webob._parsed_post_vars': ({'foo': 'bar'}, wsgi_input),
+        }
         req = self._makeOne(environ)
         result = req.POST
         assert result == {'foo': 'bar'}
 
-    def test_PUT_missing_content_type(self):
-        from webob.multidict import NoVars
+    @pytest.mark.parametrize('method', ['PUT', 'PATCH', 'DELETE'])
+    def test_POST_not_POST_missing_content_type(self, method):
         data = b'input'
-        INPUT = BytesIO(data)
-        environ = {'wsgi.input': INPUT,
-                   'REQUEST_METHOD': 'PUT',
-                  }
-        req = self._makeOne(environ)
-        result = req.POST
-        assert isinstance(result, NoVars)
-        assert result.reason.startswith('Not an HTML form submission')
-    def test_PATCH_missing_content_type(self):
-        from webob.multidict import NoVars
-        data = b'input'
-        INPUT = BytesIO(data)
-        environ = {'wsgi.input': INPUT,
-                   'REQUEST_METHOD': 'PATCH',
-                  }
+        wsgi_input = BytesIO(data)
+        environ = {
+            'wsgi.input': wsgi_input,
+            'REQUEST_METHOD': method,
+        }
         req = self._makeOne(environ)
         result = req.POST
         assert isinstance(result, NoVars)
@@ -539,21 +532,23 @@ class TestRequestCommon(object):
         INPUT = BytesIO(data)
         environ = {'wsgi.input': INPUT,
                    'REQUEST_METHOD': 'POST',
-                   'CONTENT_LENGTH':len(data),
+                   'CONTENT_LENGTH': len(data),
                    'webob.is_body_seekable': True,
                   }
         req = self._makeOne(environ)
         result = req.POST
         assert result['var1'] == 'value1'
 
-    def test_POST_json_no_content_type(self):
+    @pytest.mark.parametrize('method', ['POST', 'PUT', 'PATCH', 'DELETE'])
+    def test_POST_json_no_content_type(self, method):
         data = b'{"password": "last centurion", "email": "rory@wiggy.net"}'
-        INPUT = BytesIO(data)
-        environ = {'wsgi.input': INPUT,
-                   'REQUEST_METHOD': 'POST',
-                   'CONTENT_LENGTH':len(data),
-                   'webob.is_body_seekable': True,
-                  }
+        wsgi_input = BytesIO(data)
+        environ = {
+            'wsgi.input': wsgi_input,
+            'REQUEST_METHOD': method,
+            'CONTENT_LENGTH': len(data),
+            'webob.is_body_seekable': True,
+        }
         req = self._makeOne(environ)
         r_1 = req.body
         r_2 = req.POST
@@ -561,21 +556,38 @@ class TestRequestCommon(object):
         assert r_1 == b'{"password": "last centurion", "email": "rory@wiggy.net"}'
         assert r_3 == b'{"password": "last centurion", "email": "rory@wiggy.net"}'
 
-    def test_PUT_bad_content_type(self):
-        from webob.multidict import NoVars
+    @pytest.mark.parametrize('method', ['POST', 'PUT', 'PATCH', 'DELETE'])
+    def test_POST_bad_content_type(self, method):
         data = b'input'
-        INPUT = BytesIO(data)
-        environ = {'wsgi.input': INPUT,
-                   'REQUEST_METHOD': 'PUT',
-                   'CONTENT_TYPE': 'text/plain',
-                  }
+        wsgi_input = BytesIO(data)
+        environ = {
+            'wsgi.input': wsgi_input,
+            'REQUEST_METHOD': method,
+            'CONTENT_TYPE': 'text/plain',
+        }
         req = self._makeOne(environ)
         result = req.POST
         assert isinstance(result, NoVars)
-        assert result.reason.startswith( 'Not an HTML form submission')
+        assert result.reason.startswith('Not an HTML form submission')
 
-    def test_POST_multipart(self):
-        BODY_TEXT = (
+    @pytest.mark.parametrize('method', ['POST', 'PUT', 'PATCH', 'DELETE'])
+    def test_POST_urlencoded(self, method):
+        data = b'var1=value1&var2=value2&rep=1&rep=2'
+        wsgi_input = BytesIO(data)
+        environ = {
+            'wsgi.input': wsgi_input,
+            'REQUEST_METHOD': method,
+            'CONTENT_LENGTH': len(data),
+            'CONTENT_TYPE': 'application/x-www-form-urlencoded',
+            'webob.is_body_seekable': True,
+        }
+        req = self._makeOne(environ)
+        result = req.POST
+        assert result['var1'] == 'value1'
+
+    @pytest.mark.parametrize('method', ['POST', 'PUT', 'PATCH', 'DELETE'])
+    def test_POST_multipart(self, method):
+        data = (
             b'------------------------------deb95b63e42a\n'
             b'Content-Disposition: form-data; name="foo"\n'
             b'\n'
@@ -587,14 +599,15 @@ class TestRequestCommon(object):
             b'these are the contents of the file "bar.txt"\n'
             b'\n'
             b'------------------------------deb95b63e42a--\n')
-        INPUT = BytesIO(BODY_TEXT)
-        environ = {'wsgi.input': INPUT,
-                   'webob.is_body_seekable': True,
-                   'REQUEST_METHOD': 'POST',
-                   'CONTENT_TYPE': 'multipart/form-data; '
-                      'boundary=----------------------------deb95b63e42a',
-                   'CONTENT_LENGTH': len(BODY_TEXT),
-                  }
+        wsgi_input = BytesIO(data)
+        environ = {
+            'wsgi.input': wsgi_input,
+            'webob.is_body_seekable': True,
+            'REQUEST_METHOD': method,
+            'CONTENT_TYPE': 'multipart/form-data; '
+                            'boundary=----------------------------deb95b63e42a',
+            'CONTENT_LENGTH': len(data),
+        }
         req = self._makeOne(environ)
         result = req.POST
         assert result['foo'] == 'foo'
@@ -2575,7 +2588,7 @@ class TestRequest_functional(object):
         res = b''.join(app_iter)
         assert b'Hello' in res
         assert b"MultiDict([])" in res
-        assert b"post is <NoVars: Not a form request>" in res
+        assert b"post is <NoVars: Not an HTML form" in res
 
     def test_gets_with_query_string(self):
         request = self._blankOne('/?name=george')
@@ -3325,7 +3338,6 @@ class TestRequest_functional(object):
         # Query & POST variables
         from webob.multidict import MultiDict
         from webob.multidict import NestedMultiDict
-        from webob.multidict import NoVars
         from webob.multidict import GetDict
         req = self._blankOne('/test?check=a&check=b&name=Bob')
         GET = GetDict([('check', 'a'),

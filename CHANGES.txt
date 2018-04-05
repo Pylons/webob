@@ -52,6 +52,12 @@ These features are experimental and may change at any point in the future.
   cookie in both ``webob.cookies.make_cookie`` and
   ``webob.cookies.CookieProfile``. See https://github.com/Pylons/webob/pull/255
 
+Feature
+~~~~~~~
+
+- ``request.POST`` now supports any requests with the appropriate
+  Content-Type (#351).
+
 Bugfix
 ~~~~~~
 
