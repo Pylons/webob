@@ -301,7 +301,7 @@ ${body}''')
             for k, v in self.headers.items():
                 args[k.lower()] = escape(v)
         t_obj = self.body_template_obj
-        return t_obj.substitute(args)
+        return t_obj.safe_substitute(args)
 
     def plain_body(self, environ):
         body = self._make_body(environ, no_escape)

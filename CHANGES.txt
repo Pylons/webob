@@ -63,6 +63,12 @@ These features are experimental and may change at any point in the future.
 Bugfix
 ~~~~~~
 
+- Exceptions now use string.Template.safe_substitute rather than
+  string.Template.substitute. The latter would raise for missing mappings, the
+  former will simply not substitute the missing variable. This is safer in case
+  the WSGI environ does not contain the keys necessary for the body template.
+  See https://github.com/Pylons/webob/issues/345.
+
 - Request.host_url, Request.host_port, Request.domain correctly parse IPv6 Host
   headers as provided by a browser. See
   https://github.com/Pylons/webob/pull/332
