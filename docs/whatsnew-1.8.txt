@@ -1,6 +1,14 @@
 What's New in WebOb 1.8
 =======================
 
+Feature
+~~~~~~~
+
+- :attr:`Request.POST <webob.request.BaseRequest.POST>` now supports any
+  requests with the appropriate Content-Type. Allowing any HTTP method to
+  access form encoded content, including DELETE, PUT, and others. See
+  https://github.com/Pylons/webob/pull/352
+
 Compatibility
 ~~~~~~~~~~~~~
 
