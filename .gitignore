@@ -17,3 +17,4 @@ env*/
 WebOb.egg-info/
 pytest*.xml
 coverage*.xml
+.pytest_cache/
