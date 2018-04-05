@@ -1,6 +1,14 @@
 1.8.0rc1 (2018-01-01)
 ---------------------
 
+Feature
+~~~~~~~
+
+- ``request.POST`` now supports any requests with the appropriate
+  Content-Type. Allowing any HTTP method to access form encoded content,
+  including DELETE, PUT, and others. See
+  https://github.com/Pylons/webob/pull/352
+
 Compatibility
 ~~~~~~~~~~~~~
 
@@ -51,12 +59,6 @@ These features are experimental and may change at any point in the future.
 - The cookie APIs now have the ability to set the SameSite attribute on a
   cookie in both ``webob.cookies.make_cookie`` and
   ``webob.cookies.CookieProfile``. See https://github.com/Pylons/webob/pull/255
-
-Feature
-~~~~~~~
-
-- ``request.POST`` now supports any requests with the appropriate
-  Content-Type (#351).
 
 Bugfix
 ~~~~~~
