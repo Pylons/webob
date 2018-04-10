@@ -5719,9 +5719,88 @@ class TestAcceptLanguageProperty(object):
 # Deprecated tests:
 
 
-def test_mime_init():
+def test_MIMEAccept_init_warns():
     with warnings.catch_warnings(record=True) as warning:
         warnings.simplefilter("always")
         MIMEAccept('image/jpg')
 
     assert len(warning) == 1
+
+
+def test_MIMEAccept_init():
+    mimeaccept = MIMEAccept('image/jpg')
+    assert mimeaccept._parsed == [('image/jpg', 1)]
+    mimeaccept = MIMEAccept('image/png, image/jpg;q=0.5')
+    assert mimeaccept._parsed == [('image/png', 1), ('image/jpg', 0.5)]
+    mimeaccept = MIMEAccept('image, image/jpg;q=0.5')
+    assert mimeaccept._parsed == []
+    mimeaccept = MIMEAccept('*/*')
+    assert mimeaccept._parsed == [('*/*', 1)]
+    mimeaccept = MIMEAccept('*/png')
+    assert mimeaccept._parsed == [('*/png', 1)]
+    mimeaccept = MIMEAccept('image/pn*')
+    assert mimeaccept._parsed == [('image/pn*', 1.0)]
+    mimeaccept = MIMEAccept('image/*')
+    assert mimeaccept._parsed == [('image/*', 1)]
+
+
+def test_MIMEAccept_parse():
+    assert list(MIMEAccept.parse('image/jpg')) == [('image/jpg', 1)]
+    assert list(MIMEAccept.parse('invalid')) == []
+
+
+def test_MIMEAccept_accept_html():
+    mimeaccept = MIMEAccept('image/jpg')
+    assert not mimeaccept.accept_html()
+    mimeaccept = MIMEAccept('image/jpg, text/html')
+    assert mimeaccept.accept_html()
+
+
+def test_MIMEAccept_contains():
+    mimeaccept = MIMEAccept('A/a, B/b, C/c')
+    assert 'A/a' in mimeaccept
+    assert 'A/*' in mimeaccept
+    assert '*/a' in mimeaccept
+    assert 'A/b' not in mimeaccept
+    assert 'B/a' not in mimeaccept
+
+
+def test_MIMEAccept_json():
+    mimeaccept = MIMEAccept('text/html, */*; q=.2')
+    assert mimeaccept.best_match(['application/json']) == 'application/json'
+
+
+def test_MIMEAccept_no_raise_invalid():
+    assert MIMEAccept('invalid')
+
+
+def test_MIMEAccept_iter():
+    assert list(iter(MIMEAccept('text/html, other/whatever'))) == [
+        'text/html',
+        'other/whatever',
+    ]
+
+
+def test_MIMEAccept_str():
+    assert str(MIMEAccept('image/jpg')) == 'image/jpg'
+
+
+def test_MIMEAccept_add():
+    assert str(MIMEAccept('image/jpg') + 'image/png') == 'image/jpg, image/png'
+    assert str(MIMEAccept('image/jpg') + MIMEAccept('image/png')) == 'image/jpg, image/png'
+    assert isinstance(MIMEAccept('image/jpg') + 'image/png', MIMEAccept)
+    assert isinstance(MIMEAccept('image/jpg') + MIMEAccept('image/png'), MIMEAccept)
+
+
+def test_MIMEAccept_radd():
+    assert str('image/png' + MIMEAccept('image/jpg')) == 'image/png, image/jpg'
+    assert isinstance('image/png' + MIMEAccept('image/jpg'), MIMEAccept)
+
+
+def test_MIMEAccept_repr():
+    assert 'image/jpg' in repr(MIMEAccept('image/jpg'))
+
+
+def test_MIMEAccept_quality():
+    assert MIMEAccept('image/jpg;q=0.9').quality('image/jpg') == 0.9
+    assert MIMEAccept('image/png;q=0.9').quality('image/jpg') is None

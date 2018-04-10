@@ -1056,27 +1056,84 @@ class AcceptValidHeader(Accept):
         return bestq or None
 
 
-class MIMEAccept(AcceptValidHeader):
+class MIMEAccept(Accept):
     """
-    Backwards compatibility shim for AcceptValidHeader that acts like the old
-    MIMEAccept from WebOb 1.7.
+    Backwards compatibility shim for the new functionality provided by
+    AcceptValidHeader, AcceptInvalidHeader, or AcceptNoHeader, that acts like
+    the old MIMEAccept from WebOb version 1.7 or lower.
+
+    This shim does use the newer Accept header parsing, which will mean your
+    application may be less liberal in what Accept headers are correctly
+    parsed. It is recommended that user agents be updated to send appropriate
+    Accept headers that are valid according to rfc:`RFC 7231, section 5.3.2
+    <7231#section-5.3.2>`
 
     .. deprecated:: 1.8
 
-    Instead of directly creating the Accept object, please see:
-    :func:`create_accept_header(header_value)
-    <webob.acceptparse.create_accept_header>`, which will create the
-    appropriate object.
+       Instead of directly creating the Accept object, please see:
+       :func:`create_accept_header(header_value)
+       <webob.acceptparse.create_accept_header>`, which will create the
+       appropriate object.
+
+       This shim has an extended deprecation period to allow for application
+       developers to switch the to new API.
+
     """
 
-    def __init__(self, *args, **kw):
+    def __init__(self, header_value):
         warnings.warn(
             'The MIMEAccept class has been replaced by '
             'webob.acceptparse.create_accept_header. This compatibility shim '
             'will be deprecated in a future version of WebOb.',
             DeprecationWarning
         )
-        super(MIMEAccept, self).__init__(*args, **kw)
+        self._accept = create_accept_header(header_value)
+        if self._accept.parsed:
+            self._parsed = [(media, q) for (media, q, _, _) in self._accept.parsed]
+            self._parsed_nonzero = [(m, q) for (m, q) in self._parsed if q]
+        else:
+            self._parsed = []
+            self._parsed_nonzero = []
+
+    @staticmethod
+    def parse(value):
+        try:
+            parsed_accepted = Accept.parse(value)
+
+            for (media, q, _, _) in parsed_accepted:
+                yield (media, q)
+        except ValueError:
+            pass
+
+    def __repr__(self):
+        return self._accept.__repr__()
+
+    def __iter__(self):
+        return self._accept.__iter__()
+
+    def __str__(self):
+        return self._accept.__str__()
+
+    def __add__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__class__(str(self._accept.__add__(other._accept)))
+        else:
+            return self.__class__(str(self._accept.__add__(other)))
+
+    def __radd__(self, other):
+        return self.__class__(str(self._accept.__radd__(other)))
+
+    def __contains__(self, offer):
+        return offer in self._accept
+
+    def quality(self, offer):
+        return self._accept.quality(offer)
+
+    def best_match(self, offers, default_match=None):
+        return self._accept.best_match(offers, default_match=default_match)
+
+    def accept_html(self):
+        return self._accept.accept_html()
 
 
 class _AcceptInvalidOrNoHeader(Accept):
