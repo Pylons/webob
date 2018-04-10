@@ -1,3 +1,16 @@
+1.8.1 (2018-04-10)
+------------------
+
+Bugfix
+~~~~~~
+
+- acceptparse.MIMEAccept which is deprecated in WebOb 1.8.0 made a backwards
+  incompatible change that led to it raising on an invalid Accept header. This
+  behaviour has now been reversed, as well as some other fixes to allow
+  MIMEAccept to behave more like the old version. See
+  https://github.com/Pylons/webob/pull/356
+
+
 1.8.0 (2018-04-04)
 ------------------
 
