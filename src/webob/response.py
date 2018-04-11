@@ -949,8 +949,7 @@ class Response(object):
 
     def set_cookie(self, name=None, value='', max_age=None,
                    path='/', domain=None, secure=False, httponly=False,
-                   comment=None, expires=None, overwrite=False, key=None,
-                   samesite=None):
+                   comment=None, expires=None, overwrite=False, samesite=None):
         """
         Set (add) a cookie for the response.
 
