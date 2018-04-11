@@ -947,9 +947,9 @@ class Response(object):
     # set_cookie, unset_cookie, delete_cookie, merge_cookies
     #
 
-    def set_cookie(self, name=None, value='', max_age=None,
+    def set_cookie(self, name, value='', max_age=None,
                    path='/', domain=None, secure=False, httponly=False,
-                   comment=None, expires=None, overwrite=False, key=None,
+                   comment=None, expires=None, overwrite=False,
                    samesite=None):
         """
         Set (add) a cookie for the response.
@@ -1043,9 +1043,6 @@ class Response(object):
         if expires:
             warn_deprecation('Argument "expires" will be removed in a future '
                              'version of WebOb, please use "max_age".', 1.10, 1)
-
-        if name is None:
-            raise TypeError('set_cookie() takes at least 1 argument')
 
         if overwrite:
             self.unset_cookie(name, strict=False)
