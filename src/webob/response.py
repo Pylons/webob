@@ -965,7 +965,7 @@ class Response(object):
            The cookie value, which should be a string or ``None``.  If
            ``value`` is ``None``, it's equivalent to calling the
            :meth:`webob.response.Response.unset_cookie` method for this
-           cookie key (it effectively deletes the cookie on the client).
+           cookie name (it effectively deletes the cookie on the client).
 
         ``max_age``
 
