@@ -239,6 +239,8 @@ def serialize_cookie_date(v):
 
 
 def serialize_samesite(v):
+    v = bytes_(v)
+
     if v.lower() not in (b"strict", b"lax"):
         raise ValueError("SameSite must be b'Strict' or b'Lax'")
     return v
