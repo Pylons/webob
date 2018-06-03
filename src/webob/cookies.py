@@ -471,8 +471,8 @@ def make_cookie(name, value, max_age=None, path='/', domain=None,
       Set a comment on the cookie. Default: ``None``
 
     ``samesite``
-      The 'SameSite' attribute of the cookie, can be either ``b"Strict"``,
-      ``b"Lax"``, or ``None``.
+      The 'SameSite' attribute of the cookie, can be either ``"Strict"``,
+      ``"Lax"``, or ``None``.
     """
 
     # We are deleting the cookie, override max_age and expires
