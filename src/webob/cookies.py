@@ -242,7 +242,7 @@ def serialize_samesite(v):
     v = bytes_(v)
 
     if v.lower() not in (b"strict", b"lax"):
-        raise ValueError("SameSite must be b'Strict' or b'Lax'")
+        raise ValueError("SameSite must be 'Strict' or 'Lax'")
     return v
 
 
