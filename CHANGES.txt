@@ -20,6 +20,12 @@ Experimental Features
 Bugfix
 ~~~~~~
 
+- SameSite may now be passed as str or bytes to `Response.set_cookie` and
+  `cookies.make_cookie`. This was an oversight as all other arguments would be
+  correctly coerced before being serialized. See
+  https://github.com/Pylons/webob/issues/361 and
+  https://github.com/Pylons/webob/pull/362
+
 - acceptparse.MIMEAccept which is deprecated in WebOb 1.8.0 made a backwards
   incompatible change that led to it raising on an invalid Accept header. This
   behaviour has now been reversed, as well as some other fixes to allow
