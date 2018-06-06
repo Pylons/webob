@@ -1005,7 +1005,7 @@ class Response(object):
 
           A string representing the ``SameSite`` attribute of the cookie or
           ``None``. If samesite is ``None`` no ``SameSite`` value will be sent
-          in the cookie. Should only be ``b"Strict"`` or ``b"Lax"``.
+          in the cookie. Should only be ``"Strict"`` or ``"Lax"``.
 
         ``comment``
 

@@ -450,6 +450,13 @@ class TestCookieMakeCookie(object):
         assert 'test_cookie=value' in cookie
         assert 'Path=/foo/bar/baz' in cookie
 
+    @pytest.mark.parametrize("samesite", ["Strict", "Lax"])
+    def test_make_cookie_samesite(self, samesite):
+        cookie = self.makeOne('test_cookie', 'value', samesite=samesite)
+
+        assert 'test_cookie=value' in cookie
+        assert 'SameSite=' + samesite in cookie
+
 class CommonCookieProfile(object):
     def makeDummyRequest(self, **kw):
         class Dummy(object):
@@ -661,12 +668,20 @@ class TestSignedCookieProfile(CommonCookieProfile):
             assert '; HttpOnly' in cookie[1]
 
     @pytest.mark.parametrize("samesite", [b"Strict", b"Lax"])
+    def test_with_samesite_bytes(self, samesite):
+        cookie = self.makeOne(samesite=samesite)
+        ret = cookie.get_headers("test")
+
+        for cookie in ret:
+            assert "; SameSite=" + samesite.decode('ascii') in cookie[1]
+
+    @pytest.mark.parametrize("samesite", ["Strict", "Lax"])
     def test_with_samesite(self, samesite):
         cookie = self.makeOne(samesite=samesite)
         ret = cookie.get_headers("test")
 
         for cookie in ret:
-            assert "; SameSite=" + samesite.decode("ascii") in cookie[1]
+            assert "; SameSite=" + samesite in cookie[1]
 
     def test_cookie_length(self):
         cookie = self.makeOne()
