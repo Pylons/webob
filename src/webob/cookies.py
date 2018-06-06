@@ -239,8 +239,10 @@ def serialize_cookie_date(v):
 
 
 def serialize_samesite(v):
+    v = bytes_(v)
+
     if v.lower() not in (b"strict", b"lax"):
-        raise ValueError("SameSite must be b'Strict' or b'Lax'")
+        raise ValueError("SameSite must be 'Strict' or 'Lax'")
     return v
 
 
@@ -469,8 +471,8 @@ def make_cookie(name, value, max_age=None, path='/', domain=None,
       Set a comment on the cookie. Default: ``None``
 
     ``samesite``
-      The 'SameSite' attribute of the cookie, can be either ``b"Strict"``,
-      ``b"Lax"``, or ``None``.
+      The 'SameSite' attribute of the cookie, can be either ``"Strict"``,
+      ``"Lax"``, or ``None``.
     """
 
     # We are deleting the cookie, override max_age and expires
