@@ -1,3 +1,16 @@
+1.8.2 (2018-06-05)
+------------------
+
+Bugfix
+~~~~~~
+
+- SameSite may now be passed as str or bytes to `Response.set_cookie` and
+  `cookies.make_cookie`. This was an oversight as all other arguments would be
+  correctly coerced before being serialized. See
+  https://github.com/Pylons/webob/issues/361 and
+  https://github.com/Pylons/webob/pull/362
+
+
 1.8.1 (2018-04-10)
 ------------------
 
