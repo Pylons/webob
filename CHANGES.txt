@@ -4,6 +4,7 @@ Unreleased
 Feature
 ~~~~~~~
 
+- Add Request.remote_host, exposing REMOTE_HOST environment variable.
 
 Compatibility
 ~~~~~~~~~~~~~

@@ -1883,6 +1883,17 @@ class TestLegacyRequest(object):
         req = self._makeOne(environ)
         assert req.remote_addr == '1.2.3.4'
 
+    def test_remote_host(self):
+        environ = {'REMOTE_HOST': 'example.com',
+                  }
+        req = self._makeOne(environ)
+        assert req.remote_host == 'example.com'
+
+    def test_remote_host_not_set(self):
+        environ = {}
+        req = self._makeOne(environ)
+        assert req.remote_host is None
+
     def test_query_string(self):
         environ = {'QUERY_STRING': 'foo=bar&baz=bam',
                   }
