@@ -408,6 +408,24 @@ class Accept(object):
                 )
         return generator(value=value)
 
+    def _parse_and_normalize_offers(self, offers):
+        """
+        Throw out any offers that do not match the media type ABNF.
+
+        :return: A list of ABNF-validated offers split into the format:
+                 ``[offer_index, offer_type_subtype, offer_media_params]``.
+
+        """
+        lowercased_offers_parsed = []
+        for index, offer in enumerate(offers):
+            match = self.media_type_compiled_re.match(offer.lower())
+            # The regex here is only used for parsing, and not intended to
+            # validate the offer
+            if not match:
+                continue
+            lowercased_offers_parsed.append([index] + list(match.groups()))
+        return lowercased_offers_parsed
+
 
 class AcceptValidHeader(Accept):
     """
@@ -771,6 +789,8 @@ class AcceptValidHeader(Accept):
         This uses the matching rules described in :rfc:`RFC 7231, section 5.3.2
         <7231#section-5.3.2>`.
 
+        Any offers that do not match the media type grammar will be ignored.
+
         :param offers: ``iterable`` of ``str`` media types (media types can
                        include media type parameters)
         :return: A list of tuples of the form (media type, qvalue), in
@@ -793,21 +813,12 @@ class AcceptValidHeader(Accept):
             for media_range, qvalue, media_type_params, extension_params in
             parsed
         ]
-        lowercased_offers = [offer.lower() for offer in offers]
-
-        lowercased_offers_parsed = []
-        for offer in lowercased_offers:
-            match = self.media_type_compiled_re.match(offer)
-            # The regex here is only used for parsing, and not intended to
-            # validate the offer
-            if not match:
-                raise ValueError(repr(offer) + ' is not a media type.')
-            lowercased_offers_parsed.append(match.groups())
+        lowercased_offers_parsed = self._parse_and_normalize_offers(offers)
 
         acceptable_offers_n_quality_factors = {}
         for (
-            offer_index, (offer_type_subtype, offer_media_type_params)
-        ) in enumerate(lowercased_offers_parsed):
+            offer_index, offer_type_subtype, offer_media_type_params
+        ) in lowercased_offers_parsed:
             offer_media_type_params = self._parse_media_type_params(
                 media_type_params_segment=offer_media_type_params,
             )
@@ -1242,6 +1253,8 @@ class _AcceptInvalidOrNoHeader(Accept):
         """
         Return the offers that are acceptable according to the header.
 
+        Any offers that do not match the media type ABNF will be ignored.
+
         :param offers: ``iterable`` of ``str`` media types (media types can
                        include media type parameters)
         :return: When the header is invalid, or there is no ``Accept`` header
@@ -1250,7 +1263,11 @@ class _AcceptInvalidOrNoHeader(Accept):
                  where each offer in `offers` is paired with the qvalue of 1.0,
                  in the same order as in `offers`.
         """
-        return [(offer, 1.0) for offer in offers]
+        return [
+            (offers[offer_index], 1.0)
+            for offer_index, _, _
+            in self._parse_and_normalize_offers(offers)
+        ]
 
     def best_match(self, offers, default_match=None):
         """
