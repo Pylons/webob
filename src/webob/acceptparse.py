@@ -796,18 +796,18 @@ class AcceptValidHeader(Accept):
         lowercased_offers = [offer.lower() for offer in offers]
 
         lowercased_offers_parsed = []
-        for offer in lowercased_offers:
+        for offer_index, offer in enumerate(lowercased_offers):
             match = self.media_type_compiled_re.match(offer)
             # The regex here is only used for parsing, and not intended to
             # validate the offer
             if not match:
-                raise ValueError(repr(offer) + ' is not a media type.')
-            lowercased_offers_parsed.append(match.groups())
+                continue
+            lowercased_offers_parsed.append((offer_index, match.groups()))
 
         acceptable_offers_n_quality_factors = {}
         for (
             offer_index, (offer_type_subtype, offer_media_type_params)
-        ) in enumerate(lowercased_offers_parsed):
+        ) in lowercased_offers_parsed:
             offer_media_type_params = self._parse_media_type_params(
                 media_type_params_segment=offer_media_type_params,
             )
