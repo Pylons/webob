@@ -622,12 +622,26 @@ class TestAcceptValidHeader(object):
     def test___contains__(self):
         accept = AcceptValidHeader('A/a, B/b, C/c')
         assert 'A/a' in accept
-        assert 'A/*' in accept
-        assert '*/a' in accept
         assert 'A/b' not in accept
         assert 'B/a' not in accept
         for mask in ['*/*', 'text/html', 'TEXT/HTML']:
             assert 'text/html' in AcceptValidHeader(mask)
+
+    @pytest.mark.parametrize('offer', [
+        '*/*',
+        '*/a',
+        'a/*',
+        '*',
+        '**'
+        '**/**'
+        '**/aa',
+        'aa/**',
+        'aa/*a',
+        '*a/aa',
+    ])
+    def test___contains__raises_when_asterisk_in_offer(self, offer):
+        with pytest.raises(ValueError):
+            assert offer in AcceptValidHeader('doesnot/matter')
 
     def test___iter__(self):
         instance = AcceptValidHeader(
@@ -841,47 +855,23 @@ class TestAcceptValidHeader(object):
         for mask, offer in mismatches:
             assert not accept._old_match(mask, offer)
 
-    def test__old_match_wildcard_matching(self):
-        """
-        Wildcard matching forces the match to take place against the type or
-        subtype of the mask and offer (depending on where the wildcard matches)
-        """
-        accept = AcceptValidHeader('type/subtype')
-        matches = [
-            ('*/*', '*/*'),
-            ('*/*', 'A/*'),
-            ('*/*', '*/a'),
-            ('*/*', 'A/a'),
-            ('A/*', '*/*'),
-            ('A/*', 'A/*'),
-            ('A/*', '*/a'),
-            ('A/*', 'A/a'),
-            ('*/a', '*/*'),
-            ('*/a', 'A/*'),
-            ('*/a', '*/a'),
-            ('*/a', 'A/a'),
-            ('A/a', '*/*'),
-            ('A/a', 'A/*'),
-            ('A/a', '*/a'),
-            ('A/a', 'A/a'),
-            # Offers might not contain a subtype
-            ('*/*', '*'),
-            ('A/*', '*'),
-            ('*/a', '*')]
-        for mask, offer in matches:
-            assert accept._old_match(mask, offer)
-            # Test malformed mask and offer variants where either is missing a
-            # type or subtype
-            assert accept._old_match('A', offer)
-            assert accept._old_match(mask, 'a')
-
-        mismatches = [
-            ('B/b', 'A/*'),
-            ('B/*', 'A/a'),
-            ('B/*', 'A/*'),
-            ('*/b', '*/a')]
-        for mask, offer in mismatches:
-            assert not accept._old_match(mask, offer)
+    @pytest.mark.parametrize('offer', [
+        '*/*',
+        '*/a',
+        'a/*',
+        '*',
+        '**'
+        '**/**'
+        '**/aa',
+        'aa/**',
+        'aa/*a',
+        '*a/aa',
+    ])
+    def test__old_match_raises_when_asterisk_in_offer(self, offer):
+        with pytest.raises(ValueError):
+            AcceptValidHeader('doesnot/matter')._old_match(
+                mask='doesnot/matter', offer=offer,
+            )
 
     @pytest.mark.parametrize('header_value, returned', [
         ('tExt/HtMl', True),
@@ -1087,6 +1077,20 @@ class TestAcceptValidHeader(object):
             ['text/html']
         ) is None
         assert 'audio/basic' not in AcceptValidHeader('*/*;q=0')
+
+    @pytest.mark.parametrize('offers', [
+        ['text/html', '*/*', 'text/plain'],
+        ['a/*', 'c/d', 'e/f'],
+        ['a/b', 'c/d', '*/f'],
+        ['*'],
+        ['**'],
+        ['**/**'],
+        ['aa/**'],
+        ['**/aa'],
+    ])
+    def test_best_match_raises_when_asterisk_in_offer(self, offers):
+        with pytest.raises(ValueError):
+            AcceptValidHeader('doesnot/matter').best_match(offers=offers)
 
     def test_quality(self):
         accept = AcceptValidHeader('text/html')
@@ -1305,6 +1309,22 @@ class TestAcceptNoHeader(object):
         returned = ('type/subtype' in instance)
         assert returned is True
 
+    @pytest.mark.parametrize('offer', [
+        '*/*',
+        '*/a',
+        'a/*',
+        '*',
+        '**'
+        '**/**'
+        '**/aa',
+        'aa/**',
+        'aa/*a',
+        '*a/aa',
+    ])
+    def test___contains__raises_when_asterisk_in_offer(self, offer):
+        with pytest.raises(ValueError):
+            assert offer in AcceptNoHeader()
+
     def test___iter__(self):
         instance = AcceptNoHeader()
         returned = list(instance)
@@ -1487,6 +1507,20 @@ class TestAcceptNoHeader(object):
             [('text/html', 0.5), 'audio/basic'], default_match=False
         ) == 'audio/basic'
         assert accept.best_match([], default_match='fallback') == 'fallback'
+
+    @pytest.mark.parametrize('offers', [
+        ['text/html', '*/*', 'text/plain'],
+        ['a/*', 'c/d', 'e/f'],
+        ['a/b', 'c/d', '*/f'],
+        ['*'],
+        ['**'],
+        ['**/**'],
+        ['aa/**'],
+        ['**/aa'],
+    ])
+    def test_best_match_raises_when_asterisk_in_offer(self, offers):
+        with pytest.raises(ValueError):
+            AcceptNoHeader().best_match(offers=offers)
 
     def test_quality(self):
         instance = AcceptNoHeader()
@@ -1702,6 +1736,22 @@ class TestAcceptInvalidHeader(object):
         returned = ('type/subtype' in instance)
         assert returned is True
 
+    @pytest.mark.parametrize('offer', [
+        '*/*',
+        '*/a',
+        'a/*',
+        '*',
+        '**'
+        '**/**'
+        '**/aa',
+        'aa/**',
+        'aa/*a',
+        '*a/aa',
+    ])
+    def test___contains__raises_when_asterisk_in_offer(self, offer):
+        with pytest.raises(ValueError):
+            assert offer in AcceptInvalidHeader(header_value=', ')
+
     def test___iter__(self):
         instance = AcceptInvalidHeader(header_value=', ')
         returned = list(instance)
@@ -1885,6 +1935,20 @@ class TestAcceptInvalidHeader(object):
             [('text/html', 0.5), 'audio/basic'], default_match=False
         ) == 'audio/basic'
         assert accept.best_match([], default_match='fallback') == 'fallback'
+
+    @pytest.mark.parametrize('offers', [
+        ['text/html', '*/*', 'text/plain'],
+        ['a/*', 'c/d', 'e/f'],
+        ['a/b', 'c/d', '*/f'],
+        ['*'],
+        ['**'],
+        ['**/**'],
+        ['aa/**'],
+        ['**/aa'],
+    ])
+    def test_best_match_raises_when_asterisk_in_offer(self, offers):
+        with pytest.raises(ValueError):
+            AcceptInvalidHeader(', ').best_match(offers=offers)
 
     def test_quality(self):
         instance = AcceptInvalidHeader(header_value=', ')
@@ -5759,8 +5823,10 @@ def test_MIMEAccept_accept_html():
 def test_MIMEAccept_contains():
     mimeaccept = MIMEAccept('A/a, B/b, C/c')
     assert 'A/a' in mimeaccept
-    assert 'A/*' in mimeaccept
-    assert '*/a' in mimeaccept
+    with pytest.raises(ValueError):
+        assert 'A/*' in mimeaccept
+    with pytest.raises(ValueError):
+        assert '*/a' in mimeaccept
     assert 'A/b' not in mimeaccept
     assert 'B/a' not in mimeaccept
 

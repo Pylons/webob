@@ -175,6 +175,14 @@ class Accept(object):
     media_type_re = media_range_re
     media_type_compiled_re = re.compile('^' + media_type_re + '$')
 
+
+    @classmethod
+    def _check_offer(cls, offer):
+        if '*' in offer:
+            raise ValueError(
+                'The application should offer specific types, got %r' % offer
+            )
+
     @classmethod
     def _escape_and_quote_parameter_value(cls, param_value):
         """
@@ -542,6 +550,7 @@ class AcceptValidHeader(Accept):
         :param offer: (``str``) media type offer
         :return: (``bool``) Whether ``offer`` is acceptable according to the
                  header.
+        :raises ValueError: if ``offer`` contains any ``*``\s.
 
         This uses the old criterion of a match in
         :meth:`AcceptValidHeader._old_match`, which is not as specified in
@@ -673,12 +682,6 @@ class AcceptValidHeader(Accept):
         """
         Check if the offer is covered by the mask
 
-        ``offer`` may contain wildcards to facilitate checking if a ``mask``
-        would match a 'permissive' offer.
-
-        Wildcard matching forces the match to take place against the type or
-        subtype of the mask and offer (depending on where the wildcard matches)
-
         .. warning::
 
            This is maintained for backward compatibility, and will be
@@ -690,12 +693,11 @@ class AcceptValidHeader(Accept):
         - :meth:`AcceptValidHeader.__contains__`
         - :meth:`AcceptValidHeader.best_match`
         - :meth:`AcceptValidHeader.quality`
-
-        It allows offers of *, */*, type/*, */subtype and types with no
-        subtypes, which are not media types as specified in :rfc:`RFC 7231,
-        section 5.3.2 <7231#section-5.3.2>`. This is also undocumented in any
-        of the public APIs that uses this method.
         """
+        self._check_offer(offer=offer)
+        # offer must not contain any '*'s. See
+        # https://github.com/Pylons/webob/issues/367
+
         # Match if comparisons are the same or either is a complete wildcard
         if (mask.lower() == offer.lower() or
                 '*/*' in (mask, offer) or
@@ -931,6 +933,8 @@ class AcceptValidHeader(Accept):
 
                  | The offer that is the best match. If there is no match, the
                    value of `default_match` is returned.
+
+        :raises ValueError: if any offer in ``offers`` contains any ``*``\s.
 
         This uses the old criterion of a match in
         :meth:`AcceptValidHeader._old_match`, which is not as specified in
@@ -1175,6 +1179,7 @@ class _AcceptInvalidOrNoHeader(Accept):
         :param offer: (``str``) media type offer
         :return: (``bool``) Whether ``offer`` is acceptable according to the
                  header.
+        :raises ValueError: if ``offer`` contains any ``*``\s.
 
         For this class, either there is no ``Accept`` header in the request, or
         the header is invalid, so any media type is acceptable, and this always
@@ -1186,6 +1191,9 @@ class _AcceptInvalidOrNoHeader(Accept):
             'will change in the future to better conform to the RFC.',
             DeprecationWarning,
         )
+        self._check_offer(offer=offer)
+        # offer must not contain any '*'s. See
+        # https://github.com/Pylons/webob/issues/367
         return True
 
     def __iter__(self):
@@ -1288,6 +1296,8 @@ class _AcceptInvalidOrNoHeader(Accept):
 
                  | The offer that has the highest server quality value.  If
                    `offers` is empty, the value of `default_match` is returned.
+
+        :raises ValueError: if any offer in ``offers`` contains any ``*``\s.
         """
         warnings.warn(
             'The behavior of .best_match for the Accept classes is currently '
@@ -1299,6 +1309,9 @@ class _AcceptInvalidOrNoHeader(Accept):
         best_quality = -1
         best_offer = default_match
         for offer in offers:
+            self._check_offer(offer=offer)
+            # offer must not contain any '*'s. See
+            # https://github.com/Pylons/webob/issues/367
             if isinstance(offer, (list, tuple)):
                 offer, quality = offer
             else:
