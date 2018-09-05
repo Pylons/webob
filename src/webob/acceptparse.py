@@ -1253,7 +1253,7 @@ class _AcceptInvalidOrNoHeader(Accept):
         """
         Return the offers that are acceptable according to the header.
 
-        Any offers that do not match the media type ABNF will be ignored.
+        Any offers that do not match the media type grammar will be ignored.
 
         :param offers: ``iterable`` of ``str`` media types (media types can
                        include media type parameters)
