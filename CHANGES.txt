@@ -1,6 +1,16 @@
 1.8.3 (Unreleased)
 ------------------
 
+Bugfix
+~~~~~~
+
+- ``acceptparse.AcceptValidHeader``, ``acceptparse.AcceptInvalidHeader``, and
+  ``acceptparse.AcceptNoHeader`` will now always ignore offers that do not
+  match the required media type grammar when calling ``.acceptable_offers()``.
+  Previous versions raised a ``ValueError`` for invalid offers in
+  ``AcceptValidHeader`` and returned them as acceptable in the others.
+  See https://github.com/Pylons/webob/pull/372
+
 Feature
 ~~~~~~~
 
@@ -31,7 +41,6 @@ Bugfix
   behaviour has now been reversed, as well as some other fixes to allow
   MIMEAccept to behave more like the old version. See
   https://github.com/Pylons/webob/pull/356
-
 
 1.8.0 (2018-04-04)
 ------------------
