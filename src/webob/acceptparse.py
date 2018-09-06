@@ -419,11 +419,13 @@ class Accept(object):
         lowercased_offers_parsed = []
         for index, offer in enumerate(offers):
             match = self.media_type_compiled_re.match(offer.lower())
-            # The regex here is only used for parsing, and not intended to
-            # validate the offer
-            if not match:
-                continue
-            lowercased_offers_parsed.append([index] + list(match.groups()))
+            # we're willing to try to match any offer that matches the
+            # media type grammar can parse, but we'll throw out anything
+            # that doesn't fit the correct syntax - this is not saying that
+            # the media type is actually a real media type, just that it looks
+            # like one
+            if match:
+                lowercased_offers_parsed.append([index] + list(match.groups()))
         return lowercased_offers_parsed
 
 
