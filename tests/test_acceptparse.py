@@ -1065,6 +1065,11 @@ class TestAcceptValidHeader(object):
             ['text/*', '*/*', 'text/html', 'text/html;level=1', 'image/*'],
             [('text/*', 0.7), ('*/*', 0.7), ('text/html;level=1', 0.7)],
         ),
+        (
+            '',
+            ['text/*', '*/*', 'text/html', 'text/html;level=1', 'image/*'],
+            [],
+        ),
     ])
     def test_acceptable_offers__valid_offers(
         self, header_value, offers, expected_returned,
