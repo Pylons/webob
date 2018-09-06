@@ -1268,6 +1268,9 @@ class _AcceptInvalidOrNoHeader(Accept):
         return [
             (offers[offer_index], 1.0)
             for offer_index, _, _
+            # avoid returning any offers that don't match the grammar so
+            # that the return values here are consistent with what would be
+            # returned in AcceptValidHeader
             in self._parse_and_normalize_offers(offers)
         ]
 
