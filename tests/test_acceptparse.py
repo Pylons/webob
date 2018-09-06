@@ -1050,6 +1050,26 @@ class TestAcceptValidHeader(object):
                 ('text/plain', 0.3),
             ],
         ),
+        (
+            'text/*;q=0.3, text/html;q=0.5, text/html;level=1;q=0.7',
+            ['*/*', 'text/*', 'text/html', 'image/*'],
+            [('*/*', 0.7), ('text/*', 0.7), ('text/html', 0.5)],
+        ),
+        (
+            'text/*;q=0.3, text/html;q=0.5, text/html;level=1;q=0.7',
+            ['text/*', '*/*', 'text/html', 'image/*'],
+            [('text/*', 0.7), ('*/*', 0.7), ('text/html', 0.5)],
+        ),
+        (
+            'text/html;level=1;q=0.7',
+            ['text/*', '*/*', 'text/html', 'text/html;level=1', 'image/*'],
+            [('text/*', 0.7), ('*/*', 0.7), ('text/html;level=1', 0.7)],
+        ),
+        (
+            '',
+            ['text/*', '*/*', 'text/html', 'text/html;level=1', 'image/*'],
+            [],
+        ),
     ])
     def test_acceptable_offers__valid_offers(
         self, header_value, offers, expected_returned,
