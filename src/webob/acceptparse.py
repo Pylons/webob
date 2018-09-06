@@ -169,9 +169,8 @@ class Accept(object):
     )
 
     # For parsing the media types in the `offers` argument to
-    # .acceptable_offers(), we re-use the media range regex for media types.
-    # This is not intended to be a validation of the offers; its main purpose
-    # is to extract the media type and any media type parameters.
+    # .acceptable_offers(), we re-use the media range regex for media types, as
+    # they work out to have the exact same syntax according to RFC 7231.
     media_type_re = media_range_re
     media_type_compiled_re = re.compile('^' + media_type_re + '$')
 
