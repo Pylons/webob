@@ -38,5 +38,5 @@ Bugfix
   match the required media type grammar when calling ``.acceptable_offers()``.
   Previous versions raised a ``ValueError`` for invalid offers in
   ``AcceptValidHeader`` and returned them as acceptable in the others.
-  See https://github.com/Pylons/webob/pull/371
+  See https://github.com/Pylons/webob/pull/372
 
