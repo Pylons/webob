@@ -792,6 +792,11 @@ class AcceptValidHeader(Accept):
 
         Any offers that do not match the media type grammar will be ignored.
 
+        This function also supports media ranges (without media type
+        parameters) but without any specificity. An offered media range is
+        assigned the highest q-value of any media range from the header that
+        would match any media type that could be derived from the offer.
+
         :param offers: ``iterable`` of ``str`` media types (media types can
                        include media type parameters)
         :return: A list of tuples of the form (media type, qvalue), in
@@ -820,12 +825,34 @@ class AcceptValidHeader(Accept):
         for (
             offer_index, offer_type_subtype, offer_media_type_params
         ) in lowercased_offers_parsed:
+            offer = offers[offer_index]
+            offer_type, offer_subtype = offer_type_subtype.split('/', 1)
             offer_media_type_params = self._parse_media_type_params(
                 media_type_params_segment=offer_media_type_params,
             )
+            offer_is_range = '*' in offer
             for (
                 range_type_subtype, range_qvalue, range_media_type_params, __,
             ) in lowercased_ranges:
+                range_type, range_subtype = range_type_subtype.split('/', 1)
+
+                # if a media range is supplied as an offer then specificity is
+                # unimportant, we'll just compare for match and use the
+                # highest matching qvalue
+                if offer_is_range:
+                    if (
+                        offer_type_subtype == '*/*'
+                        or offer_type == range_type and offer_subtype == '*'
+                    ):
+                        prev_match = acceptable_offers_n_quality_factors.get(offer)
+                        if not prev_match or prev_match[0] < range_qvalue:
+                            acceptable_offers_n_quality_factors[offer] = (
+                                range_qvalue,  # qvalue of matched range
+                                offer_index,
+                                4,  # unused for offers that are media ranges
+                            )
+                    continue
+
                 # The specificity values below are based on the list in the
                 # example in RFC 7231 section 5.3.2 explaining how "media
                 # ranges can be overridden by more specific media ranges or
@@ -833,7 +860,7 @@ class AcceptValidHeader(Accept):
                 # items in reverse order, so specificity 4, 3, 2, 1 correspond
                 # to 1, 2, 3, 4 in the list, respectively (so that higher
                 # specificity has higher precedence).
-                if offer_type_subtype == range_type_subtype:
+                elif offer_type_subtype == range_type_subtype:
                     if range_media_type_params == []:
                         # If offer_media_type_params == [], the offer and the
                         # range match exactly, with neither having media type
@@ -852,8 +879,6 @@ class AcceptValidHeader(Accept):
                         # https://bitbucket.org/ned/coveragepy/issues/254/incorrect-coverage-on-continue-statement
                         continue
                 else:
-                    offer_type = offer_type_subtype.split('/')[0]
-                    range_type, range_subtype = range_type_subtype.split('/')
                     if range_subtype == '*' and offer_type == range_type:
                         specificity = 2
                     elif range_type_subtype == '*/*':
@@ -863,15 +888,15 @@ class AcceptValidHeader(Accept):
                         # https://bitbucket.org/ned/coveragepy/issues/254/incorrect-coverage-on-continue-statement
                         continue
                 try:
-                    if specificity <= acceptable_offers_n_quality_factors[
-                        offers[offer_index]
-                    ][2]:
+                    if specificity <= (
+                        acceptable_offers_n_quality_factors[offer][2]
+                    ):
                         continue
                 except KeyError:
                     # the entry for the offer is not already in
                     # acceptable_offers_n_quality_factors
                     pass
-                acceptable_offers_n_quality_factors[offers[offer_index]] = (
+                acceptable_offers_n_quality_factors[offer] = (
                     range_qvalue,  # qvalue of matched range
                     offer_index,
                     specificity,  # specifity of matched range
