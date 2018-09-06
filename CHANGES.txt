@@ -6,6 +6,11 @@ Feature
 
 - Add Request.remote_host, exposing REMOTE_HOST environment variable.
 
+- Added support for media ranges as offers when matching against the
+  ``Accept`` header via ``acceptparse.AcceptValidHeader.acceptable_offers``.
+  The algorithm for matching offer ranges against header ranges is described
+  in the documentation. See https://github.com/Pylons/webob/pull/370
+
 Compatibility
 ~~~~~~~~~~~~~
 
@@ -39,4 +44,3 @@ Bugfix
   Previous versions raised a ``ValueError`` for invalid offers in
   ``AcceptValidHeader`` and returned them as acceptable in the others.
   See https://github.com/Pylons/webob/pull/372
-
