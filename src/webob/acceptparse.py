@@ -412,8 +412,8 @@ class Accept(object):
         """
         Throw out any offers that do not match the media type ABNF.
 
-        :return: A list of ABNF-validated offers split into the format:
-                 ``[offer_index, offer_type_subtype, offer_media_params]``.
+        :return: A list of offers split into the format ``[offer_index,
+                 offer_type_subtype, offer_media_type_params]``.
 
         """
         lowercased_offers_parsed = []
