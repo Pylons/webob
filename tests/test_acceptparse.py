@@ -909,30 +909,20 @@ class TestAcceptValidHeader(object):
         instance = AcceptValidHeader(header_value=header_value)
         assert instance.accepts_html is returned
 
-    @pytest.mark.parametrize('header, offers, expected_returned', [
-        (AcceptValidHeader('text/html'), ['text/html;p=1;q=0.5'], []),
-        (AcceptValidHeader('text/html'), ['text/html;q=0.5'], []),
-        (AcceptValidHeader('text/html'), ['text/html;q=0.5;e=1'], []),
+    @pytest.mark.parametrize('offers, expected_returned', [
+        (['text/html;p=1;q=0.5'], []),
+        (['text/html;q=0.5'], []),
+        (['text/html;q=0.5;e=1'], []),
         (
-            AcceptValidHeader('text/html'),
-            ['text/html', 'text/plain;p=1;q=0.5;e=1', 'foo'],
-            [('text/html', 1.0)],
-        ),
-        (
-            AcceptInvalidHeader('foo'),
-            ['text/html', 'text/plain;p=1;q=0.5;e=1', 'foo'],
-            [('text/html', 1.0)],
-        ),
-        (
-            AcceptNoHeader(),
             ['text/html', 'text/plain;p=1;q=0.5;e=1', 'foo'],
             [('text/html', 1.0)],
         ),
     ])
     def test_acceptable_offers__invalid_offers(
-        self, header, offers, expected_returned,
+        self, offers, expected_returned,
     ):
-        assert header.acceptable_offers(offers=offers) == expected_returned
+        assert AcceptValidHeader('text/html').acceptable_offers(offers=offers)\
+            == expected_returned
 
     @pytest.mark.parametrize('header_value, offers, expected_returned', [
         # RFC 7231, section 5.3.2
@@ -1500,7 +1490,22 @@ class TestAcceptNoHeader(object):
         instance = AcceptNoHeader()
         assert instance.accepts_html is True
 
-    def test_acceptable_offers(self):
+    @pytest.mark.parametrize('offers, expected_returned', [
+        (['text/html;p=1;q=0.5'], []),
+        (['text/html;q=0.5'], []),
+        (['text/html;q=0.5;e=1'], []),
+        (
+            ['text/html', 'text/plain;p=1;q=0.5;e=1', 'foo'],
+            [('text/html', 1.0)],
+        ),
+    ])
+    def test_acceptable_offers__invalid_offers(
+        self, offers, expected_returned,
+    ):
+        assert AcceptNoHeader().acceptable_offers(offers=offers) == \
+            expected_returned
+
+    def test_acceptable_offers__valid_offers(self):
         instance = AcceptNoHeader()
         returned = instance.acceptable_offers(offers=['a/b', 'c/d', 'e/f'])
         assert returned == [('a/b', 1.0), ('c/d', 1.0), ('e/f', 1.0)]
@@ -1898,7 +1903,23 @@ class TestAcceptInvalidHeader(object):
         instance = AcceptInvalidHeader(header_value=', ')
         assert instance.accepts_html is True
 
-    def test_acceptable_offers(self):
+    @pytest.mark.parametrize('offers, expected_returned', [
+        (['text/html;p=1;q=0.5'], []),
+        (['text/html;q=0.5'], []),
+        (['text/html;q=0.5;e=1'], []),
+        (
+            ['text/html', 'text/plain;p=1;q=0.5;e=1', 'foo'],
+            [('text/html', 1.0)],
+        ),
+    ])
+    def test_acceptable_offers__invalid_offers(
+        self, offers, expected_returned,
+    ):
+        assert AcceptInvalidHeader(header_value=', ').acceptable_offers(
+            offers=offers,
+        ) == expected_returned
+
+    def test_acceptable_offers__valid_offers(self):
         instance = AcceptInvalidHeader(header_value=', ')
         returned = instance.acceptable_offers(offers=['a/b', 'c/d', 'e/f'])
         assert returned == [('a/b', 1.0), ('c/d', 1.0), ('e/f', 1.0)]
