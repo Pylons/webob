@@ -377,6 +377,33 @@ class TestAccept(object):
         list_of_returned = list(returned)
         assert list_of_returned == expected_list
 
+    @pytest.mark.parametrize('offer, expected_return', [
+        ['text/html', ('text', 'html', [])],
+        ['text/html;charset=utf8', ('text', 'html', [('charset', 'utf8')])],
+        ['text/html;charset=utf8;x-version=1', ('text', 'html', [
+            ('charset', 'utf8'),
+            ('x-version', '1'),
+        ])],
+        ['text/*', ('text', '*', [])],
+        ['*/*', ('*', '*', [])],
+    ])
+    def test_parse_offer__valid(self, offer, expected_return):
+        assert Accept.parse_offer(offer) == expected_return
+
+    @pytest.mark.parametrize('offer', [
+        '',
+        'foo',
+        'foo/bar/baz',
+        '*/plain',
+        '*/plain;charset=utf8',
+        '*/plain;charset=utf8;x-version=1',
+        '*/*;charset=utf8',
+        'text/*;charset=utf8',
+    ])
+    def test_parse_offer__invalid(self, offer):
+        with pytest.raises(ValueError):
+            Accept.parse_offer(offer)
+
 
 class TestAcceptValidHeader(object):
     def test_parse__inherited(self):

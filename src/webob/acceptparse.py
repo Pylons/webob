@@ -407,9 +407,52 @@ class Accept(object):
                 )
         return generator(value=value)
 
-    def _parse_and_normalize_offers(self, offers):
+    @classmethod
+    def parse_offer(cls, offer):
         """
-        Throw out any offers that do not match the media type ABNF.
+        Parse an offer into its component parts.
+
+        :param offer: A media type or range in the format
+                      ``type/subtype[;params]``.
+        :return: A tuple of ``(*type*, *subtype*, *params*)``.
+
+                 | *params* is a list containing ``(*parameter name*, *value*)``
+                   values.
+
+        :raises ValueError: If the offer does not match the required format.
+
+        """
+        match = cls.media_type_compiled_re.match(offer)
+        if not match:
+            raise ValueError('Invalid value for an Accept offer.')
+
+        groups = match.groups()
+        offer_type, offer_subtype = groups[0].split('/')
+        offer_params = cls._parse_media_type_params(
+            media_type_params_segment=groups[1],
+        )
+        # offer_type, offer_subtype, offer_params, invalid, example
+        #    == *        == *           true         Y/N
+        #      N           N              N           N      a/b
+        #      N           N              Y           N      a/b;x=y
+        #      N           Y              N           N      a/*
+        #      N           Y              Y           Y      a/*;x=y
+        #      Y           N              N           Y      */b
+        #      Y           N              Y           Y      */b;x=y
+        #      Y           Y              N           N      */*
+        #      Y           Y              Y           Y      */*;x=y
+        # simplifies to (A and not B or B and C)
+        if (
+            (offer_type == '*' and offer_subtype != '*')
+            or (offer_subtype == '*' and offer_params)
+        ):
+            raise ValueError('Invalid value for an Accept offer.')
+        return (offer_type, offer_subtype, offer_params)
+
+    @classmethod
+    def _parse_and_normalize_offers(cls, offers):
+        """
+        Throw out any offers that do not match the media range ABNF.
 
         :return: A list of offers split into the format ``[offer_index,
                  offer_type_subtype, offer_media_type_params]``.
@@ -417,8 +460,8 @@ class Accept(object):
         """
         lowercased_offers_parsed = []
         for index, offer in enumerate(offers):
-            match = self.media_type_compiled_re.match(offer.lower())
-            # we're willing to try to match any offer that matches the
+            match = cls.media_type_compiled_re.match(offer.lower())
+            # we're willing to try to match any range that matches the
             # media type grammar can parse, but we'll throw out anything
             # that doesn't fit the correct syntax - this is not saying that
             # the media type is actually a real media type, just that it looks
