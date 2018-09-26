@@ -377,18 +377,26 @@ class TestAccept(object):
         list_of_returned = list(returned)
         assert list_of_returned == expected_list
 
-    @pytest.mark.parametrize('offer, expected_return', [
-        ['text/html', ('text', 'html', [])],
-        ['text/html;charset=utf8', ('text', 'html', [('charset', 'utf8')])],
-        ['text/html;charset=utf8;x-version=1', ('text', 'html', [
-            ('charset', 'utf8'),
-            ('x-version', '1'),
-        ])],
-        ['text/*', ('text', '*', [])],
-        ['*/*', ('*', '*', [])],
+    @pytest.mark.parametrize('offer, expected_return, is_range, specificity', [
+        ['text/html', ('text', 'html', []), False, 3],
+        [
+            'text/html;charset=utf8',
+            ('text', 'html', [('charset', 'utf8')]),
+            False, 4
+        ],
+        [
+            'text/html;charset=utf8;x-version=1',
+            ('text', 'html', [('charset', 'utf8'), ('x-version', '1')]),
+            False, 4
+        ],
+        ['text/*', ('text', '*', []), True, 2],
+        ['*/*', ('*', '*', []), True, 1],
     ])
-    def test_parse_offer__valid(self, offer, expected_return):
-        assert Accept.parse_offer(offer) == expected_return
+    def test_parse_offer__valid(self, offer, expected_return, is_range, specificity):
+        result = Accept.parse_offer(offer)
+        assert result == expected_return
+        assert result.is_range == is_range
+        assert result.specificity == specificity
 
     @pytest.mark.parametrize('offer', [
         '',

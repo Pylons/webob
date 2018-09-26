@@ -5,6 +5,7 @@ The four headers are ``Accept``, ``Accept-Charset``, ``Accept-Encoding`` and
 ``Accept-Language``.
 """
 
+from collections import namedtuple
 import re
 import textwrap
 import warnings
@@ -72,6 +73,25 @@ def _list_1_or_more__compiled_re(element_re):
         '^(?:,' + OWS_re + ')*' + element_re +
         '(?:' + OWS_re + ',(?:' + OWS_re + element_re + ')?)*$',
     )
+
+
+class AcceptOffer(namedtuple('AcceptOffer', ['type', 'subtype', 'params'])):
+    __slots__ = ()
+
+    @property
+    def is_range(self):
+        return self.type == '*' or self.subtype == '*'
+
+    @property
+    def specificity(self):
+        if self.params:
+            return 4
+        elif self.subtype != '*':
+            return 3
+        elif self.type != '*':
+            return 2
+        else:
+            return 1
 
 
 class Accept(object):
@@ -414,10 +434,15 @@ class Accept(object):
 
         :param offer: A media type or range in the format
                       ``type/subtype[;params]``.
-        :return: A tuple of ``(*type*, *subtype*, *params*)``.
+        :return: A named tuple containing ``(*type*, *subtype*, *params*)``.
 
                  | *params* is a list containing ``(*parameter name*, *value*)``
                    values.
+
+                 | The result also supports ``is_range`` and ``specificity``
+                   properties. Specificity is a value from 1 to 4 where ``*/*``
+                   is 1, ``text/*`` is 2, ``text/html`` is 3 and
+                   ``text/html;charset=utf8`` is 4.
 
         :raises ValueError: If the offer does not match the required format.
 
@@ -447,7 +472,7 @@ class Accept(object):
             or (offer_subtype == '*' and offer_params)
         ):
             raise ValueError('Invalid value for an Accept offer.')
-        return (offer_type, offer_subtype, offer_params)
+        return AcceptOffer(offer_type, offer_subtype, offer_params)
 
     @classmethod
     def _parse_and_normalize_offers(cls, offers):
