@@ -382,12 +382,12 @@ class TestAccept(object):
         [
             'text/html;charset=utf8',
             ('text', 'html', [('charset', 'utf8')]),
-            False, 4
+            False, 4,
         ],
         [
             'text/html;charset=utf8;x-version=1',
             ('text', 'html', [('charset', 'utf8'), ('x-version', '1')]),
-            False, 4
+            False, 4,
         ],
         ['text/*', ('text', '*', []), True, 2],
         ['*/*', ('*', '*', []), True, 1],

@@ -78,6 +78,11 @@ def _list_1_or_more__compiled_re(element_re):
 class AcceptOffer(namedtuple('AcceptOffer', ['type', 'subtype', 'params'])):
     __slots__ = ()
 
+    SPECIFICITY_NONE = 1        # */*
+    SPECIFICITY_TYPE = 2        # text/*
+    SPECIFICITY_SUBTYPE = 3     # text/html
+    SPECIFICITY_PARAMS = 4      # text/html;charset=utf8
+
     @property
     def is_range(self):
         return self.type == '*' or self.subtype == '*'
@@ -85,13 +90,13 @@ class AcceptOffer(namedtuple('AcceptOffer', ['type', 'subtype', 'params'])):
     @property
     def specificity(self):
         if self.params:
-            return 4
+            return self.SPECIFICITY_PARAMS
         elif self.subtype != '*':
-            return 3
+            return self.SPECIFICITY_SUBTYPE
         elif self.type != '*':
-            return 2
+            return self.SPECIFICITY_TYPE
         else:
-            return 1
+            return self.SPECIFICITY_NONE
 
 
 class Accept(object):
