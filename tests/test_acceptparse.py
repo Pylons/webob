@@ -1091,6 +1091,11 @@ class TestAcceptValidHeader(object):
             [('text/*', 0.7), ('*/*', 0.7), ('text/html;level=1', 0.7)],
         ),
         (
+            '*/*',
+            ['text/*'],
+            [('text/*', 1.0)],
+        ),
+        (
             '',
             ['text/*', '*/*', 'text/html', 'text/html;level=1', 'image/*'],
             [],

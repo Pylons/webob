@@ -485,7 +485,7 @@ class Accept(object):
         Throw out any offers that do not match the media range ABNF.
 
         :return: A list of offers split into the format ``[offer_index,
-                 offer_type, offer_subtype, offer_media_type_params]``.
+                 parsed_offer]``.
 
         """
         parsed_offers = []
@@ -494,7 +494,7 @@ class Accept(object):
                 parsed_offer = cls.parse_offer(offer.lower())
             except ValueError:
                 continue
-            parsed_offers.append([index] + list(parsed_offer))
+            parsed_offers.append([index, parsed_offer])
         return parsed_offers
 
 
@@ -892,11 +892,10 @@ class AcceptValidHeader(Accept):
         lowercased_offers_parsed = self._parse_and_normalize_offers(offers)
 
         acceptable_offers_n_quality_factors = {}
-        for (
-            offer_index, offer_type, offer_subtype, offer_media_type_params
-        ) in lowercased_offers_parsed:
+        for offer_index, parsed_offer in lowercased_offers_parsed:
             offer = offers[offer_index]
-            offer_is_range = '*' in offer
+            offer_is_range = parsed_offer.is_range
+            offer_type, offer_subtype, offer_media_type_params = parsed_offer
             for (
                 range_type_subtype, range_qvalue, range_media_type_params, __,
             ) in lowercased_ranges:
@@ -1369,7 +1368,7 @@ class _AcceptInvalidOrNoHeader(Accept):
         """
         return [
             (offers[offer_index], 1.0)
-            for offer_index, _, _, _
+            for offer_index, _
             # avoid returning any offers that don't match the grammar so
             # that the return values here are consistent with what would be
             # returned in AcceptValidHeader
