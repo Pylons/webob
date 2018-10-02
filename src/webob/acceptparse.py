@@ -909,7 +909,7 @@ class AcceptValidHeader(Accept):
                         # Accept: anything, offer=*/*
                         (offer_type == '*' and offer_subtype == '*')
 
-                        # Accept: text/anything, offer=*/*
+                        # Accept: text/anything, offer=text/*
                         or (offer_type == range_type and offer_subtype == '*')
 
                         # Accept: */*, offer=anything
