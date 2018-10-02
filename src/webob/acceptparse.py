@@ -485,20 +485,17 @@ class Accept(object):
         Throw out any offers that do not match the media range ABNF.
 
         :return: A list of offers split into the format ``[offer_index,
-                 offer_type_subtype, offer_media_type_params]``.
+                 offer_type, offer_subtype, offer_media_type_params]``.
 
         """
-        lowercased_offers_parsed = []
+        parsed_offers = []
         for index, offer in enumerate(offers):
-            match = cls.media_type_compiled_re.match(offer.lower())
-            # we're willing to try to match any range that matches the
-            # media type grammar can parse, but we'll throw out anything
-            # that doesn't fit the correct syntax - this is not saying that
-            # the media type is actually a real media type, just that it looks
-            # like one
-            if match:
-                lowercased_offers_parsed.append([index] + list(match.groups()))
-        return lowercased_offers_parsed
+            try:
+                parsed_offer = cls.parse_offer(offer.lower())
+            except ValueError:
+                continue
+            parsed_offers.append([index] + list(parsed_offer))
+        return parsed_offers
 
 
 class AcceptValidHeader(Accept):
@@ -896,13 +893,9 @@ class AcceptValidHeader(Accept):
 
         acceptable_offers_n_quality_factors = {}
         for (
-            offer_index, offer_type_subtype, offer_media_type_params
+            offer_index, offer_type, offer_subtype, offer_media_type_params
         ) in lowercased_offers_parsed:
             offer = offers[offer_index]
-            offer_type, offer_subtype = offer_type_subtype.split('/', 1)
-            offer_media_type_params = self._parse_media_type_params(
-                media_type_params_segment=offer_media_type_params,
-            )
             offer_is_range = '*' in offer
             for (
                 range_type_subtype, range_qvalue, range_media_type_params, __,
@@ -914,8 +907,17 @@ class AcceptValidHeader(Accept):
                 # highest matching qvalue
                 if offer_is_range:
                     if (
-                        offer_type_subtype == '*/*'
-                        or offer_type == range_type and offer_subtype == '*'
+                        # Accept: anything, offer=*/*
+                        (offer_type == '*' and offer_subtype == '*')
+
+                        # Accept: text/anything, offer=*/*
+                        or (offer_type == range_type and offer_subtype == '*')
+
+                        # Accept: */*, offer=anything
+                        or (
+                            range_type == '*' and range_subtype == '*'
+                            and range_media_type_params == []
+                        )
                     ):
                         prev_match = acceptable_offers_n_quality_factors.get(offer)
                         if not prev_match or prev_match[0] < range_qvalue:
@@ -933,7 +935,10 @@ class AcceptValidHeader(Accept):
                 # items in reverse order, so specificity 4, 3, 2, 1 correspond
                 # to 1, 2, 3, 4 in the list, respectively (so that higher
                 # specificity has higher precedence).
-                elif offer_type_subtype == range_type_subtype:
+                elif (
+                    offer_type == range_type
+                    and offer_subtype == range_subtype
+                ):
                     if range_media_type_params == []:
                         # If offer_media_type_params == [], the offer and the
                         # range match exactly, with neither having media type
@@ -1364,7 +1369,7 @@ class _AcceptInvalidOrNoHeader(Accept):
         """
         return [
             (offers[offer_index], 1.0)
-            for offer_index, _, _
+            for offer_index, _, _, _
             # avoid returning any offers that don't match the grammar so
             # that the return values here are consistent with what would be
             # returned in AcceptValidHeader
