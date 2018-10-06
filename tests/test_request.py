@@ -2653,21 +2653,27 @@ class TestRequest_functional(object):
             headers={'Accept':'application/xml,*/*'})
         status, headerlist, app_iter = request.call_application(simpleapp)
         res = b''.join(app_iter)
-        assert b"accepttypes is: application/xml" in res
+        assert b"accepttypes is: application/xml,text/html" in res
 
-    def test_accept_best_match(self):
+    def test_accept_acceptable_offers(self):
+        fut = lambda r, offers: r.accept.acceptable_offers(offers)
         accept = self._blankOne('/').accept
         assert not accept
         assert self._blankOne('/', headers={'Accept': ''}).accept
-        req = self._blankOne('/', headers={'Accept':'text/plain'})
+        req = self._blankOne('/', headers={'Accept': 'text/plain'})
         assert req.accept
-        req = self._blankOne('/', accept=['*/*','text/*'])
-        assert  req.accept.best_match(['application/x-foo', 'text/plain']) == 'text/plain'
-        assert  req.accept.best_match(['text/plain', 'application/x-foo']) == 'text/plain'
+        req = self._blankOne('/', accept=['*/*', 'text/*'])
+        assert fut(req, ['application/x-foo', 'text/plain']) == [
+            ('application/x-foo', 1.0), ('text/plain', 1.0)]
+        assert fut(req, ['text/plain', 'application/x-foo']) == [
+            ('text/plain', 1.0), ('application/x-foo', 1.0)]
         req = self._blankOne('/', accept=['text/plain', 'message/*'])
-        assert  req.accept.best_match(['message/x-foo', 'text/plain']) == 'text/plain'
-        assert  req.accept.best_match(['text/plain', 'message/x-foo']) == 'text/plain'
+        assert fut(req, ['message/x-foo', 'text/plain']) == [
+            ('message/x-foo', 1.0), ('text/plain', 1.0)]
+        assert fut(req, ['text/plain', 'message/x-foo']) == [
+            ('text/plain', 1.0), ('message/x-foo', 1.0)]
 
+    @pytest.mark.filterwarnings('ignore:.*best_match.*')
     def test_from_mimeparse(self):
         # http://mimeparse.googlecode.com/svn/trunk/mimeparse.py
         supported = ['application/xbel+xml', 'application/xml']
@@ -3383,6 +3389,7 @@ class TestRequest_functional(object):
         assert req.params['name'] == 'Bob'
         assert req.params.getall('name'), ['Bob' == 'Joe']
 
+    @pytest.mark.filterwarnings('ignore:.*best_match.*')
     def test_request_put(self):
         from datetime import datetime
         from webob import Response
@@ -3573,6 +3580,7 @@ class TestRequest_functional(object):
         req2_body = req2.body
         assert req_body == req2_body
 
+@pytest.mark.filterwarnings('ignore:FakeCGIBody')
 class TestFakeCGIBody(object):
     def test_encode_multipart_value_type_options(self):
         from cgi import FieldStorage
@@ -3784,10 +3792,16 @@ def simpleapp(environ, start_response):
         'Hello world!\n',
         'The get is %r' % request.GET,
         ' and Val is %s\n' % repr(request.GET.get('name')),
-        'The languages are: %s\n' % list(request.accept_language),
-        'The accepttypes is: %s\n' % request.accept.best_match(
-            ['application/xml', 'text/html']
-        ),
+        'The languages are: %s\n' % ([o for o, _ in sorted(
+            request.accept_language.parsed or (),
+            key=lambda x: x[1],  # sort by quality
+            reverse=True,
+        )]),
+        'The accepttypes is: %s\n' % ','.join([
+            o for o, _ in request.accept.acceptable_offers([
+                'application/xml', 'text/html',
+            ])
+        ]),
         'post is %r\n' % request.POST,
         'params is %r\n' % request.params,
         'cookies is %r\n' % request.cookies,

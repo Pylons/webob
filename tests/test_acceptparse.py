@@ -33,6 +33,11 @@ from webob.acceptparse import (
 )
 from webob.request import Request
 
+IGNORE_BEST_MATCH = 'ignore:.*best_match.*'
+IGNORE_QUALITY = 'ignore:.*quality.*'
+IGNORE_CONTAINS = 'ignore:.*__contains__.*'
+IGNORE_ITER = 'ignore:.*__iter__.*'
+IGNORE_MIMEACCEPT = 'ignore:.*MIMEAccept.*'
 
 class Test_ItemNWeightRe(object):
     @pytest.mark.parametrize('header_value', [
@@ -619,6 +624,7 @@ class TestAcceptValidHeader(object):
         returned = bool(instance)
         assert returned is True
 
+    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test___contains__(self):
         accept = AcceptValidHeader('A/a, B/b, C/c')
         assert 'A/a' in accept
@@ -629,6 +635,7 @@ class TestAcceptValidHeader(object):
         for mask in ['*/*', 'text/html', 'TEXT/HTML']:
             assert 'text/html' in AcceptValidHeader(mask)
 
+    @pytest.mark.filterwarnings(IGNORE_ITER)
     def test___iter__(self):
         instance = AcceptValidHeader(
             header_value=(
@@ -1068,6 +1075,7 @@ class TestAcceptValidHeader(object):
         returned = instance.acceptable_offers(offers=offers)
         assert returned == expected_returned
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match(self):
         accept = AcceptValidHeader('text/html, foo/bar')
         assert accept.best_match(['text/html', 'foo/bar']) == 'text/html'
@@ -1077,12 +1085,14 @@ class TestAcceptValidHeader(object):
         assert accept.best_match([('foo/bar', 0.5),
                                   ('text/html', 0.4)]) == 'foo/bar'
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match_with_one_lower_q(self):
         accept = AcceptValidHeader('text/html, foo/bar;q=0.5')
         assert accept.best_match(['text/html', 'foo/bar']) == 'text/html'
         accept = AcceptValidHeader('text/html;q=0.5, foo/bar')
         assert accept.best_match(['text/html', 'foo/bar']) == 'foo/bar'
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match_with_complex_q(self):
         accept = AcceptValidHeader(
             'text/html, foo/bar;q=0.55, baz/gort;q=0.59'
@@ -1093,10 +1103,12 @@ class TestAcceptValidHeader(object):
         )
         assert accept.best_match(['text/html', 'baz/gort']) == 'baz/gort'
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match_json(self):
         accept = AcceptValidHeader('text/html, */*; q=0.2')
         assert accept.best_match(['application/json']) == 'application/json'
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match_mixedcase(self):
         accept = AcceptValidHeader(
             'image/jpg; q=0.2, Image/pNg; Q=0.4, image/*; q=0.05'
@@ -1106,18 +1118,22 @@ class TestAcceptValidHeader(object):
         assert accept.best_match(['image/Tiff', 'image/PnG', 'image/jpg']) == \
             'image/PnG'
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
+    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test_best_match_zero_quality(self):
         assert AcceptValidHeader('text/plain, */*;q=0').best_match(
             ['text/html']
         ) is None
         assert 'audio/basic' not in AcceptValidHeader('*/*;q=0')
 
+    @pytest.mark.filterwarnings(IGNORE_QUALITY)
     def test_quality(self):
         accept = AcceptValidHeader('text/html')
         assert accept.quality('text/html') == 1
         accept = AcceptValidHeader('text/html;q=0.5')
         assert accept.quality('text/html') == 0.5
 
+    @pytest.mark.filterwarnings(IGNORE_QUALITY)
     def test_quality_not_found(self):
         accept = AcceptValidHeader('text/html')
         assert accept.quality('foo/bar') is None
@@ -1324,11 +1340,13 @@ class TestAcceptNoHeader(object):
         returned = bool(instance)
         assert returned is False
 
+    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test___contains__(self):
         instance = AcceptNoHeader()
         returned = ('type/subtype' in instance)
         assert returned is True
 
+    @pytest.mark.filterwarnings(IGNORE_ITER)
     def test___iter__(self):
         instance = AcceptNoHeader()
         returned = list(instance)
@@ -1510,6 +1528,7 @@ class TestAcceptNoHeader(object):
         returned = instance.acceptable_offers(offers=['a/b', 'c/d', 'e/f'])
         assert returned == [('a/b', 1.0), ('c/d', 1.0), ('e/f', 1.0)]
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match(self):
         accept = AcceptNoHeader()
         assert accept.best_match(['text/html', 'audio/basic']) == 'text/html'
@@ -1527,6 +1546,7 @@ class TestAcceptNoHeader(object):
         ) == 'audio/basic'
         assert accept.best_match([], default_match='fallback') == 'fallback'
 
+    @pytest.mark.filterwarnings(IGNORE_QUALITY)
     def test_quality(self):
         instance = AcceptNoHeader()
         returned = instance.quality(offer='type/subtype')
@@ -1736,11 +1756,13 @@ class TestAcceptInvalidHeader(object):
         returned = bool(instance)
         assert returned is False
 
+    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test___contains__(self):
         instance = AcceptInvalidHeader(header_value=', ')
         returned = ('type/subtype' in instance)
         assert returned is True
 
+    @pytest.mark.filterwarnings(IGNORE_ITER)
     def test___iter__(self):
         instance = AcceptInvalidHeader(header_value=', ')
         returned = list(instance)
@@ -1924,6 +1946,7 @@ class TestAcceptInvalidHeader(object):
         returned = instance.acceptable_offers(offers=['a/b', 'c/d', 'e/f'])
         assert returned == [('a/b', 1.0), ('c/d', 1.0), ('e/f', 1.0)]
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match(self):
         accept = AcceptInvalidHeader(header_value=', ')
         assert accept.best_match(['text/html', 'audio/basic']) == 'text/html'
@@ -1941,6 +1964,7 @@ class TestAcceptInvalidHeader(object):
         ) == 'audio/basic'
         assert accept.best_match([], default_match='fallback') == 'fallback'
 
+    @pytest.mark.filterwarnings(IGNORE_QUALITY)
     def test_quality(self):
         instance = AcceptInvalidHeader(header_value=', ')
         returned = instance.quality(offer='type/subtype')
@@ -2344,18 +2368,22 @@ class TestAcceptCharsetValidHeader(object):
         returned = bool(instance)
         assert returned is True
 
+    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test___contains__(self):
         for mask in ['*', 'utf-8', 'UTF-8']:
             assert 'utf-8' in AcceptCharsetValidHeader(mask)
         assert 'utf-8' not in AcceptCharsetValidHeader('utf-7')
 
+    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test___contains___not(self):
         accept = AcceptCharsetValidHeader('utf-8')
         assert 'utf-7' not in accept
 
+    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test___contains___zero_quality(self):
         assert 'foo' not in AcceptCharsetValidHeader('*;q=0')
 
+    @pytest.mark.filterwarnings(IGNORE_ITER)
     def test___iter__(self):
         instance = AcceptCharsetValidHeader(
             header_value=\
@@ -2513,6 +2541,7 @@ class TestAcceptCharsetValidHeader(object):
         instance = AcceptCharsetValidHeader(header_value=header_value)
         assert instance.acceptable_offers(offers=offers) == returned
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match(self):
         accept = AcceptCharsetValidHeader('utf-8, iso-8859-5')
         assert accept.best_match(['utf-8', 'iso-8859-5']) == 'utf-8'
@@ -2521,12 +2550,14 @@ class TestAcceptCharsetValidHeader(object):
         assert accept.best_match([('iso-8859-5', 0.5), ('utf-8', 0.4)]) == \
             'iso-8859-5'
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match_with_one_lower_q(self):
         accept = AcceptCharsetValidHeader('utf-8, iso-8859-5;q=0.5')
         assert accept.best_match(['utf-8', 'iso-8859-5']) == 'utf-8'
         accept = AcceptCharsetValidHeader('utf-8;q=0.5, iso-8859-5')
         assert accept.best_match(['utf-8', 'iso-8859-5']) == 'iso-8859-5'
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match_with_complex_q(self):
         accept = AcceptCharsetValidHeader(
             'utf-8, iso-8859-5;q=0.55, utf-7;q=0.59'
@@ -2537,6 +2568,7 @@ class TestAcceptCharsetValidHeader(object):
         )
         assert accept.best_match(['utf-8', 'utf-7']) == 'utf-7'
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match_mixedcase(self):
         accept = AcceptCharsetValidHeader(
             'uTf-8; q=0.2, UtF-7; Q=0.4, *; q=0.05'
@@ -2545,18 +2577,22 @@ class TestAcceptCharsetValidHeader(object):
         assert accept.best_match(['IsO-8859-5']) == 'IsO-8859-5'
         assert accept.best_match(['iSo-8859-5', 'uTF-7', 'UtF-8']) == 'uTF-7'
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
+    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test_best_match_zero_quality(self):
         assert AcceptCharsetValidHeader('utf-7, *;q=0').best_match(
             ['utf-8']
         ) is None
         assert 'char-set' not in AcceptCharsetValidHeader('*;q=0')
 
+    @pytest.mark.filterwarnings(IGNORE_QUALITY)
     def test_quality(self):
         accept = AcceptCharsetValidHeader('utf-8')
         assert accept.quality('utf-8') == 1.0
         accept = AcceptCharsetValidHeader('utf-8;q=0.5')
         assert accept.quality('utf-8') == 0.5
 
+    @pytest.mark.filterwarnings(IGNORE_QUALITY)
     def test_quality_not_found(self):
         accept = AcceptCharsetValidHeader('utf-8')
         assert accept.quality('iso-8859-5') is None
@@ -2676,11 +2712,13 @@ class TestAcceptCharsetNoHeader(object):
         returned = bool(instance)
         assert returned is False
 
+    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test___contains__(self):
         instance = AcceptCharsetNoHeader()
         returned = ('char-set' in instance)
         assert returned is True
 
+    @pytest.mark.filterwarnings(IGNORE_ITER)
     def test___iter__(self):
         instance = AcceptCharsetNoHeader()
         returned = list(instance)
@@ -2767,6 +2805,7 @@ class TestAcceptCharsetNoHeader(object):
             ('utf-8', 1.0), ('utf-7', 1.0), ('unicode-1-1', 1.0)
         ]
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match(self):
         accept = AcceptCharsetNoHeader()
         assert accept.best_match(['utf-8', 'iso-8859-5']) == 'utf-8'
@@ -2784,6 +2823,7 @@ class TestAcceptCharsetNoHeader(object):
         ) == 'iso-8859-5'
         assert accept.best_match([], default_match='fallback') == 'fallback'
 
+    @pytest.mark.filterwarnings(IGNORE_QUALITY)
     def test_quality(self):
         instance = AcceptCharsetNoHeader()
         returned = instance.quality(offer='char-set')
@@ -2894,11 +2934,13 @@ class TestAcceptCharsetInvalidHeader(object):
         returned = bool(instance)
         assert returned is False
 
+    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test___contains__(self):
         instance = AcceptCharsetInvalidHeader(header_value='')
         returned = ('char-set' in instance)
         assert returned is True
 
+    @pytest.mark.filterwarnings(IGNORE_ITER)
     def test___iter__(self):
         instance = AcceptCharsetInvalidHeader(header_value='')
         returned = list(instance)
@@ -2979,6 +3021,7 @@ class TestAcceptCharsetInvalidHeader(object):
             ('utf-8', 1.0), ('utf-7', 1.0), ('unicode-1-1', 1.0)
         ]
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match(self):
         accept = AcceptCharsetInvalidHeader(header_value='')
         assert accept.best_match(['utf-8', 'iso-8859-5']) == 'utf-8'
@@ -2996,6 +3039,7 @@ class TestAcceptCharsetInvalidHeader(object):
         ) == 'iso-8859-5'
         assert accept.best_match([], default_match='fallback') == 'fallback'
 
+    @pytest.mark.filterwarnings(IGNORE_QUALITY)
     def test_quality(self):
         instance = AcceptCharsetInvalidHeader(header_value='')
         returned = instance.quality(offer='char-set')
@@ -3356,6 +3400,7 @@ class TestAcceptEncodingValidHeader(object):
         returned = bool(instance)
         assert returned is True
 
+    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test___contains__(self):
         accept = AcceptEncodingValidHeader('gzip, compress')
         assert 'gzip' in accept
@@ -3363,6 +3408,7 @@ class TestAcceptEncodingValidHeader(object):
         for mask in ['*', 'gzip', 'gZIP']:
             assert 'gzip' in AcceptEncodingValidHeader(mask)
 
+    @pytest.mark.filterwarnings(IGNORE_ITER)
     def test___iter__(self):
         instance = AcceptEncodingValidHeader(
             header_value='gzip; q=0.5, *; q=0, deflate; q=0.8, compress',
@@ -3526,6 +3572,7 @@ class TestAcceptEncodingValidHeader(object):
         returned = instance.acceptable_offers(offers=offers)
         assert returned == expected_returned
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match(self):
         accept = AcceptEncodingValidHeader('gzip, iso-8859-5')
         assert accept.best_match(['gzip', 'iso-8859-5']) == 'gzip'
@@ -3534,12 +3581,14 @@ class TestAcceptEncodingValidHeader(object):
         assert accept.best_match([('iso-8859-5', 0.5), ('gzip', 0.4)]) == \
             'iso-8859-5'
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match_with_one_lower_q(self):
         accept = AcceptEncodingValidHeader('gzip, compress;q=0.5')
         assert accept.best_match(['gzip', 'compress']) == 'gzip'
         accept = AcceptEncodingValidHeader('gzip;q=0.5, compress')
         assert accept.best_match(['gzip', 'compress']) == 'compress'
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match_with_complex_q(self):
         accept = AcceptEncodingValidHeader(
             'gzip, compress;q=0.55, deflate;q=0.59'
@@ -3550,6 +3599,7 @@ class TestAcceptEncodingValidHeader(object):
         )
         assert accept.best_match(['gzip', 'deflate']) == 'deflate'
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match_mixedcase(self):
         accept = AcceptEncodingValidHeader(
             'gZiP; q=0.2, COMPress; Q=0.4, *; q=0.05'
@@ -3559,18 +3609,22 @@ class TestAcceptEncodingValidHeader(object):
         assert accept.best_match(['deflaTe', 'compRess', 'UtF-8']) == \
             'compRess'
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
+    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test_best_match_zero_quality(self):
         assert AcceptEncodingValidHeader('deflate, *;q=0').best_match(
             ['gzip']
         ) is None
         assert 'content-coding' not in AcceptEncodingValidHeader('*;q=0')
 
+    @pytest.mark.filterwarnings(IGNORE_QUALITY)
     def test_quality(self):
         accept = AcceptEncodingValidHeader('gzip')
         assert accept.quality('gzip') == 1
         accept = AcceptEncodingValidHeader('gzip;q=0.5')
         assert accept.quality('gzip') == 0.5
 
+    @pytest.mark.filterwarnings(IGNORE_QUALITY)
     def test_quality_not_found(self):
         accept = AcceptEncodingValidHeader('gzip')
         assert accept.quality('compress') is None
@@ -3715,11 +3769,13 @@ class TestAcceptEncodingNoHeader(object):
         returned = bool(instance)
         assert returned is False
 
+    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test___contains__(self):
         instance = AcceptEncodingNoHeader()
         returned = ('content-coding' in instance)
         assert returned is True
 
+    @pytest.mark.filterwarnings(IGNORE_ITER)
     def test___iter__(self):
         instance = AcceptEncodingNoHeader()
         returned = list(instance)
@@ -3821,6 +3877,7 @@ class TestAcceptEncodingNoHeader(object):
         returned = instance.acceptable_offers(offers=['a', 'b', 'c'])
         assert returned == [('a', 1.0), ('b', 1.0), ('c', 1.0)]
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match(self):
         accept = AcceptEncodingNoHeader()
         assert accept.best_match(['gzip', 'compress']) == 'gzip'
@@ -3836,6 +3893,7 @@ class TestAcceptEncodingNoHeader(object):
         ) == 'compress'
         assert accept.best_match([], default_match='fallback') == 'fallback'
 
+    @pytest.mark.filterwarnings(IGNORE_QUALITY)
     def test_quality(self):
         instance = AcceptEncodingNoHeader()
         returned = instance.quality(offer='content-coding')
@@ -3984,11 +4042,13 @@ class TestAcceptEncodingInvalidHeader(object):
         returned = bool(instance)
         assert returned is False
 
+    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test___contains__(self):
         instance = AcceptEncodingInvalidHeader(header_value=', ')
         returned = ('content-coding' in instance)
         assert returned is True
 
+    @pytest.mark.filterwarnings(IGNORE_ITER)
     def test___iter__(self):
         instance = AcceptEncodingInvalidHeader(header_value=', ')
         returned = list(instance)
@@ -4089,6 +4149,7 @@ class TestAcceptEncodingInvalidHeader(object):
         returned = instance.acceptable_offers(offers=['a', 'b', 'c'])
         assert returned == [('a', 1.0), ('b', 1.0), ('c', 1.0)]
 
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match(self):
         accept = AcceptEncodingInvalidHeader(header_value=', ')
         assert accept.best_match(['gzip', 'compress']) == 'gzip'
@@ -4104,6 +4165,7 @@ class TestAcceptEncodingInvalidHeader(object):
         ) == 'compress'
         assert accept.best_match([], default_match='fallback') == 'fallback'
 
+    @pytest.mark.filterwarnings(IGNORE_QUALITY)
     def test_quality(self):
         instance = AcceptEncodingInvalidHeader(header_value=', ')
         returned = instance.quality(offer='content-coding')
@@ -4432,6 +4494,7 @@ class TestAcceptLanguageValidHeader(object):
         ('en-gb', 'en'),
         ('en-gb', 'en_GB'),
     ])
+    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test___contains___in(self, header_value, offer):
         instance = AcceptLanguageValidHeader(header_value=header_value)
         assert offer in instance
@@ -4442,6 +4505,7 @@ class TestAcceptLanguageValidHeader(object):
         ('en-gb', 'fr'),
         ('en', 'fr-fr'),
     ])
+    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test___contains___not_in(self, header_value, offer):
         instance = AcceptLanguageValidHeader(header_value=header_value)
         assert offer not in instance
@@ -4460,6 +4524,7 @@ class TestAcceptLanguageValidHeader(object):
         ('en-gb;q=0, *', ['*']),
         ('de, de;q=0', ['de']),
     ])
+    @pytest.mark.filterwarnings(IGNORE_ITER)
     def test___iter__(self, header_value, expected_list):
         instance = AcceptLanguageValidHeader(header_value=header_value)
         assert list(instance) == expected_list
@@ -4729,6 +4794,7 @@ class TestAcceptLanguageValidHeader(object):
             ),
         ]
     )
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match(
         self, header_value, offers, default_match, expected_returned,
     ):
@@ -5242,6 +5308,7 @@ class TestAcceptLanguageValidHeader(object):
         ('en-gb;q=0.5', 'en-gb', 0.5),
         ('en-gb', 'sr-Cyrl', None),
     ])
+    @pytest.mark.filterwarnings(IGNORE_QUALITY)
     def test_quality(self, header_value, offer, expected_returned):
         instance = AcceptLanguageValidHeader(header_value=header_value)
         returned = instance.quality(offer=offer)
@@ -5338,11 +5405,13 @@ class TestAcceptLanguageNoHeader(object):
         returned = bool(instance)
         assert returned is False
 
+    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test___contains__(self):
         instance = AcceptLanguageNoHeader()
         returned = ('any-tag' in instance)
         assert returned is True
 
+    @pytest.mark.filterwarnings(IGNORE_ITER)
     def test___iter__(self):
         instance = AcceptLanguageNoHeader()
         returned = list(instance)
@@ -5421,6 +5490,7 @@ class TestAcceptLanguageNoHeader(object):
         ([('foo', 0.5), 'bar'], object(), 'bar'),
         ([], 'fallback', 'fallback'),
     ])
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match(self, offers, default_match, expected_returned):
         instance = AcceptLanguageNoHeader()
         returned = instance.best_match(
@@ -5451,6 +5521,7 @@ class TestAcceptLanguageNoHeader(object):
         )
         assert returned == expected
 
+    @pytest.mark.filterwarnings(IGNORE_QUALITY)
     def test_quality(self):
         instance = AcceptLanguageNoHeader()
         returned = instance.quality(offer='any-tag')
@@ -5535,11 +5606,13 @@ class TestAcceptLanguageInvalidHeader(object):
         returned = bool(instance)
         assert returned is False
 
+    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test___contains__(self):
         instance = AcceptLanguageInvalidHeader(header_value='')
         returned = ('any-tag' in instance)
         assert returned is True
 
+    @pytest.mark.filterwarnings(IGNORE_ITER)
     def test___iter__(self):
         instance = AcceptLanguageInvalidHeader(header_value='')
         returned = list(instance)
@@ -5612,6 +5685,7 @@ class TestAcceptLanguageInvalidHeader(object):
         ([('foo', 0.5), 'bar'], object(), 'bar'),
         ([], 'fallback', 'fallback'),
     ])
+    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match(self, offers, default_match, expected_returned):
         instance = AcceptLanguageInvalidHeader(header_value='')
         returned = instance.best_match(
@@ -5642,6 +5716,7 @@ class TestAcceptLanguageInvalidHeader(object):
         )
         assert returned == expected
 
+    @pytest.mark.filterwarnings(IGNORE_QUALITY)
     def test_quality(self):
         instance = AcceptLanguageInvalidHeader(header_value='')
         returned = instance.quality(offer='any-tag')
@@ -5774,6 +5849,7 @@ class TestAcceptLanguageProperty(object):
 # Deprecated tests:
 
 
+@pytest.mark.filterwarnings(IGNORE_MIMEACCEPT)
 def test_MIMEAccept_init_warns():
     with warnings.catch_warnings(record=True) as warning:
         warnings.simplefilter("always")
@@ -5782,6 +5858,7 @@ def test_MIMEAccept_init_warns():
     assert len(warning) == 1
 
 
+@pytest.mark.filterwarnings(IGNORE_MIMEACCEPT)
 def test_MIMEAccept_init():
     mimeaccept = MIMEAccept('image/jpg')
     assert mimeaccept._parsed == [('image/jpg', 1)]
@@ -5799,11 +5876,14 @@ def test_MIMEAccept_init():
     assert mimeaccept._parsed == [('image/*', 1)]
 
 
+@pytest.mark.filterwarnings(IGNORE_MIMEACCEPT)
+@pytest.mark.filterwarnings(IGNORE_CONTAINS)
 def test_MIMEAccept_parse():
     assert list(MIMEAccept.parse('image/jpg')) == [('image/jpg', 1)]
     assert list(MIMEAccept.parse('invalid')) == []
 
 
+@pytest.mark.filterwarnings(IGNORE_MIMEACCEPT)
 def test_MIMEAccept_accept_html():
     mimeaccept = MIMEAccept('image/jpg')
     assert not mimeaccept.accept_html()
@@ -5811,6 +5891,8 @@ def test_MIMEAccept_accept_html():
     assert mimeaccept.accept_html()
 
 
+@pytest.mark.filterwarnings(IGNORE_MIMEACCEPT)
+@pytest.mark.filterwarnings(IGNORE_CONTAINS)
 def test_MIMEAccept_contains():
     mimeaccept = MIMEAccept('A/a, B/b, C/c')
     assert 'A/a' in mimeaccept
@@ -5820,15 +5902,20 @@ def test_MIMEAccept_contains():
     assert 'B/a' not in mimeaccept
 
 
+@pytest.mark.filterwarnings(IGNORE_MIMEACCEPT)
+@pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
 def test_MIMEAccept_json():
     mimeaccept = MIMEAccept('text/html, */*; q=.2')
     assert mimeaccept.best_match(['application/json']) == 'application/json'
 
 
+@pytest.mark.filterwarnings(IGNORE_MIMEACCEPT)
 def test_MIMEAccept_no_raise_invalid():
     assert MIMEAccept('invalid')
 
 
+@pytest.mark.filterwarnings(IGNORE_MIMEACCEPT)
+@pytest.mark.filterwarnings(IGNORE_ITER)
 def test_MIMEAccept_iter():
     assert list(iter(MIMEAccept('text/html, other/whatever'))) == [
         'text/html',
@@ -5836,10 +5923,12 @@ def test_MIMEAccept_iter():
     ]
 
 
+@pytest.mark.filterwarnings(IGNORE_MIMEACCEPT)
 def test_MIMEAccept_str():
     assert str(MIMEAccept('image/jpg')) == 'image/jpg'
 
 
+@pytest.mark.filterwarnings(IGNORE_MIMEACCEPT)
 def test_MIMEAccept_add():
     assert str(MIMEAccept('image/jpg') + 'image/png') == 'image/jpg, image/png'
     assert str(MIMEAccept('image/jpg') + MIMEAccept('image/png')) == 'image/jpg, image/png'
@@ -5847,15 +5936,20 @@ def test_MIMEAccept_add():
     assert isinstance(MIMEAccept('image/jpg') + MIMEAccept('image/png'), MIMEAccept)
 
 
+@pytest.mark.filterwarnings(IGNORE_MIMEACCEPT)
 def test_MIMEAccept_radd():
     assert str('image/png' + MIMEAccept('image/jpg')) == 'image/png, image/jpg'
     assert isinstance('image/png' + MIMEAccept('image/jpg'), MIMEAccept)
 
 
+@pytest.mark.filterwarnings(IGNORE_MIMEACCEPT)
+@pytest.mark.filterwarnings(IGNORE_CONTAINS)
 def test_MIMEAccept_repr():
     assert 'image/jpg' in repr(MIMEAccept('image/jpg'))
 
 
+@pytest.mark.filterwarnings(IGNORE_MIMEACCEPT)
+@pytest.mark.filterwarnings(IGNORE_QUALITY)
 def test_MIMEAccept_quality():
     assert MIMEAccept('image/jpg;q=0.9').quality('image/jpg') == 0.9
     assert MIMEAccept('image/png;q=0.9').quality('image/jpg') is None
