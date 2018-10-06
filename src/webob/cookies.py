@@ -16,6 +16,7 @@ import time
 import warnings
 
 from webob.compat import (
+    MutableMapping,
     PY2,
     text_type,
     bytes_,
@@ -31,7 +32,7 @@ __all__ = ['Cookie', 'CookieProfile', 'SignedCookieProfile', 'SignedSerializer',
 
 _marker = object()
 
-class RequestCookies(collections.MutableMapping):
+class RequestCookies(MutableMapping):
 
     _cache_key = 'webob._parsed_cookies'
 

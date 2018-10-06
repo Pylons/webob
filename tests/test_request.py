@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import collections
 import sys
 import warnings
 
@@ -26,6 +25,7 @@ from webob.acceptparse import (
     AcceptValidHeader,
     )
 from webob.compat import (
+    MutableMapping,
     bytes_,
     native_,
     text_type,
@@ -3415,7 +3415,7 @@ class TestRequest_functional(object):
 
         # Cookies
         req.headers['Cookie'] = 'test=value'
-        assert isinstance(req.cookies, collections.MutableMapping)
+        assert isinstance(req.cookies, MutableMapping)
         assert list(req.cookies.items()) == [('test', 'value')]
         req.charset = None
         assert req.cookies == {'test': 'value'}

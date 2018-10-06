@@ -1,5 +1,5 @@
-from collections import MutableMapping
 from webob.compat import (
+    MutableMapping,
     iteritems_,
     string_types,
     )

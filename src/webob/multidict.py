@@ -4,12 +4,11 @@
 """
 Gives a multi-value dictionary object (MultiDict) plus several wrappers
 """
-from collections import MutableMapping
-
 import binascii
 import warnings
 
 from webob.compat import (
+    MutableMapping,
     PY2,
     iteritems_,
     itervalues_,
