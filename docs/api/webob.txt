@@ -26,6 +26,9 @@ methods:
 .. autoclass:: Accept
    :members: parse
 
+.. autoclass:: AcceptOffer
+   :members: __str__
+
 .. autoclass:: AcceptValidHeader
    :members: parse, header_value, parsed, __init__, __add__, __bool__,
 	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,

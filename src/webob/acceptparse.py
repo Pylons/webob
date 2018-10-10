@@ -75,7 +75,25 @@ def _list_1_or_more__compiled_re(element_re):
     )
 
 
-AcceptOffer = namedtuple('AcceptOffer', ['type', 'subtype', 'params'])
+class AcceptOffer(namedtuple('AcceptOffer', ['type', 'subtype', 'params'])):
+    """
+    A pre-parsed offer tuple represeting a value in the format
+    ``type/subtype;param0=value0;param1=value1``.
+
+    :ivar type: The media type's root category.
+    :ivar subtype: The media type's subtype.
+    :ivar params: A tuple of 2-tuples containing parameter names and values.
+
+    """
+    __slots__ = ()
+
+    def __str__(self):
+        """
+        Return the properly quoted media type string.
+
+        """
+        value = self.type + '/' + self.subtype
+        return Accept._form_media_range(value, self.params)
 
 
 class Accept(object):
@@ -426,7 +444,9 @@ class Accept(object):
         :raises ValueError: If the offer does not match the required format.
 
         """
-        match = cls.media_type_compiled_re.match(offer.lower())
+        if isinstance(offer, AcceptOffer):
+            return offer
+        match = cls.media_type_compiled_re.match(offer)
         if not match:
             raise ValueError('Invalid value for an Accept offer.')
 
@@ -437,7 +457,11 @@ class Accept(object):
         )
         if offer_type == '*' or offer_subtype == '*':
             raise ValueError('Invalid value for an Accept offer.')
-        return AcceptOffer(offer_type, offer_subtype, offer_params)
+        return AcceptOffer(
+            offer_type.lower(),
+            offer_subtype.lower(),
+            tuple((name.lower(), value) for name, value in offer_params),
+        )
 
     @classmethod
     def _parse_and_normalize_offers(cls, offers):
@@ -824,7 +848,8 @@ class AcceptValidHeader(Accept):
         :meth:`.Accept.parse_offer` will be ignored.
 
         :param offers: ``iterable`` of ``str`` media types (media types can
-                       include media type parameters)
+                       include media type parameters) or pre-parsed instances
+                       of :class:`.AcceptOffer`.
         :return: A list of tuples of the form (media type, qvalue), in
                  descending order of qvalue. Where two offers have the same
                  qvalue, they are returned in the same order as their order in
@@ -838,9 +863,16 @@ class AcceptValidHeader(Accept):
         # the semantics of the parameter name."
         lowercased_ranges = [
             (
-                media_range.partition(';')[0].lower(), qvalue,
-                [(name.lower(), value) for name, value in media_type_params],
-                [(name.lower(), value) for name, value in extension_params],
+                media_range.partition(';')[0].lower(),
+                qvalue,
+                tuple(
+                    (name.lower(), value)
+                    for name, value in media_type_params
+                ),
+                tuple(
+                    (name.lower(), value)
+                    for name, value in extension_params
+                ),
             )
             for media_range, qvalue, media_type_params, extension_params in
             parsed
@@ -867,7 +899,7 @@ class AcceptValidHeader(Accept):
                     offer_type == range_type
                     and offer_subtype == range_subtype
                 ):
-                    if range_media_type_params == []:
+                    if range_media_type_params == ():
                         # If offer_media_type_params == [], the offer and the
                         # range match exactly, with neither having media type
                         # parameters.
