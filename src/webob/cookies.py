@@ -1,5 +1,3 @@
-import collections
-
 import base64
 import binascii
 import hashlib
