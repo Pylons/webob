@@ -3,6 +3,7 @@ import pytest
 from webob.byterange import Range
 from webob.byterange import ContentRange
 from webob.byterange import _is_content_range_valid
+from webob.compat import Iterable
 
 # Range class
 
@@ -78,8 +79,7 @@ def test_contentrange_str():
 
 def test_contentrange_iter():
     contentrange = ContentRange(0, 99, 100)
-    import collections
-    assert isinstance(contentrange, collections.Iterable)
+    assert isinstance(contentrange, Iterable)
     assert ContentRange.parse('bytes 0-99/100').__class__ == ContentRange
     assert ContentRange.parse(None) is None
     assert ContentRange.parse('0-99 100') is None

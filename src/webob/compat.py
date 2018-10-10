@@ -51,8 +51,10 @@ except ImportError:
 
 try:
     from collections.abc import MutableMapping
+    from collections.abc import Iterable
 except ImportError:
     from collections import MutableMapping
+    from collections import Iterable
 
 if PY3:
     from urllib import parse
