@@ -49,6 +49,13 @@ try:
 except ImportError:
     from Queue import Queue, Empty
 
+try:
+    from collections.abc import MutableMapping
+    from collections.abc import Iterable
+except ImportError:
+    from collections import MutableMapping
+    from collections import Iterable
+
 if PY3:
     from urllib import parse
     urlparse = parse

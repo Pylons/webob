@@ -169,7 +169,7 @@ def test_unicode_cookies_error_raised():
         Response.set_cookie(
             res,
             'x',
-            text_(b'\N{BLACK SQUARE}', 'unicode_escape'))
+            text_(b'\\N{BLACK SQUARE}', 'unicode_escape'))
 
 def test_unicode_cookies_warning_issued():
     import warnings
@@ -182,7 +182,7 @@ def test_unicode_cookies_warning_issued():
         # Trigger a warning.
 
         res = Response()
-        res.set_cookie('x', text_(b'\N{BLACK SQUARE}', 'unicode_escape'))
+        res.set_cookie('x', text_(b'\\N{BLACK SQUARE}', 'unicode_escape'))
 
         assert len(w) == 1
         assert issubclass(w[-1].category, RuntimeWarning) is True
@@ -832,6 +832,7 @@ def test_set_cookie_expires_is_None_and_max_age_is_timedelta():
     assert val[2] == 'a=1'
     assert val[3].startswith('expires')
 
+@pytest.mark.filterwarnings('ignore:"expires" will be removed"')
 def test_set_cookie_expires_is_datetime_and_max_age_is_None():
     import datetime
     res = Response()
@@ -846,6 +847,7 @@ def test_set_cookie_expires_is_datetime_and_max_age_is_None():
     assert val[2] == 'a=1'
     assert val[3].startswith('expires')
 
+@pytest.mark.filterwarnings('ignore:"expires" will be removed"')
 def test_set_cookie_expires_is_timedelta_and_max_age_is_None():
     import datetime
     res = Response()
@@ -860,6 +862,7 @@ def test_set_cookie_expires_is_timedelta_and_max_age_is_None():
     assert val[2] == 'a=1'
     assert val[3].startswith('expires')
 
+@pytest.mark.filterwarnings('ignore:"expires" will be removed"')
 def test_set_cookie_expires_is_datetime_tz_and_max_age_is_None():
     import datetime
     res = Response()
