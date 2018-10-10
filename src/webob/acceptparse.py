@@ -869,12 +869,8 @@ class AcceptValidHeader(Accept):
                     (name.lower(), value)
                     for name, value in media_type_params
                 ),
-                tuple(
-                    (name.lower(), value)
-                    for name, value in extension_params
-                ),
             )
-            for media_range, qvalue, media_type_params, extension_params in
+            for media_range, qvalue, media_type_params, __ in
             parsed
         ]
         lowercased_offers_parsed = self._parse_and_normalize_offers(offers)
@@ -884,7 +880,7 @@ class AcceptValidHeader(Accept):
             offer = offers[offer_index]
             offer_type, offer_subtype, offer_media_type_params = parsed_offer
             for (
-                range_type_subtype, range_qvalue, range_media_type_params, __,
+                range_type_subtype, range_qvalue, range_media_type_params,
             ) in lowercased_ranges:
                 range_type, range_subtype = range_type_subtype.split('/', 1)
 
@@ -900,10 +896,10 @@ class AcceptValidHeader(Accept):
                     and offer_subtype == range_subtype
                 ):
                     if range_media_type_params == ():
-                        # If offer_media_type_params == [], the offer and the
+                        # If offer_media_type_params == () the offer and the
                         # range match exactly, with neither having media type
                         # parameters.
-                        # If offer_media_type_params is not [], the offer and
+                        # If offer_media_type_params is not (), the offer and
                         # the range are a match. See the table towards the end
                         # of RFC 7231 section 5.3.2, where the media type
                         # 'text/html;level=3' matches the range 'text/html' in
