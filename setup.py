@@ -19,7 +19,7 @@ testing_extras = [
     ]
 
 docs_extras = [
-    'Sphinx >= 1.3.1',
+    'Sphinx >= 1.7.5',
     'pylons-sphinx-themes',
     ]
 
