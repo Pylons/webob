@@ -58,6 +58,8 @@ html_static_path = ['_static']
 
 htmlhelp_basename = 'WebObdoc'
 
+smartquotes=False
+
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {
