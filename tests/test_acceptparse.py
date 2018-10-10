@@ -382,26 +382,20 @@ class TestAccept(object):
         list_of_returned = list(returned)
         assert list_of_returned == expected_list
 
-    @pytest.mark.parametrize('offer, expected_return, is_range, specificity', [
-        ['text/html', ('text', 'html', []), False, 3],
+    @pytest.mark.parametrize('offer, expected_return', [
+        ['text/html', ('text', 'html', [])],
         [
             'text/html;charset=utf8',
             ('text', 'html', [('charset', 'utf8')]),
-            False, 4,
         ],
         [
             'text/html;charset=utf8;x-version=1',
             ('text', 'html', [('charset', 'utf8'), ('x-version', '1')]),
-            False, 4,
         ],
-        ['text/*', ('text', '*', []), True, 2],
-        ['*/*', ('*', '*', []), True, 1],
     ])
-    def test_parse_offer__valid(self, offer, expected_return, is_range, specificity):
+    def test_parse_offer__valid(self, offer, expected_return):
         result = Accept.parse_offer(offer)
         assert result == expected_return
-        assert result.is_range == is_range
-        assert result.specificity == specificity
 
     @pytest.mark.parametrize('offer', [
         '',
@@ -412,6 +406,8 @@ class TestAccept(object):
         '*/plain;charset=utf8;x-version=1',
         '*/*;charset=utf8',
         'text/*;charset=utf8',
+        'text/*',
+        '*/*',
     ])
     def test_parse_offer__invalid(self, offer):
         with pytest.raises(ValueError):
@@ -1084,23 +1080,18 @@ class TestAcceptValidHeader(object):
         ),
         (
             'text/*;q=0.3, text/html;q=0.5, text/html;level=1;q=0.7',
-            ['*/*', 'text/*', 'text/html', 'image/*'],
-            [('*/*', 0.7), ('text/*', 0.7), ('text/html', 0.5)],
-        ),
-        (
-            'text/*;q=0.3, text/html;q=0.5, text/html;level=1;q=0.7',
             ['text/*', '*/*', 'text/html', 'image/*'],
-            [('text/*', 0.7), ('*/*', 0.7), ('text/html', 0.5)],
+            [('text/html', 0.5)],
         ),
         (
             'text/html;level=1;q=0.7',
             ['text/*', '*/*', 'text/html', 'text/html;level=1', 'image/*'],
-            [('text/*', 0.7), ('*/*', 0.7), ('text/html;level=1', 0.7)],
+            [('text/html;level=1', 0.7)],
         ),
         (
             '*/*',
             ['text/*'],
-            [('text/*', 1.0)],
+            [],
         ),
         (
             '',

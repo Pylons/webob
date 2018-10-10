@@ -75,28 +75,7 @@ def _list_1_or_more__compiled_re(element_re):
     )
 
 
-class AcceptOffer(namedtuple('AcceptOffer', ['type', 'subtype', 'params'])):
-    __slots__ = ()
-
-    SPECIFICITY_NONE = 1        # */*
-    SPECIFICITY_TYPE = 2        # text/*
-    SPECIFICITY_SUBTYPE = 3     # text/html
-    SPECIFICITY_PARAMS = 4      # text/html;charset=utf8
-
-    @property
-    def is_range(self):
-        return self.type == '*' or self.subtype == '*'
-
-    @property
-    def specificity(self):
-        if self.params:
-            return self.SPECIFICITY_PARAMS
-        elif self.subtype != '*':
-            return self.SPECIFICITY_SUBTYPE
-        elif self.type != '*':
-            return self.SPECIFICITY_TYPE
-        else:
-            return self.SPECIFICITY_NONE
+AcceptOffer = namedtuple('AcceptOffer', ['type', 'subtype', 'params'])
 
 
 class Accept(object):
@@ -444,15 +423,10 @@ class Accept(object):
                  | *params* is a list containing ``(*parameter name*, *value*)``
                    values.
 
-                 | The result also supports ``is_range`` and ``specificity``
-                   properties. Specificity is a value from 1 to 4 where ``*/*``
-                   is 1, ``text/*`` is 2, ``text/html`` is 3 and
-                   ``text/html;charset=utf8`` is 4.
-
         :raises ValueError: If the offer does not match the required format.
 
         """
-        match = cls.media_type_compiled_re.match(offer)
+        match = cls.media_type_compiled_re.match(offer.lower())
         if not match:
             raise ValueError('Invalid value for an Accept offer.')
 
@@ -461,21 +435,7 @@ class Accept(object):
         offer_params = cls._parse_media_type_params(
             media_type_params_segment=groups[1],
         )
-        # offer_type, offer_subtype, offer_params, invalid, example
-        #    == *        == *           true         Y/N
-        #      N           N              N           N      a/b
-        #      N           N              Y           N      a/b;x=y
-        #      N           Y              N           N      a/*
-        #      N           Y              Y           Y      a/*;x=y
-        #      Y           N              N           Y      */b
-        #      Y           N              Y           Y      */b;x=y
-        #      Y           Y              N           N      */*
-        #      Y           Y              Y           Y      */*;x=y
-        # simplifies to (A and not B or B and C)
-        if (
-            (offer_type == '*' and offer_subtype != '*')
-            or (offer_subtype == '*' and offer_params)
-        ):
+        if offer_type == '*' or offer_subtype == '*':
             raise ValueError('Invalid value for an Accept offer.')
         return AcceptOffer(offer_type, offer_subtype, offer_params)
 
@@ -491,7 +451,7 @@ class Accept(object):
         parsed_offers = []
         for index, offer in enumerate(offers):
             try:
-                parsed_offer = cls.parse_offer(offer.lower())
+                parsed_offer = cls.parse_offer(offer)
             except ValueError:
                 continue
             parsed_offers.append([index, parsed_offer])
@@ -860,12 +820,8 @@ class AcceptValidHeader(Accept):
         This uses the matching rules described in :rfc:`RFC 7231, section 5.3.2
         <7231#section-5.3.2>`.
 
-        Any offers that do not match the media type grammar will be ignored.
-
-        This function also supports media ranges (without media type
-        parameters) but without any specificity. An offered media range is
-        assigned the highest q-value of any media range from the header that
-        would match any media type that could be derived from the offer.
+        Any offers that cannot be parsed via
+        :meth:`.Accept.parse_offer` will be ignored.
 
         :param offers: ``iterable`` of ``str`` media types (media types can
                        include media type parameters)
@@ -894,38 +850,11 @@ class AcceptValidHeader(Accept):
         acceptable_offers_n_quality_factors = {}
         for offer_index, parsed_offer in lowercased_offers_parsed:
             offer = offers[offer_index]
-            offer_is_range = parsed_offer.is_range
             offer_type, offer_subtype, offer_media_type_params = parsed_offer
             for (
                 range_type_subtype, range_qvalue, range_media_type_params, __,
             ) in lowercased_ranges:
                 range_type, range_subtype = range_type_subtype.split('/', 1)
-
-                # if a media range is supplied as an offer then specificity is
-                # unimportant, we'll just compare for match and use the
-                # highest matching qvalue
-                if offer_is_range:
-                    if (
-                        # Accept: anything, offer=*/*
-                        (offer_type == '*' and offer_subtype == '*')
-
-                        # Accept: text/anything, offer=text/*
-                        or (offer_type == range_type and offer_subtype == '*')
-
-                        # Accept: */*, offer=anything
-                        or (
-                            range_type == '*' and range_subtype == '*'
-                            and range_media_type_params == []
-                        )
-                    ):
-                        prev_match = acceptable_offers_n_quality_factors.get(offer)
-                        if not prev_match or prev_match[0] < range_qvalue:
-                            acceptable_offers_n_quality_factors[offer] = (
-                                range_qvalue,  # qvalue of matched range
-                                offer_index,
-                                4,  # unused for offers that are media ranges
-                            )
-                    continue
 
                 # The specificity values below are based on the list in the
                 # example in RFC 7231 section 5.3.2 explaining how "media
@@ -934,7 +863,7 @@ class AcceptValidHeader(Accept):
                 # items in reverse order, so specificity 4, 3, 2, 1 correspond
                 # to 1, 2, 3, 4 in the list, respectively (so that higher
                 # specificity has higher precedence).
-                elif (
+                if (
                     offer_type == range_type
                     and offer_subtype == range_subtype
                 ):
@@ -1356,7 +1285,8 @@ class _AcceptInvalidOrNoHeader(Accept):
         """
         Return the offers that are acceptable according to the header.
 
-        Any offers that do not match the media type grammar will be ignored.
+        Any offers that cannot be parsed via
+        :meth:`.Accept.parse_offer` will be ignored.
 
         :param offers: ``iterable`` of ``str`` media types (media types can
                        include media type parameters)
