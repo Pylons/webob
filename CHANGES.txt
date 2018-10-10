@@ -19,8 +19,10 @@ Feature
 - Added ``acceptparse.Accept.parse_offer`` to codify what types of offers
   are compatible with ``acceptparse.AcceptValidHeader.acceptable_offers``,
   ``acceptparse.AcceptMissingHeader.acceptable_offers``, and
-  ``acceptparse.AcceptInvalidHeader.acceptable_offers``.
-  See https://github.com/Pylons/webob/pull/376
+  ``acceptparse.AcceptInvalidHeader.acceptable_offers``. This API also
+  normalizes the offer with lowercased type/subtype and parameter names.
+  See https://github.com/Pylons/webob/pull/376 and
+  https://github.com/Pylons/webob/pull/379
 
 1.8.2 (2018-06-05)
 ------------------

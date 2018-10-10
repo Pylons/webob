@@ -382,20 +382,29 @@ class TestAccept(object):
         list_of_returned = list(returned)
         assert list_of_returned == expected_list
 
-    @pytest.mark.parametrize('offer, expected_return', [
-        ['text/html', ('text', 'html', [])],
+    @pytest.mark.parametrize('offer, expected_return, expected_str', [
+        ['text/html', ('text', 'html', ()), 'text/html'],
         [
             'text/html;charset=utf8',
-            ('text', 'html', [('charset', 'utf8')]),
+            ('text', 'html', (('charset', 'utf8'),)),
+            'text/html;charset=utf8',
         ],
         [
             'text/html;charset=utf8;x-version=1',
-            ('text', 'html', [('charset', 'utf8'), ('x-version', '1')]),
+            ('text', 'html', (('charset', 'utf8'), ('x-version', '1'))),
+            'text/html;charset=utf8;x-version=1',
+        ],
+        [
+            'text/HtMl;cHaRseT=UtF-8;X-Version=1',
+            ('text', 'html', (('charset', 'UtF-8'), ('x-version', '1'))),
+            'text/html;charset=UtF-8;x-version=1',
         ],
     ])
-    def test_parse_offer__valid(self, offer, expected_return):
+    def test_parse_offer__valid(self, offer, expected_return, expected_str):
         result = Accept.parse_offer(offer)
         assert result == expected_return
+        assert str(result) == expected_str
+        assert result is Accept.parse_offer(result)
 
     @pytest.mark.parametrize('offer', [
         '',
@@ -1115,6 +1124,13 @@ class TestAcceptValidHeader(object):
         instance = AcceptValidHeader(header_value=header_value)
         returned = instance.acceptable_offers(offers=offers)
         assert returned == expected_returned
+
+    def test_acceptable_offers_uses_AcceptOffer_objects(self):
+        from webob.acceptparse import AcceptOffer
+        offer = AcceptOffer('text', 'html', (('level', '1'),))
+        instance = AcceptValidHeader(header_value='text/*;q=0.5')
+        result = instance.acceptable_offers([offer])
+        assert result == [(offer, 0.5)]
 
     @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match(self):
