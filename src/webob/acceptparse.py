@@ -14,7 +14,7 @@ import warnings
 # RFC 7230 Section 3.2.3 "Whitespace"
 # OWS            = *( SP / HTAB )
 #                ; optional whitespace
-OWS_re = '[ \t]*'
+OWS_re = "[ \t]*"
 
 # RFC 7230 Section 3.2.6 "Field Value Components":
 # tchar          = "!" / "#" / "$" / "%" / "&" / "'" / "*"
@@ -23,23 +23,19 @@ OWS_re = '[ \t]*'
 tchar_re = r"[!#$%&'*+\-.^_`|~0-9A-Za-z]"
 
 # token          = 1*tchar
-token_re = tchar_re + '+'
-token_compiled_re = re.compile('^' + token_re + '$')
+token_re = tchar_re + "+"
+token_compiled_re = re.compile("^" + token_re + "$")
 
 # RFC 7231 Section 5.3.1 "Quality Values"
 # qvalue = ( "0" [ "." 0*3DIGIT ] )
 #        / ( "1" [ "." 0*3("0") ] )
-qvalue_re = (
-    r'(?:0(?:\.[0-9]{0,3})?)'
-    '|'
-    r'(?:1(?:\.0{0,3})?)'
-)
+qvalue_re = r"(?:0(?:\.[0-9]{0,3})?)" "|" r"(?:1(?:\.0{0,3})?)"
 # weight = OWS ";" OWS "q=" qvalue
-weight_re = OWS_re + ';' + OWS_re + '[qQ]=(' + qvalue_re + ')'
+weight_re = OWS_re + ";" + OWS_re + "[qQ]=(" + qvalue_re + ")"
 
 
 def _item_n_weight_re(item_re):
-    return '(' + item_re + ')(?:' + weight_re + ')?'
+    return "(" + item_re + ")(?:" + weight_re + ")?"
 
 
 def _item_qvalue_pair_to_header_element(pair):
@@ -47,9 +43,9 @@ def _item_qvalue_pair_to_header_element(pair):
     if qvalue == 1.0:
         element = item
     elif qvalue == 0.0:
-        element = '{};q=0'.format(item)
+        element = "{};q=0".format(item)
     else:
-        element = '{};q={}'.format(item, qvalue)
+        element = "{};q={}".format(item, qvalue)
     return element
 
 
@@ -57,11 +53,18 @@ def _list_0_or_more__compiled_re(element_re):
     # RFC 7230 Section 7 "ABNF List Extension: #rule":
     # #element => [ ( "," / element ) *( OWS "," [ OWS element ] ) ]
     return re.compile(
-        '^(?:$)|' +
-        '(?:' +
-        '(?:,|(?:' + element_re + '))' +
-        '(?:' + OWS_re + ',(?:' + OWS_re + element_re + ')?)*' +
-        ')$',
+        "^(?:$)|"
+        + "(?:"
+        + "(?:,|(?:"
+        + element_re
+        + "))"
+        + "(?:"
+        + OWS_re
+        + ",(?:"
+        + OWS_re
+        + element_re
+        + ")?)*"
+        + ")$"
     )
 
 
@@ -70,12 +73,20 @@ def _list_1_or_more__compiled_re(element_re):
     # 1#element => *( "," OWS ) element *( OWS "," [ OWS element ] )
     # and RFC 7230 Errata ID: 4169
     return re.compile(
-        '^(?:,' + OWS_re + ')*' + element_re +
-        '(?:' + OWS_re + ',(?:' + OWS_re + element_re + ')?)*$',
+        "^(?:,"
+        + OWS_re
+        + ")*"
+        + element_re
+        + "(?:"
+        + OWS_re
+        + ",(?:"
+        + OWS_re
+        + element_re
+        + ")?)*$"
     )
 
 
-class AcceptOffer(namedtuple('AcceptOffer', ['type', 'subtype', 'params'])):
+class AcceptOffer(namedtuple("AcceptOffer", ["type", "subtype", "params"])):
     """
     A pre-parsed offer tuple represeting a value in the format
     ``type/subtype;param0=value0;param1=value1``.
@@ -85,6 +96,7 @@ class AcceptOffer(namedtuple('AcceptOffer', ['type', 'subtype', 'params'])):
     :ivar params: A tuple of 2-tuples containing parameter names and values.
 
     """
+
     __slots__ = ()
 
     def __str__(self):
@@ -92,7 +104,7 @@ class AcceptOffer(namedtuple('AcceptOffer', ['type', 'subtype', 'params'])):
         Return the properly quoted media type string.
 
         """
-        value = self.type + '/' + self.subtype
+        value = self.type + "/" + self.subtype
         return Accept._form_media_range(value, self.params)
 
 
@@ -113,18 +125,17 @@ class Accept(object):
     # RFC 5234 Appendix B.1 "Core Rules":
     # VCHAR         =  %x21-7E
     #                       ; visible (printing) characters
-    vchar_re = '\x21-\x7e'
+    vchar_re = "\x21-\x7e"
     # RFC 7230 Section 3.2.6 "Field Value Components":
     # quoted-string = DQUOTE *( qdtext / quoted-pair ) DQUOTE
     # qdtext        = HTAB / SP /%x21 / %x23-5B / %x5D-7E / obs-text
     # obs-text      = %x80-FF
     # quoted-pair   = "\" ( HTAB / SP / VCHAR / obs-text )
-    obs_text_re = '\x80-\xff'
-    qdtext_re = '[\t \x21\x23-\x5b\\\x5d-\x7e' + obs_text_re + ']'
+    obs_text_re = "\x80-\xff"
+    qdtext_re = "[\t \x21\x23-\x5b\\\x5d-\x7e" + obs_text_re + "]"
     # The '\\' between \x5b and \x5d is needed to escape \x5d (']')
-    quoted_pair_re = r'\\' + '[\t ' + vchar_re + obs_text_re + ']'
-    quoted_string_re = \
-        '"(?:(?:' + qdtext_re + ')|(?:' + quoted_pair_re + '))*"'
+    quoted_pair_re = r"\\" + "[\t " + vchar_re + obs_text_re + "]"
+    quoted_string_re = '"(?:(?:' + qdtext_re + ")|(?:" + quoted_pair_re + '))*"'
 
     # RFC 7231 Section 3.1.1.1 "Media Type":
     # type       = token
@@ -132,8 +143,9 @@ class Accept(object):
     # parameter  = token "=" ( token / quoted-string )
     type_re = token_re
     subtype_re = token_re
-    parameter_re = token_re + '=' + \
-        '(?:(?:' + token_re + ')|(?:' + quoted_string_re + '))'
+    parameter_re = (
+        token_re + "=" + "(?:(?:" + token_re + ")|(?:" + quoted_string_re + "))"
+    )
 
     # Section 5.3.2 "Accept":
     # media-range    = ( "*/*"
@@ -141,60 +153,91 @@ class Accept(object):
     #                  / ( type "/" subtype )
     #                  ) *( OWS ";" OWS parameter )
     media_range_re = (
-        '(' +
-        '(?:' + type_re + '/' + subtype_re + ')' +
+        "("
+        + "(?:"
+        + type_re
+        + "/"
+        + subtype_re
+        + ")"
+        +
         # '*' is included through type_re and subtype_re, so this covers */*
         # and type/*
-        ')' +
-        '(' +
-        '(?:' + OWS_re + ';' + OWS_re +
-        '(?![qQ]=)' +  # media type parameter cannot be named "q"
-        parameter_re + ')*' +
-        ')'
+        ")"
+        + "("
+        + "(?:"
+        + OWS_re
+        + ";"
+        + OWS_re
+        + "(?![qQ]=)"
+        + parameter_re  # media type parameter cannot be named "q"
+        + ")*"
+        + ")"
     )
     # accept-params  = weight *( accept-ext )
     # accept-ext = OWS ";" OWS token [ "=" ( token / quoted-string ) ]
     accept_ext_re = (
-        OWS_re + ';' + OWS_re + token_re + '(?:' +
-        '=(?:' +
-        '(?:' + token_re + ')|(?:' + quoted_string_re + ')' +
-        ')' +
-        ')?'
+        OWS_re
+        + ";"
+        + OWS_re
+        + token_re
+        + "(?:"
+        + "=(?:"
+        + "(?:"
+        + token_re
+        + ")|(?:"
+        + quoted_string_re
+        + ")"
+        + ")"
+        + ")?"
     )
-    accept_params_re = weight_re + '((?:' + accept_ext_re + ')*)'
+    accept_params_re = weight_re + "((?:" + accept_ext_re + ")*)"
 
-    media_range_n_accept_params_re = media_range_re + '(?:' + \
-        accept_params_re + ')?'
-    media_range_n_accept_params_compiled_re = re.compile(
-        media_range_n_accept_params_re,
-    )
+    media_range_n_accept_params_re = media_range_re + "(?:" + accept_params_re + ")?"
+    media_range_n_accept_params_compiled_re = re.compile(media_range_n_accept_params_re)
 
     accept_compiled_re = _list_0_or_more__compiled_re(
-        element_re=media_range_n_accept_params_re,
+        element_re=media_range_n_accept_params_re
     )
 
     # For parsing repeated groups within the media type parameters and
     # extension parameters segments
     parameters_compiled_re = re.compile(
-        OWS_re + ';' + OWS_re + '(' + token_re + ')=(' + token_re + '|' +
-        quoted_string_re + ')',
+        OWS_re
+        + ";"
+        + OWS_re
+        + "("
+        + token_re
+        + ")=("
+        + token_re
+        + "|"
+        + quoted_string_re
+        + ")"
     )
     accept_ext_compiled_re = re.compile(
-        OWS_re + ';' + OWS_re + '(' + token_re + ')' +
-        '(?:' +
-        '=(' +
-        '(?:' +
-        '(?:' + token_re + ')|(?:' + quoted_string_re + ')' +
-        ')' +
-        ')' +
-        ')?',
+        OWS_re
+        + ";"
+        + OWS_re
+        + "("
+        + token_re
+        + ")"
+        + "(?:"
+        + "=("
+        + "(?:"
+        + "(?:"
+        + token_re
+        + ")|(?:"
+        + quoted_string_re
+        + ")"
+        + ")"
+        + ")"
+        + ")?"
     )
 
     # For parsing the media types in the `offers` argument to
     # .acceptable_offers(), we re-use the media range regex for media types, as
     # they work out to have the exact same syntax according to RFC 7231.
     media_type_re = media_range_re
-    media_type_compiled_re = re.compile('^' + media_type_re + '$')
+    media_type_compiled_re = re.compile("^" + media_type_re + "$")
 
     @classmethod
     def _escape_and_quote_parameter_value(cls, param_value):
@@ -203,12 +246,10 @@ class Accept(object):
 
         For media type and extension parameter values.
         """
-        if param_value == '':
+        if param_value == "":
             param_value = '""'
         else:
-            param_value = param_value.replace('\\', '\\\\').replace(
-                '"', r'\"',
-            )
+            param_value = param_value.replace("\\", "\\\\").replace('"', r"\"")
             if not token_compiled_re.match(param_value):
                 param_value = '"' + param_value + '"'
         return param_value
@@ -221,18 +262,16 @@ class Accept(object):
         `extension_params` is an iterable where each item is either a parameter
         string or a (name, value) tuple.
         """
-        extension_params_segment = ''
+        extension_params_segment = ""
         for item in extension_params:
             try:
-                extension_params_segment += (';' + item)
+                extension_params_segment += ";" + item
             except TypeError:
                 param_name, param_value = item
                 param_value = cls._escape_and_quote_parameter_value(
-                    param_value=param_value,
+                    param_value=param_value
                 )
-                extension_params_segment += (
-                    ';' + param_name + '=' + param_value
-                )
+                extension_params_segment += ";" + param_name + "=" + param_value
         return extension_params_segment
 
     @classmethod
@@ -243,12 +282,10 @@ class Accept(object):
         `type_subtype` is a ``str``, and `media_type_params` is an iterable of
         (parameter name, parameter value) tuples.
         """
-        media_type_params_segment = ''
+        media_type_params_segment = ""
         for param_name, param_value in media_type_params:
-            param_value = cls._escape_and_quote_parameter_value(
-                param_value=param_value,
-            )
-            media_type_params_segment += (';' + param_name + '=' + param_value)
+            param_value = cls._escape_and_quote_parameter_value(param_value=param_value)
+            media_type_params_segment += ";" + param_name + "=" + param_value
         return type_subtype + media_type_params_segment
 
     @classmethod
@@ -263,21 +300,17 @@ class Accept(object):
             media_range, qvalue, extension_params_segment = iterable
         except ValueError:
             media_range, qvalue = iterable
-            extension_params_segment = ''
+            extension_params_segment = ""
 
         if qvalue == 1.0:
             if extension_params_segment:
-                element = '{};q=1{}'.format(
-                    media_range, extension_params_segment,
-                )
+                element = "{};q=1{}".format(media_range, extension_params_segment)
             else:
                 element = media_range
         elif qvalue == 0.0:
-            element = '{};q=0{}'.format(media_range, extension_params_segment)
+            element = "{};q=0{}".format(media_range, extension_params_segment)
         else:
-            element = '{};q={}{}'.format(
-                media_range, qvalue, extension_params_segment,
-            )
+            element = "{};q={}{}".format(media_range, qvalue, extension_params_segment)
         return element
 
     @classmethod
@@ -286,7 +319,7 @@ class Accept(object):
         Parse media type parameters segment into list of (name, value) tuples.
         """
         media_type_params = cls.parameters_compiled_re.findall(
-            media_type_params_segment,
+            media_type_params_segment
         )
         for index, (name, value) in enumerate(media_type_params):
             if value.startswith('"') and value.endswith('"'):
@@ -302,7 +335,7 @@ class Accept(object):
         # RFC 7230, section 3.2.6 "Field Value Components": "Recipients that
         # process the value of a quoted-string MUST handle a quoted-pair as if
         # it were replaced by the octet following the backslash."
-        return re.sub(r'\\(?![\\])', '', token[1:-1]).replace('\\\\', '\\')
+        return re.sub(r"\\(?![\\])", "", token[1:-1]).replace("\\\\", "\\")
 
     @classmethod
     def _python_value_to_header_str(cls, value):
@@ -311,7 +344,7 @@ class Accept(object):
         """
         if isinstance(value, str):
             return value
-        if hasattr(value, 'items'):
+        if hasattr(value, "items"):
             if value == {}:
                 value = []
             else:
@@ -321,13 +354,11 @@ class Accept(object):
                     # parameters segment)), or (media range, qvalue) (supported
                     # for backward compatibility)
                     if isinstance(item, (float, int)):
-                        value_list.append((media_range, item, ''))
+                        value_list.append((media_range, item, ""))
                     else:
                         value_list.append((media_range, item[0], item[1]))
                 value = sorted(
-                    value_list,
-                    key=lambda item: item[1],  # qvalue
-                    reverse=True,
+                    value_list, key=lambda item: item[1], reverse=True  # qvalue
                 )
         if isinstance(value, (tuple, list)):
             header_elements = []
@@ -335,7 +366,7 @@ class Accept(object):
                 if isinstance(item, (tuple, list)):
                     item = cls._iterable_to_header_element(iterable=item)
                 header_elements.append(item)
-            header_str = ', '.join(header_elements)
+            header_str = ", ".join(header_elements)
         else:
             header_str = str(value)
         return header_str
@@ -375,22 +406,20 @@ class Accept(object):
         # the match *and* get all the groups using the same regex, so we have
         # to do this in steps using multiple regexes.
         if cls.accept_compiled_re.match(value) is None:
-            raise ValueError('Invalid value for an Accept header.')
+            raise ValueError("Invalid value for an Accept header.")
+
         def generator(value):
-            for match in (
-                cls.media_range_n_accept_params_compiled_re.finditer(value)
-            ):
+            for match in cls.media_range_n_accept_params_compiled_re.finditer(value):
                 groups = match.groups()
 
                 type_subtype = groups[0]
 
                 media_type_params = cls._parse_media_type_params(
-                    media_type_params_segment=groups[1],
+                    media_type_params_segment=groups[1]
                 )
 
                 media_range = cls._form_media_range(
-                    type_subtype=type_subtype,
-                    media_type_params=media_type_params,
+                    type_subtype=type_subtype, media_type_params=media_type_params
                 )
 
                 # qvalue (groups[2]) and extension_params (groups[3]) are both
@@ -403,30 +432,24 @@ class Accept(object):
                 extension_params = groups[3]
                 if extension_params:
                     extension_params = cls.accept_ext_compiled_re.findall(
-                        extension_params,
-                    )
-                    for index, (token_key, token_value) in enumerate(
                         extension_params
-                    ):
+                    )
+                    for index, (token_key, token_value) in enumerate(extension_params):
                         if token_value:
-                            if (
-                                token_value.startswith('"') and
-                                token_value.endswith('"')
+                            if token_value.startswith('"') and token_value.endswith(
+                                '"'
                             ):
                                 token_value = cls._process_quoted_string_token(
-                                    token=token_value,
+                                    token=token_value
                                 )
-                                extension_params[index] = (
-                                    token_key, token_value,
-                                )
+                                extension_params[index] = (token_key, token_value)
                         else:
                             extension_params[index] = token_key
                 else:
                     extension_params = []
 
-                yield (
-                    media_range, qvalue, media_type_params, extension_params,
-                )
+                yield (media_range, qvalue, media_type_params, extension_params)
+
         return generator(value=value)
 
     @classmethod
@@ -448,15 +471,13 @@ class Accept(object):
             return offer
         match = cls.media_type_compiled_re.match(offer)
         if not match:
-            raise ValueError('Invalid value for an Accept offer.')
+            raise ValueError("Invalid value for an Accept offer.")
 
         groups = match.groups()
-        offer_type, offer_subtype = groups[0].split('/')
-        offer_params = cls._parse_media_type_params(
-            media_type_params_segment=groups[1],
-        )
-        if offer_type == '*' or offer_subtype == '*':
-            raise ValueError('Invalid value for an Accept offer.')
+        offer_type, offer_subtype = groups[0].split("/")
+        offer_params = cls._parse_media_type_params(media_type_params_segment=groups[1])
+        if offer_type == "*" or offer_subtype == "*":
+            raise ValueError("Invalid value for an Accept offer.")
         return AcceptOffer(
             offer_type.lower(),
             offer_subtype.lower(),
@@ -575,19 +596,17 @@ class AcceptValidHeader(Accept):
         header value as ``self`` is returned.
         """
         if isinstance(other, AcceptValidHeader):
-            if other.header_value == '':
+            if other.header_value == "":
                 return self.__class__(header_value=self.header_value)
             else:
                 return create_accept_header(
-                    header_value=self.header_value + ', ' + other.header_value,
+                    header_value=self.header_value + ", " + other.header_value
                 )
 
         if isinstance(other, (AcceptNoHeader, AcceptInvalidHeader)):
             return self.__class__(header_value=self.header_value)
 
-        return self._add_instance_and_non_accept_type(
-            instance=self, other=other,
-        )
+        return self._add_instance_and_non_accept_type(instance=self, other=other)
 
     def __bool__(self):
         """
@@ -600,6 +619,7 @@ class AcceptValidHeader(Accept):
         For this class, it always returns ``True``.
         """
         return True
+
     __nonzero__ = __bool__  # Python 2
 
     def __contains__(self, offer):
@@ -635,13 +655,16 @@ class AcceptValidHeader(Accept):
         problems with the old criterion for matching.)
         """
         warnings.warn(
-            'The behavior of AcceptValidHeader.__contains__ is '
-            'currently being maintained for backward compatibility, but it '
-            'will change in the future to better conform to the RFC.',
+            "The behavior of AcceptValidHeader.__contains__ is "
+            "currently being maintained for backward compatibility, but it "
+            "will change in the future to better conform to the RFC.",
             DeprecationWarning,
         )
         for (
-            media_range, quality, media_type_params, extension_params
+            media_range,
+            quality,
+            media_type_params,
+            extension_params,
         ) in self._parsed_nonzero:
             if self._old_match(media_range, offer):
                 return True
@@ -667,16 +690,14 @@ class AcceptValidHeader(Accept):
         audio/basic', but ``list(instance)`` would return only ``['*/*']``.
         """
         warnings.warn(
-            'The behavior of AcceptLanguageValidHeader.__iter__ is currently '
-            'maintained for backward compatibility, but will change in the '
-            'future.',
+            "The behavior of AcceptLanguageValidHeader.__iter__ is currently "
+            "maintained for backward compatibility, but will change in the "
+            "future.",
             DeprecationWarning,
         )
 
         for media_range, qvalue, media_type_params, extension_params in sorted(
-            self._parsed_nonzero,
-            key=lambda i: i[1],
-            reverse=True
+            self._parsed_nonzero, key=lambda i: i[1], reverse=True
         ):
             yield media_range
 
@@ -687,11 +708,11 @@ class AcceptValidHeader(Accept):
         See the docstring for :meth:`AcceptValidHeader.__add__`.
         """
         return self._add_instance_and_non_accept_type(
-            instance=self, other=other, instance_on_the_right=True,
+            instance=self, other=other, instance_on_the_right=True
         )
 
     def __repr__(self):
-        return '<{} ({!r})>'.format(self.__class__.__name__, str(self))
+        return "<{} ({!r})>".format(self.__class__.__name__, str(self))
 
     def __str__(self):
         r"""
@@ -705,27 +726,28 @@ class AcceptValidHeader(Accept):
         # media_type_params, extension_params)
         # self._iterable_to_header_element() requires iterable to be in the
         # form: (media_range, qvalue, extension_params_segment).
-        return ', '.join(
+        return ", ".join(
             self._iterable_to_header_element(
                 iterable=(
                     tuple_[0],  # media_range
                     tuple_[1],  # qvalue
                     self._form_extension_params_segment(
-                        extension_params=tuple_[3],  # extension_params
-                    )
-                ),
-            ) for tuple_ in self.parsed
+                        extension_params=tuple_[3]  # extension_params
+                    ),
+                )
+            )
+            for tuple_ in self.parsed
         )
 
     def _add_instance_and_non_accept_type(
-        self, instance, other, instance_on_the_right=False,
+        self, instance, other, instance_on_the_right=False
     ):
         if not other:
             return self.__class__(header_value=instance.header_value)
 
         other_header_value = self._python_value_to_header_str(value=other)
 
-        if other_header_value == '':
+        if other_header_value == "":
             # if ``other`` is an object whose type we don't recognise, and
             # str(other) returns ''
             return self.__class__(header_value=instance.header_value)
@@ -736,9 +758,9 @@ class AcceptValidHeader(Accept):
             return self.__class__(header_value=instance.header_value)
 
         new_header_value = (
-            (other_header_value + ', ' + instance.header_value)
+            (other_header_value + ", " + instance.header_value)
             if instance_on_the_right
-            else (instance.header_value + ', ' + other_header_value)
+            else (instance.header_value + ", " + other_header_value)
         )
         return self.__class__(header_value=new_header_value)
 
@@ -770,44 +792,42 @@ class AcceptValidHeader(Accept):
         of the public APIs that uses this method.
         """
         # Match if comparisons are the same or either is a complete wildcard
-        if (mask.lower() == offer.lower() or
-                '*/*' in (mask, offer) or
-                '*' == offer):
+        if mask.lower() == offer.lower() or "*/*" in (mask, offer) or "*" == offer:
             return True
 
         # Set mask type with wildcard subtype for malformed masks
         try:
-            mask_type, mask_subtype = [x.lower() for x in mask.split('/')]
+            mask_type, mask_subtype = [x.lower() for x in mask.split("/")]
         except ValueError:
             mask_type = mask
-            mask_subtype = '*'
+            mask_subtype = "*"
 
         # Set offer type with wildcard subtype for malformed offers
         try:
-            offer_type, offer_subtype = [x.lower() for x in offer.split('/')]
+            offer_type, offer_subtype = [x.lower() for x in offer.split("/")]
         except ValueError:
             offer_type = offer
-            offer_subtype = '*'
+            offer_subtype = "*"
 
-        if mask_subtype == '*':
+        if mask_subtype == "*":
             # match on type only
-            if offer_type == '*':
+            if offer_type == "*":
                 return True
             else:
                 return mask_type.lower() == offer_type.lower()
 
-        if mask_type == '*':
+        if mask_type == "*":
             # match on subtype only
-            if offer_subtype == '*':
+            if offer_subtype == "*":
                 return True
             else:
                 return mask_subtype.lower() == offer_subtype.lower()
 
-        if offer_subtype == '*':
+        if offer_subtype == "*":
             # match on type only
             return mask_type.lower() == offer_type.lower()
 
-        if offer_type == '*':
+        if offer_type == "*":
             # match on subtype only
             return mask_subtype.lower() == offer_subtype.lower()
 
@@ -823,13 +843,14 @@ class AcceptValidHeader(Accept):
         return bool(
             self.acceptable_offers(
                 offers=[
-                    'text/html',
-                    'application/xhtml+xml',
-                    'application/xml',
-                    'text/xml',
-                ],
+                    "text/html",
+                    "application/xhtml+xml",
+                    "application/xml",
+                    "text/xml",
+                ]
             )
         )
+
     accepts_html = property(fget=accept_html, doc=accept_html.__doc__)
     # note the plural
 
@@ -863,15 +884,11 @@ class AcceptValidHeader(Accept):
         # the semantics of the parameter name."
         lowercased_ranges = [
             (
-                media_range.partition(';')[0].lower(),
+                media_range.partition(";")[0].lower(),
                 qvalue,
-                tuple(
-                    (name.lower(), value)
-                    for name, value in media_type_params
-                ),
+                tuple((name.lower(), value) for name, value in media_type_params),
             )
-            for media_range, qvalue, media_type_params, __ in
-            parsed
+            for media_range, qvalue, media_type_params, __ in parsed
         ]
         lowercased_offers_parsed = self._parse_and_normalize_offers(offers)
 
@@ -880,9 +897,11 @@ class AcceptValidHeader(Accept):
             offer = offers[offer_index]
             offer_type, offer_subtype, offer_media_type_params = parsed_offer
             for (
-                range_type_subtype, range_qvalue, range_media_type_params,
+                range_type_subtype,
+                range_qvalue,
+                range_media_type_params,
             ) in lowercased_ranges:
-                range_type, range_subtype = range_type_subtype.split('/', 1)
+                range_type, range_subtype = range_type_subtype.split("/", 1)
 
                 # The specificity values below are based on the list in the
                 # example in RFC 7231 section 5.3.2 explaining how "media
@@ -891,10 +910,7 @@ class AcceptValidHeader(Accept):
                 # items in reverse order, so specificity 4, 3, 2, 1 correspond
                 # to 1, 2, 3, 4 in the list, respectively (so that higher
                 # specificity has higher precedence).
-                if (
-                    offer_type == range_type
-                    and offer_subtype == range_subtype
-                ):
+                if offer_type == range_type and offer_subtype == range_subtype:
                     if range_media_type_params == ():
                         # If offer_media_type_params == () the offer and the
                         # range match exactly, with neither having media type
@@ -913,18 +929,16 @@ class AcceptValidHeader(Accept):
                         # https://bitbucket.org/ned/coveragepy/issues/254/incorrect-coverage-on-continue-statement
                         continue
                 else:
-                    if range_subtype == '*' and offer_type == range_type:
+                    if range_subtype == "*" and offer_type == range_type:
                         specificity = 2
-                    elif range_type_subtype == '*/*':
+                    elif range_type_subtype == "*/*":
                         specificity = 1
                     else:  # pragma: no cover
                         # no cover because of
                         # https://bitbucket.org/ned/coveragepy/issues/254/incorrect-coverage-on-continue-statement
                         continue
                 try:
-                    if specificity <= (
-                        acceptable_offers_n_quality_factors[offer][2]
-                    ):
+                    if specificity <= (acceptable_offers_n_quality_factors[offer][2]):
                         continue
                 except KeyError:
                     # the entry for the offer is not already in
@@ -951,7 +965,7 @@ class AcceptValidHeader(Accept):
         acceptable_offers_n_quality_factors.sort(key=lambda tuple_: tuple_[2])
         # (stable) sort by qvalue, descending
         acceptable_offers_n_quality_factors.sort(
-            key=lambda tuple_: tuple_[1], reverse=True,
+            key=lambda tuple_: tuple_[1], reverse=True
         )
         # drop offer_index
         acceptable_offers_n_quality_factors = [
@@ -1037,14 +1051,14 @@ class AcceptValidHeader(Accept):
             'text/html'
         """
         warnings.warn(
-            'The behavior of AcceptValidHeader.best_match is currently being '
-            'maintained for backward compatibility, but it will be deprecated'
-            ' in the future, as it does not conform to the RFC.',
+            "The behavior of AcceptValidHeader.best_match is currently being "
+            "maintained for backward compatibility, but it will be deprecated"
+            " in the future, as it does not conform to the RFC.",
             DeprecationWarning,
         )
         best_quality = -1
         best_offer = default_match
-        matched_by = '*/*'
+        matched_by = "*/*"
         for offer in offers:
             if isinstance(offer, (tuple, list)):
                 offer, server_quality = offer
@@ -1059,7 +1073,7 @@ class AcceptValidHeader(Accept):
                 elif possible_quality == best_quality:
                     # 'text/plain' overrides 'message/*' overrides '*/*'
                     # (if all match w/ the same q=)
-                    if matched_by.count('*') <= mask.count('*'):
+                    if matched_by.count("*") <= mask.count("*"):
                         continue
                 if self._old_match(mask, offer):
                     best_quality = possible_quality
@@ -1113,9 +1127,9 @@ class AcceptValidHeader(Accept):
             1.0
         """
         warnings.warn(
-            'The behavior of AcceptValidHeader.quality is currently being '
-            'maintained for backward compatibility, but it will be deprecated '
-            'in the future, as it does not conform to the RFC.',
+            "The behavior of AcceptValidHeader.quality is currently being "
+            "maintained for backward compatibility, but it will be deprecated "
+            "in the future, as it does not conform to the RFC.",
             DeprecationWarning,
         )
         bestq = 0
@@ -1153,10 +1167,10 @@ class MIMEAccept(Accept):
 
     def __init__(self, header_value):
         warnings.warn(
-            'The MIMEAccept class has been replaced by '
-            'webob.acceptparse.create_accept_header. This compatibility shim '
-            'will be deprecated in a future version of WebOb.',
-            DeprecationWarning
+            "The MIMEAccept class has been replaced by "
+            "webob.acceptparse.create_accept_header. This compatibility shim "
+            "will be deprecated in a future version of WebOb.",
+            DeprecationWarning,
         )
         self._accept = create_accept_header(header_value)
         if self._accept.parsed:
@@ -1231,6 +1245,7 @@ class _AcceptInvalidOrNoHeader(Accept):
         For this class, it always returns ``False``.
         """
         return False
+
     __nonzero__ = __bool__  # Python 2
 
     def __contains__(self, offer):
@@ -1252,9 +1267,9 @@ class _AcceptInvalidOrNoHeader(Accept):
         returns ``True``.
         """
         warnings.warn(
-            'The behavior of .__contains__ for the Accept classes is '
-            'currently being maintained for backward compatibility, but it '
-            'will change in the future to better conform to the RFC.',
+            "The behavior of .__contains__ for the Accept classes is "
+            "currently being maintained for backward compatibility, but it "
+            "will change in the future to better conform to the RFC.",
             DeprecationWarning,
         )
         return True
@@ -1278,9 +1293,9 @@ class _AcceptInvalidOrNoHeader(Accept):
         iterator.
         """
         warnings.warn(
-            'The behavior of AcceptValidHeader.__iter__ is currently '
-            'maintained for backward compatibility, but will change in the '
-            'future.',
+            "The behavior of AcceptValidHeader.__iter__ is currently "
+            "maintained for backward compatibility, but will change in the "
+            "future.",
             DeprecationWarning,
         )
         return iter(())
@@ -1299,13 +1314,14 @@ class _AcceptInvalidOrNoHeader(Accept):
         return bool(
             self.acceptable_offers(
                 offers=[
-                    'text/html',
-                    'application/xhtml+xml',
-                    'application/xml',
-                    'text/xml',
-                ],
+                    "text/html",
+                    "application/xhtml+xml",
+                    "application/xml",
+                    "text/xml",
+                ]
             )
         )
+
     accepts_html = property(fget=accept_html, doc=accept_html.__doc__)
     # note the plural
 
@@ -1324,13 +1340,12 @@ class _AcceptInvalidOrNoHeader(Accept):
                  where each offer in `offers` is paired with the qvalue of 1.0,
                  in the same order as in `offers`.
         """
+        # avoid returning any offers that don't match the grammar so
+        # that the return values here are consistent with what would be
+        # returned in AcceptValidHeader
         return [
             (offers[offer_index], 1.0)
-            for offer_index, _
-            # avoid returning any offers that don't match the grammar so
-            # that the return values here are consistent with what would be
-            # returned in AcceptValidHeader
-            in self._parse_and_normalize_offers(offers)
+            for offer_index, _ in self._parse_and_normalize_offers(offers)
         ]
 
     def best_match(self, offers, default_match=None):
@@ -1371,10 +1386,10 @@ class _AcceptInvalidOrNoHeader(Accept):
                    `offers` is empty, the value of `default_match` is returned.
         """
         warnings.warn(
-            'The behavior of .best_match for the Accept classes is currently '
-            'being maintained for backward compatibility, but the method will'
-            ' be deprecated in the future, as its behavior is not specified '
-            'in (and currently does not conform to) RFC 7231.',
+            "The behavior of .best_match for the Accept classes is currently "
+            "being maintained for backward compatibility, but the method will"
+            " be deprecated in the future, as its behavior is not specified "
+            "in (and currently does not conform to) RFC 7231.",
             DeprecationWarning,
         )
         best_quality = -1
@@ -1410,10 +1425,10 @@ class _AcceptInvalidOrNoHeader(Accept):
         are equally acceptable, so 1.0 is always returned.
         """
         warnings.warn(
-            'The behavior of .quality for the Accept classes is currently '
-            'being maintained for backward compatibility, but the method will'
-            ' be deprecated in the future, as its behavior does not conform to'
-            'RFC 7231.',
+            "The behavior of .quality for the Accept classes is currently "
+            "being maintained for backward compatibility, but the method will"
+            " be deprecated in the future, as its behavior does not conform to"
+            "RFC 7231.",
             DeprecationWarning,
         )
         return 1.0
@@ -1491,9 +1506,7 @@ class AcceptNoHeader(_AcceptInvalidOrNoHeader):
         if isinstance(other, (AcceptNoHeader, AcceptInvalidHeader)):
             return self.__class__()
 
-        return self._add_instance_and_non_accept_type(
-            instance=self, other=other,
-        )
+        return self._add_instance_and_non_accept_type(instance=self, other=other)
 
     def __radd__(self, other):
         """
@@ -1504,11 +1517,11 @@ class AcceptNoHeader(_AcceptInvalidOrNoHeader):
         return self.__add__(other=other)
 
     def __repr__(self):
-        return '<{}>'.format(self.__class__.__name__)
+        return "<{}>".format(self.__class__.__name__)
 
     def __str__(self):
         """Return the ``str`` ``'<no header in request>'``."""
-        return '<no header in request>'
+        return "<no header in request>"
 
     def _add_instance_and_non_accept_type(self, instance, other):
         if other is None:
@@ -1597,9 +1610,7 @@ class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
         if isinstance(other, (AcceptNoHeader, AcceptInvalidHeader)):
             return AcceptNoHeader()
 
-        return self._add_instance_and_non_accept_type(
-            instance=self, other=other,
-        )
+        return self._add_instance_and_non_accept_type(instance=self, other=other)
 
     def __radd__(self, other):
         """
@@ -1608,21 +1619,21 @@ class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
         See the docstring for :meth:`AcceptValidHeader.__add__`.
         """
         return self._add_instance_and_non_accept_type(
-            instance=self, other=other, instance_on_the_right=True,
+            instance=self, other=other, instance_on_the_right=True
         )
 
     def __repr__(self):
-        return '<{}>'.format(self.__class__.__name__)
+        return "<{}>".format(self.__class__.__name__)
         # We do not display the header_value, as it is untrusted input. The
         # header_value could always be easily obtained from the .header_value
         # property.
 
     def __str__(self):
         """Return the ``str`` ``'<invalid header value>'``."""
-        return '<invalid header value>'
+        return "<invalid header value>"
 
     def _add_instance_and_non_accept_type(
-        self, instance, other, instance_on_the_right=False,
+        self, instance, other, instance_on_the_right=False
     ):
         if other is None:
             return AcceptNoHeader()
@@ -1669,13 +1680,11 @@ def accept_property():
         environ, and do not involve parsing.)
     """
 
-    ENVIRON_KEY = 'HTTP_ACCEPT'
+    ENVIRON_KEY = "HTTP_ACCEPT"
 
     def fget(request):
         """Get an object representing the header in the request."""
-        return create_accept_header(
-            header_value=request.environ.get(ENVIRON_KEY)
-        )
+        return create_accept_header(header_value=request.environ.get(ENVIRON_KEY))
 
     def fset(request, value):
         """
@@ -1735,7 +1744,7 @@ class AcceptCharset(object):
     charset_n_weight_re = _item_n_weight_re(item_re=charset_re)
     charset_n_weight_compiled_re = re.compile(charset_n_weight_re)
     accept_charset_compiled_re = _list_1_or_more__compiled_re(
-        element_re=charset_n_weight_re,
+        element_re=charset_n_weight_re
     )
 
     @classmethod
@@ -1743,19 +1752,15 @@ class AcceptCharset(object):
         if isinstance(value, str):
             header_str = value
         else:
-            if hasattr(value, 'items'):
-                value = sorted(
-                    value.items(),
-                    key=lambda item: item[1],
-                    reverse=True,
-                )
+            if hasattr(value, "items"):
+                value = sorted(value.items(), key=lambda item: item[1], reverse=True)
             if isinstance(value, (tuple, list)):
                 result = []
                 for item in value:
                     if isinstance(item, (tuple, list)):
                         item = _item_qvalue_pair_to_header_element(pair=item)
                     result.append(item)
-                header_str = ', '.join(result)
+                header_str = ", ".join(result)
             else:
                 header_str = str(value)
         return header_str
@@ -1776,13 +1781,15 @@ class AcceptCharset(object):
         # the match *and* get all the groups using the same regex, so we have
         # to use one regex to check the match, and another to get the groups.
         if cls.accept_charset_compiled_re.match(value) is None:
-            raise ValueError('Invalid value for an Accept-Charset header.')
+            raise ValueError("Invalid value for an Accept-Charset header.")
+
         def generator(value):
-            for match in (cls.charset_n_weight_compiled_re.finditer(value)):
+            for match in cls.charset_n_weight_compiled_re.finditer(value):
                 charset = match.group(1)
                 qvalue = match.group(2)
                 qvalue = float(qvalue) if qvalue else 1.0
                 yield (charset, qvalue)
+
         return generator(value=value)
 
 
@@ -1854,16 +1861,14 @@ class AcceptCharsetValidHeader(AcceptCharset):
         """
         if isinstance(other, AcceptCharsetValidHeader):
             return create_accept_charset_header(
-                header_value=self.header_value + ', ' + other.header_value,
+                header_value=self.header_value + ", " + other.header_value
             )
 
-        if isinstance(
-            other, (AcceptCharsetNoHeader, AcceptCharsetInvalidHeader)
-        ):
+        if isinstance(other, (AcceptCharsetNoHeader, AcceptCharsetInvalidHeader)):
             return self.__class__(header_value=self.header_value)
 
         return self._add_instance_and_non_accept_charset_type(
-            instance=self, other=other,
+            instance=self, other=other
         )
 
     def __bool__(self):
@@ -1877,6 +1882,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
         For this class, it always returns ``True``.
         """
         return True
+
     __nonzero__ = __bool__  # Python 2
 
     def __contains__(self, offer):
@@ -1902,9 +1908,9 @@ class AcceptCharsetValidHeader(AcceptCharset):
             True
         """
         warnings.warn(
-            'The behavior of AcceptCharsetValidHeader.__contains__ is '
-            'currently being maintained for backward compatibility, but it '
-            'will change in the future to better conform to the RFC.',
+            "The behavior of AcceptCharsetValidHeader.__contains__ is "
+            "currently being maintained for backward compatibility, but it "
+            "will change in the future to better conform to the RFC.",
             DeprecationWarning,
         )
         for mask, quality in self._parsed_nonzero:
@@ -1932,16 +1938,12 @@ class AcceptCharsetValidHeader(AcceptCharset):
         ``list(instance)`` would return only ``['*']``.
         """
         warnings.warn(
-            'The behavior of AcceptCharsetValidHeader.__iter__ is currently '
-            'maintained for backward compatibility, but will change in the '
-            'future.',
+            "The behavior of AcceptCharsetValidHeader.__iter__ is currently "
+            "maintained for backward compatibility, but will change in the "
+            "future.",
             DeprecationWarning,
         )
-        for m,q in sorted(
-            self._parsed_nonzero,
-            key=lambda i: i[1],
-            reverse=True
-        ):
+        for m, q in sorted(self._parsed_nonzero, key=lambda i: i[1], reverse=True):
             yield m
 
     def __radd__(self, other):
@@ -1951,11 +1953,11 @@ class AcceptCharsetValidHeader(AcceptCharset):
         See the docstring for :meth:`AcceptCharsetValidHeader.__add__`.
         """
         return self._add_instance_and_non_accept_charset_type(
-            instance=self, other=other, instance_on_the_right=True,
+            instance=self, other=other, instance_on_the_right=True
         )
 
     def __repr__(self):
-        return '<{} ({!r})>'.format(self.__class__.__name__, str(self))
+        return "<{} ({!r})>".format(self.__class__.__name__, str(self))
 
     def __str__(self):
         r"""
@@ -1965,13 +1967,12 @@ class AcceptCharsetValidHeader(AcceptCharset):
         utf-8;q=1.000, UTF-7, unicode-1-1;q=0.210  ,'``, ``str(instance)``
         returns ``'iso-8859-5;q=0, utf-8, UTF-7, unicode-1-1;q=0.21'``.
         """
-        return ', '.join(
-            _item_qvalue_pair_to_header_element(pair=tuple_)
-            for tuple_ in self.parsed
+        return ", ".join(
+            _item_qvalue_pair_to_header_element(pair=tuple_) for tuple_ in self.parsed
         )
 
     def _add_instance_and_non_accept_charset_type(
-        self, instance, other, instance_on_the_right=False,
+        self, instance, other, instance_on_the_right=False
     ):
         if not other:
             return self.__class__(header_value=instance.header_value)
@@ -1984,9 +1985,9 @@ class AcceptCharsetValidHeader(AcceptCharset):
             return self.__class__(header_value=instance.header_value)
 
         new_header_value = (
-            (other_header_value + ', ' + instance.header_value)
+            (other_header_value + ", " + instance.header_value)
             if instance_on_the_right
-            else (instance.header_value + ', ' + other_header_value)
+            else (instance.header_value + ", " + other_header_value)
         )
         return self.__class__(header_value=new_header_value)
 
@@ -2011,7 +2012,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
         header correctly: ``*`` should only match charsets not mentioned
         elsewhere in the header.
         """
-        return mask == '*' or offer.lower() == mask.lower()
+        return mask == "*" or offer.lower() == mask.lower()
 
     def acceptable_offers(self, offers):
         """
@@ -2039,12 +2040,12 @@ class AcceptCharsetValidHeader(AcceptCharset):
         asterisk_qvalue = None
 
         for charset, qvalue in lowercased_parsed:
-            if charset == '*':
+            if charset == "*":
                 if asterisk_qvalue is None:
                     asterisk_qvalue = qvalue
             elif (
-                charset not in acceptable_charsets and charset not in
-                not_acceptable_charsets
+                charset not in acceptable_charsets
+                and charset not in not_acceptable_charsets
                 # if we have not already encountered this charset in the header
             ):
                 if qvalue == 0.0:
@@ -2058,9 +2059,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
         filtered_offers = []
         for index, offer in enumerate(lowercased_offers):
             # If offer matches a non-* charset with q=0, it is filtered out
-            if any((
-                (offer == charset) for charset in not_acceptable_charsets
-            )):
+            if any(((offer == charset) for charset in not_acceptable_charsets)):
                 continue
 
             matched_charset_qvalue = None
@@ -2072,9 +2071,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
                 if asterisk_qvalue:
                     matched_charset_qvalue = asterisk_qvalue
             if matched_charset_qvalue is not None:  # if there was a match
-                filtered_offers.append((
-                    offers[index], matched_charset_qvalue, index
-                ))
+                filtered_offers.append((offers[index], matched_charset_qvalue, index))
 
         # sort by position in `offers` argument, ascending
         filtered_offers.sort(key=lambda tuple_: tuple_[2])
@@ -2134,14 +2131,14 @@ class AcceptCharsetValidHeader(AcceptCharset):
             'utf-8'
         """
         warnings.warn(
-            'The behavior of AcceptCharsetValidHeader.best_match is currently'
-            ' being maintained for backward compatibility, but it will be '
-            'deprecated in the future, as it does not conform to the RFC.',
+            "The behavior of AcceptCharsetValidHeader.best_match is currently"
+            " being maintained for backward compatibility, but it will be "
+            "deprecated in the future, as it does not conform to the RFC.",
             DeprecationWarning,
         )
         best_quality = -1
         best_offer = default_match
-        matched_by = '*/*'
+        matched_by = "*/*"
         for offer in offers:
             if isinstance(offer, (tuple, list)):
                 offer, server_quality = offer
@@ -2156,7 +2153,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
                     # (if all match w/ the same q=)
                     # [We can see that this was written for the Accept header,
                     # not the Accept-Charset header.]
-                    if matched_by.count('*') <= mask.count('*'):
+                    if matched_by.count("*") <= mask.count("*"):
                         continue
                 if self._old_match(mask, offer):
                     best_quality = possible_quality
@@ -2191,9 +2188,9 @@ class AcceptCharsetValidHeader(AcceptCharset):
             1.0
         """
         warnings.warn(
-            'The behavior of AcceptCharsetValidHeader.quality is currently '
-            'being maintained for backward compatibility, but it will be '
-            'deprecated in the future, as it does not conform to the RFC.',
+            "The behavior of AcceptCharsetValidHeader.quality is currently "
+            "being maintained for backward compatibility, but it will be "
+            "deprecated in the future, as it does not conform to the RFC.",
             DeprecationWarning,
         )
         bestq = 0
@@ -2229,6 +2226,7 @@ class _AcceptCharsetInvalidOrNoHeader(AcceptCharset):
         For this class, it always returns ``False``.
         """
         return False
+
     __nonzero__ = __bool__  # Python 2
 
     def __contains__(self, offer):
@@ -2250,9 +2248,9 @@ class _AcceptCharsetInvalidOrNoHeader(AcceptCharset):
         this always returns ``True``.
         """
         warnings.warn(
-            'The behavior of .__contains__ for the AcceptCharset classes is '
-            'currently being maintained for backward compatibility, but it '
-            'will change in the future to better conform to the RFC.',
+            "The behavior of .__contains__ for the AcceptCharset classes is "
+            "currently being maintained for backward compatibility, but it "
+            "will change in the future to better conform to the RFC.",
             DeprecationWarning,
         )
         return True
@@ -2276,9 +2274,9 @@ class _AcceptCharsetInvalidOrNoHeader(AcceptCharset):
         iterator.
         """
         warnings.warn(
-            'The behavior of AcceptCharsetValidHeader.__iter__ is currently '
-            'maintained for backward compatibility, but will change in the '
-            'future.',
+            "The behavior of AcceptCharsetValidHeader.__iter__ is currently "
+            "maintained for backward compatibility, but will change in the "
+            "future.",
             DeprecationWarning,
         )
         return iter(())
@@ -2345,10 +2343,10 @@ class _AcceptCharsetInvalidOrNoHeader(AcceptCharset):
                    `offers` is empty, the value of `default_match` is returned.
         """
         warnings.warn(
-            'The behavior of .best_match for the AcceptCharset classes is '
-            'currently being maintained for backward compatibility, but the '
-            'method will be deprecated in the future, as its behavior is not '
-            'specified in (and currently does not conform to) RFC 7231.',
+            "The behavior of .best_match for the AcceptCharset classes is "
+            "currently being maintained for backward compatibility, but the "
+            "method will be deprecated in the future, as its behavior is not "
+            "specified in (and currently does not conform to) RFC 7231.",
             DeprecationWarning,
         )
         best_quality = -1
@@ -2384,10 +2382,10 @@ class _AcceptCharsetInvalidOrNoHeader(AcceptCharset):
         all offers are equally acceptable, so 1.0 is always returned.
         """
         warnings.warn(
-            'The behavior of .quality for the Accept-Charset classes is '
-            'currently being maintained for backward compatibility, but the '
-            'method will be deprecated in the future, as its behavior does not'
-            ' conform to RFC 7231.',
+            "The behavior of .quality for the Accept-Charset classes is "
+            "currently being maintained for backward compatibility, but the "
+            "method will be deprecated in the future, as its behavior does not"
+            " conform to RFC 7231.",
             DeprecationWarning,
         )
         return 1.0
@@ -2456,13 +2454,11 @@ class AcceptCharsetNoHeader(_AcceptCharsetInvalidOrNoHeader):
         if isinstance(other, AcceptCharsetValidHeader):
             return AcceptCharsetValidHeader(header_value=other.header_value)
 
-        if isinstance(
-            other, (AcceptCharsetNoHeader, AcceptCharsetInvalidHeader)
-        ):
+        if isinstance(other, (AcceptCharsetNoHeader, AcceptCharsetInvalidHeader)):
             return self.__class__()
 
         return self._add_instance_and_non_accept_charset_type(
-            instance=self, other=other,
+            instance=self, other=other
         )
 
     def __radd__(self, other):
@@ -2474,11 +2470,11 @@ class AcceptCharsetNoHeader(_AcceptCharsetInvalidOrNoHeader):
         return self.__add__(other=other)
 
     def __repr__(self):
-        return '<{}>'.format(self.__class__.__name__)
+        return "<{}>".format(self.__class__.__name__)
 
     def __str__(self):
         """Return the ``str`` ``'<no header in request>'``."""
-        return '<no header in request>'
+        return "<no header in request>"
 
     def _add_instance_and_non_accept_charset_type(self, instance, other):
         if not other:
@@ -2560,13 +2556,11 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
         if isinstance(other, AcceptCharsetValidHeader):
             return AcceptCharsetValidHeader(header_value=other.header_value)
 
-        if isinstance(
-            other, (AcceptCharsetNoHeader, AcceptCharsetInvalidHeader)
-        ):
+        if isinstance(other, (AcceptCharsetNoHeader, AcceptCharsetInvalidHeader)):
             return AcceptCharsetNoHeader()
 
         return self._add_instance_and_non_accept_charset_type(
-            instance=self, other=other,
+            instance=self, other=other
         )
 
     def __radd__(self, other):
@@ -2576,21 +2570,21 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
         See the docstring for :meth:`AcceptCharsetValidHeader.__add__`.
         """
         return self._add_instance_and_non_accept_charset_type(
-            instance=self, other=other, instance_on_the_right=True,
+            instance=self, other=other, instance_on_the_right=True
         )
 
     def __repr__(self):
-        return '<{}>'.format(self.__class__.__name__)
+        return "<{}>".format(self.__class__.__name__)
         # We do not display the header_value, as it is untrusted input. The
         # header_value could always be easily obtained from the .header_value
         # property.
 
     def __str__(self):
         """Return the ``str`` ``'<invalid header value>'``."""
-        return '<invalid header value>'
+        return "<invalid header value>"
 
     def _add_instance_and_non_accept_charset_type(
-        self, instance, other, instance_on_the_right=False,
+        self, instance, other, instance_on_the_right=False
     ):
         if not other:
             return AcceptCharsetNoHeader()
@@ -2637,7 +2631,7 @@ def accept_charset_property():
         environ, and do not involve parsing.)
     """
 
-    ENVIRON_KEY = 'HTTP_ACCEPT_CHARSET'
+    ENVIRON_KEY = "HTTP_ACCEPT_CHARSET"
 
     def fget(request):
         """Get an object representing the header in the request."""
@@ -2669,9 +2663,7 @@ def accept_charset_property():
             ):
                 header_value = value.header_value
             else:
-                header_value = AcceptCharset._python_value_to_header_str(
-                    value=value,
-                )
+                header_value = AcceptCharset._python_value_to_header_str(value=value)
             request.environ[ENVIRON_KEY] = header_value
 
     def fdel(request):
@@ -2703,7 +2695,7 @@ class AcceptEncoding(object):
     codings_n_weight_re = _item_n_weight_re(item_re=codings_re)
     codings_n_weight_compiled_re = re.compile(codings_n_weight_re)
     accept_encoding_compiled_re = _list_0_or_more__compiled_re(
-        element_re=codings_n_weight_re,
+        element_re=codings_n_weight_re
     )
 
     @classmethod
@@ -2711,19 +2703,15 @@ class AcceptEncoding(object):
         if isinstance(value, str):
             header_str = value
         else:
-            if hasattr(value, 'items'):
-                value = sorted(
-                    value.items(),
-                    key=lambda item: item[1],
-                    reverse=True,
-                )
+            if hasattr(value, "items"):
+                value = sorted(value.items(), key=lambda item: item[1], reverse=True)
             if isinstance(value, (tuple, list)):
                 result = []
                 for item in value:
                     if isinstance(item, (tuple, list)):
                         item = _item_qvalue_pair_to_header_element(pair=item)
                     result.append(item)
-                header_str = ', '.join(result)
+                header_str = ", ".join(result)
             else:
                 header_str = str(value)
         return header_str
@@ -2744,13 +2732,15 @@ class AcceptEncoding(object):
         # the match *and* get all the groups using the same regex, so we have
         # to use one regex to check the match, and another to get the groups.
         if cls.accept_encoding_compiled_re.match(value) is None:
-            raise ValueError('Invalid value for an Accept-Encoding header.')
+            raise ValueError("Invalid value for an Accept-Encoding header.")
+
         def generator(value):
-            for match in (cls.codings_n_weight_compiled_re.finditer(value)):
+            for match in cls.codings_n_weight_compiled_re.finditer(value):
                 codings = match.group(1)
                 qvalue = match.group(2)
                 qvalue = float(qvalue) if qvalue else 1.0
                 yield (codings, qvalue)
+
         return generator(value=value)
 
 
@@ -2831,20 +2821,18 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         as ``self`` is returned.
         """
         if isinstance(other, AcceptEncodingValidHeader):
-            if other.header_value == '':
+            if other.header_value == "":
                 return self.__class__(header_value=self.header_value)
             else:
                 return create_accept_encoding_header(
-                    header_value=self.header_value + ', ' + other.header_value,
+                    header_value=self.header_value + ", " + other.header_value
                 )
 
-        if isinstance(
-            other, (AcceptEncodingNoHeader, AcceptEncodingInvalidHeader)
-        ):
+        if isinstance(other, (AcceptEncodingNoHeader, AcceptEncodingInvalidHeader)):
             return self.__class__(header_value=self.header_value)
 
         return self._add_instance_and_non_accept_encoding_type(
-            instance=self, other=other,
+            instance=self, other=other
         )
 
     def __bool__(self):
@@ -2858,6 +2846,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         For this class, it always returns ``True``.
         """
         return True
+
     __nonzero__ = __bool__  # Python 2
 
     def __contains__(self, offer):
@@ -2886,9 +2875,9 @@ class AcceptEncodingValidHeader(AcceptEncoding):
             False
         """
         warnings.warn(
-            'The behavior of AcceptEncodingValidHeader.__contains__ is '
-            'currently being maintained for backward compatibility, but it '
-            'will change in the future to better conform to the RFC.',
+            "The behavior of AcceptEncodingValidHeader.__contains__ is "
+            "currently being maintained for backward compatibility, but it "
+            "will change in the future to better conform to the RFC.",
             DeprecationWarning,
         )
         for mask, quality in self._parsed_nonzero:
@@ -2916,17 +2905,13 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         ``list(instance)`` would return only ``['*']``.
         """
         warnings.warn(
-            'The behavior of AcceptEncodingLanguageValidHeader.__iter__ is '
-            'currently maintained for backward compatibility, but will change'
-            ' in the future.',
+            "The behavior of AcceptEncodingLanguageValidHeader.__iter__ is "
+            "currently maintained for backward compatibility, but will change"
+            " in the future.",
             DeprecationWarning,
         )
 
-        for m,q in sorted(
-            self._parsed_nonzero,
-            key=lambda i: i[1],
-            reverse=True
-        ):
+        for m, q in sorted(self._parsed_nonzero, key=lambda i: i[1], reverse=True):
             yield m
 
     def __radd__(self, other):
@@ -2936,11 +2921,11 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         See the docstring for :meth:`AcceptEncodingValidHeader.__add__`.
         """
         return self._add_instance_and_non_accept_encoding_type(
-            instance=self, other=other, instance_on_the_right=True,
+            instance=self, other=other, instance_on_the_right=True
         )
 
     def __repr__(self):
-        return '<{} ({!r})>'.format(self.__class__.__name__, str(self))
+        return "<{} ({!r})>".format(self.__class__.__name__, str(self))
 
     def __str__(self):
         r"""
@@ -2949,20 +2934,19 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         e.g. If the ``header_value`` is ``",\t, a ;\t q=0.20 , b ,',"``,
         ``str(instance)`` returns ``"a;q=0.2, b, '"``.
         """
-        return ', '.join(
-            _item_qvalue_pair_to_header_element(pair=tuple_)
-            for tuple_ in self.parsed
+        return ", ".join(
+            _item_qvalue_pair_to_header_element(pair=tuple_) for tuple_ in self.parsed
         )
 
     def _add_instance_and_non_accept_encoding_type(
-        self, instance, other, instance_on_the_right=False,
+        self, instance, other, instance_on_the_right=False
     ):
         if not other:
             return self.__class__(header_value=instance.header_value)
 
         other_header_value = self._python_value_to_header_str(value=other)
 
-        if other_header_value == '':
+        if other_header_value == "":
             # if ``other`` is an object whose type we don't recognise, and
             # str(other) returns ''
             return self.__class__(header_value=instance.header_value)
@@ -2973,9 +2957,9 @@ class AcceptEncodingValidHeader(AcceptEncoding):
             return self.__class__(header_value=instance.header_value)
 
         new_header_value = (
-            (other_header_value + ', ' + instance.header_value)
+            (other_header_value + ", " + instance.header_value)
             if instance_on_the_right
-            else (instance.header_value + ', ' + other_header_value)
+            else (instance.header_value + ", " + other_header_value)
         )
         return self.__class__(header_value=new_header_value)
 
@@ -3001,7 +2985,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         header correctly: ``*`` should only match content-codings not mentioned
         elsewhere in the header.
         """
-        return mask == '*' or offer.lower() == mask.lower()
+        return mask == "*" or offer.lower() == mask.lower()
 
     def acceptable_offers(self, offers):
         """
@@ -3041,12 +3025,12 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         asterisk_qvalue = None
 
         for codings, qvalue in lowercased_parsed:
-            if codings == '*':
+            if codings == "*":
                 if asterisk_qvalue is None:
                     asterisk_qvalue = qvalue
             elif (
-                codings not in acceptable_codingss and codings not in
-                not_acceptable_codingss
+                codings not in acceptable_codingss
+                and codings not in not_acceptable_codingss
                 # if we have not already encountered this codings in the header
             ):
                 if qvalue == 0.0:
@@ -3060,9 +3044,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         filtered_offers = []
         for index, offer in enumerate(lowercased_offers):
             # If offer matches a non-* codings with q=0, it is filtered out
-            if any((
-                (offer == codings) for codings in not_acceptable_codingss
-            )):
+            if any(((offer == codings) for codings in not_acceptable_codingss)):
                 continue
 
             matched_codings_qvalue = None
@@ -3073,12 +3055,10 @@ class AcceptEncodingValidHeader(AcceptEncoding):
             else:
                 if asterisk_qvalue:
                     matched_codings_qvalue = asterisk_qvalue
-                elif asterisk_qvalue != 0.0 and offer == 'identity':
+                elif asterisk_qvalue != 0.0 and offer == "identity":
                     matched_codings_qvalue = 1.0
             if matched_codings_qvalue is not None:  # if there was a match
-                filtered_offers.append((
-                    offers[index], matched_codings_qvalue, index
-                ))
+                filtered_offers.append((offers[index], matched_codings_qvalue, index))
 
         # sort by position in `offers` argument, ascending
         filtered_offers.sort(key=lambda tuple_: tuple_[2])
@@ -3145,15 +3125,15 @@ class AcceptEncodingValidHeader(AcceptEncoding):
             True
         """
         warnings.warn(
-            'The behavior of AcceptEncodingValidHeader.best_match is '
-            'currently being maintained for backward compatibility, but it '
-            'will be deprecated in the future, as it does not conform to the'
-            ' RFC.',
+            "The behavior of AcceptEncodingValidHeader.best_match is "
+            "currently being maintained for backward compatibility, but it "
+            "will be deprecated in the future, as it does not conform to the"
+            " RFC.",
             DeprecationWarning,
         )
         best_quality = -1
         best_offer = default_match
-        matched_by = '*/*'
+        matched_by = "*/*"
         for offer in offers:
             if isinstance(offer, (tuple, list)):
                 offer, server_quality = offer
@@ -3170,7 +3150,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
                     # (if all match w/ the same q=)
                     # [We can see that this was written for the Accept header,
                     # not the Accept-Encoding header.]
-                    if matched_by.count('*') <= mask.count('*'):
+                    if matched_by.count("*") <= mask.count("*"):
                         continue
                 if self._old_match(mask, offer):
                     best_quality = possible_quality
@@ -3207,9 +3187,9 @@ class AcceptEncodingValidHeader(AcceptEncoding):
             True
         """
         warnings.warn(
-            'The behavior of AcceptEncodingValidHeader.quality is currently '
-            'being maintained for backward compatibility, but it will be '
-            'deprecated in the future, as it does not conform to the RFC.',
+            "The behavior of AcceptEncodingValidHeader.quality is currently "
+            "being maintained for backward compatibility, but it will be "
+            "deprecated in the future, as it does not conform to the RFC.",
             DeprecationWarning,
         )
         bestq = 0
@@ -3245,6 +3225,7 @@ class _AcceptEncodingInvalidOrNoHeader(AcceptEncoding):
         For this class, it always returns ``False``.
         """
         return False
+
     __nonzero__ = __bool__  # Python 2
 
     def __contains__(self, offer):
@@ -3266,9 +3247,9 @@ class _AcceptEncodingInvalidOrNoHeader(AcceptEncoding):
         and this always returns ``True``.
         """
         warnings.warn(
-            'The behavior of .__contains__ for the Accept-Encoding classes is '
-            'currently being maintained for backward compatibility, but it '
-            'will change in the future to better conform to the RFC.',
+            "The behavior of .__contains__ for the Accept-Encoding classes is "
+            "currently being maintained for backward compatibility, but it "
+            "will change in the future to better conform to the RFC.",
             DeprecationWarning,
         )
         return True
@@ -3293,9 +3274,9 @@ class _AcceptEncodingInvalidOrNoHeader(AcceptEncoding):
         returns an empty iterator.
         """
         warnings.warn(
-            'The behavior of AcceptEncodingValidHeader.__iter__ is currently '
-            'maintained for backward compatibility, but will change in the '
-            'future.',
+            "The behavior of AcceptEncodingValidHeader.__iter__ is currently "
+            "maintained for backward compatibility, but will change in the "
+            "future.",
             DeprecationWarning,
         )
         return iter(())
@@ -3356,10 +3337,10 @@ class _AcceptEncodingInvalidOrNoHeader(AcceptEncoding):
                    `offers` is empty, the value of `default_match` is returned.
         """
         warnings.warn(
-            'The behavior of .best_match for the Accept-Encoding classes is '
-            'currently being maintained for backward compatibility, but the '
-            'method will be deprecated in the future, as its behavior is not '
-            'specified in (and currently does not conform to) RFC 7231.',
+            "The behavior of .best_match for the Accept-Encoding classes is "
+            "currently being maintained for backward compatibility, but the "
+            "method will be deprecated in the future, as its behavior is not "
+            "specified in (and currently does not conform to) RFC 7231.",
             DeprecationWarning,
         )
         best_quality = -1
@@ -3395,10 +3376,10 @@ class _AcceptEncodingInvalidOrNoHeader(AcceptEncoding):
         all offers are equally acceptable, so 1.0 is always returned.
         """
         warnings.warn(
-            'The behavior of .quality for the Accept-Encoding classes is '
-            'currently being maintained for backward compatibility, but the '
-            'method will be deprecated in the future, as its behavior does '
-            'not conform to RFC 7231.',
+            "The behavior of .quality for the Accept-Encoding classes is "
+            "currently being maintained for backward compatibility, but the "
+            "method will be deprecated in the future, as its behavior does "
+            "not conform to RFC 7231.",
             DeprecationWarning,
         )
         return 1.0
@@ -3469,13 +3450,11 @@ class AcceptEncodingNoHeader(_AcceptEncodingInvalidOrNoHeader):
         if isinstance(other, AcceptEncodingValidHeader):
             return AcceptEncodingValidHeader(header_value=other.header_value)
 
-        if isinstance(
-            other, (AcceptEncodingNoHeader, AcceptEncodingInvalidHeader)
-        ):
+        if isinstance(other, (AcceptEncodingNoHeader, AcceptEncodingInvalidHeader)):
             return self.__class__()
 
         return self._add_instance_and_non_accept_encoding_type(
-            instance=self, other=other,
+            instance=self, other=other
         )
 
     def __radd__(self, other):
@@ -3487,11 +3466,11 @@ class AcceptEncodingNoHeader(_AcceptEncodingInvalidOrNoHeader):
         return self.__add__(other=other)
 
     def __repr__(self):
-        return '<{}>'.format(self.__class__.__name__)
+        return "<{}>".format(self.__class__.__name__)
 
     def __str__(self):
         """Return the ``str`` ``'<no header in request>'``."""
-        return '<no header in request>'
+        return "<no header in request>"
 
     def _add_instance_and_non_accept_encoding_type(self, instance, other):
         if other is None:
@@ -3574,13 +3553,11 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
         if isinstance(other, AcceptEncodingValidHeader):
             return AcceptEncodingValidHeader(header_value=other.header_value)
 
-        if isinstance(
-            other, (AcceptEncodingNoHeader, AcceptEncodingInvalidHeader)
-        ):
+        if isinstance(other, (AcceptEncodingNoHeader, AcceptEncodingInvalidHeader)):
             return AcceptEncodingNoHeader()
 
         return self._add_instance_and_non_accept_encoding_type(
-            instance=self, other=other,
+            instance=self, other=other
         )
 
     def __radd__(self, other):
@@ -3590,21 +3567,21 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
         See the docstring for :meth:`AcceptEncodingValidHeader.__add__`.
         """
         return self._add_instance_and_non_accept_encoding_type(
-            instance=self, other=other, instance_on_the_right=True,
+            instance=self, other=other, instance_on_the_right=True
         )
 
     def __repr__(self):
-        return '<{}>'.format(self.__class__.__name__)
+        return "<{}>".format(self.__class__.__name__)
         # We do not display the header_value, as it is untrusted input. The
         # header_value could always be easily obtained from the .header_value
         # property.
 
     def __str__(self):
         """Return the ``str`` ``'<invalid header value>'``."""
-        return '<invalid header value>'
+        return "<invalid header value>"
 
     def _add_instance_and_non_accept_encoding_type(
-        self, instance, other, instance_on_the_right=False,
+        self, instance, other, instance_on_the_right=False
     ):
         if other is None:
             return AcceptEncodingNoHeader()
@@ -3651,7 +3628,7 @@ def accept_encoding_property():
         environ, and do not involve parsing.)
     """
 
-    ENVIRON_KEY = 'HTTP_ACCEPT_ENCODING'
+    ENVIRON_KEY = "HTTP_ACCEPT_ENCODING"
 
     def fget(request):
         """Get an object representing the header in the request."""
@@ -3685,9 +3662,7 @@ def accept_encoding_property():
             ):
                 header_value = value.header_value
             else:
-                header_value = AcceptEncoding._python_value_to_header_str(
-                    value=value,
-                )
+                header_value = AcceptEncoding._python_value_to_header_str(value=value)
             request.environ[ENVIRON_KEY] = header_value
 
     def fdel(request):
@@ -3715,17 +3690,11 @@ class AcceptLanguage(object):
     # RFC 4647 Section 2.1 "Basic Language Range":
     # language-range   = (1*8ALPHA *("-" 1*8alphanum)) / "*"
     # alphanum         = ALPHA / DIGIT
-    lang_range_re = (
-        r'\*|'
-        '(?:'
-        '[A-Za-z]{1,8}'
-        '(?:-[A-Za-z0-9]{1,8})*'
-        ')'
-    )
+    lang_range_re = r"\*|" "(?:" "[A-Za-z]{1,8}" "(?:-[A-Za-z0-9]{1,8})*" ")"
     lang_range_n_weight_re = _item_n_weight_re(item_re=lang_range_re)
     lang_range_n_weight_compiled_re = re.compile(lang_range_n_weight_re)
     accept_language_compiled_re = _list_1_or_more__compiled_re(
-        element_re=lang_range_n_weight_re,
+        element_re=lang_range_n_weight_re
     )
 
     @classmethod
@@ -3733,21 +3702,15 @@ class AcceptLanguage(object):
         if isinstance(value, str):
             header_str = value
         else:
-            if hasattr(value, 'items'):
-                value = sorted(
-                    value.items(),
-                    key=lambda item: item[1],
-                    reverse=True,
-                )
+            if hasattr(value, "items"):
+                value = sorted(value.items(), key=lambda item: item[1], reverse=True)
             if isinstance(value, (tuple, list)):
                 result = []
                 for element in value:
                     if isinstance(element, (tuple, list)):
-                        element = _item_qvalue_pair_to_header_element(
-                            pair=element
-                        )
+                        element = _item_qvalue_pair_to_header_element(pair=element)
                     result.append(element)
-                header_str = ', '.join(result)
+                header_str = ", ".join(result)
             else:
                 header_str = str(value)
         return header_str
@@ -3768,15 +3731,15 @@ class AcceptLanguage(object):
         # the match *and* get all the groups using the same regex, so we have
         # to use one regex to check the match, and another to get the groups.
         if cls.accept_language_compiled_re.match(value) is None:
-            raise ValueError('Invalid value for an Accept-Language header.')
+            raise ValueError("Invalid value for an Accept-Language header.")
+
         def generator(value):
-            for match in (
-                cls.lang_range_n_weight_compiled_re.finditer(value)
-            ):
+            for match in cls.lang_range_n_weight_compiled_re.finditer(value):
                 lang_range = match.group(1)
                 qvalue = match.group(2)
                 qvalue = float(qvalue) if qvalue else 1.0
                 yield (lang_range, qvalue)
+
         return generator(value=value)
 
 
@@ -3853,16 +3816,14 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         """
         if isinstance(other, AcceptLanguageValidHeader):
             return create_accept_language_header(
-                header_value=self.header_value + ', ' + other.header_value,
+                header_value=self.header_value + ", " + other.header_value
             )
 
-        if isinstance(
-            other, (AcceptLanguageNoHeader, AcceptLanguageInvalidHeader)
-        ):
+        if isinstance(other, (AcceptLanguageNoHeader, AcceptLanguageInvalidHeader)):
             return self.__class__(header_value=self.header_value)
 
         return self._add_instance_and_non_accept_language_type(
-            instance=self, other=other,
+            instance=self, other=other
         )
 
     def __nonzero__(self):
@@ -3876,6 +3837,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         For this class, it always returns ``True``.
         """
         return True
+
     __bool__ = __nonzero__  # Python 3
 
     def __contains__(self, offer):
@@ -3918,9 +3880,9 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         other problems with the old criterion for a match.)
         """
         warnings.warn(
-            'The behavior of AcceptLanguageValidHeader.__contains__ is '
-            'currently being maintained for backward compatibility, but it '
-            'will change in the future to better conform to the RFC.',
+            "The behavior of AcceptLanguageValidHeader.__contains__ is "
+            "currently being maintained for backward compatibility, but it "
+            "will change in the future to better conform to the RFC.",
             DeprecationWarning,
         )
         for mask, quality in self._parsed_nonzero:
@@ -3948,17 +3910,13 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         English', but ``list(instance)`` would return only ``['*']``.
         """
         warnings.warn(
-            'The behavior of AcceptLanguageValidHeader.__iter__ is currently '
-            'maintained for backward compatibility, but will change in the '
-            'future.',
+            "The behavior of AcceptLanguageValidHeader.__iter__ is currently "
+            "maintained for backward compatibility, but will change in the "
+            "future.",
             DeprecationWarning,
         )
 
-        for m, q in sorted(
-            self._parsed_nonzero,
-            key=lambda i: i[1],
-            reverse=True
-        ):
+        for m, q in sorted(self._parsed_nonzero, key=lambda i: i[1], reverse=True):
             yield m
 
     def __radd__(self, other):
@@ -3968,11 +3926,11 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         See the docstring for :meth:`AcceptLanguageValidHeader.__add__`.
         """
         return self._add_instance_and_non_accept_language_type(
-            instance=self, other=other, instance_on_the_right=True,
+            instance=self, other=other, instance_on_the_right=True
         )
 
     def __repr__(self):
-        return '<{} ({!r})>'.format(self.__class__.__name__, str(self))
+        return "<{} ({!r})>".format(self.__class__.__name__, str(self))
 
     def __str__(self):
         r"""
@@ -3982,13 +3940,12 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         jp;q=0.210  ,'``, ``str(instance)`` returns ``'de;q=0, es, zh,
         jp;q=0.21'``.
         """
-        return ', '.join(
-            _item_qvalue_pair_to_header_element(pair=tuple_)
-            for tuple_ in self.parsed
+        return ", ".join(
+            _item_qvalue_pair_to_header_element(pair=tuple_) for tuple_ in self.parsed
         )
 
     def _add_instance_and_non_accept_language_type(
-        self, instance, other, instance_on_the_right=False,
+        self, instance, other, instance_on_the_right=False
     ):
         if not other:
             return self.__class__(header_value=instance.header_value)
@@ -4001,9 +3958,9 @@ class AcceptLanguageValidHeader(AcceptLanguage):
             return self.__class__(header_value=instance.header_value)
 
         new_header_value = (
-            (other_header_value + ', ' + instance.header_value)
+            (other_header_value + ", " + instance.header_value)
             if instance_on_the_right
-            else (instance.header_value + ', ' + other_header_value)
+            else (instance.header_value + ", " + other_header_value)
         )
         return self.__class__(header_value=new_header_value)
 
@@ -4070,12 +4027,13 @@ class AcceptLanguageValidHeader(AcceptLanguage):
           decision to match only the first subtag, but rather because only
           language ranges and tags with at most two subtags were expected.
         """
-        item = item.replace('_', '-').lower()
+        item = item.replace("_", "-").lower()
         mask = mask.lower()
-        return (mask == '*'
+        return (
+            mask == "*"
             or item == mask
-            or item.split('-')[0] == mask
-            or item == mask.split('-')[0]
+            or item.split("-")[0] == mask
+            or item == mask.split("-")[0]
         )
 
     def basic_filtering(self, language_tags):
@@ -4140,16 +4098,14 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         acceptable_ranges = dict()
         asterisk_qvalue = None
 
-        for position_in_header, (range_, qvalue) in enumerate(
-            lowercased_parsed
-        ):
-            if range_ == '*':
+        for position_in_header, (range_, qvalue) in enumerate(lowercased_parsed):
+            if range_ == "*":
                 if asterisk_qvalue is None:
                     asterisk_qvalue = qvalue
                     asterisk_position = position_in_header
             elif (
-                range_ not in acceptable_ranges and range_ not in
-                not_acceptable_ranges
+                range_ not in acceptable_ranges
+                and range_ not in not_acceptable_ranges
                 # if we have not already encountered this range in the header
             ):
                 if qvalue == 0.0:
@@ -4158,8 +4114,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                     acceptable_ranges[range_] = (qvalue, position_in_header)
         acceptable_ranges = [
             (range_, qvalue, position_in_header)
-            for range_, (qvalue, position_in_header)
-            in acceptable_ranges.items()
+            for range_, (qvalue, position_in_header) in acceptable_ranges.items()
         ]
         # Sort acceptable_ranges by position_in_header, ascending order
         acceptable_ranges.sort(key=lambda tuple_: tuple_[2])
@@ -4173,7 +4128,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
             # language tag if, in a case-insensitive comparison, it exactly
             # equals the tag, or if it exactly equals a prefix of the tag such
             # that the first character following the prefix is "-".'
-            return (tag == range_) or tag.startswith(range_ + '-')
+            return (tag == range_) or tag.startswith(range_ + "-")
             # We can assume here that the language tags are valid tags, so we
             # do not have to worry about them being malformed and ending with
             # '-'.
@@ -4181,10 +4136,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         filtered_tags = []
         for index, tag in enumerate(lowercased_tags):
             # If tag matches a non-* range with q=0, it is filtered out
-            if any((
-                match(tag=tag, range_=range_)
-                for range_ in not_acceptable_ranges
-            )):
+            if any((match(tag=tag, range_=range_) for range_ in not_acceptable_ranges)):
                 continue
 
             matched_range_qvalue = None
@@ -4210,10 +4162,9 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                     matched_range_qvalue = asterisk_qvalue
                     matched_range_position = asterisk_position
             if matched_range_qvalue is not None:  # if there was a match
-                filtered_tags.append((
-                    language_tags[index], matched_range_qvalue,
-                    matched_range_position
-                ))
+                filtered_tags.append(
+                    (language_tags[index], matched_range_qvalue, matched_range_position)
+                )
 
         # sort by matched_range_position, ascending
         filtered_tags.sort(key=lambda tuple_: tuple_[2])
@@ -4341,15 +4292,15 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
         """
         warnings.warn(
-            'The behavior of AcceptLanguageValidHeader.best_match is '
-            'currently being maintained for backward compatibility, but it '
-            'will be deprecated in the future as it does not conform to the '
-            'RFC.',
+            "The behavior of AcceptLanguageValidHeader.best_match is "
+            "currently being maintained for backward compatibility, but it "
+            "will be deprecated in the future as it does not conform to the "
+            "RFC.",
             DeprecationWarning,
         )
         best_quality = -1
         best_offer = default_match
-        matched_by = '*/*'
+        matched_by = "*/*"
         # [We can see that this was written for the ``Accept`` header and not
         # the ``Accept-Language`` header, as there are no '/'s in a valid
         # ``Accept-Language`` header.]
@@ -4365,7 +4316,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                 elif possible_quality == best_quality:
                     # 'text/plain' overrides 'message/*' overrides '*/*'
                     # (if all match w/ the same q=)
-                    if matched_by.count('*') <= mask.count('*'):
+                    if matched_by.count("*") <= mask.count("*"):
                         continue
                     # [This tiebreaking was written for the `Accept` header. A
                     # basic language range in a valid ``Accept-Language``
@@ -4384,10 +4335,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                     matched_by = mask
         return best_offer
 
-    def lookup(
-        self, language_tags, default_range=None, default_tag=None,
-        default=None,
-    ):
+    def lookup(self, language_tags, default_range=None, default_tag=None, default=None):
         """
         Return the language tag that best matches the header, using Lookup.
 
@@ -4524,7 +4472,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         """
         if default_tag is None and default is None:
             raise TypeError(
-                '`default_tag` and `default` arguments cannot both be None.'
+                "`default_tag` and `default` arguments cannot both be None."
             )
 
         # We need separate `default_tag` and `default` arguments because if we
@@ -4533,8 +4481,8 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         # whether it has been specified as not acceptable with a q=0 range in
         # the header) or not (in which case we can just return the value).
 
-        if default_range == '*':
-            raise ValueError('default_range cannot be *.')
+        if default_range == "*":
+            raise ValueError("default_range cannot be *.")
 
         parsed = list(self.parsed)
 
@@ -4555,11 +4503,11 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
         for range_, qvalue in parsed:
             if qvalue == 0.0:
-                if range_ == '*':  # *;q=0
+                if range_ == "*":  # *;q=0
                     asterisk_q0_found = True
                 else:  # {non-* range};q=0
                     not_acceptable_ranges.append(range_.lower())
-            elif not asterisk_q0_found and range_ == '*':  # *;q={not 0}
+            elif not asterisk_q0_found and range_ == "*":  # *;q={not 0}
                 asterisk_non0_found = True
                 # if asterisk_q0_found, then it does not matter whether
                 # asterisk_non0_found
@@ -4574,7 +4522,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         lowered_tags = [tag.lower() for tag in tags]
 
         def best_match(range_):
-            subtags = range_.split('-')
+            subtags = range_.split("-")
             while True:
                 for index, tag in enumerate(lowered_tags):
                     if tag in not_acceptable_ranges:
@@ -4598,12 +4546,11 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                     break
                 # len(subtags) >= 2
                 if len(subtag_before_this) == 1 and (
-                    subtag_before_this.isdigit() or
-                    subtag_before_this.isalpha()
+                    subtag_before_this.isdigit() or subtag_before_this.isalpha()
                 ):  # if subtag_before_this is a single-letter or -digit subtag
                     subtags.pop(-1)  # pop twice instead of once
                 subtags.pop(-1)
-                range_ = '-'.join(subtags)
+                range_ = "-".join(subtags)
 
         for range_ in acceptable_ranges:
             match = best_match(range_=range_.lower())
@@ -4696,10 +4643,10 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
         """
         warnings.warn(
-            'The behavior of AcceptLanguageValidHeader.quality is'
-            'currently being maintained for backward compatibility, but it '
-            'will be deprecated in the future as it does not conform to the '
-            'RFC.',
+            "The behavior of AcceptLanguageValidHeader.quality is"
+            "currently being maintained for backward compatibility, but it "
+            "will be deprecated in the future as it does not conform to the "
+            "RFC.",
             DeprecationWarning,
         )
         bestq = 0
@@ -4735,6 +4682,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         For this class, it always returns ``False``.
         """
         return False
+
     __bool__ = __nonzero__  # Python 3
 
     def __contains__(self, offer):
@@ -4756,9 +4704,9 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         and this always returns ``True``.
         """
         warnings.warn(
-            'The behavior of .__contains__ for the AcceptLanguage classes is '
-            'currently being maintained for backward compatibility, but it '
-            'will change in the future to better conform to the RFC.',
+            "The behavior of .__contains__ for the AcceptLanguage classes is "
+            "currently being maintained for backward compatibility, but it "
+            "will change in the future to better conform to the RFC.",
             DeprecationWarning,
         )
         return True
@@ -4782,9 +4730,9 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         this always returns an empty iterator.
         """
         warnings.warn(
-            'The behavior of AcceptLanguageValidHeader.__iter__ is currently '
-            'maintained for backward compatibility, but will change in the '
-            'future.',
+            "The behavior of AcceptLanguageValidHeader.__iter__ is currently "
+            "maintained for backward compatibility, but will change in the "
+            "future.",
             DeprecationWarning,
         )
         return iter(())
@@ -4843,10 +4791,10 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
                    returned.
         """
         warnings.warn(
-            'The behavior of .best_match for the AcceptLanguage classes is '
-            'currently being maintained for backward compatibility, but the '
-            'method will be deprecated in the future, as its behavior is not '
-            'specified in (and currently does not conform to) RFC 7231.',
+            "The behavior of .best_match for the AcceptLanguage classes is "
+            "currently being maintained for backward compatibility, but the "
+            "method will be deprecated in the future, as its behavior is not "
+            "specified in (and currently does not conform to) RFC 7231.",
             DeprecationWarning,
         )
         best_quality = -1
@@ -4862,8 +4810,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         return best_offer
 
     def lookup(
-        self, language_tags=None, default_range=None, default_tag=None,
-        default=None,
+        self, language_tags=None, default_range=None, default_tag=None, default=None
     ):
         """
         Return the language tag that best matches the header, using Lookup.
@@ -4930,7 +4877,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         """
         if default_tag is None and default is None:
             raise TypeError(
-                '`default_tag` and `default` arguments cannot both be None.'
+                "`default_tag` and `default` arguments cannot both be None."
             )
 
         if default_tag is not None:
@@ -4962,10 +4909,10 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         all offers are equally acceptable, so 1.0 is always returned.
         """
         warnings.warn(
-            'The behavior of .quality for the AcceptLanguage classes is '
-            'currently being maintained for backward compatibility, but the '
-            'method will be deprecated in the future, as its behavior is not '
-            'specified in (and currently does not conform to) RFC 7231.',
+            "The behavior of .quality for the AcceptLanguage classes is "
+            "currently being maintained for backward compatibility, but the "
+            "method will be deprecated in the future, as its behavior is not "
+            "specified in (and currently does not conform to) RFC 7231.",
             DeprecationWarning,
         )
         return 1.0
@@ -5035,13 +4982,11 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
         if isinstance(other, AcceptLanguageValidHeader):
             return AcceptLanguageValidHeader(header_value=other.header_value)
 
-        if isinstance(
-            other, (AcceptLanguageNoHeader, AcceptLanguageInvalidHeader)
-        ):
+        if isinstance(other, (AcceptLanguageNoHeader, AcceptLanguageInvalidHeader)):
             return self.__class__()
 
         return self._add_instance_and_non_accept_language_type(
-            instance=self, other=other,
+            instance=self, other=other
         )
 
     def __radd__(self, other):
@@ -5053,11 +4998,11 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
         return self.__add__(other=other)
 
     def __repr__(self):
-        return '<{}>'.format(self.__class__.__name__)
+        return "<{}>".format(self.__class__.__name__)
 
     def __str__(self):
         """Return the ``str`` ``'<no header in request>'``."""
-        return '<no header in request>'
+        return "<no header in request>"
 
     def _add_instance_and_non_accept_language_type(self, instance, other):
         if not other:
@@ -5140,13 +5085,11 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         if isinstance(other, AcceptLanguageValidHeader):
             return AcceptLanguageValidHeader(header_value=other.header_value)
 
-        if isinstance(
-            other, (AcceptLanguageNoHeader, AcceptLanguageInvalidHeader)
-        ):
+        if isinstance(other, (AcceptLanguageNoHeader, AcceptLanguageInvalidHeader)):
             return AcceptLanguageNoHeader()
 
         return self._add_instance_and_non_accept_language_type(
-            instance=self, other=other,
+            instance=self, other=other
         )
 
     def __radd__(self, other):
@@ -5156,21 +5099,21 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         See the docstring for :meth:`AcceptLanguageValidHeader.__add__`.
         """
         return self._add_instance_and_non_accept_language_type(
-            instance=self, other=other, instance_on_the_right=True,
+            instance=self, other=other, instance_on_the_right=True
         )
 
     def __repr__(self):
-        return '<{}>'.format(self.__class__.__name__)
+        return "<{}>".format(self.__class__.__name__)
         # We do not display the header_value, as it is untrusted input. The
         # header_value could always be easily obtained from the .header_value
         # property.
 
     def __str__(self):
         """Return the ``str`` ``'<invalid header value>'``."""
-        return '<invalid header value>'
+        return "<invalid header value>"
 
     def _add_instance_and_non_accept_language_type(
-        self, instance, other, instance_on_the_right=False,
+        self, instance, other, instance_on_the_right=False
     ):
         if not other:
             return AcceptLanguageNoHeader()
@@ -5217,7 +5160,7 @@ def accept_language_property():
         environ, and do not involve parsing.)
     """
 
-    ENVIRON_KEY = 'HTTP_ACCEPT_LANGUAGE'
+    ENVIRON_KEY = "HTTP_ACCEPT_LANGUAGE"
 
     def fget(request):
         """Get an object representing the header in the request."""
@@ -5250,9 +5193,7 @@ def accept_language_property():
             ):
                 header_value = value.header_value
             else:
-                header_value = AcceptLanguage._python_value_to_header_str(
-                    value=value,
-                )
+                header_value = AcceptLanguage._python_value_to_header_str(value=value)
             request.environ[ENVIRON_KEY] = header_value
 
     def fdel(request):

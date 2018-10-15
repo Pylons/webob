@@ -4,30 +4,27 @@ from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
 try:
-    with open(os.path.join(here, 'README.rst')) as f:
+    with open(os.path.join(here, "README.rst")) as f:
         README = f.read()
-    with open(os.path.join(here, 'CHANGES.txt')) as f:
+    with open(os.path.join(here, "CHANGES.txt")) as f:
         CHANGES = f.read()
 except IOError:
-    README = CHANGES = ''
+    README = CHANGES = ""
 
 testing_extras = [
-    'pytest >= 3.1.0',  # >= 3.1.0 so we can use pytest.param
-    'coverage',
-    'pytest-cov',
-    'pytest-xdist',
-    ]
+    "pytest >= 3.1.0",  # >= 3.1.0 so we can use pytest.param
+    "coverage",
+    "pytest-cov",
+    "pytest-xdist",
+]
 
-docs_extras = [
-    'Sphinx >= 1.7.5',
-    'pylons-sphinx-themes',
-    ]
+docs_extras = ["Sphinx >= 1.7.5", "pylons-sphinx-themes"]
 
 setup(
-    name='WebOb',
-    version='1.9.0dev0',
+    name="WebOb",
+    version="1.9.0dev0",
     description="WSGI request and response object",
-    long_description=README + '\n\n' + CHANGES,
+    long_description=README + "\n\n" + CHANGES,
     classifiers=[
         "Development Status :: 6 - Mature",
         "Intended Audience :: Developers",
@@ -43,18 +40,15 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
     ],
-    keywords='wsgi request web http',
-    author='Ian Bicking',
-    author_email='ianb@colorstudy.com',
-    maintainer='Pylons Project',
-    url='http://webob.org/',
-    license='MIT',
-    packages=find_packages('src', exclude=['tests']),
-    package_dir={'': 'src'},
-    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*',
+    keywords="wsgi request web http",
+    author="Ian Bicking",
+    author_email="ianb@colorstudy.com",
+    maintainer="Pylons Project",
+    url="http://webob.org/",
+    license="MIT",
+    packages=find_packages("src", exclude=["tests"]),
+    package_dir={"": "src"},
+    python_requires=">=2.7,!=3.0.*,!=3.1.*,!=3.2.*",
     zip_safe=True,
-    extras_require={
-        'testing': testing_extras,
-        'docs': docs_extras,
-        },
+    extras_require={"testing": testing_extras, "docs": docs_extras},
 )

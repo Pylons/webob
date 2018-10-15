@@ -1,9 +1,10 @@
 import re
 
-__all__ = ['Range', 'ContentRange']
+__all__ = ["Range", "ContentRange"]
 
-_rx_range = re.compile('bytes *= *(\d*) *- *(\d*)', flags=re.I)
-_rx_content_range = re.compile(r'bytes (?:(\d+)-(\d+)|[*])/(?:(\d+)|[*])')
+_rx_range = re.compile("bytes *= *(\d*) *- *(\d*)", flags=re.I)
+_rx_content_range = re.compile(r"bytes (?:(\d+)-(\d+)|[*])/(?:(\d+)|[*])")
+
 
 class Range(object):
     """
@@ -13,7 +14,7 @@ class Range(object):
     def __init__(self, start, end):
         assert end is None or end >= 0, "Bad range end: %r" % end
         self.start = start
-        self.end = end # non-inclusive
+        self.end = end  # non-inclusive
 
     def range_for_length(self, length):
         """
@@ -50,18 +51,16 @@ class Range(object):
         return ContentRange(range[0], range[1], length)
 
     def __str__(self):
-        s,e = self.start, self.end
+        s, e = self.start, self.end
         if e is None:
-            r = 'bytes=%s' % s
+            r = "bytes=%s" % s
             if s >= 0:
-                r += '-'
+                r += "-"
             return r
-        return 'bytes=%s-%s' % (s, e-1)
+        return "bytes=%s-%s" % (s, e - 1)
 
     def __repr__(self):
-        return '<%s bytes %r-%r>' % (
-            self.__class__.__name__,
-            self.start, self.end)
+        return "<%s bytes %r-%r>" % (self.__class__.__name__, self.start, self.end)
 
     def __iter__(self):
         return iter((self.start, self.end))
@@ -71,7 +70,7 @@ class Range(object):
         """
             Parse the header; may return None if header is invalid
         """
-        m = _rx_range.match(header or '')
+        m = _rx_range.match(header or "")
         if not m:
             return None
         start, end = m.groups()
@@ -80,7 +79,7 @@ class Range(object):
         start = int(start)
         if not end:
             return cls(start, None)
-        end = int(end) + 1 # return val is non-inclusive
+        end = int(end) + 1  # return val is non-inclusive
         if start >= end:
             return None
         return cls(start, end)
@@ -97,25 +96,24 @@ class ContentRange(object):
 
     def __init__(self, start, stop, length):
         if not _is_content_range_valid(start, stop, length):
-            raise ValueError(
-                "Bad start:stop/length: %r-%r/%r" % (start, stop, length))
+            raise ValueError("Bad start:stop/length: %r-%r/%r" % (start, stop, length))
         self.start = start
-        self.stop = stop # this is python-style range end (non-inclusive)
+        self.stop = stop  # this is python-style range end (non-inclusive)
         self.length = length
 
     def __repr__(self):
-        return '<%s %s>' % (self.__class__.__name__, self)
+        return "<%s %s>" % (self.__class__.__name__, self)
 
     def __str__(self):
         if self.length is None:
-            length = '*'
+            length = "*"
         else:
             length = self.length
         if self.start is None:
             assert self.stop is None
-            return 'bytes */%s' % length
-        stop = self.stop - 1 # from non-inclusive to HTTP-style
-        return 'bytes %s-%s/%s' % (self.start, stop, length)
+            return "bytes */%s" % length
+        stop = self.stop - 1  # from non-inclusive to HTTP-style
+        return "bytes %s-%s/%s" % (self.start, stop, length)
 
     def __iter__(self):
         """
@@ -130,7 +128,7 @@ class ContentRange(object):
         """
             Parse the header.  May return None if it cannot parse.
         """
-        m = _rx_content_range.match(value or '')
+        m = _rx_content_range.match(value or "")
         if not m:
             return None
         s, e, l = m.groups()

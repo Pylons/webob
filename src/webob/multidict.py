@@ -7,15 +7,10 @@ Gives a multi-value dictionary object (MultiDict) plus several wrappers
 import binascii
 import warnings
 
-from webob.compat import (
-    MutableMapping,
-    PY2,
-    iteritems_,
-    itervalues_,
-    url_encode,
-    )
+from webob.compat import MutableMapping, PY2, iteritems_, itervalues_, url_encode
 
-__all__ = ['MultiDict', 'NestedMultiDict', 'NoVars', 'GetDict']
+__all__ = ["MultiDict", "NestedMultiDict", "NoVars", "GetDict"]
+
 
 class MultiDict(MutableMapping):
     """
@@ -26,12 +21,13 @@ class MultiDict(MutableMapping):
 
     def __init__(self, *args, **kw):
         if len(args) > 1:
-            raise TypeError("MultiDict can only be called with one positional "
-                            "argument")
+            raise TypeError(
+                "MultiDict can only be called with one positional " "argument"
+            )
         if args:
-            if hasattr(args[0], 'iteritems'):
+            if hasattr(args[0], "iteritems"):
                 items = list(args[0].iteritems())
-            elif hasattr(args[0], 'items'):
+            elif hasattr(args[0], "items"):
                 items = list(args[0].items())
             else:
                 items = list(args[0])
@@ -49,7 +45,8 @@ class MultiDict(MutableMapping):
         if not isinstance(lst, list):
             raise TypeError(
                 "%s.view_list(obj) takes only actual list objects, not %r"
-                % (cls.__name__, lst))
+                % (cls.__name__, lst)
+            )
         obj = cls()
         obj._items = lst
         return obj
@@ -62,17 +59,17 @@ class MultiDict(MutableMapping):
         obj = cls()
         # fs.list can be None when there's nothing to parse
         for field in fs.list or ():
-            charset = field.type_options.get('charset', 'utf8')
-            transfer_encoding = field.headers.get('Content-Transfer-Encoding', None)
+            charset = field.type_options.get("charset", "utf8")
+            transfer_encoding = field.headers.get("Content-Transfer-Encoding", None)
             supported_transfer_encoding = {
-                'base64' : binascii.a2b_base64,
-                'quoted-printable' : binascii.a2b_qp
-                }
+                "base64": binascii.a2b_base64,
+                "quoted-printable": binascii.a2b_qp,
+            }
             if not PY2:
-                if charset == 'utf8':
+                if charset == "utf8":
                     decode = lambda b: b
                 else:
-                    decode = lambda b: b.encode('utf8').decode(charset)
+                    decode = lambda b: b.encode("utf8").decode(charset)
             else:
                 decode = lambda b: b.decode(charset)
             if field.filename:
@@ -83,11 +80,11 @@ class MultiDict(MutableMapping):
                 if transfer_encoding in supported_transfer_encoding:
                     if not PY2:
                         # binascii accepts bytes
-                        value = value.encode('utf8')
+                        value = value.encode("utf8")
                     value = supported_transfer_encoding[transfer_encoding](value)
                     if not PY2:
                         # binascii returns bytes
-                        value = value.decode('utf8')
+                        value = value.decode("utf8")
                 obj.add(field.name, decode(value))
         return obj
 
@@ -123,9 +120,9 @@ class MultiDict(MutableMapping):
         """
         v = self.getall(key)
         if not v:
-            raise KeyError('Key not found: %r' % key)
+            raise KeyError("Key not found: %r" % key)
         if len(v) > 1:
-            raise KeyError('Multiple values match %r: %r' % (key, v))
+            raise KeyError("Multiple values match %r: %r" % (key, v))
         return v[0]
 
     def mixed(self):
@@ -163,7 +160,7 @@ class MultiDict(MutableMapping):
     def __delitem__(self, key):
         items = self._items
         found = False
-        for i in range(len(items)-1, -1, -1):
+        for i in range(len(items) - 1, -1, -1):
             if items[i][0] == key:
                 del items[i]
                 found = True
@@ -193,8 +190,9 @@ class MultiDict(MutableMapping):
 
     def pop(self, key, *args):
         if len(args) > 1:
-            raise TypeError("pop expected at most 2 arguments, got %s"
-                             % repr(1 + len(args)))
+            raise TypeError(
+                "pop expected at most 2 arguments, got %s" % repr(1 + len(args))
+            )
         for i in range(len(self._items)):
             if self._items[i][0] == key:
                 v = self._items[i][1]
@@ -214,7 +212,8 @@ class MultiDict(MutableMapping):
             if len(lst) != len(dict(lst)):
                 # this does not catch the cases where we overwrite existing
                 # keys, but those would produce too many warning
-                msg = ("Behavior of MultiDict.update() has changed "
+                msg = (
+                    "Behavior of MultiDict.update() has changed "
                     "and overwrites duplicate keys. Consider using .extend()"
                 )
                 warnings.warn(msg, UserWarning, stacklevel=2)
@@ -223,9 +222,9 @@ class MultiDict(MutableMapping):
     def extend(self, other=None, **kwargs):
         if other is None:
             pass
-        elif hasattr(other, 'items'):
+        elif hasattr(other, "items"):
             self._items.extend(other.items())
-        elif hasattr(other, 'keys'):
+        elif hasattr(other, "keys"):
             for k in other.keys():
                 self._items.append((k, other[k]))
         else:
@@ -235,8 +234,8 @@ class MultiDict(MutableMapping):
             self.update(kwargs)
 
     def __repr__(self):
-        items = map('(%r, %r)'.__mod__, _hide_passwd(self.items()))
-        return '%s([%s])' % (self.__class__.__name__, ', '.join(items))
+        items = map("(%r, %r)".__mod__, _hide_passwd(self.items()))
+        return "%s([%s])" % (self.__class__.__name__, ", ".join(items))
 
     def __len__(self):
         return len(self._items)
@@ -248,9 +247,12 @@ class MultiDict(MutableMapping):
     def iterkeys(self):
         for k, v in self._items:
             yield k
+
     if PY2:
+
         def keys(self):
             return [k for k, v in self._items]
+
     else:
         keys = iterkeys
 
@@ -260,8 +262,10 @@ class MultiDict(MutableMapping):
         return iter(self._items)
 
     if PY2:
+
         def items(self):
             return self._items[:]
+
     else:
         items = iteritems
 
@@ -270,63 +274,80 @@ class MultiDict(MutableMapping):
             yield v
 
     if PY2:
+
         def values(self):
             return [v for k, v in self._items]
+
     else:
         values = itervalues
 
+
 _dummy = object()
 
+
 class GetDict(MultiDict):
-#     def __init__(self, data, tracker, encoding, errors):
-#         d = lambda b: b.decode(encoding, errors)
-#         data = [(d(k), d(v)) for k,v in data]
+    #     def __init__(self, data, tracker, encoding, errors):
+    #         d = lambda b: b.decode(encoding, errors)
+    #         data = [(d(k), d(v)) for k,v in data]
     def __init__(self, data, env):
         self.env = env
         MultiDict.__init__(self, data)
+
     def on_change(self):
-        e = lambda t: t.encode('utf8')
-        data = [(e(k), e(v)) for k,v in self.items()]
+        e = lambda t: t.encode("utf8")
+        data = [(e(k), e(v)) for k, v in self.items()]
         qs = url_encode(data)
-        self.env['QUERY_STRING'] = qs
-        self.env['webob._parsed_query_vars'] = (self, qs)
+        self.env["QUERY_STRING"] = qs
+        self.env["webob._parsed_query_vars"] = (self, qs)
+
     def __setitem__(self, key, value):
         MultiDict.__setitem__(self, key, value)
         self.on_change()
+
     def add(self, key, value):
         MultiDict.add(self, key, value)
         self.on_change()
+
     def __delitem__(self, key):
         MultiDict.__delitem__(self, key)
         self.on_change()
+
     def clear(self):
         MultiDict.clear(self)
         self.on_change()
+
     def setdefault(self, key, default=None):
         result = MultiDict.setdefault(self, key, default)
         self.on_change()
         return result
+
     def pop(self, key, *args):
         result = MultiDict.pop(self, key, *args)
         self.on_change()
         return result
+
     def popitem(self):
         result = MultiDict.popitem(self)
         self.on_change()
         return result
+
     def update(self, *args, **kwargs):
         MultiDict.update(self, *args, **kwargs)
         self.on_change()
+
     def extend(self, *args, **kwargs):
         MultiDict.extend(self, *args, **kwargs)
         self.on_change()
+
     def __repr__(self):
-        items = map('(%r, %r)'.__mod__, _hide_passwd(self.items()))
+        items = map("(%r, %r)".__mod__, _hide_passwd(self.items()))
         # TODO: GET -> GetDict
-        return 'GET([%s])' % (', '.join(items))
+        return "GET([%s])" % (", ".join(items))
+
     def copy(self):
         # Copies shouldn't be tracked
         return MultiDict(self)
+
 
 class NestedMultiDict(MultiDict):
     """
@@ -345,6 +366,7 @@ class NestedMultiDict(MultiDict):
 
     def _readonly(self, *args, **kw):
         raise KeyError("NestedMultiDict objects are read-only")
+
     __setitem__ = _readonly
     add = _readonly
     __delitem__ = _readonly
@@ -392,9 +414,12 @@ class NestedMultiDict(MultiDict):
         for d in self.dicts:
             for item in iteritems_(d):
                 yield item
+
     if PY2:
+
         def items(self):
             return list(self.iteritems())
+
     else:
         items = iteritems
 
@@ -402,9 +427,12 @@ class NestedMultiDict(MultiDict):
         for d in self.dicts:
             for value in itervalues_(d):
                 yield value
+
     if PY2:
+
         def values(self):
             return list(self.itervalues())
+
     else:
         values = itervalues
 
@@ -416,10 +444,13 @@ class NestedMultiDict(MultiDict):
     iterkeys = __iter__
 
     if PY2:
+
         def keys(self):
             return list(self.iterkeys())
+
     else:
         keys = iterkeys
+
 
 class NoVars(object):
     """
@@ -430,7 +461,7 @@ class NoVars(object):
     """
 
     def __init__(self, reason=None):
-        self.reason = reason or 'N/A'
+        self.reason = reason or "N/A"
 
     def __getitem__(self, key):
         raise KeyError("No key %r: %s" % (key, self.reason))
@@ -444,6 +475,7 @@ class NoVars(object):
 
     def __delitem__(self, *args, **kw):
         raise KeyError("No keys to delete: %s" % self.reason)
+
     clear = __delitem__
     pop = __delitem__
     popitem = __delitem__
@@ -459,18 +491,19 @@ class NoVars(object):
 
     def mixed(self):
         return {}
+
     dict_of_lists = mixed
 
     def __contains__(self, key):
         return False
+
     has_key = __contains__
 
     def copy(self):
         return self
 
     def __repr__(self):
-        return '<%s: %s>' % (self.__class__.__name__,
-                             self.reason)
+        return "<%s: %s>" % (self.__class__.__name__, self.reason)
 
     def __len__(self):
         return 0
@@ -479,11 +512,13 @@ class NoVars(object):
         return iter([])
 
     if PY2:
+
         def __cmp__(self, other):
             return cmp({}, other)
 
         def keys(self):
             return []
+
         items = keys
         values = keys
         itervalues = iterkeys
@@ -495,12 +530,10 @@ class NoVars(object):
 
     __iter__ = iterkeys
 
+
 def _hide_passwd(items):
     for k, v in items:
-        if ('password' in k
-            or 'passwd' in k
-            or 'pwd' in k
-        ):
-            yield k, '******'
+        if "password" in k or "passwd" in k or "pwd" in k:
+            yield k, "******"
         else:
             yield k, v

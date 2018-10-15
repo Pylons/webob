@@ -1,55 +1,55 @@
 import calendar
 
-from datetime import (
-    date,
-    datetime,
-    timedelta,
-    tzinfo,
-    )
+from datetime import date, datetime, timedelta, tzinfo
 
-from email.utils import (
-    formatdate,
-    mktime_tz,
-    parsedate_tz,
-    )
+from email.utils import formatdate, mktime_tz, parsedate_tz
 
 import time
 
-from webob.compat import (
-    integer_types,
-    long,
-    native_,
-    text_type,
-    )
+from webob.compat import integer_types, long, native_, text_type
 
 __all__ = [
-    'UTC', 'timedelta_to_seconds',
-    'year', 'month', 'week', 'day', 'hour', 'minute', 'second',
-    'parse_date', 'serialize_date',
-    'parse_date_delta', 'serialize_date_delta',
+    "UTC",
+    "timedelta_to_seconds",
+    "year",
+    "month",
+    "week",
+    "day",
+    "hour",
+    "minute",
+    "second",
+    "parse_date",
+    "serialize_date",
+    "parse_date_delta",
+    "serialize_date_delta",
 ]
 
-_now = datetime.now # hook point for unit tests
+_now = datetime.now  # hook point for unit tests
+
 
 class _UTC(tzinfo):
     def dst(self, dt):
         return timedelta(0)
+
     def utcoffset(self, dt):
         return timedelta(0)
+
     def tzname(self, dt):
-        return 'UTC'
+        return "UTC"
+
     def __repr__(self):
-        return 'UTC'
+        return "UTC"
+
 
 UTC = _UTC()
-
 
 
 def timedelta_to_seconds(td):
     """
     Converts a timedelta instance to seconds.
     """
-    return td.seconds + (td.days*24*60*60)
+    return td.seconds + (td.days * 24 * 60 * 60)
+
 
 day = timedelta(days=1)
 week = timedelta(weeks=1)
@@ -78,6 +78,7 @@ def parse_date(value):
     t = mktime_tz(t)
     return datetime.fromtimestamp(t, UTC)
 
+
 def serialize_date(dt):
     if isinstance(dt, (bytes, text_type)):
         return native_(dt)
@@ -90,9 +91,9 @@ def serialize_date(dt):
     if not (isinstance(dt, float) or isinstance(dt, integer_types)):
         raise ValueError(
             "You must pass in a datetime, date, time tuple, or integer object, "
-            "not %r" % dt)
+            "not %r" % dt
+        )
     return formatdate(dt, usegmt=True)
-
 
 
 def parse_date_delta(value):
