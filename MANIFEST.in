@@ -1,0 +1,13 @@
+graft src
+graft docs
+prune docs/_build
+graft tests
+
+include README.rst
+include CHANGES.txt HISTORY.txt
+include contributing.md RELEASING.rst
+include .coveragerc
+include tox.ini appveyor.yml .travis.yml rtd.txt
+
+global-exclude __pycache__ *.py[cod]
+global-exclude .DS_Store
