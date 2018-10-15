@@ -17,12 +17,14 @@ class QuietHandler(WSGIRequestHandler):
     def log_request(self, *args):
         pass
 
+
 class QuietServer(WSGIServer):
     def handle_error(self, req, addr):
         pass
 
+
 def _make_test_server(app):
-    maxport = ((1 << 16) - 1)
+    maxport = (1 << 16) - 1
 
     # we'll make 3 attempts to find a free port
 
@@ -30,7 +32,7 @@ def _make_test_server(app):
         try:
             port = random.randint(maxport // 2, maxport)
             server = make_server(
-                'localhost',
+                "localhost",
                 port,
                 app,
                 server_class=QuietServer,
@@ -61,7 +63,7 @@ def serve():
             server.shutdown()
             worker.join(1)
             if worker.isAlive():
-                log.warning('worker is hanged')
+                log.warning("worker is hanged")
             else:
                 log.debug("server stopped")
 

@@ -3,10 +3,12 @@ Represents the Cache-Control header
 """
 import re
 
+
 class UpdateDict(dict):
     """
     Dict that has a callback on all updates
     """
+
     # these are declared as class attributes so that
     # we don't need to override constructor just to
     # set some defaults
@@ -57,9 +59,8 @@ class UpdateDict(dict):
         return v
 
 
-token_re = re.compile(
-    r'([a-zA-Z][a-zA-Z_-]*)\s*(?:=(?:"([^"]*)"|([^ \t",;]*)))?')
-need_quote_re = re.compile(r'[^a-zA-Z0-9._-]')
+token_re = re.compile(r'([a-zA-Z][a-zA-Z_-]*)\s*(?:=(?:"([^"]*)"|([^ \t",;]*)))?')
+need_quote_re = re.compile(r"[^a-zA-Z0-9._-]")
 
 
 class exists_property(object):
@@ -67,6 +68,7 @@ class exists_property(object):
     Represents a property that either is listed in the Cache-Control
     header, or is not listed (has no value)
     """
+
     def __init__(self, prop, type=None):
         self.prop = prop
         self.type = type
@@ -77,11 +79,11 @@ class exists_property(object):
         return self.prop in obj.properties
 
     def __set__(self, obj, value):
-        if (self.type is not None
-            and self.type != obj.type):
+        if self.type is not None and self.type != obj.type:
             raise AttributeError(
-                "The property %s only applies to %s Cache-Control" % (
-                    self.prop, self.type))
+                "The property %s only applies to %s Cache-Control"
+                % (self.prop, self.type)
+            )
 
         if value:
             obj.properties[self.prop] = None
@@ -99,6 +101,7 @@ class value_property(object):
 
     When no value is actually given, the value of self.none is returned.
     """
+
     def __init__(self, prop, default=None, none=None, type=None):
         self.prop = prop
         self.default = default
@@ -118,16 +121,16 @@ class value_property(object):
             return self.default
 
     def __set__(self, obj, value):
-        if (self.type is not None
-            and self.type != obj.type):
+        if self.type is not None and self.type != obj.type:
             raise AttributeError(
-                "The property %s only applies to %s Cache-Control" % (
-                    self.prop, self.type))
+                "The property %s only applies to %s Cache-Control"
+                % (self.prop, self.type)
+            )
         if value == self.default:
             if self.prop in obj.properties:
                 del obj.properties[self.prop]
         elif value is True:
-            obj.properties[self.prop] = None # Empty value, but present
+            obj.properties[self.prop] = None  # Empty value, but present
         else:
             obj.properties[self.prop] = value
 
@@ -180,31 +183,30 @@ class CacheControl(object):
         return obj
 
     def __repr__(self):
-        return '<CacheControl %r>' % str(self)
+        return "<CacheControl %r>" % str(self)
 
     # Request values:
     # no-cache shared (below)
     # no-store shared (below)
     # max-age shared  (below)
-    max_stale = value_property('max-stale', none='*', type='request')
-    min_fresh = value_property('min-fresh', type='request')
+    max_stale = value_property("max-stale", none="*", type="request")
+    min_fresh = value_property("min-fresh", type="request")
     # no-transform shared (below)
-    only_if_cached = exists_property('only-if-cached', type='request')
+    only_if_cached = exists_property("only-if-cached", type="request")
 
     # Response values:
-    public = exists_property('public', type='response')
-    private = value_property('private', none='*', type='response')
-    no_cache = value_property('no-cache', none='*')
-    no_store = exists_property('no-store')
-    no_transform = exists_property('no-transform')
-    must_revalidate = exists_property('must-revalidate', type='response')
-    proxy_revalidate = exists_property('proxy-revalidate', type='response')
-    max_age = value_property('max-age', none=-1)
-    s_maxage = value_property('s-maxage', type='response')
+    public = exists_property("public", type="response")
+    private = value_property("private", none="*", type="response")
+    no_cache = value_property("no-cache", none="*")
+    no_store = exists_property("no-store")
+    no_transform = exists_property("no-transform")
+    must_revalidate = exists_property("must-revalidate", type="response")
+    proxy_revalidate = exists_property("proxy-revalidate", type="response")
+    max_age = value_property("max-age", none=-1)
+    s_maxage = value_property("s-maxage", type="response")
     s_max_age = s_maxage
-    stale_while_revalidate = value_property(
-        'stale-while-revalidate', type='response')
-    stale_if_error = value_property('stale-if-error', type='response')
+    stale_while_revalidate = value_property("stale-while-revalidate", type="response")
+    stale_if_error = value_property("stale-if-error", type="response")
 
     def __str__(self):
         return serialize_cache_control(self.properties)
@@ -227,5 +229,5 @@ def serialize_cache_control(properties):
         value = str(value)
         if need_quote_re.search(value):
             value = '"%s"' % value
-        parts.append('%s=%s' % (name, value))
-    return ', '.join(parts)
+        parts.append("%s=%s" % (name, value))
+    return ", ".join(parts)

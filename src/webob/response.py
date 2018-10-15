@@ -1,12 +1,10 @@
 from base64 import b64encode
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 from hashlib import md5
 import re
 import struct
 import zlib
+
 try:
     import simplejson as json
 except ImportError:
@@ -14,30 +12,17 @@ except ImportError:
 
 from webob.byterange import ContentRange
 
-from webob.cachecontrol import (
-    CacheControl,
-    serialize_cache_control,
-    )
+from webob.cachecontrol import CacheControl, serialize_cache_control
 
-from webob.compat import (
-    PY2,
-    bytes_,
-    native_,
-    text_type,
-    url_quote,
-    urlparse,
-    )
+from webob.compat import PY2, bytes_, native_, text_type, url_quote, urlparse
 
-from webob.cookies import (
-    Cookie,
-    make_cookie,
-    )
+from webob.cookies import Cookie, make_cookie
 
 from webob.datetime_utils import (
     parse_date_delta,
     serialize_date_delta,
     timedelta_to_seconds,
-    )
+)
 
 from webob.descriptors import (
     CHARSET_RE,
@@ -55,20 +40,21 @@ from webob.descriptors import (
     serialize_content_range,
     serialize_etag_response,
     serialize_int,
-    )
+)
 
 from webob.headers import ResponseHeaders
 from webob.request import BaseRequest
 from webob.util import status_reasons, status_generic_reasons, warn_deprecation
 
-__all__ = ['Response']
+__all__ = ["Response"]
 
 _PARAM_RE = re.compile(r'([a-z0-9]+)=(?:"([^"]*)"|([a-z0-9_.-]*))', re.I)
-_OK_PARAM_RE = re.compile(r'^[a-z0-9_.-]+$', re.I)
+_OK_PARAM_RE = re.compile(r"^[a-z0-9_.-]+$", re.I)
 
-_gzip_header = b'\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff'
+_gzip_header = b"\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff"
 
 _marker = object()
+
 
 class Response(object):
     """
@@ -160,11 +146,11 @@ class Response(object):
       no ``charset`` has been set for the ``Content-Type``.
     """
 
-    default_content_type = 'text/html'
-    default_charset = 'UTF-8'
-    unicode_errors = 'strict'
+    default_content_type = "text/html"
+    default_charset = "UTF-8"
+    unicode_errors = "strict"
     default_conditional_response = False
-    default_body_encoding = 'UTF-8'
+    default_body_encoding = "UTF-8"
 
     # These two are only around so that when people pass them into the
     # constructor they correctly get saved and set, however they are not used
@@ -177,30 +163,37 @@ class Response(object):
     # __init__, from_file, copy
     #
 
-    def __init__(self, body=None, status=None, headerlist=None, app_iter=None,
-                 content_type=None, conditional_response=None, charset=_marker,
-                 **kw):
+    def __init__(
+        self,
+        body=None,
+        status=None,
+        headerlist=None,
+        app_iter=None,
+        content_type=None,
+        conditional_response=None,
+        charset=_marker,
+        **kw
+    ):
         # Do some sanity checking, and turn json_body into an actual body
-        if app_iter is None and body is None and ('json_body' in kw or 'json' in kw):
-            if 'json_body' in kw:
-                json_body = kw.pop('json_body')
+        if app_iter is None and body is None and ("json_body" in kw or "json" in kw):
+            if "json_body" in kw:
+                json_body = kw.pop("json_body")
             else:
-                json_body = kw.pop('json')
-            body = json.dumps(json_body, separators=(',', ':')).encode('UTF-8')
+                json_body = kw.pop("json")
+            body = json.dumps(json_body, separators=(",", ":")).encode("UTF-8")
 
             if content_type is None:
-                content_type = 'application/json'
+                content_type = "application/json"
 
         if app_iter is None:
             if body is None:
-                body = b''
+                body = b""
         elif body is not None:
-            raise TypeError(
-                "You may only give one of the body and app_iter arguments")
+            raise TypeError("You may only give one of the body and app_iter arguments")
 
         # Set up Response.status
         if status is None:
-            self._status = '200 OK'
+            self._status = "200 OK"
         else:
             self.status = status
 
@@ -226,9 +219,10 @@ class Response(object):
             encoding = charset
 
         # Does the status code have a body or not?
-        code_has_body = (
-            self._status[0] != '1' and
-            self._status[:3] not in ('204', '205', '304')
+        code_has_body = self._status[0] != "1" and self._status[:3] not in (
+            "204",
+            "205",
+            "304",
         )
 
         # We only set the content_type to the one passed to the constructor or
@@ -251,7 +245,7 @@ class Response(object):
         if headerlist is None and code_has_body and content_type:
             # Set up the charset, if the content_type doesn't already have one
 
-            has_charset = 'charset=' in content_type
+            has_charset = "charset=" in content_type
 
             # If the Content-Type already has a charset, we don't set the user
             # provided charset on the Content-Type, so we shouldn't use it as
@@ -266,11 +260,7 @@ class Response(object):
 
             new_charset = encoding
 
-            if (
-                not has_charset and
-                charset is _marker and
-                self.default_charset
-            ):
+            if not has_charset and charset is _marker and self.default_charset:
                 new_charset = self.default_charset
 
             # Optimize for the default_content_type as shipped by
@@ -282,16 +272,12 @@ class Response(object):
             # the user supplied charset is solely used for encoding the
             # body if it is a text_type
 
-            if (
-                new_charset and
-                (
-                    content_type == 'text/html' or
-                    _content_type_has_charset(content_type)
-                )
+            if new_charset and (
+                content_type == "text/html" or _content_type_has_charset(content_type)
             ):
-                content_type += '; charset=' + new_charset
+                content_type += "; charset=" + new_charset
 
-            self._headerlist.append(('Content-Type', content_type))
+            self._headerlist.append(("Content-Type", content_type))
 
         # Set up conditional response
         if conditional_response is None:
@@ -307,21 +293,20 @@ class Response(object):
                 encoding = encoding or self.charset
                 if encoding is None:
                     raise TypeError(
-                        "You cannot set the body to a text value without a "
-                        "charset")
+                        "You cannot set the body to a text value without a " "charset"
+                    )
                 body = body.encode(encoding)
             app_iter = [body]
 
             if headerlist is not None:
                 self._headerlist[:] = [
                     (k, v)
-                    for (k, v)
-                    in self._headerlist
-                    if k.lower() != 'content-length'
+                    for (k, v) in self._headerlist
+                    if k.lower() != "content-length"
                 ]
-            self._headerlist.append(('Content-Length', str(len(body))))
+            self._headerlist.append(("Content-Length", str(len(body))))
         elif app_iter is None and not code_has_body:
-            app_iter = [b'']
+            app_iter = [b""]
 
         self._app_iter = app_iter
 
@@ -329,8 +314,7 @@ class Response(object):
         for name, value in kw.items():
             if not hasattr(self.__class__, name):
                 # Not a basic attribute
-                raise TypeError(
-                    "Unexpected keyword: %s=%r" % (name, value))
+                raise TypeError("Unexpected keyword: %s=%r" % (name, value))
             setattr(self, name, value)
 
     @classmethod
@@ -349,15 +333,15 @@ class Response(object):
         is_text = isinstance(status, text_type)
 
         if is_text:
-            _colon = ':'
-            _http = 'HTTP/'
+            _colon = ":"
+            _http = "HTTP/"
         else:
-            _colon = b':'
-            _http = b'HTTP/'
+            _colon = b":"
+            _http = b"HTTP/"
 
         if status.startswith(_http):
             (http_ver, status_num, status_text) = status.split(None, 2)
-            status = '%s %s' % (native_(status_num), native_(status_text))
+            status = "%s %s" % (native_(status_num), native_(status_text))
 
         while 1:
             line = fp.readline().strip()
@@ -367,17 +351,12 @@ class Response(object):
             try:
                 header_name, value = line.split(_colon, 1)
             except ValueError:
-                raise ValueError('Bad header line: %r' % line)
+                raise ValueError("Bad header line: %r" % line)
             value = value.strip()
-            headerlist.append((
-                native_(header_name, 'latin-1'),
-                native_(value, 'latin-1')
-            ))
-        r = cls(
-            status=status,
-            headerlist=headerlist,
-            app_iter=(),
-        )
+            headerlist.append(
+                (native_(header_name, "latin-1"), native_(value, "latin-1"))
+            )
+        r = cls(status=status, headerlist=headerlist, app_iter=())
         body = fp.read(r.content_length or 0)
         if is_text:
             r.text = body
@@ -396,25 +375,25 @@ class Response(object):
             status=self._status,
             headerlist=self._headerlist[:],
             app_iter=app_iter,
-            conditional_response=self.conditional_response)
+            conditional_response=self.conditional_response,
+        )
 
     #
     # __repr__, __str__
     #
 
     def __repr__(self):
-        return '<%s at 0x%x %s>' % (self.__class__.__name__, abs(id(self)),
-                                    self.status)
+        return "<%s at 0x%x %s>" % (self.__class__.__name__, abs(id(self)), self.status)
 
     def __str__(self, skip_body=False):
         parts = [self.status]
         if not skip_body:
             # Force enumeration of the body (to set content-length)
             self.body
-        parts += map('%s: %s'.__mod__, self.headerlist)
+        parts += map("%s: %s".__mod__, self.headerlist)
         if not skip_body and self.body:
-            parts += ['', self.body if PY2 else self.text]
-        return '\r\n'.join(parts)
+            parts += ["", self.body if PY2 else self.text]
+        return "\r\n".join(parts)
 
     #
     # status, status_code/status_int
@@ -436,13 +415,13 @@ class Response(object):
             return
         if not PY2:
             if isinstance(value, bytes):
-                value = value.decode('ascii')
+                value = value.decode("ascii")
         elif isinstance(value, text_type):
-            value = value.encode('ascii')
+            value = value.encode("ascii")
         if not isinstance(value, str):
             raise TypeError(
-                "You must set status to a string or integer (not %s)"
-                % type(value))
+                "You must set status to a string or integer (not %s)" % type(value)
+            )
 
         # Attempt to get the status code itself, if this fails we should fail
         try:
@@ -451,7 +430,7 @@ class Response(object):
             # ValueError as a test
             int(value.split()[0])
         except ValueError:
-            raise ValueError('Invalid status code, integer required.')
+            raise ValueError("Invalid status code, integer required.")
         self._status = value
 
     status = property(_status__get, _status__set, doc=_status__get.__doc__)
@@ -464,12 +443,13 @@ class Response(object):
 
     def _status_code__set(self, code):
         try:
-            self._status = '%d %s' % (code, status_reasons[code])
+            self._status = "%d %s" % (code, status_reasons[code])
         except KeyError:
-            self._status = '%d %s' % (code, status_generic_reasons[code // 100])
+            self._status = "%d %s" % (code, status_generic_reasons[code // 100])
 
-    status_code = status_int = property(_status_code__get, _status_code__set,
-                                        doc=_status_code__get.__doc__)
+    status_code = status_int = property(
+        _status_code__get, _status_code__set, doc=_status_code__get.__doc__
+    )
 
     #
     # headerslist, headers
@@ -484,7 +464,7 @@ class Response(object):
     def _headerlist__set(self, value):
         self._headers = None
         if not isinstance(value, list):
-            if hasattr(value, 'items'):
+            if hasattr(value, "items"):
                 value = value.items()
             value = list(value)
         self._headerlist = value
@@ -492,8 +472,12 @@ class Response(object):
     def _headerlist__del(self):
         self.headerlist = []
 
-    headerlist = property(_headerlist__get, _headerlist__set,
-                          _headerlist__del, doc=_headerlist__get.__doc__)
+    headerlist = property(
+        _headerlist__get,
+        _headerlist__set,
+        _headerlist__del,
+        doc=_headerlist__get.__doc__,
+    )
 
     def _headers__get(self):
         """
@@ -504,7 +488,7 @@ class Response(object):
         return self._headers
 
     def _headers__set(self, value):
-        if hasattr(value, 'items'):
+        if hasattr(value, "items"):
             value = value.items()
         self.headerlist = value
         self._headers = None
@@ -521,17 +505,17 @@ class Response(object):
         the entire app_iter if necessary.
         """
         app_iter = self._app_iter
-#         try:
-#             if len(app_iter) == 1:
-#                 return app_iter[0]
-#         except:
-#             pass
+        #         try:
+        #             if len(app_iter) == 1:
+        #                 return app_iter[0]
+        #         except:
+        #             pass
         if isinstance(app_iter, list) and len(app_iter) == 1:
             return app_iter[0]
         if app_iter is None:
             raise AttributeError("No body has been set")
         try:
-            body = b''.join(app_iter)
+            body = b"".join(app_iter)
         finally:
             iter_close(app_iter)
         if isinstance(body, text_type):
@@ -546,28 +530,30 @@ class Response(object):
         elif self.content_length != len(body):
             raise AssertionError(
                 "Content-Length is different from actual app_iter length "
-                "(%r!=%r)"
-                % (self.content_length, len(body))
+                "(%r!=%r)" % (self.content_length, len(body))
             )
         return body
 
-    def _body__set(self, value=b''):
+    def _body__set(self, value=b""):
         if not isinstance(value, bytes):
             if isinstance(value, text_type):
-                msg = ("You cannot set Response.body to a text object "
-                       "(use Response.text)")
+                msg = (
+                    "You cannot set Response.body to a text object "
+                    "(use Response.text)"
+                )
             else:
-                msg = ("You can only set the body to a binary type (not %s)" %
-                       type(value))
+                msg = "You can only set the body to a binary type (not %s)" % type(
+                    value
+                )
             raise TypeError(msg)
         if self._app_iter is not None:
             self.content_md5 = None
         self._app_iter = [value]
         self.content_length = len(value)
 
-#     def _body__del(self):
-#         self.body = ''
-#         #self.content_length = None
+    #     def _body__del(self):
+    #         self.body = ''
+    #         #self.content_length = None
 
     body = property(_body__get, _body__set, _body__set)
 
@@ -584,10 +570,10 @@ class Response(object):
 
         """
         # Note: UTF-8 is a content-type specific default for JSON
-        return json.loads(self.body.decode('UTF-8'))
+        return json.loads(self.body.decode("UTF-8"))
 
     def _json_body__set(self, value):
-        self.body = json.dumps(value, separators=(',', ':')).encode('UTF-8')
+        self.body = json.dumps(value, separators=(",", ":")).encode("UTF-8")
 
     def _json_body__del(self):
         del self.body
@@ -604,12 +590,12 @@ class Response(object):
         app_iter = self._app_iter
 
         if isinstance(app_iter, list) and len(app_iter) == 1:
-            if app_iter[0] != b'':
+            if app_iter[0] != b"":
                 return True
             else:
                 return False
 
-        if app_iter is None: # pragma: no cover
+        if app_iter is None:  # pragma: no cover
             return False
 
         return True
@@ -643,7 +629,8 @@ class Response(object):
         if not isinstance(value, text_type):
             raise TypeError(
                 "You can only set Response.text to a unicode string "
-                "(not %s)" % type(value))
+                "(not %s)" % type(value)
+            )
         encoding = self.charset or self.default_body_encoding
         self.body = value.encode(encoding)
 
@@ -652,8 +639,9 @@ class Response(object):
 
     text = property(_text__get, _text__set, _text__del, doc=_text__get.__doc__)
 
-    unicode_body = ubody = property(_text__get, _text__set, _text__del,
-                                    "Deprecated alias for .text")
+    unicode_body = ubody = property(
+        _text__get, _text__set, _text__del, "Deprecated alias for .text"
+    )
 
     #
     # body_file, write(text)
@@ -673,8 +661,9 @@ class Response(object):
     def _body_file__del(self):
         del self.body
 
-    body_file = property(_body_file__get, _body_file__set, _body_file__del,
-                         doc=_body_file__get.__doc__)
+    body_file = property(
+        _body_file__get, _body_file__set, _body_file__del, doc=_body_file__get.__doc__
+    )
 
     def write(self, text):
         if not isinstance(text, bytes):
@@ -682,8 +671,7 @@ class Response(object):
                 msg = "You can only write str to a Response.body_file, not %s"
                 raise TypeError(msg % type(text))
             if not self.charset:
-                msg = ("You can only write text to Response if charset has "
-                       "been set")
+                msg = "You can only write text to Response if charset has " "been set"
                 raise TypeError(msg)
             text = text.encode(self.charset)
         app_iter = self._app_iter
@@ -721,63 +709,66 @@ class Response(object):
         self._app_iter = []
         self.content_length = None
 
-    app_iter = property(_app_iter__get, _app_iter__set, _app_iter__del,
-                        doc=_app_iter__get.__doc__)
+    app_iter = property(
+        _app_iter__get, _app_iter__set, _app_iter__del, doc=_app_iter__get.__doc__
+    )
 
     #
     # headers attrs
     #
 
-    allow = list_header('Allow', '14.7')
+    allow = list_header("Allow", "14.7")
     # TODO: (maybe) support response.vary += 'something'
     # TODO: same thing for all listy headers
-    vary = list_header('Vary', '14.44')
+    vary = list_header("Vary", "14.44")
 
     content_length = converter(
-        header_getter('Content-Length', '14.17'),
-        parse_int, serialize_int, 'int')
-
-    content_encoding = header_getter('Content-Encoding', '14.11')
-    content_language = list_header('Content-Language', '14.12')
-    content_location = header_getter('Content-Location', '14.14')
-    content_md5 = header_getter('Content-MD5', '14.14')
-    content_disposition = header_getter('Content-Disposition', '19.5.1')
-
-    accept_ranges = header_getter('Accept-Ranges', '14.5')
-    content_range = converter(
-        header_getter('Content-Range', '14.16'),
-        parse_content_range, serialize_content_range, 'ContentRange object')
-
-    date = date_header('Date', '14.18')
-    expires = date_header('Expires', '14.21')
-    last_modified = date_header('Last-Modified', '14.29')
-
-    _etag_raw = header_getter('ETag', '14.19')
-    etag = converter(
-        _etag_raw,
-        parse_etag_response, serialize_etag_response,
-        'Entity tag'
+        header_getter("Content-Length", "14.17"), parse_int, serialize_int, "int"
     )
+
+    content_encoding = header_getter("Content-Encoding", "14.11")
+    content_language = list_header("Content-Language", "14.12")
+    content_location = header_getter("Content-Location", "14.14")
+    content_md5 = header_getter("Content-MD5", "14.14")
+    content_disposition = header_getter("Content-Disposition", "19.5.1")
+
+    accept_ranges = header_getter("Accept-Ranges", "14.5")
+    content_range = converter(
+        header_getter("Content-Range", "14.16"),
+        parse_content_range,
+        serialize_content_range,
+        "ContentRange object",
+    )
+
+    date = date_header("Date", "14.18")
+    expires = date_header("Expires", "14.21")
+    last_modified = date_header("Last-Modified", "14.29")
+
+    _etag_raw = header_getter("ETag", "14.19")
+    etag = converter(
+        _etag_raw, parse_etag_response, serialize_etag_response, "Entity tag"
+    )
+
     @property
     def etag_strong(self):
         return parse_etag_response(self._etag_raw, strong=True)
 
-    location = header_getter('Location', '14.30')
-    pragma = header_getter('Pragma', '14.32')
-    age = converter(
-        header_getter('Age', '14.6'),
-        parse_int_safe, serialize_int, 'int')
+    location = header_getter("Location", "14.30")
+    pragma = header_getter("Pragma", "14.32")
+    age = converter(header_getter("Age", "14.6"), parse_int_safe, serialize_int, "int")
 
     retry_after = converter(
-        header_getter('Retry-After', '14.37'),
-        parse_date_delta, serialize_date_delta, 'HTTP date or delta seconds')
+        header_getter("Retry-After", "14.37"),
+        parse_date_delta,
+        serialize_date_delta,
+        "HTTP date or delta seconds",
+    )
 
-    server = header_getter('Server', '14.38')
+    server = header_getter("Server", "14.38")
 
     # TODO: the standard allows this to be a list of challenges
     www_authenticate = converter(
-        header_getter('WWW-Authenticate', '14.47'),
-        parse_auth, serialize_auth,
+        header_getter("WWW-Authenticate", "14.47"), parse_auth, serialize_auth
     )
 
     #
@@ -791,7 +782,7 @@ class Response(object):
         There is no checking to validate that a ``content_type`` actually
         allows for a ``charset`` parameter.
         """
-        header = self.headers.get('Content-Type')
+        header = self.headers.get("Content-Type")
         if not header:
             return None
         match = CHARSET_RE.search(header)
@@ -803,28 +794,30 @@ class Response(object):
         if charset is None:
             self._charset__del()
             return
-        header = self.headers.get('Content-Type', None)
+        header = self.headers.get("Content-Type", None)
         if header is None:
-            raise AttributeError("You cannot set the charset when no "
-                                 "content-type is defined")
+            raise AttributeError(
+                "You cannot set the charset when no " "content-type is defined"
+            )
         match = CHARSET_RE.search(header)
         if match:
-            header = header[:match.start()] + header[match.end():]
-        header += '; charset=%s' % charset
-        self.headers['Content-Type'] = header
+            header = header[: match.start()] + header[match.end() :]
+        header += "; charset=%s" % charset
+        self.headers["Content-Type"] = header
 
     def _charset__del(self):
-        header = self.headers.pop('Content-Type', None)
+        header = self.headers.pop("Content-Type", None)
         if header is None:
             # Don't need to remove anything
             return
         match = CHARSET_RE.search(header)
         if match:
-            header = header[:match.start()] + header[match.end():]
-        self.headers['Content-Type'] = header
+            header = header[: match.start()] + header[match.end() :]
+        self.headers["Content-Type"] = header
 
-    charset = property(_charset__get, _charset__set, _charset__del,
-                       doc=_charset__get.__doc__)
+    charset = property(
+        _charset__get, _charset__set, _charset__del, doc=_charset__get.__doc__
+    )
 
     #
     # content_type
@@ -852,10 +845,10 @@ class Response(object):
                 resp.content_type = 'application/something'
                 resp.content_type_params = params
         """
-        header = self.headers.get('Content-Type')
+        header = self.headers.get("Content-Type")
         if not header:
             return None
-        return header.split(';', 1)[0]
+        return header.split(";", 1)[0]
 
     def _content_type__set(self, value):
         if not value:
@@ -866,14 +859,11 @@ class Response(object):
 
             # Set up the charset if the content-type doesn't have one
 
-            has_charset = 'charset=' in content_type
+            has_charset = "charset=" in content_type
 
             new_charset = None
 
-            if (
-                not has_charset and
-                self.default_charset
-            ):
+            if not has_charset and self.default_charset:
                 new_charset = self.default_charset
 
             # Optimize for the default_content_type as shipped by
@@ -881,22 +871,22 @@ class Response(object):
             # otherwise add a charset if the content_type has a charset.
             #
             # We add the default charset if the content-type is "texty".
-            if (
-                new_charset and
-                (
-                    content_type == 'text/html' or
-                    _content_type_has_charset(content_type)
-                )
+            if new_charset and (
+                content_type == "text/html" or _content_type_has_charset(content_type)
             ):
-                content_type += '; charset=' + new_charset
+                content_type += "; charset=" + new_charset
 
-            self.headers['Content-Type'] = content_type
+            self.headers["Content-Type"] = content_type
 
     def _content_type__del(self):
-        self.headers.pop('Content-Type', None)
+        self.headers.pop("Content-Type", None)
 
-    content_type = property(_content_type__get, _content_type__set,
-                            _content_type__del, doc=_content_type__get.__doc__)
+    content_type = property(
+        _content_type__get,
+        _content_type__set,
+        _content_type__del,
+        doc=_content_type__get.__doc__,
+    )
 
     #
     # content_type_params
@@ -909,13 +899,13 @@ class Response(object):
         (This is not a view, set to change, modifications of the dict will not
         be applied otherwise.)
         """
-        params = self.headers.get('Content-Type', '')
-        if ';' not in params:
+        params = self.headers.get("Content-Type", "")
+        if ";" not in params:
             return {}
-        params = params.split(';', 1)[1]
+        params = params.split(";", 1)[1]
         result = {}
         for match in _PARAM_RE.finditer(params):
-            result[match.group(1)] = match.group(2) or match.group(3) or ''
+            result[match.group(1)] = match.group(2) or match.group(3) or ""
         return result
 
     def _content_type_params__set(self, value_dict):
@@ -927,30 +917,41 @@ class Response(object):
         for k, v in sorted(value_dict.items()):
             if not _OK_PARAM_RE.search(v):
                 v = '"%s"' % v.replace('"', '\\"')
-            params.append('; %s=%s' % (k, v))
-        ct = self.headers.pop('Content-Type', '').split(';', 1)[0]
-        ct += ''.join(params)
-        self.headers['Content-Type'] = ct
+            params.append("; %s=%s" % (k, v))
+        ct = self.headers.pop("Content-Type", "").split(";", 1)[0]
+        ct += "".join(params)
+        self.headers["Content-Type"] = ct
 
     def _content_type_params__del(self):
-        self.headers['Content-Type'] = self.headers.get(
-            'Content-Type', '').split(';', 1)[0]
+        self.headers["Content-Type"] = self.headers.get("Content-Type", "").split(
+            ";", 1
+        )[0]
 
     content_type_params = property(
         _content_type_params__get,
         _content_type_params__set,
         _content_type_params__del,
-        _content_type_params__get.__doc__
+        _content_type_params__get.__doc__,
     )
 
     #
     # set_cookie, unset_cookie, delete_cookie, merge_cookies
     #
 
-    def set_cookie(self, name, value='', max_age=None,
-                   path='/', domain=None, secure=False, httponly=False,
-                   comment=None, expires=None, overwrite=False,
-                   samesite=None):
+    def set_cookie(
+        self,
+        name,
+        value="",
+        max_age=None,
+        path="/",
+        domain=None,
+        secure=False,
+        httponly=False,
+        comment=None,
+        expires=None,
+        overwrite=False,
+        samesite=None,
+    ):
         """
         Set (add) a cookie for the response.
 
@@ -1041,8 +1042,12 @@ class Response(object):
 
         # Remove in WebOb 1.10
         if expires:
-            warn_deprecation('Argument "expires" will be removed in a future '
-                             'version of WebOb, please use "max_age".', 1.10, 1)
+            warn_deprecation(
+                'Argument "expires" will be removed in a future '
+                'version of WebOb, please use "max_age".',
+                1.10,
+                1,
+            )
 
         if overwrite:
             self.unset_cookie(name, strict=False)
@@ -1060,14 +1065,22 @@ class Response(object):
 
             max_age = expires - datetime.utcnow()
 
-        value = bytes_(value, 'utf-8')
+        value = bytes_(value, "utf-8")
 
-        cookie = make_cookie(name, value, max_age=max_age, path=path,
-                domain=domain, secure=secure, httponly=httponly,
-                comment=comment, samesite=samesite)
-        self.headerlist.append(('Set-Cookie', cookie))
+        cookie = make_cookie(
+            name,
+            value,
+            max_age=max_age,
+            path=path,
+            domain=domain,
+            secure=secure,
+            httponly=httponly,
+            comment=comment,
+            samesite=samesite,
+        )
+        self.headerlist.append(("Set-Cookie", cookie))
 
-    def delete_cookie(self, name, path='/', domain=None):
+    def delete_cookie(self, name, path="/", domain=None):
         """
         Delete a cookie from the client.  Note that ``path`` and ``domain``
         must match how the cookie was originally set.
@@ -1081,19 +1094,19 @@ class Response(object):
         """
         Unset a cookie with the given name (remove it from the response).
         """
-        existing = self.headers.getall('Set-Cookie')
+        existing = self.headers.getall("Set-Cookie")
         if not existing and not strict:
             return
         cookies = Cookie()
         for header in existing:
             cookies.load(header)
         if isinstance(name, text_type):
-            name = name.encode('utf8')
+            name = name.encode("utf8")
         if name in cookies:
             del cookies[name]
-            del self.headers['Set-Cookie']
+            del self.headers["Set-Cookie"]
             for m in cookies.values():
-                self.headerlist.append(('Set-Cookie', m.serialize()))
+                self.headerlist.append(("Set-Cookie", m.serialize()))
         elif strict:
             raise KeyError("No cookie has been set with the name %r" % name)
 
@@ -1104,20 +1117,23 @@ class Response(object):
         If the ``resp`` is a :class:`webob.Response` object, then the
         other object will be modified in-place.
         """
-        if not self.headers.get('Set-Cookie'):
+        if not self.headers.get("Set-Cookie"):
             return resp
         if isinstance(resp, Response):
-            for header in self.headers.getall('Set-Cookie'):
-                resp.headers.add('Set-Cookie', header)
+            for header in self.headers.getall("Set-Cookie"):
+                resp.headers.add("Set-Cookie", header)
             return resp
         else:
-            c_headers = [h for h in self.headerlist if
-                         h[0].lower() == 'set-cookie']
+            c_headers = [h for h in self.headerlist if h[0].lower() == "set-cookie"]
+
             def repl_app(environ, start_response):
                 def repl_start_response(status, headers, exc_info=None):
-                    return start_response(status, headers + c_headers,
-                                          exc_info=exc_info)
+                    return start_response(
+                        status, headers + c_headers, exc_info=exc_info
+                    )
+
                 return resp(environ, repl_start_response)
+
             return repl_app
 
     #
@@ -1131,13 +1147,14 @@ class Response(object):
         Get/set/modify the Cache-Control header (`HTTP spec section 14.9
         <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9>`_).
         """
-        value = self.headers.get('cache-control', '')
+        value = self.headers.get("cache-control", "")
         if self._cache_control_obj is None:
             self._cache_control_obj = CacheControl.parse(
-                value, updates_to=self._update_cache_control, type='response')
+                value, updates_to=self._update_cache_control, type="response"
+            )
             self._cache_control_obj.header_value = value
         if self._cache_control_obj.header_value != value:
-            new_obj = CacheControl.parse(value, type='response')
+            new_obj = CacheControl.parse(value, type="response")
             self._cache_control_obj.properties.clear()
             self._cache_control_obj.properties.update(new_obj.properties)
             self._cache_control_obj.header_value = value
@@ -1148,14 +1165,14 @@ class Response(object):
         if not value:
             value = ""
         if isinstance(value, dict):
-            value = CacheControl(value, 'response')
+            value = CacheControl(value, "response")
         if isinstance(value, text_type):
             value = str(value)
         if isinstance(value, str):
             if self._cache_control_obj is None:
-                self.headers['Cache-Control'] = value
+                self.headers["Cache-Control"] = value
                 return
-            value = CacheControl.parse(value, 'response')
+            value = CacheControl.parse(value, "response")
         cache = self.cache_control
         cache.properties.clear()
         cache.properties.update(value.properties)
@@ -1166,14 +1183,17 @@ class Response(object):
     def _update_cache_control(self, prop_dict):
         value = serialize_cache_control(prop_dict)
         if not value:
-            if 'Cache-Control' in self.headers:
-                del self.headers['Cache-Control']
+            if "Cache-Control" in self.headers:
+                del self.headers["Cache-Control"]
         else:
-            self.headers['Cache-Control'] = value
+            self.headers["Cache-Control"] = value
 
     cache_control = property(
-        _cache_control__get, _cache_control__set,
-        _cache_control__del, doc=_cache_control__get.__doc__)
+        _cache_control__get,
+        _cache_control__set,
+        _cache_control__del,
+        doc=_cache_control__get.__doc__,
+    )
 
     #
     # cache_expires
@@ -1204,9 +1224,9 @@ class Response(object):
             cache_control.post_check = 0
             cache_control.pre_check = 0
             self.expires = datetime.utcnow()
-            if 'last-modified' not in self.headers:
+            if "last-modified" not in self.headers:
                 self.last_modified = datetime.utcnow()
-            self.pragma = 'no-cache'
+            self.pragma = "no-cache"
         else:
             cache_control.properties.clear()
             cache_control.max_age = seconds
@@ -1221,17 +1241,16 @@ class Response(object):
     # encode_content, decode_content, md5_etag
     #
 
-    def encode_content(self, encoding='gzip', lazy=False):
+    def encode_content(self, encoding="gzip", lazy=False):
         """
         Encode the content with the given encoding (only ``gzip`` and
         ``identity`` are supported).
         """
-        assert encoding in ('identity', 'gzip'), \
-            "Unknown encoding: %r" % encoding
-        if encoding == 'identity':
+        assert encoding in ("identity", "gzip"), "Unknown encoding: %r" % encoding
+        if encoding == "identity":
             self.decode_content()
             return
-        if self.content_encoding == 'gzip':
+        if self.content_encoding == "gzip":
             return
         if lazy:
             self.app_iter = gzip_app_iter(self._app_iter)
@@ -1239,19 +1258,21 @@ class Response(object):
         else:
             self.app_iter = list(gzip_app_iter(self._app_iter))
             self.content_length = sum(map(len, self._app_iter))
-        self.content_encoding = 'gzip'
+        self.content_encoding = "gzip"
 
     def decode_content(self):
-        content_encoding = self.content_encoding or 'identity'
-        if content_encoding == 'identity':
+        content_encoding = self.content_encoding or "identity"
+        if content_encoding == "identity":
             return
-        if content_encoding not in ('gzip', 'deflate'):
+        if content_encoding not in ("gzip", "deflate"):
             raise ValueError(
-                "I don't know how to decode the content %s" % content_encoding)
-        if content_encoding == 'gzip':
+                "I don't know how to decode the content %s" % content_encoding
+            )
+        if content_encoding == "gzip":
             from gzip import GzipFile
             from io import BytesIO
-            gzip_f = GzipFile(filename='', mode='r', fileobj=BytesIO(self.body))
+
+            gzip_f = GzipFile(filename="", mode="r", fileobj=BytesIO(self.body))
             self.body = gzip_f.read()
             self.content_encoding = None
             gzip_f.close()
@@ -1273,9 +1294,9 @@ class Response(object):
             body = self.body
         md5_digest = md5(body).digest()
         md5_digest = b64encode(md5_digest)
-        md5_digest = md5_digest.replace(b'\n', b'')
+        md5_digest = md5_digest.replace(b"\n", b"")
         md5_digest = native_(md5_digest)
-        self.etag = md5_digest.strip('=')
+        self.etag = md5_digest.strip("=")
         if set_content_md5:
             self.content_md5 = md5_digest
 
@@ -1290,10 +1311,10 @@ class Response(object):
     def _abs_headerlist(self, environ):
         # Build the headerlist, if we have a Location header, make it absolute
         return [
-            (k, v) if k.lower() != 'location'
+            (k, v)
+            if k.lower() != "location"
             else (k, self._make_location_absolute(environ, v))
-            for (k, v)
-            in self._headerlist
+            for (k, v) in self._headerlist
         ]
 
     #
@@ -1310,12 +1331,12 @@ class Response(object):
         headerlist = self._abs_headerlist(environ)
 
         start_response(self.status, headerlist)
-        if environ['REQUEST_METHOD'] == 'HEAD':
+        if environ["REQUEST_METHOD"] == "HEAD":
             # Special case here...
             return EmptyResponse(self._app_iter)
         return self._app_iter
 
-    _safe_methods = ('GET', 'HEAD')
+    _safe_methods = ("GET", "HEAD")
 
     def conditional_response_app(self, environ, start_response):
         """
@@ -1332,7 +1353,7 @@ class Response(object):
 
         headerlist = self._abs_headerlist(environ)
 
-        method = environ.get('REQUEST_METHOD', 'GET')
+        method = environ.get("REQUEST_METHOD", "GET")
         if method in self._safe_methods:
             status304 = False
             if req.if_none_match and self.etag:
@@ -1340,49 +1361,52 @@ class Response(object):
             elif req.if_modified_since and self.last_modified:
                 status304 = self.last_modified <= req.if_modified_since
             if status304:
-                start_response('304 Not Modified', filter_headers(headerlist))
+                start_response("304 Not Modified", filter_headers(headerlist))
                 return EmptyResponse(self._app_iter)
         if (
-            req.range and self in req.if_range and
-            self.content_range is None and
-            method in ('HEAD', 'GET') and
-            self.status_code == 200 and
-            self.content_length is not None
+            req.range
+            and self in req.if_range
+            and self.content_range is None
+            and method in ("HEAD", "GET")
+            and self.status_code == 200
+            and self.content_length is not None
         ):
             content_range = req.range.content_range(self.content_length)
             if content_range is None:
                 iter_close(self._app_iter)
                 body = bytes_("Requested range not satisfiable: %s" % req.range)
                 headerlist = [
-                    ('Content-Length', str(len(body))),
-                    ('Content-Range', str(ContentRange(None, None,
-                                                       self.content_length))),
-                    ('Content-Type', 'text/plain'),
+                    ("Content-Length", str(len(body))),
+                    (
+                        "Content-Range",
+                        str(ContentRange(None, None, self.content_length)),
+                    ),
+                    ("Content-Type", "text/plain"),
                 ] + filter_headers(headerlist)
-                start_response('416 Requested Range Not Satisfiable',
-                               headerlist)
-                if method == 'HEAD':
+                start_response("416 Requested Range Not Satisfiable", headerlist)
+                if method == "HEAD":
                     return ()
                 return [body]
             else:
-                app_iter = self.app_iter_range(content_range.start,
-                                               content_range.stop)
+                app_iter = self.app_iter_range(content_range.start, content_range.stop)
                 if app_iter is not None:
                     # the following should be guaranteed by
                     # Range.range_for_length(length)
                     assert content_range.start is not None
                     headerlist = [
-                        ('Content-Length',
-                         str(content_range.stop - content_range.start)),
-                        ('Content-Range', str(content_range)),
-                    ] + filter_headers(headerlist, ('content-length',))
-                    start_response('206 Partial Content', headerlist)
-                    if method == 'HEAD':
+                        (
+                            "Content-Length",
+                            str(content_range.stop - content_range.start),
+                        ),
+                        ("Content-Range", str(content_range)),
+                    ] + filter_headers(headerlist, ("content-length",))
+                    start_response("206 Partial Content", headerlist)
+                    if method == "HEAD":
                         return EmptyResponse(app_iter)
                     return app_iter
 
         start_response(self.status, headerlist)
-        if method == 'HEAD':
+        if method == "HEAD":
             return EmptyResponse(self._app_iter)
         return self._app_iter
 
@@ -1392,24 +1416,25 @@ class Response(object):
         serves up only the given ``start:stop`` range.
         """
         app_iter = self._app_iter
-        if hasattr(app_iter, 'app_iter_range'):
+        if hasattr(app_iter, "app_iter_range"):
             return app_iter.app_iter_range(start, stop)
         return AppIterRange(app_iter, start, stop)
 
 
-def filter_headers(hlist, remove_headers=('content-length', 'content-type')):
+def filter_headers(hlist, remove_headers=("content-length", "content-type")):
     return [h for h in hlist if (h[0].lower() not in remove_headers)]
 
 
-def iter_file(file, block_size=1 << 18): # 256Kb
+def iter_file(file, block_size=1 << 18):  # 256Kb
     while True:
         data = file.read(block_size)
         if not data:
             break
         yield data
 
+
 class ResponseBodyFile(object):
-    mode = 'wb'
+    mode = "wb"
     closed = False
 
     def __init__(self, response):
@@ -1420,11 +1445,11 @@ class ResponseBodyFile(object):
         self.write = response.write
 
     def __repr__(self):
-        return '<body_file for %r>' % self.response
+        return "<body_file for %r>" % self.response
 
     encoding = property(
         lambda self: self.response.charset,
-        doc="The encoding of the file (inherited from response.charset)"
+        doc="The encoding of the file (inherited from response.charset)",
     )
 
     def writelines(self, seq):
@@ -1457,10 +1482,9 @@ class AppIterRange(object):
 
     def __init__(self, app_iter, start, stop):
         assert start >= 0, "Bad start: %r" % start
-        assert stop is None or (stop >= 0 and stop >= start), (
-            "Bad stop: %r" % stop)
+        assert stop is None or (stop >= 0 and stop >= start), "Bad stop: %r" % stop
         self.app_iter = iter(app_iter)
-        self._pos = 0 # position in app_iter
+        self._pos = 0  # position in app_iter
         self.start = start
         self.stop = stop
 
@@ -1474,11 +1498,11 @@ class AppIterRange(object):
             if self._pos < start:
                 continue
             elif self._pos == start:
-                return b''
+                return b""
             else:
-                chunk = chunk[start - self._pos:]
+                chunk = chunk[start - self._pos :]
                 if stop is not None and self._pos > stop:
-                    chunk = chunk[:stop - self._pos]
+                    chunk = chunk[: stop - self._pos]
                     assert len(chunk) == stop - start
                 return chunk
         else:
@@ -1498,9 +1522,9 @@ class AppIterRange(object):
         if stop is None or self._pos <= stop:
             return chunk
         else:
-            return chunk[:stop - self._pos]
+            return chunk[: stop - self._pos]
 
-    __next__ = next # py3
+    __next__ = next  # py3
 
     def close(self):
         iter_close(self.app_iter)
@@ -1515,7 +1539,7 @@ class EmptyResponse(object):
     """
 
     def __init__(self, app_iter=None):
-        if app_iter is not None and hasattr(app_iter, 'close'):
+        if app_iter is not None and hasattr(app_iter, "close"):
             self.close = app_iter.close
 
     def __iter__(self):
@@ -1527,52 +1551,46 @@ class EmptyResponse(object):
     def next(self):
         raise StopIteration()
 
-    __next__ = next # py3
+    __next__ = next  # py3
+
 
 def _is_xml(content_type):
     return (
-        content_type.startswith('application/xml') or
-        (
-            content_type.startswith('application/') and
-            content_type.endswith('+xml')
-        ) or
-        (
-            content_type.startswith('image/') and
-            content_type.endswith('+xml')
-        )
+        content_type.startswith("application/xml")
+        or (content_type.startswith("application/") and content_type.endswith("+xml"))
+        or (content_type.startswith("image/") and content_type.endswith("+xml"))
     )
 
+
 def _content_type_has_charset(content_type):
-    return (
-        content_type.startswith('text/') or
-        _is_xml(content_type)
-    )
+    return content_type.startswith("text/") or _is_xml(content_type)
+
 
 def _request_uri(environ):
     """Like ``wsgiref.url.request_uri``, except eliminates ``:80`` ports.
 
     Returns the full request URI."""
-    url = environ['wsgi.url_scheme'] + '://'
+    url = environ["wsgi.url_scheme"] + "://"
 
-    if environ.get('HTTP_HOST'):
-        url += environ['HTTP_HOST']
+    if environ.get("HTTP_HOST"):
+        url += environ["HTTP_HOST"]
     else:
-        url += environ['SERVER_NAME'] + ':' + environ['SERVER_PORT']
-    if url.endswith(':80') and environ['wsgi.url_scheme'] == 'http':
+        url += environ["SERVER_NAME"] + ":" + environ["SERVER_PORT"]
+    if url.endswith(":80") and environ["wsgi.url_scheme"] == "http":
         url = url[:-3]
-    elif url.endswith(':443') and environ['wsgi.url_scheme'] == 'https':
+    elif url.endswith(":443") and environ["wsgi.url_scheme"] == "https":
         url = url[:-4]
 
     if PY2:
-        script_name = environ.get('SCRIPT_NAME', '/')
-        path_info = environ.get('PATH_INFO', '')
+        script_name = environ.get("SCRIPT_NAME", "/")
+        path_info = environ.get("PATH_INFO", "")
     else:
-        script_name = bytes_(environ.get('SCRIPT_NAME', '/'), 'latin-1')
-        path_info = bytes_(environ.get('PATH_INFO', ''), 'latin-1')
+        script_name = bytes_(environ.get("SCRIPT_NAME", "/"), "latin-1")
+        path_info = bytes_(environ.get("PATH_INFO", ""), "latin-1")
 
     url += url_quote(script_name)
     qpath_info = url_quote(path_info)
-    if 'SCRIPT_NAME' not in environ:
+    if "SCRIPT_NAME" not in environ:
         url += qpath_info[1:]
     else:
         url += qpath_info
@@ -1580,19 +1598,21 @@ def _request_uri(environ):
 
 
 def iter_close(iter):
-    if hasattr(iter, 'close'):
+    if hasattr(iter, "close"):
         iter.close()
+
 
 def gzip_app_iter(app_iter):
     size = 0
-    crc = zlib.crc32(b"") & 0xffffffff
-    compress = zlib.compressobj(9, zlib.DEFLATED, -zlib.MAX_WBITS,
-                                zlib.DEF_MEM_LEVEL, 0)
+    crc = zlib.crc32(b"") & 0xFFFFFFFF
+    compress = zlib.compressobj(
+        9, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 0
+    )
 
     yield _gzip_header
     for item in app_iter:
         size += len(item)
-        crc = zlib.crc32(item, crc) & 0xffffffff
+        crc = zlib.crc32(item, crc) & 0xFFFFFFFF
 
         # The compress function may return zero length bytes if the input is
         # small enough; it buffers the input for the next iteration or for a
@@ -1605,13 +1625,14 @@ def gzip_app_iter(app_iter):
     result = compress.flush()
     if result:
         yield result
-    yield struct.pack("<2L", crc, size & 0xffffffff)
+    yield struct.pack("<2L", crc, size & 0xFFFFFFFF)
+
 
 def _error_unicode_in_app_iter(app_iter, body):
     app_iter_repr = repr(app_iter)
     if len(app_iter_repr) > 50:
-        app_iter_repr = (
-            app_iter_repr[:30] + '...' + app_iter_repr[-10:])
+        app_iter_repr = app_iter_repr[:30] + "..." + app_iter_repr[-10:]
     raise TypeError(
-        'An item of the app_iter (%s) was text, causing a '
-        'text body: %r' % (app_iter_repr, body))
+        "An item of the app_iter (%s) was text, causing a "
+        "text body: %r" % (app_iter_repr, body)
+    )

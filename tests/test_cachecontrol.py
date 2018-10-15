@@ -1,71 +1,76 @@
 import pytest
 
+
 def test_cache_control_object_max_age_None():
     from webob.cachecontrol import CacheControl
-    cc = CacheControl({}, 'a')
-    cc.properties['max-age'] = None
+
+    cc = CacheControl({}, "a")
+    cc.properties["max-age"] = None
     assert cc.max_age == -1
 
 
 class TestUpdateDict(object):
     def setup_method(self, method):
         self.call_queue = []
+
         def callback(args):
             self.call_queue.append("Called with: %s" % repr(args))
+
         self.callback = callback
 
     def make_one(self, callback):
         from webob.cachecontrol import UpdateDict
+
         ud = UpdateDict()
         ud.updated = callback
         return ud
 
     def test_clear(self):
         newone = self.make_one(self.callback)
-        newone['first'] = 1
+        newone["first"] = 1
         assert len(newone) == 1
         newone.clear()
         assert len(newone) == 0
 
     def test_update(self):
         newone = self.make_one(self.callback)
-        d = {'one': 1}
+        d = {"one": 1}
         newone.update(d)
         assert newone == d
 
     def test_set_delete(self):
         newone = self.make_one(self.callback)
-        newone['first'] = 1
+        newone["first"] = 1
         assert len(self.call_queue) == 1
         assert self.call_queue[-1] == "Called with: {'first': 1}"
 
-        del newone['first']
+        del newone["first"]
         assert len(self.call_queue) == 2
-        assert self.call_queue[-1] == 'Called with: {}'
+        assert self.call_queue[-1] == "Called with: {}"
 
     def test_setdefault(self):
         newone = self.make_one(self.callback)
-        assert newone.setdefault('haters', 'gonna-hate') == 'gonna-hate'
+        assert newone.setdefault("haters", "gonna-hate") == "gonna-hate"
         assert len(self.call_queue) == 1
         assert self.call_queue[-1] == "Called with: {'haters': 'gonna-hate'}"
 
         # no effect if failobj is not set
-        assert newone.setdefault('haters', 'gonna-love') == 'gonna-hate'
+        assert newone.setdefault("haters", "gonna-love") == "gonna-hate"
         assert len(self.call_queue) == 1
 
     def test_pop(self):
         newone = self.make_one(self.callback)
-        newone['first'] = 1
-        newone.pop('first')
+        newone["first"] = 1
+        newone.pop("first")
         assert len(self.call_queue) == 2
-        assert self.call_queue[-1] == 'Called with: {}', self.call_queue[-1]
+        assert self.call_queue[-1] == "Called with: {}", self.call_queue[-1]
 
     def test_popitem(self):
         newone = self.make_one(self.callback)
-        newone['first'] = 1
-        assert newone.popitem() == ('first', 1)
+        newone["first"] = 1
+        assert newone.popitem() == ("first", 1)
         assert len(self.call_queue) == 2
-        assert self.call_queue[-1] == 'Called with: {}', self.call_queue[-1]
+        assert self.call_queue[-1] == "Called with: {}", self.call_queue[-1]
 
 
 class TestExistProp(object):
@@ -81,14 +86,15 @@ class TestExistProp(object):
 
         class Dummy(object):
             properties = dict(prop=1)
-            type = 'dummy'
-            prop = exists_property('prop', 'dummy')
-            badprop = exists_property('badprop', 'big_dummy')
+            type = "dummy"
+            prop = exists_property("prop", "dummy")
+            badprop = exists_property("badprop", "big_dummy")
 
         return Dummy
 
     def test_get_on_class(self):
         from webob.cachecontrol import exists_property
+
         Dummy = self.make_one()
         assert isinstance(Dummy.prop, exists_property), Dummy.prop
 
@@ -105,12 +111,12 @@ class TestExistProp(object):
         obj = self.make_one()()
         obj.prop = True
         assert obj.prop is True
-        assert obj.properties['prop'] is None
+        assert obj.properties["prop"] is None
 
     def test_del_value(self):
         obj = self.make_one()()
         del obj.prop
-        assert 'prop' not in obj.properties
+        assert "prop" not in obj.properties
 
 
 class TestValueProp(object):
@@ -126,14 +132,15 @@ class TestValueProp(object):
 
         class Dummy(object):
             properties = dict(prop=1)
-            type = 'dummy'
-            prop = value_property('prop', 'dummy')
-            badprop = value_property('badprop', 'big_dummy')
+            type = "dummy"
+            prop = value_property("prop", "dummy")
+            badprop = value_property("badprop", "big_dummy")
 
         return Dummy
 
     def test_get_on_class(self):
         from webob.cachecontrol import value_property
+
         Dummy = self.make_one()
         assert isinstance(Dummy.prop, value_property), Dummy.prop
 
@@ -145,23 +152,27 @@ class TestValueProp(object):
         dummy = self.make_one()()
         dummy.prop = "new"
         assert dummy.prop == "new", dummy.prop
-        assert dummy.properties['prop'] == "new", dict(dummy.properties)
+        assert dummy.properties["prop"] == "new", dict(dummy.properties)
 
     def test_set_on_instance_bad_attribute(self):
         dummy = self.make_one()()
         dummy.prop = "new"
         assert dummy.prop == "new", dummy.prop
-        assert dummy.properties['prop'] == "new", dict(dummy.properties)
+        assert dummy.properties["prop"] == "new", dict(dummy.properties)
 
     def test_set_wrong_type(self):
         from webob.cachecontrol import value_property
+
         class Dummy(object):
-            properties = dict(prop=1, type='fail')
-            type = 'dummy'
-            prop = value_property('prop', 'dummy', type='failingtype')
+            properties = dict(prop=1, type="fail")
+            type = "dummy"
+            prop = value_property("prop", "dummy", type="failingtype")
+
         dummy = Dummy()
+
         def assign():
-            dummy.prop = 'foo'
+            dummy.prop = "foo"
+
         with pytest.raises(AttributeError):
             assign()
 
@@ -178,55 +189,69 @@ class TestValueProp(object):
 
     def test_del(self):
         dummy = self.make_one()()
-        dummy.prop = 'Ian Bicking likes to skip'
+        dummy.prop = "Ian Bicking likes to skip"
         del dummy.prop
         assert dummy.prop == "dummy"
 
 
 def test_copy_cc():
     from webob.cachecontrol import CacheControl
-    cc = CacheControl({'header': '%', "msg": 'arewerichyet?'}, 'request')
+
+    cc = CacheControl({"header": "%", "msg": "arewerichyet?"}, "request")
     cc2 = cc.copy()
     assert cc.properties is not cc2.properties
     assert cc.type is cc2.type
 
+
 def test_serialize_cache_control_emptydict():
     from webob.cachecontrol import serialize_cache_control
+
     result = serialize_cache_control(dict())
-    assert result == ''
+    assert result == ""
+
 
 def test_serialize_cache_control_cache_control_object():
     from webob.cachecontrol import serialize_cache_control, CacheControl
-    result = serialize_cache_control(CacheControl({}, 'request'))
-    assert result == ''
+
+    result = serialize_cache_control(CacheControl({}, "request"))
+    assert result == ""
+
 
 def test_serialize_cache_control_object_with_headers():
     from webob.cachecontrol import serialize_cache_control, CacheControl
-    result = serialize_cache_control(CacheControl({'header': 'a'}, 'request'))
-    assert result == 'header=a'
+
+    result = serialize_cache_control(CacheControl({"header": "a"}, "request"))
+    assert result == "header=a"
+
 
 def test_serialize_cache_control_value_is_None():
     from webob.cachecontrol import serialize_cache_control, CacheControl
-    result = serialize_cache_control(CacheControl({'header': None}, 'request'))
-    assert result == 'header'
+
+    result = serialize_cache_control(CacheControl({"header": None}, "request"))
+    assert result == "header"
+
 
 def test_serialize_cache_control_value_needs_quote():
     from webob.cachecontrol import serialize_cache_control, CacheControl
-    result = serialize_cache_control(CacheControl({'header': '""'}, 'request'))
+
+    result = serialize_cache_control(CacheControl({"header": '""'}, "request"))
     assert result == 'header=""""'
+
 
 class TestCacheControl(object):
     def make_one(self, props, typ):
         from webob.cachecontrol import CacheControl
+
         return CacheControl(props, typ)
 
     def test_ctor(self):
-        cc = self.make_one({'a': 1}, 'typ')
-        assert cc.properties == {'a': 1}
-        assert cc.type == 'typ'
+        cc = self.make_one({"a": 1}, "typ")
+        assert cc.properties == {"a": 1}
+        assert cc.type == "typ"
 
     def test_parse(self):
         from webob.cachecontrol import CacheControl
+
         cc = CacheControl.parse("public, max-age=315360000")
         assert type(cc) == CacheControl
         assert cc.max_age == 315360000
@@ -234,20 +259,24 @@ class TestCacheControl(object):
 
     def test_parse_updates_to(self):
         from webob.cachecontrol import CacheControl
+
         def foo(arg):
-            return {'a': 1}
+            return {"a": 1}
+
         cc = CacheControl.parse("public, max-age=315360000", updates_to=foo)
         assert type(cc) == CacheControl
         assert cc.max_age == 315360000
 
     def test_parse_valueerror_int(self):
         from webob.cachecontrol import CacheControl
+
         def foo(arg):
-            return {'a': 1}
+            return {"a": 1}
+
         cc = CacheControl.parse("public, max-age=abc")
         assert type(cc) == CacheControl
-        assert cc.max_age == 'abc'
+        assert cc.max_age == "abc"
 
     def test_repr(self):
-        cc = self.make_one({'a': '1'}, 'typ')
+        cc = self.make_one({"a": "1"}, "typ")
         assert repr(cc) == "<CacheControl 'a=1'>"

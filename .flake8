@@ -1,0 +1,19 @@
+# Recommended flake8 settings while editing WebOb, we use Black for the final linting/say in how code is formatted
+#
+# pip install flake8 flake8-bugbear
+#
+# This will warn/error on things that black does not fix, on purpose
+
+[flake8]
+max-line-length = 80
+max-complexity = 12
+select = E,F,W,C,B,B9
+ignore = 
+    # E123 closing bracket does not match indentation of opening bracket’s line
+    E123
+    # E203 whitespace before ‘:’ (Not PEP8 compliant, Python Black)
+    E203
+    # E501 line too long (82 > 79 characters) (replaced by B950 from flake8-bugbear, https://github.com/PyCQA/flake8-bugbear)
+    E501
+    # W503 line break before binary operator (Not PEP8 compliant, Python Black)
+    W503

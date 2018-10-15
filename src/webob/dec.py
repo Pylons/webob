@@ -6,15 +6,13 @@ application (while also allowing normal calling of the method with an
 instantiated request).
 """
 
-from webob.compat import (
-    bytes_,
-    text_type,
-    )
+from webob.compat import bytes_, text_type
 
 from webob.request import Request
 from webob.exc import HTTPException
 
-__all__ = ['wsgify']
+__all__ = ["wsgify"]
+
 
 class wsgify(object):
     """Turns a request-taking, response-returning function into a WSGI
@@ -82,11 +80,11 @@ class wsgify(object):
 
     RequestClass = Request
 
-    def __init__(self, func=None, RequestClass=None,
-                 args=(), kwargs=None, middleware_wraps=None):
+    def __init__(
+        self, func=None, RequestClass=None, args=(), kwargs=None, middleware_wraps=None
+    ):
         self.func = func
-        if (RequestClass is not None
-            and RequestClass is not self.RequestClass):
+        if RequestClass is not None and RequestClass is not self.RequestClass:
             self.RequestClass = RequestClass
         self.args = tuple(args)
         if kwargs is None:
@@ -95,12 +93,11 @@ class wsgify(object):
         self.middleware_wraps = middleware_wraps
 
     def __repr__(self):
-        return '<%s at %s wrapping %r>' % (self.__class__.__name__,
-                                           id(self), self.func)
+        return "<%s at %s wrapping %r>" % (self.__class__.__name__, id(self), self.func)
 
     def __get__(self, obj, type=None):
         # This handles wrapping methods
-        if hasattr(self.func, '__get__'):
+        if hasattr(self.func, "__get__"):
             return self.clone(self.func.__get__(obj, type))
         else:
             return self
@@ -112,14 +109,15 @@ class wsgify(object):
             if args or kw:
                 raise TypeError(
                     "Unbound %s can only be called with the function it "
-                    "will wrap" % self.__class__.__name__)
+                    "will wrap" % self.__class__.__name__
+                )
             func = req
             return self.clone(func)
         if isinstance(req, dict):
             if len(args) != 1 or kw:
                 raise TypeError(
-                    "Calling %r as a WSGI app with the wrong signature" %
-                    self.func)
+                    "Calling %r as a WSGI app with the wrong signature" % self.func
+                )
             environ = req
             start_response = args[0]
             req = self.RequestClass(environ)
@@ -156,7 +154,7 @@ class wsgify(object):
 
             resp = myapp.get('/article?id=10')
         """
-        kw.setdefault('method', 'GET')
+        kw.setdefault("method", "GET")
         req = self.RequestClass.blank(url, **kw)
         return self(req)
 
@@ -173,7 +171,7 @@ class wsgify(object):
                               dict(title='My Day',
                                    content='I ate a sandwich'))
         """
-        kw.setdefault('method', 'POST')
+        kw.setdefault("method", "POST")
         req = self.RequestClass.blank(url, POST=POST, **kw)
         return self(req)
 
@@ -198,13 +196,13 @@ class wsgify(object):
         """
         kwargs = {}
         if func is not None:
-            kwargs['func'] = func
+            kwargs["func"] = func
         if self.RequestClass is not self.__class__.RequestClass:
-            kwargs['RequestClass'] = self.RequestClass
+            kwargs["RequestClass"] = self.RequestClass
         if self.args:
-            kwargs['args'] = self.args
+            kwargs["args"] = self.args
         if self.kwargs:
-            kwargs['kwargs'] = self.kwargs
+            kwargs["kwargs"] = self.kwargs
         kwargs.update(kw)
         return self.__class__(**kwargs)
 
@@ -271,6 +269,7 @@ class wsgify(object):
             args = (self.middleware_wraps,) + args
         return args, kwargs
 
+
 class _UnboundMiddleware(object):
     """A `wsgify.middleware` invocation that has not yet wrapped a
     middleware function; the intermediate object when you do
@@ -283,13 +282,13 @@ class _UnboundMiddleware(object):
         self.kw = kw
 
     def __repr__(self):
-        return '<%s at %s wrapping %r>' % (self.__class__.__name__,
-                                           id(self), self.app)
+        return "<%s at %s wrapping %r>" % (self.__class__.__name__, id(self), self.app)
 
     def __call__(self, func, app=None):
         if app is None:
             app = self.app
         return self.wrapper_class.middleware(func, app=app, **self.kw)
+
 
 class _MiddlewareFactory(object):
     """A middleware that has not yet been bound to an application or
@@ -302,8 +301,11 @@ class _MiddlewareFactory(object):
         self.kw = kw
 
     def __repr__(self):
-        return '<%s at %s wrapping %r>' % (self.__class__.__name__, id(self),
-                                           self.middleware)
+        return "<%s at %s wrapping %r>" % (
+            self.__class__.__name__,
+            id(self),
+            self.middleware,
+        )
 
     def __call__(self, app=None, **config):
         kw = self.kw.copy()

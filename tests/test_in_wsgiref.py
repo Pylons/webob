@@ -15,6 +15,7 @@ from webob.compat import Empty
 
 log = logging.getLogger(__name__)
 
+
 @pytest.mark.usefixtures("serve")
 def test_request_reading(serve):
     """
@@ -26,22 +27,24 @@ def test_request_reading(serve):
             resp = url_open(server.url + key, timeout=3)
             assert resp.read() == b"ok"
 
+
 def _test_app_req_reading(env, sr):
     req = Request(env)
-    log.debug('starting test operation: %s', req.path_info)
+    log.debug("starting test operation: %s", req.path_info)
     test_op = _test_ops_req_read[req.path_info]
     test_op(req)
-    log.debug('done')
+    log.debug("done")
     r = Response("ok")
     return r(env, sr)
 
 
 _test_ops_req_read = {
-    '/copy': lambda req: req.copy(),
-    '/read-all': lambda req: req.body_file.read(),
-    '/read-0': lambda req: req.body_file.read(0),
-    '/make-seekable': lambda req: req.make_body_seekable()
+    "/copy": lambda req: req.copy(),
+    "/read-all": lambda req: req.body_file.read(),
+    "/read-0": lambda req: req.body_file.read(0),
+    "/make-seekable": lambda req: req.make_body_seekable(),
 }
+
 
 @pytest.mark.usefixtures("serve")
 def test_interrupted_request(serve):
@@ -67,7 +70,8 @@ def _test_app_req_interrupt(env, sr):
         cl = req.content_length
         if cl != target_cl:
             raise AssertionError(
-                'request.content_length is %s instead of %s' % (cl, target_cl))
+                "request.content_length is %s instead of %s" % (cl, target_cl)
+            )
         op = _test_ops_req_interrupt[req.path_info]
         log.info("Running test: %s", req.path_info)
         with pytest.raises(IOError):
@@ -76,19 +80,18 @@ def _test_app_req_interrupt(env, sr):
         _global_res.put(sys.exc_info())
     else:
         _global_res.put(None)
-        sr('200 OK', [])
+        sr("200 OK", [])
         return []
 
+
 def _req_int_cgi(req):
-    assert req.body_file.read(0) == b''
-    cgi.FieldStorage(
-        fp=req.body_file,
-        environ=req.environ,
-    )
+    assert req.body_file.read(0) == b""
+    cgi.FieldStorage(fp=req.body_file, environ=req.environ)
+
 
 def _req_int_readline(req):
     try:
-        assert req.body_file.readline() == b'a=b\n'
+        assert req.body_file.readline() == b"a=b\n"
     except IOError:
         # too early to detect disconnect
         raise AssertionError("False disconnect alert")
@@ -96,22 +99,22 @@ def _req_int_readline(req):
 
 
 _test_ops_req_interrupt = {
-    '/copy': lambda req: req.copy(),
-    '/read-body': lambda req: req.body,
-    '/read-post': lambda req: req.POST,
-    '/read-all': lambda req: req.body_file.read(),
-    '/read-too-much': lambda req: req.body_file.read(1 << 22),
-    '/readline': _req_int_readline,
-    '/readlines': lambda req: req.body_file.readlines(),
-    '/read-cgi': _req_int_cgi,
-    '/make-seekable': lambda req: req.make_body_seekable()
+    "/copy": lambda req: req.copy(),
+    "/read-body": lambda req: req.body,
+    "/read-post": lambda req: req.POST,
+    "/read-all": lambda req: req.body_file.read(),
+    "/read-too-much": lambda req: req.body_file.read(1 << 22),
+    "/readline": _req_int_readline,
+    "/readlines": lambda req: req.body_file.readlines(),
+    "/read-cgi": _req_int_cgi,
+    "/make-seekable": lambda req: req.make_body_seekable(),
 }
 
 
-def _send_interrupted_req(server, path='/'):
+def _send_interrupted_req(server, path="/"):
     sock = socket.socket()
-    sock.connect(('localhost', server.server_port))
-    f = sock.makefile('wb')
+    sock.connect(("localhost", server.server_port))
+    f = sock.makefile("wb")
     f.write(bytes_(_interrupted_req % path))
     f.flush()
     f.close()
@@ -124,4 +127,4 @@ _interrupted_req = (
     "content-length: 100000\r\n"
     "\r\n"
 )
-_interrupted_req += 'a=b\nz=' + 'x' * 10000
+_interrupted_req += "a=b\nz=" + "x" * 10000

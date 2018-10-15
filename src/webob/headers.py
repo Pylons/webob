@@ -1,17 +1,15 @@
-from webob.compat import (
-    MutableMapping,
-    iteritems_,
-    string_types,
-    )
+from webob.compat import MutableMapping, iteritems_, string_types
 from webob.multidict import MultiDict
 
-__all__ = ['ResponseHeaders', 'EnvironHeaders']
+__all__ = ["ResponseHeaders", "EnvironHeaders"]
+
 
 class ResponseHeaders(MultiDict):
     """
         Dictionary view on the response headerlist.
         Keys are normalized for case and whitespace.
     """
+
     def __getitem__(self, key):
         key = key.lower()
         for k, v in reversed(self._items):
@@ -45,7 +43,7 @@ class ResponseHeaders(MultiDict):
         key = key.lower()
         items = self._items
         found = False
-        for i in range(len(items)-1, -1, -1):
+        for i in range(len(items) - 1, -1, -1):
             if items[i][0].lower() == key:
                 del items[i]
                 found = True
@@ -71,8 +69,9 @@ class ResponseHeaders(MultiDict):
 
     def pop(self, key, *args):
         if len(args) > 1:
-            raise TypeError("pop expected at most 2 arguments, got %s"
-                              % repr(1 + len(args)))
+            raise TypeError(
+                "pop expected at most 2 arguments, got %s" % repr(1 + len(args))
+            )
         key = key.lower()
         for i in range(len(self._items)):
             if self._items[i][0].lower() == key:
@@ -85,34 +84,33 @@ class ResponseHeaders(MultiDict):
             raise KeyError(key)
 
 
-
-
-
-
 key2header = {
-    'CONTENT_TYPE': 'Content-Type',
-    'CONTENT_LENGTH': 'Content-Length',
-    'HTTP_CONTENT_TYPE': 'Content_Type',
-    'HTTP_CONTENT_LENGTH': 'Content_Length',
+    "CONTENT_TYPE": "Content-Type",
+    "CONTENT_LENGTH": "Content-Length",
+    "HTTP_CONTENT_TYPE": "Content_Type",
+    "HTTP_CONTENT_LENGTH": "Content_Length",
 }
 
-header2key = dict([(v.upper(),k) for (k,v) in key2header.items()])
+header2key = dict([(v.upper(), k) for (k, v) in key2header.items()])
+
 
 def _trans_key(key):
     if not isinstance(key, string_types):
         return None
     elif key in key2header:
         return key2header[key]
-    elif key.startswith('HTTP_'):
-        return key[5:].replace('_', '-').title()
+    elif key.startswith("HTTP_"):
+        return key[5:].replace("_", "-").title()
     else:
         return None
+
 
 def _trans_name(name):
     name = name.upper()
     if name in header2key:
         return header2key[name]
-    return 'HTTP_'+name.replace('-', '_')
+    return "HTTP_" + name.replace("-", "_")
+
 
 class EnvironHeaders(MutableMapping):
     """An object that represents the headers as present in a
