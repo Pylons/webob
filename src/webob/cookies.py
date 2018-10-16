@@ -162,7 +162,7 @@ class RequestCookies(MutableMapping):
             return self._cache.itervalues()  # noqa: B301
 
         def iteritems(self):
-            return self._cache.iteritems()   # noqa: B301
+            return self._cache.iteritems()  # noqa: B301
 
     def __contains__(self, name):
         return name in self._cache

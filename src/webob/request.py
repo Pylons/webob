@@ -1489,7 +1489,7 @@ def environ_from_url(path):
         "wsgi.multithread": False,
         "wsgi.multiprocess": False,
         "wsgi.run_once": False,
-        'webob.is_body_seekable': True,
+        "webob.is_body_seekable": True,
     }
     return env
 
