@@ -1,5 +1,7 @@
 # code stolen from "six"
 
+# flake8: noqa
+
 import sys
 import types
 from cgi import parse_header
@@ -104,10 +106,10 @@ if PY3:
 else:
 
     def iteritems_(d):
-        return d.iteritems()
+        return d.iteritems()  # noqa: B301
 
     def itervalues_(d):
-        return d.itervalues()
+        return d.itervalues()  # noqa: B301
 
 
 if PY3:  # pragma: no cover

@@ -32,7 +32,7 @@ def test_client(serve, client_app=None):
         del req.environ["SERVER_NAME"]
         del req.environ["SERVER_PORT"]
         assert req.send(client_app).status_code == 200
-        req.headers["Host"] = server.url.lstrip("http://")
+        req.headers["Host"] = server.url.replace("http://", "")
         del req.environ["SERVER_NAME"]
         del req.environ["SERVER_PORT"]
         resp = req.send(client_app)

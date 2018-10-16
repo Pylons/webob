@@ -40,7 +40,7 @@ def _make_test_server(app):
             )
             server.timeout = 5
             return server
-        except:
+        except BaseException:
             if i == 1:
                 raise
 

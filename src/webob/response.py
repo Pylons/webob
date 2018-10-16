@@ -613,8 +613,8 @@ class Response(object):
         """
         if not self.charset and not self.default_body_encoding:
             raise AttributeError(
-                "You cannot access Response.text unless charset or default_body_encoding"
-                " is set"
+                "You cannot access Response.text unless charset or "
+                "default_body_encoding is set"
             )
         decoding = self.charset or self.default_body_encoding
         body = self.body
@@ -623,8 +623,8 @@ class Response(object):
     def _text__set(self, value):
         if not self.charset and not self.default_body_encoding:
             raise AttributeError(
-                "You cannot access Response.text unless charset or default_body_encoding"
-                " is set"
+                "You cannot access Response.text unless charset or "
+                "default_body_encoding is set"
             )
         if not isinstance(value, text_type):
             raise TypeError(

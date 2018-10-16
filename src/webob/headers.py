@@ -52,7 +52,7 @@ class ResponseHeaders(MultiDict):
 
     def __contains__(self, key):
         key = key.lower()
-        for k, v in self._items:
+        for k, _ in self._items:
             if k.lower() == key:
                 return True
         return False

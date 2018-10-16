@@ -1,7 +1,7 @@
 import pytest
 
 from webob.util import html_escape
-from webob.compat import text_, PY3
+from webob.compat import text_
 
 py2only = pytest.mark.skipif("sys.version_info >= (3, 0)")
 py3only = pytest.mark.skipif("sys.version_info < (3, 0)")

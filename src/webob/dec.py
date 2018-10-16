@@ -128,7 +128,7 @@ class wsgify(object):
             except HTTPException as exc:
                 resp = exc
             if resp is None:
-                ## FIXME: I'm not sure what this should be?
+                # FIXME: I'm not sure what this should be?
                 resp = req.response
             if isinstance(resp, text_type):
                 resp = bytes_(resp, req.charset)

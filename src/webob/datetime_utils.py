@@ -66,7 +66,7 @@ def parse_date(value):
         return None
     try:
         value = native_(value)
-    except:
+    except Exception:
         return None
     t = parsedate_tz(value)
     if t is None:

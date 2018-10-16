@@ -8,7 +8,7 @@ _rx_content_range = re.compile(r"bytes (?:(\d+)-(\d+)|[*])/(?:(\d+)|[*])")
 
 class Range(object):
     """
-        Represents the Range header.
+    Represents the Range header.
     """
 
     def __init__(self, start, end):
@@ -18,9 +18,9 @@ class Range(object):
 
     def range_for_length(self, length):
         """
-            *If* there is only one range, and *if* it is satisfiable by
-            the given length, then return a (start, end) non-inclusive range
-            of bytes to serve.  Otherwise return None
+        *If* there is only one range, and *if* it is satisfiable by
+        the given length, then return a (start, end) non-inclusive range
+        of bytes to serve.  Otherwise return None
         """
         if length is None:
             return None
@@ -37,13 +37,13 @@ class Range(object):
 
     def content_range(self, length):
         """
-            Works like range_for_length; returns None or a ContentRange object
+        Works like range_for_length; returns None or a ContentRange object
 
-            You can use it like::
+        You can use it like::
 
-                response.content_range = req.range.content_range(response.content_length)
+            response.content_range = req.range.content_range(response.content_length)
 
-            Though it's still up to you to actually serve that content range!
+        Though it's still up to you to actually serve that content range!
         """
         range = self.range_for_length(length)
         if range is None:
@@ -68,7 +68,7 @@ class Range(object):
     @classmethod
     def parse(cls, header):
         """
-            Parse the header; may return None if header is invalid
+        Parse the header; may return None if header is invalid
         """
         m = _rx_range.match(header or "")
         if not m:
@@ -117,16 +117,16 @@ class ContentRange(object):
 
     def __iter__(self):
         """
-            Mostly so you can unpack this, like:
+        Mostly so you can unpack this, like:
 
-                start, stop, length = res.content_range
+            start, stop, length = res.content_range
         """
         return iter([self.start, self.stop, self.length])
 
     @classmethod
     def parse(cls, value):
         """
-            Parse the header.  May return None if it cannot parse.
+        Parse the header.  May return None if it cannot parse.
         """
         m = _rx_content_range.match(value or "")
         if not m:

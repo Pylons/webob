@@ -2,9 +2,18 @@ from webob.request import Request, Transcoder
 from webob.response import Response
 from webob.compat import text_, native_
 
-t1 = b'--BOUNDARY\r\nContent-Disposition: form-data; name="a"\r\n\r\n\xea\xf3...\r\n--BOUNDARY--'
-t2 = b'--BOUNDARY\r\nContent-Disposition: form-data; name="a"; filename="file"\r\n\r\n\xea\xf3...\r\n--BOUNDARY--'
-t3 = b'--BOUNDARY\r\nContent-Disposition: form-data; name="a"; filename="\xea\xf3..."\r\n\r\nfoo\r\n--BOUNDARY--'
+t1 = (
+    b'--BOUNDARY\r\nContent-Disposition: form-data; name="a"\r\n\r\n\xea\xf3...'
+    b"\r\n--BOUNDARY--"
+)
+t2 = (
+    b'--BOUNDARY\r\nContent-Disposition: form-data; name="a"; filename="file"\r\n'
+    b"\r\n\xea\xf3...\r\n--BOUNDARY--"
+)
+t3 = (
+    b'--BOUNDARY\r\nContent-Disposition: form-data; name="a"; filename="\xea\xf3...'
+    b'"\r\n\r\nfoo\r\n--BOUNDARY--'
+)
 
 
 def test_transcode():
@@ -18,6 +27,7 @@ def test_transcode():
             r = Response(text_("%s\n%r" % (v.filename, v.value)))
         else:
             r = Response(v)
+
         return r(env, sr)
 
     text = b"\xea\xf3...".decode("cp1251")
@@ -27,6 +37,7 @@ def test_transcode():
         req.environ[
             "CONTENT_TYPE"
         ] = "multipart/form-data; charset=windows-1251; boundary=BOUNDARY"
+
         return req.get_response(tapp)
 
     r = test(t1)

@@ -46,20 +46,27 @@ class RequestCookies(MutableMapping):
         env = self._environ
         header = env.get("HTTP_COOKIE", "")
         cache, cache_header = env.get(self._cache_key, ({}, None))
+
         if cache_header == header:
             return cache
-        d = lambda b: b.decode("utf8")
+
+        def d(b):
+            return b.decode("utf8")
+
         cache = dict((d(k), d(v)) for k, v in parse_cookie(header))
         env[self._cache_key] = (cache, header)
+
         return cache
 
     def _mutate_header(self, name, value):
         header = self._environ.get("HTTP_COOKIE")
         had_header = header is not None
         header = header or ""
+
         if not PY2:
             header = header.encode("latin-1")
         bytes_name = bytes_(name, "ascii")
+
         if value is None:
             replacement = None
         else:
@@ -67,15 +74,19 @@ class RequestCookies(MutableMapping):
             replacement = bytes_name + b"=" + bytes_val
         matches = _rx_cookie.finditer(header)
         found = False
+
         for match in matches:
             start, end = match.span()
             match_name = match.group(1)
+
             if match_name == bytes_name:
                 found = True
+
                 if replacement is None:  # remove value
                     header = header[:start].rstrip(b" ;") + header[end:]
                 else:  # replace value
                     header = header[:start] + replacement + header[end:]
+
                 break
         else:
             if replacement is not None:
@@ -94,20 +105,25 @@ class RequestCookies(MutableMapping):
     def _valid_cookie_name(self, name):
         if not isinstance(name, string_types):
             raise TypeError(name, "cookie name must be a string")
+
         if not isinstance(name, text_type):
             name = text_(name, "utf-8")
         try:
             bytes_cookie_name = bytes_(name, "ascii")
         except UnicodeEncodeError:
             raise TypeError("cookie name must be encodable to ascii")
+
         if not _valid_cookie_name(bytes_cookie_name):
             raise TypeError("cookie name must be valid according to RFC 6265")
+
         return name
 
     def __setitem__(self, name, value):
         name = self._valid_cookie_name(name)
+
         if not isinstance(value, string_types):
             raise ValueError(value, "cookie value must be a string")
+
         if not isinstance(value, text_type):
             try:
                 value = text_(value, "utf-8")
@@ -124,6 +140,7 @@ class RequestCookies(MutableMapping):
     def __delitem__(self, name):
         name = self._valid_cookie_name(name)
         found = self._mutate_header(name, None)
+
         if not found:
             raise KeyError(name)
 
@@ -139,13 +156,13 @@ class RequestCookies(MutableMapping):
     if PY2:
 
         def iterkeys(self):
-            return self._cache.iterkeys()
+            return self._cache.iterkeys()  # noqa: B301
 
         def itervalues(self):
-            return self._cache.itervalues()
+            return self._cache.itervalues()  # noqa: B301
 
         def iteritems(self):
-            return self._cache.iteritems()
+            return self._cache.iteritems()   # noqa: B301
 
     def __contains__(self, name):
         return name in self._cache
@@ -170,6 +187,7 @@ class Cookie(dict):
 
     def load(self, data):
         morsel = {}
+
         for key, val in _parse_cookie(data):
             if key.lower() in _c_keys:
                 morsel[key] = val
@@ -179,10 +197,12 @@ class Cookie(dict):
     def add(self, key, val):
         if not isinstance(key, bytes):
             key = key.encode("ascii", "replace")
+
         if not _valid_cookie_name(key):
             return {}
         r = Morsel(key, val)
         dict.__setitem__(self, key, r)
+
         return r
 
     __setitem__ = add
@@ -205,6 +225,7 @@ class Cookie(dict):
 def _parse_cookie(data):
     if not PY2:
         data = data.encode("latin-1")
+
     for key, val in _rx_cookie.findall(data):
         yield key, _unquote(val)
 
@@ -213,6 +234,7 @@ def parse_cookie(data):
     """
     Parse cookies ignoring anything except names and values
     """
+
     return ((k, v) for k, v in _parse_cookie(data) if _valid_cookie_name(k))
 
 
@@ -228,6 +250,7 @@ def serialize_max_age(v):
         v = str(v.seconds + v.days * 24 * 60 * 60)
     elif isinstance(v, int):
         v = str(v)
+
     return bytes_(v)
 
 
@@ -240,11 +263,14 @@ def serialize_cookie_date(v):
         return v.encode("ascii")
     elif isinstance(v, int):
         v = timedelta(seconds=v)
+
     if isinstance(v, timedelta):
         v = datetime.utcnow() + v
+
     if isinstance(v, (datetime, date)):
         v = v.timetuple()
     r = time.strftime("%%s, %d-%%s-%Y %H:%M:%S GMT", v)
+
     return bytes_(r % (weekdays[v[6]], months[v[1]]), "ascii")
 
 
@@ -253,6 +279,7 @@ def serialize_samesite(v):
 
     if v.lower() not in (b"strict", b"lax"):
         raise ValueError("SameSite must be 'Strict' or 'Lax'")
+
     return v
 
 
@@ -276,6 +303,7 @@ class Morsel(dict):
 
     def __setitem__(self, k, v):
         k = bytes_(k.lower(), "ascii")
+
         if k in _c_keys:
             dict.__setitem__(self, k, v)
 
@@ -283,23 +311,30 @@ class Morsel(dict):
         result = []
         add = result.append
         add(self.name + b"=" + _value_quote(self.value))
+
         if full:
             for k in _c_valkeys:
                 v = self[k]
+
                 if v:
                     info = _c_renames[k]
                     name = info["name"]
                     quoter = info["quoter"]
                     add(name + b"=" + quoter(v))
             expires = self[b"expires"]
+
             if expires:
                 add(b"expires=" + expires)
+
             if self.secure:
                 add(b"secure")
+
             if self.httponly:
                 add(b"HttpOnly")
+
             if self.samesite:
                 add(b"SameSite=" + self.samesite)
+
         return native_(b"; ".join(result), "ascii")
 
     __str__ = serialize
@@ -340,8 +375,10 @@ _b_quote_mark = '"' if PY2 else ord('"')
 
 def _unquote(v):
     # assert isinstance(v, bytes)
+
     if v and v[0] == v[-1] == _b_quote_mark:
         v = v[1:-1]
+
     return _rx_unquote.sub(_ch_unquote, v)
 
 
@@ -384,6 +421,7 @@ _valid_token_bytes = bytes_(_valid_token_chars)
 _escape_noop_chars = _allowed_cookie_chars + " "
 _escape_map = dict((chr(i), "\\%03o" % i) for i in range(256))
 _escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
+
 if not PY2:
     # convert to {int -> bytes}
     _escape_map = dict((ord(k), bytes_(v, "ascii")) for k, v in _escape_map.items())
@@ -425,6 +463,7 @@ def _value_quote(v):
     # invalid characters in our value)
 
     leftovers = v.translate(None, _allowed_cookie_bytes)
+
     if leftovers:
         __warn_or_raise(
             "Cookie value contains invalid bytes: (%r). Future versions "
@@ -434,6 +473,7 @@ def _value_quote(v):
             "Invalid characters in cookie value",
         )
         # raise ValueError('Invalid characters in cookie value')
+
         return b'"' + b"".join(map(_escape_char, v)) + b'"'
 
     return v
@@ -512,6 +552,7 @@ def make_cookie(
     """
 
     # We are deleting the cookie, override max_age and expires
+
     if value is None:
         value = b""
         # Note that the max-age value of zero is technically contraspec;
@@ -541,20 +582,28 @@ def make_cookie(
 
     if domain is not None:
         morsel.domain = bytes_(domain)
+
     if path is not None:
         morsel.path = bytes_(path)
+
     if httponly:
         morsel.httponly = True
+
     if secure:
         morsel.secure = True
+
     if max_age is not None:
         morsel.max_age = max_age
+
     if expires is not None:
         morsel.expires = expires
+
     if comment is not None:
         morsel.comment = bytes_(comment)
+
     if samesite is not None:
         morsel.samesite = samesite
+
     return morsel.serialize()
 
 
@@ -567,6 +616,7 @@ class JSONSerializer(object):
     def loads(self, bstruct):
         # NB: json.loads raises ValueError if no json object can be decoded
         # so we don't have to do it explicitly here.
+
         return json.loads(text_(bstruct, encoding="utf-8"))
 
 
@@ -586,6 +636,7 @@ class Base64Serializer(object):
         Returns a bytestring.
         """
         cstruct = self.serializer.dumps(appstruct)  # will be bytes
+
         return base64.urlsafe_b64encode(cstruct)
 
     def loads(self, bstruct):
@@ -659,6 +710,7 @@ class SignedSerializer(object):
         """
         cstruct = self.serializer.dumps(appstruct)  # will be bytes
         sig = hmac.new(self.salted_secret, cstruct, self.digestmod).digest()
+
         return base64.urlsafe_b64encode(sig + cstruct).rstrip(b"=")
 
     def loads(self, bstruct):
@@ -775,6 +827,7 @@ class CookieProfile(object):
             self.serializer,
         )
         selfish.request = request
+
         return selfish
 
     def get_value(self):
@@ -820,6 +873,7 @@ class CookieProfile(object):
             samesite=samesite,
         )
         response.headerlist.extend(cookies)
+
         return response
 
     def get_headers(
@@ -837,6 +891,7 @@ class CookieProfile(object):
         Returns a list of headers that should be set for the cookies to
         be correctly tracked.
         """
+
         if value is None:
             max_age = 0
             bstruct = None
@@ -871,6 +926,7 @@ class CookieProfile(object):
         """
 
         # If the user doesn't provide values, grab the defaults
+
         if domains is _default:
             domains = self.domains
 
@@ -890,6 +946,7 @@ class CookieProfile(object):
             samesite = self.samesite
 
         # Length selected based upon http://browsercookielimits.x64.me
+
         if value is not None and len(value) > 4093:
             raise ValueError(
                 "Cookie value is too long to store (%s bytes)" % len(value)
@@ -1033,4 +1090,5 @@ class SignedCookieProfile(CookieProfile):
             self.original_serializer,
         )
         selfish.request = request
+
         return selfish

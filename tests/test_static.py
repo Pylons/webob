@@ -15,6 +15,7 @@ from webob.response import Response
 def get_response(app, path="/", **req_kw):
     """Convenient function to query an application"""
     req = Request(environ_from_url(path), **req_kw)
+
     return req.get_response(app)
 
 
@@ -23,6 +24,7 @@ def create_file(content, *paths):
     path = os.path.join(*paths)
     with open(path, "wb") as fp:
         fp.write(bytes_(content))
+
     return path
 
 
@@ -69,7 +71,8 @@ class TestFileApp(unittest.TestCase):
         app = static.FileApp(self.tempfile)
 
         # Alias
-        resp = lambda method: get_response(app, method=method)
+        def resp(method):
+            return get_response(app, method=method)
 
         self.assertEqual(200, resp(method="GET").status_code)
         self.assertEqual(200, resp(method="HEAD").status_code)
@@ -96,6 +99,8 @@ class TestFileApp(unittest.TestCase):
 
     def test_use_wsgi_filewrapper(self):
         class TestWrapper(object):
+            __slots__ = ("file", "block_size")
+
             def __init__(self, file, block_size):
                 self.file = file
                 self.block_size = block_size
@@ -219,6 +224,7 @@ class TestDirectoryApp(unittest.TestCase):
     def test_file_app_factory(self):
         def make_fileapp(*args, **kwargs):
             make_fileapp.called = True
+
             return Response()
 
         make_fileapp.called = False

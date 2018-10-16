@@ -52,7 +52,7 @@ class BaseDictTests(object):
         d = self._get_instance()
         self.assertTrue("a" in d)
         del d["a"]
-        self.assertTrue(not "a" in d)
+        self.assertTrue("a" not in d)
 
     def test_pop(self):
         d = self._get_instance()

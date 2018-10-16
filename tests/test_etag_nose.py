@@ -1,5 +1,3 @@
-import pytest
-
 from webob.etag import IfRange, ETagMatcher
 from webob import Response
 

@@ -80,8 +80,8 @@ class SendRequest:
             content_length = int(environ.get("CONTENT_LENGTH", "0"))
         except ValueError:
             content_length = 0
-        ## FIXME: there is no streaming of the body, and that might be useful
-        ## in some cases
+        # FIXME: there is no streaming of the body, and that might be useful
+        # in some cases
         if content_length:
             body = environ["wsgi.input"].read(content_length)
         else:
@@ -158,7 +158,7 @@ class SendRequest:
             else:  # pragma: no cover
                 try:
                     header, value = full_header.split(":", 1)
-                except:
+                except Exception:
                     raise ValueError("Invalid header: %r" % (full_header,))
             value = value.strip()
             if "\n" in value or "\r\n" in value:  # pragma: no cover

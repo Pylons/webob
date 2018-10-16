@@ -200,13 +200,16 @@ def lazify(func):
 def no_escape(value):
     if value is None:
         return ""
+
     if not isinstance(value, text_type):
         if hasattr(value, "__unicode__"):
             value = value.__unicode__()
+
         if isinstance(value, bytes):
             value = text_(value, "utf-8")
         else:
             value = text_type(value)
+
     return value
 
 
@@ -216,6 +219,7 @@ def strip_tags(value):
     value = br_re.sub("\n", value)
     value = comment_re.sub("", value)
     value = tag_re.sub("", value)
+
     return value
 
 
@@ -230,7 +234,7 @@ class HTTPException(Exception):
 
 class WSGIHTTPException(Response, HTTPException):
 
-    ## You should set in subclasses:
+    # You should set in subclasses:
     # code = 200
     # title = 'OK'
     # explanation = 'why this happens'
@@ -266,7 +270,7 @@ ${body}"""
 </html>"""
     )
 
-    ## Set this to True for responses that should have no request body
+    # Set this to True for responses that should have no request body
     empty_body = False
 
     def __init__(
@@ -280,16 +284,20 @@ ${body}"""
     ):
         Response.__init__(self, status="%s %s" % (self.code, self.title), **kw)
         Exception.__init__(self, detail)
+
         if headers:
             self.headers.extend(headers)
         self.detail = detail
         self.comment = comment
+
         if body_template is not None:
             self.body_template = body_template
             self.body_template_obj = Template(body_template)
+
         if self.empty_body:
             del self.content_type
             del self.content_length
+
         if json_formatter is not None:
             self.json_formatter = json_formatter
 
@@ -303,28 +311,35 @@ ${body}"""
             "detail": escape(self.detail or ""),
             "comment": escape(self.comment or ""),
         }
+
         if self.comment:
             args["html_comment"] = "<!-- %s -->" % escape(self.comment)
         else:
             args["html_comment"] = ""
+
         if WSGIHTTPException.body_template_obj is not self.body_template_obj:
             # Custom template; add headers to args
+
             for k, v in environ.items():
                 args[k] = escape(v)
+
             for k, v in self.headers.items():
                 args[k.lower()] = escape(v)
         t_obj = self.body_template_obj
+
         return t_obj.safe_substitute(args)
 
     def plain_body(self, environ):
         body = self._make_body(environ, no_escape)
         body = strip_tags(body)
+
         return self.plain_template_obj.substitute(
             status=self.status, title=self.title, body=body
         )
 
     def html_body(self, environ):
         body = self._make_body(environ, html_escape)
+
         return self.html_template_obj.substitute(status=self.status, body=body)
 
     def json_formatter(self, body, status, title, environ):
@@ -335,6 +350,7 @@ ${body}"""
         jsonbody = self.json_formatter(
             body=body, status=self.status, title=self.title, environ=environ
         )
+
         return json.dumps(jsonbody)
 
     def generate_response(self, environ, start_response):
@@ -361,16 +377,20 @@ ${body}"""
             body, status=self.status, headerlist=headerlist, content_type=content_type
         )
         resp.content_type = content_type
+
         return resp(environ, start_response)
 
     def __call__(self, environ, start_response):
         is_head = environ["REQUEST_METHOD"] == "HEAD"
+
         if self.has_body or self.empty_body or is_head:
             app_iter = Response.__call__(self, environ, start_response)
         else:
             app_iter = self.generate_response(environ, start_response)
+
         if is_head:
             app_iter = []
+
         return app_iter
 
     @property
@@ -410,9 +430,9 @@ class HTTPOk(WSGIHTTPException):
     title = "OK"
 
 
-############################################################
-## 2xx success
-############################################################
+###########################################################
+# 2xx success
+###########################################################
 
 
 class HTTPCreated(HTTPOk):
@@ -505,9 +525,9 @@ class HTTPPartialContent(HTTPOk):
     title = "Partial Content"
 
 
-############################################################
-## 3xx redirection
-############################################################
+###########################################################
+# 3xx redirection
+###########################################################
 
 
 class _HTTPMove(HTTPRedirection):
@@ -547,11 +567,13 @@ ${html_comment}"""
         super(_HTTPMove, self).__init__(
             detail=detail, headers=headers, comment=comment, body_template=body_template
         )
+
         if location is not None:
             if "\n" in location or "\r" in location:
                 raise ValueError("Control characters are not allowed in location")
 
             self.location = location
+
             if add_slash:
                 raise TypeError(
                     "You can only provide one of the arguments location "
@@ -561,13 +583,16 @@ ${html_comment}"""
 
     def __call__(self, environ, start_response):
         req = Request(environ)
+
         if self.add_slash:
             url = req.path_url
             url += "/"
+
             if req.environ.get("QUERY_STRING"):
                 url += "?" + req.environ["QUERY_STRING"]
             self.location = url
         self.location = urlparse.urljoin(req.path_url, self.location)
+
         return super(_HTTPMove, self).__call__(environ, start_response)
 
 
@@ -696,9 +721,9 @@ class HTTPPermanentRedirect(_HTTPMove):
     title = "Permanent Redirect"
 
 
-############################################################
-## 4xx client error
-############################################################
+###########################################################
+# 4xx client error
+###########################################################
 
 
 class HTTPClientError(HTTPError):
@@ -1021,7 +1046,7 @@ class HTTPUnprocessableEntity(HTTPClientError):
     code: 422, title: Unprocessable Entity
     """
 
-    ## Note: from WebDAV
+    # Note: from WebDAV
     code = 422
     title = "Unprocessable Entity"
     explanation = "Unable to process the contained instructions"
@@ -1036,7 +1061,7 @@ class HTTPLocked(HTTPClientError):
     code: 423, title: Locked
     """
 
-    ## Note: from WebDAV
+    # Note: from WebDAV
     code = 423
     title = "Locked"
     explanation = "The resource is locked"
@@ -1052,7 +1077,7 @@ class HTTPFailedDependency(HTTPClientError):
     code: 424, title: Failed Dependency
     """
 
-    ## Note: from WebDAV
+    # Note: from WebDAV
     code = 424
     title = "Failed Dependency"
     explanation = (
@@ -1132,16 +1157,16 @@ class HTTPUnavailableForLegalReasons(HTTPClientError):
     explanation = "The resource is not available due to legal reasons."
 
 
-############################################################
-## 5xx Server Error
-############################################################
-#  Response status codes beginning with the digit "5" indicate cases in
-#  which the server is aware that it has erred or is incapable of
-#  performing the request. Except when responding to a HEAD request, the
-#  server SHOULD include an entity containing an explanation of the error
-#  situation, and whether it is a temporary or permanent condition. User
-#  agents SHOULD display any included entity to the user. These response
-#  codes are applicable to any request method.
+###########################################################
+# 5xx Server Error
+###########################################################
+#  Response status codes beginning with the digit "5" indicate cases in which
+#  the server is aware that it has erred or is incapable of performing the
+#  request. Except when responding to a HEAD request, the server SHOULD include
+#  an entity containing an explanation of the error situation, and whether it
+#  is a temporary or permanent condition. User agents SHOULD display any
+#  included entity to the user. These response codes are applicable to any
+#  request method.
 
 
 class HTTPServerError(HTTPError):
@@ -1304,6 +1329,7 @@ class HTTPExceptionMiddleware(object):
             def repl_start_response(status, headers, exc_info=None):
                 if exc_info is None:
                     exc_info = parent_exc_info
+
                 return start_response(status, headers, exc_info)
 
             return parent_exc_info[1](environ, repl_start_response)
@@ -1317,6 +1343,7 @@ except ImportError:  # pragma: no cover
 else:  # pragma: no cover
     for name in dir(httpexceptions):
         obj = globals().get(name)
+
         if (
             obj
             and isinstance(obj, type)
@@ -1329,6 +1356,7 @@ else:  # pragma: no cover
 
 __all__ = ["HTTPExceptionMiddleware", "status_map"]
 status_map = {}
+
 for name, value in list(globals().items()):
     if (
         isinstance(value, (type, class_types))
@@ -1336,6 +1364,7 @@ for name, value in list(globals().items()):
         and not name.startswith("_")
     ):
         __all__.append(name)
+
         if all(
             (
                 getattr(value, "code", None),
@@ -1346,6 +1375,7 @@ for name, value in list(globals().items()):
             )
         ):
             status_map[value.code] = value
+
         if hasattr(value, "explanation"):
             value.explanation = " ".join(value.explanation.strip().split())
 del name, value

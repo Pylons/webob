@@ -38,10 +38,12 @@ class TestRequestCommon(object):
 
     def _makeOne(self, *arg, **kw):
         cls = self._getTargetClass()
+
         return cls(*arg, **kw)
 
     def _blankOne(self, *arg, **kw):
         cls = self._getTargetClass()
+
         return cls.blank(*arg, **kw)
 
     def test_ctor_environ_getter_raises_WTF(self):
@@ -126,7 +128,7 @@ class TestRequestCommon(object):
         req = self._makeOne(environ)
         req.body_file = AFTER
         assert req.body_file is AFTER
-        assert req.content_length == None
+        assert req.content_length is None
 
     def test_body_file_deleter(self):
         body = b"input"
@@ -528,6 +530,9 @@ class TestRequestCommon(object):
 
     @pytest.mark.parametrize("method", ["POST", "PUT", "PATCH", "DELETE"])
     def test_POST_json_no_content_type(self, method):
+        from webob.request import NoVars
+        from webob.multidict import MultiDict
+
         data = b'{"password": "last centurion", "email": "rory@wiggy.net"}'
         wsgi_input = BytesIO(data)
         environ = {
@@ -541,6 +546,10 @@ class TestRequestCommon(object):
         r_2 = req.POST
         r_3 = req.body
         assert r_1 == b'{"password": "last centurion", "email": "rory@wiggy.net"}'
+        if method == "POST":
+            assert isinstance(r_2, MultiDict)
+        else:
+            assert isinstance(r_2, NoVars)
         assert r_3 == b'{"password": "last centurion", "email": "rory@wiggy.net"}'
 
     @pytest.mark.parametrize("method", ["POST", "PUT", "PATCH", "DELETE"])
@@ -639,8 +648,9 @@ class TestRequestCommon(object):
         environ = {"HTTP_COOKIE": "a=b"}
         req = self._blankOne("/", environ)
         clone = req.copy_get()
+
         for k, v in req.environ.items():
-            if k in ("CONTENT_LENGTH", "webob.is_body_seekable"):
+            if k in {"CONTENT_LENGTH"}:
                 assert k not in clone.environ
             elif k == "wsgi.input":
                 assert clone.environ[k] is not v
@@ -651,7 +661,7 @@ class TestRequestCommon(object):
         req = self._blankOne("/")
         req.accept_encoding = "gzip,deflate"
         req.remove_conditional_headers()
-        assert bool(req.accept_encoding) == False
+        assert bool(req.accept_encoding) is False
 
     def test_remove_conditional_headers_if_modified_since(self):
         from webob.datetime_utils import UTC
@@ -660,7 +670,7 @@ class TestRequestCommon(object):
         req = self._blankOne("/")
         req.if_modified_since = datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
         req.remove_conditional_headers()
-        assert req.if_modified_since == None
+        assert req.if_modified_since is None
 
     def test_remove_conditional_headers_if_none_match(self):
         req = self._blankOne("/")
@@ -673,13 +683,13 @@ class TestRequestCommon(object):
         req = self._blankOne("/")
         req.if_range = "foo, bar"
         req.remove_conditional_headers()
-        assert bool(req.if_range) == False
+        assert bool(req.if_range) is False
 
     def test_remove_conditional_headers_range(self):
         req = self._blankOne("/")
         req.range = "bytes=0-100"
         req.remove_conditional_headers()
-        assert req.range == None
+        assert req.range is None
 
     def test_is_body_readable_POST(self):
         req = self._blankOne(
@@ -875,6 +885,7 @@ class TestRequestCommon(object):
 
         def application(environ, start_response):
             start_response("200 OK", [("content-type", "text/plain")])
+
             return ["...\n"]
 
         status, headers, output = req.call_application(application)
@@ -889,6 +900,7 @@ class TestRequestCommon(object):
         def application(environ, start_response):
             write = start_response("200 OK", [("content-type", "text/plain")])
             write("...\n")
+
             return []
 
         status, headers, output = req.call_application(application)
@@ -911,11 +923,12 @@ class TestRequestCommon(object):
                     environ["test._call_application_called_close"] = True
 
             write("...\n")
+
             return AppIter()
 
         status, headers, output = req.call_application(application)
         assert "".join(output) == "...\n...\n"
-        assert environ["test._call_application_called_close"] == True
+        assert environ["test._call_application_called_close"] is True
 
     def test_call_application_raises_exc_info(self):
         environ = {}
@@ -924,9 +937,10 @@ class TestRequestCommon(object):
         def application(environ, start_response):
             try:
                 raise RuntimeError("OH NOES")
-            except:
+            except BaseException:
                 exc_info = sys.exc_info()
             start_response("200 OK", [("content-type", "text/plain")], exc_info)
+
             return ["...\n"]
 
         with pytest.raises(RuntimeError):
@@ -939,9 +953,10 @@ class TestRequestCommon(object):
         def application(environ, start_response):
             try:
                 raise RuntimeError("OH NOES")
-            except:
+            except BaseException:
                 exc_info = sys.exc_info()
             start_response("200 OK", [("content-type", "text/plain")], exc_info)
+
             return ["...\n"]
 
         status, headers, output, exc_info = req.call_application(application, True)
@@ -1142,7 +1157,7 @@ class TestRequestCommon(object):
         req = Request.blank("/", POST="x" * tlen)
         assert req.content_length == tlen
         req.body_file = _Helper_test_request_wrong_clen(req.body_file)
-        assert req.content_length == None
+        assert req.content_length is None
         req.content_length = tlen + 100
         req.is_body_seekable = is_seekable
         assert req.content_length == tlen + 100
@@ -1161,10 +1176,12 @@ class TestBaseRequest(object):
 
     def _makeOne(self, *arg, **kw):
         cls = self._getTargetClass()
+
         return cls(*arg, **kw)
 
     def _blankOne(self, *arg, **kw):
         cls = self._getTargetClass()
+
         return cls.blank(*arg, **kw)
 
     def test_method(self):
@@ -1338,7 +1355,7 @@ class TestBaseRequest(object):
     def test_client_addr_no_xff_no_remote_addr(self):
         environ = {}
         req = self._makeOne(environ)
-        assert req.client_addr == None
+        assert req.client_addr is None
 
     def test_host_port_w_http_host_and_no_port(self):
         environ = {"wsgi.url_scheme": "http", "HTTP_HOST": "example.com"}
@@ -1545,7 +1562,7 @@ class TestBaseRequest(object):
         }
         req = self._makeOne(environ)
         popped = req.path_info_pop()
-        assert popped == None
+        assert popped is None
         assert environ["SCRIPT_NAME"] == "/script"
 
     def test_path_info_pop_just_leading_slash(self):
@@ -1589,7 +1606,7 @@ class TestBaseRequest(object):
         }
         req = self._makeOne(environ)
         popped = req.path_info_pop(PATTERN)
-        assert popped == None
+        assert popped is None
         assert environ["SCRIPT_NAME"] == "/script"
         assert environ["PATH_INFO"] == "/path/info"
 
@@ -1634,7 +1651,7 @@ class TestBaseRequest(object):
         }
         req = self._makeOne(environ)
         peeked = req.path_info_peek()
-        assert peeked == None
+        assert peeked is None
         assert environ["SCRIPT_NAME"] == "/script"
         assert environ["PATH_INFO"] == ""
 
@@ -1735,7 +1752,7 @@ class TestBaseRequest(object):
 
     def test_encget_doesnt_raises_with_default(self):
         inst = self._makeOne({})
-        assert inst.encget("a", None) == None
+        assert inst.encget("a", None) is None
 
     def test_encget_with_encattr(self):
         val = native_(b"\xc3\xab", "latin-1")
@@ -1795,10 +1812,12 @@ class TestLegacyRequest(object):
 
     def _makeOne(self, *arg, **kw):
         cls = self._getTargetClass()
+
         return cls(*arg, **kw)
 
     def _blankOne(self, *arg, **kw):
         cls = self._getTargetClass()
+
         return cls.blank(*arg, **kw)
 
     def test_method(self):
@@ -1984,7 +2003,7 @@ class TestLegacyRequest(object):
     def test_client_addr_no_xff_no_remote_addr(self):
         environ = {}
         req = self._makeOne(environ)
-        assert req.client_addr == None
+        assert req.client_addr is None
 
     def test_host_port_w_http_host_and_no_port(self):
         environ = {"wsgi.url_scheme": "http", "HTTP_HOST": "example.com"}
@@ -2026,7 +2045,7 @@ class TestLegacyRequest(object):
         req = self._makeOne(environ)
         assert req.host_port == "6453"
 
-    def test_host_port_ipv6(self):
+    def test_host_ipv6(self):
         environ = {"wsgi.url_scheme": "https", "HTTP_HOST": "[2001:DB8::1]"}
         req = self._makeOne(environ)
         assert req.host_port == "443"
@@ -2179,7 +2198,7 @@ class TestLegacyRequest(object):
         }
         req = self._makeOne(environ)
         assert req.relative_url(
-            "other/page" == True, "http://example.com/script/other/page"
+            "other/page" is True, "http://example.com/script/other/page"
         )
 
     def test_relative_url_to_app_true_w_leading_slash(self):
@@ -2192,7 +2211,7 @@ class TestLegacyRequest(object):
             "QUERY_STRING": "foo=bar&baz=bam",
         }
         req = self._makeOne(environ)
-        assert req.relative_url("/other/page" == True, "http://example.com/other/page")
+        assert req.relative_url("/other/page" is True, "http://example.com/other/page")
 
     def test_relative_url_to_app_false_other_w_leading_slash(self):
         environ = {
@@ -2231,7 +2250,7 @@ class TestLegacyRequest(object):
         }
         req = self._makeOne(environ)
         popped = req.path_info_pop()
-        assert popped == None
+        assert popped is None
         assert environ["SCRIPT_NAME"] == "/script"
 
     def test_path_info_pop_just_leading_slash(self):
@@ -2275,7 +2294,7 @@ class TestLegacyRequest(object):
         }
         req = self._makeOne(environ)
         popped = req.path_info_pop(PATTERN)
-        assert popped == None
+        assert popped is None
         assert environ["SCRIPT_NAME"] == "/script"
         assert environ["PATH_INFO"] == "/path/info"
 
@@ -2320,7 +2339,7 @@ class TestLegacyRequest(object):
         }
         req = self._makeOne(environ)
         peeked = req.path_info_peek()
-        assert peeked == None
+        assert peeked is None
         assert environ["SCRIPT_NAME"] == "/script"
         assert environ["PATH_INFO"] == ""
 
@@ -2401,7 +2420,7 @@ class TestLegacyRequest(object):
 
     def test_encget_doesnt_raises_with_default(self):
         inst = self._makeOne({})
-        assert inst.encget("a", None) == None
+        assert inst.encget("a", None) is None
 
     def test_encget_with_encattr(self):
         val = native_(b"\xc3\xab", "latin-1")
@@ -2457,6 +2476,7 @@ class TestRequestConstructorWarnings(object):
 
     def _makeOne(self, *arg, **kw):
         cls = self._getTargetClass()
+
         return cls(*arg, **kw)
 
     def test_ctor_w_unicode_errors(self):
@@ -2519,10 +2539,12 @@ class TestRequest_functional(object):
 
     def _makeOne(self, *arg, **kw):
         cls = self._getTargetClass()
+
         return cls(*arg, **kw)
 
     def _blankOne(self, *arg, **kw):
         cls = self._getTargetClass()
+
         return cls.blank(*arg, **kw)
 
     def test_gets(self):
@@ -2580,7 +2602,9 @@ class TestRequest_functional(object):
         assert b"accepttypes is: application/xml,text/html" in res
 
     def test_accept_acceptable_offers(self):
-        fut = lambda r, offers: r.accept.acceptable_offers(offers)
+        def fut(r, offers):
+            return r.accept.acceptable_offers(offers)
+
         accept = self._blankOne("/").accept
         assert not accept
         assert self._blankOne("/", headers={"Accept": ""}).accept
@@ -2663,6 +2687,7 @@ class TestRequest_functional(object):
         request = self._blankOne("/?foo=bar&baz", headers=headers)
         status, headerlist, app_iter = request.call_application(simpleapp)
         res = b"".join(app_iter)
+
         for thing in (
             "if_modified_since: "
             + "datetime.datetime(1994, 10, 29, 19, 43, 31, tzinfo=UTC)",
@@ -2921,6 +2946,7 @@ class TestRequest_functional(object):
             "Cache-Control": "max-age=0",
         }
         r = self._makeOne({"a": 1}, headers=headers)
+
         for i in headers.keys():
             assert i in r.headers and "HTTP_" + i.upper().replace("-", "_") in r.environ
         r.headers = {"Server": "Apache"}
@@ -2950,8 +2976,8 @@ class TestRequest_functional(object):
         assert a.path_info_pop() == "foo"
         assert a.path_info_peek() == "bar"
         assert a.path_info_pop() == "bar"
-        assert a.path_info_peek() == None
-        assert a.path_info_pop() == None
+        assert a.path_info_peek() is None
+        assert a.path_info_pop() is None
 
     def test_urlvars_property(self):
         # Testing urlvars setter/getter/deleter
@@ -3206,6 +3232,7 @@ class TestRequest_functional(object):
     def test_middleware_body(self):
         def app(env, sr):
             sr("200 OK", [])
+
             return [env["wsgi.input"].read()]
 
         def mw(env, sr):
@@ -3213,6 +3240,7 @@ class TestRequest_functional(object):
             data = req.body_file.read()
             resp = req.get_response(app)
             resp.headers["x-data"] = data
+
             return resp(env, sr)
 
         req = self._blankOne("/", method="PUT", body=b"abc")
@@ -3262,9 +3290,9 @@ class TestRequest_functional(object):
         assert hasattr(req.environ["wsgi.input"], "next") or hasattr(
             req.environ["wsgi.input"], "__next__"
         )
-        assert req.environ["wsgi.multiprocess"] == False
-        assert req.environ["wsgi.multithread"] == False
-        assert req.environ["wsgi.run_once"] == False
+        assert req.environ["wsgi.multiprocess"] is False
+        assert req.environ["wsgi.multithread"] is False
+        assert req.environ["wsgi.run_once"] is False
         assert req.environ["wsgi.url_scheme"] == "http"
         assert req.environ["wsgi.version"], 1 == 0
 
@@ -3410,7 +3438,7 @@ class TestRequest_functional(object):
         # Conditional Requests
         server_token = "opaque-token"
         # shouldn't return 304
-        assert not server_token in req.if_none_match
+        assert server_token not in req.if_none_match
         req.if_none_match = server_token
         assert isinstance(req.if_none_match, ETagMatcher)
         # You *should* return 304
@@ -3474,6 +3502,7 @@ class TestRequest_functional(object):
 
         def wsgi_app(environ, start_response):
             start_response("200 OK", [("Content-Type", "text/plain")])
+
             return [b"Hi!"]
 
         assert req.call_application(wsgi_app) == (
@@ -3498,6 +3527,7 @@ class TestRequest_functional(object):
 
         def wsgi_app(environ, start_response):
             start_response("204 No Content", [])
+
             return [b""]
 
         assert req.call_application(wsgi_app) == ("204 No Content", [], [b""])
@@ -3518,6 +3548,7 @@ class TestRequest_functional(object):
 
         def wsgi_app(environ, start_response):
             start_response("200 OK", [])
+
             return [b""]
 
         assert req.call_application(wsgi_app) == ("200 OK", [], [b""])
@@ -3539,6 +3570,7 @@ class TestRequest_functional(object):
 
         def wsgi_app(environ, start_response):
             start_response("200 OK", [("Content-Type", "text/plain")])
+
             return [b"Hi!"]
 
         res = req.get_response(wsgi_app, catch_exc_info=True)
@@ -3561,8 +3593,10 @@ class TestRequest_functional(object):
         assert int(headers1.get("Content-Length", "0")) == int(
             headers2.get("Content-Length", "0")
         )
+
         if "Content-Length" in headers1:
             del headers1["Content-Length"]
+
         if "Content-Length" in headers2:
             del headers2["Content-Length"]
         assert headers1 == headers2
@@ -3628,7 +3662,7 @@ class TestFakeCGIBody(object):
         body = FakeCGIBody(
             {"bananas": "bananas"}, "multipart/form-data; boundary=foobar"
         )
-        assert body.fileno() == None
+        assert body.fileno() is None
 
     def test_iter(self):
         from webob.request import FakeCGIBody
@@ -3811,6 +3845,7 @@ def simpleapp(environ, start_response):
     start_response(status, response_headers)
     request = Request(environ)
     request.remote_user = "bob"
+
     return [
         bytes_(x)
         for x in [
@@ -3957,12 +3992,14 @@ class UnseekableInput(object):
         if size == -1:
             t = self.data[self.pos :]
             self.pos = len(self.data)
+
             return t
         else:
             if self.pos + size > len(self.data):
                 size = len(self.data) - self.pos
             t = self.data[self.pos : self.pos + size]
             self.pos += size
+
             return t
 
 
@@ -3978,10 +4015,12 @@ class _Helper_test_request_wrong_clen(object):
 
     def read(self, *args):
         r = self.f.read(*args)
+
         if not r:
             if self.file_ended:
                 raise AssertionError("Reading should stop after first empty string")
             self.file_ended = True
+
         return r
 
     def seek(self, pos):

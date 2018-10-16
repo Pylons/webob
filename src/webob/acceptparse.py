@@ -40,18 +40,21 @@ def _item_n_weight_re(item_re):
 
 def _item_qvalue_pair_to_header_element(pair):
     item, qvalue = pair
+
     if qvalue == 1.0:
         element = item
     elif qvalue == 0.0:
         element = "{};q=0".format(item)
     else:
         element = "{};q={}".format(item, qvalue)
+
     return element
 
 
 def _list_0_or_more__compiled_re(element_re):
     # RFC 7230 Section 7 "ABNF List Extension: #rule":
     # #element => [ ( "," / element ) *( OWS "," [ OWS element ] ) ]
+
     return re.compile(
         "^(?:$)|"
         + "(?:"
@@ -72,6 +75,7 @@ def _list_1_or_more__compiled_re(element_re):
     # RFC 7230 Section 7 "ABNF List Extension: #rule":
     # 1#element => *( "," OWS ) element *( OWS "," [ OWS element ] )
     # and RFC 7230 Errata ID: 4169
+
     return re.compile(
         "^(?:,"
         + OWS_re
@@ -105,6 +109,7 @@ class AcceptOffer(namedtuple("AcceptOffer", ["type", "subtype", "params"])):
 
         """
         value = self.type + "/" + self.subtype
+
         return Accept._form_media_range(value, self.params)
 
 
@@ -246,12 +251,15 @@ class Accept(object):
 
         For media type and extension parameter values.
         """
+
         if param_value == "":
             param_value = '""'
         else:
             param_value = param_value.replace("\\", "\\\\").replace('"', r"\"")
+
             if not token_compiled_re.match(param_value):
                 param_value = '"' + param_value + '"'
+
         return param_value
 
     @classmethod
@@ -263,6 +271,7 @@ class Accept(object):
         string or a (name, value) tuple.
         """
         extension_params_segment = ""
+
         for item in extension_params:
             try:
                 extension_params_segment += ";" + item
@@ -272,6 +281,7 @@ class Accept(object):
                     param_value=param_value
                 )
                 extension_params_segment += ";" + param_name + "=" + param_value
+
         return extension_params_segment
 
     @classmethod
@@ -283,9 +293,11 @@ class Accept(object):
         (parameter name, parameter value) tuples.
         """
         media_type_params_segment = ""
+
         for param_name, param_value in media_type_params:
             param_value = cls._escape_and_quote_parameter_value(param_value=param_value)
             media_type_params_segment += ";" + param_name + "=" + param_value
+
         return type_subtype + media_type_params_segment
 
     @classmethod
@@ -311,6 +323,7 @@ class Accept(object):
             element = "{};q=0{}".format(media_range, extension_params_segment)
         else:
             element = "{};q={}{}".format(media_range, qvalue, extension_params_segment)
+
         return element
 
     @classmethod
@@ -321,10 +334,12 @@ class Accept(object):
         media_type_params = cls.parameters_compiled_re.findall(
             media_type_params_segment
         )
+
         for index, (name, value) in enumerate(media_type_params):
             if value.startswith('"') and value.endswith('"'):
                 value = cls._process_quoted_string_token(token=value)
                 media_type_params[index] = (name, value)
+
         return media_type_params
 
     @classmethod
@@ -335,6 +350,7 @@ class Accept(object):
         # RFC 7230, section 3.2.6 "Field Value Components": "Recipients that
         # process the value of a quoted-string MUST handle a quoted-pair as if
         # it were replaced by the octet following the backslash."
+
         return re.sub(r"\\(?![\\])", "", token[1:-1]).replace("\\\\", "\\")
 
     @classmethod
@@ -342,17 +358,21 @@ class Accept(object):
         """
         Convert Python value to header string for __add__/__radd__.
         """
+
         if isinstance(value, str):
             return value
+
         if hasattr(value, "items"):
             if value == {}:
                 value = []
             else:
                 value_list = []
+
                 for media_range, item in value.items():
                     # item is either (media range, (qvalue, extension
                     # parameters segment)), or (media range, qvalue) (supported
                     # for backward compatibility)
+
                     if isinstance(item, (float, int)):
                         value_list.append((media_range, item, ""))
                     else:
@@ -360,8 +380,10 @@ class Accept(object):
                 value = sorted(
                     value_list, key=lambda item: item[1], reverse=True  # qvalue
                 )
+
         if isinstance(value, (tuple, list)):
             header_elements = []
+
             for item in value:
                 if isinstance(item, (tuple, list)):
                     item = cls._iterable_to_header_element(iterable=item)
@@ -369,6 +391,7 @@ class Accept(object):
             header_str = ", ".join(header_elements)
         else:
             header_str = str(value)
+
         return header_str
 
     @classmethod
@@ -405,6 +428,7 @@ class Accept(object):
         # Using Python stdlib's `re` module, there is currently no way to check
         # the match *and* get all the groups using the same regex, so we have
         # to do this in steps using multiple regexes.
+
         if cls.accept_compiled_re.match(value) is None:
             raise ValueError("Invalid value for an Accept header.")
 
@@ -430,10 +454,12 @@ class Accept(object):
                 qvalue = float(qvalue) if qvalue else 1.0
 
                 extension_params = groups[3]
+
                 if extension_params:
                     extension_params = cls.accept_ext_compiled_re.findall(
                         extension_params
                     )
+
                     for index, (token_key, token_value) in enumerate(extension_params):
                         if token_value:
                             if token_value.startswith('"') and token_value.endswith(
@@ -467,17 +493,21 @@ class Accept(object):
         :raises ValueError: If the offer does not match the required format.
 
         """
+
         if isinstance(offer, AcceptOffer):
             return offer
         match = cls.media_type_compiled_re.match(offer)
+
         if not match:
             raise ValueError("Invalid value for an Accept offer.")
 
         groups = match.groups()
         offer_type, offer_subtype = groups[0].split("/")
         offer_params = cls._parse_media_type_params(media_type_params_segment=groups[1])
+
         if offer_type == "*" or offer_subtype == "*":
             raise ValueError("Invalid value for an Accept offer.")
+
         return AcceptOffer(
             offer_type.lower(),
             offer_subtype.lower(),
@@ -494,12 +524,14 @@ class Accept(object):
 
         """
         parsed_offers = []
+
         for index, offer in enumerate(offers):
             try:
                 parsed_offer = cls.parse_offer(offer)
             except ValueError:
                 continue
             parsed_offers.append([index, parsed_offer])
+
         return parsed_offers
 
 
@@ -518,6 +550,7 @@ class AcceptValidHeader(Accept):
     @property
     def header_value(self):
         """(``str`` or ``None``) The header value."""
+
         return self._header_value
 
     @property
@@ -544,6 +577,7 @@ class AcceptValidHeader(Accept):
         *extension_params* is the extension parameters, as a list where each
         item is either a parameter string or a (parameter name, value) tuple.
         """
+
         return self._parsed
 
     def __init__(self, header_value):
@@ -595,6 +629,7 @@ class AcceptValidHeader(Accept):
         instance, then a new :class:`AcceptValidHeader` instance with the same
         header value as ``self`` is returned.
         """
+
         if isinstance(other, AcceptValidHeader):
             if other.header_value == "":
                 return self.__class__(header_value=self.header_value)
@@ -618,6 +653,7 @@ class AcceptValidHeader(Accept):
 
         For this class, it always returns ``True``.
         """
+
         return True
 
     __nonzero__ = __bool__  # Python 2
@@ -660,14 +696,16 @@ class AcceptValidHeader(Accept):
             "will change in the future to better conform to the RFC.",
             DeprecationWarning,
         )
+
         for (
             media_range,
-            quality,
-            media_type_params,
-            extension_params,
+            _quality,
+            _media_type_params,
+            _extension_params,
         ) in self._parsed_nonzero:
             if self._old_match(media_range, offer):
                 return True
+
         return False
 
     def __iter__(self):
@@ -696,7 +734,7 @@ class AcceptValidHeader(Accept):
             DeprecationWarning,
         )
 
-        for media_range, qvalue, media_type_params, extension_params in sorted(
+        for media_range, _qvalue, _media_type_params, _extension_params in sorted(
             self._parsed_nonzero, key=lambda i: i[1], reverse=True
         ):
             yield media_range
@@ -707,6 +745,7 @@ class AcceptValidHeader(Accept):
 
         See the docstring for :meth:`AcceptValidHeader.__add__`.
         """
+
         return self._add_instance_and_non_accept_type(
             instance=self, other=other, instance_on_the_right=True
         )
@@ -925,8 +964,6 @@ class AcceptValidHeader(Accept):
                     elif offer_media_type_params == range_media_type_params:
                         specificity = 4
                     else:  # pragma: no cover
-                        # no cover because of
-                        # https://bitbucket.org/ned/coveragepy/issues/254/incorrect-coverage-on-continue-statement
                         continue
                 else:
                     if range_subtype == "*" and offer_type == range_type:
@@ -934,8 +971,6 @@ class AcceptValidHeader(Accept):
                     elif range_type_subtype == "*/*":
                         specificity = 1
                     else:  # pragma: no cover
-                        # no cover because of
-                        # https://bitbucket.org/ned/coveragepy/issues/254/incorrect-coverage-on-continue-statement
                         continue
                 try:
                     if specificity <= (acceptable_offers_n_quality_factors[offer][2]):
@@ -1521,6 +1556,7 @@ class AcceptNoHeader(_AcceptInvalidOrNoHeader):
 
     def __str__(self):
         """Return the ``str`` ``'<no header in request>'``."""
+
         return "<no header in request>"
 
     def _add_instance_and_non_accept_type(self, instance, other):
@@ -1554,6 +1590,7 @@ class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
     @property
     def header_value(self):
         """(``str`` or ``None``) The header value."""
+
         return self._header_value
 
     @property
@@ -1563,6 +1600,7 @@ class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
 
         As the header is invalid and cannot be parsed, this is ``None``.
         """
+
         return self._parsed
 
     def __init__(self, header_value):
@@ -1604,6 +1642,7 @@ class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
         header value, or an :class:`AcceptInvalidHeader` instance, a new
         :class:`AcceptNoHeader` instance is returned.
         """
+
         if isinstance(other, AcceptValidHeader):
             return AcceptValidHeader(header_value=other.header_value)
 
@@ -1618,6 +1657,7 @@ class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
 
         See the docstring for :meth:`AcceptValidHeader.__add__`.
         """
+
         return self._add_instance_and_non_accept_type(
             instance=self, other=other, instance_on_the_right=True
         )
@@ -1630,6 +1670,7 @@ class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
 
     def __str__(self):
         """Return the ``str`` ``'<invalid header value>'``."""
+
         return "<invalid header value>"
 
     def _add_instance_and_non_accept_type(
@@ -1660,6 +1701,7 @@ def create_accept_header(header_value):
              | If `header_value` is an invalid ``Accept`` header, an
                :class:`AcceptInvalidHeader` instance.
     """
+
     if header_value is None:
         return AcceptNoHeader()
     try:
@@ -1684,6 +1726,7 @@ def accept_property():
 
     def fget(request):
         """Get an object representing the header in the request."""
+
         return create_accept_header(header_value=request.environ.get(ENVIRON_KEY))
 
     def fset(request, value):
@@ -1709,6 +1752,7 @@ def accept_property():
           :class:`AcceptInvalidHeader` instance
         * object of any other type that returns a value for ``__str__``
         """
+
         if value is None or isinstance(value, AcceptNoHeader):
             fdel(request=request)
         else:
@@ -1754,8 +1798,10 @@ class AcceptCharset(object):
         else:
             if hasattr(value, "items"):
                 value = sorted(value.items(), key=lambda item: item[1], reverse=True)
+
             if isinstance(value, (tuple, list)):
                 result = []
+
                 for item in value:
                     if isinstance(item, (tuple, list)):
                         item = _item_qvalue_pair_to_header_element(pair=item)
@@ -1763,6 +1809,7 @@ class AcceptCharset(object):
                 header_str = ", ".join(result)
             else:
                 header_str = str(value)
+
         return header_str
 
     @classmethod
@@ -1780,6 +1827,7 @@ class AcceptCharset(object):
         # Using Python stdlib's `re` module, there is currently no way to check
         # the match *and* get all the groups using the same regex, so we have
         # to use one regex to check the match, and another to get the groups.
+
         if cls.accept_charset_compiled_re.match(value) is None:
             raise ValueError("Invalid value for an Accept-Charset header.")
 
@@ -1808,6 +1856,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
     @property
     def header_value(self):
         """(``str``) The header value."""
+
         return self._header_value
 
     @property
@@ -1817,6 +1866,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
 
         A list of (charset, quality value) tuples.
         """
+
         return self._parsed
 
     def __init__(self, header_value):
@@ -1859,6 +1909,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
         instance, a new :class:`AcceptCharsetValidHeader` instance with the
         same header value as ``self`` is returned.
         """
+
         if isinstance(other, AcceptCharsetValidHeader):
             return create_accept_charset_header(
                 header_value=self.header_value + ", " + other.header_value
@@ -1881,6 +1932,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
 
         For this class, it always returns ``True``.
         """
+
         return True
 
     __nonzero__ = __bool__  # Python 2
@@ -1913,9 +1965,11 @@ class AcceptCharsetValidHeader(AcceptCharset):
             "will change in the future to better conform to the RFC.",
             DeprecationWarning,
         )
-        for mask, quality in self._parsed_nonzero:
+
+        for mask, _quality in self._parsed_nonzero:
             if self._old_match(mask, offer):
                 return True
+
         return False
 
     def __iter__(self):
@@ -1943,8 +1997,11 @@ class AcceptCharsetValidHeader(AcceptCharset):
             "future.",
             DeprecationWarning,
         )
-        for m, q in sorted(self._parsed_nonzero, key=lambda i: i[1], reverse=True):
-            yield m
+
+        for mask, _quality in sorted(
+            self._parsed_nonzero, key=lambda i: i[1], reverse=True
+        ):
+            yield mask
 
     def __radd__(self, other):
         """
@@ -1952,6 +2009,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
 
         See the docstring for :meth:`AcceptCharsetValidHeader.__add__`.
         """
+
         return self._add_instance_and_non_accept_charset_type(
             instance=self, other=other, instance_on_the_right=True
         )
@@ -2194,9 +2252,9 @@ class AcceptCharsetValidHeader(AcceptCharset):
             DeprecationWarning,
         )
         bestq = 0
-        for mask, q in self.parsed:
+        for mask, quality in self.parsed:
             if self._old_match(mask, offer):
-                bestq = max(bestq, q)
+                bestq = max(bestq, quality)
         return bestq or None
 
 
@@ -2436,7 +2494,7 @@ class AcceptCharsetNoHeader(_AcceptCharsetInvalidOrNoHeader):
         * a ``str`` header value
         * a ``dict``, where keys are charsets and values are qvalues
         * a ``tuple`` or ``list``, where each item is a charset ``str`` or a
-          ``tuple`` or ``list`` (charset, qvalue) pair (``str``\ s and pairs
+          ``tuple`` or ``list`` (charset, qvalue) pair (``str`` and pairs
           can be mixed within the ``tuple`` or ``list``)
         * an :class:`AcceptCharsetValidHeader`, :class:`AcceptCharsetNoHeader`,
           or :class:`AcceptCharsetInvalidHeader` instance
@@ -2474,6 +2532,7 @@ class AcceptCharsetNoHeader(_AcceptCharsetInvalidOrNoHeader):
 
     def __str__(self):
         """Return the ``str`` ``'<no header in request>'``."""
+
         return "<no header in request>"
 
     def _add_instance_and_non_accept_charset_type(self, instance, other):
@@ -2509,6 +2568,7 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
     @property
     def header_value(self):
         """(``str`` or ``None``) The header value."""
+
         return self._header_value
 
     @property
@@ -2518,6 +2578,7 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
 
         As the header is invalid and cannot be parsed, this is ``None``.
         """
+
         return self._parsed
 
     def __init__(self, header_value):
@@ -2553,6 +2614,7 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
         invalid header value, or an :class:`AcceptCharsetInvalidHeader`
         instance, a new :class:`AcceptCharsetNoHeader` instance is returned.
         """
+
         if isinstance(other, AcceptCharsetValidHeader):
             return AcceptCharsetValidHeader(header_value=other.header_value)
 
@@ -2569,6 +2631,7 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
 
         See the docstring for :meth:`AcceptCharsetValidHeader.__add__`.
         """
+
         return self._add_instance_and_non_accept_charset_type(
             instance=self, other=other, instance_on_the_right=True
         )
@@ -2581,6 +2644,7 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
 
     def __str__(self):
         """Return the ``str`` ``'<invalid header value>'``."""
+
         return "<invalid header value>"
 
     def _add_instance_and_non_accept_charset_type(
@@ -2611,6 +2675,7 @@ def create_accept_charset_header(header_value):
              | If `header_value` is an invalid ``Accept-Charset`` header, an
                :class:`AcceptCharsetInvalidHeader` instance.
     """
+
     if header_value is None:
         return AcceptCharsetNoHeader()
     try:
@@ -2635,6 +2700,7 @@ def accept_charset_property():
 
     def fget(request):
         """Get an object representing the header in the request."""
+
         return create_accept_charset_header(
             header_value=request.environ.get(ENVIRON_KEY)
         )
@@ -2655,6 +2721,7 @@ def accept_charset_property():
           or :class:`AcceptCharsetInvalidHeader` instance
         * object of any other type that returns a value for ``__str__``
         """
+
         if value is None or isinstance(value, AcceptCharsetNoHeader):
             fdel(request=request)
         else:
@@ -2705,8 +2772,10 @@ class AcceptEncoding(object):
         else:
             if hasattr(value, "items"):
                 value = sorted(value.items(), key=lambda item: item[1], reverse=True)
+
             if isinstance(value, (tuple, list)):
                 result = []
+
                 for item in value:
                     if isinstance(item, (tuple, list)):
                         item = _item_qvalue_pair_to_header_element(pair=item)
@@ -2714,6 +2783,7 @@ class AcceptEncoding(object):
                 header_str = ", ".join(result)
             else:
                 header_str = str(value)
+
         return header_str
 
     @classmethod
@@ -2731,6 +2801,7 @@ class AcceptEncoding(object):
         # Using Python stdlib's `re` module, there is currently no way to check
         # the match *and* get all the groups using the same regex, so we have
         # to use one regex to check the match, and another to get the groups.
+
         if cls.accept_encoding_compiled_re.match(value) is None:
             raise ValueError("Invalid value for an Accept-Encoding header.")
 
@@ -2759,6 +2830,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
     @property
     def header_value(self):
         """(``str`` or ``None``) The header value."""
+
         return self._header_value
 
     @property
@@ -2773,6 +2845,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
 
         *qvalue* (``float``) is the quality value of the codings.
         """
+
         return self._parsed
 
     def __init__(self, header_value):
@@ -2820,6 +2893,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         :class:`AcceptEncodingValidHeader` instance with the same header value
         as ``self`` is returned.
         """
+
         if isinstance(other, AcceptEncodingValidHeader):
             if other.header_value == "":
                 return self.__class__(header_value=self.header_value)
@@ -2845,6 +2919,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
 
         For this class, it always returns ``True``.
         """
+
         return True
 
     __nonzero__ = __bool__  # Python 2
@@ -2880,7 +2955,8 @@ class AcceptEncodingValidHeader(AcceptEncoding):
             "will change in the future to better conform to the RFC.",
             DeprecationWarning,
         )
-        for mask, quality in self._parsed_nonzero:
+
+        for mask, _quality in self._parsed_nonzero:
             if self._old_match(mask, offer):
                 return True
 
@@ -2911,8 +2987,10 @@ class AcceptEncodingValidHeader(AcceptEncoding):
             DeprecationWarning,
         )
 
-        for m, q in sorted(self._parsed_nonzero, key=lambda i: i[1], reverse=True):
-            yield m
+        for mask, _quality in sorted(
+            self._parsed_nonzero, key=lambda i: i[1], reverse=True
+        ):
+            yield mask
 
     def __radd__(self, other):
         """
@@ -2920,6 +2998,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
 
         See the docstring for :meth:`AcceptEncodingValidHeader.__add__`.
         """
+
         return self._add_instance_and_non_accept_encoding_type(
             instance=self, other=other, instance_on_the_right=True
         )
@@ -3470,6 +3549,7 @@ class AcceptEncodingNoHeader(_AcceptEncodingInvalidOrNoHeader):
 
     def __str__(self):
         """Return the ``str`` ``'<no header in request>'``."""
+
         return "<no header in request>"
 
     def _add_instance_and_non_accept_encoding_type(self, instance, other):
@@ -3504,6 +3584,7 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
     @property
     def header_value(self):
         """(``str`` or ``None``) The header value."""
+
         return self._header_value
 
     @property
@@ -3513,6 +3594,7 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
 
         As the header is invalid and cannot be parsed, this is ``None``.
         """
+
         return self._parsed
 
     def __init__(self, header_value):
@@ -3550,6 +3632,7 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
         invalid header value, or an :class:`AcceptEncodingInvalidHeader`
         instance, a new :class:`AcceptEncodingNoHeader` instance is returned.
         """
+
         if isinstance(other, AcceptEncodingValidHeader):
             return AcceptEncodingValidHeader(header_value=other.header_value)
 
@@ -3566,6 +3649,7 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
 
         See the docstring for :meth:`AcceptEncodingValidHeader.__add__`.
         """
+
         return self._add_instance_and_non_accept_encoding_type(
             instance=self, other=other, instance_on_the_right=True
         )
@@ -3578,6 +3662,7 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
 
     def __str__(self):
         """Return the ``str`` ``'<invalid header value>'``."""
+
         return "<invalid header value>"
 
     def _add_instance_and_non_accept_encoding_type(
@@ -3608,6 +3693,7 @@ def create_accept_encoding_header(header_value):
              | If `header_value` is an invalid ``Accept-Encoding`` header, an
                :class:`AcceptEncodingInvalidHeader` instance.
     """
+
     if header_value is None:
         return AcceptEncodingNoHeader()
     try:
@@ -3632,6 +3718,7 @@ def accept_encoding_property():
 
     def fget(request):
         """Get an object representing the header in the request."""
+
         return create_accept_encoding_header(
             header_value=request.environ.get(ENVIRON_KEY)
         )
@@ -3654,6 +3741,7 @@ def accept_encoding_property():
           :class:`AcceptEncodingInvalidHeader` instance
         * object of any other type that returns a value for ``__str__``
         """
+
         if value is None or isinstance(value, AcceptEncodingNoHeader):
             fdel(request=request)
         else:
@@ -3704,8 +3792,10 @@ class AcceptLanguage(object):
         else:
             if hasattr(value, "items"):
                 value = sorted(value.items(), key=lambda item: item[1], reverse=True)
+
             if isinstance(value, (tuple, list)):
                 result = []
+
                 for element in value:
                     if isinstance(element, (tuple, list)):
                         element = _item_qvalue_pair_to_header_element(pair=element)
@@ -3713,6 +3803,7 @@ class AcceptLanguage(object):
                 header_str = ", ".join(result)
             else:
                 header_str = str(value)
+
         return header_str
 
     @classmethod
@@ -3730,6 +3821,7 @@ class AcceptLanguage(object):
         # Using Python stdlib's `re` module, there is currently no way to check
         # the match *and* get all the groups using the same regex, so we have
         # to use one regex to check the match, and another to get the groups.
+
         if cls.accept_language_compiled_re.match(value) is None:
             raise ValueError("Invalid value for an Accept-Language header.")
 
@@ -3776,6 +3868,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
     @property
     def header_value(self):
         """(``str`` or ``None``) The header value."""
+
         return self._header_value
 
     @property
@@ -3785,6 +3878,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
         A list of (language range, quality value) tuples.
         """
+
         return self._parsed
 
     def __add__(self, other):
@@ -3814,6 +3908,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         instance, a new :class:`AcceptLanguageValidHeader` instance with the
         same header value as ``self`` is returned.
         """
+
         if isinstance(other, AcceptLanguageValidHeader):
             return create_accept_language_header(
                 header_value=self.header_value + ", " + other.header_value
@@ -3836,6 +3931,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
         For this class, it always returns ``True``.
         """
+
         return True
 
     __bool__ = __nonzero__  # Python 3
@@ -3885,9 +3981,11 @@ class AcceptLanguageValidHeader(AcceptLanguage):
             "will change in the future to better conform to the RFC.",
             DeprecationWarning,
         )
-        for mask, quality in self._parsed_nonzero:
+
+        for mask, _quality in self._parsed_nonzero:
             if self._old_match(mask, offer):
                 return True
+
         return False
 
     def __iter__(self):
@@ -3916,8 +4014,10 @@ class AcceptLanguageValidHeader(AcceptLanguage):
             DeprecationWarning,
         )
 
-        for m, q in sorted(self._parsed_nonzero, key=lambda i: i[1], reverse=True):
-            yield m
+        for mask, _quality in sorted(
+            self._parsed_nonzero, key=lambda i: i[1], reverse=True
+        ):
+            yield mask
 
     def __radd__(self, other):
         """
@@ -3925,6 +4025,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
         See the docstring for :meth:`AcceptLanguageValidHeader.__add__`.
         """
+
         return self._add_instance_and_non_accept_language_type(
             instance=self, other=other, instance_on_the_right=True
         )
@@ -4207,6 +4308,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
            :rfc:`RFC 7231 <7231>`.
 
            :meth:`AcceptLanguageValidHeader.lookup` is a possible alternative
+
            for finding a best match -- it conforms to, and is suggested as a
            matching scheme for the ``Accept-Language`` header in, :rfc:`RFC
            7231, section 5.3.5 <7231#section-5.3.5>` -- but please be aware
@@ -4217,6 +4319,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
         Each language tag in `offers` is checked against each non-0 range in
         the header. If the two are a match according to WebOb's old criterion
+
         for a match, the quality value of the match is the qvalue of the
         language range from the header multiplied by the server quality value
         of the offer (if the server quality value is not supplied, it is 1).
@@ -4424,6 +4527,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                         | The difference between supplying a ``str`` to
                           `default_tag` and `default` is that `default_tag` is
                           checked against ``q=0`` ranges in the header to see
+
                           if it matches one of the ranges specified as not
                           acceptable, whereas a ``str`` for the `default`
                           argument is simply returned.
@@ -5002,6 +5106,7 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
 
     def __str__(self):
         """Return the ``str`` ``'<no header in request>'``."""
+
         return "<no header in request>"
 
     def _add_instance_and_non_accept_language_type(self, instance, other):
@@ -5045,6 +5150,7 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
     @property
     def header_value(self):
         """(``str`` or ``None``) The header value."""
+
         return self._header_value
 
     @property
@@ -5054,6 +5160,7 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
 
         As the header is invalid and cannot be parsed, this is ``None``.
         """
+
         return self._parsed
 
     def __add__(self, other):
@@ -5082,6 +5189,7 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         invalid header value, or an :class:`AcceptLanguageInvalidHeader`
         instance, a new :class:`AcceptLanguageNoHeader` instance is returned.
         """
+
         if isinstance(other, AcceptLanguageValidHeader):
             return AcceptLanguageValidHeader(header_value=other.header_value)
 
@@ -5098,6 +5206,7 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
 
         See the docstring for :meth:`AcceptLanguageValidHeader.__add__`.
         """
+
         return self._add_instance_and_non_accept_language_type(
             instance=self, other=other, instance_on_the_right=True
         )
@@ -5110,6 +5219,7 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
 
     def __str__(self):
         """Return the ``str`` ``'<invalid header value>'``."""
+
         return "<invalid header value>"
 
     def _add_instance_and_non_accept_language_type(
@@ -5140,6 +5250,7 @@ def create_accept_language_header(header_value):
              | If `header_value` is an invalid ``Accept-Language`` header, an
                :class:`AcceptLanguageInvalidHeader` instance.
     """
+
     if header_value is None:
         return AcceptLanguageNoHeader()
     try:
@@ -5164,6 +5275,7 @@ def accept_language_property():
 
     def fget(request):
         """Get an object representing the header in the request."""
+
         return create_accept_language_header(
             header_value=request.environ.get(ENVIRON_KEY)
         )
@@ -5185,6 +5297,7 @@ def accept_language_property():
           :class:`AcceptLanguageInvalidHeader` instance
         * object of any other type that returns a value for ``__str__``
         """
+
         if value is None or isinstance(value, AcceptLanguageNoHeader):
             fdel(request=request)
         else:

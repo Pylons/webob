@@ -76,7 +76,7 @@ def _test_app_req_interrupt(env, sr):
         log.info("Running test: %s", req.path_info)
         with pytest.raises(IOError):
             op(req)
-    except:
+    except BaseException:
         _global_res.put(sys.exc_info())
     else:
         _global_res.put(None)

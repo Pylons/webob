@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from webob.response import Response
+from webob.compat import PY2
 
 
 def make_middleware(app):
@@ -42,7 +43,10 @@ if __name__ == "__main__":
         print("Hit ^C to end")
         try:
             while 1:
-                raw_input()
+                if PY2:
+                    raw_input()  # noqa: F821
+                else:
+                    input()
         finally:
             os.kill(proc.pid, signal.SIGKILL)
     else:

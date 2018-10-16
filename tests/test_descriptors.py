@@ -587,7 +587,7 @@ def test_parse_range_type():
     from webob.descriptors import parse_range
 
     val = parse_range("bytes=1-500")
-    assert type(val) is type(Range.parse("bytes=1-500"))
+    assert type(val) is type(Range.parse("bytes=1-500"))  # noqa: E701
 
 
 def test_parse_range_values():
@@ -709,7 +709,7 @@ def test_parse_content_range_stop():
 def test_serialize_content_range_none():
     from webob.descriptors import serialize_content_range
 
-    assert serialize_content_range(None) == "None"  ### XXX: Seems wrong
+    assert serialize_content_range(None) == "None"  # XXX: Seems wrong
 
 
 def test_serialize_content_range_emptystr():

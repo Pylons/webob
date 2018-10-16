@@ -83,7 +83,7 @@ def test_ResponseHeaders_contains():
     d = headers.ResponseHeaders()
     d["a"] = 1
     assert "a" in d
-    assert not "b" in d
+    assert "b" not in d
 
 
 def test_EnvironHeaders_delitem():
@@ -114,12 +114,12 @@ def test_EnvironHeaders_contains():
 
 def test__trans_key_not_basestring():
     result = headers._trans_key(None)
-    assert result == None
+    assert result is None
 
 
 def test__trans_key_not_a_header():
     result = headers._trans_key("")
-    assert result == None
+    assert result is None
 
 
 def test__trans_key_key2header():

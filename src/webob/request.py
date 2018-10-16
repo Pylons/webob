@@ -71,6 +71,7 @@ class _NoDefault:
 
 
 NoDefault = _NoDefault()
+DEFAULT = object()
 
 PATH_SAFE = "/~!$&'()*+,;=:@"
 
@@ -1422,7 +1423,7 @@ class LegacyRequest(BaseRequest):
 class AdhocAttrMixin(object):
     _setattr_stacklevel = 3
 
-    def __setattr__(self, attr, value, DEFAULT=object()):
+    def __setattr__(self, attr, value, DEFAULT=DEFAULT):
         if getattr(self.__class__, attr, DEFAULT) is not DEFAULT or attr.startswith(
             "_"
         ):
@@ -1430,13 +1431,13 @@ class AdhocAttrMixin(object):
         else:
             self.environ.setdefault("webob.adhoc_attrs", {})[attr] = value
 
-    def __getattr__(self, attr, DEFAULT=object()):
+    def __getattr__(self, attr, DEFAULT=DEFAULT):
         try:
             return self.environ["webob.adhoc_attrs"][attr]
         except KeyError:
             raise AttributeError(attr)
 
-    def __delattr__(self, attr, DEFAULT=object()):
+    def __delattr__(self, attr, DEFAULT=DEFAULT):
         if getattr(self.__class__, attr, DEFAULT) is not DEFAULT:
             return object.__delattr__(self, attr)
         try:
@@ -1488,7 +1489,7 @@ def environ_from_url(path):
         "wsgi.multithread": False,
         "wsgi.multiprocess": False,
         "wsgi.run_once": False,
-        #'webob.is_body_seekable': True,
+        'webob.is_body_seekable': True,
     }
     return env
 
@@ -1503,7 +1504,7 @@ def environ_add_POST(env, data, content_type=None):
     has_files = False
     if hasattr(data, "items"):
         data = list(data.items())
-        for k, v in data:
+        for _, v in data:
             if isinstance(v, (tuple, list)):
                 has_files = True
                 break

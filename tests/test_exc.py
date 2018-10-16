@@ -200,7 +200,7 @@ def test_WSGIHTTPException_respects_accept_text_html():
                 assert header[1].startswith("text/html")
 
     exc = webob_exc.WSGIHTTPException()
-    resp = exc.generate_response(
+    exc.generate_response(
         environ={
             "wsgi.url_scheme": "HTTP",
             "SERVER_NAME": "localhost",
@@ -219,7 +219,7 @@ def test_WSGIHTTPException_respects_accept_text_plain():
                 assert header[1].startswith("text/plain")
 
     exc = webob_exc.WSGIHTTPException()
-    resp = exc.generate_response(
+    exc.generate_response(
         environ={
             "wsgi.url_scheme": "HTTP",
             "SERVER_NAME": "localhost",
@@ -238,7 +238,7 @@ def test_WSGIHTTPException_respects_accept_star_star():
                 assert header[1].startswith("text/html")
 
     exc = webob_exc.WSGIHTTPException()
-    resp = exc.generate_response(
+    exc.generate_response(
         environ={
             "wsgi.url_scheme": "HTTP",
             "SERVER_NAME": "localhost",
@@ -425,13 +425,6 @@ def test_HTTPMove_location_not_none():
 
 
 def test_HTTPMove_location_newlines():
-    environ = {
-        "wsgi.url_scheme": "HTTP",
-        "SERVER_NAME": "localhost",
-        "SERVER_PORT": "80",
-        "REQUEST_METHOD": "HEAD",
-        "PATH_INFO": "/",
-    }
     with pytest.raises(ValueError):
         webob_exc._HTTPMove(location="http://example.com\r\nX-Test: false")
 
@@ -560,7 +553,6 @@ def test_HTTPExceptionMiddleware_exception_exc_info_none():
 
     try:
         old_sys = webob_exc.sys
-        sys = DummySys()
         res = m(environ, start_response)
         assert res is None
     finally:

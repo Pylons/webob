@@ -207,9 +207,9 @@ def date_header(header, rfc_section):
     return converter_date(header_getter(header, rfc_section))
 
 
-########################
-## Converter functions
-########################
+#######################
+# Converter functions
+#######################
 
 
 _rx_etag = re.compile(r'(?:^|\s)(W/)?"((?:\\"|.)*?)"')

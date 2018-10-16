@@ -1,5 +1,3 @@
-import pytest
-
 from webob.etag import ETagMatcher, IfRange, etag_property
 
 
@@ -16,6 +14,7 @@ class Test_etag_properties(object):
                 self.__dict__.update(**kwargs)
 
         d = Dummy(**kw)
+
         return d
 
     def test_fget_missing_key(self):
