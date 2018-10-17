@@ -4527,7 +4527,6 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                         | The difference between supplying a ``str`` to
                           `default_tag` and `default` is that `default_tag` is
                           checked against ``q=0`` ranges in the header to see
-
                           if it matches one of the ranges specified as not
                           acceptable, whereas a ``str`` for the `default`
                           argument is simply returned.
