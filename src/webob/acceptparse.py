@@ -4594,9 +4594,6 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         not_acceptable_ranges = []
         acceptable_ranges = []
 
-        asterisk_non0_found = False
-        # Whether there is a '*' range in the header with q={not 0}
-
         asterisk_q0_found = False
         # Whether there is a '*' range in the header with q=0
         # While '*' is skipped in Lookup because it "does not convey enough
@@ -4606,17 +4603,14 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         # acceptable.
 
         for range_, qvalue in parsed:
-            if qvalue == 0.0:
-                if range_ == "*":  # *;q=0
+            if range_ == "*":
+                if qvalue == 0.0:
                     asterisk_q0_found = True
-                else:  # {non-* range};q=0
-                    not_acceptable_ranges.append(range_.lower())
-            elif not asterisk_q0_found and range_ == "*":  # *;q={not 0}
-                asterisk_non0_found = True
-                # if asterisk_q0_found, then it does not matter whether
-                # asterisk_non0_found
-            else:  # {non-* range};q={not 0}
+            elif qvalue == 0.0:
+                not_acceptable_ranges.append(range_.lower())
+            else:
                 acceptable_ranges.append((range_, qvalue))
+                # range_ is .lower()ed later
         # Sort acceptable_ranges by qvalue, descending order
         acceptable_ranges.sort(key=lambda tuple_: tuple_[1], reverse=True)
         # Sort guaranteed to be stable with Python >= 2.2, so position in
