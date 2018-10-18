@@ -2792,7 +2792,7 @@ class TestRequest_functional(object):
         assert list(new_params.items()) == [('a', '1'), ('b', '4')]
         # The key name is \u1000:
         req = self._blankOne('/?%E1%80%80=x')
-        val = text_type(b'\u1000', 'unicode_escape')
+        val = text_type(b'\\u1000', 'unicode_escape')
         assert val in list(req.GET.keys())
         assert req.GET[val] == 'x'
 
