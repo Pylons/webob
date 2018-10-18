@@ -357,7 +357,7 @@ class Accept(object):
                    form (except the case of the characters are unchanged):
                    unnecessary spaces around the semicolons before media type
                    parameters are removed; the parameter values are returned in
-                   a form where only the '``\``' and '``"``' characters are
+                   a form where only the '``\\``' and '``"``' characters are
                    escaped, and the values are quoted with double quotes only
                    if they need to be quoted.
 
@@ -512,7 +512,7 @@ class AcceptValidHeader(Accept):
         The media range is returned in a canonicalised form (except the case of
         the characters are unchanged): unnecessary spaces around the semicolons
         before media type parameters are removed; the parameter values are
-        returned in a form where only the '``\``' and '``"``' characters are
+        returned in a form where only the '``\\``' and '``"``' characters are
         escaped, and the values are quoted with double quotes only if they need
         to be quoted.
 
@@ -554,8 +554,8 @@ class AcceptValidHeader(Accept):
 
         * ``None``
         * a ``str`` header value
-        * a ``dict``, with media ranges ``str``\ s (including any media type
-          parameters) as keys, and either qvalues ``float``\ s or (*qvalues*,
+        * a ``dict``, with media ranges ``str``'s (including any media type
+          parameters) as keys, and either qvalues ``float``'s or (*qvalues*,
           *extension_params*) tuples as values, where *extension_params* is a
           ``str`` of the extension parameters segment of the header element,
           starting with the first '``;``'
@@ -1477,8 +1477,8 @@ class AcceptNoHeader(_AcceptInvalidOrNoHeader):
 
         * ``None``
         * a ``str`` header value
-        * a ``dict``, with media ranges ``str``\ s (including any media type
-          parameters) as keys, and either qvalues ``float``\ s or (*qvalues*,
+        * a ``dict``, with media ranges ``str``'s (including any media type
+          parameters) as keys, and either qvalues ``float``'s or (*qvalues*,
           *extension_params*) tuples as values, where *extension_params* is a
           ``str`` of the extension parameters segment of the header element,
           starting with the first '``;``'
@@ -1590,8 +1590,8 @@ class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
 
         * ``None``
         * a ``str`` header value
-        * a ``dict``, with media ranges ``str``\ s (including any media type
-          parameters) as keys, and either qvalues ``float``\ s or (*qvalues*,
+        * a ``dict``, with media ranges ``str``'s (including any media type
+          parameters) as keys, and either qvalues ``float``'s or (*qvalues*,
           *extension_params*) tuples as values, where *extension_params* is a
           ``str`` of the extension parameters segment of the header element,
           starting with the first '``;``'
@@ -1709,8 +1709,8 @@ def accept_property():
 
         * ``None``
         * a ``str`` header value
-        * a ``dict``, with media ranges ``str``\ s (including any media type
-          parameters) as keys, and either qvalues ``float``\ s or (*qvalues*,
+        * a ``dict``, with media ranges ``str``'s (including any media type
+          parameters) as keys, and either qvalues ``float``'s or (*qvalues*,
           *extension_params*) tuples as values, where *extension_params* is a
           ``str`` of the extension parameters segment of the header element,
           starting with the first '``;``'
@@ -1867,7 +1867,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
         * a ``str`` header value
         * a ``dict``, where keys are charsets and values are qvalues
         * a ``tuple`` or ``list``, where each item is a charset ``str`` or a
-          ``tuple`` or ``list`` (charset, qvalue) pair (``str``\ s and pairs
+          ``tuple`` or ``list`` (charset, qvalue) pair (``str``'s and pairs
           can be mixed within the ``tuple`` or ``list``)
         * an :class:`AcceptCharsetValidHeader`, :class:`AcceptCharsetNoHeader`,
           or :class:`AcceptCharsetInvalidHeader` instance
@@ -2587,7 +2587,7 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
         * a ``str`` header value
         * a ``dict``, where keys are charsets and values are qvalues
         * a ``tuple`` or ``list``, where each item is a charset ``str`` or a
-          ``tuple`` or ``list`` (charset, qvalue) pair (``str``\ s and pairs
+          ``tuple`` or ``list`` (charset, qvalue) pair (``str``'s and pairs
           can be mixed within the ``tuple`` or ``list``)
         * an :class:`AcceptCharsetValidHeader`, :class:`AcceptCharsetNoHeader`,
           or :class:`AcceptCharsetInvalidHeader` instance
@@ -2702,7 +2702,7 @@ def accept_charset_property():
         * a ``str`` header value
         * a ``dict``, where keys are charsets and values are qvalues
         * a ``tuple`` or ``list``, where each item is a charset ``str`` or a
-          ``tuple`` or ``list`` (charset, qvalue) pair (``str``\ s and pairs
+          ``tuple`` or ``list`` (charset, qvalue) pair (``str``'s and pairs
           can be mixed within the ``tuple`` or ``list``)
         * an :class:`AcceptCharsetValidHeader`, :class:`AcceptCharsetNoHeader`,
           or :class:`AcceptCharsetInvalidHeader` instance
@@ -2860,8 +2860,8 @@ class AcceptEncodingValidHeader(AcceptEncoding):
 
         * ``None``
         * a ``str`` header value
-        * a ``dict``, with content-coding, ``identity`` or ``*`` ``str``\ s as
-          keys, and qvalue ``float``\ s as values
+        * a ``dict``, with content-coding, ``identity`` or ``*`` ``str``'s as
+          keys, and qvalue ``float``'s as values
         * a ``tuple`` or ``list``, where each item is either a header element
           ``str``, or a (content-coding/``identity``/``*``, qvalue) ``tuple``
           or ``list``
@@ -3080,7 +3080,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         indicate an offer with no content-coding. From the RFC: 'If the
         representation has no content-coding, then it is acceptable by default
         unless specifically excluded by the Accept-Encoding field stating
-        either "identity;q=0" or "\*;q=0" without a more specific entry for
+        either "identity;q=0" or "\\*;q=0" without a more specific entry for
         "identity".' The RFC does not specify the qvalue that should be
         assigned to the representation/offer with no content-coding; this
         implementation assigns it a qvalue of 1.0.
@@ -3508,8 +3508,8 @@ class AcceptEncodingNoHeader(_AcceptEncodingInvalidOrNoHeader):
 
         * ``None``
         * a ``str`` header value
-        * a ``dict``, with content-coding, ``identity`` or ``*`` ``str``\ s as
-          keys, and qvalue ``float``\ s as values
+        * a ``dict``, with content-coding, ``identity`` or ``*`` ``str``'s as
+          keys, and qvalue ``float``'s as values
         * a ``tuple`` or ``list``, where each item is either a header element
           ``str``, or a (content-coding/``identity``/``*``, qvalue) ``tuple``
           or ``list``
@@ -3620,8 +3620,8 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
 
         * ``None``
         * a ``str`` header value
-        * a ``dict``, with content-coding, ``identity`` or ``*`` ``str``\ s as
-          keys, and qvalue ``float``\ s as values
+        * a ``dict``, with content-coding, ``identity`` or ``*`` ``str``'s as
+          keys, and qvalue ``float``'s as values
         * a ``tuple`` or ``list``, where each item is either a header element
           ``str``, or a (content-coding/``identity``/``*``, qvalue) ``tuple``
           or ``list``
@@ -3737,8 +3737,8 @@ def accept_encoding_property():
 
         * ``None``
         * a ``str`` header value
-        * a ``dict``, with content-coding, ``identity`` or ``*`` ``str``\ s as
-          keys, and qvalue ``float``\ s as values
+        * a ``dict``, with content-coding, ``identity`` or ``*`` ``str``'s as
+          keys, and qvalue ``float``'s as values
         * a ``tuple`` or ``list``, where each item is either a header element
           ``str``, or a (content-coding/``identity``/``*``, qvalue) ``tuple``
           or ``list``
@@ -3910,8 +3910,8 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         * ``None``
         * a ``str``
         * a ``dict``, with language ranges as keys and qvalues as values
-        * a ``tuple`` or ``list``, of language range ``str``\ s or of ``tuple``
-          or ``list`` (language range, qvalue) pairs (``str``\ s and pairs can
+        * a ``tuple`` or ``list``, of language range ``str``'s or of ``tuple``
+          or ``list`` (language range, qvalue) pairs (``str``'s and pairs can
           be mixed within the ``tuple`` or ``list``)
         * an :class:`AcceptLanguageValidHeader`,
           :class:`AcceptLanguageNoHeader`, or
@@ -5099,8 +5099,8 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
         * ``None``
         * a ``str``
         * a ``dict``, with language ranges as keys and qvalues as values
-        * a ``tuple`` or ``list``, of language range ``str``\ s or of ``tuple``
-          or ``list`` (language range, qvalue) pairs (``str``\ s and pairs can be
+        * a ``tuple`` or ``list``, of language range ``str``'s or of ``tuple``
+          or ``list`` (language range, qvalue) pairs (``str``'s and pairs can be
           mixed within the ``tuple`` or ``list``)
         * an :class:`AcceptLanguageValidHeader`,
           :class:`AcceptLanguageNoHeader`, or
@@ -5211,8 +5211,8 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         * ``None``
         * a ``str``
         * a ``dict``, with language ranges as keys and qvalues as values
-        * a ``tuple`` or ``list``, of language range ``str``\ s or of ``tuple``
-          or ``list`` (language range, qvalue) pairs (``str``\ s and pairs can
+        * a ``tuple`` or ``list``, of language range ``str``'s or of ``tuple``
+          or ``list`` (language range, qvalue) pairs (``str``'s and pairs can
           be mixed within the ``tuple`` or ``list``)
         * an :class:`AcceptLanguageValidHeader`,
           :class:`AcceptLanguageNoHeader`, or
@@ -5327,8 +5327,8 @@ def accept_language_property():
         * ``None``
         * a ``str``
         * a ``dict``, with language ranges as keys and qvalues as values
-        * a ``tuple`` or ``list``, of language range ``str``\ s or of ``tuple``
-          or ``list`` (language range, qvalue) pairs (``str``\ s and pairs can
+        * a ``tuple`` or ``list``, of language range ``str``'s or of ``tuple``
+          or ``list`` (language range, qvalue) pairs (``str``'s and pairs can
           be mixed within the ``tuple`` or ``list``)
         * an :class:`AcceptLanguageValidHeader`,
           :class:`AcceptLanguageNoHeader`, or
