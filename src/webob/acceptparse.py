@@ -593,6 +593,13 @@ class AcceptValidHeader(Accept):
         self._parsed_nonzero = [item for item in self.parsed if item[1]]
         # item[1] is the qvalue
 
+    def copy(self):
+        """
+        Create a copy of the header object.
+
+        """
+        return self.__class__(self._header_value)
+
     def __add__(self, other):
         """
         Add to header, creating a new header object.
@@ -1504,6 +1511,13 @@ class AcceptNoHeader(_AcceptInvalidOrNoHeader):
         self._parsed = None
         self._parsed_nonzero = None
 
+    def copy(self):
+        """
+        Create a copy of the header object.
+
+        """
+        return self.__class__()
+
     def __add__(self, other):
         """
         Add to header, creating a new header object.
@@ -1611,6 +1625,13 @@ class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
         self._parsed = None
         self._parsed_nonzero = None
 
+    def copy(self):
+        """
+        Create a copy of the header object.
+
+        """
+        return self.__class__(self._header_value)
+
     def __add__(self, other):
         """
         Add to header, creating a new header object.
@@ -1704,6 +1725,8 @@ def create_accept_header(header_value):
 
     if header_value is None:
         return AcceptNoHeader()
+    if isinstance(header_value, Accept):
+        return header_value.copy()
     try:
         return AcceptValidHeader(header_value=header_value)
     except ValueError:
@@ -1882,6 +1905,13 @@ class AcceptCharsetValidHeader(AcceptCharset):
         self._parsed_nonzero = [
             item for item in self.parsed if item[1]  # item[1] is the qvalue
         ]
+
+    def copy(self):
+        """
+        Create a copy of the header object.
+
+        """
+        return self.__class__(self._header_value)
 
     def __add__(self, other):
         """
@@ -2484,6 +2514,13 @@ class AcceptCharsetNoHeader(_AcceptCharsetInvalidOrNoHeader):
         self._parsed = None
         self._parsed_nonzero = None
 
+    def copy(self):
+        """
+        Create a copy of the header object.
+
+        """
+        return self.__class__()
+
     def __add__(self, other):
         """
         Add to header, creating a new header object.
@@ -2589,6 +2626,13 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
         self._parsed = None
         self._parsed_nonzero = None
 
+    def copy(self):
+        """
+        Create a copy of the header object.
+
+        """
+        return self.__class__(self._header_value)
+
     def __add__(self, other):
         """
         Add to header, creating a new header object.
@@ -2678,6 +2722,8 @@ def create_accept_charset_header(header_value):
 
     if header_value is None:
         return AcceptCharsetNoHeader()
+    if isinstance(header_value, AcceptCharset):
+        return header_value.copy()
     try:
         return AcceptCharsetValidHeader(header_value=header_value)
     except ValueError:
@@ -2860,6 +2906,13 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         self._parsed = list(self.parse(header_value))
         self._parsed_nonzero = [item for item in self.parsed if item[1]]
         # item[1] is the qvalue
+
+    def copy(self):
+        """
+        Create a copy of the header object.
+
+        """
+        return self.__class__(self._header_value)
 
     def __add__(self, other):
         """
@@ -3499,6 +3552,13 @@ class AcceptEncodingNoHeader(_AcceptEncodingInvalidOrNoHeader):
         self._parsed = None
         self._parsed_nonzero = None
 
+    def copy(self):
+        """
+        Create a copy of the header object.
+
+        """
+        return self.__class__()
+
     def __add__(self, other):
         """
         Add to header, creating a new header object.
@@ -3605,6 +3665,13 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
         self._parsed = None
         self._parsed_nonzero = None
 
+    def copy(self):
+        """
+        Create a copy of the header object.
+
+        """
+        return self.__class__(self._header_value)
+
     def __add__(self, other):
         """
         Add to header, creating a new header object.
@@ -3696,6 +3763,8 @@ def create_accept_encoding_header(header_value):
 
     if header_value is None:
         return AcceptEncodingNoHeader()
+    if isinstance(header_value, AcceptEncoding):
+        return header_value.copy()
     try:
         return AcceptEncodingValidHeader(header_value=header_value)
     except ValueError:
@@ -3864,6 +3933,13 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         self._parsed = list(self.parse(header_value))
         self._parsed_nonzero = [item for item in self.parsed if item[1]]
         # item[1] is the qvalue
+
+    def copy(self):
+        """
+        Create a copy of the header object.
+
+        """
+        return self.__class__(self._header_value)
 
     @property
     def header_value(self):
@@ -5032,6 +5108,13 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
         self._parsed = None
         self._parsed_nonzero = None
 
+    def copy(self):
+        """
+        Create a copy of the header object.
+
+        """
+        return self.__class__()
+
     @property
     def header_value(self):
         """
@@ -5140,6 +5223,13 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         self._parsed = None
         self._parsed_nonzero = None
 
+    def copy(self):
+        """
+        Create a copy of the header object.
+
+        """
+        return self.__class__(self._header_value)
+
     @property
     def header_value(self):
         """(``str`` or ``None``) The header value."""
@@ -5246,6 +5336,8 @@ def create_accept_language_header(header_value):
 
     if header_value is None:
         return AcceptLanguageNoHeader()
+    if isinstance(header_value, AcceptLanguage):
+        return header_value.copy()
     try:
         return AcceptLanguageValidHeader(header_value=header_value)
     except ValueError:

@@ -2085,18 +2085,27 @@ class TestCreateAcceptHeader(object):
         returned = create_accept_header(header_value=header_value)
         assert isinstance(returned, AcceptNoHeader)
         assert returned.header_value == header_value
+        returned2 = create_accept_header(returned)
+        assert returned2 is not returned
+        assert returned2._header_value == returned._header_value
 
     def test_header_value_is_valid(self):
         header_value = "text/html, text/plain;q=0.9"
         returned = create_accept_header(header_value=header_value)
         assert isinstance(returned, AcceptValidHeader)
         assert returned.header_value == header_value
+        returned2 = create_accept_header(returned)
+        assert returned2 is not returned
+        assert returned2._header_value == returned._header_value
 
     @pytest.mark.parametrize("header_value", [", ", "noslash"])
     def test_header_value_is_invalid(self, header_value):
         returned = create_accept_header(header_value=header_value)
         assert isinstance(returned, AcceptInvalidHeader)
         assert returned.header_value == header_value
+        returned2 = create_accept_header(returned)
+        assert returned2 is not returned
+        assert returned2._header_value == returned._header_value
 
 
 class TestAcceptProperty(object):
@@ -3134,18 +3143,27 @@ class TestCreateAcceptCharsetHeader(object):
         returned = create_accept_charset_header(header_value=header_value)
         assert isinstance(returned, AcceptCharsetValidHeader)
         assert returned.header_value == header_value
+        returned2 = create_accept_charset_header(returned)
+        assert returned2 is not returned
+        assert returned2._header_value == returned._header_value
 
     def test_header_value_is_None(self):
         header_value = None
         returned = create_accept_charset_header(header_value=header_value)
         assert isinstance(returned, AcceptCharsetNoHeader)
         assert returned.header_value == header_value
+        returned2 = create_accept_charset_header(returned)
+        assert returned2 is not returned
+        assert returned2._header_value == returned._header_value
 
     @pytest.mark.parametrize("header_value", ["", "iso-8859-5, unicode/1"])
     def test_header_value_is_invalid(self, header_value):
         returned = create_accept_charset_header(header_value=header_value)
         assert isinstance(returned, AcceptCharsetInvalidHeader)
         assert returned.header_value == header_value
+        returned2 = create_accept_charset_header(returned)
+        assert returned2 is not returned
+        assert returned2._header_value == returned._header_value
 
 
 class TestAcceptCharsetProperty(object):
@@ -4200,18 +4218,27 @@ class TestCreateAcceptEncodingHeader(object):
         returned = create_accept_encoding_header(header_value=header_value)
         assert isinstance(returned, AcceptEncodingNoHeader)
         assert returned.header_value == header_value
+        returned2 = create_accept_encoding_header(returned)
+        assert returned2 is not returned
+        assert returned2._header_value == returned._header_value
 
     def test_header_value_is_valid(self):
         header_value = "gzip, identity;q=0.9"
         returned = create_accept_encoding_header(header_value=header_value)
         assert isinstance(returned, AcceptEncodingValidHeader)
         assert returned.header_value == header_value
+        returned2 = create_accept_encoding_header(returned)
+        assert returned2 is not returned
+        assert returned2._header_value == returned._header_value
 
     @pytest.mark.parametrize("header_value", [", ", "gzip;q= 1"])
     def test_header_value_is_invalid(self, header_value):
         returned = create_accept_encoding_header(header_value=header_value)
         assert isinstance(returned, AcceptEncodingInvalidHeader)
         assert returned.header_value == header_value
+        returned2 = create_accept_encoding_header(returned)
+        assert returned2 is not returned
+        assert returned2._header_value == returned._header_value
 
 
 class TestAcceptEncodingProperty(object):
@@ -5613,18 +5640,27 @@ class TestCreateAcceptLanguageHeader(object):
         returned = create_accept_language_header(header_value=header_value)
         assert isinstance(returned, AcceptLanguageNoHeader)
         assert returned.header_value == header_value
+        returned2 = create_accept_language_header(returned)
+        assert returned2 is not returned
+        assert returned2._header_value == returned._header_value
 
     def test_header_value_is_valid(self):
         header_value = "es, ja"
         returned = create_accept_language_header(header_value=header_value)
         assert isinstance(returned, AcceptLanguageValidHeader)
         assert returned.header_value == header_value
+        returned2 = create_accept_language_header(returned)
+        assert returned2 is not returned
+        assert returned2._header_value == returned._header_value
 
     @pytest.mark.parametrize("header_value", ["", "en_gb"])
     def test_header_value_is_invalid(self, header_value):
         returned = create_accept_language_header(header_value=header_value)
         assert isinstance(returned, AcceptLanguageInvalidHeader)
         assert returned.header_value == header_value
+        returned2 = create_accept_language_header(returned)
+        assert returned2 is not returned
+        assert returned2._header_value == returned._header_value
 
 
 class TestAcceptLanguageProperty(object):
