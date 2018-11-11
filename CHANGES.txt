@@ -1,3 +1,24 @@
+1.8.4 (Unreleased)
+------------------
+
+Bugfix
+~~~~~~
+
+- Accept header classes now support a .copy() function that may be used to
+  create a copy. This allows ``create_accept_header`` and other like functions
+  to accept an pre-existing Accept header. See
+  https://github.com/Pylons/webob/pull/386 and
+  https://github.com/Pylons/webob/issues/385
+
+Warnings
+~~~~~~~~
+
+- Some backslashes introduced with the new accept handling code were causing
+  DeprecationWarnings upon compiling the source to pyc files, all of the
+  backslashes have been reigned in as appropriate, and users should no longer
+  see DeprecationWarnings for invalid escape sequence. See
+  https://github.com/Pylons/webob/issues/384
+
 1.8.3 (2018-10-14)
 ------------------
 
