@@ -29,6 +29,16 @@ Experimental Features
 Bugfix
 ~~~~~~
 
+- Response.content_type now accepts unicode strings on Python 2 and encodes
+  them to latin-1. See https://github.com/Pylons/webob/pull/389 and
+  https://github.com/Pylons/webob/issues/388
+
+- Accept header classes now support a .copy() function that may be used to
+  create a copy. This allows ``create_accept_header`` and other like functions
+  to accept an pre-existing Accept header. See
+  https://github.com/Pylons/webob/pull/386 and
+  https://github.com/Pylons/webob/issues/385
+
 - SameSite may now be passed as str or bytes to `Response.set_cookie` and
   `cookies.make_cookie`. This was an oversight as all other arguments would be
   correctly coerced before being serialized. See
@@ -47,3 +57,12 @@ Bugfix
   Previous versions raised a ``ValueError`` for invalid offers in
   ``AcceptValidHeader`` and returned them as acceptable in the others.
   See https://github.com/Pylons/webob/pull/372
+
+Warnings
+~~~~~~~~
+
+- Some backslashes introduced with the new accept handling code were causing
+  DeprecationWarnings upon compiling the source to pyc files, all of the
+  backslashes have been reigned in as appropriate, and users should no longer
+  see DeprecationWarnings for invalid escape sequence. See
+  https://github.com/Pylons/webob/issues/384
