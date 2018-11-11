@@ -4,6 +4,10 @@
 Bugfix
 ~~~~~~
 
+- Response.content_type now accepts unicode strings on Python 2 and encodes
+  them to latin-1. See https://github.com/Pylons/webob/pull/389 and
+  https://github.com/Pylons/webob/issues/388
+
 - Accept header classes now support a .copy() function that may be used to
   create a copy. This allows ``create_accept_header`` and other like functions
   to accept an pre-existing Accept header. See
