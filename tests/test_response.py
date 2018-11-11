@@ -166,6 +166,13 @@ def test_init_doesnt_add_default_content_type_with_bodyless_status():
     assert Response(status="204 No Content").content_type is None
 
 
+def test_content_type_supports_unicode():
+    content_type = u"text/html"
+    resp = Response()
+    resp.content_type = content_type
+    assert isinstance(resp.headers["Content-Type"], str)
+
+
 def test_cookies():
     res = Response()
     # test unicode value
