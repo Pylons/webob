@@ -1,44 +1,27 @@
-from base64 import b64encode
-from datetime import (
-    datetime,
-    timedelta,
-    )
-from hashlib import md5
 import re
 import struct
 import zlib
-try:
-    import simplejson as json
-except ImportError:
-    import json
+from base64 import b64encode
+from datetime import datetime, timedelta
+from hashlib import md5
 
 from webob.byterange import ContentRange
-
-from webob.cachecontrol import (
-    CacheControl,
-    serialize_cache_control,
-    )
-
+from webob.cachecontrol import CacheControl, serialize_cache_control
 from webob.compat import (
     PY2,
     bytes_,
     native_,
+    string_types,
     text_type,
     url_quote,
     urlparse,
-    )
-
-from webob.cookies import (
-    Cookie,
-    make_cookie,
-    )
-
+)
+from webob.cookies import Cookie, make_cookie
 from webob.datetime_utils import (
     parse_date_delta,
     serialize_date_delta,
     timedelta_to_seconds,
-    )
-
+)
 from webob.descriptors import (
     CHARSET_RE,
     SCHEME_RE,
@@ -55,11 +38,15 @@ from webob.descriptors import (
     serialize_content_range,
     serialize_etag_response,
     serialize_int,
-    )
-
+)
 from webob.headers import ResponseHeaders
 from webob.request import BaseRequest
-from webob.util import status_reasons, status_generic_reasons, warn_deprecation
+from webob.util import status_generic_reasons, status_reasons, warn_deprecation
+
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 __all__ = ['Response']
 
@@ -862,6 +849,12 @@ class Response(object):
             self._content_type__del()
             return
         else:
+            if PY2 and isinstance(value, text_type):
+                value = value.encode("latin-1")
+
+            if not isinstance(value, string_types):
+                raise TypeError("content_type requires value to be of string_types")
+
             content_type = value
 
             # Set up the charset if the content-type doesn't have one
