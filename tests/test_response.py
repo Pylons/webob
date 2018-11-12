@@ -173,6 +173,15 @@ def test_content_type_supports_unicode():
     assert isinstance(resp.headers["Content-Type"], str)
 
 
+@pytest.mark.skipif("sys.version_info < (3, 0)")
+def test_content_type_not_binary():
+    content_type = b"text/html"
+    resp = Response()
+
+    with pytest.raises(TypeError):
+        resp.content_type = content_type
+
+
 def test_cookies():
     res = Response()
     # test unicode value
