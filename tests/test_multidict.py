@@ -41,11 +41,8 @@ class BaseDictTests(object):
     def test_dict_api(self):
         self.assertTrue("a" in self.d.mixed())
         self.assertTrue("a" in self.d.keys())
-        self.assertTrue("a" in self.d.iterkeys())
         self.assertTrue(("b", "1") in self.d.items())
-        self.assertTrue(("b", "1") in self.d.iteritems())
         self.assertTrue("1" in self.d.values())
-        self.assertTrue("1" in self.d.itervalues())
         self.assertEqual(len(self.d), 4)
 
     def test_set_del_item(self):
@@ -501,10 +498,6 @@ class NoVarsTestCase(unittest.TestCase):
     def test_keys(self):
         d = self._get_instance()
         self.assertEqual(list(d.keys()), [])
-
-    def test_iterkeys(self):
-        d = self._get_instance()
-        self.assertEqual(list(d.iterkeys()), [])
 
 
 class DummyField(object):

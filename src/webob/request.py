@@ -22,7 +22,6 @@ from webob.acceptparse import (
 from webob.cachecontrol import CacheControl, serialize_cache_control
 
 from webob.compat import (
-    PY2,
     bytes_,
     native_,
     parse_qsl_text,
@@ -158,9 +157,6 @@ class BaseRequest(object):
             return val
         encoding = getattr(self, encattr)
 
-        if PY2:
-            return val.decode(encoding)
-
         if encoding in _LATIN_ENCODINGS:  # shortcut
             return val
         return bytes_(val, "latin-1").decode(encoding)
@@ -170,10 +166,7 @@ class BaseRequest(object):
             encoding = getattr(self, encattr)
         else:
             encoding = "ascii"
-        if PY2:  # pragma: no cover
-            self.environ[key] = bytes_(val, encoding)
-        else:
-            self.environ[key] = bytes_(val, encoding).decode("latin-1")
+        self.environ[key] = bytes_(val, encoding).decode("latin-1")
 
     @property
     def charset(self):
@@ -215,18 +208,13 @@ class BaseRequest(object):
         fs_environ = self.environ.copy()
         fs_environ.setdefault("CONTENT_LENGTH", "0")
         fs_environ["QUERY_STRING"] = ""
-        if PY2:
-            fs = cgi_FieldStorage(
-                fp=self.body_file, environ=fs_environ, keep_blank_values=True
-            )
-        else:
-            fs = cgi_FieldStorage(
-                fp=self.body_file,
-                environ=fs_environ,
-                keep_blank_values=True,
-                encoding=charset,
-                errors=errors,
-            )
+        fs = cgi_FieldStorage(
+            fp=self.body_file,
+            environ=fs_environ,
+            keep_blank_values=True,
+            encoding=charset,
+            errors=errors,
+        )
 
         fout = t.transcode_fs(fs, r._content_type_raw)
 
@@ -798,17 +786,12 @@ class BaseRequest(object):
         # default of 0 is better:
         fs_environ.setdefault("CONTENT_LENGTH", "0")
         fs_environ["QUERY_STRING"] = ""
-        if PY2:
-            fs = cgi_FieldStorage(
-                fp=self.body_file, environ=fs_environ, keep_blank_values=True
-            )
-        else:
-            fs = cgi_FieldStorage(
-                fp=self.body_file,
-                environ=fs_environ,
-                keep_blank_values=True,
-                encoding="utf8",
-            )
+        fs = cgi_FieldStorage(
+            fp=self.body_file,
+            environ=fs_environ,
+            keep_blank_values=True,
+            encoding="utf8",
+        )
 
         self.body_file_raw.seek(0)
         vars = MultiDict.from_fieldstorage(fs)
@@ -1659,29 +1642,14 @@ class Transcoder(object):
             # this doesn't look like a form submission
             return q_orig
 
-        if PY2:
-            q = urlparse.parse_qsl(q, self.charset)
-            t = self._trans
-            q = [(t(k), t(v)) for k, v in q]
-        else:
-            q = list(parse_qsl_text(q, self.charset))
+        q = list(parse_qsl_text(q, self.charset))
 
         return url_encode(q)
 
     def transcode_fs(self, fs, content_type):
         # transcode FieldStorage
-        if PY2:
-
-            def decode(b):
-                if b is not None:
-                    return b.decode(self.charset, self.errors)
-                else:
-                    return b
-
-        else:
-
-            def decode(b):
-                return b
+        def decode(b):
+            return b
 
         data = []
         for field in fs.list or ():

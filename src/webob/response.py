@@ -7,15 +7,7 @@ from hashlib import md5
 
 from webob.byterange import ContentRange
 from webob.cachecontrol import CacheControl, serialize_cache_control
-from webob.compat import (
-    PY2,
-    bytes_,
-    native_,
-    string_types,
-    text_type,
-    url_quote,
-    urlparse,
-)
+from webob.compat import bytes_, native_, string_types, text_type, url_quote, urlparse
 from webob.cookies import Cookie, make_cookie
 from webob.datetime_utils import (
     parse_date_delta,
@@ -395,7 +387,8 @@ class Response(object):
             self.body
         parts += map("%s: %s".__mod__, self.headerlist)
         if not skip_body and self.body:
-            parts += ["", self.body if PY2 else self.text]
+            parts += ["", self.text]
+
         return "\r\n".join(parts)
 
     #
@@ -416,11 +409,10 @@ class Response(object):
         else:
             self.status_code = code
             return
-        if not PY2:
-            if isinstance(value, bytes):
-                value = value.decode("ascii")
-        elif isinstance(value, text_type):
-            value = value.encode("ascii")
+
+        if isinstance(value, bytes):
+            value = value.decode("ascii")
+
         if not isinstance(value, str):
             raise TypeError(
                 "You must set status to a string or integer (not %s)" % type(value)
@@ -860,9 +852,6 @@ class Response(object):
             self._content_type__del()
             return
         else:
-            if PY2 and isinstance(value, text_type):
-                value = value.encode("latin-1")
-
             if not isinstance(value, string_types):
                 raise TypeError("content_type requires value to be of string_types")
 
@@ -1592,12 +1581,8 @@ def _request_uri(environ):
     elif url.endswith(":443") and environ["wsgi.url_scheme"] == "https":
         url = url[:-4]
 
-    if PY2:
-        script_name = environ.get("SCRIPT_NAME", "/")
-        path_info = environ.get("PATH_INFO", "")
-    else:
-        script_name = bytes_(environ.get("SCRIPT_NAME", "/"), "latin-1")
-        path_info = bytes_(environ.get("PATH_INFO", ""), "latin-1")
+    script_name = bytes_(environ.get("SCRIPT_NAME", "/"), "latin-1")
+    path_info = bytes_(environ.get("PATH_INFO", ""), "latin-1")
 
     url += url_quote(script_name)
     qpath_info = url_quote(path_info)

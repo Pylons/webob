@@ -9,7 +9,6 @@ except ImportError:
 from webob.compat import url_quote
 import socket
 from webob import exc
-from webob.compat import PY2
 
 __all__ = ["send_request_app", "SendRequest"]
 
@@ -135,10 +134,7 @@ class SendRequest:
         Turn a Message object into a list of WSGI-style headers.
         """
         headers_out = []
-        if not PY2:
-            headers = message._headers
-        else:
-            headers = message.headers
+        headers = message._headers
         for full_header in headers:
             if not full_header:  # pragma: no cover
                 # Shouldn't happen, but we'll just ignore

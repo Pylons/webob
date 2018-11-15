@@ -7,7 +7,7 @@ Gives a multi-value dictionary object (MultiDict) plus several wrappers
 import binascii
 import warnings
 
-from webob.compat import MutableMapping, PY2, iteritems_, itervalues_, url_encode
+from webob.compat import MutableMapping, iteritems_, itervalues_, url_encode
 
 __all__ = ["MultiDict", "NestedMultiDict", "NoVars", "GetDict"]
 
@@ -71,21 +71,15 @@ class MultiDict(MutableMapping):
                 "quoted-printable": binascii.a2b_qp,
             }
 
-            if not PY2:
-                if charset == "utf8":
+            if charset == "utf8":
 
-                    def decode(b):
-                        return b
-
-                else:
-
-                    def decode(b):
-                        return b.encode("utf8").decode(charset)
+                def decode(b):
+                    return b
 
             else:
 
                 def decode(b):
-                    return b.decode(charset)
+                    return b.encode("utf8").decode(charset)
 
             if field.filename:
                 field.filename = decode(field.filename)
@@ -94,14 +88,12 @@ class MultiDict(MutableMapping):
                 value = field.value
 
                 if transfer_encoding in supported_transfer_encoding:
-                    if not PY2:
-                        # binascii accepts bytes
-                        value = value.encode("utf8")
+                    # binascii accepts bytes
+                    value = value.encode("utf8")
                     value = supported_transfer_encoding[transfer_encoding](value)
 
-                    if not PY2:
-                        # binascii returns bytes
-                        value = value.decode("utf8")
+                    # binascii returns bytes
+                    value = value.decode("utf8")
                 obj.add(field.name, decode(value))
 
         return obj
@@ -281,42 +273,18 @@ class MultiDict(MutableMapping):
     # All the iteration:
     #
 
-    def iterkeys(self):
+    def keys(self):
         for k, _ in self._items:
             yield k
 
-    if PY2:
+    __iter__ = keys
 
-        def keys(self):
-            return [k for k, v in self._items]
-
-    else:
-        keys = iterkeys
-
-    __iter__ = iterkeys
-
-    def iteritems(self):
+    def items(self):
         return iter(self._items)
 
-    if PY2:
-
-        def items(self):
-            return self._items[:]
-
-    else:
-        items = iteritems
-
-    def itervalues(self):
+    def values(self):
         for _, v in self._items:
             yield v
-
-    if PY2:
-
-        def values(self):
-            return [v for k, v in self._items]
-
-    else:
-        values = itervalues
 
 
 _dummy = object()
@@ -461,46 +429,22 @@ class NestedMultiDict(MultiDict):
 
         return False
 
-    def iteritems(self):
+    def items(self):
         for d in self.dicts:
             for item in iteritems_(d):
                 yield item
 
-    if PY2:
-
-        def items(self):
-            return list(self.iteritems())  # noqa: B301
-
-    else:
-        items = iteritems
-
-    def itervalues(self):
+    def values(self):
         for d in self.dicts:
             for value in itervalues_(d):
                 yield value
 
-    if PY2:
-
-        def values(self):
-            return list(self.itervalues())  # noqa: B301
-
-    else:
-        values = itervalues
-
-    def __iter__(self):
+    def keys(self):
         for d in self.dicts:
             for key in d:
                 yield key
 
-    iterkeys = __iter__
-
-    if PY2:
-
-        def keys(self):
-            return list(self.iterkeys())  # noqa: B301
-
-    else:
-        keys = iterkeys
+    __iter__ = keys
 
 
 class NoVars(object):
@@ -559,27 +503,12 @@ class NoVars(object):
     def __len__(self):
         return 0
 
-    def iterkeys(self):
+    def keys(self):
         return iter([])
 
-    if PY2:
-
-        def __cmp__(self, other):
-            return cmp({}, other)  # noqa: F821
-
-        def keys(self):
-            return []
-
-        items = keys
-        values = keys
-        itervalues = iterkeys
-        iteritems = iterkeys
-    else:
-        keys = iterkeys
-        items = iterkeys
-        values = iterkeys
-
-    __iter__ = iterkeys
+    items = keys
+    values = keys
+    __iter__ = keys
 
 
 def _hide_passwd(items):

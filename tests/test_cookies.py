@@ -6,9 +6,6 @@ from webob import cookies
 from webob.compat import text_
 from webob.compat import native_
 
-py2only = pytest.mark.skipif("sys.version_info >= (3, 0)")
-py3only = pytest.mark.skipif("sys.version_info < (3, 0)")
-
 
 def setup_module(module):
     cookies._should_raise = True
@@ -407,40 +404,17 @@ class TestRequestCookies(object):
         inst = self._makeOne(environ)
         assert sorted(list(inst.items())) == [("a", "1"), ("b", val), ("c", "3")]
 
-    @py2only
-    def test_iterkeys(self):
-        environ = {"HTTP_COOKIE": 'a=1; b="La Pe\\303\\261a"; c=3'}
-        inst = self._makeOne(environ)
-        assert sorted(list(inst.iterkeys())) == ["a", "b", "c"]
-
-    @py3only
     def test_iterkeys_py3(self):
         environ = {"HTTP_COOKIE": b'a=1; b="La Pe\\303\\261a"; c=3'.decode("utf-8")}
         inst = self._makeOne(environ)
         assert sorted(list(inst.keys())) == ["a", "b", "c"]
 
-    @py2only
-    def test_itervalues(self):
-        val = text_(b"La Pe\xc3\xb1a", "utf-8")
-        environ = {"HTTP_COOKIE": 'a=1; b="La Pe\\303\\261a"; c=3'}
-        inst = self._makeOne(environ)
-        sorted(list(inst.itervalues())) == ["1", "3", val]
-
-    @py3only
     def test_itervalues_py3(self):
         val = text_(b"La Pe\xc3\xb1a", "utf-8")
         environ = {"HTTP_COOKIE": b'a=1; b="La Pe\\303\\261a"; c=3'.decode("utf-8")}
         inst = self._makeOne(environ)
         sorted(list(inst.values())) == ["1", "3", val]
 
-    @py2only
-    def test_iteritems(self):
-        val = text_(b"La Pe\xc3\xb1a", "utf-8")
-        environ = {"HTTP_COOKIE": 'a=1; b="La Pe\\303\\261a"; c=3'}
-        inst = self._makeOne(environ)
-        assert sorted(list(inst.iteritems())) == [("a", "1"), ("b", val), ("c", "3")]
-
-    @py3only
     def test_iteritems_py3(self):
         val = text_(b"La Pe\xc3\xb1a", "utf-8")
         environ = {"HTTP_COOKIE": b'a=1; b="La Pe\\303\\261a"; c=3'.decode("utf-8")}
