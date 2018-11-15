@@ -1,6 +1,6 @@
 import os
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 here = os.path.abspath(os.path.dirname(__file__))
 try:
@@ -22,7 +22,7 @@ docs_extras = ["Sphinx >= 1.7.5", "pylons-sphinx-themes"]
 
 setup(
     name="WebOb",
-    version="1.9.0dev0",
+    version="2.0.0dev0",
     description="WSGI request and response object",
     long_description=README + "\n\n" + CHANGES,
     classifiers=[
@@ -32,7 +32,6 @@ setup(
         "Topic :: Internet :: WWW/HTTP :: WSGI",
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
@@ -48,7 +47,7 @@ setup(
     license="MIT",
     packages=find_packages("src", exclude=["tests"]),
     package_dir={"": "src"},
-    python_requires=">=2.7,!=3.0.*,!=3.1.*,!=3.2.*",
+    python_requires=">=3.4",
     zip_safe=True,
     extras_require={"testing": testing_extras, "docs": docs_extras},
 )
