@@ -1563,23 +1563,8 @@ class LimitedLengthFile(io.RawIOBase):
                 "(%d more bytes were expected)" % (self.remaining,)
             )
         buff[:sz] = data
+
         return sz
-
-
-def _cgi_FieldStorage__repr__patch(self):
-    """monkey patch for FieldStorage.__repr__
-
-    Unbelievably, the default __repr__ on FieldStorage reads
-    the entire file content instead of being sane about it.
-    This is a simple replacement that doesn't do that
-    """
-    if self.file:
-        return "FieldStorage(%r, %r)" % (self.name, self.filename)
-    return "FieldStorage(%r, %r, %r)" % (self.name, self.filename, self.value)
-
-
-cgi_FieldStorage.__repr__ = _cgi_FieldStorage__repr__patch
-
 
 
 def _get_multipart_boundary(ctype):

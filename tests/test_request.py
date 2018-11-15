@@ -2957,9 +2957,9 @@ class TestRequest_functional(object):
 
 class Test_cgi_FieldStorage__repr__patch(object):
     def _callFUT(self, fake):
-        from webob.request import _cgi_FieldStorage__repr__patch
+        from webob.compat import cgi_FieldStorage
 
-        return _cgi_FieldStorage__repr__patch(fake)
+        return cgi_FieldStorage.__repr__(fake)
 
     def test_with_file(self):
         class Fake(object):
