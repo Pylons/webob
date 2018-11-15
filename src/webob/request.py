@@ -97,42 +97,12 @@ class BaseRequest(object):
 
     _charset = None
 
-    def __init__(
-        self, environ, charset=None, unicode_errors=None, decode_param_names=None, **kw
-    ):
+    def __init__(self, environ, **kw):
 
         if type(environ) is not dict:
             raise TypeError("WSGI environ must be a dict; you passed %r" % (environ,))
 
-        if unicode_errors is not None:
-            warnings.warn(
-                "You unicode_errors=%r to the Request constructor.  Passing a "
-                "``unicode_errors`` value to the Request is no longer "
-                "supported in WebOb 1.2+.  This value has been ignored "
-                % (unicode_errors,),
-                DeprecationWarning,
-            )
-
-        if decode_param_names is not None:
-            warnings.warn(
-                "You passed decode_param_names=%r to the Request constructor. "
-                "Passing a ``decode_param_names`` value to the Request "
-                "is no longer supported in WebOb 1.2+.  This value has "
-                "been ignored " % (decode_param_names,),
-                DeprecationWarning,
-            )
-
-        if not _is_utf8(charset):
-            raise DeprecationWarning(
-                "You passed charset=%r to the Request constructor. As of "
-                "WebOb 1.2, if your application needs a non-UTF-8 request "
-                "charset, please construct the request without a charset or "
-                "with a charset of 'None',  then use ``req = "
-                "req.decode(charset)``" % charset
-            )
-
-        d = self.__dict__
-        d["environ"] = environ
+        self.__dict__["environ"] = environ
 
         if kw:
             cls = self.__class__

@@ -1818,32 +1818,6 @@ class TestBaseRequest(object):
         assert result == "example.com:80"
 
 
-class TestRequestConstructorWarnings(object):
-    def _getTargetClass(self):
-        from webob.request import Request
-
-        return Request
-
-    def _makeOne(self, *arg, **kw):
-        cls = self._getTargetClass()
-
-        return cls(*arg, **kw)
-
-    def test_ctor_w_unicode_errors(self):
-        with warnings.catch_warnings(record=True) as w:
-            # still emit if warning was printed previously
-            warnings.simplefilter("always")
-            self._makeOne({}, unicode_errors=True)
-        assert len(w) == 1
-
-    def test_ctor_w_decode_param_names(self):
-        with warnings.catch_warnings(record=True) as w:
-            # still emit if warning was printed previously
-            warnings.simplefilter("always")
-            self._makeOne({}, decode_param_names=True)
-        assert len(w) == 1
-
-
 class TestRequestWithAdhocAttr(object):
     def _blankOne(self, *arg, **kw):
         from webob.request import Request
