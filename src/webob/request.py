@@ -1248,7 +1248,8 @@ class BaseRequest(object):
 
         def start_response(status, headers, exc_info=None):
             if exc_info is not None and not catch_exc_info:
-                reraise(exc_info)
+                etype, exc, tb = exc_info
+                raise etype(exc).with_traceback(tb)
             captured[:] = [status, headers, exc_info]
             return output.append
 

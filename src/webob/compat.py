@@ -48,14 +48,6 @@ def native_(s, encoding="latin-1", errors="strict"):
 urlparse = parse
 
 
-def reraise(exc_info):
-    etype, exc, tb = exc_info
-
-    if exc.__traceback__ is not tb:
-        raise exc.with_traceback(tb)
-    raise exc
-
-
 def iteritems_(d):
     return d.items()
 

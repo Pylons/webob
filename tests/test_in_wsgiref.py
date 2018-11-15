@@ -1,17 +1,12 @@
-import sys
+import cgi
 import logging
 import socket
-import cgi
+import sys
 
 import pytest
-
+from webob.compat import Empty, Queue, bytes_, url_open
 from webob.request import Request
 from webob.response import Response
-from webob.compat import url_open
-from webob.compat import bytes_
-from webob.compat import reraise
-from webob.compat import Queue
-from webob.compat import Empty
 
 log = logging.getLogger(__name__)
 
@@ -35,6 +30,7 @@ def _test_app_req_reading(env, sr):
     test_op(req)
     log.debug("done")
     r = Response("ok")
+
     return r(env, sr)
 
 
@@ -55,9 +51,10 @@ def test_interrupted_request(serve):
                 res = _global_res.get(timeout=1)
             except Empty:
                 raise AssertionError("Error during test %s", path)
+
             if res is not None:
                 print("Error during test:", path)
-                reraise(res)
+                raise res[0](res[1]).with_traceback(res[2])
 
 
 _global_res = Queue()
@@ -68,6 +65,7 @@ def _test_app_req_interrupt(env, sr):
     try:
         req = Request(env)
         cl = req.content_length
+
         if cl != target_cl:
             raise AssertionError(
                 "request.content_length is %s instead of %s" % (cl, target_cl)
@@ -81,6 +79,7 @@ def _test_app_req_interrupt(env, sr):
     else:
         _global_res.put(None)
         sr("200 OK", [])
+
         return []
 
 
