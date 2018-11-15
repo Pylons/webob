@@ -40,15 +40,6 @@ def native_(s, encoding="latin-1", errors="strict"):
 
 urlparse = parse
 
-
-def iteritems_(d):
-    return d.items()
-
-
-def itervalues_(d):
-    return d.values()
-
-
 def unquote(string):
     if not string:
         return b""

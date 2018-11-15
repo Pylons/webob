@@ -1,4 +1,4 @@
-from webob.compat import MutableMapping, iteritems_, string_types
+from webob.compat import MutableMapping
 from webob.multidict import MultiDict
 
 __all__ = ["ResponseHeaders", "EnvironHeaders"]
@@ -23,14 +23,14 @@ class ResponseHeaders(MultiDict):
 
     def mixed(self):
         r = self.dict_of_lists()
-        for key, val in iteritems_(r):
+        for key, val in r.items():
             if len(val) == 1:
                 r[key] = val[0]
         return r
 
     def dict_of_lists(self):
         r = {}
-        for key, val in iteritems_(self):
+        for key, val in self.items():
             r.setdefault(key.lower(), []).append(val)
         return r
 

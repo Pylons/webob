@@ -7,7 +7,7 @@ Gives a multi-value dictionary object (MultiDict) plus several wrappers
 import binascii
 import warnings
 
-from webob.compat import MutableMapping, iteritems_, itervalues_, url_encode
+from webob.compat import MutableMapping, url_encode
 
 __all__ = ["MultiDict", "NestedMultiDict", "NoVars", "GetDict"]
 
@@ -429,12 +429,12 @@ class NestedMultiDict(MultiDict):
 
     def items(self):
         for d in self.dicts:
-            for item in iteritems_(d):
+            for item in d.items():
                 yield item
 
     def values(self):
         for d in self.dicts:
-            for value in itervalues_(d):
+            for value in d.values():
                 yield value
 
     def keys(self):
