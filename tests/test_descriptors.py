@@ -1011,23 +1011,3 @@ class TestEnvironDecoder(_TestEnvironDecoder):
         req.environ["HTTP_X_AKEY"] = native_(b"\xc3\xab")
         result = desc.fget(req)
         assert result == text_(b"\xc3\xab", "utf-8")
-
-
-class TestEnvironDecoderLegacy(_TestEnvironDecoder):
-    def _makeRequest(self):
-        from webob.request import LegacyRequest
-
-        req = LegacyRequest.blank("/")
-        return req
-
-    def test_fget_nonascii(self):
-        desc = self._callFUT("HTTP_X_AKEY", encattr="url_encoding")
-        req = self._makeRequest()
-        req.environ["HTTP_X_AKEY"] = native_(b"\xc3\xab", "latin-1")
-        result = desc.fget(req)
-        assert result == native_(b"\xc3\xab", "latin-1")
-
-    def test_default_fget_nonascii(self):
-        req = self._makeRequest()
-        desc = self._callFUT("akey", default=b"the_default")
-        assert desc.fget(req).__class__ == bytes

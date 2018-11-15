@@ -62,7 +62,7 @@ from webob.headers import EnvironHeaders
 
 from webob.multidict import NestedMultiDict, MultiDict, NoVars, GetDict
 
-__all__ = ["BaseRequest", "Request", "LegacyRequest"]
+__all__ = ["BaseRequest", "Request"]
 
 
 class _NoDefault:
@@ -1405,20 +1405,8 @@ class BaseRequest(object):
         obj = cls(env, **kw)
         if headers is not None:
             obj.headers.update(headers)
+
         return obj
-
-
-class LegacyRequest(BaseRequest):
-    uscript_name = upath_property("SCRIPT_NAME")
-    upath_info = upath_property("PATH_INFO")
-
-    def encget(self, key, default=NoDefault, encattr=None):
-        val = self.environ.get(key, default)
-        if val is NoDefault:
-            raise KeyError(key)
-        if val is default:
-            return default
-        return val
 
 
 class AdhocAttrMixin(object):
