@@ -948,7 +948,6 @@ class Response(object):
         secure=False,
         httponly=False,
         comment=None,
-        expires=None,
         overwrite=False,
         samesite=None,
     ):
@@ -1014,25 +1013,6 @@ class Response(object):
            If ``comment`` is ``None``, no ``Comment`` value will be sent in
            the cookie.
 
-        ``expires``
-
-           A ``datetime.timedelta`` object representing an amount of time,
-           ``datetime.datetime`` or ``None``. A non-``None`` value is used to
-           generate the ``Expires`` value of the generated cookie. If
-           ``max_age`` is not passed, but this value is not ``None``, it will
-           influence the ``Max-Age`` header. If this value is ``None``, the
-           ``Expires`` cookie value will be unset (unless ``max_age`` is set).
-           If ``max_age`` is set, it will be used to generate the ``expires``
-           and this value is ignored.
-
-           If a ``datetime.datetime`` is provided it has to either be timezone
-           aware or be based on UTC. ``datetime.datetime`` objects that are
-           local time are not supported. Timezone aware ``datetime.datetime``
-           objects are converted to UTC.
-
-           This argument will be removed in future versions of WebOb (version
-           1.9).
-
         ``overwrite``
 
            If this key is ``True``, before setting the cookie, unset any
@@ -1040,33 +1020,10 @@ class Response(object):
 
         """
 
-        # Remove in WebOb 1.10
-        if expires:
-            warn_deprecation(
-                'Argument "expires" will be removed in a future '
-                'version of WebOb, please use "max_age".',
-                1.10,
-                1,
-            )
-
         if overwrite:
             self.unset_cookie(name, strict=False)
 
-        # If expires is set, but not max_age we set max_age to expires
-        if not max_age and isinstance(expires, timedelta):
-            max_age = expires
-
-        # expires can also be a datetime
-        if not max_age and isinstance(expires, datetime):
-
-            # If expires has a timezone attached, convert it to UTC
-            if expires.tzinfo and expires.utcoffset():
-                expires = (expires - expires.utcoffset()).replace(tzinfo=None)
-
-            max_age = expires - datetime.utcnow()
-
         value = bytes_(value, "utf-8")
-
         cookie = make_cookie(
             name,
             value,
