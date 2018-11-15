@@ -2,160 +2,102 @@
 
 # flake8: noqa
 
+import cgi
 import sys
+import tempfile
 import types
+from cgi import FieldStorage as _cgi_FieldStorage
 from cgi import parse_header
+from collections.abc import Iterable, MutableMapping
+from html import escape
+from queue import Empty, Queue
+from urllib import parse
+from urllib.parse import quote as url_quote
+from urllib.parse import quote_plus
+from urllib.parse import urlencode as url_encode
+from urllib.request import urlopen as url_open
 
-# True if we are running on Python 3.
-PY3 = sys.version_info[0] == 3
-PY2 = sys.version_info[0] == 2
-
-if PY3:
-    string_types = (str,)
-    integer_types = (int,)
-    class_types = (type,)
-    text_type = str
-    long = int
-else:
-    string_types = (basestring,)
-    integer_types = (int, long)
-    class_types = (type, types.ClassType)
-    text_type = unicode
-    long = long
-
-# TODO check if errors is ever used
+string_types = (str,)
+integer_types = (int,)
+class_types = (type,)
+text_type = str
+long = int
 
 
 def text_(s, encoding="latin-1", errors="strict"):
     if isinstance(s, bytes):
         return s.decode(encoding, errors)
+
     return s
 
 
 def bytes_(s, encoding="latin-1", errors="strict"):
     if isinstance(s, text_type):
         return s.encode(encoding, errors)
+
     return s
 
 
-if PY3:
+def native_(s, encoding="latin-1", errors="strict"):
+    if isinstance(s, text_type):
+        return s
 
-    def native_(s, encoding="latin-1", errors="strict"):
-        if isinstance(s, text_type):
-            return s
-        return str(s, encoding, errors)
-
-
-else:
-
-    def native_(s, encoding="latin-1", errors="strict"):
-        if isinstance(s, text_type):
-            return s.encode(encoding, errors)
-        return str(s)
+    return str(s, encoding, errors)
 
 
-try:
-    from queue import Queue, Empty
-except ImportError:
-    from Queue import Queue, Empty
-
-try:
-    from collections.abc import MutableMapping
-    from collections.abc import Iterable
-except ImportError:
-    from collections import MutableMapping
-    from collections import Iterable
-
-if PY3:
-    from urllib import parse
-
-    urlparse = parse
-    from urllib.parse import quote as url_quote
-    from urllib.parse import urlencode as url_encode, quote_plus
-    from urllib.request import urlopen as url_open
-else:
-    import urlparse
-    from urllib import quote_plus
-    from urllib import quote as url_quote
-    from urllib import unquote as url_unquote
-    from urllib import urlencode as url_encode
-    from urllib2 import urlopen as url_open
-
-if PY3:  # pragma: no cover
-
-    def reraise(exc_info):
-        etype, exc, tb = exc_info
-        if exc.__traceback__ is not tb:
-            raise exc.with_traceback(tb)
-        raise exc
+urlparse = parse
 
 
-else:
-    exec("def reraise(exc): raise exc[0], exc[1], exc[2]")
+def reraise(exc_info):
+    etype, exc, tb = exc_info
+
+    if exc.__traceback__ is not tb:
+        raise exc.with_traceback(tb)
+    raise exc
 
 
-if PY3:
-
-    def iteritems_(d):
-        return d.items()
-
-    def itervalues_(d):
-        return d.values()
+def iteritems_(d):
+    return d.items()
 
 
-else:
-
-    def iteritems_(d):
-        return d.iteritems()  # noqa: B301
-
-    def itervalues_(d):
-        return d.itervalues()  # noqa: B301
+def itervalues_(d):
+    return d.values()
 
 
-if PY3:  # pragma: no cover
+def unquote(string):
+    if not string:
+        return b""
+    res = string.split(b"%")
 
-    def unquote(string):
-        if not string:
-            return b""
-        res = string.split(b"%")
-        if len(res) != 1:
-            string = res[0]
-            for item in res[1:]:
-                try:
-                    string += bytes([int(item[:2], 16)]) + item[2:]
-                except ValueError:
-                    string += b"%" + item
-        return string
+    if len(res) != 1:
+        string = res[0]
 
-    def url_unquote(s):
-        return unquote(s.encode("ascii")).decode("latin-1")
+        for item in res[1:]:
+            try:
+                string += bytes([int(item[:2], 16)]) + item[2:]
+            except ValueError:
+                string += b"%" + item
 
-    def parse_qsl_text(qs, encoding="utf-8"):
-        qs = qs.encode("latin-1")
-        qs = qs.replace(b"+", b" ")
-        pairs = [s2 for s1 in qs.split(b"&") for s2 in s1.split(b";") if s2]
-        for name_value in pairs:
-            nv = name_value.split(b"=", 1)
-            if len(nv) != 2:
-                nv.append("")
-            name = unquote(nv[0])
-            value = unquote(nv[1])
-            yield (name.decode(encoding), value.decode(encoding))
+    return string
 
 
-else:
-    from urlparse import parse_qsl
-
-    def parse_qsl_text(qs, encoding="utf-8"):
-        qsl = parse_qsl(qs, keep_blank_values=True, strict_parsing=False)
-        for (x, y) in qsl:
-            yield (x.decode(encoding), y.decode(encoding))
+def url_unquote(s):
+    return unquote(s.encode("ascii")).decode("latin-1")
 
 
-if PY3:
-    from html import escape
-else:
-    from cgi import escape
+def parse_qsl_text(qs, encoding="utf-8"):
+    qs = qs.encode("latin-1")
+    qs = qs.replace(b"+", b" ")
+    pairs = [s2 for s1 in qs.split(b"&") for s2 in s1.split(b";") if s2]
+
+    for name_value in pairs:
+        nv = name_value.split(b"=", 1)
+
+        if len(nv) != 2:
+            nv.append("")
+        name = unquote(nv[0])
+        value = unquote(nv[1])
+        yield (name.decode(encoding), value.decode(encoding))
 
 
 # Various different FieldStorage work-arounds required on Python 3.x
