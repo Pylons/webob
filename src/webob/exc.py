@@ -1335,25 +1335,6 @@ class HTTPExceptionMiddleware(object):
             return parent_exc_info[1](environ, repl_start_response)
 
 
-try:
-    from paste import httpexceptions
-except ImportError:  # pragma: no cover
-    # Without Paste we don't need to do this fixup
-    pass
-else:  # pragma: no cover
-    for name in dir(httpexceptions):
-        obj = globals().get(name)
-
-        if (
-            obj
-            and isinstance(obj, type)
-            and issubclass(obj, HTTPException)
-            and obj is not HTTPException
-            and obj is not WSGIHTTPException
-        ):
-            obj.__bases__ = obj.__bases__ + (getattr(httpexceptions, name),)
-    del name, obj, httpexceptions
-
 __all__ = ["HTTPExceptionMiddleware", "status_map"]
 status_map = {}
 
