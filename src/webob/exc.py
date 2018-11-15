@@ -171,7 +171,7 @@ import re
 import sys
 
 from webob.acceptparse import create_accept_header
-from webob.compat import class_types, text_, text_type, urlparse
+from webob.compat import text_, urlparse
 from webob.request import Request
 from webob.response import Response
 from webob.util import html_escape
@@ -201,14 +201,14 @@ def no_escape(value):
     if value is None:
         return ""
 
-    if not isinstance(value, text_type):
+    if not isinstance(value, str):
         if hasattr(value, "__unicode__"):
             value = value.__unicode__()
 
         if isinstance(value, bytes):
             value = text_(value, "utf-8")
         else:
-            value = text_type(value)
+            value = str(value)
 
     return value
 
@@ -1340,7 +1340,7 @@ status_map = {}
 
 for name, value in list(globals().items()):
     if (
-        isinstance(value, (type, class_types))
+        isinstance(value, (type, type))
         and issubclass(value, HTTPException)
         and not name.startswith("_")
     ):

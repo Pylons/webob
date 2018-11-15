@@ -21,7 +21,7 @@ from webob.acceptparse import (
     AcceptNoHeader,
     AcceptValidHeader,
 )
-from webob.compat import MutableMapping, bytes_, native_, text_type, text_
+from webob.compat import MutableMapping, bytes_, native_, text_
 from webob.multidict import NoVars
 
 
@@ -1267,20 +1267,20 @@ class TestBaseRequest(object):
     def test_uscript_name(self):
         environ = {"SCRIPT_NAME": "/script"}
         req = self._makeOne(environ)
-        assert isinstance(req.uscript_name, text_type)
+        assert isinstance(req.uscript_name, str)
         assert req.uscript_name == "/script"
 
     def test_upath_info(self):
         environ = {"PATH_INFO": "/path/info"}
         req = self._makeOne(environ)
-        assert isinstance(req.upath_info, text_type)
+        assert isinstance(req.upath_info, str)
         assert req.upath_info == "/path/info"
 
     def test_upath_info_set_unicode(self):
         environ = {"PATH_INFO": "/path/info"}
         req = self._makeOne(environ)
         req.upath_info = text_("/another")
-        assert isinstance(req.upath_info, text_type)
+        assert isinstance(req.upath_info, str)
         assert req.upath_info == "/another"
 
     def test_content_type_getter_no_parameters(self):
@@ -2079,7 +2079,7 @@ class TestRequest_functional(object):
         assert list(new_params.items()) == [("a", "1"), ("b", "4")]
         # The key name is \u1000:
         req = self._blankOne("/?%E1%80%80=x")
-        val = text_type(b"\\u1000", "unicode_escape")
+        val = str(b"\\u1000", "unicode_escape")
         assert val in list(req.GET.keys())
         assert req.GET[val] == "x"
 

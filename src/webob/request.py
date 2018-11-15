@@ -25,8 +25,6 @@ from webob.compat import (
     bytes_,
     native_,
     parse_qsl_text,
-    reraise,
-    text_type,
     url_encode,
     url_quote,
     url_unquote,
@@ -710,7 +708,7 @@ class BaseRequest(object):
             raise AttributeError(
                 "You cannot access Response.text unless charset is set"
             )
-        if not isinstance(value, text_type):
+        if not isinstance(value, str):
             raise TypeError(
                 "You can only set Request.text to a unicode string "
                 "(not %s)" % type(value)
@@ -1186,7 +1184,7 @@ class BaseRequest(object):
         not read every valid HTTP request properly.
         """
         start_line = fp.readline()
-        is_text = isinstance(start_line, text_type)
+        is_text = isinstance(start_line, str)
         if is_text:
             crlf = "\r\n"
             colon = ":"
@@ -1440,7 +1438,7 @@ def environ_from_url(path):
 def environ_add_POST(env, data, content_type=None):
     if data is None:
         return
-    elif isinstance(data, text_type):
+    elif isinstance(data, str):
         data = data.encode("ascii")
     if env["REQUEST_METHOD"] not in ("POST", "PUT"):
         env["REQUEST_METHOD"] = "POST"

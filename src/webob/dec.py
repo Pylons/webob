@@ -6,7 +6,7 @@ application (while also allowing normal calling of the method with an
 instantiated request).
 """
 
-from webob.compat import bytes_, text_type
+from webob.compat import bytes_
 
 from webob.request import Request
 from webob.exc import HTTPException
@@ -130,7 +130,7 @@ class wsgify(object):
             if resp is None:
                 # FIXME: I'm not sure what this should be?
                 resp = req.response
-            if isinstance(resp, text_type):
+            if isinstance(resp, str):
                 resp = bytes_(resp, req.charset)
             if isinstance(resp, bytes):
                 body = resp

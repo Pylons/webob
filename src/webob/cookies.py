@@ -9,7 +9,7 @@ import string
 import time
 import warnings
 
-from webob.compat import MutableMapping, text_type, bytes_, text_, native_, string_types
+from webob.compat import MutableMapping, bytes_, text_, native_
 
 from webob.util import strings_differ
 
@@ -98,10 +98,10 @@ class RequestCookies(MutableMapping):
         return found
 
     def _valid_cookie_name(self, name):
-        if not isinstance(name, string_types):
+        if not isinstance(name, str):
             raise TypeError(name, "cookie name must be a string")
 
-        if not isinstance(name, text_type):
+        if not isinstance(name, str):
             name = text_(name, "utf-8")
         try:
             bytes_cookie_name = bytes_(name, "ascii")
@@ -116,10 +116,10 @@ class RequestCookies(MutableMapping):
     def __setitem__(self, name, value):
         name = self._valid_cookie_name(name)
 
-        if not isinstance(value, string_types):
+        if not isinstance(value, str):
             raise ValueError(value, "cookie value must be a string")
 
-        if not isinstance(value, text_type):
+        if not isinstance(value, str):
             try:
                 value = text_(value, "utf-8")
             except UnicodeDecodeError:
@@ -242,7 +242,7 @@ def serialize_cookie_date(v):
         return None
     elif isinstance(v, bytes):
         return v
-    elif isinstance(v, text_type):
+    elif isinstance(v, str):
         return v.encode("ascii")
     elif isinstance(v, int):
         v = timedelta(seconds=v)

@@ -6,8 +6,6 @@ from collections import namedtuple
 
 from webob.byterange import ContentRange, Range
 
-from webob.compat import text_type
-
 from webob.datetime_utils import parse_date, serialize_date
 
 from webob.util import header_docstring, warn_deprecation
@@ -179,7 +177,7 @@ def parse_list(value):
 
 
 def serialize_list(value):
-    if isinstance(value, (text_type, bytes)):
+    if isinstance(value, (str, bytes)):
         return str(value)
     else:
         return ", ".join(map(str, value))

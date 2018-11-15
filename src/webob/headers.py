@@ -95,7 +95,7 @@ header2key = dict([(v.upper(), k) for (k, v) in key2header.items()])
 
 
 def _trans_key(key):
-    if not isinstance(key, string_types):
+    if not isinstance(key, str):
         return None
     elif key in key2header:
         return key2header[key]

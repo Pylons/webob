@@ -6,7 +6,7 @@ from email.utils import formatdate, mktime_tz, parsedate_tz
 
 import time
 
-from webob.compat import integer_types, long, native_, text_type
+from webob.compat import native_
 
 __all__ = [
     "UTC",
@@ -80,7 +80,7 @@ def parse_date(value):
 
 
 def serialize_date(dt):
-    if isinstance(dt, (bytes, text_type)):
+    if isinstance(dt, (bytes, str)):
         return native_(dt)
     if isinstance(dt, timedelta):
         dt = _now() + dt
@@ -88,7 +88,7 @@ def serialize_date(dt):
         dt = dt.timetuple()
     if isinstance(dt, (tuple, time.struct_time)):
         dt = calendar.timegm(dt)
-    if not (isinstance(dt, float) or isinstance(dt, integer_types)):
+    if not (isinstance(dt, float) or isinstance(dt, int)):
         raise ValueError(
             "You must pass in a datetime, date, time tuple, or integer object, "
             "not %r" % dt
@@ -111,7 +111,7 @@ def parse_date_delta(value):
 
 
 def serialize_date_delta(value):
-    if isinstance(value, (float, int, long)):
+    if isinstance(value, (float, int, int)):
         return str(int(value))
     else:
         return serialize_date(value)

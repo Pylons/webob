@@ -1,6 +1,6 @@
 import warnings
 
-from webob.compat import escape, string_types, text_, text_type
+from webob.compat import escape, text_
 
 from webob.headers import _trans_key
 
@@ -20,14 +20,14 @@ def html_escape(s):
     __html__ = getattr(s, "__html__", None)
     if __html__ is not None and callable(__html__):
         return s.__html__()
-    if not isinstance(s, string_types):
+    if not isinstance(s, str):
         __unicode__ = getattr(s, "__unicode__", None)
         if __unicode__ is not None and callable(__unicode__):
             s = s.__unicode__()
         else:
             s = str(s)
     s = escape(s, True)
-    if isinstance(s, text_type):
+    if isinstance(s, str):
         s = s.encode("ascii", "xmlcharrefreplace")
     return text_(s)
 

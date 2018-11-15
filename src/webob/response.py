@@ -7,7 +7,7 @@ from hashlib import md5
 
 from webob.byterange import ContentRange
 from webob.cachecontrol import CacheControl, serialize_cache_control
-from webob.compat import bytes_, native_, string_types, text_type, url_quote, urlparse
+from webob.compat import bytes_, native_, url_quote, urlparse
 from webob.cookies import Cookie, make_cookie
 from webob.datetime_utils import (
     parse_date_delta,
@@ -282,7 +282,7 @@ class Response(object):
 
         # Set up app_iter if the HTTP Status code has a body
         if app_iter is None and code_has_body:
-            if isinstance(body, text_type):
+            if isinstance(body, str):
                 # Fall back to trying self.charset if encoding is not set. In
                 # most cases encoding will be set to the default value.
                 encoding = encoding or self.charset
@@ -325,7 +325,7 @@ class Response(object):
         must have a ``Content-Length``."""
         headerlist = []
         status = fp.readline().strip()
-        is_text = isinstance(status, text_type)
+        is_text = isinstance(status, str)
 
         if is_text:
             _colon = ":"
@@ -513,7 +513,7 @@ class Response(object):
             body = b"".join(app_iter)
         finally:
             iter_close(app_iter)
-        if isinstance(body, text_type):
+        if isinstance(body, str):
             raise _error_unicode_in_app_iter(app_iter, body)
         self._app_iter = [body]
         if len(body) == 0:
@@ -531,7 +531,7 @@ class Response(object):
 
     def _body__set(self, value=b""):
         if not isinstance(value, bytes):
-            if isinstance(value, text_type):
+            if isinstance(value, str):
                 msg = (
                     "You cannot set Response.body to a text object "
                     "(use Response.text)"
@@ -621,7 +621,7 @@ class Response(object):
                 "You cannot access Response.text unless charset or "
                 "default_body_encoding is set"
             )
-        if not isinstance(value, text_type):
+        if not isinstance(value, str):
             raise TypeError(
                 "You can only set Response.text to a unicode string "
                 "(not %s)" % type(value)
@@ -662,7 +662,7 @@ class Response(object):
 
     def write(self, text):
         if not isinstance(text, bytes):
-            if not isinstance(text, text_type):
+            if not isinstance(text, str):
                 msg = "You can only write str to a Response.body_file, not %s"
                 raise TypeError(msg % type(text))
             if not self.charset:
@@ -852,7 +852,7 @@ class Response(object):
             self._content_type__del()
             return
         else:
-            if not isinstance(value, string_types):
+            if not isinstance(value, str):
                 raise TypeError("content_type requires value to be of string_types")
 
             content_type = value
@@ -1057,7 +1057,7 @@ class Response(object):
         cookies = Cookie()
         for header in existing:
             cookies.load(header)
-        if isinstance(name, text_type):
+        if isinstance(name, str):
             name = name.encode("utf8")
         if name in cookies:
             del cookies[name]
@@ -1123,7 +1123,7 @@ class Response(object):
             value = ""
         if isinstance(value, dict):
             value = CacheControl(value, "response")
-        if isinstance(value, text_type):
+        if isinstance(value, str):
             value = str(value)
         if isinstance(value, str):
             if self._cache_control_obj is None:
