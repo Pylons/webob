@@ -26,9 +26,7 @@ class MultiDict(MutableMapping):
             )
 
         if args:
-            if hasattr(args[0], "iteritems"):
-                items = list(args[0].iteritems())  # noqa: B301
-            elif hasattr(args[0], "items"):
+            if hasattr(args[0], "items"):
                 items = list(args[0].items())
             else:
                 items = list(args[0])
