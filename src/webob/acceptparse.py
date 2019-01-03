@@ -2476,7 +2476,7 @@ class AcceptCharsetNoHeader(_AcceptCharsetInvalidOrNoHeader):
         * a ``str`` header value
         * a ``dict``, where keys are charsets and values are qvalues
         * a ``tuple`` or ``list``, where each item is a charset ``str`` or a
-          ``tuple`` or ``list`` (charset, qvalue) pair (``str``\ s and pairs
+          ``tuple`` or ``list`` (charset, qvalue) pair (``str``'s and pairs
           can be mixed within the ``tuple`` or ``list``)
         * an :class:`AcceptCharsetValidHeader`, :class:`AcceptCharsetNoHeader`,
           or :class:`AcceptCharsetInvalidHeader` instance
