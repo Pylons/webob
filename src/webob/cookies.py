@@ -9,9 +9,9 @@ import string
 import time
 import warnings
 
-from webob.compat import MutableMapping, bytes_, text_, native_
+from webob.compat import MutableMapping
 
-from webob.util import strings_differ
+from webob.util import strings_differ, bytes_, text_
 
 __all__ = [
     "Cookie",
@@ -91,7 +91,7 @@ class RequestCookies(MutableMapping):
                     header = replacement
 
         if header:
-            self._environ["HTTP_COOKIE"] = native_(header, "latin-1")
+            self._environ["HTTP_COOKIE"] = text_(header, "latin-1")
         elif had_header:
             self._environ["HTTP_COOKIE"] = ""
 
@@ -324,15 +324,15 @@ class Morsel(dict):
                     )
                 add(b"SameSite=" + self.samesite)
 
-        return native_(b"; ".join(result), "ascii")
+        return text_(b"; ".join(result), "ascii")
 
     __str__ = serialize
 
     def __repr__(self):
         return "<%s: %s=%r>" % (
             self.__class__.__name__,
-            native_(self.name),
-            native_(self.value),
+            text_(self.name),
+            text_(self.value),
         )
 
 

@@ -166,15 +166,15 @@ References:
 """
 
 import json
-from string import Template
 import re
 import sys
+from string import Template
 
 from webob.acceptparse import create_accept_header
-from webob.compat import text_, urlparse
+from webob.compat import urlparse
 from webob.request import Request
 from webob.response import Response
-from webob.util import html_escape
+from webob.util import html_escape, text_
 
 tag_re = re.compile(r"<.*?>", re.S)
 br_re = re.compile(r"<br.*?>", re.I | re.S)

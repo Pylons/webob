@@ -4,9 +4,10 @@ import socket
 import sys
 
 import pytest
-from webob.compat import Empty, Queue, bytes_, url_open
+from webob.compat import Empty, Queue, url_open
 from webob.request import Request
 from webob.response import Response
+from webob.util import bytes_
 
 log = logging.getLogger(__name__)
 

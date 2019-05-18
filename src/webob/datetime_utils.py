@@ -1,12 +1,9 @@
 import calendar
-
+import time
 from datetime import date, datetime, timedelta, tzinfo
-
 from email.utils import formatdate, mktime_tz, parsedate_tz
 
-import time
-
-from webob.compat import native_
+from webob.util import text_
 
 __all__ = [
     "UTC",
@@ -48,6 +45,7 @@ def timedelta_to_seconds(td):
     """
     Converts a timedelta instance to seconds.
     """
+
     return td.seconds + (td.days * 24 * 60 * 60)
 
 
@@ -65,34 +63,44 @@ def parse_date(value):
     if not value:
         return None
     try:
-        value = native_(value)
+        if not isinstance(value, str):
+            value = str(value, "latin-1")
     except Exception:
         return None
     t = parsedate_tz(value)
+
     if t is None:
         # Could not parse
+
         return None
+
     if t[-1] is None:
         # No timezone given.  None would mean local time, but we'll force UTC
         t = t[:9] + (0,)
     t = mktime_tz(t)
+
     return datetime.fromtimestamp(t, UTC)
 
 
 def serialize_date(dt):
     if isinstance(dt, (bytes, str)):
-        return native_(dt)
+        return text_(dt)
+
     if isinstance(dt, timedelta):
         dt = _now() + dt
+
     if isinstance(dt, (datetime, date)):
         dt = dt.timetuple()
+
     if isinstance(dt, (tuple, time.struct_time)):
         dt = calendar.timegm(dt)
+
     if not (isinstance(dt, float) or isinstance(dt, int)):
         raise ValueError(
             "You must pass in a datetime, date, time tuple, or integer object, "
             "not %r" % dt
         )
+
     return formatdate(dt, usegmt=True)
 
 
@@ -100,6 +108,7 @@ def parse_date_delta(value):
     """
     like parse_date, but also handle delta seconds
     """
+
     if not value:
         return None
     try:

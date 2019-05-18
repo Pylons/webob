@@ -1,6 +1,5 @@
 import pytest
-from webob.compat import text_
-from webob.util import html_escape
+from webob.util import html_escape, text_
 
 
 class t_esc_HTML(object):

@@ -1,11 +1,8 @@
-from datetime import tzinfo
-from datetime import timedelta
+from datetime import timedelta, tzinfo
 
 import pytest
-
-from webob.compat import native_, text_
-
 from webob.request import Request
+from webob.util import text_
 
 
 class GMT(tzinfo):
@@ -175,7 +172,6 @@ def test_header_getter_fset_none():
 
 
 def test_header_getter_fset_text():
-    from webob.compat import text_
     from webob.descriptors import header_getter
     from webob import Response
 
@@ -186,7 +182,6 @@ def test_header_getter_fset_text():
 
 
 def test_header_getter_fset_text_control_chars():
-    from webob.compat import text_
     from webob.descriptors import header_getter
     from webob import Response
 
@@ -995,7 +990,7 @@ class _TestEnvironDecoder(object):
         desc = self._callFUT("HTTP_X_AKEY", encattr="url_encoding")
         req = self._makeRequest()
         desc.fset(req, text_(b"\xc3\xab", "utf-8"))
-        assert req.environ["HTTP_X_AKEY"] == native_(b"\xc3\xab", "latin-1")
+        assert req.environ["HTTP_X_AKEY"] == str(b"\xc3\xab", "latin-1")
 
 
 class TestEnvironDecoder(_TestEnvironDecoder):
@@ -1003,11 +998,12 @@ class TestEnvironDecoder(_TestEnvironDecoder):
         from webob.request import BaseRequest
 
         req = BaseRequest.blank("/")
+
         return req
 
     def test_fget_nonascii(self):
         desc = self._callFUT("HTTP_X_AKEY", encattr="url_encoding")
         req = self._makeRequest()
-        req.environ["HTTP_X_AKEY"] = native_(b"\xc3\xab")
+        req.environ["HTTP_X_AKEY"] = str(b"\xc3\xab", "latin-1")
         result = desc.fget(req)
         assert result == text_(b"\xc3\xab", "utf-8")

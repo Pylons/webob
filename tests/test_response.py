@@ -1,15 +1,12 @@
-import zlib
 import io
 import sys
+import zlib
 
 import pytest
-
-from webob.request import BaseRequest
-from webob.request import Request
-from webob.response import Response
-from webob.compat import text_
-from webob.compat import bytes_
 from webob import cookies
+from webob.request import BaseRequest, Request
+from webob.response import Response
+from webob.util import bytes_, text_
 
 
 def setup_module(module):
@@ -22,6 +19,7 @@ def teardown_module(module):
 
 def simple_app(environ, start_response):
     start_response("200 OK", [("Content-Type", "text/html; charset=UTF-8")])
+
     return ["OK"]
 
 
@@ -309,6 +307,7 @@ def test_conditional_response_if_none_match_weak():
     resp_weak = Response(
         app_iter=["foo\n"], conditional_response=True, headers={"etag": 'W/"bar"'}
     )
+
     for rq in [req, req_weak]:
         for rp in [resp, resp_weak]:
             rq.get_response(rp).status_code == 304
@@ -460,6 +459,7 @@ def test_content_length():
 
 def test_app_iter_range():
     req = Request.blank("/", range=(2, 5))
+
     for app_iter in [
         [b"012345"],
         [b"0", b"12345"],
@@ -1028,6 +1028,7 @@ def test_merge_cookies_resp_is_wsgi_callable():
 
     def dummy_wsgi_callable(environ, start_response):
         L.append((environ, start_response))
+
         return "abc"
 
     res = Response()

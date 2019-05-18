@@ -1,8 +1,21 @@
 import warnings
 
-from webob.compat import escape, text_
-
+from webob.compat import escape
 from webob.headers import _trans_key
+
+
+def text_(s, encoding="latin-1", errors="strict"):
+    if isinstance(s, bytes):
+        return str(s, encoding, errors)
+
+    return s
+
+
+def bytes_(s, encoding="latin-1", errors="strict"):
+    if isinstance(s, str):
+        return s.encode(encoding, errors)
+
+    return s
 
 
 def html_escape(s):
@@ -15,20 +28,26 @@ def html_escape(s):
 
     None is treated specially, and returns the empty string.
     """
+
     if s is None:
         return ""
     __html__ = getattr(s, "__html__", None)
+
     if __html__ is not None and callable(__html__):
         return s.__html__()
+
     if not isinstance(s, str):
         __unicode__ = getattr(s, "__unicode__", None)
+
         if __unicode__ is not None and callable(__unicode__):
             s = s.__unicode__()
         else:
             s = str(s)
     s = escape(s, True)
+
     if isinstance(s, str):
         s = s.encode("ascii", "xmlcharrefreplace")
+
     return text_(s)
 
 
@@ -40,6 +59,7 @@ def header_docstring(header, rfc_section):
         major_section,
         rfc_section,
     )
+
     return "Gets and sets the ``%s`` header (`HTTP spec section %s <%s>`_)." % (
         header,
         rfc_section,
@@ -49,6 +69,7 @@ def header_docstring(header, rfc_section):
 
 def warn_deprecation(text, version, stacklevel):
     # version specifies when to start raising exceptions instead of warnings
+
     if version in ("1.2", "1.3", "1.4", "1.5", "1.6", "1.7"):
         raise DeprecationWarning(text)
     else:
@@ -153,6 +174,7 @@ def strings_differ(string1, string2, compare_digest=compare_digest):
 
     """
     len_eq = len(string1) == len(string2)
+
     if len_eq:
         invalid_bits = 0
         left = string1
@@ -166,4 +188,5 @@ def strings_differ(string1, string2, compare_digest=compare_digest):
     else:
         for a, b in zip(left, right):
             invalid_bits += a != b
+
     return invalid_bits != 0

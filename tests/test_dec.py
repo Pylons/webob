@@ -1,9 +1,9 @@
 import unittest
+
+from webob.dec import wsgify
 from webob.request import Request
 from webob.response import Response
-from webob.dec import wsgify
-from webob.compat import bytes_
-from webob.compat import text_
+from webob.util import bytes_, text_
 
 
 class DecoratorTests(unittest.TestCase):
@@ -11,6 +11,7 @@ class DecoratorTests(unittest.TestCase):
         if isinstance(req, str):
             req = Request.blank(req)
         resp = req.get_response(app)
+
         return resp
 
     def test_wsgify(self):
@@ -162,6 +163,7 @@ class DecoratorTests(unittest.TestCase):
         @wsgify
         def test_app(req):
             self.assertEqual(req.method, "PUT")
+
             return Response(req.body)
 
         resp = test_app.request("/url/path", method="PUT", body=resp_str)
@@ -198,6 +200,7 @@ class DecoratorTests(unittest.TestCase):
         @wsgify.middleware
         def set_urlvar(req, app, **vars):
             req.urlvars.update(vars)
+
             return app(req)
 
         from webob.dec import _MiddlewareFactory
@@ -223,6 +226,7 @@ class DecoratorTests(unittest.TestCase):
         @wsgify.middleware
         def set_args(req, app, **kwargs):
             req.urlvars = kwargs
+
             return req.get_response(app)
 
         @wsgify
@@ -240,6 +244,7 @@ class DecoratorTests(unittest.TestCase):
         @wsgify.middleware
         def set_args(req, app, **kwargs):
             req.urlvars = kwargs
+
             return req.get_response(app)
 
         @wsgify
@@ -257,6 +262,7 @@ class DecoratorTests(unittest.TestCase):
         @wsgify.middleware
         def set_urlvar(req, app, **vars):
             req.urlvars.update(vars)
+
             return app(req)
 
         @set_urlvar(a=1, b=2)

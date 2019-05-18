@@ -4,9 +4,10 @@ from io import BytesIO
 import pytest
 import sys
 
+
 class text_Tests(unittest.TestCase):
     def _callFUT(self, *arg, **kw):
-        from webob.compat import text_
+        from webob.util import text_
 
         return text_(*arg, **kw)
 
@@ -31,7 +32,7 @@ class text_Tests(unittest.TestCase):
 
 class bytes_Tests(unittest.TestCase):
     def _callFUT(self, *arg, **kw):
-        from webob.compat import bytes_
+        from webob.util import bytes_
 
         return bytes_(*arg, **kw)
 

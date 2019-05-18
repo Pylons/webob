@@ -1,6 +1,6 @@
 from webob.request import Request, Transcoder
 from webob.response import Response
-from webob.compat import text_, native_
+from webob.util import text_
 
 t1 = (
     b'--BOUNDARY\r\nContent-Disposition: form-data; name="a"\r\n\r\n\xea\xf3...'
@@ -58,14 +58,14 @@ def test_transcode_non_multipart():
     req = Request.blank("/?a", POST="%EF%F0%E8=%E2%E5%F2")
     req._content_type_raw = "application/x-www-form-urlencoded"
     req2 = req.decode("cp1251")
-    assert native_(req2.body) == "%D0%BF%D1%80%D0%B8=%D0%B2%D0%B5%D1%82"
+    assert text_(req2.body) == "%D0%BF%D1%80%D0%B8=%D0%B2%D0%B5%D1%82"
 
 
 def test_transcode_non_form():
     req = Request.blank("/?a", POST="%EF%F0%E8=%E2%E5%F2")
     req._content_type_raw = "application/x-foo"
     req2 = req.decode("cp1251")
-    assert native_(req2.body) == "%EF%F0%E8=%E2%E5%F2"
+    assert text_(req2.body) == "%EF%F0%E8=%E2%E5%F2"
 
 
 def test_transcode_noop():

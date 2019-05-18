@@ -1,5 +1,3 @@
-# code stolen from "six"
-
 # flake8: noqa
 
 import cgi
@@ -16,26 +14,6 @@ from urllib.parse import quote as url_quote
 from urllib.parse import quote_plus
 from urllib.parse import urlencode as url_encode
 from urllib.request import urlopen as url_open
-
-def text_(s, encoding="latin-1", errors="strict"):
-    if isinstance(s, bytes):
-        return s.decode(encoding, errors)
-
-    return s
-
-
-def bytes_(s, encoding="latin-1", errors="strict"):
-    if isinstance(s, str):
-        return s.encode(encoding, errors)
-
-    return s
-
-
-def native_(s, encoding="latin-1", errors="strict"):
-    if isinstance(s, str):
-        return s
-
-    return str(s, encoding, errors)
 
 
 urlparse = parse

@@ -2,11 +2,9 @@
 
 import sys
 import warnings
-
 from io import BytesIO, StringIO
 
 import pytest
-
 from webob.acceptparse import (
     AcceptCharsetInvalidHeader,
     AcceptCharsetNoHeader,
@@ -21,12 +19,9 @@ from webob.acceptparse import (
     AcceptNoHeader,
     AcceptValidHeader,
 )
-from webob.compat import MutableMapping, bytes_, native_, text_
+from webob.compat import MutableMapping
 from webob.multidict import NoVars
-
-
-py2only = pytest.mark.skipif("sys.version_info >= (3, 0)")
-py3only = pytest.mark.skipif("sys.version_info < (3, 0)")
+from webob.util import bytes_, text_
 
 
 class TestRequestCommon(object):
@@ -546,6 +541,7 @@ class TestRequestCommon(object):
         r_2 = req.POST
         r_3 = req.body
         assert r_1 == b'{"password": "last centurion", "email": "rory@wiggy.net"}'
+
         if method == "POST":
             assert isinstance(r_2, MultiDict)
         else:
@@ -1770,18 +1766,18 @@ class TestBaseRequest(object):
         assert inst.encget("a", None) is None
 
     def test_encget_with_encattr(self):
-        val = native_(b"\xc3\xab", "latin-1")
+        val = str(b"\xc3\xab", "latin-1")
         inst = self._makeOne({"a": val})
         assert inst.encget("a", encattr="url_encoding") == text_(b"\xc3\xab", "utf-8")
 
     def test_encget_with_encattr_latin_1(self):
-        val = native_(b"\xc3\xab", "latin-1")
+        val = str(b"\xc3\xab", "latin-1")
         inst = self._makeOne({"a": val})
         inst.my_encoding = "latin-1"
         assert inst.encget("a", encattr="my_encoding") == text_(b"\xc3\xab", "latin-1")
 
     def test_encget_no_encattr(self):
-        val = native_(b"\xc3\xab", "latin-1")
+        val = str(b"\xc3\xab", "latin-1")
         inst = self._makeOne({"a": val})
         assert inst.encget("a") == val
 
@@ -1792,7 +1788,7 @@ class TestBaseRequest(object):
         assert result == "http://localhost/%C3%AB/a"
 
     def test_header_getter(self):
-        val = native_(b"abc", "latin-1")
+        val = str(b"abc", "latin-1")
         inst = self._makeOne({"HTTP_FLUB": val})
         result = inst.headers["Flub"]
         assert result.__class__ == str

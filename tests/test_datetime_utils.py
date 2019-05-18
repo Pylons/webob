@@ -71,7 +71,7 @@ def test_serialize_date():
         * passing a timedelta, return now plus the delta
         * passing an invalid object, should raise ValueError
     """
-    from webob.compat import text_
+    from webob.util import text_
 
     ret = datetime_utils.serialize_date("Mon, 20 Nov 1995 19:12:08 GMT")
     assert isinstance(ret, str)

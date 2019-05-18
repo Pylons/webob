@@ -6,10 +6,9 @@ application (while also allowing normal calling of the method with an
 instantiated request).
 """
 
-from webob.compat import bytes_
-
-from webob.request import Request
 from webob.exc import HTTPException
+from webob.request import Request
+from webob.util import bytes_
 
 __all__ = ["wsgify"]
 
@@ -84,9 +83,11 @@ class wsgify(object):
         self, func=None, RequestClass=None, args=(), kwargs=None, middleware_wraps=None
     ):
         self.func = func
+
         if RequestClass is not None and RequestClass is not self.RequestClass:
             self.RequestClass = RequestClass
         self.args = tuple(args)
+
         if kwargs is None:
             kwargs = {}
         self.kwargs = kwargs
@@ -97,6 +98,7 @@ class wsgify(object):
 
     def __get__(self, obj, type=None):
         # This handles wrapping methods
+
         if hasattr(self.func, "__get__"):
             return self.clone(self.func.__get__(obj, type))
         else:
@@ -105,6 +107,7 @@ class wsgify(object):
     def __call__(self, req, *args, **kw):
         """Call this as a WSGI application or with a request"""
         func = self.func
+
         if func is None:
             if args or kw:
                 raise TypeError(
@@ -112,7 +115,9 @@ class wsgify(object):
                     "will wrap" % self.__class__.__name__
                 )
             func = req
+
             return self.clone(func)
+
         if isinstance(req, dict):
             if len(args) != 1 or kw:
                 raise TypeError(
@@ -127,20 +132,26 @@ class wsgify(object):
                 resp = self.call_func(req, *args, **kw)
             except HTTPException as exc:
                 resp = exc
+
             if resp is None:
                 # FIXME: I'm not sure what this should be?
                 resp = req.response
+
             if isinstance(resp, str):
                 resp = bytes_(resp, req.charset)
+
             if isinstance(resp, bytes):
                 body = resp
                 resp = req.response
                 resp.write(body)
+
             if resp is not req.response:
                 resp = req.response.merge_cookies(resp)
+
             return resp(environ, start_response)
         else:
             args, kw = self._prepare_args(args, kw)
+
             return self.call_func(req, *args, **kw)
 
     def get(self, url, **kw):
@@ -156,6 +167,7 @@ class wsgify(object):
         """
         kw.setdefault("method", "GET")
         req = self.RequestClass.blank(url, **kw)
+
         return self(req)
 
     def post(self, url, POST=None, **kw):
@@ -173,6 +185,7 @@ class wsgify(object):
         """
         kw.setdefault("method", "POST")
         req = self.RequestClass.blank(url, POST=POST, **kw)
+
         return self(req)
 
     def request(self, url, **kw):
@@ -183,11 +196,13 @@ class wsgify(object):
             resp = myapp.request('/article/1', method='PUT', body='New article')
         """
         req = self.RequestClass.blank(url, **kw)
+
         return self(req)
 
     def call_func(self, req, *args, **kwargs):
         """Call the wrapped function; override this in a subclass to
         change how the function is called."""
+
         return self.func(req, *args, **kwargs)
 
     def clone(self, func=None, **kw):
@@ -195,15 +210,20 @@ class wsgify(object):
         parameters rebound
         """
         kwargs = {}
+
         if func is not None:
             kwargs["func"] = func
+
         if self.RequestClass is not self.__class__.RequestClass:
             kwargs["RequestClass"] = self.RequestClass
+
         if self.args:
             kwargs["args"] = self.args
+
         if self.kwargs:
             kwargs["kwargs"] = self.kwargs
         kwargs.update(kw)
+
         return self.__class__(**kwargs)
 
     # To match @decorator:
@@ -256,17 +276,22 @@ class wsgify(object):
         binding the application).
 
         """
+
         if middle_func is None:
             return _UnboundMiddleware(cls, app, kw)
+
         if app is None:
             return _MiddlewareFactory(cls, middle_func, kw)
+
         return cls(middle_func, middleware_wraps=app, kwargs=kw)
 
     def _prepare_args(self, args, kwargs):
         args = args or self.args
         kwargs = kwargs or self.kwargs
+
         if self.middleware_wraps:
             args = (self.middleware_wraps,) + args
+
         return args, kwargs
 
 
@@ -287,6 +312,7 @@ class _UnboundMiddleware(object):
     def __call__(self, func, app=None):
         if app is None:
             app = self.app
+
         return self.wrapper_class.middleware(func, app=app, **self.kw)
 
 
@@ -310,4 +336,5 @@ class _MiddlewareFactory(object):
     def __call__(self, app=None, **config):
         kw = self.kw.copy()
         kw.update(config)
+
         return self.wrapper_class.middleware(self.middleware, app, **kw)

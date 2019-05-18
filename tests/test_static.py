@@ -1,15 +1,15 @@
-from io import BytesIO
-from os.path import getmtime
-import tempfile
-from time import gmtime
 import os
 import shutil
+import tempfile
 import unittest
+from io import BytesIO
+from os.path import getmtime
+from time import gmtime
 
 from webob import static
-from webob.compat import bytes_
 from webob.request import Request, environ_from_url
 from webob.response import Response
+from webob.util import bytes_
 
 
 def get_response(app, path="/", **req_kw):

@@ -3,8 +3,7 @@ import pytest
 from datetime import timedelta
 
 from webob import cookies
-from webob.compat import text_
-from webob.compat import native_
+from webob.util import text_
 
 
 def setup_module(module):
@@ -321,7 +320,7 @@ class TestRequestCookies(object):
             inst.__setitem__(None, 1)
 
     def test___setitem__name_not_encodeable_to_ascii(self):
-        name = native_(b"La Pe\xc3\xb1a", "utf-8")
+        name = str(b"La Pe\xc3\xb1a", "utf-8")
         inst = self._makeOne({})
         with pytest.raises(TypeError):
             inst.__setitem__(name, "abc")
@@ -345,14 +344,14 @@ class TestRequestCookies(object):
             inst.__setitem__("a", value)
 
     def test__setitem__success_no_existing_headers(self):
-        value = native_(b"test_cookie", "utf-8")
+        value = str(b"test_cookie", "utf-8")
         environ = {}
         inst = self._makeOne(environ)
         inst["a"] = value
         assert environ["HTTP_COOKIE"] == "a=test_cookie"
 
     def test__setitem__success_append(self):
-        value = native_(b"test_cookie", "utf-8")
+        value = str(b"test_cookie", "utf-8")
         environ = {"HTTP_COOKIE": "a=1; b=2"}
         inst = self._makeOne(environ)
         inst["c"] = value
@@ -761,7 +760,7 @@ def serialize(secret, salt, data):
     import base64
     import json
     from hashlib import sha1
-    from webob.compat import bytes_
+    from webob.util import bytes_
 
     salted_secret = bytes_(salt or "", "utf-8") + bytes_(secret, "utf-8")
     cstruct = bytes_(json.dumps(data))

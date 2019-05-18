@@ -1,15 +1,10 @@
 import binascii
 import io
+import mimetypes
 import os
 import re
 import sys
 import tempfile
-import mimetypes
-
-try:
-    import simplejson as json
-except ImportError:
-    import json
 import warnings
 
 from webob.acceptparse import (
@@ -18,30 +13,24 @@ from webob.acceptparse import (
     accept_language_property,
     accept_property,
 )
-
 from webob.cachecontrol import CacheControl, serialize_cache_control
-
 from webob.compat import (
-    bytes_,
-    native_,
+    cgi_FieldStorage,
     parse_qsl_text,
+    quote_plus,
     url_encode,
     url_quote,
     url_unquote,
-    quote_plus,
     urlparse,
-    cgi_FieldStorage,
 )
-
 from webob.cookies import RequestCookies
-
 from webob.descriptors import (
     CHARSET_RE,
     SCHEME_RE,
     converter,
     converter_date,
-    environ_getter,
     environ_decoder,
+    environ_getter,
     parse_auth,
     parse_int,
     parse_int_safe,
@@ -52,12 +41,16 @@ from webob.descriptors import (
     serialize_range,
     upath_property,
 )
-
-from webob.etag import IfRange, AnyETag, NoETag, etag_property
-
+from webob.etag import AnyETag, IfRange, NoETag, etag_property
 from webob.headers import EnvironHeaders
+from webob.multidict import GetDict, MultiDict, NestedMultiDict, NoVars
+from webob.util import text_, bytes_
 
-from webob.multidict import NestedMultiDict, MultiDict, NoVars, GetDict
+try:
+    import simplejson as json
+except ImportError:
+    import json
+
 
 __all__ = ["BaseRequest", "Request"]
 
@@ -117,16 +110,20 @@ class BaseRequest(object):
 
     def encget(self, key, default=NoDefault, encattr=None):
         val = self.environ.get(key, default)
+
         if val is NoDefault:
             raise KeyError(key)
+
         if val is default:
             return default
+
         if not encattr:
             return val
         encoding = getattr(self, encattr)
 
         if encoding in _LATIN_ENCODINGS:  # shortcut
             return val
+
         return bytes_(val, "latin-1").decode(encoding)
 
     def encset(self, key, val, encattr=None):
@@ -140,20 +137,24 @@ class BaseRequest(object):
     def charset(self):
         if self._charset is None:
             charset = detect_charset(self._content_type_raw)
+
             if _is_utf8(charset):
                 charset = "UTF-8"
             self._charset = charset
+
         return self._charset
 
     @charset.setter
     def charset(self, charset):
         if _is_utf8(charset):
             charset = "UTF-8"
+
         if charset != self.charset:
             raise DeprecationWarning("Use req = req.decode(%r)" % charset)
 
     def decode(self, charset=None, errors="strict"):
         charset = charset or self.charset
+
         if charset == "UTF-8":
             return self
         # cookies and path are always utf-8
@@ -168,7 +169,8 @@ class BaseRequest(object):
         )
 
         if content_type == "application/x-www-form-urlencoded":
-            r.body = bytes_(t.transcode_query(native_(self.body)))
+            r.body = bytes_(t.transcode_query(text_(self.body)))
+
             return r
         elif content_type != "multipart/form-data":
             return r
@@ -191,6 +193,7 @@ class BaseRequest(object):
         r.body_file = fout
         r.content_length = fout.tell()
         fout.seek(0)
+
         return r
 
     # this is necessary for correct warnings depth for both
@@ -254,8 +257,10 @@ class BaseRequest(object):
 
         If you access this value, CONTENT_LENGTH will also be updated.
         """
+
         if not self.is_body_seekable:
             self.make_body_seekable()
+
         return self.body_file_raw
 
     url_encoding = environ_getter("webob.url_encoding", "UTF-8")
@@ -295,13 +300,16 @@ class BaseRequest(object):
         you don't include any parameters in the value then existing
         parameters will be preserved.
         """
+
         return self._content_type_raw.split(";", 1)[0]
 
     def _content_type__set(self, value=None):
         if value is not None:
             value = str(value)
+
             if ";" not in value:
                 content_type = self._content_type_raw
+
                 if ";" in content_type:
                     value += ";" + content_type.split(";", 1)[1]
         self._content_type_raw = value
@@ -320,8 +328,10 @@ class BaseRequest(object):
         All the request headers as a case-insensitive dictionary-like
         object.
         """
+
         if self._headers is None:
             self._headers = EnvironHeaders(self.environ)
+
         return self._headers
 
     def _headers__set(self, value):
@@ -354,10 +364,12 @@ class BaseRequest(object):
         """
         e = self.environ
         xff = e.get("HTTP_X_FORWARDED_FOR")
+
         if xff is not None:
             addr = xff.split(",")[0].strip()
         else:
             addr = e.get("REMOTE_ADDR")
+
         return addr
 
     @property
@@ -374,17 +386,20 @@ class BaseRequest(object):
         """
         e = self.environ
         host = e.get("HTTP_HOST")
+
         if host is not None:
             if ":" in host and host[-1] != "]":
                 host, port = host.rsplit(":", 1)
             else:
                 url_scheme = e["wsgi.url_scheme"]
+
                 if url_scheme == "https":
                     port = "443"
                 else:
                     port = "80"
         else:
             port = e["SERVER_PORT"]
+
         return port
 
     @property
@@ -396,6 +411,7 @@ class BaseRequest(object):
         scheme = e.get("wsgi.url_scheme")
         url = scheme + "://"
         host = e.get("HTTP_HOST")
+
         if host is not None:
             if ":" in host and host[-1] != "]":
                 host, port = host.rsplit(":", 1)
@@ -404,6 +420,7 @@ class BaseRequest(object):
         else:
             host = e.get("SERVER_NAME")
             port = e.get("SERVER_PORT")
+
         if scheme == "https":
             if port == "443":
                 port = None
@@ -411,8 +428,10 @@ class BaseRequest(object):
             if port == "80":
                 port = None
         url += host
+
         if port:
             url += ":%s" % port
+
         return url
 
     @property
@@ -421,6 +440,7 @@ class BaseRequest(object):
         The URL including SCRIPT_NAME (no PATH_INFO or query string)
         """
         bscript_name = bytes_(self.script_name, self.url_encoding)
+
         return self.host_url + url_quote(bscript_name, PATH_SAFE)
 
     @property
@@ -429,6 +449,7 @@ class BaseRequest(object):
         The URL including SCRIPT_NAME and PATH_INFO, but not QUERY_STRING
         """
         bpath_info = bytes_(self.path_info, self.url_encoding)
+
         return self.application_url + url_quote(bpath_info, PATH_SAFE)
 
     @property
@@ -438,6 +459,7 @@ class BaseRequest(object):
         """
         bscript = bytes_(self.script_name, self.url_encoding)
         bpath = bytes_(self.path_info, self.url_encoding)
+
         return url_quote(bscript, PATH_SAFE) + url_quote(bpath, PATH_SAFE)
 
     @property
@@ -447,8 +469,10 @@ class BaseRequest(object):
         """
         path = self.path
         qs = self.environ.get("QUERY_STRING")
+
         if qs:
             path += "?" + qs
+
         return path
 
     @property
@@ -458,8 +482,10 @@ class BaseRequest(object):
         """
         url = self.path_url
         qs = self.environ.get("QUERY_STRING")
+
         if qs:
             url += "?" + qs
+
         return url
 
     def relative_url(self, other_url, to_application=False):
@@ -469,12 +495,15 @@ class BaseRequest(object):
         If ``to_application`` is True, then resolve it relative to the
         URL with only SCRIPT_NAME
         """
+
         if to_application:
             url = self.application_url
+
             if not url.endswith("/"):
                 url += "/"
         else:
             url = self.path_url
+
         return urlparse.urljoin(url, other_url)
 
     def path_info_pop(self, pattern=None):
@@ -491,19 +520,24 @@ class BaseRequest(object):
         request and None is returned.
         """
         path = self.path_info
+
         if not path:
             return None
         slashes = ""
+
         while path.startswith("/"):
             slashes += "/"
             path = path[1:]
         idx = path.find("/")
+
         if idx == -1:
             idx = len(path)
         r = path[:idx]
+
         if pattern is None or re.match(pattern, r):
             self.script_name += slashes + r
             self.path_info = path[idx:]
+
             return r
 
     def path_info_peek(self):
@@ -512,9 +546,11 @@ class BaseRequest(object):
         next segment.  Doesn't modify the environment.
         """
         path = self.path_info
+
         if not path:
             return None
         path = path.lstrip("/")
+
         return path.split("/", 1)[0]
 
     def _urlvars__get(self):
@@ -524,6 +560,7 @@ class BaseRequest(object):
         Takes values from ``environ['wsgiorg.routing_args']``.
         Systems like ``routes`` set this value.
         """
+
         if "paste.urlvars" in self.environ:
             return self.environ["paste.urlvars"]
         elif "wsgiorg.routing_args" in self.environ:
@@ -531,15 +568,18 @@ class BaseRequest(object):
         else:
             result = {}
             self.environ["wsgiorg.routing_args"] = ((), result)
+
             return result
 
     def _urlvars__set(self, value):
         environ = self.environ
+
         if "wsgiorg.routing_args" in environ:
             environ["wsgiorg.routing_args"] = (
                 environ["wsgiorg.routing_args"][0],
                 value,
             )
+
             if "paste.urlvars" in environ:
                 del environ["paste.urlvars"]
         elif "paste.urlvars" in environ:
@@ -550,6 +590,7 @@ class BaseRequest(object):
     def _urlvars__del(self):
         if "paste.urlvars" in self.environ:
             del self.environ["paste.urlvars"]
+
         if "wsgiorg.routing_args" in self.environ:
             if not self.environ["wsgiorg.routing_args"][0]:
                 del self.environ["wsgiorg.routing_args"]
@@ -570,15 +611,18 @@ class BaseRequest(object):
         Takes values from ``environ['wsgiorg.routing_args']``.
         Systems like ``routes`` set this value.
         """
+
         if "wsgiorg.routing_args" in self.environ:
             return self.environ["wsgiorg.routing_args"][0]
         else:
             # Since you can't update this value in-place, we don't need
             # to set the key in the environment
+
             return ()
 
     def _urlargs__set(self, value):
         environ = self.environ
+
         if "paste.urlvars" in environ:
             # Some overlap between this and wsgiorg.routing_args; we need
             # wsgiorg.routing_args to make this work
@@ -611,10 +655,12 @@ class BaseRequest(object):
         only set if you are using a Javascript library that sets it
         (or you set the header yourself manually).  Currently
         Prototype and jQuery are known to set this header."""
+
         return self.environ.get("HTTP_X_REQUESTED_WITH", "") == "XMLHttpRequest"
 
     def _host__get(self):
         """Host name provided in HTTP_HOST, with fall-back to SERVER_NAME"""
+
         if "HTTP_HOST" in self.environ:
             return self.environ["HTTP_HOST"]
         else:
@@ -649,8 +695,10 @@ class BaseRequest(object):
         value use :meth:`webob.request.Request.host` instead.
         """
         domain = self.host
+
         if ":" in domain and domain[-1] != "]":
             domain = domain.rsplit(":", 1)[0]
+
         return domain
 
     @property
@@ -658,18 +706,21 @@ class BaseRequest(object):
         """
         Return the content of the request body.
         """
+
         if not self.is_body_readable:
             return b""
 
         self.make_body_seekable()  # we need this to have content_length
         r = self.body_file.read(self.content_length)
         self.body_file_raw.seek(0)
+
         return r
 
     @body.setter
     def body(self, value):
         if value is None:
             value = b""
+
         if not isinstance(value, bytes):
             raise TypeError(
                 "You can only set Request.body to bytes (not %r)" % type(value)
@@ -684,6 +735,7 @@ class BaseRequest(object):
 
     def _json_body__get(self):
         """Access the body of the request as JSON"""
+
         return json.loads(self.body.decode(self.charset))
 
     def _json_body__set(self, value):
@@ -698,9 +750,11 @@ class BaseRequest(object):
         """
         Get/set the text value of the body
         """
+
         if not self.charset:
             raise AttributeError("You cannot access Request.text unless charset is set")
         body = self.body
+
         return body.decode(self.charset)
 
     def _text__set(self, value):
@@ -708,6 +762,7 @@ class BaseRequest(object):
             raise AttributeError(
                 "You cannot access Response.text unless charset is set"
             )
+
         if not isinstance(value, str):
             raise TypeError(
                 "You can only set Request.text to a unicode string "
@@ -730,17 +785,21 @@ class BaseRequest(object):
         requests with an appropriate Content-Type are also supported.
         """
         env = self.environ
+
         if "webob._parsed_post_vars" in env:
             vars, body_file = env["webob._parsed_post_vars"]
+
             if body_file is self.body_file_raw:
                 return vars
         content_type = self.content_type
+
         if (self.method != "POST" and not content_type) or content_type not in (
             "",
             "application/x-www-form-urlencoded",
             "multipart/form-data",
         ):
             # Not an HTML form submission
+
             return NoVars(
                 "Not an HTML form submission (Content-Type: %s)" % content_type
             )
@@ -764,6 +823,7 @@ class BaseRequest(object):
         self.body_file_raw.seek(0)
         vars = MultiDict.from_fieldstorage(fs)
         env["webob._parsed_post_vars"] = (vars, self.body_file_raw)
+
         return vars
 
     @property
@@ -774,12 +834,15 @@ class BaseRequest(object):
         """
         env = self.environ
         source = env.get("QUERY_STRING", "")
+
         if "webob._parsed_query_vars" in env:
             vars, qs = env["webob._parsed_query_vars"]
+
             if qs == source:
                 return vars
 
         data = []
+
         if source:
             # this is disabled because we want to access req.GET
             # for text/plain; charset=ascii uploads for example
@@ -789,6 +852,7 @@ class BaseRequest(object):
             # data = [(d(k), d(v)) for k,v in data]
         vars = GetDict(data, env)
         env["webob._parsed_query_vars"] = (vars, source)
+
         return vars
 
     def _check_charset(self):
@@ -806,6 +870,7 @@ class BaseRequest(object):
         the query string and request body.
         """
         params = NestedMultiDict(self.GET, self.POST)
+
         return params
 
     @property
@@ -813,6 +878,7 @@ class BaseRequest(object):
         """
         Return a dictionary of cookies as found in the request.
         """
+
         return RequestCookies(self.environ)
 
     @cookies.setter
@@ -831,6 +897,7 @@ class BaseRequest(object):
         env = self.environ.copy()
         new_req = self.__class__(env)
         new_req.copy_body()
+
         return new_req
 
     def copy_get(self):
@@ -840,6 +907,7 @@ class BaseRequest(object):
         verb) then it becomes GET, and the request body is thrown away.
         """
         env = self.environ.copy()
+
         return self.__class__(env, method="GET", content_type=None, body=b"")
 
     # webob.is_body_seekable marks input streams that are seekable
@@ -862,6 +930,7 @@ class BaseRequest(object):
             # Encoding is allowed (and works) or we have replaced
             # self.body_file with something that is readable and EOF's
             # correctly.
+
             return self.environ.get(
                 "wsgi.input_terminated",
                 # For backwards compatibility, we fall back to checking if
@@ -888,6 +957,7 @@ class BaseRequest(object):
         The choice to copy to BytesIO is made from
         ``self.request_body_tempfile_limit``
         """
+
         if self.is_body_seekable:
             self.body_file_raw.seek(0)
         else:
@@ -904,6 +974,7 @@ class BaseRequest(object):
 
         if self.is_body_readable:
             # Before we copy, if we can, rewind the body file
+
             if self.is_body_seekable:
                 self.body_file_raw.seek(0)
 
@@ -921,6 +992,7 @@ class BaseRequest(object):
                     # We attempted to read more data, but got none, break.
                     # This can happen if for instance we are reading as much as
                     # we can because we don't have a Content-Length...
+
                     break
                 elif not data:
                     # We have a Content-Length and we attempted to read, but
@@ -940,12 +1012,14 @@ class BaseRequest(object):
                     # When we have enough data that we need a tempfile, let's
                     # create one, then clear the temporary variable we were
                     # using
+
                     if len(newbody) > tempfile_limit:
                         fileobj = self.make_tempfile()
                         fileobj.write(newbody)
                         newbody = b""
 
                 # Only decrement todo if Content-Length is set
+
                 if self.content_length is not None:
                     todo -= len(data)
 
@@ -981,6 +1055,7 @@ class BaseRequest(object):
         Create a tempfile to store big request body.
         This API is not stable yet. A 'size' argument might be added.
         """
+
         return tempfile.TemporaryFile()
 
     def remove_conditional_headers(
@@ -1000,12 +1075,16 @@ class BaseRequest(object):
         conflict detection.
         """
         check_keys = []
+
         if remove_range:
             check_keys += ["HTTP_IF_RANGE", "HTTP_RANGE"]
+
         if remove_match:
             check_keys.append("HTTP_IF_NONE_MATCH")
+
         if remove_modified:
             check_keys.append("HTTP_IF_MODIFIED_SINCE")
+
         if remove_encoding:
             check_keys.append("HTTP_ACCEPT_ENCODING")
 
@@ -1030,19 +1109,23 @@ class BaseRequest(object):
         env = self.environ
         value = env.get("HTTP_CACHE_CONTROL", "")
         cache_header, cache_obj = env.get("webob._cache_control", (None, None))
+
         if cache_obj is not None and cache_header == value:
             return cache_obj
         cache_obj = CacheControl.parse(
             value, updates_to=self._update_cache_control, type="request"
         )
         env["webob._cache_control"] = (value, cache_obj)
+
         return cache_obj
 
     def _cache_control__set(self, value):
         env = self.environ
         value = value or ""
+
         if isinstance(value, dict):
             value = CacheControl(value, type="request")
+
         if isinstance(value, CacheControl):
             str_value = str(value)
             env["HTTP_CACHE_CONTROL"] = str_value
@@ -1053,8 +1136,10 @@ class BaseRequest(object):
 
     def _cache_control__del(self):
         env = self.environ
+
         if "HTTP_CACHE_CONTROL" in env:
             del env["HTTP_CACHE_CONTROL"]
+
         if "webob._cache_control" in env:
             del env["webob._cache_control"]
 
@@ -1112,6 +1197,7 @@ class BaseRequest(object):
         except KeyError:
             name = "(invalid WSGI environ)"
         msg = "<%s at 0x%x %s>" % (self.__class__.__name__, abs(id(self)), name)
+
         return msg
 
     def as_bytes(self, skip_body=False):
@@ -1130,12 +1216,14 @@ class BaseRequest(object):
         # acquire body before we handle headers so that
         # content-length will be set
         body = None
+
         if self.is_body_readable:
             if skip_body > 1:
                 if len(self.body) > skip_body:
                     body = bytes_("<body skipped (len=%s)>" % len(self.body))
                 else:
                     skip_body = False
+
             if not skip_body:
                 body = self.body
 
@@ -1146,10 +1234,12 @@ class BaseRequest(object):
         if body:
             parts.extend([b"", body])
         # HTTP clearly specifies CRLF
+
         return b"\r\n".join(parts)
 
     def as_text(self, skip_body=False):
         bytes = self.as_bytes(skip_body)
+
         return bytes.decode(self.charset)
 
     __str__ = as_text
@@ -1162,13 +1252,16 @@ class BaseRequest(object):
         """
         f = io.BytesIO(b)
         r = cls.from_file(f)
+
         if f.tell() != len(b):
             raise ValueError("The string contains more data than expected")
+
         return r
 
     @classmethod
     def from_text(cls, s):
         b = bytes_(s, "utf-8")
+
         return cls.from_bytes(b)
 
     @classmethod
@@ -1185,6 +1278,7 @@ class BaseRequest(object):
         """
         start_line = fp.readline()
         is_text = isinstance(start_line, str)
+
         if is_text:
             crlf = "\r\n"
             colon = ":"
@@ -1194,32 +1288,38 @@ class BaseRequest(object):
         try:
             header = start_line.rstrip(crlf)
             method, resource, http_version = header.split(None, 2)
-            method = native_(method, "utf-8")
-            resource = native_(resource, "utf-8")
-            http_version = native_(http_version, "utf-8")
+            method = text_(method, "utf-8")
+            resource = text_(resource, "utf-8")
+            http_version = text_(http_version, "utf-8")
         except ValueError:
             raise ValueError("Bad HTTP request line: %r" % start_line)
         r = cls(
             environ_from_url(resource), http_version=http_version, method=method.upper()
         )
         del r.environ["HTTP_HOST"]
+
         while 1:
             line = fp.readline()
+
             if not line.strip():
                 # end of headers
+
                 break
             hname, hval = line.split(colon, 1)
-            hname = native_(hname, "utf-8")
-            hval = native_(hval, "utf-8").strip()
+            hname = text_(hname, "utf-8")
+            hval = text_(hval, "utf-8").strip()
+
             if hname in r.headers:
                 hval = r.headers[hname] + ", " + hval
             r.headers[hname] = hval
 
         clen = r.content_length
+
         if clen is None:
             body = fp.read()
         else:
             body = fp.read(clen)
+
         if is_text:
             body = bytes_(body, "utf-8")
         r.body = body
@@ -1239,6 +1339,7 @@ class BaseRequest(object):
         do this and there was an exception, the exception will be
         raised directly.
         """
+
         if self.is_body_seekable:
             self.body_file_raw.seek(0)
         captured = []
@@ -1249,9 +1350,11 @@ class BaseRequest(object):
                 etype, exc, tb = exc_info
                 raise etype(exc).with_traceback(tb)
             captured[:] = [status, headers, exc_info]
+
             return output.append
 
         app_iter = application(self.environ, start_response)
+
         if output or not captured:
             try:
                 output.extend(app_iter)
@@ -1259,6 +1362,7 @@ class BaseRequest(object):
                 if hasattr(app_iter, "close"):
                     app_iter.close()
             app_iter = output
+
         if catch_exc_info:
             return (captured[0], captured[1], app_iter, captured[2])
         else:
@@ -1279,8 +1383,10 @@ class BaseRequest(object):
         If ``application`` is not given, this will send the request to
         ``self.make_default_send_app()``
         """
+
         if application is None:
             application = self.make_default_send_app()
+
         if catch_exc_info:
             status, headers, app_iter, exc_info = self.call_application(
                 application, catch_exc_info=True
@@ -1290,6 +1396,7 @@ class BaseRequest(object):
             status, headers, app_iter = self.call_application(
                 application, catch_exc_info=False
             )
+
         return self.ResponseClass(
             status=status, headerlist=list(headers), app_iter=app_iter
         )
@@ -1304,6 +1411,7 @@ class BaseRequest(object):
             from webob import client
 
             _client = client
+
         return client.send_request_app
 
     @classmethod
@@ -1324,14 +1432,18 @@ class BaseRequest(object):
         Any extra keyword will be passed to ``__init__``.
         """
         env = environ_from_url(path)
+
         if base_url:
             scheme, netloc, path, query, fragment = urlparse.urlsplit(base_url)
+
             if query or fragment:
                 raise ValueError(
                     "base_url (%r) cannot have a query or fragment" % base_url
                 )
+
             if scheme:
                 env["wsgi.url_scheme"] = scheme
+
             if netloc:
                 if ":" not in netloc:
                     if scheme == "http":
@@ -1344,17 +1456,22 @@ class BaseRequest(object):
                 env["SERVER_PORT"] = port
                 env["SERVER_NAME"] = host
                 env["HTTP_HOST"] = netloc
+
             if path:
                 env["SCRIPT_NAME"] = url_unquote(path)
+
         if environ:
             env.update(environ)
         content_type = kw.get("content_type", env.get("CONTENT_TYPE"))
+
         if headers and "Content-Type" in headers:
             content_type = headers["Content-Type"]
+
         if content_type is not None:
             kw["content_type"] = content_type
         environ_add_POST(env, POST, content_type=content_type)
         obj = cls(env, **kw)
+
         if headers is not None:
             obj.headers.update(headers)
 
@@ -1394,10 +1511,13 @@ class Request(AdhocAttrMixin, BaseRequest):
 def environ_from_url(path):
     if SCHEME_RE.search(path):
         scheme, netloc, path, qs, fragment = urlparse.urlsplit(path)
+
         if fragment:
             raise TypeError("Path cannot contain a fragment (%r)" % fragment)
+
         if qs:
             path += "?" + qs
+
         if ":" not in netloc:
             if scheme == "http":
                 netloc += ":80"
@@ -1408,6 +1528,7 @@ def environ_from_url(path):
     else:
         scheme = "http"
         netloc = "localhost:80"
+
     if path and "?" in path:
         path_info, query_string = path.split("?", 1)
         path_info = url_unquote(path_info)
@@ -1432,6 +1553,7 @@ def environ_from_url(path):
         "wsgi.run_once": False,
         "webob.is_body_seekable": True,
     }
+
     return env
 
 
@@ -1440,20 +1562,26 @@ def environ_add_POST(env, data, content_type=None):
         return
     elif isinstance(data, str):
         data = data.encode("ascii")
+
     if env["REQUEST_METHOD"] not in ("POST", "PUT"):
         env["REQUEST_METHOD"] = "POST"
     has_files = False
+
     if hasattr(data, "items"):
         data = list(data.items())
+
         for _, v in data:
             if isinstance(v, (tuple, list)):
                 has_files = True
+
                 break
+
     if content_type is None:
         if has_files:
             content_type = "multipart/form-data"
         else:
             content_type = "application/x-www-form-urlencoded"
+
     if content_type.startswith("multipart/form-data"):
         if not isinstance(data, bytes):
             content_type, data = _encode_multipart(data, content_type)
@@ -1462,6 +1590,7 @@ def environ_add_POST(env, data, content_type=None):
             raise ValueError(
                 "Submiting files is not allowed for" " content type `%s`" % content_type
             )
+
         if not isinstance(data, bytes):
             data = url_encode(data)
     else:
@@ -1509,6 +1638,7 @@ class LimitedLengthFile(io.RawIOBase):
         data = self.file.read(sz0)
         sz = len(data)
         self.remaining -= sz
+
         if sz < sz0 and self.remaining:
             raise DisconnectionError(
                 "The client disconnected while sending the body "
@@ -1521,8 +1651,9 @@ class LimitedLengthFile(io.RawIOBase):
 
 def _get_multipart_boundary(ctype):
     m = re.search(r"boundary=([^ ]+)", ctype, re.I)
+
     if m:
-        return native_(m.group(1).strip('"'))
+        return text_(m.group(1).strip('"'))
 
 
 def _encode_multipart(vars, content_type, fout=None):
@@ -1535,21 +1666,26 @@ def _encode_multipart(vars, content_type, fout=None):
 
     CRLF = b"\r\n"
     boundary = _get_multipart_boundary(content_type)
+
     if not boundary:
-        boundary = native_(binascii.hexlify(os.urandom(10)))
+        boundary = text_(binascii.hexlify(os.urandom(10)))
         content_type += "; boundary=%s" % boundary
+
     for name, value in vars:
         w(b"--")
         wt(boundary)
         w(CRLF)
         wt("Content-Disposition: form-data")
+
         if name is not None:
             wt('; name="%s"' % name)
         filename = None
+
         if getattr(value, "filename", None):
             filename = value.filename
         elif isinstance(value, (list, tuple)):
             filename, value = value
+
             if hasattr(value, "read"):
                 value = value.read()
 
@@ -1562,8 +1698,10 @@ def _encode_multipart(vars, content_type, fout=None):
         w(CRLF)
 
         # TODO: should handle value.disposition_options
+
         if getattr(value, "type", None):
             wt("Content-type: %s" % value.type)
+
             if value.type_options:
                 for ct_name, ct_value in sorted(value.type_options.items()):
                     wt('; %s="%s"' % (ct_name, ct_value))
@@ -1572,14 +1710,17 @@ def _encode_multipart(vars, content_type, fout=None):
             wt("Content-type: %s" % mime_type)
             w(CRLF)
         w(CRLF)
+
         if hasattr(value, "value"):
             value = value.value
+
         if isinstance(value, bytes):
             w(value)
         else:
             wt(value)
         w(CRLF)
     wt("--%s--" % boundary)
+
     if fout:
         return content_type, fout
     else:
@@ -1588,6 +1729,7 @@ def _encode_multipart(vars, content_type, fout=None):
 
 def detect_charset(ctype):
     m = CHARSET_RE.search(ctype)
+
     if m:
         return m.group(1).strip('"').strip()
 
@@ -1607,8 +1749,10 @@ class Transcoder(object):
 
     def transcode_query(self, q):
         q_orig = q
+
         if "=" not in q:
             # this doesn't look like a form submission
+
             return q_orig
 
         q = list(parse_qsl_text(q, self.charset))
@@ -1621,8 +1765,10 @@ class Transcoder(object):
             return b
 
         data = []
+
         for field in fs.list or ():
             field.name = decode(field.name)
+
             if field.filename:
                 field.filename = decode(field.filename)
                 data.append((field.name, field))
@@ -1631,4 +1777,5 @@ class Transcoder(object):
 
         # TODO: transcode big requests to temp file
         content_type, fout = _encode_multipart(data, content_type, fout=io.BytesIO())
+
         return fout

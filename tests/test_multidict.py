@@ -2,7 +2,7 @@
 
 import unittest
 from webob import multidict
-from webob.compat import text_
+from webob.util import text_
 
 
 class BaseDictTests(object):
