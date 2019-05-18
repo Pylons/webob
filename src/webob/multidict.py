@@ -41,7 +41,7 @@ class MultiDict(MutableMapping):
     @classmethod
     def view_list(cls, lst):
         """
-        Create a dict that is a view on the given list
+        Create a multidict that is a view on the given list
         """
 
         if not isinstance(lst, list):
@@ -57,7 +57,7 @@ class MultiDict(MutableMapping):
     @classmethod
     def from_fieldstorage(cls, fs):
         """
-        Create a dict from a cgi.FieldStorage instance
+        Create a multidict from a cgi.FieldStorage instance
         """
         obj = cls()
         # fs.list can be None when there's nothing to parse
