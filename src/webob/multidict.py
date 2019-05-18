@@ -6,8 +6,9 @@ Gives a multi-value dictionary object (MultiDict) plus several wrappers
 """
 import binascii
 import warnings
+from collections.abc import MutableMapping
 
-from webob.compat import MutableMapping, url_encode
+from webob.compat import url_encode
 
 __all__ = ["MultiDict", "NestedMultiDict", "NoVars", "GetDict"]
 

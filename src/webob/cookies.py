@@ -3,15 +3,14 @@ import binascii
 import hashlib
 import hmac
 import json
-from datetime import date, datetime, timedelta
 import re
 import string
 import time
 import warnings
+from collections.abc import MutableMapping
+from datetime import date, datetime, timedelta
 
-from webob.compat import MutableMapping
-
-from webob.util import strings_differ, bytes_, text_
+from webob.util import bytes_, strings_differ, text_
 
 __all__ = [
     "Cookie",

@@ -1,4 +1,5 @@
-from webob.compat import MutableMapping
+from collections.abc import MutableMapping
+
 from webob.multidict import MultiDict
 
 __all__ = ["ResponseHeaders", "EnvironHeaders"]
@@ -12,6 +13,7 @@ class ResponseHeaders(MultiDict):
 
     def __getitem__(self, key):
         key = key.lower()
+
         for k, v in reversed(self._items):
             if k.lower() == key:
                 return v
@@ -19,19 +21,24 @@ class ResponseHeaders(MultiDict):
 
     def getall(self, key):
         key = key.lower()
+
         return [v for (k, v) in self._items if k.lower() == key]
 
     def mixed(self):
         r = self.dict_of_lists()
+
         for key, val in r.items():
             if len(val) == 1:
                 r[key] = val[0]
+
         return r
 
     def dict_of_lists(self):
         r = {}
+
         for key, val in self.items():
             r.setdefault(key.lower(), []).append(val)
+
         return r
 
     def __setitem__(self, key, value):
@@ -43,28 +50,34 @@ class ResponseHeaders(MultiDict):
         key = key.lower()
         items = self._items
         found = False
+
         for i in range(len(items) - 1, -1, -1):
             if items[i][0].lower() == key:
                 del items[i]
                 found = True
+
         if not found:
             raise KeyError(key)
 
     def __contains__(self, key):
         key = key.lower()
+
         for k, _ in self._items:
             if k.lower() == key:
                 return True
+
         return False
 
     has_key = __contains__
 
     def setdefault(self, key, default=None):
         c_key = key.lower()
+
         for k, v in self._items:
             if k.lower() == c_key:
                 return v
         self._items.append((key, default))
+
         return default
 
     def pop(self, key, *args):
@@ -73,11 +86,14 @@ class ResponseHeaders(MultiDict):
                 "pop expected at most 2 arguments, got %s" % repr(1 + len(args))
             )
         key = key.lower()
+
         for i in range(len(self._items)):
             if self._items[i][0].lower() == key:
                 v = self._items[i][1]
                 del self._items[i]
+
                 return v
+
         if args:
             return args[0]
         else:
@@ -107,8 +123,10 @@ def _trans_key(key):
 
 def _trans_name(name):
     name = name.upper()
+
     if name in header2key:
         return header2key[name]
+
     return "HTTP_" + name.replace("-", "_")
 
 

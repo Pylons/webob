@@ -6,7 +6,7 @@ import tempfile
 import types
 from cgi import FieldStorage as _cgi_FieldStorage
 from cgi import parse_header
-from collections.abc import Iterable, MutableMapping
+
 from html import escape
 from queue import Empty, Queue
 from urllib import parse

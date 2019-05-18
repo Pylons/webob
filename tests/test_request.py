@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
-
 import sys
 import warnings
+from collections.abc import MutableMapping
 from io import BytesIO, StringIO
 
 import pytest
@@ -19,7 +18,6 @@ from webob.acceptparse import (
     AcceptNoHeader,
     AcceptValidHeader,
 )
-from webob.compat import MutableMapping
 from webob.multidict import NoVars
 from webob.util import bytes_, text_
 
