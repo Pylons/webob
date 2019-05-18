@@ -313,7 +313,7 @@ class BaseRequest(object):
         "int",
     )
     remote_user = environ_getter("REMOTE_USER", None)
-    remote_host = environ_getter("REMOTE_HOST", None, "4.1.9")
+    remote_host = environ_getter("REMOTE_HOST", None)
     remote_addr = environ_getter("REMOTE_ADDR", None)
     query_string = environ_getter("QUERY_STRING", "")
     server_name = environ_getter("SERVER_NAME")
