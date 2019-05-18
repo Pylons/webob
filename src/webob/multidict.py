@@ -216,17 +216,15 @@ class MultiDict(MutableMapping):
                 "pop expected at most 2 arguments, got %s" % repr(1 + len(args))
             )
 
-        for i in range(len(self._items)):
-            if self._items[i][0] == key:
-                v = self._items[i][1]
+        for i, (k, v) in enumerate(self._items):
+            if k == key:
                 del self._items[i]
 
                 return v
 
         if args:
             return args[0]
-        else:
-            raise KeyError(key)
+        raise KeyError(key)
 
     def popitem(self):
         return self._items.pop()
