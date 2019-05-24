@@ -29,24 +29,6 @@ def test_cookie_one_value_with_trailing_semi():
 def test_cookie_escaped_unquoted():
     eq_(list(cookies.parse_cookie('x=\\040')), [(b'x', b' ')])
 
-def test_cookie_complex():
-    c = cookies.Cookie('dismiss-top=6; CP=null*, '\
-                       'PHPSESSID=0a539d42abc001cdc762809248d4beed, a="42,"')
-    d = lambda v: v.decode('ascii')
-    c_dict = dict((d(k),d(v.value)) for k,v in c.items())
-    eq_(c_dict, {'a': '42,',
-        'CP': 'null*',
-        'PHPSESSID': '0a539d42abc001cdc762809248d4beed',
-        'dismiss-top': '6'
-    })
-
-def test_cookie_complex_serialize():
-    c = cookies.Cookie('dismiss-top=6; CP=null*, '\
-                       'PHPSESSID=0a539d42abc001cdc762809248d4beed, a="42,"')
-    eq_(c.serialize(),
-        'CP=null*; PHPSESSID=0a539d42abc001cdc762809248d4beed; a="42\\054"; '
-        'dismiss-top=6')
-
 def test_cookie_load_multiple():
     c = cookies.Cookie('a=1; Secure=true')
     vals = list(c.values())

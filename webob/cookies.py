@@ -292,7 +292,7 @@ class Morsel(dict):
 
 
 _re_quoted = r'"(?:\\"|.)*?"' # any doublequoted string
-_legal_special_chars = "~!@#$%^&*()_+=-`.?|:/(){}<>'"
+_legal_special_chars = "~!@#$%^&*()_+=-`.?|:/(){}<>',"
 _re_legal_char  = r"[\w\d%s]" % re.escape(_legal_special_chars)
 _re_expires_val = r"\w{3},\s[\w\d-]{9,11}\s[\d:]{8}\sGMT"
 _re_cookie_str_key = r"(%s+?)" % _re_legal_char
