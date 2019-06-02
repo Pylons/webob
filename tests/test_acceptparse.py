@@ -1162,6 +1162,8 @@ class TestAcceptValidHeader(object):
             ),
             ("*/*", ["text/*"], []),
             ("", ["text/*", "*/*", "text/html", "text/html;level=1", "image/*"], []),
+            ("application/json, */*", ["text/html", "application/json"],
+             [("application/json", 1.0), ("text/html", 1.0)]),
         ],
     )
     def test_acceptable_offers__valid_offers(

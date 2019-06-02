@@ -993,8 +993,9 @@ class AcceptValidHeader(Accept):
                 )
 
         acceptable_offers_n_quality_factors = [
-            # key is offer, value[0] is qvalue, value[1] is offer_index
-            (key, value[0], value[1])
+            # key is offer, value[0] is qvalue, value[1] is offer_index,
+            # value[2] is specificity
+            (key, value[0], value[1], value[2])
             for key, value in acceptable_offers_n_quality_factors.items()
             if value[0]  # != 0.0
             # We have to filter out the offers with qvalues of 0 here instead
@@ -1005,11 +1006,15 @@ class AcceptValidHeader(Accept):
         ]
         # sort by offer_index, ascending
         acceptable_offers_n_quality_factors.sort(key=lambda tuple_: tuple_[2])
+        # (stable) sort by specificity, descending
+        acceptable_offers_n_quality_factors.sort(
+            key=lambda tuple_: tuple_[3], reverse=True
+        )
         # (stable) sort by qvalue, descending
         acceptable_offers_n_quality_factors.sort(
             key=lambda tuple_: tuple_[1], reverse=True
         )
-        # drop offer_index
+        # drop offer_index, specificity
         acceptable_offers_n_quality_factors = [
             (item[0], item[1]) for item in acceptable_offers_n_quality_factors
         ]
