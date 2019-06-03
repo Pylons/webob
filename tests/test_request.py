@@ -2612,8 +2612,8 @@ class TestRequest_functional(object):
         assert req.accept
         req = self._blankOne("/", accept=["*/*", "text/*"])
         assert fut(req, ["application/x-foo", "text/plain"]) == [
-            ("application/x-foo", 1.0),
             ("text/plain", 1.0),
+            ("application/x-foo", 1.0),
         ]
         assert fut(req, ["text/plain", "application/x-foo"]) == [
             ("text/plain", 1.0),
