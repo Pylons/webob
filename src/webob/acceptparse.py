@@ -1006,13 +1006,9 @@ class AcceptValidHeader(Accept):
         ]
         # sort by offer_index, ascending
         acceptable_offers_n_quality_factors.sort(key=lambda tuple_: tuple_[2])
-        # (stable) sort by specificity, descending
+        # (stable) sort by qvalue and then specificity, descending
         acceptable_offers_n_quality_factors.sort(
-            key=lambda tuple_: tuple_[3], reverse=True
-        )
-        # (stable) sort by qvalue, descending
-        acceptable_offers_n_quality_factors.sort(
-            key=lambda tuple_: tuple_[1], reverse=True
+            key=lambda tuple_: (tuple_[1], tuple_[3], reverse=True
         )
         # drop offer_index, specificity
         acceptable_offers_n_quality_factors = [
