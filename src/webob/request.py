@@ -1196,8 +1196,8 @@ class BaseRequest(object):
         # HTTP clearly specifies CRLF
         return b"\r\n".join(parts)
 
-    def as_text(self):
-        bytes = self.as_bytes()
+    def as_text(self, skip_body=False):
+        bytes = self.as_bytes(skip_body)
         return bytes.decode(self.charset)
 
     __str__ = as_text
