@@ -1004,11 +1004,13 @@ class AcceptValidHeader(Accept):
             # and offers is ['text/html']
         ]
         acceptable_offers_n_quality_factors.sort(
-            key=lambda tuple_: (tuple_[1], -tuple_[2]), reverse=True,
+            key=lambda tuple_: (tuple_[1], -tuple_[2]),
+            reverse=True,
             # descending sort by (qvalue, -offer_index)
         )
         return [
-            (item[0], item[1]) for item in acceptable_offers_n_quality_factors
+            (item[0], item[1])
+            for item in acceptable_offers_n_quality_factors
             # dropping offer_index
         ]
         # If a media range is repeated in the header (which would not make
