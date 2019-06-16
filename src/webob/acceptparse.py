@@ -1003,11 +1003,9 @@ class AcceptValidHeader(Accept):
             # text/html' (which does not make sense, but is nonetheless valid),
             # and offers is ['text/html']
         ]
-        # sort by offer_index, ascending
-        acceptable_offers_n_quality_factors.sort(key=lambda tuple_: tuple_[2])
-        # (stable) sort by qvalue, descending
         acceptable_offers_n_quality_factors.sort(
-            key=lambda tuple_: tuple_[1], reverse=True
+            key=lambda tuple_: (tuple_[1], -tuple_[2]), reverse=True,
+            # descending sort by (qvalue, -offer_index)
         )
         # drop offer_index
         acceptable_offers_n_quality_factors = [
