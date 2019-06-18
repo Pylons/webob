@@ -1003,17 +1003,13 @@ class AcceptValidHeader(Accept):
             # text/html' (which does not make sense, but is nonetheless valid),
             # and offers is ['text/html']
         ]
-        # sort by offer_index, ascending
-        acceptable_offers_n_quality_factors.sort(key=lambda tuple_: tuple_[2])
-        # (stable) sort by qvalue, descending
         acceptable_offers_n_quality_factors.sort(
-            key=lambda tuple_: tuple_[1], reverse=True
+            key=lambda tuple_: (tuple_[1], -tuple_[2]),
+            reverse=True,
+            # descending sort by (qvalue, -offer_index)
         )
-        # drop offer_index
-        acceptable_offers_n_quality_factors = [
-            (item[0], item[1]) for item in acceptable_offers_n_quality_factors
-        ]
-        return acceptable_offers_n_quality_factors
+        # return list of (offer, qvalue) tuples, dropping offer_index
+        return [(item[0], item[1]) for item in acceptable_offers_n_quality_factors]
         # If a media range is repeated in the header (which would not make
         # sense, but would be valid according to the rules in the RFC), an
         # offer for which the media range is the most specific match would take
