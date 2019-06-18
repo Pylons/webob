@@ -1008,11 +1008,8 @@ class AcceptValidHeader(Accept):
             reverse=True,
             # descending sort by (qvalue, -offer_index)
         )
-        return [
-            (item[0], item[1])
-            for item in acceptable_offers_n_quality_factors
-            # dropping offer_index
-        ]
+        # return list of (offer, qvalue) tuples, dropping offer_index
+        return [(item[0], item[1]) for item in acceptable_offers_n_quality_factors]
         # If a media range is repeated in the header (which would not make
         # sense, but would be valid according to the rules in the RFC), an
         # offer for which the media range is the most specific match would take
