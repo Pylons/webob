@@ -1198,7 +1198,7 @@ class MIMEAccept(Accept):
        appropriate object.
 
        This shim has an extended deprecation period to allow for application
-       developers to switch the to new API.
+       developers to switch to the new API.
 
     """
 
