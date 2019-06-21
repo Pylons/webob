@@ -1188,8 +1188,7 @@ class MIMEAccept(Accept):
     This shim does use the newer Accept header parsing, which will mean your
     application may be less liberal in what Accept headers are correctly
     parsed. It is recommended that user agents be updated to send appropriate
-    Accept headers that are valid according to rfc:`RFC 7231, section 5.3.2
-    <7231#section-5.3.2>`
+    Accept headers that are valid according to :rfc:`7231#section-5.3.2`.
 
     .. deprecated:: 1.8
 
@@ -1199,7 +1198,7 @@ class MIMEAccept(Accept):
        appropriate object.
 
        This shim has an extended deprecation period to allow for application
-       developers to switch the to new API.
+       developers to switch to the new API.
 
     """
 
