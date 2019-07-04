@@ -621,7 +621,10 @@ class Response(object):
             )
         decoding = self.charset or self.default_body_encoding
         body = self.body
-        return body.decode(decoding, self.unicode_errors)
+        try:
+            return body.decode(decoding, self.unicode_errors)
+        except:
+            return body.decode("UTF-8", self.unicode_errors)
 
     def _text__set(self, value):
         if not self.charset and not self.default_body_encoding:
