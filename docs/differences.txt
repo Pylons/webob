@@ -321,7 +321,7 @@ From information `from the wiki
 Yaro
 ====
 
-`Yaro <https://pypi.python.org/pypi/yaro>`_ is a small wrapper around
+`Yaro <https://pypi.org/project/yaro>`_ is a small wrapper around
 the WSGI environment, much like WebOb in scope.
 
 The WebOb objects have many more methods and attributes.  The Yaro
@@ -365,7 +365,7 @@ An offshoot of `Pocoo <http://www.pocoo.org/>`_,
 this library is based around WSGI, similar to Paste and Yaro.
 
 This is taken from the `wrapper documentation
-<http://werkzeug.pocoo.org/docs/0.12/wrappers/>`_.
+<https://werkzeug.palletsprojects.com/en/0.15.x/contrib/wrappers/#werkzeug-contrib-wrappers>`_.
 
 Request
 -------
@@ -399,7 +399,7 @@ Zope 3
 From the Zope 3 interfaces for the `Request
 <https://zopepublisher.readthedocs.io/en/sphinx-docs/browser_api.html#zope.publisher.interfaces.browser.IBrowserRequest>`_
 and `Response
-<http://zopepublisher.readthedocs.io/en/sphinx-docs/http_api.html#zope.publisher.interfaces.http.IHTTPResponse>`_.
+<https://zopepublisher.readthedocs.io/en/sphinx-docs/http_api.html#zope.publisher.interfaces.http.IHTTPResponse>`_.
 
 Request
 -------
@@ -589,7 +589,7 @@ webapp Response
     <https://cloud.google.com/appengine/docs/standard/python/tools/webapp2>`_.
 
 The Google App Engine `webapp
-<https://cloud.google.com/appengine/docs/standard/python/tools/webapp/>`_
+<https://cloud.google.com/appengine/docs/standard/python/python25>`_
 framework uses the WebOb Request object, but does not use its Response
 object.
 

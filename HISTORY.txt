@@ -21,7 +21,7 @@ Backwards Incompatibilities
 - Many changes have been made to the way WebOb does Accept handling, not just
   for the Accept header itself, but also for Accept-Charset, Accept-Encoding
   and Accept-Language. This was a `Google Summer of Code
-  <https://developers.google.com/open-source/gsoc/>`_ project completed by
+  <https://summerofcode.withgoogle.com/>`_ project completed by
   Whiteroses (https://github.com/whiteroses). Many thanks to Google for running
   GSoC, the Python Software Foundation for organising and a huge thanks to Ira
   for completing the work. See https://github.com/Pylons/webob/pull/338 and
@@ -441,7 +441,7 @@ Features
   longer quoted in cookie values: ``~/=<>()[]{}?@`` .  The full set of
   non-letter-or-digit unquoted cookie value characters is now
   ``!#$%&'*+-.^_`|~/: =<>()[]{}?@``.  See
-  http://tools.ietf.org/html/rfc6265#section-4.1.1 for more information.
+  https://tools.ietf.org/html/rfc6265#section-4.1.1 for more information.
 
 - Cookie names are now restricted to the set of characters expected by RFC
   6265.  Previously they could contain unsupported characters such as ``/``.
@@ -454,7 +454,7 @@ Features
   however.
 
 - Added support for draft status code 451 ("Unavailable for Legal Reasons").
-  See http://tools.ietf.org/html/draft-tbray-http-legally-restricted-status-00
+  See https://tools.ietf.org/html/draft-tbray-http-legally-restricted-status-00
 
 - Added status codes 428, 429, 431 and 511 to ``util.status_reasons`` (they
   were already present in a previous release as ``webob.exc`` exceptions).
@@ -725,7 +725,7 @@ Bug Fixes
 ---------
 
 * Fix disconnect detection being incorrect in some cases (`issue 21
-  <https://bitbucket.org/ianb/webob/issue/21>`_).
+  <https://bitbucket.org/ianb/webob/issues/21>`_).
 
 * Fix exception when calling ``.accept.best_match(..)`` on a header containing
   ``'*'`` (instead of ``'*/*'``).
@@ -758,7 +758,7 @@ Bug Fixes
   (the old names will be removed in 1.3 or even later).
 
 * Make ``Response.write`` much more efficient (`issue 18
-  <https://bitbucket.org/ianb/webob/issue/18>`_).
+  <https://bitbucket.org/ianb/webob/issues/18>`_).
 
 * Make sure copying responses does not reset Content-Length or Content-MD5 of the
   original (and that of future copies).
@@ -783,12 +783,12 @@ Bug Fixes
 
 * Revert the restriction on req.body not being settable for GET and some
   other requests. Such requests actually can have a body according to HTTP BIS
-  (see also `commit message <https://bitbucket.org/ianb/webob/changeset/b3ef34c57936>`_)
+  (see also `commit message <https://bitbucket.org/ianb/webob/commits/b3ef34c57936>`_)
 
 * Add support for file upload testing via ``Request.blank(POST=..)``. Patch contributed by
   Tim Perevezentsev. See also:
-  `ticket <https://bitbucket.org/ianb/webob/issue/15>`_,
-  `changeset <https://bitbucket.org/ianb/webob/changeset/4ba9ab0c3f99>`_.
+  `ticket <https://bitbucket.org/ianb/webob/issues/15>`_,
+  `changeset <https://bitbucket.org/ianb/webob/commits/4ba9ab0c3f99>`_.
 
 * Deprecate ``req.str_GET``, ``str_POST``, ``str_params`` and ``str_cookies`` (warning).
 
@@ -803,8 +803,8 @@ Bug Fixes
 1.1b1
 ---------
 
-* We have acquired the webob.org domain, docs are now hosted at `docs.webob.org
-  <http://docs.webob.org/>`_
+* We have acquired the webob.org domain, docs are now hosted at `https://docs.pylonsproject.org/projects/webob/en/stable/
+  <https://docs.pylonsproject.org/projects/webob/en/stable/>`_
 
 * Make ``accept.quality(..)`` return best match quality, not first match quality.
 
@@ -830,7 +830,7 @@ Bug Fixes
 ------
 
 * Escape commas in cookie values (see also:
-  `stdlib Cookie bug <http://bugs.python.org/issue9824>`_)
+  `stdlib Cookie bug <https://bugs.python.org/issue9824>`_)
 
 * Change cookie serialization to more closely match how cookies usually
   are serialized (unquoted expires, semicolon separators even between morsels)
@@ -839,20 +839,20 @@ Bug Fixes
 
 * Enhance the req.is_body_readable to always guess GET, HEAD, DELETE and TRACE
   as unreadable and PUT and POST as readable
-  (`issue 12 <https://bitbucket.org/ianb/webob/issue/12>`_)
+  (`issue 12 <https://bitbucket.org/ianb/webob/issues/12>`_)
 
 * Deny setting req.body or req.body_file to non-empty values for GET, HEAD and
   other bodiless requests
 
 * Fix running nosetests with arguments on UNIX systems
-  (`issue 11 <https://bitbucket.org/ianb/webob/issue/11>`_)
+  (`issue 11 <https://bitbucket.org/ianb/webob/issues/11>`_)
 
 
 1.0.7
 ------
 
 * Fix ``Accept`` header matching for items with zero-quality
-  (`issue 10 <https://bitbucket.org/ianb/webob/issue/10>`_)
+  (`issue 10 <https://bitbucket.org/ianb/webob/issues/10>`_)
 
 * Hide password values in ``MultiDict.__repr__``
 
@@ -868,7 +868,7 @@ Bug Fixes
   or this flag is set.
 
 * The two changes above fix a hangup with CherryPy and wsgiref servers
-  (`issue 6 <https://bitbucket.org/ianb/webob/issue/6>`_)
+  (`issue 6 <https://bitbucket.org/ianb/webob/issues/6>`_)
 
 * ``req.body_file`` is now safer to read directly. For ``GET`` and other similar requests
   it returns an empty ``StringIO`` or ``BytesIO`` object even if the server passed in
@@ -881,7 +881,7 @@ Bug Fixes
 * Fix ``.pop()`` and ``.setdefault(..)`` methods of ``req/resp.cache_control``
 
 * Thanks to the participants of `Pyramid sprint at the PyCon US 2011
-  <https://bitbucket.org/ianb/webob/changeset/7b7dc3ec6159>`_ WebOb now has
+  <https://bitbucket.org/ianb/webob/commits/7b7dc3ec6159>`_ WebOb now has
   100% test coverage.
 
 1.0.5
@@ -897,7 +897,7 @@ Bug Fixes
   Now it is fixed properly.
 
 * Make sure that req.url and related properties do not unnecessarily escape some chars
-  (``:@&+$``) in the URI path (`issue 5 <https://bitbucket.org/ianb/webob/issue/5>`_)
+  (``:@&+$``) in the URI path (`issue 5 <https://bitbucket.org/ianb/webob/issues/5>`_)
 
 * Revert some changes from 1.0.3 that have broken backwards compatibility for some apps.
   Getting ``req.body_file`` does not make input stream seekable, but there's a new property
@@ -927,16 +927,16 @@ Bug Fixes
 
 * Fix a bug regarding field names escaping for forms submitted as ``multipart/form-data``.
   For more infromation see `the bug report and discussion
-  <https://bitbucket.org/ianb/webob/issue/2>`_ and 1.0.4 notes for further fix.
+  <https://bitbucket.org/ianb/webob/issues/2>`_ and 1.0.4 notes for further fix.
 
 * Add ``req.http_version`` attribute.
 
 1.0.2
 ------
 
-* Primary maintainer is now `Sergey Schetinin <http://self.maluke.com/>`_.
+* Primary maintainer is now Sergey Schetinin.
 
-* Issue tracker moved from `Trac <http://bit.ly/webob-tickets>`_ to bitbucket's `issue
+* Issue tracker moved from Trac to bitbucket's `issue
   tracker <https://bitbucket.org/ianb/webob/issues>`_
 
 * WebOb 1.0.1 changed the behavior of ``MultiDict.update`` to be more in line with
@@ -1126,7 +1126,7 @@ Bug Fixes
 -----
 
 * Moved repository from svn location to
-  http://bitbucket.org/ianb/webob/
+  https://bitbucket.org/ianb/webob/wiki/Home
 
 * Arguments to :meth:`Accept.best_match` must be specific types,
   not wildcards. The server should know a list of specic types it can

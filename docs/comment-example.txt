@@ -252,7 +252,7 @@ Because we put in some text without quoting it is susceptible to a
 <https://en.wikipedia.org/wiki/Cross-site_scripting>`_ attack.  Fixing
 that is beyond the scope of this tutorial; you could quote it or clean
 it with something like `lxml.html.clean
-<http://lxml.de/lxmlhtml.html#cleaning-up-html>`_.
+<https://lxml.de/lxmlhtml.html#cleaning-up-html>`_.
 
 Accepting Comments
 ------------------

@@ -24,7 +24,7 @@ Backwards Incompatibilities
 - Many changes have been made to the way WebOb does Accept handling, not just
   for the ``Accept`` header itself, but also for ``Accept-Charset``,
   ``Accept-Encoding`` and ``Accept-Language``. This was a `Google Summer of
-  Code <https://developers.google.com/open-source/gsoc/>`_ project completed by
+  Code <https://summerofcode.withgoogle.com/>`_ project completed by
   Whiteroses (https://github.com/whiteroses). Many thanks to Google for running
   GSoC, the Python Software Foundation for organising and a huge thanks to Ira
   for completing the work. See https://github.com/Pylons/webob/pull/338 and

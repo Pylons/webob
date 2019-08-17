@@ -53,9 +53,9 @@ use this exclusively of other libraries.  If those other libraries
 also keep their state in the environment, multiple wrappers can
 coexist.  Examples of libraries that can coexist include
 `paste.wsgiwrappers.Request
-<https://bitbucket.org/ianb/paste/src/0e5a48796ab969d874c6b772c5c33561ac2d1b0d/paste/wsgiwrappers.py?at=default&fileviewer=file-view-default#wsgiwrappers.py-64>`_
+<https://github.com/cdent/paste/blob/master/paste/wsgiwrappers.py#L64>`_
 (used by Pylons) and `yaro.Request
-<https://pypi.python.org/pypi/yaro>`_.
+<https://pypi.org/project/yaro>`_.
 
 The WSGI environment has a number of required variables.  To make it
 easier to test and play around with, the ``Request`` class has a

@@ -9,11 +9,11 @@ Introduction
 ------------
 
 This is an example of how to write a web service using WebOb.  The
-example shows how to create a `JSON-RPC <http://json-rpc.org/>`_
+example shows how to create a `JSON-RPC <https://www.jsonrpc.org/>`_
 endpoint using WebOb and the `simplejson
-<https://pypi.python.org/pypi/simplejson>`_ JSON library.  This
+<https://pypi.org/project/simplejson>`_ JSON library.  This
 also shows how to use WebOb as a client library using `WSGIProxy
-<https://pypi.python.org/pypi/WSGIProxy/>`_.
+<https://pypi.org/project/WSGIProxy/>`_.
 
 While this example presents JSON-RPC, this is not an endorsement of
 JSON-RPC.  In fact I don't like JSON-RPC.  It's unnecessarily
@@ -36,7 +36,7 @@ and get the return values.  It also provides a way to get error
 responses.
 
 The `specification
-<http://json-rpc.org/wiki/specification>`_ goes into the
+<https://www.jsonrpc.org/specification_v1>`_ goes into the
 details (though in a vague sort of way).  Here's the basics:
 
 * All access goes through a POST to a single URL.
@@ -318,7 +318,7 @@ code:
 
     class JsonRpcApp(object):
         """
-        Serve the given object via json-rpc (http://json-rpc.org/)
+        Serve the given object via json-rpc (https://www.jsonrpc.org/)
         """
 
         def __init__(self, obj):
