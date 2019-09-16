@@ -623,7 +623,7 @@ class Response(object):
         body = self.body
         try:
             return body.decode(decoding, self.unicode_errors)
-        except:
+        except UnicodeDecodeError:
             return body.decode("UTF-8", self.unicode_errors)
 
     def _text__set(self, value):
