@@ -106,6 +106,13 @@ def test_cookie_samesite_lax():
     c[b"foo"].samesite = b"Lax"
     assert c.serialize() == "foo=bar; SameSite=Lax"
 
+    
+def test_cookie_samesite_none():
+    c = cookies.Cookie()
+    c[b"foo"] = b"bar"
+    c[b"foo"].samesite = b"None"
+    assert c.serialize() == "foo=bar; SameSite=None"
+
 
 def test_cookie_reserved_keys():
     c = cookies.Cookie("dismiss-top=6; CP=null*; $version=42; a=42")
@@ -135,6 +142,7 @@ def test_serialize_cookie_date():
 def test_serialize_samesite():
     assert cookies.serialize_samesite(b"Lax") == b"Lax"
     assert cookies.serialize_samesite(b"Strict") == b"Strict"
+    assert cookies.serialize_samesite(b"None") == b"None"
 
     with pytest.raises(ValueError):
         cookies.serialize_samesite(b"SomethingElse")
@@ -483,7 +491,7 @@ class TestCookieMakeCookie(object):
         assert "test_cookie=value" in cookie
         assert "Path=/foo/bar/baz" in cookie
 
-    @pytest.mark.parametrize("samesite", ["Strict", "Lax"])
+    @pytest.mark.parametrize("samesite", ["Strict", "Lax", "None"])
     def test_make_cookie_samesite(self, samesite):
         cookie = self.makeOne("test_cookie", "value", samesite=samesite)
 
@@ -708,7 +716,7 @@ class TestSignedCookieProfile(CommonCookieProfile):
         for cookie in ret:
             assert "; HttpOnly" in cookie[1]
 
-    @pytest.mark.parametrize("samesite", [b"Strict", b"Lax"])
+    @pytest.mark.parametrize("samesite", [b"Strict", b"Lax", b"None"])
     def test_with_samesite_bytes(self, samesite):
         cookie = self.makeOne(samesite=samesite)
         ret = cookie.get_headers("test")
@@ -716,7 +724,7 @@ class TestSignedCookieProfile(CommonCookieProfile):
         for cookie in ret:
             assert "; SameSite=" + samesite.decode("ascii") in cookie[1]
 
-    @pytest.mark.parametrize("samesite", ["Strict", "Lax"])
+    @pytest.mark.parametrize("samesite", ["Strict", "Lax", "None"])
     def test_with_samesite(self, samesite):
         cookie = self.makeOne(samesite=samesite)
         ret = cookie.get_headers("test")
