@@ -106,7 +106,7 @@ def test_cookie_samesite_lax():
     c[b"foo"].samesite = b"Lax"
     assert c.serialize() == "foo=bar; SameSite=Lax"
 
-    
+
 def test_cookie_samesite_none():
     c = cookies.Cookie()
     c[b"foo"] = b"bar"
