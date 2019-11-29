@@ -548,7 +548,7 @@ def make_cookie(
 
     ``samesite``
       The 'SameSite' attribute of the cookie, can be either ``"strict"``,
-      ``"lax"``, ``"none"`` or ``None``.
+      ``"lax"``, ``"none"``, or ``None``.
     """
 
     # We are deleting the cookie, override max_age and expires
