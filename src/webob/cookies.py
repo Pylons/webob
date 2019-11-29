@@ -277,8 +277,8 @@ def serialize_cookie_date(v):
 def serialize_samesite(v):
     v = bytes_(v)
 
-    if v.lower() not in (b"strict", b"lax"):
-        raise ValueError("SameSite must be 'Strict' or 'Lax'")
+    if v.lower() not in (b"strict", b"lax", b"none"):
+        raise ValueError("SameSite must be 'strict', 'lax', or 'none'")
 
     return v
 
@@ -547,8 +547,8 @@ def make_cookie(
       Set a comment on the cookie. Default: ``None``
 
     ``samesite``
-      The 'SameSite' attribute of the cookie, can be either ``"Strict"``,
-      ``"Lax"``, or ``None``.
+      The 'SameSite' attribute of the cookie, can be either ``"strict"``,
+      ``"lax"``, ``"none"`` or ``None``.
     """
 
     # We are deleting the cookie, override max_age and expires
@@ -763,8 +763,8 @@ class CookieProfile(object):
       session cookie. Default: ``False``.
 
     ``samesite``
-      The 'SameSite' attribute of the cookie, can be either ``b"Strict"``,
-      ``b"Lax"``, or ``None``.
+      The 'SameSite' attribute of the cookie, can be either ``b"strict"``,
+      ``b"lax"``, ``b"none"``, or ``None``.
 
     ``path``
       The path used for the session cookie. Default: ``'/'``.
@@ -1020,8 +1020,8 @@ class SignedCookieProfile(CookieProfile):
       session cookie. Default: ``False``.
 
     ``samesite``
-      The 'SameSite' attribute of the cookie, can be either ``b"Strict"``,
-      ``b"Lax"``, or ``None``.
+      The 'SameSite' attribute of the cookie, can be either ``b"strict"``,
+      ``b"lax"``, ``b"none"``, or ``None``.
 
     ``path``
       The path used for the session cookie. Default: ``'/'``.
