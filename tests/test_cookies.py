@@ -107,6 +107,22 @@ def test_cookie_samesite_lax():
     assert c.serialize() == "foo=bar; SameSite=Lax"
 
 
+def test_cookie_samesite_none():
+    c = cookies.Cookie()
+    c[b"foo"] = b"bar"
+    c[b"foo"].samesite = b"None"
+    c[b"foo"].secure = True
+    assert c.serialize() == "foo=bar; secure; SameSite=None"
+
+
+def test_cookie_samesite_none_not_secure():
+    c = cookies.Cookie()
+    c[b"foo"] = b"bar"
+    c[b"foo"].samesite = b"None"
+    with pytest.raises(ValueError):
+        c.serialize()
+
+
 def test_cookie_reserved_keys():
     c = cookies.Cookie("dismiss-top=6; CP=null*; $version=42; a=42")
     assert "$version" not in c
@@ -135,6 +151,7 @@ def test_serialize_cookie_date():
 def test_serialize_samesite():
     assert cookies.serialize_samesite(b"Lax") == b"Lax"
     assert cookies.serialize_samesite(b"Strict") == b"Strict"
+    assert cookies.serialize_samesite(b"None") == b"None"
 
     with pytest.raises(ValueError):
         cookies.serialize_samesite(b"SomethingElse")
@@ -483,9 +500,9 @@ class TestCookieMakeCookie(object):
         assert "test_cookie=value" in cookie
         assert "Path=/foo/bar/baz" in cookie
 
-    @pytest.mark.parametrize("samesite", ["Strict", "Lax"])
+    @pytest.mark.parametrize("samesite", ["Strict", "Lax", "None"])
     def test_make_cookie_samesite(self, samesite):
-        cookie = self.makeOne("test_cookie", "value", samesite=samesite)
+        cookie = self.makeOne("test_cookie", "value", samesite=samesite, secure=True)
 
         assert "test_cookie=value" in cookie
         assert "SameSite=" + samesite in cookie
@@ -708,17 +725,17 @@ class TestSignedCookieProfile(CommonCookieProfile):
         for cookie in ret:
             assert "; HttpOnly" in cookie[1]
 
-    @pytest.mark.parametrize("samesite", [b"Strict", b"Lax"])
+    @pytest.mark.parametrize("samesite", [b"Strict", b"Lax", b"None"])
     def test_with_samesite_bytes(self, samesite):
-        cookie = self.makeOne(samesite=samesite)
+        cookie = self.makeOne(samesite=samesite, secure=True)
         ret = cookie.get_headers("test")
 
         for cookie in ret:
             assert "; SameSite=" + samesite.decode("ascii") in cookie[1]
 
-    @pytest.mark.parametrize("samesite", ["Strict", "Lax"])
+    @pytest.mark.parametrize("samesite", ["Strict", "Lax", "None"])
     def test_with_samesite(self, samesite):
-        cookie = self.makeOne(samesite=samesite)
+        cookie = self.makeOne(samesite=samesite, secure=True)
         ret = cookie.get_headers("test")
 
         for cookie in ret:
