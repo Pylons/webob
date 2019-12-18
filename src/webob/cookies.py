@@ -335,8 +335,9 @@ class Morsel(dict):
             if self.samesite:
                 if not self.secure and self.samesite.lower() == b'none':
                     raise ValueError(
-                        'Incompatible arguments: when the samesite attribute equals "none", '
-                        'then the secure attribute must be True"')
+                        'Incompatible cookie attributes: '
+                        'when the samesite equals "none", then the secure must be True"'
+                    )
                 add(b"SameSite=" + self.samesite)
 
         return native_(b"; ".join(result), "ascii")
