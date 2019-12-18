@@ -333,10 +333,10 @@ class Morsel(dict):
                 add(b"HttpOnly")
 
             if self.samesite:
-                if not self.secure and self.samesite.lower() == b'none':
+                if not self.secure and self.samesite.lower() == b"none":
                     raise ValueError(
-                        'Incompatible cookie attributes: '
-                        'when the samesite equals "none", then the secure must be True"'
+                        "Incompatible cookie attributes: "
+                        "when the samesite equals 'none', then the secure must be True"
                     )
                 add(b"SameSite=" + self.samesite)
 
