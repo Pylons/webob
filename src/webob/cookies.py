@@ -33,6 +33,10 @@ __all__ = [
 
 _marker = object()
 
+# Module flag to handle validation of SameSite attributes
+# See the documentation for ``make_cookie`` for more information.
+SAMESITE_VALIDATION = True
+
 
 class RequestCookies(MutableMapping):
 
@@ -277,8 +281,9 @@ def serialize_cookie_date(v):
 def serialize_samesite(v):
     v = bytes_(v)
 
-    if v.lower() not in (b"strict", b"lax", b"none"):
-        raise ValueError("SameSite must be 'strict', 'lax', or 'none'")
+    if SAMESITE_VALIDATION:
+        if v.lower() not in (b"strict", b"lax", b"none"):
+            raise ValueError("SameSite must be 'strict', 'lax', or 'none'")
 
     return v
 
@@ -553,7 +558,18 @@ def make_cookie(
 
     ``samesite``
       The 'SameSite' attribute of the cookie, can be either ``"strict"``,
-      ``"lax"``, ``"none"``, or ``None``.
+      ``"lax"``, ``"none"``, or ``None``. By default, WebOb will validate the
+      value to ensure it conforms to the allowable options in the active Cookie
+      RFC.
+
+      To disable this check and send headers that are experimental or introduced
+      in a future RFC, set the module flag ``SAMESITE_VALIDATION`` to a
+      false value like::
+
+        import webob.cookies
+        webob.cookies.SAMESITE_VALIDATION = False
+
+        ck = webob.cookies.make_cookie(cookie_name, value, samesite='future')
     """
 
     # We are deleting the cookie, override max_age and expires

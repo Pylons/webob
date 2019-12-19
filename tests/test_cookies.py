@@ -122,6 +122,36 @@ def test_cookie_samesite_none_not_secure():
     with pytest.raises(ValueError):
         c.serialize()
 
+def test_cookie_samesite_future():
+    # first default
+    c = cookies.Cookie()
+    with pytest.raises(ValueError) as excinfo:
+        c[b"foo"] = b"bar"
+        c[b"foo"].samesite = b"Future"
+        c.serialize()
+    assert excinfo.value.args[0] == "SameSite must be 'strict', 'lax', or 'none'"
+
+    try:
+        # disable validation so future args pass
+        cookies.SAMESITE_VALIDATION = False
+        c = cookies.Cookie()
+        c[b"foo"] = b"bar"
+        c[b"foo"].samesite = b"Future"
+        assert c.serialize() == "foo=bar; SameSite=Future"
+
+        # reset to the default behavior pass
+        cookies.SAMESITE_VALIDATION = True
+        c = cookies.Cookie()
+        with pytest.raises(ValueError) as excinfo:
+            c[b"foo"] = b"bar"
+            c[b"foo"].samesite = b"Future"
+            c.serialize()
+        assert excinfo.value.args[0] == "SameSite must be 'strict', 'lax', or 'none'"
+
+    except Exception as exc:
+        cookies.SAMESITE_VALIDATION = True
+        raise
+
 
 def test_cookie_reserved_keys():
     c = cookies.Cookie("dismiss-top=6; CP=null*; $version=42; a=42")

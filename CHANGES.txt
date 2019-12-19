@@ -14,6 +14,20 @@ Feature
   See https://github.com/Pylons/webob/pull/376 and
   https://github.com/Pylons/webob/pull/379
 
+ - Validation of SameSite values can be disabled by toggling a module flag. This
+   is in anticipation of future changes in evolving cookie standards.
+   The discussion in https://github.com/Pylons/webob/pull/407 (which initially
+   expanded the allowed options) notes the sudden change to browser cookie
+   implementation details may happen again.
+
+   In May 2019, Google announced a new model for privacy controls in their
+   browsers, which affected the list fo valid options for the SameSite attribute
+   of cookies. In late 2019, the company began to roll out these changes to their
+   browsers to force developer adoption of the new specification.
+   See https://www.chromium.org/updates/same-site and
+   https://blog.chromium.org/2019/10/developers-get-ready-for-new.html for more
+   details on this change.
+
 Compatibility
 ~~~~~~~~~~~~~
 
