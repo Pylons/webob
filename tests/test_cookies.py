@@ -122,6 +122,7 @@ def test_cookie_samesite_none_not_secure():
     with pytest.raises(ValueError):
         c.serialize()
 
+
 def test_cookie_samesite_future():
     # first default
     c = cookies.Cookie()
