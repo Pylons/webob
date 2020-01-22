@@ -453,7 +453,8 @@ _c_keys.update([b'expires', b'secure', b'httponly', b'samesite'])
 
 def make_cookie(name, value, max_age=None, path='/', domain=None,
                 secure=False, httponly=False, comment=None, samesite=None):
-    """ Generate a cookie value.
+    """
+    Generate a cookie value.
 
     ``name``
       The name of the cookie.
@@ -485,17 +486,28 @@ def make_cookie(name, value, max_age=None, path='/', domain=None,
     ``samesite``
       The 'SameSite' attribute of the cookie, can be either ``"strict"``,
       ``"lax"``, ``"none"``, or ``None``. By default, WebOb will validate the
-      value to ensure it conforms to the allowable options in the active Cookie
-      RFC.
+      value to ensure it conforms to the allowable options in the various draft
+      RFC's that exist.
 
       To disable this check and send headers that are experimental or introduced
       in a future RFC, set the module flag ``SAMESITE_VALIDATION`` to a
-      false value like::
+      false value like:
 
-        import webob.cookies
-        webob.cookies.SAMESITE_VALIDATION = False
+      .. code::
 
-        ck = webob.cookies.make_cookie(cookie_name, value, samesite='future')
+          import webob.cookies
+          webob.cookies.SAMESITE_VALIDATION = False
+
+          ck = webob.cookies.make_cookie(cookie_name, value, samesite='future')
+
+      .. danger::
+
+          This feature has known compatibility issues with various user agents,
+          and is not yet an accepted RFC. It is therefore considered
+          experimental and subject to change.
+
+          For more information please see :ref:`Experimental: SameSite Cookies
+          <samesiteexp>`
     """
 
     # We are deleting the cookie, override max_age and expires
@@ -700,6 +712,9 @@ class CookieProfile(object):
     ``samesite``
       The 'SameSite' attribute of the cookie, can be either ``b"strict"``,
       ``b"lax"``, ``b"none"``, or ``None``.
+
+      For more information please see the ``samesite`` documentation in
+      :meth:`webob.cookies.make_cookie`
 
     ``path``
       The path used for the session cookie. Default: ``'/'``.
