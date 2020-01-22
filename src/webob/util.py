@@ -37,12 +37,7 @@ def html_escape(s):
         return s.__html__()
 
     if not isinstance(s, str):
-        __unicode__ = getattr(s, "__unicode__", None)
-
-        if __unicode__ is not None and callable(__unicode__):
-            s = s.__unicode__()
-        else:
-            s = str(s)
+        s = str(s)
     s = escape(s, True)
 
     if isinstance(s, str):

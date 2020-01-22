@@ -24,7 +24,7 @@ def test_noescape_not_basestring():
 
 def test_noescape_unicode():
     class DummyUnicodeObject(object):
-        def __unicode__(self):
+        def __str__(self):
             return "42"
 
     duo = DummyUnicodeObject()
