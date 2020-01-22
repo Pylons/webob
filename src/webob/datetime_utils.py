@@ -74,9 +74,6 @@ def parse_date(value):
 
         return None
 
-    if t[-1] is None:
-        # No timezone given.  None would mean local time, but we'll force UTC
-        t = t[:9] + (0,)
     t = mktime_tz(t)
 
     return datetime.fromtimestamp(t, UTC)
