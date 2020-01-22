@@ -45,7 +45,7 @@ def test_transcode():
     r = test(t2)
     assert r.text == "file\n%r" % text.encode("cp1251")
     r = test(t3)
-    assert r.text, "%s\n%r" % (text == b"foo")
+    assert r.text == "%s\n%r" % (text, b"foo")
 
 
 def test_transcode_query():
