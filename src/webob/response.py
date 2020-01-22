@@ -543,8 +543,6 @@ class Response(object):
         finally:
             iter_close(app_iter)
 
-        if isinstance(body, str):
-            raise _error_unicode_in_app_iter(app_iter, body)
         self._app_iter = [body]
 
         if len(body) == 0:
@@ -1705,14 +1703,3 @@ def gzip_app_iter(app_iter):
     if result:
         yield result
     yield struct.pack("<2L", crc, size & 0xFFFFFFFF)
-
-
-def _error_unicode_in_app_iter(app_iter, body):
-    app_iter_repr = repr(app_iter)
-
-    if len(app_iter_repr) > 50:
-        app_iter_repr = app_iter_repr[:30] + "..." + app_iter_repr[-10:]
-    raise TypeError(
-        "An item of the app_iter (%s) was text, causing a "
-        "text body: %r" % (app_iter_repr, body)
-    )
