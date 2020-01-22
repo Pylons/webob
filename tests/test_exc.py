@@ -1,16 +1,16 @@
-import pytest
-
 import json
 
-from webob.request import Request
-from webob.dec import wsgify
+import pytest
 from webob import exc as webob_exc
+from webob.dec import wsgify
+from webob.request import Request
 
 
 @wsgify
 def method_not_allowed_app(req):
     if req.method != "GET":
         raise webob_exc.HTTPMethodNotAllowed()
+
     return "hello!"
 
 
@@ -29,6 +29,10 @@ def test_noescape_unicode():
 
     duo = DummyUnicodeObject()
     assert webob_exc.no_escape(duo) == "42"
+
+
+def test_noescape_bytes():
+    assert webob_exc.no_escape(b"test") == "test"
 
 
 def test_strip_tags_empty():
@@ -61,6 +65,7 @@ def test_HTTPException():
 
     def _response(environ, start_response):
         _called.append((environ, start_response))
+
         return _result
 
     environ = {}
