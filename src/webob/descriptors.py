@@ -131,10 +131,10 @@ def header_getter(header, rfc_section):
     def fset(r, value):
         fdel(r)
         if value is not None:
-            if "\n" in value or "\r" in value:
-                raise ValueError("Header value may not contain control characters")
             if not isinstance(value, str):
                 raise ValueError("Value must be text_type")
+            if "\n" in value or "\r" in value:
+                raise ValueError("Header value may not contain control characters")
 
             r._headerlist.append((header, value))
 

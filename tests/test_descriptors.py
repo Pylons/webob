@@ -191,6 +191,16 @@ def test_header_getter_fset_text_control_chars():
         desc.fset(resp, text_("\n"))
 
 
+def test_header_getter_fset_non_text():
+    from webob.descriptors import header_getter
+    from webob import Response
+
+    resp = Response("aresp")
+    desc = header_getter("AHEADER", "14.3")
+    with pytest.raises(ValueError):
+        desc.fset(resp, b"test")
+
+
 def test_header_getter_fdel():
     from webob.descriptors import header_getter
     from webob import Response
