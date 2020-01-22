@@ -14,20 +14,6 @@ Feature
   See https://github.com/Pylons/webob/pull/376 and
   https://github.com/Pylons/webob/pull/379
 
- - Validation of SameSite values can be disabled by toggling a module flag. This
-   is in anticipation of future changes in evolving cookie standards.
-   The discussion in https://github.com/Pylons/webob/pull/407 (which initially
-   expanded the allowed options) notes the sudden change to browser cookie
-   implementation details may happen again.
-
-   In May 2019, Google announced a new model for privacy controls in their
-   browsers, which affected the list fo valid options for the SameSite attribute
-   of cookies. In late 2019, the company began to roll out these changes to their
-   browsers to force developer adoption of the new specification.
-   See https://www.chromium.org/updates/same-site and
-   https://blog.chromium.org/2019/10/developers-get-ready-for-new.html for more
-   details on this change.
-
 Compatibility
 ~~~~~~~~~~~~~
 
@@ -38,6 +24,33 @@ Backwards Incompatibilities
 
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
+
+- The SameSite value now includes a new option named "None", this is a new
+  change that was introduced in
+  https://tools.ietf.org/html/draft-west-cookie-incrementalism-00
+
+  Please be aware that older clients are incompatible with this change:
+  https://www.chromium.org/updates/same-site/incompatible-clients, WebOb does
+  not enable SameSite on cookies by default, so there is no backwards
+  incompatible change here.
+
+  See https://github.com/Pylons/webob/issues/406
+
+- Validation of SameSite values can be disabled by toggling a module flag. This
+  is in anticipation of future changes in evolving cookie standards.
+  The discussion in https://github.com/Pylons/webob/pull/407 (which initially
+  expanded the allowed options) notes the sudden change to browser cookie
+  implementation details may happen again.
+
+  In May 2019, Google announced a new model for privacy controls in their
+  browsers, which affected the list of valid options for the SameSite attribute
+  of cookies. In late 2019, the company began to roll out these changes to their
+  browsers to force developer adoption of the new specification.
+  See https://www.chromium.org/updates/same-site and
+  https://blog.chromium.org/2019/10/developers-get-ready-for-new.html for more
+  details on this change.
+
+  See https://github.com/Pylons/webob/pull/409
 
 
 Bugfix
