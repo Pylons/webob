@@ -3039,6 +3039,32 @@ class Test_environ_from_url(object):
         assert "application/x-foo" in request.body.decode("ascii", str(request))
 
 
+def test_environ_add_POST_file_with_content_type():
+    # For benefit of _encode_multipart which did not have adequate coverage for
+    # type_options
+    class FakeFile:
+        def __init__(self, filename, content_type, type_options, value):
+            self.filename = filename
+            self.type = content_type
+            self.type_options = type_options or {}
+            self.value = value
+
+    from webob.request import environ_from_url, environ_add_POST
+
+    env = environ_from_url("http://example.com/")
+    environ_add_POST(
+        env,
+        {
+            "sample_file": FakeFile(
+                "test.txt", "text/plain", {"charset": "utf-8"}, "this is data"
+            ),
+        },
+    )
+    wsgi_input = env["wsgi.input"].read()
+    assert b"this is data" in wsgi_input
+    assert b'Content-type: text/plain; charset="utf-8"' in wsgi_input
+
+
 class TestRequestMultipart(object):
     def test_multipart_with_charset(self):
         from webob.request import Request

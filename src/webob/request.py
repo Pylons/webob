@@ -1571,7 +1571,7 @@ def environ_add_POST(env, data, content_type=None):
         data = list(data.items())
 
         for _, v in data:
-            if isinstance(v, (tuple, list)):
+            if isinstance(v, (tuple, list)) or hasattr(v, "filename"):
                 has_files = True
 
                 break
