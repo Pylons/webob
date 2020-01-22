@@ -60,8 +60,8 @@ def serve():
             log.debug("shutting server down")
             server.shutdown()
             worker.join(1)
-            if worker.isAlive():
-                log.warning('worker is hanged')
+            if worker.is_alive():
+                log.warning("worker is hanged")
             else:
                 log.debug("server stopped")
 
