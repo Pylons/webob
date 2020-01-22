@@ -100,8 +100,6 @@ class RequestCookies(MutableMapping):
         if not isinstance(name, str):
             raise TypeError(name, "cookie name must be a string")
 
-        if not isinstance(name, str):
-            name = text_(name, "utf-8")
         try:
             bytes_cookie_name = bytes_(name, "ascii")
         except UnicodeEncodeError:
@@ -118,11 +116,6 @@ class RequestCookies(MutableMapping):
         if not isinstance(value, str):
             raise ValueError(value, "cookie value must be a string")
 
-        if not isinstance(value, str):
-            try:
-                value = text_(value, "utf-8")
-            except UnicodeDecodeError:
-                raise ValueError(value, "cookie value must be utf-8 binary or unicode")
         self._mutate_header(name, value)
 
     def __getitem__(self, name):
