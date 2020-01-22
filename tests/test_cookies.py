@@ -123,6 +123,33 @@ def test_cookie_samesite_none_not_secure():
         c.serialize()
 
 
+def test_cookie_samesite_future__default():
+    # ensure default behavior when unsupported values are provided
+    c = cookies.Cookie()
+    with pytest.raises(ValueError) as excinfo:
+        c[b"foo"] = b"bar"
+        c[b"foo"].samesite = b"Future"
+        c.serialize()
+    assert excinfo.value.args[0] == "SameSite must be 'strict', 'lax', or 'none'"
+
+
+def test_cookie_samesite_future__monkeypatched(monkeypatch):
+    # disable validation so future args pass
+    monkeypatch.setattr(cookies, "SAMESITE_VALIDATION", False)
+    c = cookies.Cookie()
+    c[b"foo"] = b"bar"
+    c[b"foo"].samesite = b"Future"
+    assert c.serialize() == "foo=bar; SameSite=Future"
+
+    # ensure we can toggle it to True and re-achieve default behavior...
+    monkeypatch.setattr(cookies, "SAMESITE_VALIDATION", True)
+    with pytest.raises(ValueError) as excinfo:
+        c[b"foo"] = b"bar"
+        c[b"foo"].samesite = b"Future"
+        c.serialize()
+    assert excinfo.value.args[0] == "SameSite must be 'strict', 'lax', or 'none'"
+
+
 def test_cookie_reserved_keys():
     c = cookies.Cookie("dismiss-top=6; CP=null*; $version=42; a=42")
     assert "$version" not in c
