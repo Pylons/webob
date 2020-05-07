@@ -16,7 +16,7 @@ mimetypes.add_type("image/x-icon", ".ico")  # not among defaults
 BLOCK_SIZE = 1 << 16
 
 
-class FileApp(object):
+class FileApp:
     """An application that will send the file at the given filename.
 
     Adds a mime type based on `mimetypes.guess_type()`.
@@ -62,7 +62,7 @@ class FileApp(object):
         ).conditional_response_app
 
 
-class FileIter(object):
+class FileIter:
     def __init__(self, file):
         self.file = file
 
@@ -104,7 +104,7 @@ class FileIter(object):
     __iter__ = app_iter_range
 
 
-class DirectoryApp(object):
+class DirectoryApp:
     """An application that serves up the files in a given directory.
 
     This will serve index files (by default ``index.html``), or set

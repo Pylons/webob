@@ -113,7 +113,7 @@ class AcceptOffer(namedtuple("AcceptOffer", ["type", "subtype", "params"])):
         return Accept._form_media_range(value, self.params)
 
 
-class Accept(object):
+class Accept:
     """
     Represent an ``Accept`` header.
 
@@ -1790,7 +1790,7 @@ def accept_property():
     return property(fget, fset, fdel, textwrap.dedent(doc))
 
 
-class AcceptCharset(object):
+class AcceptCharset:
     """
     Represent an ``Accept-Charset`` header.
 
@@ -2784,7 +2784,7 @@ def accept_charset_property():
     return property(fget, fset, fdel, textwrap.dedent(doc))
 
 
-class AcceptEncoding(object):
+class AcceptEncoding:
     """
     Represent an ``Accept-Encoding`` header.
 
@@ -3827,7 +3827,7 @@ def accept_encoding_property():
     return property(fget, fset, fdel, textwrap.dedent(doc))
 
 
-class AcceptLanguage(object):
+class AcceptLanguage:
     """
     Represent an ``Accept-Language`` header.
 

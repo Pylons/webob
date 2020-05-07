@@ -5,7 +5,7 @@ from webob import multidict
 from webob.util import text_
 
 
-class BaseDictTests(object):
+class BaseDictTests:
     def setUp(self):
         self._list = [("a", text_("\xe9")), ("a", "e"), ("a", "f"), ("b", "1")]
         self.data = multidict.MultiDict(self._list)
@@ -500,7 +500,7 @@ class NoVarsTestCase(unittest.TestCase):
         self.assertEqual(list(d.keys()), [])
 
 
-class DummyField(object):
+class DummyField:
     def __init__(self, name, value, filename=None):
         self.name = name
         self.value = value
@@ -509,6 +509,6 @@ class DummyField(object):
         self.headers = {}
 
 
-class DummyFieldStorage(object):
+class DummyFieldStorage:
     def __init__(self, name, value, filename=None):
         self.list = [DummyField(name, value, filename)]

@@ -23,7 +23,7 @@ def test_noescape_not_basestring():
 
 
 def test_noescape_unicode():
-    class DummyUnicodeObject(object):
+    class DummyUnicodeObject:
         def __str__(self):
             return "42"
 
@@ -476,7 +476,7 @@ def test_HTTPMove_call_query_string():
 
 
 def test_HTTPFound_unused_environ_variable():
-    class Crashy(object):
+    class Crashy:
         def __str__(self):
             raise Exception("I crashed!")
 

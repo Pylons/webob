@@ -510,7 +510,7 @@ def test_date_header_fdel():
 def test_deprecated_property():
     from webob.descriptors import deprecated_property
 
-    class Foo(object):
+    class Foo:
         pass
 
     Foo.attr = deprecated_property("attr", "attr", "whatever", "1.2")
@@ -931,7 +931,7 @@ def test_serialize_auth_digest_tuple():
 _nodefault = object()
 
 
-class _TestEnvironDecoder(object):
+class _TestEnvironDecoder:
     def _callFUT(self, key, default=_nodefault, rfc_section=None, encattr=None):
         from webob.descriptors import environ_decoder
 

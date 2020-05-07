@@ -1172,7 +1172,7 @@ def test_cache_control_set_unicode():
 
 
 def test_cache_control_set_control_obj_is_not_None():
-    class DummyCacheControl(object):
+    class DummyCacheControl:
         def __init__(self):
             self.header_value = 1
             self.properties = {"bleh": 1}
@@ -1470,7 +1470,7 @@ def test_content_type_has_charset():
 
 
 def test_app_iter_is_same():
-    class app_iter(object):
+    class app_iter:
         pass
 
     my_app_iter = app_iter()

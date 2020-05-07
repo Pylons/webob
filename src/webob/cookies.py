@@ -613,7 +613,7 @@ def make_cookie(
     return morsel.serialize()
 
 
-class JSONSerializer(object):
+class JSONSerializer:
     """ A serializer which uses `json.dumps`` and ``json.loads``"""
 
     def dumps(self, appstruct):
@@ -626,7 +626,7 @@ class JSONSerializer(object):
         return json.loads(text_(bstruct, encoding="utf-8"))
 
 
-class Base64Serializer(object):
+class Base64Serializer:
     """ A serializer which uses base64 to encode/decode data"""
 
     def __init__(self, serializer=None):
@@ -660,7 +660,7 @@ class Base64Serializer(object):
         return self.serializer.loads(cstruct)
 
 
-class SignedSerializer(object):
+class SignedSerializer:
     """
     A helper to cryptographically sign arbitrary content using HMAC.
 
@@ -746,7 +746,7 @@ class SignedSerializer(object):
 _default = object()
 
 
-class CookieProfile(object):
+class CookieProfile:
     """
     A helper class that helps bring some sanity to the insanity that is cookie
     handling.

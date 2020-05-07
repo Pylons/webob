@@ -181,7 +181,7 @@ br_re = re.compile(r"<br.*?>", re.I | re.S)
 comment_re = re.compile(r"<!--|-->")
 
 
-class _lazified(object):
+class _lazified:
     def __init__(self, func, value):
         self.func = func
         self.value = value
@@ -1303,7 +1303,7 @@ class HTTPNetworkAuthenticationRequired(HTTPServerError):
     explanation = "Network authentication is required"
 
 
-class HTTPExceptionMiddleware(object):
+class HTTPExceptionMiddleware:
     """
     Middleware that catches exceptions in the sub-application.  This
     does not catch exceptions in the app_iter; only during the initial

@@ -98,7 +98,7 @@ class TestFileApp(unittest.TestCase):
         self.assertEqual(403, get_response(app).status_code)
 
     def test_use_wsgi_filewrapper(self):
-        class TestWrapper(object):
+        class TestWrapper:
             __slots__ = ("file", "block_size")
 
             def __init__(self, file, block_size):

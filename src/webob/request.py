@@ -80,7 +80,7 @@ _LATIN_ENCODINGS = (
 )
 
 
-class BaseRequest(object):
+class BaseRequest:
     # The limit after which request bodies should be stored on disk
     # if they are read in (under this, and the request body is stored
     # in memory):
@@ -1478,7 +1478,7 @@ class BaseRequest(object):
         return obj
 
 
-class AdhocAttrMixin(object):
+class AdhocAttrMixin:
     _setattr_stacklevel = 3
 
     def __setattr__(self, attr, value, DEFAULT=DEFAULT):
@@ -1741,7 +1741,7 @@ def _is_utf8(charset):
         return charset.lower().replace("-", "") == "utf8"
 
 
-class Transcoder(object):
+class Transcoder:
     def __init__(self, charset, errors="strict"):
         self.charset = charset  # source charset
         self.errors = errors  # unicode errors

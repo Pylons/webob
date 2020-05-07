@@ -2,17 +2,17 @@ import pytest
 from webob.util import html_escape, text_
 
 
-class t_esc_HTML(object):
+class t_esc_HTML:
     def __html__(self):
         return "<div>hello</div>"
 
 
-class t_esc_Unicode(object):
+class t_esc_Unicode:
     def __str__(self):
         return "\xe9"
 
 
-class t_esc_UnsafeAttrs(object):
+class t_esc_UnsafeAttrs:
     attr = "value"
 
     def __getattr__(self, k):
@@ -22,7 +22,7 @@ class t_esc_UnsafeAttrs(object):
         return "<UnsafeAttrs>"
 
 
-class t_esc_SuperMoose(object):
+class t_esc_SuperMoose:
     def __str__(self):
         return "m\xf8ose"
 

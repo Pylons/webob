@@ -444,7 +444,7 @@ class NestedMultiDict(MultiDict):
     __iter__ = keys
 
 
-class NoVars(object):
+class NoVars:
     """
     Represents no variables; used when no variables
     are applicable.

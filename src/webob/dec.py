@@ -13,7 +13,7 @@ from webob.util import bytes_
 __all__ = ["wsgify"]
 
 
-class wsgify(object):
+class wsgify:
     """Turns a request-taking, response-returning function into a WSGI
     app
 
@@ -295,7 +295,7 @@ class wsgify(object):
         return args, kwargs
 
 
-class _UnboundMiddleware(object):
+class _UnboundMiddleware:
     """A `wsgify.middleware` invocation that has not yet wrapped a
     middleware function; the intermediate object when you do
     something like ``@wsgify.middleware(RequestClass=Foo)``
@@ -316,7 +316,7 @@ class _UnboundMiddleware(object):
         return self.wrapper_class.middleware(func, app=app, **self.kw)
 
 
-class _MiddlewareFactory(object):
+class _MiddlewareFactory:
     """A middleware that has not yet been bound to an application or
     configured.
     """

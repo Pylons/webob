@@ -40,7 +40,7 @@ IGNORE_ITER = "ignore:.*__iter__.*"
 IGNORE_MIMEACCEPT = "ignore:.*MIMEAccept.*"
 
 
-class Test_ItemNWeightRe(object):
+class Test_ItemNWeightRe:
     @pytest.mark.parametrize(
         "header_value",
         [
@@ -95,7 +95,7 @@ class Test_ItemNWeightRe(object):
         assert re.match("^" + regex + "$", header_value, re.VERBOSE).groups() == groups
 
 
-class Test_List1OrMoreCompiledRe(object):
+class Test_List1OrMoreCompiledRe:
     @pytest.mark.parametrize(
         "header_value",
         [
@@ -138,7 +138,7 @@ class Test_List1OrMoreCompiledRe(object):
         assert regex.match(header_value)
 
 
-class TestAccept(object):
+class TestAccept:
     @pytest.mark.parametrize(
         "value",
         [
@@ -465,7 +465,7 @@ class TestAccept(object):
             Accept.parse_offer(offer)
 
 
-class TestAcceptValidHeader(object):
+class TestAcceptValidHeader:
     def test_parse__inherited(self):
         returned = AcceptValidHeader.parse(
             value=(
@@ -541,7 +541,7 @@ class TestAcceptValidHeader(object):
     def test___add___other_type_with_invalid___str__(self, str_):
         left_operand = AcceptValidHeader(header_value="text/html")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return str_
 
@@ -562,7 +562,7 @@ class TestAcceptValidHeader(object):
     def test___add___other_type_with_valid___str___empty(self):
         left_operand = AcceptValidHeader(header_value=",\t ,i/j, k/l;q=0.333,")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return ""
 
@@ -655,7 +655,7 @@ class TestAcceptValidHeader(object):
     def test___add___other_type_with_valid___str___not_empty(self):
         header = ",\t ,i/j, k/l;q=0.333,"
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1"
 
@@ -759,7 +759,7 @@ class TestAcceptValidHeader(object):
     def test___radd___other_type_with_invalid___str__(self, str_):
         right_operand = AcceptValidHeader(header_value="a/b")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return str_
 
@@ -779,7 +779,7 @@ class TestAcceptValidHeader(object):
     def test___radd___other_type_with_valid___str___empty(self):
         right_operand = AcceptValidHeader(header_value=",\t ,i/j, k/l;q=0.333,")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return ""
 
@@ -872,7 +872,7 @@ class TestAcceptValidHeader(object):
     def test___radd___other_type_with_valid___str___not_empty(self):
         header = ",\t ,i/j, k/l;q=0.333,"
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1"
 
@@ -1238,7 +1238,7 @@ class TestAcceptValidHeader(object):
         assert accept.quality("foo/bar") is None
 
 
-class TestAcceptNoHeader(object):
+class TestAcceptNoHeader:
     def test_parse__inherited(self):
         returned = AcceptNoHeader.parse(
             value=(
@@ -1290,7 +1290,7 @@ class TestAcceptNoHeader(object):
     def test___add___other_type_with_invalid___str__(self, str_):
         left_operand = AcceptNoHeader()
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return str_
 
@@ -1308,7 +1308,7 @@ class TestAcceptNoHeader(object):
     def test___add___other_type_with_valid___str___empty(self):
         left_operand = AcceptNoHeader()
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return ""
 
@@ -1397,7 +1397,7 @@ class TestAcceptNoHeader(object):
         assert result.header_value == value_as_header
 
     def test___add___other_type_with_valid___str___not_empty(self):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1"
 
@@ -1482,7 +1482,7 @@ class TestAcceptNoHeader(object):
     def test___radd___other_type_with_invalid___str__(self, str_):
         right_operand = AcceptNoHeader()
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return str_
 
@@ -1497,7 +1497,7 @@ class TestAcceptNoHeader(object):
         assert result.header_value == ""
 
     def test___radd___other_type_with_valid___str___empty(self):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return ""
 
@@ -1586,7 +1586,7 @@ class TestAcceptNoHeader(object):
         assert result.header_value == value_as_header
 
     def test___radd___other_type_with_valid___str___not_empty(self):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1"
 
@@ -1656,7 +1656,7 @@ class TestAcceptNoHeader(object):
         assert returned == 1.0
 
 
-class TestAcceptInvalidHeader(object):
+class TestAcceptInvalidHeader:
     def test_parse__inherited(self):
         returned = AcceptInvalidHeader.parse(
             value=(
@@ -1709,7 +1709,7 @@ class TestAcceptInvalidHeader(object):
     def test___add___other_type_with_invalid___str__(self, str_):
         left_operand = AcceptInvalidHeader(header_value="invalid header")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return str_
 
@@ -1727,7 +1727,7 @@ class TestAcceptInvalidHeader(object):
     def test___add___other_type_with_valid___str___empty(self):
         left_operand = AcceptInvalidHeader(header_value=", ")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return ""
 
@@ -1816,7 +1816,7 @@ class TestAcceptInvalidHeader(object):
         assert result.header_value == value_as_header
 
     def test___add___other_type_with_valid___str___not_empty(self):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1"
 
@@ -1900,7 +1900,7 @@ class TestAcceptInvalidHeader(object):
     def test___radd___other_type_with_invalid___str__(self, str_):
         right_operand = AcceptInvalidHeader(header_value=", ")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return str_
 
@@ -1917,7 +1917,7 @@ class TestAcceptInvalidHeader(object):
     def test___radd___other_type_with_valid___str___empty(self):
         right_operand = AcceptInvalidHeader(header_value="invalid header")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return ""
 
@@ -2006,7 +2006,7 @@ class TestAcceptInvalidHeader(object):
         assert result.header_value == value_as_header
 
     def test___radd___other_type_with_valid___str___not_empty(self):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1"
 
@@ -2079,7 +2079,7 @@ class TestAcceptInvalidHeader(object):
         assert returned == 1.0
 
 
-class TestCreateAcceptHeader(object):
+class TestCreateAcceptHeader:
     def test_header_value_is_None(self):
         header_value = None
         returned = create_accept_header(header_value=header_value)
@@ -2108,7 +2108,7 @@ class TestCreateAcceptHeader(object):
         assert returned2._header_value == returned._header_value
 
 
-class TestAcceptProperty(object):
+class TestAcceptProperty:
     def test_fget_header_is_valid(self):
         header_value = 'text/html;p1="1";p2=v2;q=0.9;e1="1";e2, audio/basic'
         request = Request.blank("/", environ={"HTTP_ACCEPT": header_value})
@@ -2243,7 +2243,7 @@ class TestAcceptProperty(object):
         request = Request.blank("/", environ={"HTTP_ACCEPT": "text/html"})
         property_ = accept_property()
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return header_value
 
@@ -2287,7 +2287,7 @@ class TestAcceptProperty(object):
         assert "HTTP_ACCEPT" not in request.environ
 
 
-class TestAcceptCharset(object):
+class TestAcceptCharset:
     @pytest.mark.parametrize(
         "value",
         [
@@ -2348,7 +2348,7 @@ class TestAcceptCharset(object):
         assert list_of_returned == expected_list
 
 
-class TestAcceptCharsetValidHeader(object):
+class TestAcceptCharsetValidHeader:
     def test_parse__inherited(self):
         returned = AcceptCharsetValidHeader.parse(
             value=",iso-8859-5 ; q=0.333 , ,utf-8,unicode-1-1 ;q=0.90,"
@@ -2404,7 +2404,7 @@ class TestAcceptCharsetValidHeader(object):
     def test___add___other_type_with_invalid___str__(self, str_):
         left_operand = AcceptCharsetValidHeader(header_value="iso-8859-5")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return str_
 
@@ -2444,7 +2444,7 @@ class TestAcceptCharsetValidHeader(object):
     def test___add___other_type_with_valid___str__(self):
         left_operand = AcceptCharsetValidHeader(header_value=",\t ,iso-8859-5;q=0.333,")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "UTF-7;q=0.5, unicode-1-1;q=0, UTF-8"
 
@@ -2534,7 +2534,7 @@ class TestAcceptCharsetValidHeader(object):
     def test___radd___other_type_with_invalid___str__(self, str_):
         right_operand = AcceptCharsetValidHeader(header_value="iso-8859-5")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return str_
 
@@ -2579,7 +2579,7 @@ class TestAcceptCharsetValidHeader(object):
             header_value=",\t ,iso-8859-5;q=0.333,"
         )
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "UTF-7;q=0.5, unicode-1-1;q=0, UTF-8"
 
@@ -2704,7 +2704,7 @@ class TestAcceptCharsetValidHeader(object):
         assert accept.quality("iso-8859-5") is None
 
 
-class TestAcceptCharsetNoHeader(object):
+class TestAcceptCharsetNoHeader:
     def test_parse__inherited(self):
         returned = AcceptCharsetNoHeader.parse(
             value=",iso-8859-5 ; q=0.333 , ,utf-8,unicode-1-1 ;q=0.90,"
@@ -2743,7 +2743,7 @@ class TestAcceptCharsetNoHeader(object):
     def test___add___other_type_with_invalid___str__(self, str_):
         left_operand = AcceptCharsetNoHeader()
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return str_
 
@@ -2778,7 +2778,7 @@ class TestAcceptCharsetNoHeader(object):
         assert result.header_value == value_as_header
 
     def test___add___other_type_with_valid___str__(self):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "UTF-7;q=0.5, unicode-1-1;q=0, UTF-8"
 
@@ -2847,7 +2847,7 @@ class TestAcceptCharsetNoHeader(object):
     def test___radd___other_type_with_invalid___str__(self, str_):
         right_operand = AcceptCharsetNoHeader()
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return str_
 
@@ -2882,7 +2882,7 @@ class TestAcceptCharsetNoHeader(object):
         assert result.header_value == value_as_header
 
     def test___radd___other_type_with_valid___str__(self):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "UTF-7;q=0.5, unicode-1-1;q=0, UTF-8"
 
@@ -2928,7 +2928,7 @@ class TestAcceptCharsetNoHeader(object):
         assert returned == 1.0
 
 
-class TestAcceptCharsetInvalidHeader(object):
+class TestAcceptCharsetInvalidHeader:
     def test_parse__inherited(self):
         returned = AcceptCharsetInvalidHeader.parse(
             value=",iso-8859-5 ; q=0.333 , ,utf-8,unicode-1-1 ;q=0.90,"
@@ -2963,7 +2963,7 @@ class TestAcceptCharsetInvalidHeader(object):
 
     @pytest.mark.parametrize("str_", ["", "UTF/8"])
     def test___add___other_type_with_invalid___str__(self, str_):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return str_
 
@@ -2997,7 +2997,7 @@ class TestAcceptCharsetInvalidHeader(object):
         assert result.header_value == value_as_header
 
     def test___add___other_type_valid_header_value(self):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "UTF-7;q=0.5, unicode-1-1;q=0, UTF-8"
 
@@ -3057,7 +3057,7 @@ class TestAcceptCharsetInvalidHeader(object):
 
     @pytest.mark.parametrize("str_", ["", "UTF/8"])
     def test___radd___other_type_with_invalid___str__(self, str_):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return str_
 
@@ -3091,7 +3091,7 @@ class TestAcceptCharsetInvalidHeader(object):
         assert result.header_value == value_as_header
 
     def test___radd___other_type_valid_header_value(self):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "UTF-7;q=0.5, unicode-1-1;q=0, UTF-8"
 
@@ -3137,7 +3137,7 @@ class TestAcceptCharsetInvalidHeader(object):
         assert returned == 1.0
 
 
-class TestCreateAcceptCharsetHeader(object):
+class TestCreateAcceptCharsetHeader:
     def test_header_value_is_valid(self):
         header_value = "iso-8859-5, unicode-1-1;q=0.8"
         returned = create_accept_charset_header(header_value=header_value)
@@ -3166,7 +3166,7 @@ class TestCreateAcceptCharsetHeader(object):
         assert returned2._header_value == returned._header_value
 
 
-class TestAcceptCharsetProperty(object):
+class TestAcceptCharsetProperty:
     def test_fget_header_is_None(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_CHARSET": None})
         property_ = accept_charset_property()
@@ -3238,7 +3238,7 @@ class TestAcceptCharsetProperty(object):
         request = Request.blank("/", environ={"HTTP_ACCEPT_CHARSET": ""})
         property_ = accept_charset_property()
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "utf-8;q=0.5, iso-8859-5;q=0, utf-7"
 
@@ -3286,7 +3286,7 @@ class TestAcceptCharsetProperty(object):
         assert "HTTP_ACCEPT_CHARSET" not in request.environ
 
 
-class TestAcceptEncoding(object):
+class TestAcceptEncoding:
     @pytest.mark.parametrize(
         "value",
         [
@@ -3344,7 +3344,7 @@ class TestAcceptEncoding(object):
         assert list_of_returned == expected_list
 
 
-class TestAcceptEncodingValidHeader(object):
+class TestAcceptEncodingValidHeader:
     def test_parse__inherited(self):
         returned = AcceptEncodingValidHeader.parse(
             value=",,\t gzip;q=1.0, identity; q=0.5, *;q=0 \t ,"
@@ -3385,7 +3385,7 @@ class TestAcceptEncodingValidHeader(object):
     def test___add___other_type_with_invalid___str__(self):
         left_operand = AcceptEncodingValidHeader(header_value="gzip")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return ", "
 
@@ -3406,7 +3406,7 @@ class TestAcceptEncodingValidHeader(object):
     def test___add___other_type_with_valid___str___empty(self):
         left_operand = AcceptEncodingValidHeader(header_value="gzip")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return ""
 
@@ -3444,7 +3444,7 @@ class TestAcceptEncodingValidHeader(object):
     def test___add___other_type_with_valid___str___not_empty(self):
         header = ",\t ,gzip, identity;q=0.333,"
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "compress;q=0.5, deflate;q=0, *"
 
@@ -3532,7 +3532,7 @@ class TestAcceptEncodingValidHeader(object):
     def test___radd___other_type_with_invalid___str__(self):
         right_operand = AcceptEncodingValidHeader(header_value="gzip")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return ", "
 
@@ -3552,7 +3552,7 @@ class TestAcceptEncodingValidHeader(object):
     def test___radd___other_type_with_valid___str___empty(self):
         right_operand = AcceptEncodingValidHeader(header_value="gzip")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return ""
 
@@ -3590,7 +3590,7 @@ class TestAcceptEncodingValidHeader(object):
     def test___radd___other_type_with_valid___str___not_empty(self):
         header = ",\t ,gzip, identity;q=0.333,"
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "compress;q=0.5, deflate;q=0, *"
 
@@ -3714,7 +3714,7 @@ class TestAcceptEncodingValidHeader(object):
         assert accept.quality("compress") is None
 
 
-class TestAcceptEncodingNoHeader(object):
+class TestAcceptEncodingNoHeader:
     def test_parse__inherited(self):
         returned = AcceptEncodingNoHeader.parse(
             value=",,\t gzip;q=1.0, identity; q=0.5, *;q=0 \t ,"
@@ -3743,7 +3743,7 @@ class TestAcceptEncodingNoHeader(object):
     def test___add___other_type_with_invalid___str__(self):
         left_operand = AcceptEncodingNoHeader()
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return ", "
 
@@ -3761,7 +3761,7 @@ class TestAcceptEncodingNoHeader(object):
     def test___add___other_type_with_valid___str___empty(self):
         left_operand = AcceptEncodingNoHeader()
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return ""
 
@@ -3795,7 +3795,7 @@ class TestAcceptEncodingNoHeader(object):
         assert result.header_value == value_as_header
 
     def test___add___other_type_with_valid___str___not_empty(self):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "compress;q=0.5, deflate;q=0, *"
 
@@ -3867,7 +3867,7 @@ class TestAcceptEncodingNoHeader(object):
     def test___radd___other_type_with_invalid___str__(self):
         right_operand = AcceptEncodingNoHeader()
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return ", "
 
@@ -3882,7 +3882,7 @@ class TestAcceptEncodingNoHeader(object):
         assert result.header_value == ""
 
     def test___radd___other_type_with_valid___str___empty(self):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return ""
 
@@ -3916,7 +3916,7 @@ class TestAcceptEncodingNoHeader(object):
         assert result.header_value == value_as_header
 
     def test___radd___other_type_with_valid___str___not_empty(self):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "compress;q=0.5, deflate;q=0, *"
 
@@ -3962,7 +3962,7 @@ class TestAcceptEncodingNoHeader(object):
         assert returned == 1.0
 
 
-class TestAcceptEncodingInvalidHeader(object):
+class TestAcceptEncodingInvalidHeader:
     def test_parse__inherited(self):
         returned = AcceptEncodingInvalidHeader.parse(
             value=",,\t gzip;q=1.0, identity; q=0.5, *;q=0 \t ,"
@@ -3992,7 +3992,7 @@ class TestAcceptEncodingInvalidHeader(object):
     def test___add___other_type_with_invalid___str__(self):
         left_operand = AcceptEncodingInvalidHeader(header_value="invalid header")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return ", "
 
@@ -4010,7 +4010,7 @@ class TestAcceptEncodingInvalidHeader(object):
     def test___add___other_type_with_valid___str___empty(self):
         left_operand = AcceptEncodingInvalidHeader(header_value=", ")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return ""
 
@@ -4044,7 +4044,7 @@ class TestAcceptEncodingInvalidHeader(object):
         assert result.header_value == value_as_header
 
     def test___add___other_type_with_valid___str___not_empty(self):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "*, compress;q=0.5, deflate;q=0"
 
@@ -4115,7 +4115,7 @@ class TestAcceptEncodingInvalidHeader(object):
     def test___radd___other_type_with_invalid___str__(self):
         right_operand = AcceptEncodingInvalidHeader(header_value="gzip;q= 1")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return ", "
 
@@ -4132,7 +4132,7 @@ class TestAcceptEncodingInvalidHeader(object):
     def test___radd___other_type_with_valid___str___empty(self):
         right_operand = AcceptEncodingInvalidHeader(header_value=", ")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return ""
 
@@ -4166,7 +4166,7 @@ class TestAcceptEncodingInvalidHeader(object):
         assert result.header_value == value_as_header
 
     def test___radd___other_type_with_valid___str___not_empty(self):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "compress;q=0.5, deflate;q=0, *"
 
@@ -4212,7 +4212,7 @@ class TestAcceptEncodingInvalidHeader(object):
         assert returned == 1.0
 
 
-class TestCreateAcceptEncodingHeader(object):
+class TestCreateAcceptEncodingHeader:
     def test_header_value_is_None(self):
         header_value = None
         returned = create_accept_encoding_header(header_value=header_value)
@@ -4241,7 +4241,7 @@ class TestCreateAcceptEncodingHeader(object):
         assert returned2._header_value == returned._header_value
 
 
-class TestAcceptEncodingProperty(object):
+class TestAcceptEncodingProperty:
     def test_fget_header_is_None(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_ENCODING": None})
         property_ = accept_encoding_property()
@@ -4310,7 +4310,7 @@ class TestAcceptEncodingProperty(object):
         request = Request.blank("/", environ={"HTTP_ACCEPT_ENCODING": ""})
         property_ = accept_encoding_property()
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "gzip;q=0.5, compress;q=0, deflate"
 
@@ -4358,7 +4358,7 @@ class TestAcceptEncodingProperty(object):
         assert "HTTP_ACCEPT_ENCODING" not in request.environ
 
 
-class TestAcceptLanguage(object):
+class TestAcceptLanguage:
     @pytest.mark.parametrize(
         "value",
         [
@@ -4427,7 +4427,7 @@ class TestAcceptLanguage(object):
         assert list_of_returned == expected_list
 
 
-class TestAcceptLanguageValidHeader(object):
+class TestAcceptLanguageValidHeader:
     @pytest.mark.parametrize("header_value", ["", ", da;q=0.2, en-gb;q=0.3 "])
     def test___init___invalid_header(self, header_value):
         with pytest.raises(ValueError):
@@ -4485,7 +4485,7 @@ class TestAcceptLanguageValidHeader(object):
     def test___add___other_type_with_invalid___str__(self, str_):
         left_operand = AcceptLanguageValidHeader(header_value="en")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return str_
 
@@ -4513,7 +4513,7 @@ class TestAcceptLanguageValidHeader(object):
     def test___add___other_type_with_valid___str__(self):
         header = ",\t ,de, zh-Hans;q=0.333,"
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "en-gb;q=0.5, fr;q=0, es"
 
@@ -4635,7 +4635,7 @@ class TestAcceptLanguageValidHeader(object):
     def test___radd___other_type_with_invalid___str__(self, str_):
         right_operand = AcceptLanguageValidHeader(header_value="en")
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return str_
 
@@ -4668,7 +4668,7 @@ class TestAcceptLanguageValidHeader(object):
             header_value=",\t ,de, zh-Hans;q=0.333,"
         )
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "en-gb;q=0.5, fr;q=0, es"
 
@@ -5245,7 +5245,7 @@ class TestAcceptLanguageValidHeader(object):
         assert returned == expected_returned
 
 
-class TestAcceptLanguageNoHeader(object):
+class TestAcceptLanguageNoHeader:
     def test___init__(self):
         instance = AcceptLanguageNoHeader()
         assert instance.header_value is None
@@ -5273,7 +5273,7 @@ class TestAcceptLanguageNoHeader(object):
     def test___add___other_type_with_invalid___str__(self, str_):
         left_operand = AcceptLanguageNoHeader()
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return str_
 
@@ -5296,7 +5296,7 @@ class TestAcceptLanguageNoHeader(object):
         assert result.header_value == value_as_header
 
     def test___add___other_type_with_valid___str__(self):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "en-gb;q=0.5, fr;q=0, es"
 
@@ -5364,7 +5364,7 @@ class TestAcceptLanguageNoHeader(object):
     def test___radd___other_type_with_invalid___str__(self, str_):
         right_operand = AcceptLanguageNoHeader()
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return str_
 
@@ -5387,7 +5387,7 @@ class TestAcceptLanguageNoHeader(object):
         assert result.header_value == value_as_header
 
     def test___radd___other_type_with_valid___str__(self):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "en-gb;q=0.5, fr;q=0, es"
 
@@ -5456,7 +5456,7 @@ class TestAcceptLanguageNoHeader(object):
         assert returned == 1.0
 
 
-class TestAcceptLanguageInvalidHeader(object):
+class TestAcceptLanguageInvalidHeader:
     def test___init__(self):
         header_value = "invalid header"
         instance = AcceptLanguageInvalidHeader(header_value=header_value)
@@ -5480,7 +5480,7 @@ class TestAcceptLanguageInvalidHeader(object):
 
     @pytest.mark.parametrize("str_", ["", "en_gb"])
     def test___add___other_type_with_invalid___str__(self, str_):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return str_
 
@@ -5494,7 +5494,7 @@ class TestAcceptLanguageInvalidHeader(object):
         assert result.header_value == "en"
 
     def test___add___other_type_valid_header_value(self):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "en"
 
@@ -5552,7 +5552,7 @@ class TestAcceptLanguageInvalidHeader(object):
 
     @pytest.mark.parametrize("str_", ["", "en_gb"])
     def test___radd___other_type_with_invalid___str__(self, str_):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return str_
 
@@ -5566,7 +5566,7 @@ class TestAcceptLanguageInvalidHeader(object):
         assert result.header_value == "en"
 
     def test___radd___other_type_valid_header_value(self):
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "en"
 
@@ -5634,7 +5634,7 @@ class TestAcceptLanguageInvalidHeader(object):
         assert returned == 1.0
 
 
-class TestCreateAcceptLanguageHeader(object):
+class TestCreateAcceptLanguageHeader:
     def test_header_value_is_None(self):
         header_value = None
         returned = create_accept_language_header(header_value=header_value)
@@ -5663,7 +5663,7 @@ class TestCreateAcceptLanguageHeader(object):
         assert returned2._header_value == returned._header_value
 
 
-class TestAcceptLanguageProperty(object):
+class TestAcceptLanguageProperty:
     def test_fget_header_is_None(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_LANGUAGE": None})
         property_ = accept_language_property()
@@ -5723,7 +5723,7 @@ class TestAcceptLanguageProperty(object):
         request = Request.blank("/", environ={"HTTP_ACCEPT_LANGUAGE": ""})
         property_ = accept_language_property()
 
-        class Other(object):
+        class Other:
             def __str__(self):
                 return "en-gb;q=0.5, fr;q=0, es"
 

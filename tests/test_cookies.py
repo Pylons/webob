@@ -269,7 +269,7 @@ def test_morsel_repr():
     assert result == "<Morsel: a='b'>"
 
 
-class TestRequestCookies(object):
+class TestRequestCookies:
     def _makeOne(self, environ):
         from webob.cookies import RequestCookies
 
@@ -453,7 +453,7 @@ class TestRequestCookies(object):
         assert r.endswith(">")
 
 
-class TestCookieMakeCookie(object):
+class TestCookieMakeCookie:
     def makeOne(self, name, value, **kw):
         from webob.cookies import make_cookie
 
@@ -508,9 +508,9 @@ class TestCookieMakeCookie(object):
         assert "SameSite=" + samesite in cookie
 
 
-class CommonCookieProfile(object):
+class CommonCookieProfile:
     def makeDummyRequest(self, **kw):
-        class Dummy(object):
+        class Dummy:
             def __init__(self, **kwargs):
                 self.__dict__.update(**kwargs)
 
@@ -564,7 +564,7 @@ class TestCookieProfile(CommonCookieProfile):
             cookie.get_value()
 
     def test_get_value_serializer_raises_value_error(self):
-        class RaisingSerializer(object):
+        class RaisingSerializer:
             def loads(self, val):
                 raise ValueError("foo")
 
@@ -768,7 +768,7 @@ def serialize(secret, salt, data):
     return base64.urlsafe_b64encode(sig + cstruct).rstrip(b"=")
 
 
-class TestSignedSerializer(object):
+class TestSignedSerializer:
     def makeOne(self, secret, salt, hashalg="sha1", **kw):
         from webob.cookies import SignedSerializer
 

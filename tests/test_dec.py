@@ -71,7 +71,7 @@ class DecoratorTests(unittest.TestCase):
     def test_wsgify_no___get__(self):
         # use a class instance instead of a fn so we wrap something w/
         # no __get__
-        class TestApp(object):
+        class TestApp:
             def __call__(self, req):
                 return "nothing to see here"
 

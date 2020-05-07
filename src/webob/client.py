@@ -96,7 +96,7 @@ class SendRequest:
         except socket.timeout:
             resp = exc.HTTPGatewayTimeout()
             return resp(environ, start_response)
-        except (socket.error, socket.gaierror) as e:
+        except (OSError, socket.gaierror) as e:
             if (isinstance(e, socket.error) and e.args[0] == -2) or (
                 isinstance(e, socket.gaierror) and e.args[0] == 8
             ):

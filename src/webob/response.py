@@ -57,7 +57,7 @@ _gzip_header = b"\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff"
 _marker = object()
 
 
-class Response(object):
+class Response:
     """
     Represents a WSGI response.
 
@@ -1500,7 +1500,7 @@ def iter_file(file, block_size=1 << 18):  # 256Kb
         yield data
 
 
-class ResponseBodyFile(object):
+class ResponseBodyFile:
     mode = "wb"
     closed = False
 
@@ -1544,7 +1544,7 @@ class ResponseBodyFile(object):
         return sum([len(chunk) for chunk in self.response.app_iter])
 
 
-class AppIterRange(object):
+class AppIterRange:
     """
     Wraps an ``app_iter``, returning just a range of bytes.
     """
@@ -1605,7 +1605,7 @@ class AppIterRange(object):
         iter_close(self.app_iter)
 
 
-class EmptyResponse(object):
+class EmptyResponse:
     """
     An empty WSGI response.
 

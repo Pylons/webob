@@ -73,7 +73,7 @@ class Test_strings_differ(unittest.TestCase):
         self.assertTrue(result)
 
     def test_it_with_external_comparator(self):
-        class DummyComparator(object):
+        class DummyComparator:
             called = False
 
             def __init__(self, ret_val):

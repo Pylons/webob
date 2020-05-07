@@ -22,7 +22,7 @@ from webob.multidict import NoVars
 from webob.util import bytes_, text_
 
 
-class TestRequestCommon(object):
+class TestRequestCommon:
     # unit tests of non-bytes-vs-text-specific methods of request object
     def _getTargetClass(self):
         from webob.request import Request
@@ -924,7 +924,7 @@ class TestRequestCommon(object):
         def application(environ, start_response):
             write = start_response("200 OK", [("content-type", "text/plain")])
 
-            class AppIter(object):
+            class AppIter:
                 def __iter__(self):
                     yield "...\n"
 
@@ -1176,7 +1176,7 @@ class TestRequestCommon(object):
             req.copy_body()
 
 
-class TestBaseRequest(object):
+class TestBaseRequest:
     # tests of methods of a base request which are encoding-specific
     def _getTargetClass(self):
         from webob.request import BaseRequest
@@ -1812,7 +1812,7 @@ class TestBaseRequest(object):
         assert result == "example.com:80"
 
 
-class TestRequestWithAdhocAttr(object):
+class TestRequestWithAdhocAttr:
     def _blankOne(self, *arg, **kw):
         from webob.request import Request
 
@@ -1848,7 +1848,7 @@ class TestRequestWithAdhocAttr(object):
             delattr(req, "some_attr")
 
 
-class TestRequest_functional(object):
+class TestRequest_functional:
     # functional tests of request
     def _getTargetClass(self):
         from webob.request import Request
@@ -2923,14 +2923,14 @@ class TestRequest_functional(object):
         assert req_body == req2_body
 
 
-class Test_cgi_FieldStorage__repr__patch(object):
+class Test_cgi_FieldStorage__repr__patch:
     def _callFUT(self, fake):
         from webob.compat import cgi_FieldStorage
 
         return cgi_FieldStorage.__repr__(fake)
 
     def test_with_file(self):
-        class Fake(object):
+        class Fake:
             name = "name"
             file = "file"
             filename = "filename"
@@ -2941,7 +2941,7 @@ class Test_cgi_FieldStorage__repr__patch(object):
         assert result, "FieldStorage('name' == 'filename')"
 
     def test_without_file(self):
-        class Fake(object):
+        class Fake:
             name = "name"
             file = None
             filename = "filename"
@@ -2952,14 +2952,14 @@ class Test_cgi_FieldStorage__repr__patch(object):
         assert result, "FieldStorage('name', 'filename' == 'value')"
 
 
-class TestLimitedLengthFile(object):
+class TestLimitedLengthFile:
     def _makeOne(self, file, maxlen):
         from webob.request import LimitedLengthFile
 
         return LimitedLengthFile(file, maxlen)
 
     def test_fileno(self):
-        class DummyFile(object):
+        class DummyFile:
             def fileno(self):
                 return 1
 
@@ -2968,7 +2968,7 @@ class TestLimitedLengthFile(object):
         assert inst.fileno() == 1
 
 
-class Test_environ_from_url(object):
+class Test_environ_from_url:
     def _callFUT(self, *arg, **kw):
         from webob.request import environ_from_url
 
@@ -3065,7 +3065,7 @@ def test_environ_add_POST_file_with_content_type():
     assert b'Content-type: text/plain; charset="utf-8"' in wsgi_input
 
 
-class TestRequestMultipart(object):
+class TestRequestMultipart:
     def test_multipart_with_charset(self):
         from webob.request import Request
 
@@ -3221,7 +3221,7 @@ _test_req2 = _norm_req(_test_req2) + b"\r\n"
 _test_req_multipart_charset = _norm_req(_test_req_multipart_charset)
 
 
-class UnseekableInput(object):
+class UnseekableInput:
     def __init__(self, data):
         self.data = data
         self.pos = 0
@@ -3246,7 +3246,7 @@ class UnseekableInputWithSeek(UnseekableInput):
         raise IOError("Invalid seek!")
 
 
-class _Helper_test_request_wrong_clen(object):
+class _Helper_test_request_wrong_clen:
     def __init__(self, f):
         self.f = f
         self.file_ended = False

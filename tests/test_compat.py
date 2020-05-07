@@ -54,7 +54,7 @@ class bytes_Tests(unittest.TestCase):
         self.assertEqual(result, b"La Pe\xc3\xb1a")
 
 
-class Test_cgi_FieldStorage_Py3_tests(object):
+class Test_cgi_FieldStorage_Py3_tests:
     def test_fieldstorage_not_multipart(self):
         from webob.compat import cgi_FieldStorage
 

@@ -220,13 +220,13 @@ class TestSendRequest(unittest.TestCase):
         self.assertEqual(response.length, None)
 
 
-class DummyMessage(object):
+class DummyMessage:
     def __init__(self, msg):
         self.msg = msg
         self.headers = self._headers = {}
 
 
-class DummyResponse(object):
+class DummyResponse:
     def __init__(self, msg, headerval="10"):
         self.msg = DummyMessage(msg)
         self.status = "200"
@@ -241,7 +241,7 @@ class DummyResponse(object):
         return b"foo"
 
 
-class DummyConnectionFactory(object):
+class DummyConnectionFactory:
     def __init__(self, result=None):
         self.result = result
         self.closed = False
@@ -261,7 +261,7 @@ class DummyConnectionFactory(object):
         self.closed = True
 
 
-class DummyRequestFactory(object):
+class DummyRequestFactory:
     def __init__(self, hostport, **kw):
         self.hostport = hostport
         self.kw = kw

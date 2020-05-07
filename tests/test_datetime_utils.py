@@ -111,7 +111,7 @@ def test_timedelta_to_seconds():
     assert result == 7464960000
 
 
-class _NowRestorer(object):
+class _NowRestorer:
     def __init__(self, new_now):
         self._new_now = new_now
         self._old_now = None
