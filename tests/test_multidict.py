@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import unittest
 from webob import multidict
 from webob.util import text_
