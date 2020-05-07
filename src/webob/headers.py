@@ -107,7 +107,7 @@ key2header = {
     "HTTP_CONTENT_LENGTH": "Content_Length",
 }
 
-header2key = dict([(v.upper(), k) for (k, v) in key2header.items()])
+header2key = {v.upper(): k for (k, v) in key2header.items()}
 
 
 def _trans_key(key):

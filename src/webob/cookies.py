@@ -48,7 +48,7 @@ class RequestCookies(MutableMapping):
         def d(b):
             return b.decode("utf8")
 
-        cache = dict((d(k), d(v)) for k, v in parse_cookie(header))
+        cache = {d(k): d(v) for k, v in parse_cookie(header)}
         env[self._cache_key] = (cache, header)
 
         return cache
@@ -351,7 +351,7 @@ def _bchr(i):
     return bytes([i])
 
 
-_ch_unquote_map = dict((bytes_("%03o" % i), _bchr(i)) for i in range(256))
+_ch_unquote_map = {bytes_("%03o" % i): _bchr(i) for i in range(256)}
 _ch_unquote_map.update((v, v) for v in list(_ch_unquote_map.values()))
 
 _b_dollar_sign = ord("$")
@@ -404,10 +404,10 @@ _valid_token_bytes = bytes_(_valid_token_chars)
 # this is a map used to escape the values
 
 _escape_noop_chars = _allowed_cookie_chars + " "
-_escape_map = dict((chr(i), "\\%03o" % i) for i in range(256))
+_escape_map = {chr(i): "\\%03o" % i for i in range(256)}
 _escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
 
-_escape_map = dict((ord(k), bytes_(v, "ascii")) for k, v in _escape_map.items())
+_escape_map = {ord(k): bytes_(v, "ascii") for k, v in _escape_map.items()}
 _escape_char = _escape_map.__getitem__
 
 weekdays = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")

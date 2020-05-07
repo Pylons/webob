@@ -2142,7 +2142,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
         filtered_offers = []
         for index, offer in enumerate(lowercased_offers):
             # If offer matches a non-* charset with q=0, it is filtered out
-            if any(((offer == charset) for charset in not_acceptable_charsets)):
+            if any((offer == charset) for charset in not_acceptable_charsets):
                 continue
 
             matched_charset_qvalue = None
@@ -3171,7 +3171,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         filtered_offers = []
         for index, offer in enumerate(lowercased_offers):
             # If offer matches a non-* codings with q=0, it is filtered out
-            if any(((offer == codings) for codings in not_acceptable_codingss)):
+            if any((offer == codings) for codings in not_acceptable_codingss):
                 continue
 
             matched_codings_qvalue = None
@@ -4308,7 +4308,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         filtered_tags = []
         for index, tag in enumerate(lowercased_tags):
             # If tag matches a non-* range with q=0, it is filtered out
-            if any((match(tag=tag, range_=range_) for range_ in not_acceptable_ranges)):
+            if any(match(tag=tag, range_=range_) for range_ in not_acceptable_ranges):
                 continue
 
             matched_range_qvalue = None

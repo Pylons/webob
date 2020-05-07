@@ -49,7 +49,7 @@ def test_cookie_complex():
     def d(v):
         return v.decode("ascii")
 
-    c_dict = dict((d(k), d(v.value)) for k, v in c.items())
+    c_dict = {d(k): d(v.value) for k, v in c.items()}
     assert c_dict == {
         "a": "42,",
         "CP": "null*",
