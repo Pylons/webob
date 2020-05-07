@@ -38,13 +38,13 @@ class FileApp:
             return exc.HTTPMethodNotAllowed("You cannot %s a file" % req.method)
         try:
             stat = os.stat(self.filename)
-        except (IOError, OSError) as e:
+        except OSError as e:
             msg = "Can't open %r: %s" % (self.filename, e)
             return exc.HTTPNotFound(comment=msg)
 
         try:
             file = self._open(self.filename, "rb")
-        except (IOError, OSError) as e:
+        except OSError as e:
             msg = "You are not permitted to view this file (%s)" % e
             return exc.HTTPForbidden(msg)
 
@@ -123,7 +123,7 @@ class DirectoryApp:
         if not self.path.endswith(os.path.sep):
             self.path += os.path.sep
         if not os.path.isdir(self.path):
-            raise IOError("Path does not exist or is not directory: %r" % self.path)
+            raise OSError("Path does not exist or is not directory: %r" % self.path)
         self.index_page = index_page
         self.hide_index_with_redirect = hide_index_with_redirect
         self.fileapp_kw = kw

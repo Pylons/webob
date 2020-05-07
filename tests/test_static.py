@@ -84,7 +84,7 @@ class TestFileApp(unittest.TestCase):
         # Mock the built-in ``open()`` function to allow finner control about
         # what we are testing.
         def open_ioerror(*args, **kwargs):
-            raise IOError()
+            raise OSError()
 
         def open_oserror(*args, **kwargs):
             raise OSError()

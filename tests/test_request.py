@@ -3243,7 +3243,7 @@ class UnseekableInput:
 
 class UnseekableInputWithSeek(UnseekableInput):
     def seek(self, pos, rel=0):
-        raise IOError("Invalid seek!")
+        raise OSError("Invalid seek!")
 
 
 class _Helper_test_request_wrong_clen:
