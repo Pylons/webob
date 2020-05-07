@@ -2103,7 +2103,7 @@ class TestRequest_functional:
     def test_already_consumed_stream(self):
         from webob.request import Request
 
-        body = "something".encode("latin-1")
+        body = b"something"
         content_type = "application/x-www-form-urlencoded; charset=latin-1"
         environ = {
             "wsgi.input": BytesIO(body),
