@@ -561,7 +561,7 @@ ${html_comment}"""
         location=None,
         add_slash=False,
     ):
-        super(_HTTPMove, self).__init__(
+        super().__init__(
             detail=detail, headers=headers, comment=comment, body_template=body_template
         )
 
@@ -590,7 +590,7 @@ ${html_comment}"""
             self.location = url
         self.location = urlparse.urljoin(req.path_url, self.location)
 
-        return super(_HTTPMove, self).__call__(environ, start_response)
+        return super().__call__(environ, start_response)
 
 
 class HTTPMultipleChoices(_HTTPMove):
