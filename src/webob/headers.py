@@ -163,5 +163,4 @@ class EnvironHeaders(MutableMapping):
         return len(list(self.keys()))
 
     def __iter__(self):
-        for k in self.keys():
-            yield k
+        yield from self.keys()

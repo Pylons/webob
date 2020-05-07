@@ -428,18 +428,15 @@ class NestedMultiDict(MultiDict):
 
     def items(self):
         for d in self.dicts:
-            for item in d.items():
-                yield item
+            yield from d.items()
 
     def values(self):
         for d in self.dicts:
-            for value in d.values():
-                yield value
+            yield from d.values()
 
     def keys(self):
         for d in self.dicts:
-            for key in d:
-                yield key
+            yield from d
 
     __iter__ = keys
 
