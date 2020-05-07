@@ -165,7 +165,7 @@ def test_init_doesnt_add_default_content_type_with_bodyless_status():
 
 
 def test_content_type_supports_unicode():
-    content_type = u"text/html"
+    content_type = "text/html"
     resp = Response()
     resp.content_type = content_type
     assert isinstance(resp.headers["Content-Type"], str)
@@ -1081,7 +1081,7 @@ def test_location_unicode():
     environ = {
         "REQUEST_METHOD": "GET",
         "wsgi.url_scheme": "http",
-        "HTTP_HOST": u"test.com",
+        "HTTP_HOST": "test.com",
     }
     res = Response()
     res.status = "301"
