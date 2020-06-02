@@ -810,6 +810,7 @@ class BaseRequest(object):
                 encoding="utf8",
             )
 
+        self.body_file_raw.seek(0)
         vars = MultiDict.from_fieldstorage(fs)
         env["webob._parsed_post_vars"] = (vars, self.body_file_raw)
         return vars
