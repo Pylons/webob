@@ -613,6 +613,21 @@ class TestRequestCommon(object):
         assert bar.filename == "bar.txt"
         assert bar.file.read() == b'these are the contents of the file "bar.txt"\n'
 
+    @pytest.mark.parametrize("method", ["POST", "PUT", "PATCH", "DELETE"])
+    def test_POST_preserves_body_file(self, method):
+        data = b"var1=value1&var2=value2&rep=1&rep=2"
+        wsgi_input = BytesIO(data)
+        environ = {
+            "wsgi.input": wsgi_input,
+            "REQUEST_METHOD": method,
+            "CONTENT_LENGTH": len(data),
+            "CONTENT_TYPE": "application/x-www-form-urlencoded",
+        }
+        req = self._makeOne(environ)
+        result = req.POST
+        assert result["var1"] == "value1"
+        assert req.body_file_raw.read() == data
+
     # GET
     def test_GET_reflects_query_string(self):
         environ = {"QUERY_STRING": "foo=123"}
