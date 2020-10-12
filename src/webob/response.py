@@ -732,7 +732,7 @@ class Response(object):
     content_encoding = header_getter("Content-Encoding", "14.11")
     content_language = list_header("Content-Language", "14.12")
     content_location = header_getter("Content-Location", "14.14")
-    content_md5 = header_getter("Content-MD5", "14.14")
+    content_md5 = header_getter("Content-MD5", "14.15")
     content_disposition = header_getter("Content-Disposition", "19.5.1")
 
     accept_ranges = header_getter("Accept-Ranges", "14.5")
