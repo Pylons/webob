@@ -14,9 +14,9 @@ __all__ = ["MultiDict", "NestedMultiDict", "NoVars", "GetDict"]
 
 class MultiDict(MutableMapping):
     """
-        An ordered dictionary that can have multiple values for each key.
-        Adds the methods getall, getone, mixed and extend and add to the normal
-        dictionary interface.
+    An ordered dictionary that can have multiple values for each key.
+    Adds the methods getall, getone, mixed and extend and add to the normal
+    dictionary interface.
     """
 
     def __init__(self, *args, **kw):

@@ -6,8 +6,8 @@ __all__ = ["ResponseHeaders", "EnvironHeaders"]
 
 class ResponseHeaders(MultiDict):
     """
-        Dictionary view on the response headerlist.
-        Keys are normalized for case and whitespace.
+    Dictionary view on the response headerlist.
+    Keys are normalized for case and whitespace.
     """
 
     def __getitem__(self, key):
