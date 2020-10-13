@@ -244,9 +244,9 @@ class BaseRequest(object):
     @property
     def body_file(self):
         """
-            Input stream of the request (wsgi.input).
-            Setting this property resets the content_length and seekable flag
-            (unlike setting req.body_file_raw).
+        Input stream of the request (wsgi.input).
+        Setting this property resets the content_length and seekable flag
+        (unlike setting req.body_file_raw).
         """
 
         if not self.is_body_readable:
@@ -292,11 +292,11 @@ class BaseRequest(object):
     @property
     def body_file_seekable(self):
         """
-            Get the body of the request (wsgi.input) as a seekable file-like
-            object. Middleware and routing applications should use this
-            attribute over .body_file.
+        Get the body of the request (wsgi.input) as a seekable file-like
+        object. Middleware and routing applications should use this
+        attribute over .body_file.
 
-            If you access this value, CONTENT_LENGTH will also be updated.
+        If you access this value, CONTENT_LENGTH will also be updated.
         """
         if not self.is_body_seekable:
             self.make_body_seekable()
@@ -675,7 +675,7 @@ class BaseRequest(object):
 
     @property
     def domain(self):
-        """ Returns the domain portion of the host value.  Equivalent to:
+        """Returns the domain portion of the host value.  Equivalent to:
 
         .. code-block:: python
 
@@ -1027,8 +1027,8 @@ class BaseRequest(object):
 
     def make_tempfile(self):
         """
-            Create a tempfile to store big request body.
-            This API is not stable yet. A 'size' argument might be added.
+        Create a tempfile to store big request body.
+        This API is not stable yet. A 'size' argument might be added.
         """
         return tempfile.TemporaryFile()
 
@@ -1165,10 +1165,10 @@ class BaseRequest(object):
 
     def as_bytes(self, skip_body=False):
         """
-            Return HTTP bytes representing this request.
-            If skip_body is True, exclude the body.
-            If skip_body is an integer larger than one, skip body
-            only if its length is bigger than that number.
+        Return HTTP bytes representing this request.
+        If skip_body is True, exclude the body.
+        If skip_body is an integer larger than one, skip body
+        only if its length is bigger than that number.
         """
         url = self.url
         host = self.host_url
@@ -1206,8 +1206,8 @@ class BaseRequest(object):
     @classmethod
     def from_bytes(cls, b):
         """
-            Create a request from HTTP bytes data. If the bytes contain
-            extra data after the request, raise a ValueError.
+        Create a request from HTTP bytes data. If the bytes contain
+        extra data after the request, raise a ValueError.
         """
         f = io.BytesIO(b)
         r = cls.from_file(f)
@@ -1579,7 +1579,7 @@ class LimitedLengthFile(io.RawIOBase):
 
 
 def _cgi_FieldStorage__repr__patch(self):
-    """ monkey patch for FieldStorage.__repr__
+    """monkey patch for FieldStorage.__repr__
 
     Unbelievably, the default __repr__ on FieldStorage reads
     the entire file content instead of being sane about it.

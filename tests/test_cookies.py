@@ -159,11 +159,11 @@ def test_cookie_reserved_keys():
 
 def test_serialize_cookie_date():
     """
-        Testing webob.cookies.serialize_cookie_date.
-        Missing scenarios:
-            * input value is an str, should be returned verbatim
-            * input value is an int, should be converted to timedelta and we
-              should continue the rest of the process
+    Testing webob.cookies.serialize_cookie_date.
+    Missing scenarios:
+        * input value is an str, should be returned verbatim
+        * input value is an int, should be converted to timedelta and we
+          should continue the rest of the process
     """
     date_one = cookies.serialize_cookie_date(b"Tue, 04-Jan-2011 13:43:50 GMT")
     assert date_one == b"Tue, 04-Jan-2011 13:43:50 GMT"

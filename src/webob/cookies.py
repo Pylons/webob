@@ -867,7 +867,7 @@ class CookieProfile(object):
         return selfish
 
     def get_value(self):
-        """ Looks for a cookie by name in the currently bound request, and
+        """Looks for a cookie by name in the currently bound request, and
         returns its value.  If the cookie profile is not bound to a request,
         this method will raise a :exc:`ValueError`.
 
@@ -922,7 +922,7 @@ class CookieProfile(object):
         httponly=_default,
         samesite=_default,
     ):
-        """ Retrieve raw headers for setting cookies.
+        """Retrieve raw headers for setting cookies.
 
         Returns a list of headers that should be set for the cookies to
         be correctly tracked.

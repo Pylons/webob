@@ -19,8 +19,8 @@ log = logging.getLogger(__name__)
 @pytest.mark.usefixtures("serve")
 def test_request_reading(serve):
     """
-        Test actual request/response cycle in the presence of Request.copy()
-        and other methods that can potentially hang.
+    Test actual request/response cycle in the presence of Request.copy()
+    and other methods that can potentially hang.
     """
     with serve(_test_app_req_reading) as server:
         for key in _test_ops_req_read:

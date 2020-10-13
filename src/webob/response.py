@@ -1210,9 +1210,9 @@ class Response(object):
 
     def _cache_expires(self, seconds=0, **kw):
         """
-            Set expiration on this request.  This sets the response to
-            expire in the given seconds, and any other attributes are used
-            for ``cache_control`` (e.g., ``private=True``).
+        Set expiration on this request.  This sets the response to
+        expire in the given seconds, and any other attributes are used
+        for ``cache_control`` (e.g., ``private=True``).
         """
         if seconds is True:
             seconds = 0
