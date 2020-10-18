@@ -85,7 +85,7 @@ Bugfix
   ``AcceptValidHeader`` and returned them as acceptable in the others.
   See https://github.com/Pylons/webob/pull/372
 
-- ``Response.body_file.write`` and ``Response.write`` now returns the wrote
+- ``Response.body_file.write`` and ``Response.write`` now returns the written
   length. See https://github.com/Pylons/webob/pull/422
 
 Warnings
