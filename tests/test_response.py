@@ -638,7 +638,7 @@ def test_app_iter_range_starts_after_iter_end():
 def test_resp_write_app_iter_non_list():
     res = Response(app_iter=(b"a", b"b"))
     assert res.content_length is None
-    res.write(b"c")
+    assert res.write(b"c") == 1
     assert res.body == b"abc"
     assert res.content_length == 3
 
@@ -675,7 +675,7 @@ def test_response_file_body_tell_text():
 
     rbo = ResponseBodyFile(Response())
     assert rbo.tell() == 0
-    rbo.write("123456789")
+    assert rbo.write("123456789") == 9
     assert rbo.tell() == 9
 
 
@@ -687,13 +687,13 @@ def test_response_write_non_str():
 
 def test_response_file_body_write_empty_app_iter():
     res = Response("foo")
-    res.write("baz")
+    assert res.write("baz") == 3
     assert res.app_iter == [b"foo", b"baz"]
 
 
 def test_response_file_body_write_empty_body():
     res = Response("")
-    res.write("baz")
+    assert res.write("baz") == 3
     assert res.app_iter == [b"", b"baz"]
 
 
@@ -829,7 +829,7 @@ def test_body_file_del():
 def test_write_unicode():
     res = Response()
     res.text = text_(b"La Pe\xc3\xb1a", "utf-8")
-    res.write(text_(b"a"))
+    assert res.write(text_(b"a")) == 1
     assert res.text, text_(b"La Pe\xc3\xb1aa" == "utf-8")
 
 
@@ -842,7 +842,7 @@ def test_write_unicode_no_charset():
 def test_write_text():
     res = Response()
     res.body = b"abc"
-    res.write(text_(b"a"))
+    assert res.write(text_(b"a")) == 1
     assert res.text == "abca"
 
 
@@ -1272,7 +1272,7 @@ def test_body_file_write_no_charset():
 def test_body_file_write_unicode_encodes():
     s = text_(b"La Pe\xc3\xb1a", "utf-8")
     res = Response()
-    res.write(s)
+    assert res.write(s) == 8
     assert res.app_iter, [b"" == b"La Pe\xc3\xb1a"]
 
 

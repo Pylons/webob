@@ -677,6 +677,7 @@ class Response(object):
                 msg = "You can only write text to Response if charset has " "been set"
                 raise TypeError(msg)
             text = text.encode(self.charset)
+        text_len = len(text)
         app_iter = self._app_iter
         if not isinstance(app_iter, list):
             try:
@@ -687,7 +688,8 @@ class Response(object):
             self.content_length = sum(len(chunk) for chunk in app_iter)
         app_iter.append(text)
         if self.content_length is not None:
-            self.content_length += len(text)
+            self.content_length += text_len
+        return text_len
 
     #
     # app_iter
