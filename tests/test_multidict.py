@@ -187,6 +187,37 @@ class BaseDictTests(object):
             vars["title"].encode("utf8"), text_("こんにちは", "utf8").encode("utf8")
         )
 
+    def test_from_fieldstorage_without_charset_and_non_utf8(self):
+        from cgi import FieldStorage
+        from webob.request import BaseRequest
+        from webob.multidict import MultiDict
+
+        multipart_type = "multipart/form-data; boundary=foobar"
+        from io import BytesIO
+
+        body = (
+            b"--foobar\r\n"
+            b'Content-Disposition: form-data; name="title"\r\n'
+            b'Content-type: text/plain;"\r\n'
+            b"\r\n"
+            b"\x1b$B$3$s$K$A$O\x1b(B"
+            b"\r\n"
+            b"--foobar--"
+        )
+        multipart_body = BytesIO(body)
+        environ = BaseRequest.blank("/").environ
+        environ.update(CONTENT_TYPE=multipart_type)
+        environ.update(REQUEST_METHOD="POST")
+        environ.update(CONTENT_LENGTH=len(body))
+        fs = FieldStorage(multipart_body, environ=environ)
+        vars = MultiDict.from_fieldstorage(fs)
+        self.assertEqual(
+            vars["title"].encode("utf8"),
+            text_(b"\x1b$B$3$s$K$A$O\x1b(B", "utf8", "replace").encode(
+                "utf8", "replace"
+            ),
+        )
+
     def test_from_fieldstorage_with_base64_encoding(self):
         from cgi import FieldStorage
         from webob.request import BaseRequest
