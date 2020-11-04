@@ -80,12 +80,12 @@ class MultiDict(MutableMapping):
                 else:
 
                     def decode(b):
-                        return b.encode("utf8").decode(charset)
+                        return b.encode("utf8", errors='replace').decode(charset, errors='replace')
 
             else:
 
                 def decode(b):
-                    return b.decode(charset)
+                    return b.decode(charset, errors='replace')
 
             if field.filename:
                 field.filename = decode(field.filename)
