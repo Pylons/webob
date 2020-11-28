@@ -10,7 +10,7 @@ import string
 import time
 import warnings
 
-from webob.util import bytes_, strings_differ, text_
+from webob.util import bytes_, text_
 
 __all__ = [
     "Cookie",
@@ -737,7 +737,7 @@ class SignedSerializer:
 
         sig = hmac.new(self.salted_secret, bytes_(cstruct), self.digestmod).digest()
 
-        if strings_differ(sig, expected_sig):
+        if not hmac.compare_digest(sig, expected_sig):
             raise ValueError("Invalid signature")
 
         return self.serializer.loads(cstruct)
