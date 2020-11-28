@@ -316,7 +316,7 @@ Status and License
 ==================
 
 WebOb is an extraction and refinement of pieces from `Paste
-<https://pypi.python.org/pypi/Paste>`_.  It is under active development on `GitHub
+<https://pypi.org/project/Paste>`_.  It is under active development on `GitHub
 <https://github.com/pylons/webob>`_. It was originally written by `Ian Bicking
 <http://www.ianbicking.org/>`_, and is maintained by the `Pylons Project
 <https://pylonsproject.org/>`_.
@@ -332,6 +332,6 @@ Report issues on the `issue tracker <https://github.com/Pylons/webob/issues>`_.
 If you've got questions that aren't answered by this documentation, contact the
 `pylons-discuss mail list
 <https://groups.google.com/forum/#!forum/pylons-discuss>`_ or join the
-`#pyramid IRC channel <https://webchat.freenode.net/?channels=pyramid>`_.
+`#pyramid IRC channel <https://webchat.freenode.net/#pyramid>`_.
 
 WebOb is released under an :doc:`MIT-style license <license>`.

@@ -350,7 +350,7 @@ page doesn't exist.  ``exc.HTTPTemporaryRedirect`` is a response that
 gives a ``307 Temporary Redirect`` response with the given location.
 
 Otherwise we fill in a template.  The template language we're going to
-use in this example is `Tempita <https://pypi.python.org/pypi/Tempita>`_, a
+use in this example is `Tempita <https://pypi.org/project/Tempita>`_, a
 very simple template language with a similar interface to
 :py:class:`string.Template`.
 

@@ -84,7 +84,7 @@ These two pieces solve a lot of the more tedious parts of making a framework.  T
 Serving Your Application
 ------------------------
 
-While we can test the application using WebOb, you might want to serve the application.  Here's the basic recipe, using the `Paste <https://pypi.python.org/pypi/Paste>`_ HTTP server:
+While we can test the application using WebOb, you might want to serve the application.  Here's the basic recipe, using the `Paste <https://pypi.org/project/Paste>`_ HTTP server:
 
 .. code-block:: python
 
@@ -268,7 +268,7 @@ Controllers
 
 The router just passes the request on to the controller, so the controllers are themselves just WSGI applications.  But we'll want to set up something to make those applications friendlier to write.
 
-To do that we'll write a `decorator <http://www.drdobbs.com/web-development/python-24-decorators/184406073>`_.  A decorator is a function that wraps another function.  After decoration the function will be a WSGI application, but it will be decorating a function with a signature like ``controller_func(req, **urlvars)``.  The controller function will return a response object (which, remember, is a WSGI application on its own).
+To do that we'll write a `decorator <https://wiki.python.org/moin/PythonDecorators>`_.  A decorator is a function that wraps another function.  After decoration the function will be a WSGI application, but it will be decorating a function with a signature like ``controller_func(req, **urlvars)``.  The controller function will return a response object (which, remember, is a WSGI application on its own).
 
 .. code-block:: python
    :linenos:
@@ -537,7 +537,7 @@ Well, we don't *really* need to factor templating into our framework.  After all
 
 But we'll add a little helper, because I think it shows a clever trick.
 
-We'll use `Tempita <https://pypi.python.org/pypi/Tempita>`_ for templating, mostly because it's very simplistic about how it does loading.  The basic form is:
+We'll use `Tempita <https://pypi.org/project/Tempita>`_ for templating, mostly because it's very simplistic about how it does loading.  The basic form is:
 
 .. code-block:: python
 
