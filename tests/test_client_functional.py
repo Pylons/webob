@@ -3,8 +3,8 @@ import time
 import pytest
 
 from webob import Request, Response
-from webob.dec import wsgify
 from webob.client import SendRequest
+from webob.dec import wsgify
 
 
 @wsgify

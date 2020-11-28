@@ -1,13 +1,15 @@
-import pytest
-import threading
-import random
-import logging
 from contextlib import contextmanager
+import logging
+import random
+import threading
+from wsgiref.simple_server import (
+    ServerHandler,
+    WSGIRequestHandler,
+    WSGIServer,
+    make_server,
+)
 
-from wsgiref.simple_server import make_server
-from wsgiref.simple_server import WSGIRequestHandler
-from wsgiref.simple_server import WSGIServer
-from wsgiref.simple_server import ServerHandler
+import pytest
 
 log = logging.getLogger(__name__)
 ServerHandler.handle_error = lambda: None

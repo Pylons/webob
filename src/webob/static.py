@@ -58,7 +58,7 @@ class FileApp:
             content_length=stat.st_size,
             last_modified=stat.st_mtime,
             # @@ etag
-            **self.kw
+            **self.kw,
         ).conditional_response_app
 
 

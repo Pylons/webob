@@ -1,8 +1,8 @@
-import unittest
 from io import BytesIO
+import sys
+import unittest
 
 import pytest
-import sys
 
 
 class text_Tests(unittest.TestCase):

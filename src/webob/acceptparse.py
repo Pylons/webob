@@ -10,7 +10,6 @@ import re
 import textwrap
 import warnings
 
-
 # RFC 7230 Section 3.2.3 "Whitespace"
 # OWS            = *( SP / HTAB )
 #                ; optional whitespace

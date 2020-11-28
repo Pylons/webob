@@ -1,22 +1,18 @@
 # flake8: noqa
 
 import cgi
+from cgi import FieldStorage as _cgi_FieldStorage, parse_header
+from html import escape
+from queue import Empty, Queue
 import sys
 import tempfile
 import types
-from cgi import FieldStorage as _cgi_FieldStorage
-from cgi import parse_header
-
-from html import escape
-from queue import Empty, Queue
 from urllib import parse
-from urllib.parse import quote as url_quote
-from urllib.parse import quote_plus
-from urllib.parse import urlencode as url_encode
+from urllib.parse import quote as url_quote, quote_plus, urlencode as url_encode
 from urllib.request import urlopen as url_open
 
-
 urlparse = parse
+
 
 def unquote(string):
     if not string:
@@ -57,7 +53,7 @@ def parse_qsl_text(qs, encoding="utf-8"):
 # Various different FieldStorage work-arounds required on Python 3.x
 class cgi_FieldStorage(_cgi_FieldStorage):  # pragma: no cover
     def __repr__(self):
-        """ monkey patch for FieldStorage.__repr__
+        """monkey patch for FieldStorage.__repr__
 
         Unbelievably, the default __repr__ on FieldStorage reads
         the entire file content instead of being sane about it.

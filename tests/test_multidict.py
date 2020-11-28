@@ -1,4 +1,5 @@
 import unittest
+
 from webob import multidict
 from webob.util import text_
 
@@ -156,8 +157,9 @@ class BaseDictTests:
 
     def test_from_fieldstorage_with_charset(self):
         from cgi import FieldStorage
-        from webob.request import BaseRequest
+
         from webob.multidict import MultiDict
+        from webob.request import BaseRequest
 
         multipart_type = "multipart/form-data; boundary=foobar"
         from io import BytesIO
@@ -184,8 +186,9 @@ class BaseDictTests:
 
     def test_from_fieldstorage_with_base64_encoding(self):
         from cgi import FieldStorage
-        from webob.request import BaseRequest
+
         from webob.multidict import MultiDict
+        from webob.request import BaseRequest
 
         multipart_type = "multipart/form-data; boundary=foobar"
         from io import BytesIO
@@ -213,8 +216,9 @@ class BaseDictTests:
 
     def test_from_fieldstorage_with_quoted_printable_encoding(self):
         from cgi import FieldStorage
-        from webob.request import BaseRequest
+
         from webob.multidict import MultiDict
+        from webob.request import BaseRequest
 
         multipart_type = "multipart/form-data; boundary=foobar"
         from io import BytesIO

@@ -1,6 +1,6 @@
-import unittest
 import io
 import socket
+import unittest
 
 
 class TestSendRequest(unittest.TestCase):

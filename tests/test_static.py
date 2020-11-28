@@ -1,10 +1,10 @@
+from io import BytesIO
 import os
+from os.path import getmtime
 import shutil
 import tempfile
-import unittest
-from io import BytesIO
-from os.path import getmtime
 from time import gmtime
+import unittest
 
 from webob import static
 from webob.request import Request, environ_from_url

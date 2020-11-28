@@ -2,6 +2,7 @@ import re
 import warnings
 
 import pytest
+
 from webob.acceptparse import (
     Accept,
     AcceptCharset,

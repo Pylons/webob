@@ -1,6 +1,6 @@
-import pytest
-
 from datetime import timedelta
+
+import pytest
 
 from webob import cookies
 from webob.util import text_
@@ -756,10 +756,11 @@ class TestSignedCookieProfile(CommonCookieProfile):
 
 
 def serialize(secret, salt, data):
-    import hmac
     import base64
-    import json
     from hashlib import sha1
+    import hmac
+    import json
+
     from webob.util import bytes_
 
     salted_secret = bytes_(salt or "", "utf-8") + bytes_(secret, "utf-8")

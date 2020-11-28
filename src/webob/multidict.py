@@ -5,8 +5,8 @@
 Gives a multi-value dictionary object (MultiDict) plus several wrappers
 """
 import binascii
-import warnings
 from collections.abc import MutableMapping
+import warnings
 
 from webob.compat import url_encode
 

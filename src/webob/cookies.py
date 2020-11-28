@@ -1,5 +1,7 @@
 import base64
 import binascii
+from collections.abc import MutableMapping
+from datetime import date, datetime, timedelta
 import hashlib
 import hmac
 import json
@@ -7,8 +9,6 @@ import re
 import string
 import time
 import warnings
-from collections.abc import MutableMapping
-from datetime import date, datetime, timedelta
 
 from webob.util import bytes_, strings_differ, text_
 

@@ -20,9 +20,9 @@ def simple_app(environ, start_response):
 
 
 if __name__ == "__main__":
-    import sys
     import os
     import signal
+    import sys
 
     if sys.argv[1:]:
         arg = sys.argv[1]
@@ -30,8 +30,8 @@ if __name__ == "__main__":
         arg = None
     if arg in ["open", "run"]:
         import subprocess
-        import webbrowser
         import time
+        import webbrowser
 
         os.environ["SHOW_OUTPUT"] = "0"
         proc = subprocess.Popen([sys.executable, __file__])

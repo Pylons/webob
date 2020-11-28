@@ -44,7 +44,7 @@ from webob.descriptors import (
 from webob.etag import AnyETag, IfRange, NoETag, etag_property
 from webob.headers import EnvironHeaders
 from webob.multidict import GetDict, MultiDict, NestedMultiDict, NoVars
-from webob.util import text_, bytes_
+from webob.util import bytes_, text_
 
 try:
     import simplejson as json

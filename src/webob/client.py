@@ -1,14 +1,16 @@
 import errno
-import sys
 import re
+import sys
 
 try:
     import httplib
 except ImportError:
     import http.client as httplib
-from webob.compat import url_quote
+
 import socket
+
 from webob import exc
+from webob.compat import url_quote
 
 __all__ = ["send_request_app", "SendRequest"]
 

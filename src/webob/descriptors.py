@@ -1,15 +1,10 @@
+from collections import namedtuple
+from datetime import date, datetime
 import re
 
-from datetime import date, datetime
-
-from collections import namedtuple
-
 from webob.byterange import ContentRange, Range
-
 from webob.datetime_utils import parse_date, serialize_date
-
 from webob.util import header_docstring, warn_deprecation
-
 
 CHARSET_RE = re.compile(r";\s*charset=([^;]*)", re.I)
 SCHEME_RE = re.compile(r"^[a-z]+:", re.I)

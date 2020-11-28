@@ -1,9 +1,10 @@
-import sys
-import warnings
 from collections.abc import MutableMapping
 from io import BytesIO, StringIO
+import sys
+import warnings
 
 import pytest
+
 from webob.acceptparse import (
     AcceptCharsetInvalidHeader,
     AcceptCharsetNoHeader,
@@ -523,8 +524,8 @@ class TestRequestCommon:
 
     @pytest.mark.parametrize("method", ["POST", "PUT", "PATCH", "DELETE"])
     def test_POST_json_no_content_type(self, method):
-        from webob.request import NoVars
         from webob.multidict import MultiDict
+        from webob.request import NoVars
 
         data = b'{"password": "last centurion", "email": "rory@wiggy.net"}'
         wsgi_input = BytesIO(data)
@@ -673,8 +674,9 @@ class TestRequestCommon:
         assert bool(req.accept_encoding) is False
 
     def test_remove_conditional_headers_if_modified_since(self):
-        from webob.datetime_utils import UTC
         from datetime import datetime
+
+        from webob.datetime_utils import UTC
 
         req = self._blankOne("/")
         req.if_modified_since = datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
@@ -1059,8 +1061,9 @@ class TestRequestCommon:
 
     def test_blank__post_files(self):
         import cgi
-        from webob.request import _get_multipart_boundary
+
         from webob.multidict import MultiDict
+        from webob.request import _get_multipart_boundary
 
         POST = MultiDict()
         POST["first"] = ("filename1", BytesIO(b"1"))
@@ -2277,12 +2280,12 @@ class TestRequest_functional:
         assert a.host_url == "http://www.example.com"
         a = self._makeOne(
             {"wsgi.url_scheme": "http"},
-            **{"server_name": "localhost", "server_port": 5000}
+            **{"server_name": "localhost", "server_port": 5000},
         )
         assert a.host_url == "http://localhost:5000"
         a = self._makeOne(
             {"wsgi.url_scheme": "https"},
-            **{"server_name": "localhost", "server_port": 443}
+            **{"server_name": "localhost", "server_port": 443},
         )
         assert a.host_url == "https://localhost"
 
@@ -2663,9 +2666,7 @@ class TestRequest_functional:
         # port from doctest (docs/reference.txt)
 
         # Query & POST variables
-        from webob.multidict import MultiDict
-        from webob.multidict import NestedMultiDict
-        from webob.multidict import GetDict
+        from webob.multidict import GetDict, MultiDict, NestedMultiDict
 
         req = self._blankOne("/test?check=a&check=b&name=Bob")
         GET = GetDict([("check", "a"), ("check", "b"), ("name", "Bob")], {})
@@ -2700,13 +2701,12 @@ class TestRequest_functional:
     @pytest.mark.filterwarnings("ignore:.*best_match.*")
     def test_request_put(self):
         from datetime import datetime
-        from webob import Response
-        from webob import UTC
+
+        from webob import UTC, Response
         from webob.acceptparse import Accept
         from webob.byterange import Range
         from webob.etag import ETagMatcher
-        from webob.multidict import MultiDict
-        from webob.multidict import GetDict
+        from webob.multidict import GetDict, MultiDict
 
         req = self._blankOne("/test?check=a&check=b&name=Bob")
         req.method = "PUT"
@@ -2801,8 +2801,7 @@ class TestRequest_functional:
         assert server_token not in req.if_match
 
     def test_request_patch(self):
-        from webob.multidict import MultiDict
-        from webob.multidict import GetDict
+        from webob.multidict import GetDict, MultiDict
 
         req = self._blankOne("/test?check=a&check=b&name=Bob")
         req.method = "PATCH"
@@ -3025,11 +3024,11 @@ class Test_environ_from_url:
         assert request.upath_info == expected
 
     def test_fileupload_mime_type_detection(self):
-        from webob.request import Request
-
         # sometimes on win the detected mime type for .jpg will be
         # image/pjpeg for ex. so use a non-standard extesion to avoid that
         import mimetypes
+
+        from webob.request import Request
 
         mimetypes.add_type("application/x-foo", ".foo")
         request = Request.blank(
@@ -3049,7 +3048,7 @@ def test_environ_add_POST_file_with_content_type():
             self.type_options = type_options or {}
             self.value = value
 
-    from webob.request import environ_from_url, environ_add_POST
+    from webob.request import environ_add_POST, environ_from_url
 
     env = environ_from_url("http://example.com/")
     environ_add_POST(

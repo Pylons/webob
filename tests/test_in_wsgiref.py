@@ -4,6 +4,7 @@ import socket
 import sys
 
 import pytest
+
 from webob.compat import Empty, Queue, url_open
 from webob.request import Request
 from webob.response import Response

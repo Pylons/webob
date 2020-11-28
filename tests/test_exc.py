@@ -1,6 +1,7 @@
 import json
 
 import pytest
+
 from webob import exc as webob_exc
 from webob.dec import wsgify
 from webob.request import Request

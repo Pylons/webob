@@ -1,7 +1,7 @@
 import calendar
-import time
 from datetime import date, datetime, timedelta, tzinfo
 from email.utils import formatdate, mktime_tz, parsedate_tz
+import time
 
 from webob.util import text_
 

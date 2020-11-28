@@ -167,8 +167,8 @@ References:
 
 import json
 import re
-import sys
 from string import Template
+import sys
 
 from webob.acceptparse import create_accept_header
 from webob.compat import urlparse
@@ -277,7 +277,7 @@ ${body}"""
         comment=None,
         body_template=None,
         json_formatter=None,
-        **kw
+        **kw,
     ):
         Response.__init__(self, status="%s %s" % (self.code, self.title), **kw)
         Exception.__init__(self, detail)

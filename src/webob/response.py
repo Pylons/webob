@@ -1,9 +1,9 @@
-import re
-import struct
-import zlib
 from base64 import b64encode
 from datetime import datetime, timedelta
 from hashlib import md5
+import re
+import struct
+import zlib
 
 from webob.byterange import ContentRange
 from webob.cachecontrol import CacheControl, serialize_cache_control
@@ -173,7 +173,7 @@ class Response:
         content_type=None,
         conditional_response=None,
         charset=_marker,
-        **kw
+        **kw,
     ):
         # Do some sanity checking, and turn json_body into an actual body
 

@@ -3,6 +3,7 @@ import sys
 import zlib
 
 import pytest
+
 from webob import cookies
 from webob.request import BaseRequest, Request
 from webob.response import Response
@@ -660,6 +661,7 @@ def test_response_file_body_writelines():
 )
 def test_response_file_body_tell():
     import zipfile
+
     from webob.response import ResponseBodyFile
 
     rbo = ResponseBodyFile(Response())

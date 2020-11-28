@@ -1,4 +1,5 @@
 import pytest
+
 from webob.util import html_escape, text_
 
 

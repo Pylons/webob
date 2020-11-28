@@ -211,28 +211,28 @@ def test_serialize_cache_control_emptydict():
 
 
 def test_serialize_cache_control_cache_control_object():
-    from webob.cachecontrol import serialize_cache_control, CacheControl
+    from webob.cachecontrol import CacheControl, serialize_cache_control
 
     result = serialize_cache_control(CacheControl({}, "request"))
     assert result == ""
 
 
 def test_serialize_cache_control_object_with_headers():
-    from webob.cachecontrol import serialize_cache_control, CacheControl
+    from webob.cachecontrol import CacheControl, serialize_cache_control
 
     result = serialize_cache_control(CacheControl({"header": "a"}, "request"))
     assert result == "header=a"
 
 
 def test_serialize_cache_control_value_is_None():
-    from webob.cachecontrol import serialize_cache_control, CacheControl
+    from webob.cachecontrol import CacheControl, serialize_cache_control
 
     result = serialize_cache_control(CacheControl({"header": None}, "request"))
     assert result == "header"
 
 
 def test_serialize_cache_control_value_needs_quote():
-    from webob.cachecontrol import serialize_cache_control, CacheControl
+    from webob.cachecontrol import CacheControl, serialize_cache_control
 
     result = serialize_cache_control(CacheControl({"header": '""'}, "request"))
     assert result == 'header=""""'
