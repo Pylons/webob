@@ -169,9 +169,9 @@ import json
 import re
 from string import Template
 import sys
+from urllib import parse as urlparse
 
 from webob.acceptparse import create_accept_header
-from webob.compat import urlparse
 from webob.request import Request
 from webob.response import Response
 from webob.util import html_escape, text_

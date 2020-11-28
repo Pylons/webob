@@ -7,47 +7,6 @@ from queue import Empty, Queue
 import sys
 import tempfile
 import types
-from urllib import parse
-from urllib.parse import quote as url_quote, quote_plus, urlencode as url_encode
-from urllib.request import urlopen as url_open
-
-urlparse = parse
-
-
-def unquote(string):
-    if not string:
-        return b""
-    res = string.split(b"%")
-
-    if len(res) != 1:
-        string = res[0]
-
-        for item in res[1:]:
-            try:
-                string += bytes([int(item[:2], 16)]) + item[2:]
-            except ValueError:
-                string += b"%" + item
-
-    return string
-
-
-def url_unquote(s):
-    return unquote(s.encode("ascii")).decode("latin-1")
-
-
-def parse_qsl_text(qs, encoding="utf-8"):
-    qs = qs.encode("latin-1")
-    qs = qs.replace(b"+", b" ")
-    pairs = [s2 for s1 in qs.split(b"&") for s2 in s1.split(b";") if s2]
-
-    for name_value in pairs:
-        nv = name_value.split(b"=", 1)
-
-        if len(nv) != 2:
-            nv.append("")
-        name = unquote(nv[0])
-        value = unquote(nv[1])
-        yield (name.decode(encoding), value.decode(encoding))
 
 
 # Various different FieldStorage work-arounds required on Python 3.x

@@ -3,11 +3,12 @@ from datetime import datetime, timedelta
 from hashlib import md5
 import re
 import struct
+from urllib import parse as urlparse
+from urllib.parse import quote as url_quote
 import zlib
 
 from webob.byterange import ContentRange
 from webob.cachecontrol import CacheControl, serialize_cache_control
-from webob.compat import url_quote, urlparse
 from webob.cookies import Cookie, make_cookie
 from webob.datetime_utils import (
     parse_date_delta,
@@ -720,6 +721,7 @@ class Response:
 
         if self.content_length is not None:
             self.content_length += text_len
+
         return text_len
 
     #

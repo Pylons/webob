@@ -5,6 +5,8 @@ import os
 import re
 import sys
 import tempfile
+from urllib import parse as urlparse
+from urllib.parse import quote as url_quote, quote_plus, urlencode as url_encode
 import warnings
 
 from webob.acceptparse import (
@@ -14,15 +16,7 @@ from webob.acceptparse import (
     accept_property,
 )
 from webob.cachecontrol import CacheControl, serialize_cache_control
-from webob.compat import (
-    cgi_FieldStorage,
-    parse_qsl_text,
-    quote_plus,
-    url_encode,
-    url_quote,
-    url_unquote,
-    urlparse,
-)
+from webob.compat import cgi_FieldStorage
 from webob.cookies import RequestCookies
 from webob.descriptors import (
     CHARSET_RE,
@@ -44,7 +38,7 @@ from webob.descriptors import (
 from webob.etag import AnyETag, IfRange, NoETag, etag_property
 from webob.headers import EnvironHeaders
 from webob.multidict import GetDict, MultiDict, NestedMultiDict, NoVars
-from webob.util import bytes_, text_
+from webob.util import bytes_, parse_qsl_text, text_, url_unquote
 
 try:
     import simplejson as json
