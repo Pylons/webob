@@ -1,17 +1,15 @@
-import sys
+import cgi
 import logging
 import socket
-import cgi
+import sys
+from urllib.request import urlopen as url_open
 
 import pytest
 
+from webob.compat import Empty, Queue
 from webob.request import Request
 from webob.response import Response
-from webob.compat import url_open
-from webob.compat import bytes_
-from webob.compat import reraise
-from webob.compat import Queue
-from webob.compat import Empty
+from webob.util import bytes_
 
 log = logging.getLogger(__name__)
 
@@ -35,6 +33,7 @@ def _test_app_req_reading(env, sr):
     test_op(req)
     log.debug("done")
     r = Response("ok")
+
     return r(env, sr)
 
 
@@ -55,9 +54,10 @@ def test_interrupted_request(serve):
                 res = _global_res.get(timeout=1)
             except Empty:
                 raise AssertionError("Error during test %s", path)
+
             if res is not None:
                 print("Error during test:", path)
-                reraise(res)
+                raise res[0](res[1]).with_traceback(res[2])
 
 
 _global_res = Queue()
@@ -68,6 +68,7 @@ def _test_app_req_interrupt(env, sr):
     try:
         req = Request(env)
         cl = req.content_length
+
         if cl != target_cl:
             raise AssertionError(
                 "request.content_length is %s instead of %s" % (cl, target_cl)
@@ -81,6 +82,7 @@ def _test_app_req_interrupt(env, sr):
     else:
         _global_res.put(None)
         sr("200 OK", [])
+
         return []
 
 
@@ -92,7 +94,7 @@ def _req_int_cgi(req):
 def _req_int_readline(req):
     try:
         assert req.body_file.readline() == b"a=b\n"
-    except IOError:
+    except OSError:
         # too early to detect disconnect
         raise AssertionError("False disconnect alert")
     req.body_file.readline()

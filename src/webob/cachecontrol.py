@@ -63,7 +63,7 @@ token_re = re.compile(r'([a-zA-Z][a-zA-Z_-]*)\s*(?:=(?:"([^"]*)"|([^ \t",;]*)))?
 need_quote_re = re.compile(r"[^a-zA-Z0-9._-]")
 
 
-class exists_property(object):
+class exists_property:
     """
     Represents a property that either is listed in the Cache-Control
     header, or is not listed (has no value)
@@ -95,7 +95,7 @@ class exists_property(object):
         self.__set__(obj, False)
 
 
-class value_property(object):
+class value_property:
     """
     Represents a property that has a value in the Cache-Control header.
 
@@ -139,7 +139,7 @@ class value_property(object):
             del obj.properties[self.prop]
 
 
-class CacheControl(object):
+class CacheControl:
 
     """
     Represents the Cache-Control header.

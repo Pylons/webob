@@ -1,5 +1,5 @@
-from webob.etag import IfRange, ETagMatcher
 from webob import Response
+from webob.etag import ETagMatcher, IfRange
 
 
 def test_if_range_None():

@@ -166,22 +166,22 @@ References:
 """
 
 import json
-from string import Template
 import re
+from string import Template
 import sys
+from urllib import parse as urlparse
 
 from webob.acceptparse import create_accept_header
-from webob.compat import class_types, text_, text_type, urlparse
 from webob.request import Request
 from webob.response import Response
-from webob.util import html_escape
+from webob.util import html_escape, text_
 
 tag_re = re.compile(r"<.*?>", re.S)
 br_re = re.compile(r"<br.*?>", re.I | re.S)
 comment_re = re.compile(r"<!--|-->")
 
 
-class _lazified(object):
+class _lazified:
     def __init__(self, func, value):
         self.func = func
         self.value = value
@@ -201,14 +201,11 @@ def no_escape(value):
     if value is None:
         return ""
 
-    if not isinstance(value, text_type):
-        if hasattr(value, "__unicode__"):
-            value = value.__unicode__()
-
+    if not isinstance(value, str):
         if isinstance(value, bytes):
             value = text_(value, "utf-8")
         else:
-            value = text_type(value)
+            value = str(value)
 
     return value
 
@@ -280,7 +277,7 @@ ${body}"""
         comment=None,
         body_template=None,
         json_formatter=None,
-        **kw
+        **kw,
     ):
         Response.__init__(self, status="%s %s" % (self.code, self.title), **kw)
         Exception.__init__(self, detail)
@@ -564,7 +561,7 @@ ${html_comment}"""
         location=None,
         add_slash=False,
     ):
-        super(_HTTPMove, self).__init__(
+        super().__init__(
             detail=detail, headers=headers, comment=comment, body_template=body_template
         )
 
@@ -593,7 +590,7 @@ ${html_comment}"""
             self.location = url
         self.location = urlparse.urljoin(req.path_url, self.location)
 
-        return super(_HTTPMove, self).__call__(environ, start_response)
+        return super().__call__(environ, start_response)
 
 
 class HTTPMultipleChoices(_HTTPMove):
@@ -1306,7 +1303,7 @@ class HTTPNetworkAuthenticationRequired(HTTPServerError):
     explanation = "Network authentication is required"
 
 
-class HTTPExceptionMiddleware(object):
+class HTTPExceptionMiddleware:
     """
     Middleware that catches exceptions in the sub-application.  This
     does not catch exceptions in the app_iter; only during the initial
@@ -1335,31 +1332,12 @@ class HTTPExceptionMiddleware(object):
             return parent_exc_info[1](environ, repl_start_response)
 
 
-try:
-    from paste import httpexceptions
-except ImportError:  # pragma: no cover
-    # Without Paste we don't need to do this fixup
-    pass
-else:  # pragma: no cover
-    for name in dir(httpexceptions):
-        obj = globals().get(name)
-
-        if (
-            obj
-            and isinstance(obj, type)
-            and issubclass(obj, HTTPException)
-            and obj is not HTTPException
-            and obj is not WSGIHTTPException
-        ):
-            obj.__bases__ = obj.__bases__ + (getattr(httpexceptions, name),)
-    del name, obj, httpexceptions
-
 __all__ = ["HTTPExceptionMiddleware", "status_map"]
 status_map = {}
 
 for name, value in list(globals().items()):
     if (
-        isinstance(value, (type, class_types))
+        isinstance(value, (type, type))
         and issubclass(value, HTTPException)
         and not name.startswith("_")
     ):

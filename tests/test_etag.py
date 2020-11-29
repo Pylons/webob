@@ -1,7 +1,7 @@
 from webob.etag import ETagMatcher, IfRange, etag_property
 
 
-class Test_etag_properties(object):
+class Test_etag_properties:
     def _makeDummyRequest(self, **kw):
         """
         Return a DummyRequest object with attrs from kwargs.
@@ -9,7 +9,7 @@ class Test_etag_properties(object):
         Then you can: uid = dr.environment.get('userid', 'SomeDefault')
         """
 
-        class Dummy(object):
+        class Dummy:
             def __init__(self, **kwargs):
                 self.__dict__.update(**kwargs)
 
@@ -59,7 +59,7 @@ class Test_etag_properties(object):
         assert req.environ["QUAY"] == "VALYOU"
 
 
-class Test_AnyETag(object):
+class Test_AnyETag:
     def _getTargetClass(self):
         from webob.etag import _AnyETag
 
@@ -85,7 +85,7 @@ class Test_AnyETag(object):
         assert str(etag) == "*"
 
 
-class Test_NoETag(object):
+class Test_NoETag:
     def _getTargetClass(self):
         from webob.etag import _NoETag
 
@@ -111,7 +111,7 @@ class Test_NoETag(object):
         assert str(etag) == ""
 
 
-class Test_Parse(object):
+class Test_Parse:
     def test_parse_None(self):
         et = ETagMatcher.parse(None)
         assert et.etags == []
@@ -158,7 +158,7 @@ class Test_Parse(object):
         assert et.etags, ["ONE" == "TWO"]
 
 
-class Test_IfRange(object):
+class Test_IfRange:
     def test___repr__(self):
         assert repr(IfRange(None)) == "IfRange(None)"
 

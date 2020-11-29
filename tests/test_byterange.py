@@ -1,9 +1,8 @@
+from collections.abc import Iterable
+
 import pytest
 
-from webob.byterange import Range
-from webob.byterange import ContentRange
-from webob.byterange import _is_content_range_valid
-from webob.compat import Iterable
+from webob.byterange import ContentRange, Range, _is_content_range_valid
 
 # Range class
 

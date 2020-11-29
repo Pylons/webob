@@ -16,7 +16,7 @@ mimetypes.add_type("image/x-icon", ".ico")  # not among defaults
 BLOCK_SIZE = 1 << 16
 
 
-class FileApp(object):
+class FileApp:
     """An application that will send the file at the given filename.
 
     Adds a mime type based on `mimetypes.guess_type()`.
@@ -38,13 +38,13 @@ class FileApp(object):
             return exc.HTTPMethodNotAllowed("You cannot %s a file" % req.method)
         try:
             stat = os.stat(self.filename)
-        except (IOError, OSError) as e:
+        except OSError as e:
             msg = "Can't open %r: %s" % (self.filename, e)
             return exc.HTTPNotFound(comment=msg)
 
         try:
             file = self._open(self.filename, "rb")
-        except (IOError, OSError) as e:
+        except OSError as e:
             msg = "You are not permitted to view this file (%s)" % e
             return exc.HTTPForbidden(msg)
 
@@ -58,11 +58,11 @@ class FileApp(object):
             content_length=stat.st_size,
             last_modified=stat.st_mtime,
             # @@ etag
-            **self.kw
+            **self.kw,
         ).conditional_response_app
 
 
-class FileIter(object):
+class FileIter:
     def __init__(self, file):
         self.file = file
 
@@ -104,7 +104,7 @@ class FileIter(object):
     __iter__ = app_iter_range
 
 
-class DirectoryApp(object):
+class DirectoryApp:
     """An application that serves up the files in a given directory.
 
     This will serve index files (by default ``index.html``), or set
@@ -123,7 +123,7 @@ class DirectoryApp(object):
         if not self.path.endswith(os.path.sep):
             self.path += os.path.sep
         if not os.path.isdir(self.path):
-            raise IOError("Path does not exist or is not directory: %r" % self.path)
+            raise OSError("Path does not exist or is not directory: %r" % self.path)
         self.index_page = index_page
         self.hide_index_with_redirect = hide_index_with_redirect
         self.fileapp_kw = kw

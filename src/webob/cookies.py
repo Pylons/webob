@@ -1,25 +1,16 @@
 import base64
 import binascii
+from collections.abc import MutableMapping
+from datetime import date, datetime, timedelta
 import hashlib
 import hmac
 import json
-from datetime import date, datetime, timedelta
 import re
 import string
 import time
 import warnings
 
-from webob.compat import (
-    MutableMapping,
-    PY2,
-    text_type,
-    bytes_,
-    text_,
-    native_,
-    string_types,
-)
-
-from webob.util import strings_differ
+from webob.util import bytes_, text_
 
 __all__ = [
     "Cookie",
@@ -57,7 +48,7 @@ class RequestCookies(MutableMapping):
         def d(b):
             return b.decode("utf8")
 
-        cache = dict((d(k), d(v)) for k, v in parse_cookie(header))
+        cache = {d(k): d(v) for k, v in parse_cookie(header)}
         env[self._cache_key] = (cache, header)
 
         return cache
@@ -67,8 +58,7 @@ class RequestCookies(MutableMapping):
         had_header = header is not None
         header = header or ""
 
-        if not PY2:
-            header = header.encode("latin-1")
+        header = header.encode("latin-1")
         bytes_name = bytes_(name, "ascii")
 
         if value is None:
@@ -100,18 +90,16 @@ class RequestCookies(MutableMapping):
                     header = replacement
 
         if header:
-            self._environ["HTTP_COOKIE"] = native_(header, "latin-1")
+            self._environ["HTTP_COOKIE"] = text_(header, "latin-1")
         elif had_header:
             self._environ["HTTP_COOKIE"] = ""
 
         return found
 
     def _valid_cookie_name(self, name):
-        if not isinstance(name, string_types):
+        if not isinstance(name, str):
             raise TypeError(name, "cookie name must be a string")
 
-        if not isinstance(name, text_type):
-            name = text_(name, "utf-8")
         try:
             bytes_cookie_name = bytes_(name, "ascii")
         except UnicodeEncodeError:
@@ -125,14 +113,9 @@ class RequestCookies(MutableMapping):
     def __setitem__(self, name, value):
         name = self._valid_cookie_name(name)
 
-        if not isinstance(value, string_types):
+        if not isinstance(value, str):
             raise ValueError(value, "cookie value must be a string")
 
-        if not isinstance(value, text_type):
-            try:
-                value = text_(value, "utf-8")
-            except UnicodeDecodeError:
-                raise ValueError(value, "cookie value must be utf-8 binary or unicode")
         self._mutate_header(name, value)
 
     def __getitem__(self, name):
@@ -156,17 +139,6 @@ class RequestCookies(MutableMapping):
 
     def items(self):
         return self._cache.items()
-
-    if PY2:
-
-        def iterkeys(self):
-            return self._cache.iterkeys()  # noqa: B301
-
-        def itervalues(self):
-            return self._cache.itervalues()  # noqa: B301
-
-        def iteritems(self):
-            return self._cache.iteritems()  # noqa: B301
 
     def __contains__(self, name):
         return name in self._cache
@@ -227,8 +199,7 @@ class Cookie(dict):
 
 
 def _parse_cookie(data):
-    if not PY2:
-        data = data.encode("latin-1")
+    data = data.encode("latin-1")
 
     for key, val in _rx_cookie.findall(data):
         yield key, _unquote(val)
@@ -263,7 +234,7 @@ def serialize_cookie_date(v):
         return None
     elif isinstance(v, bytes):
         return v
-    elif isinstance(v, text_type):
+    elif isinstance(v, str):
         return v.encode("ascii")
     elif isinstance(v, int):
         v = timedelta(seconds=v)
@@ -345,15 +316,15 @@ class Morsel(dict):
                     )
                 add(b"SameSite=" + self.samesite)
 
-        return native_(b"; ".join(result), "ascii")
+        return text_(b"; ".join(result), "ascii")
 
     __str__ = serialize
 
     def __repr__(self):
         return "<%s: %s=%r>" % (
             self.__class__.__name__,
-            native_(self.name),
-            native_(self.value),
+            text_(self.name),
+            text_(self.value),
         )
 
 
@@ -375,12 +346,16 @@ _re_cookie_str = _re_cookie_str_key + _re_cookie_str_equal + _re_cookie_str_val
 _rx_cookie = re.compile(bytes_(_re_cookie_str, "ascii"))
 _rx_unquote = re.compile(bytes_(r"\\([0-3][0-7][0-7]|.)", "ascii"))
 
-_bchr = chr if PY2 else (lambda i: bytes([i]))
-_ch_unquote_map = dict((bytes_("%03o" % i), _bchr(i)) for i in range(256))
+
+def _bchr(i):
+    return bytes([i])
+
+
+_ch_unquote_map = {bytes_("%03o" % i): _bchr(i) for i in range(256)}
 _ch_unquote_map.update((v, v) for v in list(_ch_unquote_map.values()))
 
-_b_dollar_sign = "$" if PY2 else ord("$")
-_b_quote_mark = '"' if PY2 else ord('"')
+_b_dollar_sign = ord("$")
+_b_quote_mark = ord('"')
 
 
 def _unquote(v):
@@ -429,12 +404,10 @@ _valid_token_bytes = bytes_(_valid_token_chars)
 # this is a map used to escape the values
 
 _escape_noop_chars = _allowed_cookie_chars + " "
-_escape_map = dict((chr(i), "\\%03o" % i) for i in range(256))
+_escape_map = {chr(i): "\\%03o" % i for i in range(256)}
 _escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
 
-if not PY2:
-    # convert to {int -> bytes}
-    _escape_map = dict((ord(k), bytes_(v, "ascii")) for k, v in _escape_map.items())
+_escape_map = {ord(k): bytes_(v, "ascii") for k, v in _escape_map.items()}
 _escape_char = _escape_map.__getitem__
 
 weekdays = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
@@ -640,7 +613,7 @@ def make_cookie(
     return morsel.serialize()
 
 
-class JSONSerializer(object):
+class JSONSerializer:
     """ A serializer which uses `json.dumps`` and ``json.loads``"""
 
     def dumps(self, appstruct):
@@ -653,7 +626,7 @@ class JSONSerializer(object):
         return json.loads(text_(bstruct, encoding="utf-8"))
 
 
-class Base64Serializer(object):
+class Base64Serializer:
     """ A serializer which uses base64 to encode/decode data"""
 
     def __init__(self, serializer=None):
@@ -687,7 +660,7 @@ class Base64Serializer(object):
         return self.serializer.loads(cstruct)
 
 
-class SignedSerializer(object):
+class SignedSerializer:
     """
     A helper to cryptographically sign arbitrary content using HMAC.
 
@@ -764,7 +737,7 @@ class SignedSerializer(object):
 
         sig = hmac.new(self.salted_secret, bytes_(cstruct), self.digestmod).digest()
 
-        if strings_differ(sig, expected_sig):
+        if not hmac.compare_digest(sig, expected_sig):
             raise ValueError("Invalid signature")
 
         return self.serializer.loads(cstruct)
@@ -773,7 +746,7 @@ class SignedSerializer(object):
 _default = object()
 
 
-class CookieProfile(object):
+class CookieProfile:
     """
     A helper class that helps bring some sanity to the insanity that is cookie
     handling.

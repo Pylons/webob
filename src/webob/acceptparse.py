@@ -10,7 +10,6 @@ import re
 import textwrap
 import warnings
 
-
 # RFC 7230 Section 3.2.3 "Whitespace"
 # OWS            = *( SP / HTAB )
 #                ; optional whitespace
@@ -113,7 +112,7 @@ class AcceptOffer(namedtuple("AcceptOffer", ["type", "subtype", "params"])):
         return Accept._form_media_range(value, self.params)
 
 
-class Accept(object):
+class Accept:
     """
     Represent an ``Accept`` header.
 
@@ -1790,7 +1789,7 @@ def accept_property():
     return property(fget, fset, fdel, textwrap.dedent(doc))
 
 
-class AcceptCharset(object):
+class AcceptCharset:
     """
     Represent an ``Accept-Charset`` header.
 
@@ -2142,7 +2141,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
         filtered_offers = []
         for index, offer in enumerate(lowercased_offers):
             # If offer matches a non-* charset with q=0, it is filtered out
-            if any(((offer == charset) for charset in not_acceptable_charsets)):
+            if any((offer == charset) for charset in not_acceptable_charsets):
                 continue
 
             matched_charset_qvalue = None
@@ -2784,7 +2783,7 @@ def accept_charset_property():
     return property(fget, fset, fdel, textwrap.dedent(doc))
 
 
-class AcceptEncoding(object):
+class AcceptEncoding:
     """
     Represent an ``Accept-Encoding`` header.
 
@@ -3171,7 +3170,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         filtered_offers = []
         for index, offer in enumerate(lowercased_offers):
             # If offer matches a non-* codings with q=0, it is filtered out
-            if any(((offer == codings) for codings in not_acceptable_codingss)):
+            if any((offer == codings) for codings in not_acceptable_codingss):
                 continue
 
             matched_codings_qvalue = None
@@ -3827,7 +3826,7 @@ def accept_encoding_property():
     return property(fget, fset, fdel, textwrap.dedent(doc))
 
 
-class AcceptLanguage(object):
+class AcceptLanguage:
     """
     Represent an ``Accept-Language`` header.
 
@@ -4308,7 +4307,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         filtered_tags = []
         for index, tag in enumerate(lowercased_tags):
             # If tag matches a non-* range with q=0, it is filtered out
-            if any((match(tag=tag, range_=range_) for range_ in not_acceptable_ranges)):
+            if any(match(tag=tag, range_=range_) for range_ in not_acceptable_ranges):
                 continue
 
             matched_range_qvalue = None

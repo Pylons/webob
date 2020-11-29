@@ -9,7 +9,7 @@ def test_cache_control_object_max_age_None():
     assert cc.max_age == -1
 
 
-class TestUpdateDict(object):
+class TestUpdateDict:
     def setup_method(self, method):
         self.call_queue = []
 
@@ -73,7 +73,7 @@ class TestUpdateDict(object):
         assert self.call_queue[-1] == "Called with: {}", self.call_queue[-1]
 
 
-class TestExistProp(object):
+class TestExistProp:
     """
     Test webob.cachecontrol.exists_property
     """
@@ -84,7 +84,7 @@ class TestExistProp(object):
     def make_one(self):
         from webob.cachecontrol import exists_property
 
-        class Dummy(object):
+        class Dummy:
             properties = dict(prop=1)
             type = "dummy"
             prop = exists_property("prop", "dummy")
@@ -119,7 +119,7 @@ class TestExistProp(object):
         assert "prop" not in obj.properties
 
 
-class TestValueProp(object):
+class TestValueProp:
     """
     Test webob.cachecontrol.exists_property
     """
@@ -130,7 +130,7 @@ class TestValueProp(object):
     def make_one(self):
         from webob.cachecontrol import value_property
 
-        class Dummy(object):
+        class Dummy:
             properties = dict(prop=1)
             type = "dummy"
             prop = value_property("prop", "dummy")
@@ -163,7 +163,7 @@ class TestValueProp(object):
     def test_set_wrong_type(self):
         from webob.cachecontrol import value_property
 
-        class Dummy(object):
+        class Dummy:
             properties = dict(prop=1, type="fail")
             type = "dummy"
             prop = value_property("prop", "dummy", type="failingtype")
@@ -211,34 +211,34 @@ def test_serialize_cache_control_emptydict():
 
 
 def test_serialize_cache_control_cache_control_object():
-    from webob.cachecontrol import serialize_cache_control, CacheControl
+    from webob.cachecontrol import CacheControl, serialize_cache_control
 
     result = serialize_cache_control(CacheControl({}, "request"))
     assert result == ""
 
 
 def test_serialize_cache_control_object_with_headers():
-    from webob.cachecontrol import serialize_cache_control, CacheControl
+    from webob.cachecontrol import CacheControl, serialize_cache_control
 
     result = serialize_cache_control(CacheControl({"header": "a"}, "request"))
     assert result == "header=a"
 
 
 def test_serialize_cache_control_value_is_None():
-    from webob.cachecontrol import serialize_cache_control, CacheControl
+    from webob.cachecontrol import CacheControl, serialize_cache_control
 
     result = serialize_cache_control(CacheControl({"header": None}, "request"))
     assert result == "header"
 
 
 def test_serialize_cache_control_value_needs_quote():
-    from webob.cachecontrol import serialize_cache_control, CacheControl
+    from webob.cachecontrol import CacheControl, serialize_cache_control
 
     result = serialize_cache_control(CacheControl({"header": '""'}, "request"))
     assert result == 'header=""""'
 
 
-class TestCacheControl(object):
+class TestCacheControl:
     def make_one(self, props, typ):
         from webob.cachecontrol import CacheControl
 

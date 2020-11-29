@@ -1,15 +1,13 @@
-import zlib
 import io
 import sys
+import zlib
 
 import pytest
 
-from webob.request import BaseRequest
-from webob.request import Request
-from webob.response import Response
-from webob.compat import text_
-from webob.compat import bytes_
 from webob import cookies
+from webob.request import BaseRequest, Request
+from webob.response import Response
+from webob.util import bytes_, text_
 
 
 def setup_module(module):
@@ -22,6 +20,7 @@ def teardown_module(module):
 
 def simple_app(environ, start_response):
     start_response("200 OK", [("Content-Type", "text/html; charset=UTF-8")])
+
     return ["OK"]
 
 
@@ -167,7 +166,7 @@ def test_init_doesnt_add_default_content_type_with_bodyless_status():
 
 
 def test_content_type_supports_unicode():
-    content_type = u"text/html"
+    content_type = "text/html"
     resp = Response()
     resp.content_type = content_type
     assert isinstance(resp.headers["Content-Type"], str)
@@ -309,6 +308,7 @@ def test_conditional_response_if_none_match_weak():
     resp_weak = Response(
         app_iter=["foo\n"], conditional_response=True, headers={"etag": 'W/"bar"'}
     )
+
     for rq in [req, req_weak]:
         for rp in [resp, resp_weak]:
             rq.get_response(rp).status_code == 304
@@ -460,6 +460,7 @@ def test_content_length():
 
 def test_app_iter_range():
     req = Request.blank("/", range=(2, 5))
+
     for app_iter in [
         [b"012345"],
         [b"0", b"12345"],
@@ -660,6 +661,7 @@ def test_response_file_body_writelines():
 )
 def test_response_file_body_tell():
     import zipfile
+
     from webob.response import ResponseBodyFile
 
     rbo = ResponseBodyFile(Response())
@@ -945,73 +947,6 @@ def test_set_cookie_expires_is_None_and_max_age_is_timedelta():
     assert val[3].startswith("expires")
 
 
-@pytest.mark.filterwarnings('ignore:"expires" will be removed"')
-def test_set_cookie_expires_is_datetime_and_max_age_is_None():
-    import datetime
-
-    res = Response()
-    then = datetime.datetime.utcnow() + datetime.timedelta(days=1)
-    res.set_cookie("a", "1", expires=then)
-    assert res.headerlist[-1][0] == "Set-Cookie"
-    val = [x.strip() for x in res.headerlist[-1][1].split(";")]
-    assert len(val) == 4
-    val.sort()
-    assert val[0] in ("Max-Age=86399", "Max-Age=86400")
-    assert val[1] == "Path=/"
-    assert val[2] == "a=1"
-    assert val[3].startswith("expires")
-
-
-@pytest.mark.filterwarnings('ignore:"expires" will be removed"')
-def test_set_cookie_expires_is_timedelta_and_max_age_is_None():
-    import datetime
-
-    res = Response()
-    then = datetime.timedelta(days=1)
-    res.set_cookie("a", "1", expires=then)
-    assert res.headerlist[-1][0] == "Set-Cookie"
-    val = [x.strip() for x in res.headerlist[-1][1].split(";")]
-    assert len(val) == 4
-    val.sort()
-    assert val[0] in ("Max-Age=86399", "Max-Age=86400")
-    assert val[1] == "Path=/"
-    assert val[2] == "a=1"
-    assert val[3].startswith("expires")
-
-
-@pytest.mark.filterwarnings('ignore:"expires" will be removed"')
-def test_set_cookie_expires_is_datetime_tz_and_max_age_is_None():
-    import datetime
-
-    res = Response()
-
-    class FixedOffset(datetime.tzinfo):
-        def __init__(self, offset, name):
-            self.__offset = datetime.timedelta(minutes=offset)
-            self.__name = name
-
-        def utcoffset(self, dt):
-            return self.__offset
-
-        def tzname(self, dt):
-            return self.__name
-
-        def dst(self, dt):
-            return datetime.timedelta(0)
-
-    then = datetime.datetime.now(FixedOffset(60, "UTC+1")) + datetime.timedelta(days=1)
-
-    res.set_cookie("a", "1", expires=then)
-    assert res.headerlist[-1][0] == "Set-Cookie"
-    val = [x.strip() for x in res.headerlist[-1][1].split(";")]
-    assert len(val) == 4
-    val.sort()
-    assert val[0] in ("Max-Age=86399", "Max-Age=86400")
-    assert val[1] == "Path=/"
-    assert val[2] == "a=1"
-    assert val[3].startswith("expires")
-
-
 def test_delete_cookie():
     res = Response()
     res.headers["Set-Cookie"] = "a=2; Path=/"
@@ -1095,6 +1030,7 @@ def test_merge_cookies_resp_is_wsgi_callable():
 
     def dummy_wsgi_callable(environ, start_response):
         L.append((environ, start_response))
+
         return "abc"
 
     res = Response()
@@ -1147,7 +1083,7 @@ def test_location_unicode():
     environ = {
         "REQUEST_METHOD": "GET",
         "wsgi.url_scheme": "http",
-        "HTTP_HOST": u"test.com",
+        "HTTP_HOST": "test.com",
     }
     res = Response()
     res.status = "301"
@@ -1238,7 +1174,7 @@ def test_cache_control_set_unicode():
 
 
 def test_cache_control_set_control_obj_is_not_None():
-    class DummyCacheControl(object):
+    class DummyCacheControl:
         def __init__(self):
             self.header_value = 1
             self.properties = {"bleh": 1}
@@ -1536,7 +1472,7 @@ def test_content_type_has_charset():
 
 
 def test_app_iter_is_same():
-    class app_iter(object):
+    class app_iter:
         pass
 
     my_app_iter = app_iter()

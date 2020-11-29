@@ -1,11 +1,9 @@
-from datetime import tzinfo
-from datetime import timedelta
+from datetime import timedelta, tzinfo
 
 import pytest
 
-from webob.compat import native_, text_
-
 from webob.request import Request
+from webob.util import text_
 
 
 class GMT(tzinfo):
@@ -145,8 +143,8 @@ def test_header_getter_doc():
 
 
 def test_header_getter_fget():
-    from webob.descriptors import header_getter
     from webob import Response
+    from webob.descriptors import header_getter
 
     resp = Response("aresp")
     desc = header_getter("AHEADER", "14.3")
@@ -154,8 +152,8 @@ def test_header_getter_fget():
 
 
 def test_header_getter_fset():
-    from webob.descriptors import header_getter
     from webob import Response
+    from webob.descriptors import header_getter
 
     resp = Response("aresp")
     desc = header_getter("AHEADER", "14.3")
@@ -164,8 +162,8 @@ def test_header_getter_fset():
 
 
 def test_header_getter_fset_none():
-    from webob.descriptors import header_getter
     from webob import Response
+    from webob.descriptors import header_getter
 
     resp = Response("aresp")
     desc = header_getter("AHEADER", "14.3")
@@ -175,9 +173,8 @@ def test_header_getter_fset_none():
 
 
 def test_header_getter_fset_text():
-    from webob.compat import text_
-    from webob.descriptors import header_getter
     from webob import Response
+    from webob.descriptors import header_getter
 
     resp = Response("aresp")
     desc = header_getter("AHEADER", "14.3")
@@ -186,9 +183,8 @@ def test_header_getter_fset_text():
 
 
 def test_header_getter_fset_text_control_chars():
-    from webob.compat import text_
-    from webob.descriptors import header_getter
     from webob import Response
+    from webob.descriptors import header_getter
 
     resp = Response("aresp")
     desc = header_getter("AHEADER", "14.3")
@@ -196,9 +192,19 @@ def test_header_getter_fset_text_control_chars():
         desc.fset(resp, text_("\n"))
 
 
-def test_header_getter_fdel():
-    from webob.descriptors import header_getter
+def test_header_getter_fset_non_text():
     from webob import Response
+    from webob.descriptors import header_getter
+
+    resp = Response("aresp")
+    desc = header_getter("AHEADER", "14.3")
+    with pytest.raises(ValueError):
+        desc.fset(resp, b"test")
+
+
+def test_header_getter_fdel():
+    from webob import Response
+    from webob.descriptors import header_getter
 
     resp = Response("aresp")
     desc = header_getter("AHEADER", "14.3")
@@ -208,8 +214,8 @@ def test_header_getter_fdel():
 
 
 def test_header_getter_unicode_fget_none():
-    from webob.descriptors import header_getter
     from webob import Response
+    from webob.descriptors import header_getter
 
     resp = Response("aresp")
     desc = header_getter("AHEADER", "14.3")
@@ -217,8 +223,8 @@ def test_header_getter_unicode_fget_none():
 
 
 def test_header_getter_unicode_fget():
-    from webob.descriptors import header_getter
     from webob import Response
+    from webob.descriptors import header_getter
 
     resp = Response("aresp")
     desc = header_getter("AHEADER", "14.3")
@@ -227,8 +233,8 @@ def test_header_getter_unicode_fget():
 
 
 def test_header_getter_unicode_fset_none():
-    from webob.descriptors import header_getter
     from webob import Response
+    from webob.descriptors import header_getter
 
     resp = Response("aresp")
     desc = header_getter("AHEADER", "14.3")
@@ -237,8 +243,8 @@ def test_header_getter_unicode_fset_none():
 
 
 def test_header_getter_unicode_fset():
-    from webob.descriptors import header_getter
     from webob import Response
+    from webob.descriptors import header_getter
 
     resp = Response("aresp")
     desc = header_getter("AHEADER", "14.3")
@@ -247,8 +253,8 @@ def test_header_getter_unicode_fset():
 
 
 def test_header_getter_unicode_fdel():
-    from webob.descriptors import header_getter
     from webob import Response
+    from webob.descriptors import header_getter
 
     resp = Response("aresp")
     desc = header_getter("AHEADER", "14.3")
@@ -258,9 +264,7 @@ def test_header_getter_unicode_fdel():
 
 
 def test_converter_not_prop():
-    from webob.descriptors import converter
-    from webob.descriptors import parse_int_safe
-    from webob.descriptors import serialize_int
+    from webob.descriptors import converter, parse_int_safe, serialize_int
 
     with pytest.raises(AssertionError):
         converter(
@@ -269,10 +273,12 @@ def test_converter_not_prop():
 
 
 def test_converter_with_name_docstring():
-    from webob.descriptors import converter
-    from webob.descriptors import environ_getter
-    from webob.descriptors import parse_int_safe
-    from webob.descriptors import serialize_int
+    from webob.descriptors import (
+        converter,
+        environ_getter,
+        parse_int_safe,
+        serialize_int,
+    )
 
     desc = converter(
         environ_getter("CONTENT_LENGTH", "666", "14.13"),
@@ -289,10 +295,12 @@ def test_converter_with_name_docstring():
 
 
 def test_converter_with_name_fget():
-    from webob.descriptors import converter
-    from webob.descriptors import environ_getter
-    from webob.descriptors import parse_int_safe
-    from webob.descriptors import serialize_int
+    from webob.descriptors import (
+        converter,
+        environ_getter,
+        parse_int_safe,
+        serialize_int,
+    )
 
     req = Request.blank("/")
     desc = converter(
@@ -305,10 +313,12 @@ def test_converter_with_name_fget():
 
 
 def test_converter_with_name_fset():
-    from webob.descriptors import converter
-    from webob.descriptors import environ_getter
-    from webob.descriptors import parse_int_safe
-    from webob.descriptors import serialize_int
+    from webob.descriptors import (
+        converter,
+        environ_getter,
+        parse_int_safe,
+        serialize_int,
+    )
 
     req = Request.blank("/")
     desc = converter(
@@ -322,10 +332,12 @@ def test_converter_with_name_fset():
 
 
 def test_converter_without_name_fget():
-    from webob.descriptors import converter
-    from webob.descriptors import environ_getter
-    from webob.descriptors import parse_int_safe
-    from webob.descriptors import serialize_int
+    from webob.descriptors import (
+        converter,
+        environ_getter,
+        parse_int_safe,
+        serialize_int,
+    )
 
     req = Request.blank("/")
     desc = converter(
@@ -335,10 +347,12 @@ def test_converter_without_name_fget():
 
 
 def test_converter_without_name_fset():
-    from webob.descriptors import converter
-    from webob.descriptors import environ_getter
-    from webob.descriptors import parse_int_safe
-    from webob.descriptors import serialize_int
+    from webob.descriptors import (
+        converter,
+        environ_getter,
+        parse_int_safe,
+        serialize_int,
+    )
 
     req = Request.blank("/")
     desc = converter(
@@ -349,10 +363,12 @@ def test_converter_without_name_fset():
 
 
 def test_converter_none_for_wrong_type():
-    from webob.descriptors import converter
-    from webob.descriptors import environ_getter
-    from webob.descriptors import parse_int_safe
-    from webob.descriptors import serialize_int
+    from webob.descriptors import (
+        converter,
+        environ_getter,
+        parse_int_safe,
+        serialize_int,
+    )
 
     req = Request.blank("/")
     desc = converter(
@@ -365,10 +381,12 @@ def test_converter_none_for_wrong_type():
 
 
 def test_converter_delete():
-    from webob.descriptors import converter
-    from webob.descriptors import environ_getter
-    from webob.descriptors import parse_int_safe
-    from webob.descriptors import serialize_int
+    from webob.descriptors import (
+        converter,
+        environ_getter,
+        parse_int_safe,
+        serialize_int,
+    )
 
     req = Request.blank("/")
     desc = converter(
@@ -446,8 +464,8 @@ def test_serialize_list_unicode():
 
 def test_converter_date():
     import datetime
-    from webob.descriptors import converter_date
-    from webob.descriptors import environ_getter
+
+    from webob.descriptors import converter_date, environ_getter
 
     req = Request.blank("/")
     UTC = GMT()
@@ -458,8 +476,7 @@ def test_converter_date():
 
 
 def test_converter_date_docstring():
-    from webob.descriptors import converter_date
-    from webob.descriptors import environ_getter
+    from webob.descriptors import converter_date, environ_getter
 
     desc = converter_date(
         environ_getter("HTTP_DATE", "Tue, 15 Nov 1994 08:12:31 GMT", "14.8")
@@ -481,6 +498,7 @@ def test_date_header_fget_none():
 
 def test_date_header_fset_fget():
     import datetime
+
     from webob import Response
     from webob.descriptors import date_header
 
@@ -505,7 +523,7 @@ def test_date_header_fdel():
 def test_deprecated_property():
     from webob.descriptors import deprecated_property
 
-    class Foo(object):
+    class Foo:
         pass
 
     Foo.attr = deprecated_property("attr", "attr", "whatever", "1.2")
@@ -562,6 +580,7 @@ def test_serialize_if_range_unicode():
 
 def test_serialize_if_range_datetime():
     import datetime
+
     from webob.descriptors import serialize_if_range
 
     UTC = GMT()
@@ -926,7 +945,7 @@ def test_serialize_auth_digest_tuple():
 _nodefault = object()
 
 
-class _TestEnvironDecoder(object):
+class _TestEnvironDecoder:
     def _callFUT(self, key, default=_nodefault, rfc_section=None, encattr=None):
         from webob.descriptors import environ_decoder
 
@@ -995,7 +1014,7 @@ class _TestEnvironDecoder(object):
         desc = self._callFUT("HTTP_X_AKEY", encattr="url_encoding")
         req = self._makeRequest()
         desc.fset(req, text_(b"\xc3\xab", "utf-8"))
-        assert req.environ["HTTP_X_AKEY"] == native_(b"\xc3\xab", "latin-1")
+        assert req.environ["HTTP_X_AKEY"] == str(b"\xc3\xab", "latin-1")
 
 
 class TestEnvironDecoder(_TestEnvironDecoder):
@@ -1003,31 +1022,12 @@ class TestEnvironDecoder(_TestEnvironDecoder):
         from webob.request import BaseRequest
 
         req = BaseRequest.blank("/")
+
         return req
 
     def test_fget_nonascii(self):
         desc = self._callFUT("HTTP_X_AKEY", encattr="url_encoding")
         req = self._makeRequest()
-        req.environ["HTTP_X_AKEY"] = native_(b"\xc3\xab")
+        req.environ["HTTP_X_AKEY"] = str(b"\xc3\xab", "latin-1")
         result = desc.fget(req)
         assert result == text_(b"\xc3\xab", "utf-8")
-
-
-class TestEnvironDecoderLegacy(_TestEnvironDecoder):
-    def _makeRequest(self):
-        from webob.request import LegacyRequest
-
-        req = LegacyRequest.blank("/")
-        return req
-
-    def test_fget_nonascii(self):
-        desc = self._callFUT("HTTP_X_AKEY", encattr="url_encoding")
-        req = self._makeRequest()
-        req.environ["HTTP_X_AKEY"] = native_(b"\xc3\xab", "latin-1")
-        result = desc.fget(req)
-        assert result == native_(b"\xc3\xab", "latin-1")
-
-    def test_default_fget_nonascii(self):
-        req = self._makeRequest()
-        desc = self._callFUT("akey", default=b"the_default")
-        assert desc.fget(req).__class__ == bytes

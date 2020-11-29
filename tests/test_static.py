@@ -1,15 +1,15 @@
 from io import BytesIO
+import os
 from os.path import getmtime
+import shutil
 import tempfile
 from time import gmtime
-import os
-import shutil
 import unittest
 
 from webob import static
-from webob.compat import bytes_
 from webob.request import Request, environ_from_url
 from webob.response import Response
+from webob.util import bytes_
 
 
 def get_response(app, path="/", **req_kw):
@@ -84,7 +84,7 @@ class TestFileApp(unittest.TestCase):
         # Mock the built-in ``open()`` function to allow finner control about
         # what we are testing.
         def open_ioerror(*args, **kwargs):
-            raise IOError()
+            raise OSError()
 
         def open_oserror(*args, **kwargs):
             raise OSError()
@@ -98,7 +98,7 @@ class TestFileApp(unittest.TestCase):
         self.assertEqual(403, get_response(app).status_code)
 
     def test_use_wsgi_filewrapper(self):
-        class TestWrapper(object):
+        class TestWrapper:
             __slots__ = ("file", "block_size")
 
             def __init__(self, file, block_size):

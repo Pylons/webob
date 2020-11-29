@@ -34,7 +34,7 @@ def etag_property(key, default, rfc_section, strong=True):
     return property(fget, fset, fdel, doc=doc)
 
 
-class _AnyETag(object):
+class _AnyETag:
     """
     Represents an ETag of *, or a missing ETag when matching is 'safe'
     """
@@ -57,7 +57,7 @@ class _AnyETag(object):
 AnyETag = _AnyETag()
 
 
-class _NoETag(object):
+class _NoETag:
     """
     Represents a missing ETag when matching is unsafe
     """
@@ -83,7 +83,7 @@ NoETag = _NoETag()
 # TODO: convert into a simple tuple
 
 
-class ETagMatcher(object):
+class ETagMatcher:
     def __init__(self, etags):
         self.etags = etags
 
@@ -114,7 +114,7 @@ class ETagMatcher(object):
         return ", ".join(map('"%s"'.__mod__, self.etags))
 
 
-class IfRange(object):
+class IfRange:
     def __init__(self, etag):
         self.etag = etag
 
@@ -149,7 +149,7 @@ class IfRange(object):
     __bool__ = __nonzero__  # python 3
 
 
-class IfRangeDate(object):
+class IfRangeDate:
     def __init__(self, date):
         self.date = date
 

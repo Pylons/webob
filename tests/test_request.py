@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
-
+from collections.abc import MutableMapping
+from io import BytesIO, StringIO
 import sys
 import warnings
-
-from io import BytesIO, StringIO
 
 import pytest
 
@@ -21,15 +19,11 @@ from webob.acceptparse import (
     AcceptNoHeader,
     AcceptValidHeader,
 )
-from webob.compat import MutableMapping, bytes_, native_, text_type, text_
 from webob.multidict import NoVars
+from webob.util import bytes_, text_
 
 
-py2only = pytest.mark.skipif("sys.version_info >= (3, 0)")
-py3only = pytest.mark.skipif("sys.version_info < (3, 0)")
-
-
-class TestRequestCommon(object):
+class TestRequestCommon:
     # unit tests of non-bytes-vs-text-specific methods of request object
     def _getTargetClass(self):
         from webob.request import Request
@@ -530,8 +524,8 @@ class TestRequestCommon(object):
 
     @pytest.mark.parametrize("method", ["POST", "PUT", "PATCH", "DELETE"])
     def test_POST_json_no_content_type(self, method):
-        from webob.request import NoVars
         from webob.multidict import MultiDict
+        from webob.request import NoVars
 
         data = b'{"password": "last centurion", "email": "rory@wiggy.net"}'
         wsgi_input = BytesIO(data)
@@ -546,6 +540,7 @@ class TestRequestCommon(object):
         r_2 = req.POST
         r_3 = req.body
         assert r_1 == b'{"password": "last centurion", "email": "rory@wiggy.net"}'
+
         if method == "POST":
             assert isinstance(r_2, MultiDict)
         else:
@@ -679,8 +674,9 @@ class TestRequestCommon(object):
         assert bool(req.accept_encoding) is False
 
     def test_remove_conditional_headers_if_modified_since(self):
-        from webob.datetime_utils import UTC
         from datetime import datetime
+
+        from webob.datetime_utils import UTC
 
         req = self._blankOne("/")
         req.if_modified_since = datetime(2006, 1, 1, 12, 0, tzinfo=UTC)
@@ -930,7 +926,7 @@ class TestRequestCommon(object):
         def application(environ, start_response):
             write = start_response("200 OK", [("content-type", "text/plain")])
 
-            class AppIter(object):
+            class AppIter:
                 def __iter__(self):
                     yield "...\n"
 
@@ -1065,8 +1061,9 @@ class TestRequestCommon(object):
 
     def test_blank__post_files(self):
         import cgi
-        from webob.request import _get_multipart_boundary
+
         from webob.multidict import MultiDict
+        from webob.request import _get_multipart_boundary
 
         POST = MultiDict()
         POST["first"] = ("filename1", BytesIO(b"1"))
@@ -1182,7 +1179,7 @@ class TestRequestCommon(object):
             req.copy_body()
 
 
-class TestBaseRequest(object):
+class TestBaseRequest:
     # tests of methods of a base request which are encoding-specific
     def _getTargetClass(self):
         from webob.request import BaseRequest
@@ -1267,20 +1264,20 @@ class TestBaseRequest(object):
     def test_uscript_name(self):
         environ = {"SCRIPT_NAME": "/script"}
         req = self._makeOne(environ)
-        assert isinstance(req.uscript_name, text_type)
+        assert isinstance(req.uscript_name, str)
         assert req.uscript_name == "/script"
 
     def test_upath_info(self):
         environ = {"PATH_INFO": "/path/info"}
         req = self._makeOne(environ)
-        assert isinstance(req.upath_info, text_type)
+        assert isinstance(req.upath_info, str)
         assert req.upath_info == "/path/info"
 
     def test_upath_info_set_unicode(self):
         environ = {"PATH_INFO": "/path/info"}
         req = self._makeOne(environ)
         req.upath_info = text_("/another")
-        assert isinstance(req.upath_info, text_type)
+        assert isinstance(req.upath_info, str)
         assert req.upath_info == "/another"
 
     def test_content_type_getter_no_parameters(self):
@@ -1770,18 +1767,18 @@ class TestBaseRequest(object):
         assert inst.encget("a", None) is None
 
     def test_encget_with_encattr(self):
-        val = native_(b"\xc3\xab", "latin-1")
+        val = str(b"\xc3\xab", "latin-1")
         inst = self._makeOne({"a": val})
         assert inst.encget("a", encattr="url_encoding") == text_(b"\xc3\xab", "utf-8")
 
     def test_encget_with_encattr_latin_1(self):
-        val = native_(b"\xc3\xab", "latin-1")
+        val = str(b"\xc3\xab", "latin-1")
         inst = self._makeOne({"a": val})
         inst.my_encoding = "latin-1"
         assert inst.encget("a", encattr="my_encoding") == text_(b"\xc3\xab", "latin-1")
 
     def test_encget_no_encattr(self):
-        val = native_(b"\xc3\xab", "latin-1")
+        val = str(b"\xc3\xab", "latin-1")
         inst = self._makeOne({"a": val})
         assert inst.encget("a") == val
 
@@ -1792,7 +1789,7 @@ class TestBaseRequest(object):
         assert result == "http://localhost/%C3%AB/a"
 
     def test_header_getter(self):
-        val = native_(b"abc", "latin-1")
+        val = str(b"abc", "latin-1")
         inst = self._makeOne({"HTTP_FLUB": val})
         result = inst.headers["Flub"]
         assert result.__class__ == str
@@ -1818,698 +1815,7 @@ class TestBaseRequest(object):
         assert result == "example.com:80"
 
 
-class TestLegacyRequest(object):
-    # tests of methods of a bytesrequest which deal with http environment vars
-    def _getTargetClass(self):
-        from webob.request import LegacyRequest
-
-        return LegacyRequest
-
-    def _makeOne(self, *arg, **kw):
-        cls = self._getTargetClass()
-
-        return cls(*arg, **kw)
-
-    def _blankOne(self, *arg, **kw):
-        cls = self._getTargetClass()
-
-        return cls.blank(*arg, **kw)
-
-    def test_method(self):
-        environ = {"REQUEST_METHOD": "OPTIONS"}
-        req = self._makeOne(environ)
-        assert req.method == "OPTIONS"
-
-    def test_http_version(self):
-        environ = {"SERVER_PROTOCOL": "1.1"}
-        req = self._makeOne(environ)
-        assert req.http_version == "1.1"
-
-    def test_script_name(self):
-        environ = {"SCRIPT_NAME": "/script"}
-        req = self._makeOne(environ)
-        assert req.script_name == "/script"
-
-    def test_path_info(self):
-        environ = {"PATH_INFO": "/path/info"}
-        req = self._makeOne(environ)
-        assert req.path_info == "/path/info"
-
-    def test_content_length_getter(self):
-        environ = {"CONTENT_LENGTH": "1234"}
-        req = self._makeOne(environ)
-        assert req.content_length == 1234
-
-    def test_content_length_setter_w_str(self):
-        environ = {"CONTENT_LENGTH": "1234"}
-        req = self._makeOne(environ)
-        req.content_length = "3456"
-        assert req.content_length == 3456
-
-    def test_remote_user(self):
-        environ = {"REMOTE_USER": "phred"}
-        req = self._makeOne(environ)
-        assert req.remote_user == "phred"
-
-    def test_remote_addr(self):
-        environ = {"REMOTE_ADDR": "1.2.3.4"}
-        req = self._makeOne(environ)
-        assert req.remote_addr == "1.2.3.4"
-
-    def test_remote_host(self):
-        environ = {"REMOTE_HOST": "example.com"}
-        req = self._makeOne(environ)
-        assert req.remote_host == "example.com"
-
-    def test_remote_host_not_set(self):
-        environ = {}
-        req = self._makeOne(environ)
-        assert req.remote_host is None
-
-    def test_query_string(self):
-        environ = {"QUERY_STRING": "foo=bar&baz=bam"}
-        req = self._makeOne(environ)
-        assert req.query_string == "foo=bar&baz=bam"
-
-    def test_server_name(self):
-        environ = {"SERVER_NAME": "somehost.tld"}
-        req = self._makeOne(environ)
-        assert req.server_name == "somehost.tld"
-
-    def test_server_port_getter(self):
-        environ = {"SERVER_PORT": "6666"}
-        req = self._makeOne(environ)
-        assert req.server_port == 6666
-
-    def test_server_port_setter_with_string(self):
-        environ = {"SERVER_PORT": "6666"}
-        req = self._makeOne(environ)
-        req.server_port = "6667"
-        assert req.server_port == 6667
-
-    def test_uscript_name(self):
-        environ = {"SCRIPT_NAME": "/script"}
-        req = self._makeOne(environ)
-        assert isinstance(req.uscript_name, text_type)
-        result = req.uscript_name
-        assert result.__class__ == text_type
-        assert result == "/script"
-
-    def test_upath_info(self):
-        environ = {"PATH_INFO": "/path/info"}
-        req = self._makeOne(environ)
-        result = req.upath_info
-        assert isinstance(result, text_type)
-        assert result == "/path/info"
-
-    def test_upath_info_set_unicode(self):
-        environ = {"PATH_INFO": "/path/info"}
-        req = self._makeOne(environ)
-        req.upath_info = text_("/another")
-        result = req.upath_info
-        assert isinstance(result, text_type)
-        assert result == "/another"
-
-    def test_content_type_getter_no_parameters(self):
-        environ = {"CONTENT_TYPE": "application/xml+foobar"}
-        req = self._makeOne(environ)
-        assert req.content_type == "application/xml+foobar"
-
-    def test_content_type_getter_w_parameters(self):
-        environ = {"CONTENT_TYPE": 'application/xml+foobar;charset="utf8"'}
-        req = self._makeOne(environ)
-        assert req.content_type == "application/xml+foobar"
-
-    def test_content_type_setter_w_None(self):
-        environ = {"CONTENT_TYPE": 'application/xml+foobar;charset="utf8"'}
-        req = self._makeOne(environ)
-        req.content_type = None
-        assert req.content_type == ""
-        assert "CONTENT_TYPE" not in environ
-
-    def test_content_type_setter_existing_paramter_no_new_paramter(self):
-        environ = {"CONTENT_TYPE": 'application/xml+foobar;charset="utf8"'}
-        req = self._makeOne(environ)
-        req.content_type = "text/xml"
-        assert req.content_type == "text/xml"
-        assert environ["CONTENT_TYPE"] == 'text/xml;charset="utf8"'
-
-    def test_content_type_deleter_clears_environ_value(self):
-        environ = {"CONTENT_TYPE": 'application/xml+foobar;charset="utf8"'}
-        req = self._makeOne(environ)
-        del req.content_type
-        assert req.content_type == ""
-        assert "CONTENT_TYPE" not in environ
-
-    def test_content_type_deleter_no_environ_value(self):
-        environ = {}
-        req = self._makeOne(environ)
-        del req.content_type
-        assert req.content_type == ""
-        assert "CONTENT_TYPE" not in environ
-
-    def test_headers_getter(self):
-        CONTENT_TYPE = 'application/xml+foobar;charset="utf8"'
-        environ = {"CONTENT_TYPE": CONTENT_TYPE, "CONTENT_LENGTH": "123"}
-        req = self._makeOne(environ)
-        headers = req.headers
-        assert headers == {"Content-Type": CONTENT_TYPE, "Content-Length": "123"}
-
-    def test_headers_setter(self):
-        CONTENT_TYPE = 'application/xml+foobar;charset="utf8"'
-        environ = {"CONTENT_TYPE": CONTENT_TYPE, "CONTENT_LENGTH": "123"}
-        req = self._makeOne(environ)
-        req.headers = {"Qux": "Spam"}
-        assert req.headers == {"Qux": "Spam"}
-        assert environ["HTTP_QUX"] == native_("Spam")
-        assert environ == {"HTTP_QUX": "Spam"}
-
-    def test_no_headers_deleter(self):
-        CONTENT_TYPE = 'application/xml+foobar;charset="utf8"'
-        environ = {"CONTENT_TYPE": CONTENT_TYPE, "CONTENT_LENGTH": "123"}
-        req = self._makeOne(environ)
-
-        def _test():
-            del req.headers
-
-        with pytest.raises(AttributeError):
-            _test()
-
-    def test_client_addr_xff_singleval(self):
-        environ = {"HTTP_X_FORWARDED_FOR": "192.168.1.1"}
-        req = self._makeOne(environ)
-        assert req.client_addr == "192.168.1.1"
-
-    def test_client_addr_xff_multival(self):
-        environ = {"HTTP_X_FORWARDED_FOR": "192.168.1.1, 192.168.1.2"}
-        req = self._makeOne(environ)
-        assert req.client_addr == "192.168.1.1"
-
-    def test_client_addr_prefers_xff(self):
-        environ = {"REMOTE_ADDR": "192.168.1.2", "HTTP_X_FORWARDED_FOR": "192.168.1.1"}
-        req = self._makeOne(environ)
-        assert req.client_addr == "192.168.1.1"
-
-    def test_client_addr_no_xff(self):
-        environ = {"REMOTE_ADDR": "192.168.1.2"}
-        req = self._makeOne(environ)
-        assert req.client_addr == "192.168.1.2"
-
-    def test_client_addr_no_xff_no_remote_addr(self):
-        environ = {}
-        req = self._makeOne(environ)
-        assert req.client_addr is None
-
-    def test_host_port_w_http_host_and_no_port(self):
-        environ = {"wsgi.url_scheme": "http", "HTTP_HOST": "example.com"}
-        req = self._makeOne(environ)
-        assert req.host_port == "80"
-
-    def test_host_port_w_http_host_and_standard_port(self):
-        environ = {"wsgi.url_scheme": "http", "HTTP_HOST": "example.com:80"}
-        req = self._makeOne(environ)
-        assert req.host_port == "80"
-
-    def test_host_port_w_http_host_and_oddball_port(self):
-        environ = {"wsgi.url_scheme": "http", "HTTP_HOST": "example.com:8888"}
-        req = self._makeOne(environ)
-        assert req.host_port == "8888"
-
-    def test_host_port_w_http_host_https_and_no_port(self):
-        environ = {"wsgi.url_scheme": "https", "HTTP_HOST": "example.com"}
-        req = self._makeOne(environ)
-        assert req.host_port == "443"
-
-    def test_host_port_w_http_host_https_and_standard_port(self):
-        environ = {"wsgi.url_scheme": "https", "HTTP_HOST": "example.com:443"}
-        req = self._makeOne(environ)
-        assert req.host_port == "443"
-
-    def test_host_port_w_http_host_https_and_oddball_port(self):
-        environ = {"wsgi.url_scheme": "https", "HTTP_HOST": "example.com:8888"}
-        req = self._makeOne(environ)
-        assert req.host_port == "8888"
-
-    def test_host_port_wo_http_host(self):
-        environ = {"wsgi.url_scheme": "https", "SERVER_PORT": "4333"}
-        req = self._makeOne(environ)
-        assert req.host_port == "4333"
-
-    def test_host_port_ipv6(self):
-        environ = {"HTTP_HOST": "[2001:DB8::1]:6453"}
-        req = self._makeOne(environ)
-        assert req.host_port == "6453"
-
-    def test_host_ipv6(self):
-        environ = {"wsgi.url_scheme": "https", "HTTP_HOST": "[2001:DB8::1]"}
-        req = self._makeOne(environ)
-        assert req.host_port == "443"
-
-    def test_host_url_w_http_host_and_no_port(self):
-        environ = {"wsgi.url_scheme": "http", "HTTP_HOST": "example.com"}
-        req = self._makeOne(environ)
-        assert req.host_url == "http://example.com"
-
-    def test_host_url_w_http_host_and_standard_port(self):
-        environ = {"wsgi.url_scheme": "http", "HTTP_HOST": "example.com:80"}
-        req = self._makeOne(environ)
-        assert req.host_url == "http://example.com"
-
-    def test_host_url_w_http_host_and_oddball_port(self):
-        environ = {"wsgi.url_scheme": "http", "HTTP_HOST": "example.com:8888"}
-        req = self._makeOne(environ)
-        assert req.host_url == "http://example.com:8888"
-
-    def test_host_url_w_http_host_https_and_no_port(self):
-        environ = {"wsgi.url_scheme": "https", "HTTP_HOST": "example.com"}
-        req = self._makeOne(environ)
-        assert req.host_url == "https://example.com"
-
-    def test_host_url_w_http_host_https_and_standard_port(self):
-        environ = {"wsgi.url_scheme": "https", "HTTP_HOST": "example.com:443"}
-        req = self._makeOne(environ)
-        assert req.host_url == "https://example.com"
-
-    def test_host_url_w_http_host_https_and_oddball_port(self):
-        environ = {"wsgi.url_scheme": "https", "HTTP_HOST": "example.com:4333"}
-        req = self._makeOne(environ)
-        assert req.host_url == "https://example.com:4333"
-
-    def test_host_url_wo_http_host(self):
-        environ = {
-            "wsgi.url_scheme": "https",
-            "SERVER_NAME": "example.com",
-            "SERVER_PORT": "4333",
-        }
-        req = self._makeOne(environ)
-        assert req.host_url == "https://example.com:4333"
-
-    def test_host_url_http_ipv6_host(self):
-        environ = {"wsgi.url_scheme": "https", "HTTP_HOST": "[2001:DB8::1]:6453"}
-        req = self._makeOne(environ)
-        assert req.host_url == "https://[2001:DB8::1]:6453"
-
-    def test_host_url_http_ipv6_host_no_port(self):
-        environ = {"wsgi.url_scheme": "https", "HTTP_HOST": "[2001:DB8::1]"}
-        req = self._makeOne(environ)
-        assert req.host_url == "https://[2001:DB8::1]"
-
-    @py2only
-    def test_application_url_py2(self):
-        inst = self._blankOne("/%C3%AB")
-        inst.script_name = b"/\xc3\xab"
-        app_url = inst.application_url
-        assert app_url == "http://localhost/%C3%AB"
-
-    @py3only
-    def test_application_url(self):
-        inst = self._blankOne("/%C3%AB")
-        inst.script_name = b"/\xc3\xab"
-        app_url = inst.application_url
-        assert app_url == "http://localhost/%C3%83%C2%AB"
-
-    @py2only
-    def test_path_url_py2(self):
-        inst = self._blankOne("/%C3%AB")
-        inst.script_name = b"/\xc3\xab"
-        result = inst.path_url
-        assert result == "http://localhost/%C3%AB/%C3%AB"
-
-    @py3only
-    def test_path_url(self):
-        inst = self._blankOne("/%C3%AB")
-        inst.script_name = b"/\xc3\xab"
-        result = inst.path_url
-        assert result == "http://localhost/%C3%83%C2%AB/%C3%83%C2%AB"
-
-    @py2only
-    def test_path_py2(self):
-        inst = self._blankOne("/%C3%AB")
-        inst.script_name = b"/\xc3\xab"
-        result = inst.path
-        assert result == "/%C3%AB/%C3%AB"
-
-    @py3only
-    def test_path(self):
-        inst = self._blankOne("/%C3%AB")
-        inst.script_name = b"/\xc3\xab"
-        result = inst.path
-        assert result == "/%C3%83%C2%AB/%C3%83%C2%AB"
-
-    def test_path_qs_no_qs(self):
-        environ = {
-            "wsgi.url_scheme": "http",
-            "SERVER_NAME": "example.com",
-            "SERVER_PORT": "80",
-            "SCRIPT_NAME": "/script",
-            "PATH_INFO": "/path/info",
-        }
-        req = self._makeOne(environ)
-        assert req.path_qs == "/script/path/info"
-
-    def test_path_qs_w_qs(self):
-        environ = {
-            "wsgi.url_scheme": "http",
-            "SERVER_NAME": "example.com",
-            "SERVER_PORT": "80",
-            "SCRIPT_NAME": "/script",
-            "PATH_INFO": "/path/info",
-            "QUERY_STRING": "foo=bar&baz=bam",
-        }
-        req = self._makeOne(environ)
-        assert req.path_qs == "/script/path/info?foo=bar&baz=bam"
-
-    def test_url_no_qs(self):
-        environ = {
-            "wsgi.url_scheme": "http",
-            "SERVER_NAME": "example.com",
-            "SERVER_PORT": "80",
-            "SCRIPT_NAME": "/script",
-            "PATH_INFO": "/path/info",
-        }
-        req = self._makeOne(environ)
-        assert req.url == "http://example.com/script/path/info"
-
-    def test_url_w_qs(self):
-        environ = {
-            "wsgi.url_scheme": "http",
-            "SERVER_NAME": "example.com",
-            "SERVER_PORT": "80",
-            "SCRIPT_NAME": "/script",
-            "PATH_INFO": "/path/info",
-            "QUERY_STRING": "foo=bar&baz=bam",
-        }
-        req = self._makeOne(environ)
-        assert req.url == "http://example.com/script/path/info?foo=bar&baz=bam"
-
-    def test_relative_url_to_app_true_wo_leading_slash(self):
-        environ = {
-            "wsgi.url_scheme": "http",
-            "SERVER_NAME": "example.com",
-            "SERVER_PORT": "80",
-            "SCRIPT_NAME": "/script",
-            "PATH_INFO": "/path/info",
-            "QUERY_STRING": "foo=bar&baz=bam",
-        }
-        req = self._makeOne(environ)
-        assert req.relative_url(
-            "other/page" is True, "http://example.com/script/other/page"
-        )
-
-    def test_relative_url_to_app_true_w_leading_slash(self):
-        environ = {
-            "wsgi.url_scheme": "http",
-            "SERVER_NAME": "example.com",
-            "SERVER_PORT": "80",
-            "SCRIPT_NAME": "/script",
-            "PATH_INFO": "/path/info",
-            "QUERY_STRING": "foo=bar&baz=bam",
-        }
-        req = self._makeOne(environ)
-        assert req.relative_url("/other/page" is True, "http://example.com/other/page")
-
-    def test_relative_url_to_app_false_other_w_leading_slash(self):
-        environ = {
-            "wsgi.url_scheme": "http",
-            "SERVER_NAME": "example.com",
-            "SERVER_PORT": "80",
-            "SCRIPT_NAME": "/script",
-            "PATH_INFO": "/path/info",
-            "QUERY_STRING": "foo=bar&baz=bam",
-        }
-        req = self._makeOne(environ)
-        assert req.relative_url("/other/page", False) == "http://example.com/other/page"
-
-    def test_relative_url_to_app_false_other_wo_leading_slash(self):
-        environ = {
-            "wsgi.url_scheme": "http",
-            "SERVER_NAME": "example.com",
-            "SERVER_PORT": "80",
-            "SCRIPT_NAME": "/script",
-            "PATH_INFO": "/path/info",
-            "QUERY_STRING": "foo=bar&baz=bam",
-        }
-        req = self._makeOne(environ)
-        assert (
-            req.relative_url("other/page", False)
-            == "http://example.com/script/path/other/page"
-        )
-
-    def test_path_info_pop_empty(self):
-        environ = {
-            "wsgi.url_scheme": "http",
-            "SERVER_NAME": "example.com",
-            "SERVER_PORT": "80",
-            "SCRIPT_NAME": "/script",
-            "PATH_INFO": "",
-        }
-        req = self._makeOne(environ)
-        popped = req.path_info_pop()
-        assert popped is None
-        assert environ["SCRIPT_NAME"] == "/script"
-
-    def test_path_info_pop_just_leading_slash(self):
-        environ = {
-            "wsgi.url_scheme": "http",
-            "SERVER_NAME": "example.com",
-            "SERVER_PORT": "80",
-            "SCRIPT_NAME": "/script",
-            "PATH_INFO": "/",
-        }
-        req = self._makeOne(environ)
-        popped = req.path_info_pop()
-        assert popped == ""
-        assert environ["SCRIPT_NAME"] == "/script/"
-        assert environ["PATH_INFO"] == ""
-
-    def test_path_info_pop_non_empty_no_pattern(self):
-        environ = {
-            "wsgi.url_scheme": "http",
-            "SERVER_NAME": "example.com",
-            "SERVER_PORT": "80",
-            "SCRIPT_NAME": "/script",
-            "PATH_INFO": "/path/info",
-        }
-        req = self._makeOne(environ)
-        popped = req.path_info_pop()
-        assert popped == "path"
-        assert environ["SCRIPT_NAME"] == "/script/path"
-        assert environ["PATH_INFO"] == "/info"
-
-    def test_path_info_pop_non_empty_w_pattern_miss(self):
-        import re
-
-        PATTERN = re.compile("miss")
-        environ = {
-            "wsgi.url_scheme": "http",
-            "SERVER_NAME": "example.com",
-            "SERVER_PORT": "80",
-            "SCRIPT_NAME": "/script",
-            "PATH_INFO": "/path/info",
-        }
-        req = self._makeOne(environ)
-        popped = req.path_info_pop(PATTERN)
-        assert popped is None
-        assert environ["SCRIPT_NAME"] == "/script"
-        assert environ["PATH_INFO"] == "/path/info"
-
-    def test_path_info_pop_non_empty_w_pattern_hit(self):
-        import re
-
-        PATTERN = re.compile("path")
-        environ = {
-            "wsgi.url_scheme": "http",
-            "SERVER_NAME": "example.com",
-            "SERVER_PORT": "80",
-            "SCRIPT_NAME": "/script",
-            "PATH_INFO": "/path/info",
-        }
-        req = self._makeOne(environ)
-        popped = req.path_info_pop(PATTERN)
-        assert popped == "path"
-        assert environ["SCRIPT_NAME"] == "/script/path"
-        assert environ["PATH_INFO"] == "/info"
-
-    def test_path_info_pop_skips_empty_elements(self):
-        environ = {
-            "wsgi.url_scheme": "http",
-            "SERVER_NAME": "example.com",
-            "SERVER_PORT": "80",
-            "SCRIPT_NAME": "/script",
-            "PATH_INFO": "//path/info",
-        }
-        req = self._makeOne(environ)
-        popped = req.path_info_pop()
-        assert popped == "path"
-        assert environ["SCRIPT_NAME"] == "/script//path"
-        assert environ["PATH_INFO"] == "/info"
-
-    def test_path_info_peek_empty(self):
-        environ = {
-            "wsgi.url_scheme": "http",
-            "SERVER_NAME": "example.com",
-            "SERVER_PORT": "80",
-            "SCRIPT_NAME": "/script",
-            "PATH_INFO": "",
-        }
-        req = self._makeOne(environ)
-        peeked = req.path_info_peek()
-        assert peeked is None
-        assert environ["SCRIPT_NAME"] == "/script"
-        assert environ["PATH_INFO"] == ""
-
-    def test_path_info_peek_just_leading_slash(self):
-        environ = {
-            "wsgi.url_scheme": "http",
-            "SERVER_NAME": "example.com",
-            "SERVER_PORT": "80",
-            "SCRIPT_NAME": "/script",
-            "PATH_INFO": "/",
-        }
-        req = self._makeOne(environ)
-        peeked = req.path_info_peek()
-        assert peeked == ""
-        assert environ["SCRIPT_NAME"] == "/script"
-        assert environ["PATH_INFO"] == "/"
-
-    def test_path_info_peek_non_empty(self):
-        environ = {
-            "wsgi.url_scheme": "http",
-            "SERVER_NAME": "example.com",
-            "SERVER_PORT": "80",
-            "SCRIPT_NAME": "/script",
-            "PATH_INFO": "/path",
-        }
-        req = self._makeOne(environ)
-        peeked = req.path_info_peek()
-        assert peeked == "path"
-        assert environ["SCRIPT_NAME"] == "/script"
-        assert environ["PATH_INFO"] == "/path"
-
-    def test_is_xhr_no_header(self):
-        req = self._makeOne({})
-        assert not req.is_xhr
-
-    def test_is_xhr_header_miss(self):
-        environ = {"HTTP_X_REQUESTED_WITH": "notAnXMLHTTPRequest"}
-        req = self._makeOne(environ)
-        assert not req.is_xhr
-
-    def test_is_xhr_header_hit(self):
-        environ = {"HTTP_X_REQUESTED_WITH": "XMLHttpRequest"}
-        req = self._makeOne(environ)
-        assert req.is_xhr
-
-    # host
-    def test_host_getter_w_HTTP_HOST(self):
-        environ = {"HTTP_HOST": "example.com:8888"}
-        req = self._makeOne(environ)
-        assert req.host == "example.com:8888"
-
-    def test_host_getter_wo_HTTP_HOST(self):
-        environ = {"SERVER_NAME": "example.com", "SERVER_PORT": "8888"}
-        req = self._makeOne(environ)
-        assert req.host == "example.com:8888"
-
-    def test_host_setter(self):
-        environ = {}
-        req = self._makeOne(environ)
-        req.host = "example.com:8888"
-        assert environ["HTTP_HOST"] == "example.com:8888"
-
-    def test_host_deleter_hit(self):
-        environ = {"HTTP_HOST": "example.com:8888"}
-        req = self._makeOne(environ)
-        del req.host
-        assert "HTTP_HOST" not in environ
-
-    def test_host_deleter_miss(self):
-        environ = {}
-        req = self._makeOne(environ)
-        del req.host  # doesn't raise
-
-    def test_encget_raises_without_default(self):
-        inst = self._makeOne({})
-        with pytest.raises(KeyError):
-            inst.encget("a")
-
-    def test_encget_doesnt_raises_with_default(self):
-        inst = self._makeOne({})
-        assert inst.encget("a", None) is None
-
-    def test_encget_with_encattr(self):
-        val = native_(b"\xc3\xab", "latin-1")
-        inst = self._makeOne({"a": val})
-        assert inst.encget("a", encattr="url_encoding") == native_(
-            b"\xc3\xab", "latin-1"
-        )
-
-    def test_encget_no_encattr(self):
-        val = native_(b"\xc3\xab", "latin-1")
-        inst = self._makeOne({"a": val})
-        assert inst.encget("a"), native_(b"\xc3\xab" == "latin-1")
-
-    @py2only
-    def test_relative_url_py2(self):
-        inst = self._blankOne("/%C3%AB/c")
-        result = inst.relative_url("a")
-        assert result == "http://localhost/%C3%AB/a"
-
-    @py3only
-    def test_relative_url(self):
-        inst = self._blankOne("/%C3%AB/c")
-        result = inst.relative_url("a")
-        assert result == "http://localhost/%C3%83%C2%AB/a"
-
-    def test_header_getter(self):
-        val = native_(b"abc", "latin-1")
-        inst = self._makeOne({"HTTP_FLUB": val})
-        result = inst.headers["Flub"]
-        assert result == "abc"
-
-    def test_json_body(self):
-        inst = self._makeOne({})
-        inst.body = b'{"a":"1"}'
-        assert inst.json_body == {"a": "1"}
-
-    def test_host_get_w_http_host(self):
-        inst = self._makeOne({"HTTP_HOST": "example.com"})
-        result = inst.host
-        assert result == "example.com"
-
-    def test_host_get_w_no_http_host(self):
-        inst = self._makeOne({"SERVER_NAME": "example.com", "SERVER_PORT": "80"})
-        result = inst.host
-        assert result == "example.com:80"
-
-
-class TestRequestConstructorWarnings(object):
-    def _getTargetClass(self):
-        from webob.request import Request
-
-        return Request
-
-    def _makeOne(self, *arg, **kw):
-        cls = self._getTargetClass()
-
-        return cls(*arg, **kw)
-
-    def test_ctor_w_unicode_errors(self):
-        with warnings.catch_warnings(record=True) as w:
-            # still emit if warning was printed previously
-            warnings.simplefilter("always")
-            self._makeOne({}, unicode_errors=True)
-        assert len(w) == 1
-
-    def test_ctor_w_decode_param_names(self):
-        with warnings.catch_warnings(record=True) as w:
-            # still emit if warning was printed previously
-            warnings.simplefilter("always")
-            self._makeOne({}, decode_param_names=True)
-        assert len(w) == 1
-
-
-class TestRequestWithAdhocAttr(object):
+class TestRequestWithAdhocAttr:
     def _blankOne(self, *arg, **kw):
         from webob.request import Request
 
@@ -2545,7 +1851,7 @@ class TestRequestWithAdhocAttr(object):
             delattr(req, "some_attr")
 
 
-class TestRequest_functional(object):
+class TestRequest_functional:
     # functional tests of request
     def _getTargetClass(self):
         from webob.request import Request
@@ -2770,7 +2076,7 @@ class TestRequest_functional(object):
         assert list(new_params.items()) == [("a", "1"), ("b", "4")]
         # The key name is \u1000:
         req = self._blankOne("/?%E1%80%80=x")
-        val = text_type(b"\\u1000", "unicode_escape")
+        val = str(b"\\u1000", "unicode_escape")
         assert val in list(req.GET.keys())
         assert req.GET[val] == "x"
 
@@ -2800,7 +2106,7 @@ class TestRequest_functional(object):
     def test_already_consumed_stream(self):
         from webob.request import Request
 
-        body = "something".encode("latin-1")
+        body = b"something"
         content_type = "application/x-www-form-urlencoded; charset=latin-1"
         environ = {
             "wsgi.input": BytesIO(body),
@@ -2965,7 +2271,7 @@ class TestRequest_functional(object):
         for i in headers.keys():
             assert i in r.headers and "HTTP_" + i.upper().replace("-", "_") in r.environ
         r.headers = {"Server": "Apache"}
-        assert set(r.environ.keys()) == set(["a", "HTTP_SERVER"])
+        assert set(r.environ.keys()) == {"a", "HTTP_SERVER"}
 
     def test_host_url(self):
         # Request has a read only property host_url that combines several
@@ -2974,12 +2280,12 @@ class TestRequest_functional(object):
         assert a.host_url == "http://www.example.com"
         a = self._makeOne(
             {"wsgi.url_scheme": "http"},
-            **{"server_name": "localhost", "server_port": 5000}
+            **{"server_name": "localhost", "server_port": 5000},
         )
         assert a.host_url == "http://localhost:5000"
         a = self._makeOne(
             {"wsgi.url_scheme": "https"},
-            **{"server_name": "localhost", "server_port": 443}
+            **{"server_name": "localhost", "server_port": 443},
         )
         assert a.host_url == "https://localhost"
 
@@ -3360,9 +2666,7 @@ class TestRequest_functional(object):
         # port from doctest (docs/reference.txt)
 
         # Query & POST variables
-        from webob.multidict import MultiDict
-        from webob.multidict import NestedMultiDict
-        from webob.multidict import GetDict
+        from webob.multidict import GetDict, MultiDict, NestedMultiDict
 
         req = self._blankOne("/test?check=a&check=b&name=Bob")
         GET = GetDict([("check", "a"), ("check", "b"), ("name", "Bob")], {})
@@ -3397,13 +2701,12 @@ class TestRequest_functional(object):
     @pytest.mark.filterwarnings("ignore:.*best_match.*")
     def test_request_put(self):
         from datetime import datetime
-        from webob import Response
-        from webob import UTC
+
+        from webob import UTC, Response
         from webob.acceptparse import Accept
         from webob.byterange import Range
         from webob.etag import ETagMatcher
-        from webob.multidict import MultiDict
-        from webob.multidict import GetDict
+        from webob.multidict import GetDict, MultiDict
 
         req = self._blankOne("/test?check=a&check=b&name=Bob")
         req.method = "PUT"
@@ -3498,8 +2801,7 @@ class TestRequest_functional(object):
         assert server_token not in req.if_match
 
     def test_request_patch(self):
-        from webob.multidict import MultiDict
-        from webob.multidict import GetDict
+        from webob.multidict import GetDict, MultiDict
 
         req = self._blankOne("/test?check=a&check=b&name=Bob")
         req.method = "PATCH"
@@ -3620,120 +2922,14 @@ class TestRequest_functional(object):
         assert req_body == req2_body
 
 
-@pytest.mark.filterwarnings("ignore:FakeCGIBody")
-class TestFakeCGIBody(object):
-    def test_encode_multipart_value_type_options(self):
-        from cgi import FieldStorage
-        from webob.request import BaseRequest, FakeCGIBody
-        from webob.multidict import MultiDict
-
-        multipart_type = "multipart/form-data; boundary=foobar"
-        from io import BytesIO
-
-        body = (
-            b"--foobar\r\n"
-            b'Content-Disposition: form-data; name="bananas"; '
-            b'filename="bananas.txt"\r\n'
-            b'Content-type: text/plain; charset="utf-7"\r\n'
-            b"\r\n"
-            b"these are the contents of the file 'bananas.txt'\r\n"
-            b"\r\n"
-            b"--foobar--"
-        )
-        multipart_body = BytesIO(body)
-        environ = BaseRequest.blank("/").environ
-        environ.update(CONTENT_TYPE=multipart_type)
-        environ.update(REQUEST_METHOD="POST")
-        environ.update(CONTENT_LENGTH=len(body))
-        fs = FieldStorage(multipart_body, environ=environ)
-        vars = MultiDict.from_fieldstorage(fs)
-        assert vars["bananas"].__class__ == FieldStorage
-        fake_body = FakeCGIBody(vars, multipart_type)
-        assert fake_body.read() == body
-
-    def test_encode_multipart_no_boundary(self):
-        from webob.request import FakeCGIBody
-
-        with pytest.raises(ValueError):
-            FakeCGIBody({}, "multipart/form-data")
-
-    def test_repr(self):
-        from webob.request import FakeCGIBody
-
-        body = FakeCGIBody(
-            {"bananas": "bananas"}, "multipart/form-data; boundary=foobar"
-        )
-        body.read(1)
-        import re
-
-        assert (
-            re.sub(r"\b0x[0-9a-f]+\b", "<whereitsat>", repr(body))
-            == "<FakeCGIBody at <whereitsat> viewing {'bananas': 'ba...nas'}>"
-        )
-
-    def test_fileno(self):
-        from webob.request import FakeCGIBody
-
-        body = FakeCGIBody(
-            {"bananas": "bananas"}, "multipart/form-data; boundary=foobar"
-        )
-        assert body.fileno() is None
-
-    def test_iter(self):
-        from webob.request import FakeCGIBody
-
-        body = FakeCGIBody(
-            {"bananas": "bananas"}, "multipart/form-data; boundary=foobar"
-        )
-        assert list(body) == [
-            b"--foobar\r\n",
-            b'Content-Disposition: form-data; name="bananas"\r\n',
-            b"\r\n",
-            b"bananas\r\n",
-            b"--foobar--",
-        ]
-
-    def test_readline(self):
-        from webob.request import FakeCGIBody
-
-        body = FakeCGIBody(
-            {"bananas": "bananas"}, "multipart/form-data; boundary=foobar"
-        )
-        assert body.readline() == b"--foobar\r\n"
-        assert body.readline() == b'Content-Disposition: form-data; name="bananas"\r\n'
-        assert body.readline() == b"\r\n"
-        assert body.readline() == b"bananas\r\n"
-        assert body.readline() == b"--foobar--"
-        # subsequent calls to readline will return ''
-
-    def test_read_bad_content_type(self):
-        from webob.request import FakeCGIBody
-
-        body = FakeCGIBody({"bananas": "bananas"}, "application/jibberjabber")
-        with pytest.raises(AssertionError):
-            body.read()
-
-    def test_read_urlencoded(self):
-        from webob.request import FakeCGIBody
-
-        body = FakeCGIBody({"bananas": "bananas"}, "application/x-www-form-urlencoded")
-        assert body.read() == b"bananas=bananas"
-
-    def test_readable(self):
-        from webob.request import FakeCGIBody
-
-        body = FakeCGIBody({"bananas": "bananas"}, "application/something")
-        assert body.readable()
-
-
-class Test_cgi_FieldStorage__repr__patch(object):
+class Test_cgi_FieldStorage__repr__patch:
     def _callFUT(self, fake):
-        from webob.request import _cgi_FieldStorage__repr__patch
+        from webob.compat import cgi_FieldStorage
 
-        return _cgi_FieldStorage__repr__patch(fake)
+        return cgi_FieldStorage.__repr__(fake)
 
     def test_with_file(self):
-        class Fake(object):
+        class Fake:
             name = "name"
             file = "file"
             filename = "filename"
@@ -3744,7 +2940,7 @@ class Test_cgi_FieldStorage__repr__patch(object):
         assert result, "FieldStorage('name' == 'filename')"
 
     def test_without_file(self):
-        class Fake(object):
+        class Fake:
             name = "name"
             file = None
             filename = "filename"
@@ -3755,14 +2951,14 @@ class Test_cgi_FieldStorage__repr__patch(object):
         assert result, "FieldStorage('name', 'filename' == 'value')"
 
 
-class TestLimitedLengthFile(object):
+class TestLimitedLengthFile:
     def _makeOne(self, file, maxlen):
         from webob.request import LimitedLengthFile
 
         return LimitedLengthFile(file, maxlen)
 
     def test_fileno(self):
-        class DummyFile(object):
+        class DummyFile:
             def fileno(self):
                 return 1
 
@@ -3771,7 +2967,7 @@ class TestLimitedLengthFile(object):
         assert inst.fileno() == 1
 
 
-class Test_environ_from_url(object):
+class Test_environ_from_url:
     def _callFUT(self, *arg, **kw):
         from webob.request import environ_from_url
 
@@ -3828,11 +3024,11 @@ class Test_environ_from_url(object):
         assert request.upath_info == expected
 
     def test_fileupload_mime_type_detection(self):
-        from webob.request import Request
-
         # sometimes on win the detected mime type for .jpg will be
         # image/pjpeg for ex. so use a non-standard extesion to avoid that
         import mimetypes
+
+        from webob.request import Request
 
         mimetypes.add_type("application/x-foo", ".foo")
         request = Request.blank(
@@ -3842,7 +3038,33 @@ class Test_environ_from_url(object):
         assert "application/x-foo" in request.body.decode("ascii", str(request))
 
 
-class TestRequestMultipart(object):
+def test_environ_add_POST_file_with_content_type():
+    # For benefit of _encode_multipart which did not have adequate coverage for
+    # type_options
+    class FakeFile:
+        def __init__(self, filename, content_type, type_options, value):
+            self.filename = filename
+            self.type = content_type
+            self.type_options = type_options or {}
+            self.value = value
+
+    from webob.request import environ_add_POST, environ_from_url
+
+    env = environ_from_url("http://example.com/")
+    environ_add_POST(
+        env,
+        {
+            "sample_file": FakeFile(
+                "test.txt", "text/plain", {"charset": "utf-8"}, "this is data"
+            ),
+        },
+    )
+    wsgi_input = env["wsgi.input"].read()
+    assert b"this is data" in wsgi_input
+    assert b'Content-type: text/plain; charset="utf-8"' in wsgi_input
+
+
+class TestRequestMultipart:
     def test_multipart_with_charset(self):
         from webob.request import Request
 
@@ -3998,7 +3220,7 @@ _test_req2 = _norm_req(_test_req2) + b"\r\n"
 _test_req_multipart_charset = _norm_req(_test_req_multipart_charset)
 
 
-class UnseekableInput(object):
+class UnseekableInput:
     def __init__(self, data):
         self.data = data
         self.pos = 0
@@ -4020,10 +3242,10 @@ class UnseekableInput(object):
 
 class UnseekableInputWithSeek(UnseekableInput):
     def seek(self, pos, rel=0):
-        raise IOError("Invalid seek!")
+        raise OSError("Invalid seek!")
 
 
-class _Helper_test_request_wrong_clen(object):
+class _Helper_test_request_wrong_clen:
     def __init__(self, f):
         self.f = f
         self.file_ended = False

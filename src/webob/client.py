@@ -1,15 +1,16 @@
 import errno
-import sys
 import re
+import sys
 
 try:
     import httplib
 except ImportError:
     import http.client as httplib
-from webob.compat import url_quote
+
 import socket
+from urllib.parse import quote as url_quote
+
 from webob import exc
-from webob.compat import PY2
 
 __all__ = ["send_request_app", "SendRequest"]
 
@@ -43,16 +44,20 @@ class SendRequest:
 
     def __call__(self, environ, start_response):
         scheme = environ["wsgi.url_scheme"]
+
         if scheme == "http":
             ConnClass = self.HTTPConnection
         elif scheme == "https":
             ConnClass = self.HTTPSConnection
         else:
             raise ValueError("Unknown scheme: %r" % scheme)
+
         if "SERVER_NAME" not in environ:
             host = environ.get("HTTP_HOST")
+
             if not host:
                 raise ValueError("environ contains neither SERVER_NAME nor HTTP_HOST")
+
             if ":" in host:
                 host, port = host.split(":", 1)
             else:
@@ -63,10 +68,12 @@ class SendRequest:
             environ["SERVER_NAME"] = host
             environ["SERVER_PORT"] = port
         kw = {}
+
         if "webob.client.timeout" in environ and self._timeout_supported(ConnClass):
             kw["timeout"] = environ["webob.client.timeout"]
         conn = ConnClass("%(SERVER_NAME)s:%(SERVER_PORT)s" % environ, **kw)
         headers = {}
+
         for key, value in environ.items():
             if key.startswith("HTTP_"):
                 key = key[5:].replace("_", "-").title()
@@ -74,6 +81,7 @@ class SendRequest:
         path = url_quote(environ.get("SCRIPT_NAME", "")) + url_quote(
             environ.get("PATH_INFO", "")
         )
+
         if environ.get("QUERY_STRING"):
             path += "?" + environ["QUERY_STRING"]
         try:
@@ -82,13 +90,16 @@ class SendRequest:
             content_length = 0
         # FIXME: there is no streaming of the body, and that might be useful
         # in some cases
+
         if content_length:
             body = environ["wsgi.input"].read(content_length)
         else:
             body = ""
         headers["Content-Length"] = content_length
+
         if environ.get("CONTENT_TYPE"):
             headers["Content-Type"] = environ["CONTENT_TYPE"]
+
         if not path.startswith("/"):
             path = "/" + path
         try:
@@ -96,8 +107,9 @@ class SendRequest:
             res = conn.getresponse()
         except socket.timeout:
             resp = exc.HTTPGatewayTimeout()
+
             return resp(environ, start_response)
-        except (socket.error, socket.gaierror) as e:
+        except (OSError, socket.gaierror) as e:
             if (isinstance(e, socket.error) and e.args[0] == -2) or (
                 isinstance(e, socket.gaierror) and e.args[0] == 8
             ):
@@ -106,10 +118,12 @@ class SendRequest:
                     "Name or service not known (bad domain name: %s)"
                     % environ["SERVER_NAME"]
                 )
+
                 return resp(environ, start_response)
             elif e.args[0] in _e_refused:  # pragma: no cover
                 # Connection refused
                 resp = exc.HTTPBadGateway("Connection refused")
+
                 return resp(environ, start_response)
             raise
         headers_out = self.parse_headers(res.msg)
@@ -117,11 +131,13 @@ class SendRequest:
         start_response(status, headers_out)
         length = res.getheader("content-length")
         # FIXME: This shouldn't really read in all the content at once
+
         if length is not None:
             body = res.read(int(length))
         else:
             body = res.read()
         conn.close()
+
         return [body]
 
     # Remove these headers from response (specify lower case header
@@ -135,16 +151,17 @@ class SendRequest:
         Turn a Message object into a list of WSGI-style headers.
         """
         headers_out = []
-        if not PY2:
-            headers = message._headers
-        else:
-            headers = message.headers
+        headers = message._headers
+
         for full_header in headers:
             if not full_header:  # pragma: no cover
                 # Shouldn't happen, but we'll just ignore
+
                 continue
+
             if full_header[0].isspace():  # pragma: no cover
                 # Continuation line, add to the last header
+
                 if not headers_out:
                     raise ValueError(
                         "First header starts with a space (%r)" % full_header
@@ -152,7 +169,9 @@ class SendRequest:
                 last_header, last_value = headers_out.pop()
                 value = last_value + ", " + full_header.strip()
                 headers_out.append((last_header, value))
+
                 continue
+
             if isinstance(full_header, tuple):  # pragma: no cover
                 header, value = full_header
             else:  # pragma: no cover
@@ -161,12 +180,15 @@ class SendRequest:
                 except Exception:
                     raise ValueError("Invalid header: %r" % (full_header,))
             value = value.strip()
+
             if "\n" in value or "\r\n" in value:  # pragma: no cover
                 # Python 3 has multiline values for continuations, Python 2
                 # has two items in headers
                 value = self.MULTILINE_RE.sub(", ", value)
+
             if header.lower() not in self.filtered_headers:
                 headers_out.append((header, value))
+
         return headers_out
 
     def _timeout_supported(self, ConnClass):
@@ -175,11 +197,13 @@ class SendRequest:
             httplib.HTTPSConnection,
         ):  # pragma: no cover
             return False
+
         return True
 
 
 send_request_app = SendRequest()
 
 _e_refused = (errno.ECONNREFUSED,)
+
 if hasattr(errno, "ENODATA"):  # pragma: no cover
     _e_refused += (errno.ENODATA,)

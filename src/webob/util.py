@@ -1,8 +1,54 @@
 import warnings
 
-from webob.compat import escape, string_types, text_, text_type
-
+from webob.compat import escape
 from webob.headers import _trans_key
+
+
+def unquote(string):
+    if not string:
+        return b""
+    res = string.split(b"%")
+
+    if len(res) != 1:
+        string = res[0]
+
+        for item in res[1:]:
+            string += bytes([int(item[:2], 16)]) + item[2:]
+
+    return string
+
+
+def url_unquote(s):
+    return unquote(s.encode("ascii")).decode("latin-1")
+
+
+def parse_qsl_text(qs, encoding="utf-8"):
+    qs = qs.encode("latin-1")
+    qs = qs.replace(b"+", b" ")
+    pairs = [s2 for s1 in qs.split(b"&") for s2 in s1.split(b";") if s2]
+
+    for name_value in pairs:
+        nv = name_value.split(b"=", 1)
+
+        if len(nv) != 2:
+            nv.append("")
+        name = unquote(nv[0])
+        value = unquote(nv[1])
+        yield (name.decode(encoding), value.decode(encoding))
+
+
+def text_(s, encoding="latin-1", errors="strict"):
+    if isinstance(s, bytes):
+        return str(s, encoding, errors)
+
+    return s
+
+
+def bytes_(s, encoding="latin-1", errors="strict"):
+    if isinstance(s, str):
+        return s.encode(encoding, errors)
+
+    return s
 
 
 def html_escape(s):
@@ -15,20 +61,21 @@ def html_escape(s):
 
     None is treated specially, and returns the empty string.
     """
+
     if s is None:
         return ""
     __html__ = getattr(s, "__html__", None)
+
     if __html__ is not None and callable(__html__):
         return s.__html__()
-    if not isinstance(s, string_types):
-        __unicode__ = getattr(s, "__unicode__", None)
-        if __unicode__ is not None and callable(__unicode__):
-            s = s.__unicode__()
-        else:
-            s = str(s)
+
+    if not isinstance(s, str):
+        s = str(s)
     s = escape(s, True)
-    if isinstance(s, text_type):
+
+    if isinstance(s, str):
         s = s.encode("ascii", "xmlcharrefreplace")
+
     return text_(s)
 
 
@@ -40,6 +87,7 @@ def header_docstring(header, rfc_section):
         major_section,
         rfc_section,
     )
+
     return "Gets and sets the ``%s`` header (`HTTP spec section %s <%s>`_)." % (
         header,
         rfc_section,
@@ -49,6 +97,7 @@ def header_docstring(header, rfc_section):
 
 def warn_deprecation(text, version, stacklevel):
     # version specifies when to start raising exceptions instead of warnings
+
     if version in ("1.2", "1.3", "1.4", "1.5", "1.6", "1.7"):
         raise DeprecationWarning(text)
     else:
@@ -129,41 +178,3 @@ status_generic_reasons = {
     4: "Unknown Client Error",
     5: "Unknown Server Error",
 }
-
-try:
-    # py3.3+ have native comparison support
-    from hmac import compare_digest
-except ImportError:  # pragma: nocover (Python 2.7.7 backported this)
-    compare_digest = None
-
-
-def strings_differ(string1, string2, compare_digest=compare_digest):
-    """Check whether two strings differ while avoiding timing attacks.
-
-    This function returns True if the given strings differ and False
-    if they are equal.  It's careful not to leak information about *where*
-    they differ as a result of its running time, which can be very important
-    to avoid certain timing-related crypto attacks:
-
-        http://seb.dbzteam.org/crypto/python-oauth-timing-hmac.pdf
-
-    .. versionchanged:: 1.5
-       Support :func:`hmac.compare_digest` if it is available (Python 2.7.7+
-       and Python 3.3+).
-
-    """
-    len_eq = len(string1) == len(string2)
-    if len_eq:
-        invalid_bits = 0
-        left = string1
-    else:
-        invalid_bits = 1
-        left = string2
-    right = string2
-
-    if compare_digest is not None:
-        invalid_bits += not compare_digest(left, right)
-    else:
-        for a, b in zip(left, right):
-            invalid_bits += a != b
-    return invalid_bits != 0

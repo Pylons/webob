@@ -1,13 +1,9 @@
-import pytest
-
 from datetime import timedelta
 
-from webob import cookies
-from webob.compat import text_
-from webob.compat import native_
+import pytest
 
-py2only = pytest.mark.skipif("sys.version_info >= (3, 0)")
-py3only = pytest.mark.skipif("sys.version_info < (3, 0)")
+from webob import cookies
+from webob.util import text_
 
 
 def setup_module(module):
@@ -53,7 +49,7 @@ def test_cookie_complex():
     def d(v):
         return v.decode("ascii")
 
-    c_dict = dict((d(k), d(v.value)) for k, v in c.items())
+    c_dict = {d(k): d(v.value) for k, v in c.items()}
     assert c_dict == {
         "a": "42,",
         "CP": "null*",
@@ -273,7 +269,7 @@ def test_morsel_repr():
     assert result == "<Morsel: a='b'>"
 
 
-class TestRequestCookies(object):
+class TestRequestCookies:
     def _makeOne(self, environ):
         from webob.cookies import RequestCookies
 
@@ -324,7 +320,7 @@ class TestRequestCookies(object):
             inst.__setitem__(None, 1)
 
     def test___setitem__name_not_encodeable_to_ascii(self):
-        name = native_(b"La Pe\xc3\xb1a", "utf-8")
+        name = str(b"La Pe\xc3\xb1a", "utf-8")
         inst = self._makeOne({})
         with pytest.raises(TypeError):
             inst.__setitem__(name, "abc")
@@ -348,14 +344,14 @@ class TestRequestCookies(object):
             inst.__setitem__("a", value)
 
     def test__setitem__success_no_existing_headers(self):
-        value = native_(b"test_cookie", "utf-8")
+        value = str(b"test_cookie", "utf-8")
         environ = {}
         inst = self._makeOne(environ)
         inst["a"] = value
         assert environ["HTTP_COOKIE"] == "a=test_cookie"
 
     def test__setitem__success_append(self):
-        value = native_(b"test_cookie", "utf-8")
+        value = str(b"test_cookie", "utf-8")
         environ = {"HTTP_COOKIE": "a=1; b=2"}
         inst = self._makeOne(environ)
         inst["c"] = value
@@ -407,40 +403,17 @@ class TestRequestCookies(object):
         inst = self._makeOne(environ)
         assert sorted(list(inst.items())) == [("a", "1"), ("b", val), ("c", "3")]
 
-    @py2only
-    def test_iterkeys(self):
-        environ = {"HTTP_COOKIE": 'a=1; b="La Pe\\303\\261a"; c=3'}
-        inst = self._makeOne(environ)
-        assert sorted(list(inst.iterkeys())) == ["a", "b", "c"]
-
-    @py3only
     def test_iterkeys_py3(self):
         environ = {"HTTP_COOKIE": b'a=1; b="La Pe\\303\\261a"; c=3'.decode("utf-8")}
         inst = self._makeOne(environ)
         assert sorted(list(inst.keys())) == ["a", "b", "c"]
 
-    @py2only
-    def test_itervalues(self):
-        val = text_(b"La Pe\xc3\xb1a", "utf-8")
-        environ = {"HTTP_COOKIE": 'a=1; b="La Pe\\303\\261a"; c=3'}
-        inst = self._makeOne(environ)
-        sorted(list(inst.itervalues())) == ["1", "3", val]
-
-    @py3only
     def test_itervalues_py3(self):
         val = text_(b"La Pe\xc3\xb1a", "utf-8")
         environ = {"HTTP_COOKIE": b'a=1; b="La Pe\\303\\261a"; c=3'.decode("utf-8")}
         inst = self._makeOne(environ)
         sorted(list(inst.values())) == ["1", "3", val]
 
-    @py2only
-    def test_iteritems(self):
-        val = text_(b"La Pe\xc3\xb1a", "utf-8")
-        environ = {"HTTP_COOKIE": 'a=1; b="La Pe\\303\\261a"; c=3'}
-        inst = self._makeOne(environ)
-        assert sorted(list(inst.iteritems())) == [("a", "1"), ("b", val), ("c", "3")]
-
-    @py3only
     def test_iteritems_py3(self):
         val = text_(b"La Pe\xc3\xb1a", "utf-8")
         environ = {"HTTP_COOKIE": b'a=1; b="La Pe\\303\\261a"; c=3'.decode("utf-8")}
@@ -480,7 +453,7 @@ class TestRequestCookies(object):
         assert r.endswith(">")
 
 
-class TestCookieMakeCookie(object):
+class TestCookieMakeCookie:
     def makeOne(self, name, value, **kw):
         from webob.cookies import make_cookie
 
@@ -535,9 +508,9 @@ class TestCookieMakeCookie(object):
         assert "SameSite=" + samesite in cookie
 
 
-class CommonCookieProfile(object):
+class CommonCookieProfile:
     def makeDummyRequest(self, **kw):
-        class Dummy(object):
+        class Dummy:
             def __init__(self, **kwargs):
                 self.__dict__.update(**kwargs)
 
@@ -591,7 +564,7 @@ class TestCookieProfile(CommonCookieProfile):
             cookie.get_value()
 
     def test_get_value_serializer_raises_value_error(self):
-        class RaisingSerializer(object):
+        class RaisingSerializer:
             def loads(self, val):
                 raise ValueError("foo")
 
@@ -783,11 +756,12 @@ class TestSignedCookieProfile(CommonCookieProfile):
 
 
 def serialize(secret, salt, data):
-    import hmac
     import base64
-    import json
     from hashlib import sha1
-    from webob.compat import bytes_
+    import hmac
+    import json
+
+    from webob.util import bytes_
 
     salted_secret = bytes_(salt or "", "utf-8") + bytes_(secret, "utf-8")
     cstruct = bytes_(json.dumps(data))
@@ -795,7 +769,7 @@ def serialize(secret, salt, data):
     return base64.urlsafe_b64encode(sig + cstruct).rstrip(b"=")
 
 
-class TestSignedSerializer(object):
+class TestSignedSerializer:
     def makeOne(self, secret, salt, hashalg="sha1", **kw):
         from webob.cookies import SignedSerializer
 

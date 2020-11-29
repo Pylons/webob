@@ -1,13 +1,15 @@
-import pytest
-import threading
-import random
-import logging
 from contextlib import contextmanager
+import logging
+import random
+import threading
+from wsgiref.simple_server import (
+    ServerHandler,
+    WSGIRequestHandler,
+    WSGIServer,
+    make_server,
+)
 
-from wsgiref.simple_server import make_server
-from wsgiref.simple_server import WSGIRequestHandler
-from wsgiref.simple_server import WSGIServer
-from wsgiref.simple_server import ServerHandler
+import pytest
 
 log = logging.getLogger(__name__)
 ServerHandler.handle_error = lambda: None
@@ -62,7 +64,7 @@ def serve():
             log.debug("shutting server down")
             server.shutdown()
             worker.join(1)
-            if worker.isAlive():
+            if worker.is_alive():
                 log.warning("worker is hanged")
             else:
                 log.debug("server stopped")

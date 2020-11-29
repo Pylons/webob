@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
-
 import unittest
+
 from webob import multidict
-from webob.compat import text_
+from webob.util import text_
 
 
-class BaseDictTests(object):
+class BaseDictTests:
     def setUp(self):
         self._list = [("a", text_("\xe9")), ("a", "e"), ("a", "f"), ("b", "1")]
         self.data = multidict.MultiDict(self._list)
@@ -41,11 +40,8 @@ class BaseDictTests(object):
     def test_dict_api(self):
         self.assertTrue("a" in self.d.mixed())
         self.assertTrue("a" in self.d.keys())
-        self.assertTrue("a" in self.d.iterkeys())
         self.assertTrue(("b", "1") in self.d.items())
-        self.assertTrue(("b", "1") in self.d.iteritems())
         self.assertTrue("1" in self.d.values())
-        self.assertTrue("1" in self.d.itervalues())
         self.assertEqual(len(self.d), 4)
 
     def test_set_del_item(self):
@@ -161,8 +157,9 @@ class BaseDictTests(object):
 
     def test_from_fieldstorage_with_charset(self):
         from cgi import FieldStorage
-        from webob.request import BaseRequest
+
         from webob.multidict import MultiDict
+        from webob.request import BaseRequest
 
         multipart_type = "multipart/form-data; boundary=foobar"
         from io import BytesIO
@@ -189,8 +186,9 @@ class BaseDictTests(object):
 
     def test_from_fieldstorage_with_base64_encoding(self):
         from cgi import FieldStorage
-        from webob.request import BaseRequest
+
         from webob.multidict import MultiDict
+        from webob.request import BaseRequest
 
         multipart_type = "multipart/form-data; boundary=foobar"
         from io import BytesIO
@@ -218,8 +216,9 @@ class BaseDictTests(object):
 
     def test_from_fieldstorage_with_quoted_printable_encoding(self):
         from cgi import FieldStorage
-        from webob.request import BaseRequest
+
         from webob.multidict import MultiDict
+        from webob.request import BaseRequest
 
         multipart_type = "multipart/form-data; boundary=foobar"
         from io import BytesIO
@@ -502,12 +501,8 @@ class NoVarsTestCase(unittest.TestCase):
         d = self._get_instance()
         self.assertEqual(list(d.keys()), [])
 
-    def test_iterkeys(self):
-        d = self._get_instance()
-        self.assertEqual(list(d.iterkeys()), [])
 
-
-class DummyField(object):
+class DummyField:
     def __init__(self, name, value, filename=None):
         self.name = name
         self.value = value
@@ -516,6 +511,6 @@ class DummyField(object):
         self.headers = {}
 
 
-class DummyFieldStorage(object):
+class DummyFieldStorage:
     def __init__(self, name, value, filename=None):
         self.list = [DummyField(name, value, filename)]

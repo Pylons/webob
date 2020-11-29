@@ -1,8 +1,9 @@
+import calendar
+import datetime
+from email.utils import formatdate
+
 import pytest
 
-import datetime
-import calendar
-from email.utils import formatdate
 from webob import datetime_utils
 
 
@@ -15,52 +16,38 @@ def test_UTC():
     assert repr(x) == "UTC"
 
 
-def test_parse_date():
-    """Testing datetime_utils.parse_date.
-    We need to verify the following scenarios:
-        * a nil submitted value
-        * a submitted value that cannot be parse into a date
-        * a valid RFC2822 date with and without timezone
-    """
-
-    ret = datetime_utils.parse_date(None)
-    assert ret is None, (
-        "We passed a None value to parse_date. We should get"
-        " None but instead we got %s" % ret
-    )
-
-    ret = datetime_utils.parse_date("Hi There")
-    assert ret is None, (
-        "We passed an invalid value to parse_date. We should"
-        " get None but instead we got %s" % ret
-    )
-
-    ret = datetime_utils.parse_date(1)
-    assert ret is None, (
-        "We passed an invalid value to parse_date. We should"
-        " get None but instead we got %s" % ret
-    )
-
-    ret = datetime_utils.parse_date("\xc3")
-    assert ret is None, (
-        "We passed an invalid value to parse_date. We should"
-        " get None but instead we got %s" % ret
-    )
-
-    ret = datetime_utils.parse_date("Mon, 20 Nov 1995 19:12:08 -0500")
-    assert ret == datetime.datetime(1995, 11, 21, 0, 12, 8, tzinfo=datetime_utils.UTC)
-
-    ret = datetime_utils.parse_date("Mon, 20 Nov 1995 19:12:08")
-
-    assert ret == datetime.datetime(1995, 11, 20, 19, 12, 8, tzinfo=datetime_utils.UTC)
-
-    ret = datetime_utils.parse_date(Uncooperative())
-    assert ret is None
+# Testing datetime_utils.parse_date.
+# We need to verify the following scenarios:
+#     * a nil submitted value
+#     * a submitted value that cannot be parse into a date
+#     * a valid RFC2822 date with and without timezone
 
 
-class Uncooperative(object):
+class Uncooperative:
     def __str__(self):
         raise NotImplementedError
+
+
+@pytest.mark.parametrize("invalid_date", [None, "Hi there", 1, "\xc3", Uncooperative()])
+def test_parse_date_invalid(invalid_date):
+    assert datetime_utils.parse_date(invalid_date) is None
+
+
+@pytest.mark.parametrize(
+    "valid_date, parsed_datetime",
+    [
+        (
+            "Mon, 20 Nov 1995 19:12:08 -0500",
+            datetime.datetime(1995, 11, 21, 0, 12, 8, tzinfo=datetime_utils.UTC),
+        ),
+        (
+            "Mon, 20 Nov 1995 19:12:08",
+            datetime.datetime(1995, 11, 20, 19, 12, 8, tzinfo=datetime_utils.UTC),
+        ),
+    ],
+)
+def test_parse_date_valid(valid_date, parsed_datetime):
+    assert datetime_utils.parse_date(valid_date) == parsed_datetime
 
 
 def test_serialize_date():
@@ -71,7 +58,7 @@ def test_serialize_date():
         * passing a timedelta, return now plus the delta
         * passing an invalid object, should raise ValueError
     """
-    from webob.compat import text_
+    from webob.util import text_
 
     ret = datetime_utils.serialize_date("Mon, 20 Nov 1995 19:12:08 GMT")
     assert isinstance(ret, str)
@@ -125,7 +112,7 @@ def test_timedelta_to_seconds():
     assert result == 7464960000
 
 
-class _NowRestorer(object):
+class _NowRestorer:
     def __init__(self, new_now):
         self._new_now = new_now
         self._old_now = None

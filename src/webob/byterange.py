@@ -6,7 +6,7 @@ _rx_range = re.compile(r"bytes *= *(\d*) *- *(\d*)", flags=re.I)
 _rx_content_range = re.compile(r"bytes (?:(\d+)-(\d+)|[*])/(?:(\d+)|[*])")
 
 
-class Range(object):
+class Range:
     """
     Represents the Range header.
     """
@@ -85,7 +85,7 @@ class Range(object):
         return cls(start, end)
 
 
-class ContentRange(object):
+class ContentRange:
 
     """
     Represents the Content-Range header
