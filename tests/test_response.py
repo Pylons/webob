@@ -381,6 +381,18 @@ def test_decode_content_with_deflate():
     assert res.body == body
     assert res.content_encoding is None
 
+def test_decode_content_with_deflate_and_zlib_header():
+    res = Response()
+    body = b"Hey Hey Hey"
+    # don't chop off the zlib container
+    # https://tools.ietf.org/html/rfc7230#section-4.2.2 says
+    # that chopping it exists but is non-conformant
+    res.body = zlib.compress(body)
+    res.content_encoding = "deflate"
+    res.decode_content()
+    assert res.body == body
+    assert res.content_encoding is None
+
 def test_content_length():
     r0 = Response('x' * 10, content_length=10)
 

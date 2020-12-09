@@ -1249,8 +1249,15 @@ class Response(object):
             self.content_encoding = None
             gzip_f.close()
         else:
-            # Weird feature: http://bugs.python.org/issue5784
-            self.body = zlib.decompress(self.body, -15)
+            try:
+                # RFC7230 section 4.2.2 specifies that the body should be wrapped
+                # inside a ZLIB (RFC1950) container ...
+                self.body = zlib.decompress(self.body)
+            except zlib.error:
+                # ... but there are nonconformant implementations around which send
+                # the data without the ZLIB container, so we use maximum window size
+                # decompression without header check (the - sign)
+                self.body = zlib.decompress(self.body, -15)
             self.content_encoding = None
 
     def md5_etag(self, body=None, set_content_md5=False):
