@@ -1,3 +1,16 @@
+Unreleased
+----------
+
+Bugfix
+~~~~~~
+
+- Decoding deflate-encoded responses now supports data which is packed in
+  a zlib container as it is supposed to be. The old, non-standard behaviour
+  is still supported.
+
+  See https://github.com/Pylons/webob/pull/426
+
+
 1.8.6 (2020-01-21)
 ------------------
 
