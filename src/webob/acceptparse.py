@@ -43,9 +43,9 @@ def _item_qvalue_pair_to_header_element(pair):
     if qvalue == 1.0:
         element = item
     elif qvalue == 0.0:
-        element = "{};q=0".format(item)
+        element = f"{item};q=0"
     else:
-        element = "{};q={}".format(item, qvalue)
+        element = f"{item};q={qvalue}"
 
     return element
 
@@ -315,13 +315,13 @@ class Accept:
 
         if qvalue == 1.0:
             if extension_params_segment:
-                element = "{};q=1{}".format(media_range, extension_params_segment)
+                element = f"{media_range};q=1{extension_params_segment}"
             else:
                 element = media_range
         elif qvalue == 0.0:
-            element = "{};q=0{}".format(media_range, extension_params_segment)
+            element = f"{media_range};q=0{extension_params_segment}"
         else:
-            element = "{};q={}{}".format(media_range, qvalue, extension_params_segment)
+            element = f"{media_range};q={qvalue}{extension_params_segment}"
 
         return element
 
@@ -757,7 +757,7 @@ class AcceptValidHeader(Accept):
         )
 
     def __repr__(self):
-        return "<{} ({!r})>".format(self.__class__.__name__, str(self))
+        return f"<{self.__class__.__name__} ({str(self)!r})>"
 
     def __str__(self):
         r"""
@@ -842,14 +842,14 @@ class AcceptValidHeader(Accept):
 
         # Set mask type with wildcard subtype for malformed masks
         try:
-            mask_type, mask_subtype = [x.lower() for x in mask.split("/")]
+            mask_type, mask_subtype = (x.lower() for x in mask.split("/"))
         except ValueError:
             mask_type = mask
             mask_subtype = "*"
 
         # Set offer type with wildcard subtype for malformed offers
         try:
-            offer_type, offer_subtype = [x.lower() for x in offer.split("/")]
+            offer_type, offer_subtype = (x.lower() for x in offer.split("/"))
         except ValueError:
             offer_type = offer
             offer_subtype = "*"
@@ -1560,7 +1560,7 @@ class AcceptNoHeader(_AcceptInvalidOrNoHeader):
         return self.__add__(other=other)
 
     def __repr__(self):
-        return "<{}>".format(self.__class__.__name__)
+        return f"<{self.__class__.__name__}>"
 
     def __str__(self):
         """Return the ``str`` ``'<no header in request>'``."""
@@ -1678,7 +1678,7 @@ class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
         )
 
     def __repr__(self):
-        return "<{}>".format(self.__class__.__name__)
+        return f"<{self.__class__.__name__}>"
         # We do not display the header_value, as it is untrusted input. The
         # header_value could always be easily obtained from the .header_value
         # property.
@@ -2039,7 +2039,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
         )
 
     def __repr__(self):
-        return "<{} ({!r})>".format(self.__class__.__name__, str(self))
+        return f"<{self.__class__.__name__} ({str(self)!r})>"
 
     def __str__(self):
         r"""
@@ -2559,7 +2559,7 @@ class AcceptCharsetNoHeader(_AcceptCharsetInvalidOrNoHeader):
         return self.__add__(other=other)
 
     def __repr__(self):
-        return "<{}>".format(self.__class__.__name__)
+        return f"<{self.__class__.__name__}>"
 
     def __str__(self):
         """Return the ``str`` ``'<no header in request>'``."""
@@ -2675,7 +2675,7 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
         )
 
     def __repr__(self):
-        return "<{}>".format(self.__class__.__name__)
+        return f"<{self.__class__.__name__}>"
         # We do not display the header_value, as it is untrusted input. The
         # header_value could always be easily obtained from the .header_value
         # property.
@@ -3051,7 +3051,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         )
 
     def __repr__(self):
-        return "<{} ({!r})>".format(self.__class__.__name__, str(self))
+        return f"<{self.__class__.__name__} ({str(self)!r})>"
 
     def __str__(self):
         r"""
@@ -3599,7 +3599,7 @@ class AcceptEncodingNoHeader(_AcceptEncodingInvalidOrNoHeader):
         return self.__add__(other=other)
 
     def __repr__(self):
-        return "<{}>".format(self.__class__.__name__)
+        return f"<{self.__class__.__name__}>"
 
     def __str__(self):
         """Return the ``str`` ``'<no header in request>'``."""
@@ -3716,7 +3716,7 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
         )
 
     def __repr__(self):
-        return "<{}>".format(self.__class__.__name__)
+        return f"<{self.__class__.__name__}>"
         # We do not display the header_value, as it is untrusted input. The
         # header_value could always be easily obtained from the .header_value
         # property.
@@ -4101,7 +4101,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         )
 
     def __repr__(self):
-        return "<{} ({!r})>".format(self.__class__.__name__, str(self))
+        return f"<{self.__class__.__name__} ({str(self)!r})>"
 
     def __str__(self):
         r"""
@@ -5172,7 +5172,7 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
         return self.__add__(other=other)
 
     def __repr__(self):
-        return "<{}>".format(self.__class__.__name__)
+        return f"<{self.__class__.__name__}>"
 
     def __str__(self):
         """Return the ``str`` ``'<no header in request>'``."""
@@ -5289,7 +5289,7 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         )
 
     def __repr__(self):
-        return "<{}>".format(self.__class__.__name__)
+        return f"<{self.__class__.__name__}>"
         # We do not display the header_value, as it is untrusted input. The
         # header_value could always be easily obtained from the .header_value
         # property.

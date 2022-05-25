@@ -153,7 +153,7 @@ class RequestCookies(MutableMapping):
         self._environ["HTTP_COOKIE"] = ""
 
     def __repr__(self):
-        return "<RequestCookies (dict-like) with values %r>" % (self._cache,)
+        return f"<RequestCookies (dict-like) with values {self._cache!r}>"
 
 
 class Cookie(dict):
@@ -192,7 +192,7 @@ class Cookie(dict):
     __str__ = serialize
 
     def __repr__(self):
-        return "<%s: [%s]>" % (
+        return "<{}: [{}]>".format(
             self.__class__.__name__,
             ", ".join(map(repr, self.values())),
         )
@@ -321,7 +321,7 @@ class Morsel(dict):
     __str__ = serialize
 
     def __repr__(self):
-        return "<%s: %s=%r>" % (
+        return "<{}: {}={!r}>".format(
             self.__class__.__name__,
             text_(self.name),
             text_(self.value),
@@ -340,7 +340,7 @@ _re_expires_val = r"\w{3},\s[\w\d-]{9,11}\s[\d:]{8}\sGMT"
 _re_cookie_str_key = r"(%s+?)" % _re_legal_char
 _re_cookie_str_equal = r"\s*=\s*"
 _re_unquoted_val = r"(?:%s|\\(?:[0-3][0-7][0-7]|.))*" % _re_legal_char
-_re_cookie_str_val = r"(%s|%s|%s)" % (_re_quoted, _re_expires_val, _re_unquoted_val)
+_re_cookie_str_val = fr"({_re_quoted}|{_re_expires_val}|{_re_unquoted_val})"
 _re_cookie_str = _re_cookie_str_key + _re_cookie_str_equal + _re_cookie_str_val
 
 _rx_cookie = re.compile(bytes_(_re_cookie_str, "ascii"))

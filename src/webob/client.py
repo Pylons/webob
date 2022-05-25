@@ -127,7 +127,7 @@ class SendRequest:
                 return resp(environ, start_response)
             raise
         headers_out = self.parse_headers(res.msg)
-        status = "%s %s" % (res.status, res.reason)
+        status = f"{res.status} {res.reason}"
         start_response(status, headers_out)
         length = res.getheader("content-length")
         # FIXME: This shouldn't really read in all the content at once
@@ -178,7 +178,7 @@ class SendRequest:
                 try:
                     header, value = full_header.split(":", 1)
                 except Exception:
-                    raise ValueError("Invalid header: %r" % (full_header,))
+                    raise ValueError(f"Invalid header: {full_header!r}")
             value = value.strip()
 
             if "\n" in value or "\r\n" in value:  # pragma: no cover

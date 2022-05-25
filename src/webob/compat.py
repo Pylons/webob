@@ -20,9 +20,9 @@ class cgi_FieldStorage(_cgi_FieldStorage):  # pragma: no cover
         """
 
         if self.file:
-            return "FieldStorage(%r, %r)" % (self.name, self.filename)
+            return f"FieldStorage({self.name!r}, {self.filename!r})"
 
-        return "FieldStorage(%r, %r, %r)" % (self.name, self.filename, self.value)
+        return f"FieldStorage({self.name!r}, {self.filename!r}, {self.value!r})"
 
     # Work around https://bugs.python.org/issue27777
     def make_file(self):
@@ -38,7 +38,7 @@ class cgi_FieldStorage(_cgi_FieldStorage):  # pragma: no cover
         ib = self.innerboundary
 
         if not cgi.valid_boundary(ib):
-            raise ValueError("Invalid boundary in multipart form: %r" % (ib,))
+            raise ValueError(f"Invalid boundary in multipart form: {ib!r}")
         self.list = []
 
         if self.qs_on_post:
@@ -58,7 +58,7 @@ class cgi_FieldStorage(_cgi_FieldStorage):  # pragma: no cover
 
         if not isinstance(first_line, bytes):
             raise ValueError(
-                "%s should return bytes, got %s" % (self.fp, type(first_line).__name__)
+                f"{self.fp} should return bytes, got {type(first_line).__name__}"
             )
         self.bytes_read += len(first_line)
 

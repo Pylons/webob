@@ -229,5 +229,5 @@ def serialize_cache_control(properties):
         value = str(value)
         if need_quote_re.search(value):
             value = '"%s"' % value
-        parts.append("%s=%s" % (name, value))
+        parts.append(f"{name}={value}")
     return ", ".join(parts)

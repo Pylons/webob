@@ -927,7 +927,7 @@ def test_serialize_auth_digest_multiple():
 
     val = serialize_auth(("Digest", 'realm="WebOb", nonce=abcde12345, qop=foo'))
     flags = val[len("Digest") :]
-    result = sorted([x.strip() for x in flags.split(",")])
+    result = sorted(x.strip() for x in flags.split(","))
     assert result == ["nonce=abcde12345", "qop=foo", 'realm="WebOb"']
 
 
@@ -938,7 +938,7 @@ def test_serialize_auth_digest_tuple():
         ("Digest", {"realm": '"WebOb"', "nonce": "abcde12345", "qop": "foo"})
     )
     flags = val[len("Digest") :]
-    result = sorted([x.strip() for x in flags.split(",")])
+    result = sorted(x.strip() for x in flags.split(","))
     assert result == ['nonce="abcde12345"', 'qop="foo"', 'realm=""WebOb""']
 
 

@@ -150,11 +150,11 @@ class DecoratorTests(unittest.TestCase):
 
         @wsgify
         def test_app(req):
-            return Response("%s: %s" % (req.POST["speaker"], req.POST["words"]))
+            return Response("{}: {}".format(req.POST["speaker"], req.POST["words"]))
 
         resp = test_app.post("/url/path", post_dict)
         self.assertEqual(
-            resp.body, bytes_("%s: %s" % (post_dict["speaker"], post_dict["words"]))
+            resp.body, bytes_("{}: {}".format(post_dict["speaker"], post_dict["words"]))
         )
 
     def test_wsgify_request_method(self):

@@ -96,7 +96,7 @@ def deprecated_property(attr, name, text, version):  # pragma: no cover
 
     def warn():
         warn_deprecation(
-            "The attribute %s is deprecated: %s" % (name, text), version, 3
+            f"The attribute {name} is deprecated: {text}", version, 3
         )
 
     def fget(self):
@@ -141,7 +141,7 @@ def header_getter(header, rfc_section):
 
 def converter(prop, parse, serialize, convert_name=None):
     assert isinstance(prop, property)
-    convert_name = convert_name or "``%s`` and ``%s``" % (
+    convert_name = convert_name or "``{}`` and ``{}``".format(
         parse.__name__,
         serialize.__name__,
     )
@@ -340,5 +340,5 @@ def serialize_auth(val):
         if isinstance(params, dict):
             params = ", ".join(map('%s="%s"'.__mod__, params.items()))
         assert isinstance(params, str)
-        return "%s %s" % (authtype, params)
+        return f"{authtype} {params}"
     return val

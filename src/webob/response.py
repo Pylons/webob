@@ -325,7 +325,7 @@ class Response:
         for name, value in kw.items():
             if not hasattr(self.__class__, name):
                 # Not a basic attribute
-                raise TypeError("Unexpected keyword: %s=%r" % (name, value))
+                raise TypeError(f"Unexpected keyword: {name}={value!r}")
             setattr(self, name, value)
 
     @classmethod
@@ -352,7 +352,7 @@ class Response:
 
         if status.startswith(_http):
             (http_ver, status_num, status_text) = status.split(None, 2)
-            status = "%s %s" % (text_(status_num), text_(status_text))
+            status = f"{text_(status_num)} {text_(status_text)}"
 
         while 1:
             line = fp.readline().strip()
@@ -397,7 +397,7 @@ class Response:
     #
 
     def __repr__(self):
-        return "<%s at 0x%x %s>" % (self.__class__.__name__, abs(id(self)), self.status)
+        return f"<{self.__class__.__name__} at 0x{abs(id(self)):x} {self.status}>"
 
     def __str__(self, skip_body=False):
         parts = [self.status]
@@ -977,7 +977,7 @@ class Response:
         for k, v in sorted(value_dict.items()):
             if not _OK_PARAM_RE.search(v):
                 v = '"%s"' % v.replace('"', '\\"')
-            params.append("; %s=%s" % (k, v))
+            params.append(f"; {k}={v}")
         ct = self.headers.pop("Content-Type", "").split(";", 1)[0]
         ct += "".join(params)
         self.headers["Content-Type"] = ct
@@ -1550,7 +1550,7 @@ class ResponseBodyFile:
         if not self.response.has_body:
             return 0
 
-        return sum([len(chunk) for chunk in self.response.app_iter])
+        return sum(len(chunk) for chunk in self.response.app_iter)
 
 
 class AppIterRange:

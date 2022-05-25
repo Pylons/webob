@@ -94,7 +94,7 @@ class wsgify:
         self.middleware_wraps = middleware_wraps
 
     def __repr__(self):
-        return "<%s at %s wrapping %r>" % (self.__class__.__name__, id(self), self.func)
+        return f"<{self.__class__.__name__} at {id(self)} wrapping {self.func!r}>"
 
     def __get__(self, obj, type=None):
         # This handles wrapping methods
@@ -307,7 +307,7 @@ class _UnboundMiddleware:
         self.kw = kw
 
     def __repr__(self):
-        return "<%s at %s wrapping %r>" % (self.__class__.__name__, id(self), self.app)
+        return f"<{self.__class__.__name__} at {id(self)} wrapping {self.app!r}>"
 
     def __call__(self, func, app=None):
         if app is None:
@@ -327,7 +327,7 @@ class _MiddlewareFactory:
         self.kw = kw
 
     def __repr__(self):
-        return "<%s at %s wrapping %r>" % (
+        return "<{} at {} wrapping {!r}>".format(
             self.__class__.__name__,
             id(self),
             self.middleware,

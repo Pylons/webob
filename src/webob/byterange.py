@@ -57,10 +57,10 @@ class Range:
             if s >= 0:
                 r += "-"
             return r
-        return "bytes=%s-%s" % (s, e - 1)
+        return f"bytes={s}-{e - 1}"
 
     def __repr__(self):
-        return "<%s bytes %r-%r>" % (self.__class__.__name__, self.start, self.end)
+        return f"<{self.__class__.__name__} bytes {self.start!r}-{self.end!r}>"
 
     def __iter__(self):
         return iter((self.start, self.end))
@@ -96,13 +96,13 @@ class ContentRange:
 
     def __init__(self, start, stop, length):
         if not _is_content_range_valid(start, stop, length):
-            raise ValueError("Bad start:stop/length: %r-%r/%r" % (start, stop, length))
+            raise ValueError(f"Bad start:stop/length: {start!r}-{stop!r}/{length!r}")
         self.start = start
         self.stop = stop  # this is python-style range end (non-inclusive)
         self.length = length
 
     def __repr__(self):
-        return "<%s %s>" % (self.__class__.__name__, self)
+        return f"<{self.__class__.__name__} {self}>"
 
     def __str__(self):
         if self.length is None:
@@ -113,7 +113,7 @@ class ContentRange:
             assert self.stop is None
             return "bytes */%s" % length
         stop = self.stop - 1  # from non-inclusive to HTTP-style
-        return "bytes %s-%s/%s" % (self.start, stop, length)
+        return f"bytes {self.start}-{stop}/{length}"
 
     def __iter__(self):
         """
