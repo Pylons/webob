@@ -54,7 +54,7 @@ def serve():
         server = _make_test_server(app)
         try:
             worker = threading.Thread(target=server.serve_forever)
-            worker.setDaemon(True)
+            worker.daemon = True
             worker.start()
             server.url = "http://localhost:%d" % server.server_port
             log.debug("server started on %s", server.url)
