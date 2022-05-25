@@ -340,7 +340,7 @@ _re_expires_val = r"\w{3},\s[\w\d-]{9,11}\s[\d:]{8}\sGMT"
 _re_cookie_str_key = r"(%s+?)" % _re_legal_char
 _re_cookie_str_equal = r"\s*=\s*"
 _re_unquoted_val = r"(?:%s|\\(?:[0-3][0-7][0-7]|.))*" % _re_legal_char
-_re_cookie_str_val = fr"({_re_quoted}|{_re_expires_val}|{_re_unquoted_val})"
+_re_cookie_str_val = rf"({_re_quoted}|{_re_expires_val}|{_re_unquoted_val})"
 _re_cookie_str = _re_cookie_str_key + _re_cookie_str_equal + _re_cookie_str_val
 
 _rx_cookie = re.compile(bytes_(_re_cookie_str, "ascii"))
@@ -614,7 +614,7 @@ def make_cookie(
 
 
 class JSONSerializer:
-    """ A serializer which uses `json.dumps`` and ``json.loads``"""
+    """A serializer which uses `json.dumps`` and ``json.loads``"""
 
     def dumps(self, appstruct):
         return bytes_(json.dumps(appstruct), encoding="utf-8")
@@ -627,7 +627,7 @@ class JSONSerializer:
 
 
 class Base64Serializer:
-    """ A serializer which uses base64 to encode/decode data"""
+    """A serializer which uses base64 to encode/decode data"""
 
     def __init__(self, serializer=None):
         if serializer is None:
@@ -818,12 +818,12 @@ class CookieProfile:
         self.request = None
 
     def __call__(self, request):
-        """ Bind a request to a copy of this instance and return it"""
+        """Bind a request to a copy of this instance and return it"""
 
         return self.bind(request)
 
     def bind(self, request):
-        """ Bind a request to a copy of this instance and return it"""
+        """Bind a request to a copy of this instance and return it"""
 
         selfish = CookieProfile(
             self.cookie_name,
@@ -871,7 +871,7 @@ class CookieProfile:
         httponly=_default,
         samesite=_default,
     ):
-        """ Set the cookies on a response."""
+        """Set the cookies on a response."""
         cookies = self.get_headers(
             value,
             domains=domains,
@@ -1083,7 +1083,7 @@ class SignedCookieProfile(CookieProfile):
         )
 
     def bind(self, request):
-        """ Bind a request to a copy of this instance and return it"""
+        """Bind a request to a copy of this instance and return it"""
 
         selfish = SignedCookieProfile(
             self.secret,

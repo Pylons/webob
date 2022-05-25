@@ -95,9 +95,7 @@ def deprecated_property(attr, name, text, version):  # pragma: no cover
     """
 
     def warn():
-        warn_deprecation(
-            f"The attribute {name} is deprecated: {text}", version, 3
-        )
+        warn_deprecation(f"The attribute {name} is deprecated: {text}", version, 3)
 
     def fget(self):
         warn()

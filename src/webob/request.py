@@ -1499,7 +1499,7 @@ class AdhocAttrMixin:
 
 
 class Request(AdhocAttrMixin, BaseRequest):
-    """ The default request implementation """
+    """The default request implementation"""
 
 
 def environ_from_url(path):
