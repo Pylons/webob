@@ -71,7 +71,7 @@ def _test_app_req_interrupt(env, sr):
 
         if cl != target_cl:
             raise AssertionError(
-                "request.content_length is %s instead of %s" % (cl, target_cl)
+                f"request.content_length is {cl} instead of {target_cl}"
             )
         op = _test_ops_req_interrupt[req.path_info]
         log.info("Running test: %s", req.path_info)

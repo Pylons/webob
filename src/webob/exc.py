@@ -279,7 +279,7 @@ ${body}"""
         json_formatter=None,
         **kw,
     ):
-        Response.__init__(self, status="%s %s" % (self.code, self.title), **kw)
+        Response.__init__(self, status=f"{self.code} {self.title}", **kw)
         Exception.__init__(self, detail)
 
         if headers:

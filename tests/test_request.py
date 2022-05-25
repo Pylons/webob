@@ -3123,7 +3123,7 @@ def simpleapp(environ, start_response):
                 request.url,
             ),
             "urlvars: %r\n" % request.urlvars,
-            "urlargs: %r\n" % (request.urlargs,),
+            f"urlargs: {request.urlargs!r}\n",
             "is_xhr: %r\n" % request.is_xhr,
             "if_modified_since: %r\n" % request.if_modified_since,
             "user_agent: %r\n" % request.user_agent,

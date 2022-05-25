@@ -24,7 +24,7 @@ def test_transcode():
         v = req.POST[req.query_string]
 
         if hasattr(v, "filename"):
-            r = Response(text_("%s\n%r" % (v.filename, v.value)))
+            r = Response(text_(f"{v.filename}\n{v.value!r}"))
         else:
             r = Response(v)
 
@@ -45,7 +45,7 @@ def test_transcode():
     r = test(t2)
     assert r.text == "file\n%r" % text.encode("cp1251")
     r = test(t3)
-    assert r.text == "%s\n%r" % (text, b"foo")
+    assert r.text == "{}\n{!r}".format(text, b"foo")
 
 
 def test_transcode_query():

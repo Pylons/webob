@@ -133,7 +133,7 @@ class MultiDict(MutableMapping):
             raise KeyError("Key not found: %r" % key)
 
         if len(v) > 1:
-            raise KeyError("Multiple values match %r: %r" % (key, v))
+            raise KeyError(f"Multiple values match {key!r}: {v!r}")
 
         return v[0]
 
@@ -260,7 +260,7 @@ class MultiDict(MutableMapping):
     def __repr__(self):
         items = map("(%r, %r)".__mod__, _hide_passwd(self.items()))
 
-        return "%s([%s])" % (self.__class__.__name__, ", ".join(items))
+        return "{}([{}])".format(self.__class__.__name__, ", ".join(items))
 
     def __len__(self):
         return len(self._items)
@@ -452,7 +452,7 @@ class NoVars:
         self.reason = reason or "N/A"
 
     def __getitem__(self, key):
-        raise KeyError("No key %r: %s" % (key, self.reason))
+        raise KeyError(f"No key {key!r}: {self.reason}")
 
     def __setitem__(self, *args, **kw):
         raise KeyError("Cannot add variables: %s" % self.reason)
@@ -491,7 +491,7 @@ class NoVars:
         return self
 
     def __repr__(self):
-        return "<%s: %s>" % (self.__class__.__name__, self.reason)
+        return f"<{self.__class__.__name__}: {self.reason}>"
 
     def __len__(self):
         return 0

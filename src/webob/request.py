@@ -85,7 +85,7 @@ class BaseRequest:
     def __init__(self, environ, **kw):
 
         if type(environ) is not dict:
-            raise TypeError("WSGI environ must be a dict; you passed %r" % (environ,))
+            raise TypeError(f"WSGI environ must be a dict; you passed {environ!r}")
 
         self.__dict__["environ"] = environ
 
@@ -99,7 +99,7 @@ class BaseRequest:
 
             for name, value in kw.items():
                 if not hasattr(cls, name):
-                    raise TypeError("Unexpected keyword: %s=%r" % (name, value))
+                    raise TypeError(f"Unexpected keyword: {name}={value!r}")
                 setattr(self, name, value)
 
     def encget(self, key, default=NoDefault, encattr=None):
@@ -1187,10 +1187,10 @@ class BaseRequest:
 
     def __repr__(self):
         try:
-            name = "%s %s" % (self.method, self.url)
+            name = f"{self.method} {self.url}"
         except KeyError:
             name = "(invalid WSGI environ)"
-        msg = "<%s at 0x%x %s>" % (self.__class__.__name__, abs(id(self)), name)
+        msg = f"<{self.__class__.__name__} at 0x{abs(id(self)):x} {name}>"
 
         return msg
 
@@ -1205,7 +1205,7 @@ class BaseRequest:
         host = self.host_url
         assert url.startswith(host)
         url = url[len(host) :]
-        parts = [bytes_("%s %s %s" % (self.method, url, self.http_version))]
+        parts = [bytes_(f"{self.method} {url} {self.http_version}")]
 
         # acquire body before we handle headers so that
         # content-length will be set
@@ -1222,7 +1222,7 @@ class BaseRequest:
                 body = self.body
 
         for k, v in sorted(self.headers.items()):
-            header = bytes_("%s: %s" % (k, v))
+            header = bytes_(f"{k}: {v}")
             parts.append(header)
 
         if body:
@@ -1499,7 +1499,7 @@ class AdhocAttrMixin:
 
 
 class Request(AdhocAttrMixin, BaseRequest):
-    """ The default request implementation """
+    """The default request implementation"""
 
 
 def environ_from_url(path):
@@ -1616,7 +1616,7 @@ class LimitedLengthFile(io.RawIOBase):
         self.remaining = maxlen
 
     def __repr__(self):
-        return "<%s(%r, maxlen=%s)>" % (self.__class__.__name__, self.file, self.maxlen)
+        return f"<{self.__class__.__name__}({self.file!r}, maxlen={self.maxlen})>"
 
     def fileno(self):
         return self.file.fileno()
@@ -1698,7 +1698,7 @@ def _encode_multipart(vars, content_type, fout=None):
 
             if value.type_options:
                 for ct_name, ct_value in sorted(value.type_options.items()):
-                    wt('; %s="%s"' % (ct_name, ct_value))
+                    wt(f'; {ct_name}="{ct_value}"')
             w(CRLF)
         elif mime_type:
             wt("Content-type: %s" % mime_type)

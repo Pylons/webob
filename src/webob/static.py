@@ -39,7 +39,7 @@ class FileApp:
         try:
             stat = os.stat(self.filename)
         except OSError as e:
-            msg = "Can't open %r: %s" % (self.filename, e)
+            msg = f"Can't open {self.filename!r}: {e}"
             return exc.HTTPNotFound(comment=msg)
 
         try:

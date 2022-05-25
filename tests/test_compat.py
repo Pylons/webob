@@ -87,7 +87,7 @@ Larry
 --JfISa01"""
         env = {
             "REQUEST_METHOD": "POST",
-            "CONTENT_TYPE": "multipart/form-data; boundary={}".format(BOUNDARY),
+            "CONTENT_TYPE": f"multipart/form-data; boundary={BOUNDARY}",
             "CONTENT_LENGTH": str(len(POSTDATA)),
         }
         fp = BytesIO(POSTDATA.encode("latin-1"))
@@ -124,7 +124,7 @@ ADMIN
 --4ddfd368-cb07-4b9e-b003-876010298a6c--"""
         env = {
             "REQUEST_METHOD": "POST",
-            "CONTENT_TYPE": "multipart/form-data; boundary={}".format(BOUNDARY),
+            "CONTENT_TYPE": f"multipart/form-data; boundary={BOUNDARY}",
             "CONTENT_LENGTH": str(len(POSTDATA)),
         }
         fp = BytesIO(POSTDATA.encode("latin-1"))
@@ -167,7 +167,7 @@ Content-Disposition: form-data; name="submit"
 
         env = {
             "REQUEST_METHOD": "POST",
-            "CONTENT_TYPE": "multipart/form-data; boundary={}".format(BOUNDARY),
+            "CONTENT_TYPE": f"multipart/form-data; boundary={BOUNDARY}",
             "CONTENT_LENGTH": "560",
         }
         # Add some leading whitespace to our post data that will cause the

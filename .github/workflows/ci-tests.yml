@@ -7,6 +7,7 @@ on:
             - master
             - "[0-9].[0-9]+-branch"
         tags:
+            - "*"
     # Build pull requests
     pull_request:
 
@@ -15,11 +16,11 @@ jobs:
         strategy:
             matrix:
                 py:
-                    - "3.6"
                     - "3.7"
                     - "3.8"
                     - "3.9"
-                    - "pypy3"
+                    - "3.10"
+                    - "pypy-3.8"
                 os:
                     - "ubuntu-latest"
                     - "windows-latest"
@@ -34,9 +35,9 @@ jobs:
                       architecture: x86
                     - os: "macos-latest"
                       architecture: x86
-                    # Building on PyPy3 on Windows is broken
+                    # PyPy on Windows is a no go
                     - os: "windows-latest"
-                      py: "pypy3"
+                      py: "pypy-3.8"
 
         name: "Python: ${{ matrix.py }}-${{ matrix.architecture }} on ${{ matrix.os }}"
         runs-on: ${{ matrix.os }}

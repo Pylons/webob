@@ -141,7 +141,7 @@ class IfRange:
         return bool(self.etag)
 
     def __repr__(self):
-        return "%s(%r)" % (self.__class__.__name__, self.etag)
+        return f"{self.__class__.__name__}({self.etag!r})"
 
     def __str__(self):
         return str(self.etag) if self.etag else ""
@@ -158,7 +158,7 @@ class IfRangeDate:
         return last_modified and (last_modified <= self.date)
 
     def __repr__(self):
-        return "%s(%r)" % (self.__class__.__name__, self.date)
+        return f"{self.__class__.__name__}({self.date!r})"
 
     def __str__(self):
         return serialize_date(self.date)
