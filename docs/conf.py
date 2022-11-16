@@ -19,7 +19,7 @@ source_suffix = [".txt", ".rst"]
 # The encoding of source files.
 # source_encoding = 'utf-8-sig'
 
-# The master toctree document.
+# The main toctree document.
 master_doc = "index"
 
 # General information about the project.

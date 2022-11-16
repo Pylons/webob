@@ -1,6 +1,8 @@
 Unreleased
 ----------
 
+- Rename "master" git branch to "main"
+
 Feature
 ~~~~~~~
 

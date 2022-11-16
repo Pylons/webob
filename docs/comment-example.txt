@@ -16,7 +16,7 @@ Code
 
 The finished code for this is available in
 `docs/comment-example-code/example.py
-<https://github.com/Pylons/webob/blob/master/docs/comment-example-code/example.py>`_
+<https://github.com/Pylons/webob/blob/main/docs/comment-example-code/example.py>`_
 -- you can run that file as a script to try it out.
 
 Instantiating Middleware

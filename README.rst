@@ -1,7 +1,7 @@
 WebOb
 =====
 
-.. image:: https://travis-ci.com/Pylons/webob.png?branch=master
+.. image:: https://travis-ci.com/Pylons/webob.png?branch=main
         :target: https://travis-ci.com/Pylons/webob
 
 .. image:: https://readthedocs.org/projects/webob/badge/?version=stable
