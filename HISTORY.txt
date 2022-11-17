@@ -26,7 +26,7 @@ Backwards Incompatibilities
   GSoC, the Python Software Foundation for organising and a huge thanks to Ira
   for completing the work. See https://github.com/Pylons/webob/pull/338 and
   https://github.com/Pylons/webob/pull/335. Documentation is available at
-  https://docs.pylonsproject.org/projects/webob/en/master/api/webob.html
+  https://docs.pylonsproject.org/projects/webob/en/main/api/webob.html
 
 - When calling a ``@wsgify`` decorated function, the default arguments passed
   to ``@wsgify`` are now used when called with the request, and not as a

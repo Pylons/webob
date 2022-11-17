@@ -22,7 +22,7 @@ Git Branches
 Git branches and their purpose and status at the time of this writing are
 listed below.
 
-* [master](https://github.com/Pylons/webob/) - The branch on which further
+* [main](https://github.com/Pylons/webob/) - The branch on which further
 development takes place. The default branch on GitHub.
 * [1.6-branch](https://github.com/Pylons/webob/tree/1.6-branch) - The branch
 classified as "stable" or "latest". Actively maintained. 
@@ -92,7 +92,7 @@ pull request.
     workflow](https://help.github.com/articles/what-is-a-good-git-workflow/).
     Start by pulling from the upstream to get the most current changes.
 
-         git pull upstream master
+         git pull upstream main
 
 7.  Make a branch, make changes to the docs, and rebuild them as indicated in
     step 5.  To speed up the build process, you can omit `clean` from the above
