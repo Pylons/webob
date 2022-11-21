@@ -1,8 +1,9 @@
 WebOb
 =====
 
-.. image:: https://travis-ci.com/Pylons/webob.png?branch=main
-        :target: https://travis-ci.com/Pylons/webob
+.. image:: https://github.com/Pylons/webob/workflows/Build%20and%20test/badge.svg?branch=main
+        :target: https://github.com/Pylons/webob/actions?query=workflow%3A%22Build+and+test%22
+        :alt: main CI Status
 
 .. image:: https://readthedocs.org/projects/webob/badge/?version=stable
         :target: https://docs.pylonsproject.org/projects/webob/en/stable/
