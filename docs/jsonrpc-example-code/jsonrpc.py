@@ -18,9 +18,9 @@ class JsonRpcApp(object):
         req = Request(environ)
         try:
             resp = self.process(req)
-        except ValueError, e:
+        except ValueError as e:
             resp = exc.HTTPBadRequest(str(e))
-        except exc.HTTPException, e:
+        except exc.HTTPException as e:
             resp = e
         return resp(environ, start_response)
 
@@ -29,13 +29,13 @@ class JsonRpcApp(object):
             raise exc.HTTPMethodNotAllowed("Only POST allowed", allowed="POST")
         try:
             json = loads(req.body)
-        except ValueError, e:
+        except ValueError as e:
             raise ValueError("Bad JSON: %s" % e)
         try:
             method = json["method"]
             params = json["params"]
             id = json["id"]
-        except KeyError, e:
+        except KeyError as e:
             raise ValueError("JSON body missing parameter: %s" % e)
         if method.startswith("_"):
             raise exc.HTTPForbidden(

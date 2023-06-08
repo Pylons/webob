@@ -72,7 +72,7 @@ class WikiApp(object):
             except AttributeError:
                 raise exc.HTTPBadRequest("No such action %r" % action)
             resp = meth(req, page)
-        except exc.HTTPException, e:
+        except exc.HTTPException as e:
             resp = e
         return resp(environ, start_response)
 

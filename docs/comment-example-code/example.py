@@ -3,7 +3,7 @@ import urllib
 import time
 import re
 from cPickle import load, dump
-from webob import Request, Response, html_escape
+from webob import Request, html_escape
 from webob import exc
 
 
@@ -112,7 +112,7 @@ class Commenter(object):
             name = req.params["name"]
             homepage = req.params["homepage"]
             comments = req.params["comments"]
-        except KeyError, e:
+        except KeyError as e:
             resp = exc.HTTPBadRequest("Missing parameter: %s" % e)
             return resp
         data = self.get_data(url)
