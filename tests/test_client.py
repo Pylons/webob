@@ -160,7 +160,7 @@ class TestSendRequest(unittest.TestCase):
 
     def test___call___with_socket_error_neg2(self):
         environ = self._makeEnviron()
-        response = socket.error(-2)
+        response = OSError(-2)
         conn_factory = DummyConnectionFactory(response)
         inst = self._makeOne(HTTPConnection=conn_factory)
 
@@ -179,7 +179,7 @@ class TestSendRequest(unittest.TestCase):
         if not hasattr(errno, "ENODATA"):
             # no ENODATA on win
             return
-        response = socket.error(errno.ENODATA)
+        response = OSError(errno.ENODATA)
         conn_factory = DummyConnectionFactory(response)
         inst = self._makeOne(HTTPConnection=conn_factory)
 
@@ -193,7 +193,7 @@ class TestSendRequest(unittest.TestCase):
 
     def test___call___with_socket_error_unknown(self):
         environ = self._makeEnviron()
-        response = socket.error("nope")
+        response = OSError("nope")
         conn_factory = DummyConnectionFactory(response)
         inst = self._makeOne(HTTPConnection=conn_factory)
 

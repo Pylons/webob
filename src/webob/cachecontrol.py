@@ -81,8 +81,7 @@ class exists_property:
     def __set__(self, obj, value):
         if self.type is not None and self.type != obj.type:
             raise AttributeError(
-                "The property %s only applies to %s Cache-Control"
-                % (self.prop, self.type)
+                f"The property {self.prop} only applies to {self.type} Cache-Control"
             )
 
         if value:
@@ -123,8 +122,7 @@ class value_property:
     def __set__(self, obj, value):
         if self.type is not None and self.type != obj.type:
             raise AttributeError(
-                "The property %s only applies to %s Cache-Control"
-                % (self.prop, self.type)
+                f"The property {self.prop} only applies to {self.type} Cache-Control"
             )
         if value == self.default:
             if self.prop in obj.properties:

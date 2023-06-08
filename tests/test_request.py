@@ -3114,8 +3114,7 @@ def simpleapp(environ, start_response):
             "body: %r\n" % request.body,
             "method: %s\n" % request.method,
             "remote_user: %r\n" % request.environ["REMOTE_USER"],
-            "host_url: %r; application_url: %r; path_url: %r; url: %r\n"
-            % (
+            "host_url: {!r}; application_url: {!r}; path_url: {!r}; url: {!r}\n".format(
                 request.host_url,
                 request.application_url,
                 request.path_url,

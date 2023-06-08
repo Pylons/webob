@@ -34,12 +34,7 @@ from webob.descriptors import (
 )
 from webob.headers import ResponseHeaders
 from webob.request import BaseRequest
-from webob.util import (
-    bytes_,
-    status_generic_reasons,
-    status_reasons,
-    text_,
-)
+from webob.util import bytes_, status_generic_reasons, status_reasons, text_
 
 try:
     import simplejson as json
@@ -554,7 +549,7 @@ class Response:
         elif self.content_length != len(body):
             raise AssertionError(
                 "Content-Length is different from actual app_iter length "
-                "(%r!=%r)" % (self.content_length, len(body))
+                "({!r}!={!r})".format(self.content_length, len(body))
             )
 
         return body

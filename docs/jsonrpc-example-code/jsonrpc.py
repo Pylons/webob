@@ -6,7 +6,7 @@ import traceback
 import sys
 
 
-class JsonRpcApp(object):
+class JsonRpcApp:
     """
     Serve the given object via json-rpc (http://json-rpc.org/)
     """
@@ -66,7 +66,7 @@ class JsonRpcApp(object):
         )
 
 
-class ServerProxy(object):
+class ServerProxy:
     """
     JSON proxy to a remote service.
     """
@@ -85,10 +85,10 @@ class ServerProxy(object):
         return _Method(self, name)
 
     def __repr__(self):
-        return "<%s for %s>" % (self.__class__.__name__, self._url)
+        return f"<{self.__class__.__name__} for {self._url}>"
 
 
-class _Method(object):
+class _Method:
     def __init__(self, parent, name):
         self.parent = parent
         self.name = name
@@ -104,7 +104,7 @@ class _Method(object):
             resp.status_code == 500 and resp.content_type == "application/json"
         ):
             raise ProxyError(
-                "Error from JSON-RPC client %s: %s" % (self.parent._url, resp.status),
+                f"Error from JSON-RPC client {self.parent._url}: {resp.status}",
                 resp,
             )
         json = loads(resp.body)
@@ -141,14 +141,14 @@ class Fault(Exception):
         self.response = response
 
     def __str__(self):
-        return "Method error calling %s: %s\n%s" % (
+        return "Method error calling {}: {}\n{}".format(
             self.response.request.url,
             self.args[0],
             self.error,
         )
 
 
-class DemoObject(object):
+class DemoObject:
     """
     Something interesting to attach to
     """
@@ -192,7 +192,7 @@ def main(args=None):
         sys.exit(2)
     app = make_app(args[0])
     server = simple_server.make_server(options.host, int(options.port), app)
-    print("Serving on http://%s:%s" % (options.host, options.port))
+    print(f"Serving on http://{options.host}:{options.port}")
     server.serve_forever()
     # Try python jsonrpc.py 'jsonrpc:DemoObject()'
 

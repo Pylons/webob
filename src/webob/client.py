@@ -71,7 +71,7 @@ class SendRequest:
 
         if "webob.client.timeout" in environ and self._timeout_supported(ConnClass):
             kw["timeout"] = environ["webob.client.timeout"]
-        conn = ConnClass("%(SERVER_NAME)s:%(SERVER_PORT)s" % environ, **kw)
+        conn = ConnClass("{SERVER_NAME}:{SERVER_PORT}".format(**environ), **kw)
         headers = {}
 
         for key, value in environ.items():

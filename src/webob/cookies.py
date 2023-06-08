@@ -30,7 +30,6 @@ SAMESITE_VALIDATION = True
 
 
 class RequestCookies(MutableMapping):
-
     _cache_key = "webob._parsed_cookies"
 
     def __init__(self, environ):
@@ -449,8 +448,8 @@ def _value_quote(v):
 
     if leftovers:
         __warn_or_raise(
-            "Cookie value contains invalid bytes: (%r). Future versions "
-            "will raise ValueError upon encountering invalid bytes." % (leftovers,),
+            "Cookie value contains invalid bytes: ({!r}). Future versions "
+            "will raise ValueError upon encountering invalid bytes.".format(leftovers),
             RuntimeWarning,
             ValueError,
             "Invalid characters in cookie value",

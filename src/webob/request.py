@@ -81,7 +81,6 @@ class BaseRequest:
     _charset = None
 
     def __init__(self, environ, **kw):
-
         if type(environ) is not dict:
             raise TypeError(f"WSGI environ must be a dict; you passed {environ!r}")
 
@@ -656,7 +655,7 @@ class BaseRequest:
         if "HTTP_HOST" in self.environ:
             return self.environ["HTTP_HOST"]
         else:
-            return "%(SERVER_NAME)s:%(SERVER_PORT)s" % self.environ
+            return "{SERVER_NAME}:{SERVER_PORT}".format(**self.environ)
 
     def _host__set(self, value):
         self.environ["HTTP_HOST"] = value
@@ -850,9 +849,10 @@ class BaseRequest:
     def _check_charset(self):
         if self.charset != "UTF-8":
             raise DeprecationWarning(
-                "Requests are expected to be submitted in UTF-8, not %s. "
-                "You can fix this by doing req = req.decode('%s')"
-                % (self.charset, self.charset)
+                "Requests are expected to be submitted in UTF-8, not {}. "
+                "You can fix this by doing req = req.decode('{}')".format(
+                    self.charset, self.charset
+                )
             )
 
     @property

@@ -45,8 +45,7 @@ class MultiDict(MutableMapping):
 
         if not isinstance(lst, list):
             raise TypeError(
-                "%s.view_list(obj) takes only actual list objects, not %r"
-                % (cls.__name__, lst)
+                f"{cls.__name__}.view_list(obj) takes only actual list objects, not {lst!r}"
             )
         obj = cls()
         obj._items = lst

@@ -230,7 +230,6 @@ class HTTPException(Exception):
 
 
 class WSGIHTTPException(Response, HTTPException):
-
     # You should set in subclasses:
     # code = 200
     # title = 'OK'
