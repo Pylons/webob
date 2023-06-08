@@ -6,7 +6,8 @@ import re
 import sys
 import tempfile
 from urllib import parse as urlparse
-from urllib.parse import quote as url_quote, urlencode as url_encode
+from urllib.parse import quote as url_quote
+from urllib.parse import urlencode as url_encode
 
 from webob.acceptparse import (
     accept_charset_property,
@@ -82,7 +83,8 @@ class BaseRequest:
 
     def __init__(self, environ, **kw):
         if type(environ) is not dict:
-            raise TypeError(f"WSGI environ must be a dict; you passed {environ!r}")
+            msg = f"WSGI environ must be a dict; you passed {environ!r}"
+            raise TypeError(msg)
 
         self.__dict__["environ"] = environ
 
@@ -96,7 +98,8 @@ class BaseRequest:
 
             for name, value in kw.items():
                 if not hasattr(cls, name):
-                    raise TypeError(f"Unexpected keyword: {name}={value!r}")
+                    msg = f"Unexpected keyword: {name}={value!r}"
+                    raise TypeError(msg)
                 setattr(self, name, value)
 
     def encget(self, key, default=NoDefault, encattr=None):
@@ -118,10 +121,7 @@ class BaseRequest:
         return bytes_(val, "latin-1").decode(encoding)
 
     def encset(self, key, val, encattr=None):
-        if encattr:
-            encoding = getattr(self, encattr)
-        else:
-            encoding = "ascii"
+        encoding = getattr(self, encattr) if encattr else "ascii"
         self.environ[key] = bytes_(val, encoding).decode("latin-1")
 
     @property
@@ -226,7 +226,8 @@ class BaseRequest:
     @body_file.setter
     def body_file(self, value):
         if isinstance(value, bytes):
-            raise ValueError("Excepted fileobj but received bytes.")
+            msg = "Excepted fileobj but received bytes."
+            raise ValueError(msg)
 
         self.content_length = None
         self.body_file_raw = value
@@ -270,7 +271,7 @@ class BaseRequest:
     query_string = environ_getter("QUERY_STRING", "")
     server_name = environ_getter("SERVER_NAME")
     server_port = converter(
-        environ_getter("SERVER_PORT"), parse_int, serialize_int, "int"
+        environ_getter("SERVER_PORT"), parse_int, serialize_int, "int",
     )
 
     script_name = environ_decoder("SCRIPT_NAME", "", encattr="url_encoding")
@@ -356,10 +357,7 @@ class BaseRequest:
         e = self.environ
         xff = e.get("HTTP_X_FORWARDED_FOR")
 
-        if xff is not None:
-            addr = xff.split(",")[0].strip()
-        else:
-            addr = e.get("REMOTE_ADDR")
+        addr = xff.split(",")[0].strip() if xff is not None else e.get("REMOTE_ADDR")
 
         return addr
 
@@ -384,10 +382,7 @@ class BaseRequest:
             else:
                 url_scheme = e["wsgi.url_scheme"]
 
-                if url_scheme == "https":
-                    port = "443"
-                else:
-                    port = "80"
+                port = "443" if url_scheme == "https" else "80"
         else:
             port = e["SERVER_PORT"]
 
@@ -415,9 +410,8 @@ class BaseRequest:
         if scheme == "https":
             if port == "443":
                 port = None
-        elif scheme == "http":
-            if port == "80":
-                port = None
+        elif scheme == "http" and port == "80":
+            port = None
         url += host
 
         if port:
@@ -530,6 +524,7 @@ class BaseRequest:
             self.path_info = path[idx:]
 
             return r
+        return None
 
     def path_info_peek(self):
         """
@@ -592,7 +587,7 @@ class BaseRequest:
                 )
 
     urlvars = property(
-        _urlvars__get, _urlvars__set, _urlvars__del, doc=_urlvars__get.__doc__
+        _urlvars__get, _urlvars__set, _urlvars__del, doc=_urlvars__get.__doc__,
     )
 
     def _urlargs__get(self):
@@ -635,7 +630,7 @@ class BaseRequest:
                 )
 
     urlargs = property(
-        _urlargs__get, _urlargs__set, _urlargs__del, _urlargs__get.__doc__
+        _urlargs__get, _urlargs__set, _urlargs__del, _urlargs__get.__doc__,
     )
 
     @property
@@ -714,7 +709,7 @@ class BaseRequest:
 
         if not isinstance(value, bytes):
             raise TypeError(
-                "You can only set Request.body to bytes (not %r)" % type(value)
+                "You can only set Request.body to bytes (not %r)" % type(value),
             )
         self.content_length = len(value)
         self.body_file_raw = io.BytesIO(value)
@@ -743,21 +738,23 @@ class BaseRequest:
         """
 
         if not self.charset:
-            raise AttributeError("You cannot access Request.text unless charset is set")
+            msg = "You cannot access Request.text unless charset is set"
+            raise AttributeError(msg)
         body = self.body
 
         return body.decode(self.charset)
 
     def _text__set(self, value):
         if not self.charset:
+            msg = "You cannot access Response.text unless charset is set"
             raise AttributeError(
-                "You cannot access Response.text unless charset is set"
+                msg,
             )
 
         if not isinstance(value, str):
             raise TypeError(
                 "You can only set Request.text to a unicode string "
-                "(not %s)" % type(value)
+                "(not %s)" % type(value),
             )
         self.body = value.encode(self.charset)
 
@@ -792,7 +789,7 @@ class BaseRequest:
             # Not an HTML form submission
 
             return NoVars(
-                "Not an HTML form submission (Content-Type: %s)" % content_type
+                "Not an HTML form submission (Content-Type: %s)" % content_type,
             )
         self._check_charset()
 
@@ -848,11 +845,9 @@ class BaseRequest:
 
     def _check_charset(self):
         if self.charset != "UTF-8":
+            msg = f"Requests are expected to be submitted in UTF-8, not {self.charset}. You can fix this by doing req = req.decode('{self.charset}')"
             raise DeprecationWarning(
-                "Requests are expected to be submitted in UTF-8, not {}. "
-                "You can fix this by doing req = req.decode('{}')".format(
-                    self.charset, self.charset
-                )
+                msg,
             )
 
     @property
@@ -993,7 +988,7 @@ class BaseRequest:
                     # should be a LimitedLengthFile which should already have
                     # raised if there was less data than expected.
                     raise DisconnectionError(
-                        "Client disconnected (%s more bytes were expected)" % todo
+                        "Client disconnected (%s more bytes were expected)" % todo,
                     )
 
                 if fileobj:
@@ -1090,7 +1085,7 @@ class BaseRequest:
     accept_language = accept_language_property()
 
     authorization = converter(
-        environ_getter("HTTP_AUTHORIZATION", None, "14.8"), parse_auth, serialize_auth
+        environ_getter("HTTP_AUTHORIZATION", None, "14.8"), parse_auth, serialize_auth,
     )
 
     def _cache_control__get(self):
@@ -1105,7 +1100,7 @@ class BaseRequest:
         if cache_obj is not None and cache_header == value:
             return cache_obj
         cache_obj = CacheControl.parse(
-            value, updates_to=self._update_cache_control, type="request"
+            value, updates_to=self._update_cache_control, type="request",
         )
         env["webob._cache_control"] = (value, cache_obj)
 
@@ -1150,10 +1145,10 @@ class BaseRequest:
 
     date = converter_date(environ_getter("HTTP_DATE", None, "14.8"))
     if_modified_since = converter_date(
-        environ_getter("HTTP_IF_MODIFIED_SINCE", None, "14.25")
+        environ_getter("HTTP_IF_MODIFIED_SINCE", None, "14.25"),
     )
     if_unmodified_since = converter_date(
-        environ_getter("HTTP_IF_UNMODIFIED_SINCE", None, "14.28")
+        environ_getter("HTTP_IF_UNMODIFIED_SINCE", None, "14.28"),
     )
     if_range = converter(
         environ_getter("HTTP_IF_RANGE", None, "14.27"),
@@ -1246,7 +1241,8 @@ class BaseRequest:
         r = cls.from_file(f)
 
         if f.tell() != len(b):
-            raise ValueError("The string contains more data than expected")
+            msg = "The string contains more data than expected"
+            raise ValueError(msg)
 
         return r
 
@@ -1286,7 +1282,7 @@ class BaseRequest:
         except ValueError:
             raise ValueError("Bad HTTP request line: %r" % start_line)
         r = cls(
-            environ_from_url(resource), http_version=http_version, method=method.upper()
+            environ_from_url(resource), http_version=http_version, method=method.upper(),
         )
         del r.environ["HTTP_HOST"]
 
@@ -1307,10 +1303,7 @@ class BaseRequest:
 
         clen = r.content_length
 
-        if clen is None:
-            body = fp.read()
-        else:
-            body = fp.read(clen)
+        body = fp.read() if clen is None else fp.read(clen)
 
         if is_text:
             body = bytes_(body, "utf-8")
@@ -1381,16 +1374,16 @@ class BaseRequest:
 
         if catch_exc_info:
             status, headers, app_iter, exc_info = self.call_application(
-                application, catch_exc_info=True
+                application, catch_exc_info=True,
             )
             del exc_info
         else:
             status, headers, app_iter = self.call_application(
-                application, catch_exc_info=False
+                application, catch_exc_info=False,
             )
 
         return self.ResponseClass(
-            status=status, headerlist=list(headers), app_iter=app_iter
+            status=status, headerlist=list(headers), app_iter=app_iter,
         )
 
     get_response = send
@@ -1430,7 +1423,7 @@ class BaseRequest:
 
             if query or fragment:
                 raise ValueError(
-                    "base_url (%r) cannot have a query or fragment" % base_url
+                    "base_url (%r) cannot have a query or fragment" % base_url,
                 )
 
             if scheme:
@@ -1475,7 +1468,7 @@ class AdhocAttrMixin:
 
     def __setattr__(self, attr, value, DEFAULT=DEFAULT):
         if getattr(self.__class__, attr, DEFAULT) is not DEFAULT or attr.startswith(
-            "_"
+            "_",
         ):
             object.__setattr__(self, attr, value)
         else:
@@ -1580,7 +1573,7 @@ def environ_add_POST(env, data, content_type=None):
     elif content_type.startswith("application/x-www-form-urlencoded"):
         if has_files:
             raise ValueError(
-                "Submiting files is not allowed for" " content type `%s`" % content_type
+                "Submiting files is not allowed for" " content type `%s`" % content_type,
             )
 
         if not isinstance(data, bytes):
@@ -1589,7 +1582,7 @@ def environ_add_POST(env, data, content_type=None):
         if not isinstance(data, bytes):
             raise ValueError(
                 "Please provide `POST` data as bytes"
-                " for content type `%s`" % content_type
+                " for content type `%s`" % content_type,
             )
     data = bytes_(data, "utf8")
     env["wsgi.input"] = io.BytesIO(data)
@@ -1634,7 +1627,7 @@ class LimitedLengthFile(io.RawIOBase):
         if sz < sz0 and self.remaining:
             raise DisconnectionError(
                 "The client disconnected while sending the body "
-                "(%d more bytes were expected)" % (self.remaining,)
+                "(%d more bytes were expected)" % (self.remaining,),
             )
         buff[:sz] = data
 
@@ -1646,6 +1639,7 @@ def _get_multipart_boundary(ctype):
 
     if m:
         return text_(m.group(1).strip('"'))
+    return None
 
 
 def _encode_multipart(vars, content_type, fout=None):
@@ -1724,6 +1718,7 @@ def detect_charset(ctype):
 
     if m:
         return m.group(1).strip('"').strip()
+    return None
 
 
 def _is_utf8(charset):

@@ -1,6 +1,6 @@
+import re
 from collections import namedtuple
 from datetime import date, datetime
-import re
 
 from webob.byterange import ContentRange, Range
 from webob.datetime_utils import parse_date, serialize_date
@@ -68,6 +68,8 @@ def environ_decoder(key, default=_not_given, rfc_section=None, encattr=None):
             if val is None:
                 if key in req.environ:
                     del req.environ[key]
+                    return None
+                return None
             else:
                 return req.encset(key, val, encattr=encattr)
 
@@ -120,14 +122,17 @@ def header_getter(header, rfc_section):
         for k, v in r._headerlist:
             if k.lower() == key:
                 return v
+        return None
 
     def fset(r, value):
         fdel(r)
         if value is not None:
             if not isinstance(value, str):
-                raise ValueError("Value must be text_type")
+                msg = "Value must be text_type"
+                raise ValueError(msg)
             if "\n" in value or "\r" in value:
-                raise ValueError("Header value may not contain control characters")
+                msg = "Header value may not contain control characters"
+                raise ValueError(msg)
 
             r._headerlist.append((header, value))
 
@@ -280,7 +285,7 @@ def serialize_content_range(value):
         if len(value) not in (2, 3):
             raise ValueError(
                 "When setting content_range to a list/tuple, it must "
-                "be length 2 or 3 (not %r)" % value
+                "be length 2 or 3 (not %r)" % value,
             )
         if len(value) == 2:
             begin, end = value

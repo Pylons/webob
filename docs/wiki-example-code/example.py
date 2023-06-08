@@ -1,8 +1,8 @@
 import os
 import re
-from webob import Request, Response
-from webob import exc
+
 from tempita import HTMLTemplate
+from webob import Request, Response, exc
 
 VIEW_TEMPLATE = HTMLTemplate(
     """\
@@ -22,7 +22,7 @@ VIEW_TEMPLATE = HTMLTemplate(
 <a href="{{req.url}}?action=edit">Edit</a>
  </body>
 </html>
-"""
+""",
 )
 
 EDIT_TEMPLATE = HTMLTemplate(
@@ -50,7 +50,7 @@ EDIT_TEMPLATE = HTMLTemplate(
  <a href="{{req.path_url}}">Cancel</a>
 </form>
 </body></html>
-"""
+""",
 )
 
 
@@ -84,17 +84,15 @@ class WikiApp:
         if path.endswith("/"):
             path += "index"
         if not path.startswith(self.storage_dir):
-            raise exc.HTTPBadRequest("Bad path")
+            msg = "Bad path"
+            raise exc.HTTPBadRequest(msg)
         path += ".html"
         return Page(path)
 
     def action_view_GET(self, req, page):
         if not page.exists:
             return exc.HTTPTemporaryRedirect(location=req.url + "?action=edit")
-        if req.cookies.get("message"):
-            message = req.cookies["message"]
-        else:
-            message = None
+        message = req.cookies["message"] if req.cookies.get("message") else None
         text = self.view_template.substitute(page=page, req=req, message=message)
         resp = Response(text)
         if message:
@@ -108,7 +106,7 @@ class WikiApp:
         submit_mtime = int(req.params.get("mtime") or "0") or None
         if page.mtime != submit_mtime:
             return exc.HTTPPreconditionFailed(
-                "The page has been updated since you started editing it"
+                "The page has been updated since you started editing it",
             )
         page.set(title=req.params["title"], content=req.params["content"])
         resp = exc.HTTPSeeOther(location=req.path_url)

@@ -1,7 +1,5 @@
 import base64
 import binascii
-from collections.abc import MutableMapping
-from datetime import date, datetime, timedelta
 import hashlib
 import hmac
 import json
@@ -9,6 +7,8 @@ import re
 import string
 import time
 import warnings
+from collections.abc import MutableMapping
+from datetime import date, datetime, timedelta
 
 from webob.util import bytes_, text_
 
@@ -102,10 +102,12 @@ class RequestCookies(MutableMapping):
         try:
             bytes_cookie_name = bytes_(name, "ascii")
         except UnicodeEncodeError:
-            raise TypeError("cookie name must be encodable to ascii")
+            msg = "cookie name must be encodable to ascii"
+            raise TypeError(msg)
 
         if not _valid_cookie_name(bytes_cookie_name):
-            raise TypeError("cookie name must be valid according to RFC 6265")
+            msg = "cookie name must be valid according to RFC 6265"
+            raise TypeError(msg)
 
         return name
 
@@ -251,9 +253,9 @@ def serialize_cookie_date(v):
 def serialize_samesite(v):
     v = bytes_(v)
 
-    if SAMESITE_VALIDATION:
-        if v.lower() not in (b"strict", b"lax", b"none"):
-            raise ValueError("SameSite must be 'strict', 'lax', or 'none'")
+    if SAMESITE_VALIDATION and v.lower() not in (b"strict", b"lax", b"none"):
+        msg = "SameSite must be 'strict', 'lax', or 'none'"
+        raise ValueError(msg)
 
     return v
 
@@ -309,9 +311,9 @@ class Morsel(dict):
 
             if self.samesite:
                 if not self.secure and self.samesite.lower() == b"none":
+                    msg = "Incompatible cookie attributes: when the samesite equals 'none', then the secure must be True"
                     raise ValueError(
-                        "Incompatible cookie attributes: "
-                        "when the samesite equals 'none', then the secure must be True"
+                        msg,
                     )
                 add(b"SameSite=" + self.samesite)
 
@@ -575,8 +577,9 @@ def make_cookie(
         try:
             max_age = int(max_age)
         except ValueError:
+            msg = "max_age should be an integer. Amount of seconds until expiration."
             raise ValueError(
-                "max_age should be an integer. Amount of seconds until expiration."
+                msg,
             )
 
         expires = max_age
@@ -737,7 +740,8 @@ class SignedSerializer:
         sig = hmac.new(self.salted_secret, bytes_(cstruct), self.digestmod).digest()
 
         if not hmac.compare_digest(sig, expected_sig):
-            raise ValueError("Invalid signature")
+            msg = "Invalid signature"
+            raise ValueError(msg)
 
         return self.serializer.loads(cstruct)
 
@@ -849,7 +853,8 @@ class CookieProfile:
         """
 
         if not self.request:
-            raise ValueError("No request bound to cookie profile")
+            msg = "No request bound to cookie profile"
+            raise ValueError(msg)
 
         cookie = self.request.cookies.get(self.cookie_name)
 
@@ -858,6 +863,7 @@ class CookieProfile:
                 return self.serializer.loads(bytes_(cookie))
             except ValueError:
                 return None
+        return None
 
     def set_cookies(
         self,
@@ -957,7 +963,7 @@ class CookieProfile:
 
         if value is not None and len(value) > 4093:
             raise ValueError(
-                "Cookie value is too long to store (%s bytes)" % len(value)
+                "Cookie value is too long to store (%s bytes)" % len(value),
             )
 
         cookies = []
@@ -1067,7 +1073,7 @@ class SignedCookieProfile(CookieProfile):
         self.original_serializer = serializer
 
         signed_serializer = SignedSerializer(
-            secret, salt, hashalg, serializer=self.original_serializer
+            secret, salt, hashalg, serializer=self.original_serializer,
         )
         CookieProfile.__init__(
             self,

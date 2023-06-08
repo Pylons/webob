@@ -1,7 +1,6 @@
 from collections.abc import Iterable
 
 import pytest
-
 from webob.byterange import ContentRange, Range, _is_content_range_valid
 
 # Range class

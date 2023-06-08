@@ -56,7 +56,8 @@ class SendRequest:
             host = environ.get("HTTP_HOST")
 
             if not host:
-                raise ValueError("environ contains neither SERVER_NAME nor HTTP_HOST")
+                msg = "environ contains neither SERVER_NAME nor HTTP_HOST"
+                raise ValueError(msg)
 
             if ":" in host:
                 host, port = host.split(":", 1)
@@ -79,7 +80,7 @@ class SendRequest:
                 key = key[5:].replace("_", "-").title()
                 headers[key] = value
         path = url_quote(environ.get("SCRIPT_NAME", "")) + url_quote(
-            environ.get("PATH_INFO", "")
+            environ.get("PATH_INFO", ""),
         )
 
         if environ.get("QUERY_STRING"):
@@ -91,10 +92,7 @@ class SendRequest:
         # FIXME: there is no streaming of the body, and that might be useful
         # in some cases
 
-        if content_length:
-            body = environ["wsgi.input"].read(content_length)
-        else:
-            body = ""
+        body = environ["wsgi.input"].read(content_length) if content_length else ""
         headers["Content-Length"] = content_length
 
         if environ.get("CONTENT_TYPE"):
@@ -116,7 +114,7 @@ class SendRequest:
                 # Name or service not known
                 resp = exc.HTTPBadGateway(
                     "Name or service not known (bad domain name: %s)"
-                    % environ["SERVER_NAME"]
+                    % environ["SERVER_NAME"],
                 )
 
                 return resp(environ, start_response)
@@ -132,10 +130,7 @@ class SendRequest:
         length = res.getheader("content-length")
         # FIXME: This shouldn't really read in all the content at once
 
-        if length is not None:
-            body = res.read(int(length))
-        else:
-            body = res.read()
+        body = res.read(int(length)) if length is not None else res.read()
         conn.close()
 
         return [body]
@@ -164,7 +159,7 @@ class SendRequest:
 
                 if not headers_out:
                     raise ValueError(
-                        "First header starts with a space (%r)" % full_header
+                        "First header starts with a space (%r)" % full_header,
                     )
                 last_header, last_value = headers_out.pop()
                 value = last_value + ", " + full_header.strip()
@@ -178,7 +173,8 @@ class SendRequest:
                 try:
                     header, value = full_header.split(":", 1)
                 except Exception:
-                    raise ValueError(f"Invalid header: {full_header!r}")
+                    msg = f"Invalid header: {full_header!r}"
+                    raise ValueError(msg)
             value = value.strip()
 
             if "\n" in value or "\r\n" in value:  # pragma: no cover

@@ -1,7 +1,6 @@
 from datetime import timedelta, tzinfo
 
 import pytest
-
 from webob.request import Request
 from webob.util import text_
 
@@ -268,7 +267,7 @@ def test_converter_not_prop():
 
     with pytest.raises(AssertionError):
         converter(
-            ("CONTENT_LENGTH", None, "14.13"), parse_int_safe, serialize_int, "int"
+            ("CONTENT_LENGTH", None, "14.13"), parse_int_safe, serialize_int, "int",
         )
 
 
@@ -341,7 +340,7 @@ def test_converter_without_name_fget():
 
     req = Request.blank("/")
     desc = converter(
-        environ_getter("CONTENT_LENGTH", "666", "14.13"), parse_int_safe, serialize_int
+        environ_getter("CONTENT_LENGTH", "666", "14.13"), parse_int_safe, serialize_int,
     )
     assert desc.fget(req) == 666
 
@@ -356,7 +355,7 @@ def test_converter_without_name_fset():
 
     req = Request.blank("/")
     desc = converter(
-        environ_getter("CONTENT_LENGTH", "666", "14.13"), parse_int_safe, serialize_int
+        environ_getter("CONTENT_LENGTH", "666", "14.13"), parse_int_safe, serialize_int,
     )
     desc.fset(req, "999")
     assert desc.fget(req) == 999
@@ -470,7 +469,7 @@ def test_converter_date():
     req = Request.blank("/")
     UTC = GMT()
     desc = converter_date(
-        environ_getter("HTTP_DATE", "Tue, 15 Nov 1994 08:12:31 GMT", "14.8")
+        environ_getter("HTTP_DATE", "Tue, 15 Nov 1994 08:12:31 GMT", "14.8"),
     )
     assert desc.fget(req) == datetime.datetime(1994, 11, 15, 8, 12, 31, tzinfo=UTC)
 
@@ -479,7 +478,7 @@ def test_converter_date_docstring():
     from webob.descriptors import converter_date, environ_getter
 
     desc = converter_date(
-        environ_getter("HTTP_DATE", "Tue, 15 Nov 1994 08:12:31 GMT", "14.8")
+        environ_getter("HTTP_DATE", "Tue, 15 Nov 1994 08:12:31 GMT", "14.8"),
     )
     assert (
         "http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.8" in desc.__doc__
@@ -529,9 +528,9 @@ def test_deprecated_property():
     Foo.attr = deprecated_property("attr", "attr", "whatever", "1.2")
     foo = Foo()
     with pytest.raises(DeprecationWarning):
-        getattr(foo, "attr")
+        foo.attr
     with pytest.raises(DeprecationWarning):
-        setattr(foo, "attr", {})
+        foo.attr = {}
     with pytest.raises(DeprecationWarning):
         delattr(foo, "attr")
 
@@ -606,7 +605,7 @@ def test_parse_range_type():
     from webob.descriptors import parse_range
 
     val = parse_range("bytes=1-500")
-    assert type(val) is type(Range.parse("bytes=1-500"))  # noqa: E701
+    assert type(val) is type(Range.parse("bytes=1-500"))
 
 
 def test_parse_range_values():
@@ -935,7 +934,7 @@ def test_serialize_auth_digest_tuple():
     from webob.descriptors import serialize_auth
 
     val = serialize_auth(
-        ("Digest", {"realm": '"WebOb"', "nonce": "abcde12345", "qop": "foo"})
+        ("Digest", {"realm": '"WebOb"', "nonce": "abcde12345", "qop": "foo"}),
     )
     flags = val[len("Digest") :]
     result = sorted(x.strip() for x in flags.split(","))
@@ -953,7 +952,7 @@ class _TestEnvironDecoder:
             return environ_decoder(key, rfc_section=rfc_section, encattr=encattr)
         else:
             return environ_decoder(
-                key, default=default, rfc_section=rfc_section, encattr=encattr
+                key, default=default, rfc_section=rfc_section, encattr=encattr,
             )
 
     def test_docstring(self):

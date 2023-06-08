@@ -1,11 +1,11 @@
+import re
+import struct
+import zlib
 from base64 import b64encode
 from datetime import datetime, timedelta
 from hashlib import md5
-import re
-import struct
 from urllib import parse as urlparse
 from urllib.parse import quote as url_quote
-import zlib
 
 from webob.byterange import ContentRange
 from webob.cachecontrol import CacheControl, serialize_cache_control
@@ -173,10 +173,7 @@ class Response:
         # Do some sanity checking, and turn json_body into an actual body
 
         if app_iter is None and body is None and ("json_body" in kw or "json" in kw):
-            if "json_body" in kw:
-                json_body = kw.pop("json_body")
-            else:
-                json_body = kw.pop("json")
+            json_body = kw.pop("json_body") if "json_body" in kw else kw.pop("json")
             body = json.dumps(json_body, separators=(",", ":")).encode("UTF-8")
 
             if content_type is None:
@@ -186,7 +183,8 @@ class Response:
             if body is None:
                 body = b""
         elif body is not None:
-            raise TypeError("You may only give one of the body and app_iter arguments")
+            msg = "You may only give one of the body and app_iter arguments"
+            raise TypeError(msg)
 
         # Set up Response.status
 
@@ -296,8 +294,9 @@ class Response:
                 encoding = encoding or self.charset
 
                 if encoding is None:
+                    msg = "You cannot set the body to a text value without a charset"
                     raise TypeError(
-                        "You cannot set the body to a text value without a " "charset"
+                        msg,
                     )
                 body = body.encode(encoding)
             app_iter = [body]
@@ -319,7 +318,8 @@ class Response:
         for name, value in kw.items():
             if not hasattr(self.__class__, name):
                 # Not a basic attribute
-                raise TypeError(f"Unexpected keyword: {name}={value!r}")
+                msg = f"Unexpected keyword: {name}={value!r}"
+                raise TypeError(msg)
             setattr(self, name, value)
 
     @classmethod
@@ -432,7 +432,7 @@ class Response:
 
         if not isinstance(value, str):
             raise TypeError(
-                "You must set status to a string or integer (not %s)" % type(value)
+                "You must set status to a string or integer (not %s)" % type(value),
             )
 
         # Attempt to get the status code itself, if this fails we should fail
@@ -442,7 +442,8 @@ class Response:
             # ValueError as a test
             int(value.split()[0])
         except ValueError:
-            raise ValueError("Invalid status code, integer required.")
+            msg = "Invalid status code, integer required."
+            raise ValueError(msg)
         self._status = value
 
     status = property(_status__get, _status__set, doc=_status__get.__doc__)
@@ -461,7 +462,7 @@ class Response:
             self._status = "%d %s" % (code, status_generic_reasons[code // 100])
 
     status_code = status_int = property(
-        _status_code__get, _status_code__set, doc=_status_code__get.__doc__
+        _status_code__get, _status_code__set, doc=_status_code__get.__doc__,
     )
 
     #
@@ -532,7 +533,8 @@ class Response:
             return app_iter[0]
 
         if app_iter is None:
-            raise AttributeError("No body has been set")
+            msg = "No body has been set"
+            raise AttributeError(msg)
         try:
             body = b"".join(app_iter)
         finally:
@@ -547,9 +549,9 @@ class Response:
         elif self.content_length is None:
             self.content_length = len(body)
         elif self.content_length != len(body):
+            msg = f"Content-Length is different from actual app_iter length ({self.content_length!r}!={len(body)!r})"
             raise AssertionError(
-                "Content-Length is different from actual app_iter length "
-                "({!r}!={!r})".format(self.content_length, len(body))
+                msg,
             )
 
         return body
@@ -563,7 +565,7 @@ class Response:
                 )
             else:
                 msg = "You can only set the body to a binary type (not %s)" % type(
-                    value
+                    value,
                 )
             raise TypeError(msg)
 
@@ -612,10 +614,7 @@ class Response:
         app_iter = self._app_iter
 
         if isinstance(app_iter, list) and len(app_iter) == 1:
-            if app_iter[0] != b"":
-                return True
-            else:
-                return False
+            return app_iter[0] != b""
 
         if app_iter is None:  # pragma: no cover
             return False
@@ -635,9 +634,9 @@ class Response:
         """
 
         if not self.charset and not self.default_body_encoding:
+            msg = "You cannot access Response.text unless charset or default_body_encoding is set"
             raise AttributeError(
-                "You cannot access Response.text unless charset or "
-                "default_body_encoding is set"
+                msg,
             )
         decoding = self.charset or self.default_body_encoding
         body = self.body
@@ -646,15 +645,15 @@ class Response:
 
     def _text__set(self, value):
         if not self.charset and not self.default_body_encoding:
+            msg = "You cannot access Response.text unless charset or default_body_encoding is set"
             raise AttributeError(
-                "You cannot access Response.text unless charset or "
-                "default_body_encoding is set"
+                msg,
             )
 
         if not isinstance(value, str):
             raise TypeError(
                 "You can only set Response.text to a unicode string "
-                "(not %s)" % type(value)
+                "(not %s)" % type(value),
             )
         encoding = self.charset or self.default_body_encoding
         self.body = value.encode(encoding)
@@ -665,7 +664,7 @@ class Response:
     text = property(_text__get, _text__set, _text__del, doc=_text__get.__doc__)
 
     unicode_body = ubody = property(
-        _text__get, _text__set, _text__del, "Deprecated alias for .text"
+        _text__get, _text__set, _text__del, "Deprecated alias for .text",
     )
 
     #
@@ -688,7 +687,7 @@ class Response:
         del self.body
 
     body_file = property(
-        _body_file__get, _body_file__set, _body_file__del, doc=_body_file__get.__doc__
+        _body_file__get, _body_file__set, _body_file__del, doc=_body_file__get.__doc__,
     )
 
     def write(self, text):
@@ -743,7 +742,7 @@ class Response:
         self.content_length = None
 
     app_iter = property(
-        _app_iter__get, _app_iter__set, _app_iter__del, doc=_app_iter__get.__doc__
+        _app_iter__get, _app_iter__set, _app_iter__del, doc=_app_iter__get.__doc__,
     )
 
     #
@@ -756,7 +755,7 @@ class Response:
     vary = list_header("Vary", "14.44")
 
     content_length = converter(
-        header_getter("Content-Length", "14.17"), parse_int, serialize_int, "int"
+        header_getter("Content-Length", "14.17"), parse_int, serialize_int, "int",
     )
 
     content_encoding = header_getter("Content-Encoding", "14.11")
@@ -779,7 +778,7 @@ class Response:
 
     _etag_raw = header_getter("ETag", "14.19")
     etag = converter(
-        _etag_raw, parse_etag_response, serialize_etag_response, "Entity tag"
+        _etag_raw, parse_etag_response, serialize_etag_response, "Entity tag",
     )
 
     @property
@@ -801,7 +800,7 @@ class Response:
 
     # TODO: the standard allows this to be a list of challenges
     www_authenticate = converter(
-        header_getter("WWW-Authenticate", "14.47"), parse_auth, serialize_auth
+        header_getter("WWW-Authenticate", "14.47"), parse_auth, serialize_auth,
     )
 
     #
@@ -834,8 +833,9 @@ class Response:
         header = self.headers.get("Content-Type", None)
 
         if header is None:
+            msg = "You cannot set the charset when no content-type is defined"
             raise AttributeError(
-                "You cannot set the charset when no " "content-type is defined"
+                msg,
             )
         match = CHARSET_RE.search(header)
 
@@ -858,7 +858,7 @@ class Response:
         self.headers["Content-Type"] = header
 
     charset = property(
-        _charset__get, _charset__set, _charset__del, doc=_charset__get.__doc__
+        _charset__get, _charset__set, _charset__del, doc=_charset__get.__doc__,
     )
 
     #
@@ -901,7 +901,8 @@ class Response:
             return
         else:
             if not isinstance(value, str):
-                raise TypeError("content_type requires value to be of string_types")
+                msg = "content_type requires value to be of string_types"
+                raise TypeError(msg)
 
             content_type = value
 
@@ -978,7 +979,7 @@ class Response:
 
     def _content_type_params__del(self):
         self.headers["Content-Type"] = self.headers.get("Content-Type", "").split(
-            ";", 1
+            ";", 1,
         )[0]
 
     content_type_params = property(
@@ -1148,7 +1149,7 @@ class Response:
             def repl_app(environ, start_response):
                 def repl_start_response(status, headers, exc_info=None):
                     return start_response(
-                        status, headers + c_headers, exc_info=exc_info
+                        status, headers + c_headers, exc_info=exc_info,
                     )
 
                 return resp(environ, repl_start_response)
@@ -1170,7 +1171,7 @@ class Response:
 
         if self._cache_control_obj is None:
             self._cache_control_obj = CacheControl.parse(
-                value, updates_to=self._update_cache_control, type="response"
+                value, updates_to=self._update_cache_control, type="response",
             )
             self._cache_control_obj.header_value = value
 
@@ -1304,7 +1305,7 @@ class Response:
 
         if content_encoding not in ("gzip", "deflate"):
             raise ValueError(
-                "I don't know how to decode the content %s" % content_encoding
+                "I don't know how to decode the content %s" % content_encoding,
             )
 
         if content_encoding == "gzip":
@@ -1435,14 +1436,7 @@ class Response:
             if content_range is None:
                 iter_close(self._app_iter)
                 body = bytes_("Requested range not satisfiable: %s" % req.range)
-                headerlist = [
-                    ("Content-Length", str(len(body))),
-                    (
-                        "Content-Range",
-                        str(ContentRange(None, None, self.content_length)),
-                    ),
-                    ("Content-Type", "text/plain"),
-                ] + filter_headers(headerlist)
+                headerlist = [("Content-Length", str(len(body))), ("Content-Range", str(ContentRange(None, None, self.content_length))), ("Content-Type", "text/plain"), *filter_headers(headerlist)]
                 start_response("416 Requested Range Not Satisfiable", headerlist)
 
                 if method == "HEAD":
@@ -1456,13 +1450,7 @@ class Response:
                     # the following should be guaranteed by
                     # Range.range_for_length(length)
                     assert content_range.start is not None
-                    headerlist = [
-                        (
-                            "Content-Length",
-                            str(content_range.stop - content_range.start),
-                        ),
-                        ("Content-Range", str(content_range)),
-                    ] + filter_headers(headerlist, ("content-length",))
+                    headerlist = [("Content-Length", str(content_range.stop - content_range.start)), ("Content-Range", str(content_range)), *filter_headers(headerlist, ("content-length",))]
                     start_response("206 Partial Content", headerlist)
 
                     if method == "HEAD":
@@ -1531,7 +1519,8 @@ class ResponseBodyFile:
             self.write(item)
 
     def close(self):
-        raise NotImplementedError("Response bodies cannot be closed")
+        msg = "Response bodies cannot be closed"
+        raise NotImplementedError(msg)
 
     def flush(self):
         pass
@@ -1582,7 +1571,7 @@ class AppIterRange:
 
                 return chunk
         else:
-            raise StopIteration()
+            raise StopIteration
 
     def next(self):
         if self._pos < self.start:
@@ -1627,7 +1616,7 @@ class EmptyResponse:
         return 0
 
     def next(self):
-        raise StopIteration()
+        raise StopIteration
 
     __next__ = next  # py3
 
@@ -1683,7 +1672,7 @@ def gzip_app_iter(app_iter):
     size = 0
     crc = zlib.crc32(b"") & 0xFFFFFFFF
     compress = zlib.compressobj(
-        9, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 0
+        9, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 0,
     )
 
     yield _gzip_header

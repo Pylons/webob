@@ -1,6 +1,7 @@
 """
 Represents the Cache-Control header
 """
+import contextlib
 import re
 
 
@@ -80,8 +81,9 @@ class exists_property:
 
     def __set__(self, obj, value):
         if self.type is not None and self.type != obj.type:
+            msg = f"The property {self.prop} only applies to {self.type} Cache-Control"
             raise AttributeError(
-                f"The property {self.prop} only applies to {self.type} Cache-Control"
+                msg,
             )
 
         if value:
@@ -121,8 +123,9 @@ class value_property:
 
     def __set__(self, obj, value):
         if self.type is not None and self.type != obj.type:
+            msg = f"The property {self.prop} only applies to {self.type} Cache-Control"
             raise AttributeError(
-                f"The property {self.prop} only applies to {self.type} Cache-Control"
+                msg,
             )
         if value == self.default:
             if self.prop in obj.properties:
@@ -170,10 +173,9 @@ class CacheControl:
             name = match.group(1)
             value = match.group(2) or match.group(3) or None
             if value:
-                try:
+                with contextlib.suppress(ValueError):
                     value = int(value)
-                except ValueError:
-                    pass
+
             props[name] = value
         obj = cls(props, type=type)
         if updates_to:

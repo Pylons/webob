@@ -1,10 +1,10 @@
 import os
-import urllib
-import time
 import re
-from cPickle import load, dump
-from webob import Request, html_escape
-from webob import exc
+import time
+import urllib
+
+from cPickle import dump, load
+from webob import Request, exc, html_escape
 
 
 class Commenter:
@@ -72,7 +72,7 @@ class Commenter:
         text = []
         text.append("<hr>")
         text.append(
-            '<h2><a name="comment-area"></a>Comments (%s):</h2>' % len(comments)
+            '<h2><a name="comment-area"></a>Comments (%s):</h2>' % len(comments),
         )
         for comment in comments:
             text.append(
@@ -80,7 +80,7 @@ class Commenter:
                     html_escape(comment["homepage"]),
                     html_escape(comment["name"]),
                     time.strftime("%c", comment["time"]),
-                )
+                ),
             )
             # Susceptible to XSS attacks!:
             text.append(comment["comments"])
@@ -116,7 +116,7 @@ class Commenter:
             return resp
         data = self.get_data(url)
         data.append(
-            dict(name=name, homepage=homepage, comments=comments, time=time.gmtime())
+            {"name": name, "homepage": homepage, "comments": comments, "time": time.gmtime()},
         )
         self.save_data(url, data)
         resp = exc.HTTPSeeOther(location=url + "#comment-area")

@@ -39,13 +39,13 @@ class TestSendRequest(unittest.TestCase):
         inst = self._makeOne(HTTPConnection=conn_factory)
 
         def start_response(status, headers):
-            self.assertEqual(status, "200 OK")
-            self.assertEqual(headers, [])
+            assert status == "200 OK"
+            assert headers == []
             inst.start_response_called = True
 
         iterable = inst(environ, start_response)
-        self.assertTrue(inst.start_response_called)
-        self.assertEqual(list(iterable), [b"foo"])
+        assert inst.start_response_called
+        assert list(iterable) == [b"foo"]
 
     def test___call___no_servername_no_http_host(self):
         environ = self._makeEnviron()
@@ -65,15 +65,15 @@ class TestSendRequest(unittest.TestCase):
         inst = self._makeOne(HTTPConnection=conn_factory)
 
         def start_response(status, headers):
-            self.assertEqual(status, "200 OK")
-            self.assertEqual(headers, [])
+            assert status == "200 OK"
+            assert headers == []
             inst.start_response_called = True
 
         iterable = inst(environ, start_response)
-        self.assertTrue(inst.start_response_called)
-        self.assertEqual(list(iterable), [b"foo"])
-        self.assertEqual(environ["SERVER_NAME"], "localhost")
-        self.assertEqual(environ["SERVER_PORT"], "80")
+        assert inst.start_response_called
+        assert list(iterable) == [b"foo"]
+        assert environ["SERVER_NAME"] == "localhost"
+        assert environ["SERVER_PORT"] == "80"
 
     def test___call___no_servername_colon_not_in_host_https(self):
         environ = self._makeEnviron()
@@ -85,15 +85,15 @@ class TestSendRequest(unittest.TestCase):
         inst = self._makeOne(HTTPSConnection=conn_factory)
 
         def start_response(status, headers):
-            self.assertEqual(status, "200 OK")
-            self.assertEqual(headers, [])
+            assert status == "200 OK"
+            assert headers == []
             inst.start_response_called = True
 
         iterable = inst(environ, start_response)
-        self.assertTrue(inst.start_response_called)
-        self.assertEqual(list(iterable), [b"foo"])
-        self.assertEqual(environ["SERVER_NAME"], "localhost")
-        self.assertEqual(environ["SERVER_PORT"], "443")
+        assert inst.start_response_called
+        assert list(iterable) == [b"foo"]
+        assert environ["SERVER_NAME"] == "localhost"
+        assert environ["SERVER_PORT"] == "443"
 
     def test___call___no_content_length(self):
         environ = self._makeEnviron()
@@ -103,13 +103,13 @@ class TestSendRequest(unittest.TestCase):
         inst = self._makeOne(HTTPConnection=conn_factory)
 
         def start_response(status, headers):
-            self.assertEqual(status, "200 OK")
-            self.assertEqual(headers, [])
+            assert status == "200 OK"
+            assert headers == []
             inst.start_response_called = True
 
         iterable = inst(environ, start_response)
-        self.assertTrue(inst.start_response_called)
-        self.assertEqual(list(iterable), [b"foo"])
+        assert inst.start_response_called
+        assert list(iterable) == [b"foo"]
 
     def test___call___with_webob_client_timeout_and_timeout_supported(self):
         environ = self._makeEnviron()
@@ -119,14 +119,14 @@ class TestSendRequest(unittest.TestCase):
         inst = self._makeOne(HTTPConnection=conn_factory)
 
         def start_response(status, headers):
-            self.assertEqual(status, "200 OK")
-            self.assertEqual(headers, [])
+            assert status == "200 OK"
+            assert headers == []
             inst.start_response_called = True
 
         iterable = inst(environ, start_response)
-        self.assertTrue(inst.start_response_called)
-        self.assertEqual(list(iterable), [b"foo"])
-        self.assertEqual(conn_factory.kw, {"timeout": 10})
+        assert inst.start_response_called
+        assert list(iterable) == [b"foo"]
+        assert conn_factory.kw == {"timeout": 10}
 
     def test___call___bad_content_length(self):
         environ = self._makeEnviron({"CONTENT_LENGTH": "abc"})
@@ -135,13 +135,13 @@ class TestSendRequest(unittest.TestCase):
         inst = self._makeOne(HTTPConnection=conn_factory)
 
         def start_response(status, headers):
-            self.assertEqual(status, "200 OK")
-            self.assertEqual(headers, [])
+            assert status == "200 OK"
+            assert headers == []
             inst.start_response_called = True
 
         iterable = inst(environ, start_response)
-        self.assertTrue(inst.start_response_called)
-        self.assertEqual(list(iterable), [b"foo"])
+        assert inst.start_response_called
+        assert list(iterable) == [b"foo"]
 
     def test___call___with_socket_timeout(self):
         environ = self._makeEnviron()
@@ -151,12 +151,12 @@ class TestSendRequest(unittest.TestCase):
         inst = self._makeOne(HTTPConnection=conn_factory)
 
         def start_response(status, headers):
-            self.assertEqual(status, "504 Gateway Timeout")
+            assert status == "504 Gateway Timeout"
             inst.start_response_called = True
 
         iterable = inst(environ, start_response)
-        self.assertTrue(inst.start_response_called)
-        self.assertTrue(list(iterable)[0].startswith(b"504"))
+        assert inst.start_response_called
+        assert list(iterable)[0].startswith(b"504")
 
     def test___call___with_socket_error_neg2(self):
         environ = self._makeEnviron()
@@ -165,12 +165,12 @@ class TestSendRequest(unittest.TestCase):
         inst = self._makeOne(HTTPConnection=conn_factory)
 
         def start_response(status, headers):
-            self.assertEqual(status, "502 Bad Gateway")
+            assert status == "502 Bad Gateway"
             inst.start_response_called = True
 
         iterable = inst(environ, start_response)
-        self.assertTrue(inst.start_response_called)
-        self.assertTrue(list(iterable)[0].startswith(b"502"))
+        assert inst.start_response_called
+        assert list(iterable)[0].startswith(b"502")
 
     def test___call___with_socket_error_ENODATA(self):
         import errno
@@ -184,12 +184,12 @@ class TestSendRequest(unittest.TestCase):
         inst = self._makeOne(HTTPConnection=conn_factory)
 
         def start_response(status, headers):
-            self.assertEqual(status, "502 Bad Gateway")
+            assert status == "502 Bad Gateway"
             inst.start_response_called = True
 
         iterable = inst(environ, start_response)
-        self.assertTrue(inst.start_response_called)
-        self.assertTrue(list(iterable)[0].startswith(b"502"))
+        assert inst.start_response_called
+        assert list(iterable)[0].startswith(b"502")
 
     def test___call___with_socket_error_unknown(self):
         environ = self._makeEnviron()
@@ -198,7 +198,7 @@ class TestSendRequest(unittest.TestCase):
         inst = self._makeOne(HTTPConnection=conn_factory)
 
         def start_response(status, headers):
-            self.assertEqual(status, "502 Bad Gateway")
+            assert status == "502 Bad Gateway"
             inst.start_response_called = True
 
         self.assertRaises(socket.error, inst, environ, start_response)
@@ -210,14 +210,14 @@ class TestSendRequest(unittest.TestCase):
         inst = self._makeOne(HTTPConnection=conn_factory)
 
         def start_response(status, headers):
-            self.assertEqual(status, "200 OK")
-            self.assertEqual(headers, [])
+            assert status == "200 OK"
+            assert headers == []
             inst.start_response_called = True
 
         iterable = inst(environ, start_response)
-        self.assertTrue(inst.start_response_called)
-        self.assertEqual(list(iterable), [b"foo"])
-        self.assertEqual(response.length, None)
+        assert inst.start_response_called
+        assert list(iterable) == [b"foo"]
+        assert response.length is None
 
 
 class DummyMessage:

@@ -1,9 +1,8 @@
+import sys
 from collections.abc import MutableMapping
 from io import BytesIO, StringIO
-import sys
 
 import pytest
-
 from webob.acceptparse import (
     AcceptCharsetInvalidHeader,
     AcceptCharsetNoHeader,
@@ -108,7 +107,7 @@ class TestRequestCommon:
     def test_body_file_setter_w_bytes(self):
         req = self._blankOne("/")
         with pytest.raises(ValueError):
-            setattr(req, "body_file", b"foo")
+            req.body_file = b"foo"
 
     def test_body_file_setter_non_bytes(self):
         BEFORE = BytesIO(b"before")
@@ -466,7 +465,7 @@ class TestRequestCommon:
         req = self._makeOne(environ)
         req._charset = ""
         with pytest.raises(AttributeError):
-            getattr(req, "text")
+            req.text
 
     def test__text_set_without_charset(self):
         body = b"test"
@@ -475,7 +474,7 @@ class TestRequestCommon:
         req = self._makeOne(environ)
         req._charset = ""
         with pytest.raises(AttributeError):
-            setattr(req, "text", "abc")
+            req.text = "abc"
 
     # POST
     def test_POST_not_POST_or_PUT(self):
@@ -703,31 +702,31 @@ class TestRequestCommon:
 
     def test_is_body_readable_POST(self):
         req = self._blankOne(
-            "/", environ={"REQUEST_METHOD": "POST", "CONTENT_LENGTH": "100"}
+            "/", environ={"REQUEST_METHOD": "POST", "CONTENT_LENGTH": "100"},
         )
         assert req.is_body_readable
 
     def test_is_body_readable_PATCH(self):
         req = self._blankOne(
-            "/", environ={"REQUEST_METHOD": "PATCH", "CONTENT_LENGTH": "100"}
+            "/", environ={"REQUEST_METHOD": "PATCH", "CONTENT_LENGTH": "100"},
         )
         assert req.is_body_readable
 
     def test_is_body_readable_GET(self):
         req = self._blankOne(
-            "/", environ={"REQUEST_METHOD": "GET", "CONTENT_LENGTH": "100"}
+            "/", environ={"REQUEST_METHOD": "GET", "CONTENT_LENGTH": "100"},
         )
         assert req.is_body_readable
 
     def test_is_body_readable_unknown_method_and_content_length(self):
         req = self._blankOne(
-            "/", environ={"REQUEST_METHOD": "WTF", "CONTENT_LENGTH": "100"}
+            "/", environ={"REQUEST_METHOD": "WTF", "CONTENT_LENGTH": "100"},
         )
         assert req.is_body_readable
 
     def test_is_body_readable_special_flag(self):
         req = self._blankOne(
-            "/", environ={"REQUEST_METHOD": "WTF", "webob.is_body_readable": True}
+            "/", environ={"REQUEST_METHOD": "WTF", "webob.is_body_readable": True},
         )
         assert req.is_body_readable
 
@@ -946,7 +945,8 @@ class TestRequestCommon:
 
         def application(environ, start_response):
             try:
-                raise RuntimeError("OH NOES")
+                msg = "OH NOES"
+                raise RuntimeError(msg)
             except BaseException:
                 exc_info = sys.exc_info()
             start_response("200 OK", [("content-type", "text/plain")], exc_info)
@@ -962,7 +962,8 @@ class TestRequestCommon:
 
         def application(environ, start_response):
             try:
-                raise RuntimeError("OH NOES")
+                msg = "OH NOES"
+                raise RuntimeError(msg)
             except BaseException:
                 exc_info = sys.exc_info()
             start_response("200 OK", [("content-type", "text/plain")], exc_info)
@@ -992,7 +993,7 @@ class TestRequestCommon:
         assert request.method == "GET"
 
         request = self._blankOne(
-            "/", environ={"CONTENT_TYPE": "application/json"}, POST=""
+            "/", environ={"CONTENT_TYPE": "application/json"}, POST="",
         )
         assert request.content_type == "application/json"
         assert request.method == "POST"
@@ -1003,7 +1004,7 @@ class TestRequestCommon:
         assert request.method == "GET"
 
         request = self._blankOne(
-            "/", headers={"Content-Type": "application/json"}, POST=""
+            "/", headers={"Content-Type": "application/json"}, POST="",
         )
         assert request.content_type == "application/json"
         assert request.method == "POST"
@@ -1042,7 +1043,7 @@ class TestRequestCommon:
         POST["second"] = "2"
 
         request = self._blankOne(
-            "/", POST=POST, content_type="multipart/form-data; " "boundary=boundary"
+            "/", POST=POST, content_type="multipart/form-data; " "boundary=boundary",
         )
         assert request.method == "POST"
         assert request.content_type == "multipart/form-data"
@@ -1106,7 +1107,7 @@ class TestRequestCommon:
     # from_bytes
     def test_from_bytes_extra_data(self):
         _test_req_copy = _test_req.replace(
-            b"Content-Type", b"Content-Length: 337\r\nContent-Type"
+            b"Content-Type", b"Content-Length: 337\r\nContent-Type",
         )
         cls = self._getTargetClass()
         with pytest.raises(ValueError):
@@ -1130,14 +1131,14 @@ class TestRequestCommon:
                 "REQUEST_METHOD": "POST",
                 "QUERY_STRING": "a=b",
                 "CONTENT_TYPE": "text/html;charset=ascii",
-            }
+            },
         )
         assert req.charset == "ascii"
         assert dict(req.GET) == {"a": "b"}
         assert dict(req.POST) == {}
         req.charset = "ascii"  # no exception
         with pytest.raises(DeprecationWarning):
-            setattr(req, "charset", "utf-8")
+            req.charset = "utf-8"
 
         # again no exception
         req = Request(
@@ -1145,12 +1146,12 @@ class TestRequestCommon:
                 "REQUEST_METHOD": "POST",
                 "QUERY_STRING": "a=b",
                 "CONTENT_TYPE": "multipart/form-data;charset=ascii",
-            }
+            },
         )
         assert req.charset == "ascii"
         assert dict(req.GET) == {"a": "b"}
         with pytest.raises(DeprecationWarning):
-            getattr(req, "POST")
+            req.POST
 
     def test_limited_length_file_repr(self):
         from webob.request import Request
@@ -1837,7 +1838,7 @@ class TestRequestWithAdhocAttr:
     def test_adhoc_attrs_get_missing(self):
         req = self._blankOne("/")
         with pytest.raises(AttributeError):
-            getattr(req, "some_attr")
+            req.some_attr
 
     def test_adhoc_attrs_del(self):
         req = self._blankOne("/", environ={"webob.adhoc_attrs": {"foo": 1}})
@@ -2081,7 +2082,7 @@ class TestRequest_functional:
 
     def test_copy_body(self):
         req = self._blankOne(
-            "/", method="POST", body=b"some text", request_body_tempfile_limit=1
+            "/", method="POST", body=b"some text", request_body_tempfile_limit=1,
         )
         old_body_file = req.body_file_raw
         req.copy_body()
@@ -2243,7 +2244,7 @@ class TestRequest_functional:
         del r.content_type
         assert "CONTENT_TYPE" not in r.environ
         a = self._makeOne(
-            {"a": 1}, content_type="charset=utf-8;application/atom+xml;type=entry"
+            {"a": 1}, content_type="charset=utf-8;application/atom+xml;type=entry",
         )
         assert (
             a.environ["CONTENT_TYPE"] == "charset=utf-8;application/atom+xml;type=entry"
@@ -2267,8 +2268,9 @@ class TestRequest_functional:
         }
         r = self._makeOne({"a": 1}, headers=headers)
 
-        for i in headers.keys():
-            assert i in r.headers and "HTTP_" + i.upper().replace("-", "_") in r.environ
+        for i in headers:
+            assert i in r.headers
+            assert "HTTP_" + i.upper().replace("-", "_") in r.environ
         r.headers = {"Server": "Apache"}
         assert set(r.environ.keys()) == {"a", "HTTP_SERVER"}
 
@@ -2305,7 +2307,7 @@ class TestRequest_functional:
             {
                 "wsgiorg.routing_args": ((), {"x": "y"}),
                 "paste.urlvars": {"test": "value"},
-            }
+            },
         )
         a.urlvars = {"hello": "world"}
         assert "paste.urlvars" not in a.environ
@@ -2337,7 +2339,7 @@ class TestRequest_functional:
     def test_host_property(self):
         # Testing host setter/getter/deleter
         a = self._makeOne(
-            {"wsgi.url_scheme": "http"}, server_name="localhost", server_port=5000
+            {"wsgi.url_scheme": "http"}, server_name="localhost", server_port=5000,
         )
         assert a.host == "localhost:5000"
         a.host = "localhost:5000"
@@ -2369,7 +2371,7 @@ class TestRequest_functional:
 
         assert len(r.body) == len(string.ascii_letters * len_strl)
         with pytest.raises(TypeError):
-            setattr(r, "body", text_("hello world"))
+            r.body = text_("hello world")
 
         r.body = None
         assert r.body == b""
@@ -2383,7 +2385,7 @@ class TestRequest_functional:
         assert hasattr(r.body_file_raw, "seek")
 
         r = self._makeOne(
-            {"a": 1}, method="PUT", body_file=BytesIO(bytes_(string.ascii_letters))
+            {"a": 1}, method="PUT", body_file=BytesIO(bytes_(string.ascii_letters)),
         )
         assert hasattr(r.body_file_raw, "seek")
 
@@ -2418,7 +2420,7 @@ class TestRequest_functional:
             # duplicate on purpose
             b"Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\n"
             b"Keep-Alive: 115\n"
-            b"Connection: keep-alive\n"
+            b"Connection: keep-alive\n",
         )
         req = cls.from_file(val_file)
         assert isinstance(req, cls)
@@ -2430,7 +2432,7 @@ class TestRequest_functional:
     def test_from_file_patch(self):
         cls = self._getTargetClass()
         req = cls.from_bytes(_test_req_patch)
-        assert "PATCH" == req.method
+        assert req.method == "PATCH"
         assert len(req.body)
         assert req.body in _test_req_patch
         assert _test_req_patch == req.as_bytes()
@@ -2461,7 +2463,7 @@ class TestRequest_functional:
         # out should equal contents, except for the Content-Length header,
         # so insert that.
         _test_req_copy = _test_req.replace(
-            b"Content-Type", b"Content-Length: 337\r\nContent-Type"
+            b"Content-Type", b"Content-Length: 337\r\nContent-Type",
         )
         assert req.as_bytes() == _test_req_copy
 
@@ -2494,7 +2496,7 @@ class TestRequest_functional:
         # out should equal contents, except for the Content-Length header,
         # so insert that.
         _test_req_copy = _test_req.replace(
-            b"Content-Type", b"Content-Length: 337\r\nContent-Type"
+            b"Content-Type", b"Content-Length: 337\r\nContent-Type",
         )
         assert req.as_bytes() == _test_req_copy
 
@@ -2519,14 +2521,14 @@ class TestRequest_functional:
                 "gopher://gopher.example.com",
             )
         req = self._blankOne(
-            "www.example.com/foo?hello=world", None, "http://www.example.com"
+            "www.example.com/foo?hello=world", None, "http://www.example.com",
         )
         assert req.environ.get("HTTP_HOST", None) == "www.example.com:80"
         assert req.environ.get("PATH_INFO", None) == "www.example.com/foo"
         assert req.environ.get("QUERY_STRING", None) == "hello=world"
         assert req.environ.get("REQUEST_METHOD", None) == "GET"
         req = self._blankOne(
-            "www.example.com/secure?hello=world", None, "https://www.example.com/secure"
+            "www.example.com/secure?hello=world", None, "https://www.example.com/secure",
         )
         assert req.environ.get("HTTP_HOST", None) == "www.example.com:443"
         assert req.environ.get("PATH_INFO", None) == "www.example.com/secure"
@@ -2604,11 +2606,12 @@ class TestRequest_functional:
         assert req.environ["SERVER_NAME"] == "localhost"
         assert req.environ["SERVER_PORT"] == "80"
         assert req.environ["SERVER_PROTOCOL"] == "HTTP/1.0"
-        assert hasattr(req.environ["wsgi.errors"], "write") and hasattr(
-            req.environ["wsgi.errors"], "flush"
+        assert hasattr(req.environ["wsgi.errors"], "write")
+        assert hasattr(
+            req.environ["wsgi.errors"], "flush",
         )
         assert hasattr(req.environ["wsgi.input"], "next") or hasattr(
-            req.environ["wsgi.input"], "__next__"
+            req.environ["wsgi.input"], "__next__",
         )
         assert req.environ["wsgi.multiprocess"] is False
         assert req.environ["wsgi.multithread"] is False
@@ -2683,7 +2686,7 @@ class TestRequest_functional:
         assert list(req.POST.items()) == []
         req.method = "POST"
         req.body = b"name=Joe&email=joe@example.com"
-        assert req.POST == MultiDict([("name", "Joe"), ("email", "joe@example.com")])
+        assert MultiDict([("name", "Joe"), ("email", "joe@example.com")]) == req.POST
         assert req.POST["name"] == "Joe"
 
         assert isinstance(req.params, NestedMultiDict)
@@ -2714,9 +2717,9 @@ class TestRequest_functional:
         req.environ["CONTENT_TYPE"] = "application/x-www-form-urlencoded"
         GET = GetDict([("check", "a"), ("check", "b"), ("name", "Bob")], {})
         assert req.GET == GET
-        assert req.POST == MultiDict(
-            [("var1", "value1"), ("var2", "value2"), ("rep", "1"), ("rep", "2")]
-        )
+        assert MultiDict(
+            [("var1", "value1"), ("var2", "value2"), ("rep", "1"), ("rep", "2")],
+        ) == req.POST
         assert list(req.GET.items()) == [
             ("check", "a"),
             ("check", "b"),
@@ -2809,9 +2812,9 @@ class TestRequest_functional:
         req.environ["CONTENT_TYPE"] = "application/x-www-form-urlencoded"
         GET = GetDict([("check", "a"), ("check", "b"), ("name", "Bob")], {})
         assert req.GET == GET
-        assert req.POST == MultiDict(
-            [("var1", "value1"), ("var2", "value2"), ("rep", "1"), ("rep", "2")]
-        )
+        assert MultiDict(
+            [("var1", "value1"), ("var2", "value2"), ("rep", "1"), ("rep", "2")],
+        ) == req.POST
 
     def test_call_WSGI_app(self):
         req = self._blankOne("/")
@@ -2907,7 +2910,7 @@ class TestRequest_functional:
         headers1 = dict(req.headers)
         headers2 = dict(req2.headers)
         assert int(headers1.get("Content-Length", "0")) == int(
-            headers2.get("Content-Length", "0")
+            headers2.get("Content-Length", "0"),
         )
 
         if "Content-Length" in headers1:
@@ -3031,7 +3034,7 @@ class Test_environ_from_url:
 
         mimetypes.add_type("application/x-foo", ".foo")
         request = Request.blank(
-            "/", POST=dict(file1=("foo.foo", "xxx"), file2=("bar.mp3", "xxx"))
+            "/", POST={"file1": ("foo.foo", "xxx"), "file2": ("bar.mp3", "xxx")},
         )
         assert "audio/mpeg" in request.body.decode("ascii", str(request))
         assert "application/x-foo" in request.body.decode("ascii", str(request))
@@ -3054,7 +3057,7 @@ def test_environ_add_POST_file_with_content_type():
         env,
         {
             "sample_file": FakeFile(
-                "test.txt", "text/plain", {"charset": "utf-8"}, "this is data"
+                "test.txt", "text/plain", {"charset": "utf-8"}, "this is data",
             ),
         },
     )
@@ -3069,7 +3072,7 @@ class TestRequestMultipart:
 
         req = Request.from_bytes(_test_req_multipart_charset)
         assert req.POST["title"].encode("utf8") == text_("こんにちは", "utf-8").encode(
-            "utf8"
+            "utf8",
         )
 
 
@@ -3104,9 +3107,9 @@ def simpleapp(environ, start_response):
                 [
                     o
                     for o, _ in request.accept.acceptable_offers(
-                        ["application/xml", "text/html"]
+                        ["application/xml", "text/html"],
                     )
-                ]
+                ],
             ),
             "post is %r\n" % request.POST,
             "params is %r\n" % request.params,
@@ -3240,7 +3243,8 @@ class UnseekableInput:
 
 class UnseekableInputWithSeek(UnseekableInput):
     def seek(self, pos, rel=0):
-        raise OSError("Invalid seek!")
+        msg = "Invalid seek!"
+        raise OSError(msg)
 
 
 class _Helper_test_request_wrong_clen:
@@ -3253,7 +3257,8 @@ class _Helper_test_request_wrong_clen:
 
         if not r:
             if self.file_ended:
-                raise AssertionError("Reading should stop after first empty string")
+                msg = "Reading should stop after first empty string"
+                raise AssertionError(msg)
             self.file_ended = True
 
         return r

@@ -5,10 +5,11 @@ The four headers are ``Accept``, ``Accept-Charset``, ``Accept-Encoding`` and
 ``Accept-Language``.
 """
 
-from collections import namedtuple
+import contextlib
 import re
 import textwrap
 import warnings
+from collections import namedtuple
 
 # RFC 7230 Section 3.2.3 "Whitespace"
 # OWS            = *( SP / HTAB )
@@ -66,7 +67,7 @@ def _list_0_or_more__compiled_re(element_re):
         + OWS_re
         + element_re
         + ")?)*"
-        + ")$"
+        + ")$",
     )
 
 
@@ -85,7 +86,7 @@ def _list_1_or_more__compiled_re(element_re):
         + ",(?:"
         + OWS_re
         + element_re
-        + ")?)*$"
+        + ")?)*$",
     )
 
 
@@ -200,7 +201,7 @@ class Accept:
     media_range_n_accept_params_compiled_re = re.compile(media_range_n_accept_params_re)
 
     accept_compiled_re = _list_0_or_more__compiled_re(
-        element_re=media_range_n_accept_params_re
+        element_re=media_range_n_accept_params_re,
     )
 
     # For parsing repeated groups within the media type parameters and
@@ -215,7 +216,7 @@ class Accept:
         + token_re
         + "|"
         + quoted_string_re
-        + ")"
+        + ")",
     )
     accept_ext_compiled_re = re.compile(
         OWS_re
@@ -234,7 +235,7 @@ class Accept:
         + ")"
         + ")"
         + ")"
-        + ")?"
+        + ")?",
     )
 
     # For parsing the media types in the `offers` argument to
@@ -277,7 +278,7 @@ class Accept:
             except TypeError:
                 param_name, param_value = item
                 param_value = cls._escape_and_quote_parameter_value(
-                    param_value=param_value
+                    param_value=param_value,
                 )
                 extension_params_segment += ";" + param_name + "=" + param_value
 
@@ -331,7 +332,7 @@ class Accept:
         Parse media type parameters segment into list of (name, value) tuples.
         """
         media_type_params = cls.parameters_compiled_re.findall(
-            media_type_params_segment
+            media_type_params_segment,
         )
 
         for index, (name, value) in enumerate(media_type_params):
@@ -377,7 +378,7 @@ class Accept:
                     else:
                         value_list.append((media_range, item[0], item[1]))
                 value = sorted(
-                    value_list, key=lambda item: item[1], reverse=True  # qvalue
+                    value_list, key=lambda item: item[1], reverse=True,  # qvalue
                 )
 
         if isinstance(value, (tuple, list)):
@@ -429,7 +430,8 @@ class Accept:
         # to do this in steps using multiple regexes.
 
         if cls.accept_compiled_re.match(value) is None:
-            raise ValueError("Invalid value for an Accept header.")
+            msg = "Invalid value for an Accept header."
+            raise ValueError(msg)
 
         def generator(value):
             for match in cls.media_range_n_accept_params_compiled_re.finditer(value):
@@ -438,11 +440,11 @@ class Accept:
                 type_subtype = groups[0]
 
                 media_type_params = cls._parse_media_type_params(
-                    media_type_params_segment=groups[1]
+                    media_type_params_segment=groups[1],
                 )
 
                 media_range = cls._form_media_range(
-                    type_subtype=type_subtype, media_type_params=media_type_params
+                    type_subtype=type_subtype, media_type_params=media_type_params,
                 )
 
                 # qvalue (groups[2]) and extension_params (groups[3]) are both
@@ -456,16 +458,16 @@ class Accept:
 
                 if extension_params:
                     extension_params = cls.accept_ext_compiled_re.findall(
-                        extension_params
+                        extension_params,
                     )
 
                     for index, (token_key, token_value) in enumerate(extension_params):
                         if token_value:
                             if token_value.startswith('"') and token_value.endswith(
-                                '"'
+                                '"',
                             ):
                                 token_value = cls._process_quoted_string_token(
-                                    token=token_value
+                                    token=token_value,
                                 )
                                 extension_params[index] = (token_key, token_value)
                         else:
@@ -498,14 +500,16 @@ class Accept:
         match = cls.media_type_compiled_re.match(offer)
 
         if not match:
-            raise ValueError("Invalid value for an Accept offer.")
+            msg = "Invalid value for an Accept offer."
+            raise ValueError(msg)
 
         groups = match.groups()
         offer_type, offer_subtype = groups[0].split("/")
         offer_params = cls._parse_media_type_params(media_type_params_segment=groups[1])
 
         if offer_type == "*" or offer_subtype == "*":
-            raise ValueError("Invalid value for an Accept offer.")
+            msg = "Invalid value for an Accept offer."
+            raise ValueError(msg)
 
         return AcceptOffer(
             offer_type.lower(),
@@ -641,7 +645,7 @@ class AcceptValidHeader(Accept):
                 return self.__class__(header_value=self.header_value)
             else:
                 return create_accept_header(
-                    header_value=self.header_value + ", " + other.header_value
+                    header_value=self.header_value + ", " + other.header_value,
                 )
 
         if isinstance(other, (AcceptNoHeader, AcceptInvalidHeader)):
@@ -741,7 +745,7 @@ class AcceptValidHeader(Accept):
         )
 
         for media_range, _qvalue, _media_type_params, _extension_params in sorted(
-            self._parsed_nonzero, key=lambda i: i[1], reverse=True
+            self._parsed_nonzero, key=lambda i: i[1], reverse=True,
         ):
             yield media_range
 
@@ -753,7 +757,7 @@ class AcceptValidHeader(Accept):
         """
 
         return self._add_instance_and_non_accept_type(
-            instance=self, other=other, instance_on_the_right=True
+            instance=self, other=other, instance_on_the_right=True,
         )
 
     def __repr__(self):
@@ -777,15 +781,15 @@ class AcceptValidHeader(Accept):
                     tuple_[0],  # media_range
                     tuple_[1],  # qvalue
                     self._form_extension_params_segment(
-                        extension_params=tuple_[3]  # extension_params
+                        extension_params=tuple_[3],  # extension_params
                     ),
-                )
+                ),
             )
             for tuple_ in self.parsed
         )
 
     def _add_instance_and_non_accept_type(
-        self, instance, other, instance_on_the_right=False
+        self, instance, other, instance_on_the_right=False,
     ):
         if not other:
             return self.__class__(header_value=instance.header_value)
@@ -837,7 +841,7 @@ class AcceptValidHeader(Accept):
         of the public APIs that uses this method.
         """
         # Match if comparisons are the same or either is a complete wildcard
-        if mask.lower() == offer.lower() or "*/*" in (mask, offer) or "*" == offer:
+        if mask.lower() == offer.lower() or "*/*" in (mask, offer) or offer == "*":
             return True
 
         # Set mask type with wildcard subtype for malformed masks
@@ -892,8 +896,8 @@ class AcceptValidHeader(Accept):
                     "application/xhtml+xml",
                     "application/xml",
                     "text/xml",
-                ]
-            )
+                ],
+            ),
         )
 
     accepts_html = property(fget=accept_html, doc=accept_html.__doc__)
@@ -1354,8 +1358,8 @@ class _AcceptInvalidOrNoHeader(Accept):
                     "application/xhtml+xml",
                     "application/xml",
                     "text/xml",
-                ]
-            )
+                ],
+            ),
         )
 
     accepts_html = property(fget=accept_html, doc=accept_html.__doc__)
@@ -1674,7 +1678,7 @@ class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
         """
 
         return self._add_instance_and_non_accept_type(
-            instance=self, other=other, instance_on_the_right=True
+            instance=self, other=other, instance_on_the_right=True,
         )
 
     def __repr__(self):
@@ -1689,7 +1693,7 @@ class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
         return "<invalid header value>"
 
     def _add_instance_and_non_accept_type(
-        self, instance, other, instance_on_the_right=False
+        self, instance, other, instance_on_the_right=False,
     ):
         if other is None:
             return AcceptNoHeader()
@@ -1781,10 +1785,9 @@ def accept_property():
 
     def fdel(request):
         """Delete the corresponding key from the request environ."""
-        try:
+        with contextlib.suppress(KeyError):
             del request.environ[ENVIRON_KEY]
-        except KeyError:
-            pass
+
 
     return property(fget, fset, fdel, textwrap.dedent(doc))
 
@@ -1805,7 +1808,7 @@ class AcceptCharset:
     charset_n_weight_re = _item_n_weight_re(item_re=charset_re)
     charset_n_weight_compiled_re = re.compile(charset_n_weight_re)
     accept_charset_compiled_re = _list_1_or_more__compiled_re(
-        element_re=charset_n_weight_re
+        element_re=charset_n_weight_re,
     )
 
     @classmethod
@@ -1846,7 +1849,8 @@ class AcceptCharset:
         # to use one regex to check the match, and another to get the groups.
 
         if cls.accept_charset_compiled_re.match(value) is None:
-            raise ValueError("Invalid value for an Accept-Charset header.")
+            msg = "Invalid value for an Accept-Charset header."
+            raise ValueError(msg)
 
         def generator(value):
             for match in cls.charset_n_weight_compiled_re.finditer(value):
@@ -1936,14 +1940,14 @@ class AcceptCharsetValidHeader(AcceptCharset):
 
         if isinstance(other, AcceptCharsetValidHeader):
             return create_accept_charset_header(
-                header_value=self.header_value + ", " + other.header_value
+                header_value=self.header_value + ", " + other.header_value,
             )
 
         if isinstance(other, (AcceptCharsetNoHeader, AcceptCharsetInvalidHeader)):
             return self.__class__(header_value=self.header_value)
 
         return self._add_instance_and_non_accept_charset_type(
-            instance=self, other=other
+            instance=self, other=other,
         )
 
     def __bool__(self):
@@ -2023,7 +2027,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
         )
 
         for mask, _quality in sorted(
-            self._parsed_nonzero, key=lambda i: i[1], reverse=True
+            self._parsed_nonzero, key=lambda i: i[1], reverse=True,
         ):
             yield mask
 
@@ -2035,7 +2039,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
         """
 
         return self._add_instance_and_non_accept_charset_type(
-            instance=self, other=other, instance_on_the_right=True
+            instance=self, other=other, instance_on_the_right=True,
         )
 
     def __repr__(self):
@@ -2054,7 +2058,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
         )
 
     def _add_instance_and_non_accept_charset_type(
-        self, instance, other, instance_on_the_right=False
+        self, instance, other, instance_on_the_right=False,
     ):
         if not other:
             return self.__class__(header_value=instance.header_value)
@@ -2118,7 +2122,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
         lowercased_offers = [offer.lower() for offer in offers]
 
         not_acceptable_charsets = set()
-        acceptable_charsets = dict()
+        acceptable_charsets = {}
         asterisk_qvalue = None
 
         for charset, qvalue in lowercased_parsed:
@@ -2547,7 +2551,7 @@ class AcceptCharsetNoHeader(_AcceptCharsetInvalidOrNoHeader):
             return self.__class__()
 
         return self._add_instance_and_non_accept_charset_type(
-            instance=self, other=other
+            instance=self, other=other,
         )
 
     def __radd__(self, other):
@@ -2660,7 +2664,7 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
             return AcceptCharsetNoHeader()
 
         return self._add_instance_and_non_accept_charset_type(
-            instance=self, other=other
+            instance=self, other=other,
         )
 
     def __radd__(self, other):
@@ -2671,7 +2675,7 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
         """
 
         return self._add_instance_and_non_accept_charset_type(
-            instance=self, other=other, instance_on_the_right=True
+            instance=self, other=other, instance_on_the_right=True,
         )
 
     def __repr__(self):
@@ -2686,7 +2690,7 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
         return "<invalid header value>"
 
     def _add_instance_and_non_accept_charset_type(
-        self, instance, other, instance_on_the_right=False
+        self, instance, other, instance_on_the_right=False,
     ):
         if not other:
             return AcceptCharsetNoHeader()
@@ -2742,7 +2746,7 @@ def accept_charset_property():
         """Get an object representing the header in the request."""
 
         return create_accept_charset_header(
-            header_value=request.environ.get(ENVIRON_KEY)
+            header_value=request.environ.get(ENVIRON_KEY),
         )
 
     def fset(request, value):
@@ -2766,7 +2770,7 @@ def accept_charset_property():
             fdel(request=request)
         else:
             if isinstance(
-                value, (AcceptCharsetValidHeader, AcceptCharsetInvalidHeader)
+                value, (AcceptCharsetValidHeader, AcceptCharsetInvalidHeader),
             ):
                 header_value = value.header_value
             else:
@@ -2775,10 +2779,9 @@ def accept_charset_property():
 
     def fdel(request):
         """Delete the corresponding key from the request environ."""
-        try:
+        with contextlib.suppress(KeyError):
             del request.environ[ENVIRON_KEY]
-        except KeyError:
-            pass
+
 
     return property(fget, fset, fdel, textwrap.dedent(doc))
 
@@ -2802,7 +2805,7 @@ class AcceptEncoding:
     codings_n_weight_re = _item_n_weight_re(item_re=codings_re)
     codings_n_weight_compiled_re = re.compile(codings_n_weight_re)
     accept_encoding_compiled_re = _list_0_or_more__compiled_re(
-        element_re=codings_n_weight_re
+        element_re=codings_n_weight_re,
     )
 
     @classmethod
@@ -2843,7 +2846,8 @@ class AcceptEncoding:
         # to use one regex to check the match, and another to get the groups.
 
         if cls.accept_encoding_compiled_re.match(value) is None:
-            raise ValueError("Invalid value for an Accept-Encoding header.")
+            msg = "Invalid value for an Accept-Encoding header."
+            raise ValueError(msg)
 
         def generator(value):
             for match in cls.codings_n_weight_compiled_re.finditer(value):
@@ -2946,14 +2950,14 @@ class AcceptEncodingValidHeader(AcceptEncoding):
                 return self.__class__(header_value=self.header_value)
             else:
                 return create_accept_encoding_header(
-                    header_value=self.header_value + ", " + other.header_value
+                    header_value=self.header_value + ", " + other.header_value,
                 )
 
         if isinstance(other, (AcceptEncodingNoHeader, AcceptEncodingInvalidHeader)):
             return self.__class__(header_value=self.header_value)
 
         return self._add_instance_and_non_accept_encoding_type(
-            instance=self, other=other
+            instance=self, other=other,
         )
 
     def __bool__(self):
@@ -3006,6 +3010,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         for mask, _quality in self._parsed_nonzero:
             if self._old_match(mask, offer):
                 return True
+        return None
 
     def __iter__(self):
         """
@@ -3035,7 +3040,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         )
 
         for mask, _quality in sorted(
-            self._parsed_nonzero, key=lambda i: i[1], reverse=True
+            self._parsed_nonzero, key=lambda i: i[1], reverse=True,
         ):
             yield mask
 
@@ -3047,7 +3052,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         """
 
         return self._add_instance_and_non_accept_encoding_type(
-            instance=self, other=other, instance_on_the_right=True
+            instance=self, other=other, instance_on_the_right=True,
         )
 
     def __repr__(self):
@@ -3065,7 +3070,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         )
 
     def _add_instance_and_non_accept_encoding_type(
-        self, instance, other, instance_on_the_right=False
+        self, instance, other, instance_on_the_right=False,
     ):
         if not other:
             return self.__class__(header_value=instance.header_value)
@@ -3147,7 +3152,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         lowercased_offers = [offer.lower() for offer in offers]
 
         not_acceptable_codingss = set()
-        acceptable_codingss = dict()
+        acceptable_codingss = {}
         asterisk_qvalue = None
 
         for codings, qvalue in lowercased_parsed:
@@ -3587,7 +3592,7 @@ class AcceptEncodingNoHeader(_AcceptEncodingInvalidOrNoHeader):
             return self.__class__()
 
         return self._add_instance_and_non_accept_encoding_type(
-            instance=self, other=other
+            instance=self, other=other,
         )
 
     def __radd__(self, other):
@@ -3701,7 +3706,7 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
             return AcceptEncodingNoHeader()
 
         return self._add_instance_and_non_accept_encoding_type(
-            instance=self, other=other
+            instance=self, other=other,
         )
 
     def __radd__(self, other):
@@ -3712,7 +3717,7 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
         """
 
         return self._add_instance_and_non_accept_encoding_type(
-            instance=self, other=other, instance_on_the_right=True
+            instance=self, other=other, instance_on_the_right=True,
         )
 
     def __repr__(self):
@@ -3727,7 +3732,7 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
         return "<invalid header value>"
 
     def _add_instance_and_non_accept_encoding_type(
-        self, instance, other, instance_on_the_right=False
+        self, instance, other, instance_on_the_right=False,
     ):
         if other is None:
             return AcceptEncodingNoHeader()
@@ -3783,7 +3788,7 @@ def accept_encoding_property():
         """Get an object representing the header in the request."""
 
         return create_accept_encoding_header(
-            header_value=request.environ.get(ENVIRON_KEY)
+            header_value=request.environ.get(ENVIRON_KEY),
         )
 
     def fset(request, value):
@@ -3809,7 +3814,7 @@ def accept_encoding_property():
             fdel(request=request)
         else:
             if isinstance(
-                value, (AcceptEncodingValidHeader, AcceptEncodingInvalidHeader)
+                value, (AcceptEncodingValidHeader, AcceptEncodingInvalidHeader),
             ):
                 header_value = value.header_value
             else:
@@ -3818,10 +3823,9 @@ def accept_encoding_property():
 
     def fdel(request):
         """Delete the corresponding key from the request environ."""
-        try:
+        with contextlib.suppress(KeyError):
             del request.environ[ENVIRON_KEY]
-        except KeyError:
-            pass
+
 
     return property(fget, fset, fdel, textwrap.dedent(doc))
 
@@ -3845,7 +3849,7 @@ class AcceptLanguage:
     lang_range_n_weight_re = _item_n_weight_re(item_re=lang_range_re)
     lang_range_n_weight_compiled_re = re.compile(lang_range_n_weight_re)
     accept_language_compiled_re = _list_1_or_more__compiled_re(
-        element_re=lang_range_n_weight_re
+        element_re=lang_range_n_weight_re,
     )
 
     @classmethod
@@ -3886,7 +3890,8 @@ class AcceptLanguage:
         # to use one regex to check the match, and another to get the groups.
 
         if cls.accept_language_compiled_re.match(value) is None:
-            raise ValueError("Invalid value for an Accept-Language header.")
+            msg = "Invalid value for an Accept-Language header."
+            raise ValueError(msg)
 
         def generator(value):
             for match in cls.lang_range_n_weight_compiled_re.finditer(value):
@@ -3981,14 +3986,14 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
         if isinstance(other, AcceptLanguageValidHeader):
             return create_accept_language_header(
-                header_value=self.header_value + ", " + other.header_value
+                header_value=self.header_value + ", " + other.header_value,
             )
 
         if isinstance(other, (AcceptLanguageNoHeader, AcceptLanguageInvalidHeader)):
             return self.__class__(header_value=self.header_value)
 
         return self._add_instance_and_non_accept_language_type(
-            instance=self, other=other
+            instance=self, other=other,
         )
 
     def __nonzero__(self):
@@ -4085,7 +4090,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         )
 
         for mask, _quality in sorted(
-            self._parsed_nonzero, key=lambda i: i[1], reverse=True
+            self._parsed_nonzero, key=lambda i: i[1], reverse=True,
         ):
             yield mask
 
@@ -4097,7 +4102,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         """
 
         return self._add_instance_and_non_accept_language_type(
-            instance=self, other=other, instance_on_the_right=True
+            instance=self, other=other, instance_on_the_right=True,
         )
 
     def __repr__(self):
@@ -4116,7 +4121,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         )
 
     def _add_instance_and_non_accept_language_type(
-        self, instance, other, instance_on_the_right=False
+        self, instance, other, instance_on_the_right=False,
     ):
         if not other:
             return self.__class__(header_value=instance.header_value)
@@ -4266,7 +4271,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         lowercased_tags = [tag.lower() for tag in language_tags]
 
         not_acceptable_ranges = set()
-        acceptable_ranges = dict()
+        acceptable_ranges = {}
         asterisk_qvalue = None
 
         for position_in_header, (range_, qvalue) in enumerate(lowercased_parsed):
@@ -4334,7 +4339,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                     matched_range_position = asterisk_position
             if matched_range_qvalue is not None:  # if there was a match
                 filtered_tags.append(
-                    (language_tags[index], matched_range_qvalue, matched_range_position)
+                    (language_tags[index], matched_range_qvalue, matched_range_position),
                 )
 
         # sort by matched_range_position, ascending
@@ -4644,8 +4649,9 @@ class AcceptLanguageValidHeader(AcceptLanguage):
           unacceptable.
         """
         if default_tag is None and default is None:
+            msg = "`default_tag` and `default` arguments cannot both be None."
             raise TypeError(
-                "`default_tag` and `default` arguments cannot both be None."
+                msg,
             )
 
         # We need separate `default_tag` and `default` arguments because if we
@@ -4655,7 +4661,8 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         # the header) or not (in which case we can just return the value).
 
         if default_range == "*":
-            raise ValueError("default_range cannot be *.")
+            msg = "default_range cannot be *."
+            raise ValueError(msg)
 
         parsed = list(self.parsed)
 
@@ -4977,7 +4984,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         return best_offer
 
     def lookup(
-        self, language_tags=None, default_range=None, default_tag=None, default=None
+        self, language_tags=None, default_range=None, default_tag=None, default=None,
     ):
         """
         Return the language tag that best matches the header, using Lookup.
@@ -5043,8 +5050,9 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
                  | the return value from `default_tag` or `default`.
         """
         if default_tag is None and default is None:
+            msg = "`default_tag` and `default` arguments cannot both be None."
             raise TypeError(
-                "`default_tag` and `default` arguments cannot both be None."
+                msg,
             )
 
         if default_tag is not None:
@@ -5160,7 +5168,7 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
             return self.__class__()
 
         return self._add_instance_and_non_accept_language_type(
-            instance=self, other=other
+            instance=self, other=other,
         )
 
     def __radd__(self, other):
@@ -5274,7 +5282,7 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
             return AcceptLanguageNoHeader()
 
         return self._add_instance_and_non_accept_language_type(
-            instance=self, other=other
+            instance=self, other=other,
         )
 
     def __radd__(self, other):
@@ -5285,7 +5293,7 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         """
 
         return self._add_instance_and_non_accept_language_type(
-            instance=self, other=other, instance_on_the_right=True
+            instance=self, other=other, instance_on_the_right=True,
         )
 
     def __repr__(self):
@@ -5300,7 +5308,7 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         return "<invalid header value>"
 
     def _add_instance_and_non_accept_language_type(
-        self, instance, other, instance_on_the_right=False
+        self, instance, other, instance_on_the_right=False,
     ):
         if not other:
             return AcceptLanguageNoHeader()
@@ -5356,7 +5364,7 @@ def accept_language_property():
         """Get an object representing the header in the request."""
 
         return create_accept_language_header(
-            header_value=request.environ.get(ENVIRON_KEY)
+            header_value=request.environ.get(ENVIRON_KEY),
         )
 
     def fset(request, value):
@@ -5381,7 +5389,7 @@ def accept_language_property():
             fdel(request=request)
         else:
             if isinstance(
-                value, (AcceptLanguageValidHeader, AcceptLanguageInvalidHeader)
+                value, (AcceptLanguageValidHeader, AcceptLanguageInvalidHeader),
             ):
                 header_value = value.header_value
             else:
@@ -5390,9 +5398,8 @@ def accept_language_property():
 
     def fdel(request):
         """Delete the corresponding key from the request environ."""
-        try:
+        with contextlib.suppress(KeyError):
             del request.environ[ENVIRON_KEY]
-        except KeyError:
-            pass
+
 
     return property(fget, fset, fdel, textwrap.dedent(doc))

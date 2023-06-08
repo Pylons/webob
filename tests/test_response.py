@@ -3,7 +3,6 @@ import sys
 import zlib
 
 import pytest
-
 from webob import cookies
 from webob.request import BaseRequest, Request
 from webob.response import Response
@@ -38,11 +37,11 @@ def test_response():
     res.body = b"Not OK"
     assert b"".join(res.app_iter) == b"Not OK"
     res.charset = "iso8859-1"
-    assert "text/html; charset=iso8859-1" == res.headers["content-type"]
+    assert res.headers["content-type"] == "text/html; charset=iso8859-1"
     res.content_type = "text/xml"
-    assert "text/xml; charset=UTF-8" == res.headers["content-type"]
+    assert res.headers["content-type"] == "text/xml; charset=UTF-8"
     res.content_type = "text/xml; charset=UTF-8"
-    assert "text/xml; charset=UTF-8" == res.headers["content-type"]
+    assert res.headers["content-type"] == "text/xml; charset=UTF-8"
     res.headers = {"content-type": "text/html"}
     assert res.headers["content-type"] == "text/html"
     assert res.headerlist == [("content-type", "text/html")]
@@ -306,7 +305,7 @@ def test_conditional_response_if_none_match_weak():
     req_weak = Request.blank("/", headers={"if-none-match": 'W/"bar"'})
     resp = Response(app_iter=["foo\n"], conditional_response=True, etag="bar")
     resp_weak = Response(
-        app_iter=["foo\n"], conditional_response=True, headers={"etag": 'W/"bar"'}
+        app_iter=["foo\n"], conditional_response=True, headers={"etag": 'W/"bar"'},
     )
 
     for rq in [req, req_weak]:
@@ -314,10 +313,10 @@ def test_conditional_response_if_none_match_weak():
             rq.get_response(rp).status_code == 304
 
     r2 = Response(
-        app_iter=["foo\n"], conditional_response=True, headers={"etag": '"foo"'}
+        app_iter=["foo\n"], conditional_response=True, headers={"etag": '"foo"'},
     )
     r2_weak = Response(
-        app_iter=["foo\n"], conditional_response=True, headers={"etag": 'W/"foo"'}
+        app_iter=["foo\n"], conditional_response=True, headers={"etag": 'W/"foo"'},
     )
     req_weak.get_response(r2).status_code == 200
     req.get_response(r2_weak) == 200
@@ -606,7 +605,7 @@ def test_set_status():
     res.status = "200"
     assert res.status == "200 OK"
     with pytest.raises(TypeError):
-        setattr(res, "status", (200,))
+        res.status = 200,
 
 
 def test_set_headerlist():
@@ -772,14 +771,14 @@ def test_body_del():
 
 def test_text_get_no_charset():
     res = Response(charset=None)
-    assert "" == res.text
+    assert res.text == ""
 
 
 def test_text_get_no_default_body_encoding():
     res = Response(charset=None)
     res.default_body_encoding = None
     with pytest.raises(AttributeError):
-        assert "" == res.text
+        assert res.text == ""
 
 
 def test_unicode_body():
@@ -1148,7 +1147,7 @@ def test_cache_control_object_max_age_ten():
 def test_cache_control_set_object_error():
     res = Response()
     with pytest.raises(AttributeError):
-        setattr(res.cache_control, "max_stale", 10)
+        res.cache_control.max_stale = 10
 
 
 def test_cache_expires_set():
@@ -1349,14 +1348,14 @@ def test_decode_content_gzip():
 
 def test__make_location_absolute_has_scheme_only():
     result = Response._make_location_absolute(
-        {"wsgi.url_scheme": "http", "HTTP_HOST": "example.com:80"}, "http:"
+        {"wsgi.url_scheme": "http", "HTTP_HOST": "example.com:80"}, "http:",
     )
     assert result == "http:"
 
 
 def test__make_location_absolute_path():
     result = Response._make_location_absolute(
-        {"wsgi.url_scheme": "http", "HTTP_HOST": "example.com:80"}, "/abc"
+        {"wsgi.url_scheme": "http", "HTTP_HOST": "example.com:80"}, "/abc",
     )
     assert result == "http://example.com/abc"
 

@@ -1,5 +1,5 @@
-import unittest
 import doctest
+import unittest
 
 
 def test_suite():
@@ -13,7 +13,7 @@ def test_suite():
             doctest.DocFileSuite("file-example.txt", optionflags=flags),
             doctest.DocFileSuite("index.txt", optionflags=flags),
             doctest.DocFileSuite("reference.txt", optionflags=flags),
-        )
+        ),
     )
 
 

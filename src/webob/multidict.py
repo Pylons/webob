@@ -5,9 +5,10 @@
 Gives a multi-value dictionary object (MultiDict) plus several wrappers
 """
 import binascii
+import contextlib
+import warnings
 from collections.abc import MutableMapping
 from urllib.parse import urlencode as url_encode
-import warnings
 
 __all__ = ["MultiDict", "NestedMultiDict", "NoVars", "GetDict"]
 
@@ -21,8 +22,9 @@ class MultiDict(MutableMapping):
 
     def __init__(self, *args, **kw):
         if len(args) > 1:
+            msg = "MultiDict can only be called with one positional argument"
             raise TypeError(
-                "MultiDict can only be called with one positional " "argument"
+                msg,
             )
 
         if args:
@@ -44,8 +46,9 @@ class MultiDict(MutableMapping):
         """
 
         if not isinstance(lst, list):
+            msg = f"{cls.__name__}.view_list(obj) takes only actual list objects, not {lst!r}"
             raise TypeError(
-                f"{cls.__name__}.view_list(obj) takes only actual list objects, not {lst!r}"
+                msg,
             )
         obj = cls()
         obj._items = lst
@@ -102,10 +105,9 @@ class MultiDict(MutableMapping):
         raise KeyError(key)
 
     def __setitem__(self, key, value):
-        try:
+        with contextlib.suppress(KeyError):
             del self[key]
-        except KeyError:
-            pass
+
         self._items.append((key, value))
 
     def add(self, key, value):
@@ -132,7 +134,8 @@ class MultiDict(MutableMapping):
             raise KeyError("Key not found: %r" % key)
 
         if len(v) > 1:
-            raise KeyError(f"Multiple values match {key!r}: {v!r}")
+            msg = f"Multiple values match {key!r}: {v!r}"
+            raise KeyError(msg)
 
         return v[0]
 
@@ -186,11 +189,7 @@ class MultiDict(MutableMapping):
             raise KeyError(key)
 
     def __contains__(self, key):
-        for k, _ in self._items:
-            if k == key:
-                return True
-
-        return False
+        return any(k == key for k, _ in self._items)
 
     has_key = __contains__
 
@@ -211,7 +210,7 @@ class MultiDict(MutableMapping):
     def pop(self, key, *args):
         if len(args) > 1:
             raise TypeError(
-                "pop expected at most 2 arguments, got %s" % repr(1 + len(args))
+                "pop expected at most 2 arguments, got %s" % repr(1 + len(args)),
             )
 
         for i, (k, v) in enumerate(self._items):
@@ -247,7 +246,7 @@ class MultiDict(MutableMapping):
         elif hasattr(other, "items"):
             self._items.extend(other.items())
         elif hasattr(other, "keys"):
-            for k in other.keys():
+            for k in other:
                 self._items.append((k, other[k]))
         else:
             for k, v in other:
@@ -373,7 +372,8 @@ class NestedMultiDict(MultiDict):
         raise KeyError(key)
 
     def _readonly(self, *args, **kw):
-        raise KeyError("NestedMultiDict objects are read-only")
+        msg = "NestedMultiDict objects are read-only"
+        raise KeyError(msg)
 
     __setitem__ = _readonly
     add = _readonly
@@ -401,11 +401,7 @@ class NestedMultiDict(MultiDict):
         return MultiDict(self)
 
     def __contains__(self, key):
-        for d in self.dicts:
-            if key in d:
-                return True
-
-        return False
+        return any(key in d for d in self.dicts)
 
     has_key = __contains__
 
@@ -418,11 +414,7 @@ class NestedMultiDict(MultiDict):
         return v
 
     def __nonzero__(self):
-        for d in self.dicts:
-            if d:
-                return True
-
-        return False
+        return any(d for d in self.dicts)
 
     def items(self):
         for d in self.dicts:
@@ -451,7 +443,8 @@ class NoVars:
         self.reason = reason or "N/A"
 
     def __getitem__(self, key):
-        raise KeyError(f"No key {key!r}: {self.reason}")
+        msg = f"No key {key!r}: {self.reason}"
+        raise KeyError(msg)
 
     def __setitem__(self, *args, **kw):
         raise KeyError("Cannot add variables: %s" % self.reason)
