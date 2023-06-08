@@ -1,6 +1,5 @@
 import pytest
-
-from webob.util import html_escape, text_
+from webob.util import html_escape
 
 
 class t_esc_HTML:
@@ -29,7 +28,7 @@ class t_esc_SuperMoose:
 
 
 @pytest.mark.parametrize(
-    "input,expected",
+    ("input", "expected"),
     [
         ('these chars: < > & "', "these chars: &lt; &gt; &amp; &quot;"),
         (" ", " "),

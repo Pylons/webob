@@ -1,7 +1,6 @@
 import time
 
 import pytest
-
 from webob import Request, Response
 from webob.client import SendRequest
 from webob.dec import wsgify
@@ -17,7 +16,7 @@ def simple_app(req):
 def test_client(serve, client_app=None):
     with serve(simple_app) as server:
         req = Request.blank(
-            server.url, method="POST", content_type="application/json", json={"test": 1}
+            server.url, method="POST", content_type="application/json", json={"test": 1},
         )
         resp = req.send(client_app)
         assert resp.status_code == 200, resp.status
@@ -79,7 +78,7 @@ def test_client_cookies(serve, client_app=None):
         resp = req.send(client_app)
         assert resp.headers.getall("Set-Cookie") == ["a=b", "c=d"]
         assert resp.headers["X-Crazy"] == "value, continuation", repr(
-            resp.headers["X-Crazy"]
+            resp.headers["X-Crazy"],
         )
 
 

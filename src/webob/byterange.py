@@ -96,7 +96,8 @@ class ContentRange:
 
     def __init__(self, start, stop, length):
         if not _is_content_range_valid(start, stop, length):
-            raise ValueError(f"Bad start:stop/length: {start!r}-{stop!r}/{length!r}")
+            msg = f"Bad start:stop/length: {start!r}-{stop!r}/{length!r}"
+            raise ValueError(msg)
         self.start = start
         self.stop = stop  # this is python-style range end (non-inclusive)
         self.length = length
@@ -105,10 +106,7 @@ class ContentRange:
         return f"<{self.__class__.__name__} {self}>"
 
     def __str__(self):
-        if self.length is None:
-            length = "*"
-        else:
-            length = self.length
+        length = "*" if self.length is None else self.length
         if self.start is None:
             assert self.stop is None
             return "bytes */%s" % length

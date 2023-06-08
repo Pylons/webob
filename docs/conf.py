@@ -1,7 +1,4 @@
 import pkg_resources
-import sys
-import os
-import shlex
 
 extensions = [
     "sphinx.ext.autodoc",

@@ -9,7 +9,7 @@ __all__ = ["FileApp", "DirectoryApp"]
 
 mimetypes._winreg = None  # do not load mimetypes from windows registry
 mimetypes.add_type(
-    "text/javascript", ".js"
+    "text/javascript", ".js",
 )  # stdlib default is application/x-javascript
 mimetypes.add_type("image/x-icon", ".ico")  # not among defaults
 
@@ -89,7 +89,7 @@ class FileIter:
         try:
             while True:
                 data = self.file.read(
-                    min(block_size, limit) if limit is not None else block_size
+                    min(block_size, limit) if limit is not None else block_size,
                 )
                 if not data:
                     return
@@ -117,7 +117,7 @@ class DirectoryApp:
     """
 
     def __init__(
-        self, path, index_page="index.html", hide_index_with_redirect=False, **kw
+        self, path, index_page="index.html", hide_index_with_redirect=False, **kw,
     ):
         self.path = os.path.abspath(path)
         if not self.path.endswith(os.path.sep):

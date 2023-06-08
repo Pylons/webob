@@ -5,7 +5,6 @@ import sys
 from urllib.request import urlopen as url_open
 
 import pytest
-
 from webob.compat import Empty, Queue
 from webob.request import Request
 from webob.response import Response
@@ -53,7 +52,8 @@ def test_interrupted_request(serve):
             try:
                 res = _global_res.get(timeout=1)
             except Empty:
-                raise AssertionError("Error during test %s", path)
+                msg = "Error during test %s"
+                raise AssertionError(msg, path)
 
             if res is not None:
                 print("Error during test:", path)
@@ -70,8 +70,9 @@ def _test_app_req_interrupt(env, sr):
         cl = req.content_length
 
         if cl != target_cl:
+            msg = f"request.content_length is {cl} instead of {target_cl}"
             raise AssertionError(
-                f"request.content_length is {cl} instead of {target_cl}"
+                msg,
             )
         op = _test_ops_req_interrupt[req.path_info]
         log.info("Running test: %s", req.path_info)
@@ -96,7 +97,8 @@ def _req_int_readline(req):
         assert req.body_file.readline() == b"a=b\n"
     except OSError:
         # too early to detect disconnect
-        raise AssertionError("False disconnect alert")
+        msg = "False disconnect alert"
+        raise AssertionError(msg)
     req.body_file.readline()
 
 

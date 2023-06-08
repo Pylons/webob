@@ -1,7 +1,6 @@
 import json
 
 import pytest
-
 from webob import exc as webob_exc
 from webob.dec import wsgify
 from webob.request import Request
@@ -10,7 +9,7 @@ from webob.request import Request
 @wsgify
 def method_not_allowed_app(req):
     if req.method != "GET":
-        raise webob_exc.HTTPMethodNotAllowed()
+        raise webob_exc.HTTPMethodNotAllowed
 
     return "hello!"
 
@@ -86,7 +85,7 @@ def test_exception_with_unicode_data():
 
 def test_WSGIHTTPException_headers():
     exc = webob_exc.WSGIHTTPException(
-        headers=[("Set-Cookie", "a=1"), ("Set-Cookie", "a=2")]
+        headers=[("Set-Cookie", "a=1"), ("Set-Cookie", "a=2")],
     )
     mixed = exc.headers.mixed()
     assert mixed["set-cookie"] == ["a=1", "a=2"]
@@ -266,7 +265,7 @@ def test_WSGIHTTPException_allows_custom_json_formatter():
         explanation = "Validation of an attribute failed."
 
     exc = ValidationError(
-        detail='Attribute "xyz" is invalid.', json_formatter=json_formatter
+        detail='Attribute "xyz" is invalid.', json_formatter=json_formatter,
     )
     body = exc.json_body({})
     assert json.loads(body) == {"fake": True}
@@ -296,7 +295,7 @@ def test_WSGIHTTPException_generate_response():
         b"\n"
         b"\n\n"
         b" </body>\n"
-        b"</html>"
+        b"</html>",
     ]
 
 
@@ -479,7 +478,8 @@ def test_HTTPMove_call_query_string():
 def test_HTTPFound_unused_environ_variable():
     class Crashy:
         def __str__(self):
-            raise Exception("I crashed!")
+            msg = "I crashed!"
+            raise Exception(msg)
 
     def start_response(status, headers, exc_info=None):
         pass
@@ -508,7 +508,7 @@ def test_HTTPFound_unused_environ_variable():
         b"you should be redirected automatically.\n"
         b"\n\n"
         b" </body>\n"
-        b"</html>"
+        b"</html>",
     ]
 
 

@@ -1,8 +1,8 @@
 import os
 import re
-from webob import Request, Response
-from webob import exc
+
 from tempita import HTMLTemplate
+from webob import Request, Response, exc
 
 VIEW_TEMPLATE = HTMLTemplate(
     """\
@@ -22,7 +22,7 @@ VIEW_TEMPLATE = HTMLTemplate(
 <a href="{{req.url}}?action=edit">Edit</a>
  </body>
 </html>
-"""
+""",
 )
 
 EDIT_TEMPLATE = HTMLTemplate(
@@ -50,12 +50,11 @@ EDIT_TEMPLATE = HTMLTemplate(
  <a href="{{req.path_url}}">Cancel</a>
 </form>
 </body></html>
-"""
+""",
 )
 
 
-class WikiApp(object):
-
+class WikiApp:
     view_template = VIEW_TEMPLATE
     edit_template = EDIT_TEMPLATE
 
@@ -68,11 +67,11 @@ class WikiApp(object):
         page = self.get_page(req.path_info)
         try:
             try:
-                meth = getattr(self, "action_%s_%s" % (action, req.method))
+                meth = getattr(self, f"action_{action}_{req.method}")
             except AttributeError:
                 raise exc.HTTPBadRequest("No such action %r" % action)
             resp = meth(req, page)
-        except exc.HTTPException, e:
+        except exc.HTTPException as e:
             resp = e
         return resp(environ, start_response)
 
@@ -85,17 +84,15 @@ class WikiApp(object):
         if path.endswith("/"):
             path += "index"
         if not path.startswith(self.storage_dir):
-            raise exc.HTTPBadRequest("Bad path")
+            msg = "Bad path"
+            raise exc.HTTPBadRequest(msg)
         path += ".html"
         return Page(path)
 
     def action_view_GET(self, req, page):
         if not page.exists:
             return exc.HTTPTemporaryRedirect(location=req.url + "?action=edit")
-        if req.cookies.get("message"):
-            message = req.cookies["message"]
-        else:
-            message = None
+        message = req.cookies["message"] if req.cookies.get("message") else None
         text = self.view_template.substitute(page=page, req=req, message=message)
         resp = Response(text)
         if message:
@@ -109,7 +106,7 @@ class WikiApp(object):
         submit_mtime = int(req.params.get("mtime") or "0") or None
         if page.mtime != submit_mtime:
             return exc.HTTPPreconditionFailed(
-                "The page has been updated since you started editing it"
+                "The page has been updated since you started editing it",
             )
         page.set(title=req.params["title"], content=req.params["content"])
         resp = exc.HTTPSeeOther(location=req.path_url)
@@ -121,7 +118,7 @@ class WikiApp(object):
         return Response(text)
 
 
-class Page(object):
+class Page:
     def __init__(self, filename):
         self.filename = filename
 
@@ -167,10 +164,7 @@ class Page(object):
         dir = os.path.dirname(self.filename)
         if not os.path.exists(dir):
             os.makedirs(dir)
-        new_content = (
-            """<html><head><title>%s</title></head><body>%s</body></html>"""
-            % (title, content)
-        )
+        new_content = f"""<html><head><title>{title}</title></head><body>{content}</body></html>"""
         f = open(self.filename, "wb")
         f.write(new_content)
         f.close()

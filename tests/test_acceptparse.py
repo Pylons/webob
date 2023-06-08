@@ -2,7 +2,6 @@ import re
 import warnings
 
 import pytest
-
 from webob.acceptparse import (
     Accept,
     AcceptCharset,
@@ -71,7 +70,7 @@ class Test_ItemNWeightRe:
         assert re.match("^" + regex + "$", header_value, re.VERBOSE) is None
 
     @pytest.mark.parametrize(
-        "header_value, groups",
+        ("header_value", "groups"),
         [
             ("foo", ("foo", None)),
             ("foo;q=0", ("foo", "0")),
@@ -202,7 +201,7 @@ class TestAccept:
             AcceptValidHeader.parse(value=value)
 
     @pytest.mark.parametrize(
-        "value, expected_list",
+        ("value", "expected_list"),
         [
             # Examples from RFC 7231, Section 5.3.2 "Accept":
             (
@@ -264,7 +263,7 @@ class TestAccept:
                         1.0,
                         [("param1", "val1"), ("param2", "val2"), ("param3", r'"\\')],
                         [],
-                    )
+                    ),
                 ],
             ),
             (
@@ -275,7 +274,7 @@ class TestAccept:
                         1.0,
                         [("param", "!#$%&'*+-.^_`|~09AZaz")],
                         [],
-                    )
+                    ),
                 ],
             ),
             ('text/html;param=""', [('text/html;param=""', 1.0, [("param", "")], [])]),
@@ -287,7 +286,7 @@ class TestAccept:
                         1.0,
                         [("param", "\t \x21\x23\x24\x5a\x5b\x5d\x5e\x7d\x7e")],
                         [],
-                    )
+                    ),
                 ],
             ),
             (
@@ -298,7 +297,7 @@ class TestAccept:
                         1.0,
                         [("param", "\x80\x81\xfe\xff\x22\x5c")],
                         [],
-                    )
+                    ),
                 ],
             ),
             (
@@ -309,7 +308,7 @@ class TestAccept:
                         1.0,
                         [("param", "\t \x21\x7e\x80\xff")],
                         [],
-                    )
+                    ),
                 ],
             ),
             (
@@ -349,7 +348,7 @@ class TestAccept:
                         0.9,
                         [],
                         ["extparam1", ("extparam2", "val2"), ("extparam3", "val3")],
-                    )
+                    ),
                 ],
             ),
             (
@@ -365,7 +364,7 @@ class TestAccept:
                         1.0,
                         [],
                         [("extparam", "\t \x21\x23\x24\x5a\x5b\x5d\x5e\x7d\x7e")],
-                    )
+                    ),
                 ],
             ),
             (
@@ -393,7 +392,7 @@ class TestAccept:
                         0.9,
                         [("param1", "val1"), ("param2", "val2")],
                         [("extparam1", "val1"), "extparam2", ("extparam3", "val3")],
-                    )
+                    ),
                 ],
             ),
             (
@@ -420,7 +419,7 @@ class TestAccept:
         assert list_of_returned == expected_list
 
     @pytest.mark.parametrize(
-        "offer, expected_return, expected_str",
+        ("offer", "expected_return", "expected_str"),
         [
             ["text/html", ("text", "html", ()), "text/html"],
             [
@@ -472,7 +471,7 @@ class TestAcceptValidHeader:
             value=(
                 ",\t , a/b;q=1;e1;e2=v2 \t,\t\t c/d, e/f;p1=v1;q=0;e1, "
                 + "g/h;p1=v1\t ;\t\tp2=v2;q=0.5 \t,"
-            )
+            ),
         )
         list_of_returned = list(returned)
         assert list_of_returned == [
@@ -483,7 +482,7 @@ class TestAcceptValidHeader:
         ]
 
     @pytest.mark.parametrize(
-        "header_value", [", ", "text/html;param=val;q=1;extparam=\x19"]
+        "header_value", [", ", "text/html;param=val;q=1;extparam=\x19"],
     )
     def test___init___invalid_header(self, header_value):
         with pytest.raises(ValueError):
@@ -573,7 +572,7 @@ class TestAcceptValidHeader:
         assert result is not left_operand
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             # str
             (
@@ -667,7 +666,7 @@ class TestAcceptValidHeader:
 
     def test___add___AcceptValidHeader_header_value_empty(self):
         left_operand = AcceptValidHeader(
-            header_value="a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1"
+            header_value="a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1",
         )
         right_operand = AcceptValidHeader(header_value="")
         result = left_operand + right_operand
@@ -677,7 +676,7 @@ class TestAcceptValidHeader:
 
     def test___add___AcceptValidHeader_header_value_not_empty(self):
         left_operand = AcceptValidHeader(
-            header_value="a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1"
+            header_value="a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1",
         )
         right_operand = AcceptValidHeader(header_value=",\t ,i/j, k/l;q=0.333,")
         result = left_operand + right_operand
@@ -723,7 +722,7 @@ class TestAcceptValidHeader:
         instance = AcceptValidHeader(
             header_value=(
                 "text/plain; q=0.5, text/html; q=0, text/x-dvi; q=0.8, " "text/x-c"
-            )
+            ),
         )
         assert list(instance) == ["text/x-c", "text/x-dvi", "text/plain"]
 
@@ -790,7 +789,7 @@ class TestAcceptValidHeader:
         assert result is not right_operand
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             # str
             (
@@ -883,7 +882,7 @@ class TestAcceptValidHeader:
         assert result.header_value == str(left_operand) + ", " + header
 
     @pytest.mark.parametrize(
-        "header_value, expected_returned",
+        ("header_value", "expected_returned"),
         [
             ("", "<AcceptValidHeader ('')>"),
             (
@@ -904,7 +903,7 @@ class TestAcceptValidHeader:
         assert repr(instance) == expected_returned
 
     @pytest.mark.parametrize(
-        "header_value, expected_returned",
+        ("header_value", "expected_returned"),
         [
             ("", ""),
             (
@@ -980,7 +979,7 @@ class TestAcceptValidHeader:
             assert not accept._old_match(mask, offer)
 
     @pytest.mark.parametrize(
-        "header_value, returned",
+        ("header_value", "returned"),
         [
             ("tExt/HtMl", True),
             ("APPlication/XHTML+xml", True),
@@ -996,7 +995,7 @@ class TestAcceptValidHeader:
         assert instance.accept_html() is returned
 
     @pytest.mark.parametrize(
-        "header_value, returned",
+        ("header_value", "returned"),
         [
             ("tExt/HtMl", True),
             ("APPlication/XHTML+xml", True),
@@ -1012,7 +1011,7 @@ class TestAcceptValidHeader:
         assert instance.accepts_html is returned
 
     @pytest.mark.parametrize(
-        "offers, expected_returned",
+        ("offers", "expected_returned"),
         [
             (["text/html;p=1;q=0.5"], []),
             (["text/html;q=0.5"], []),
@@ -1027,7 +1026,7 @@ class TestAcceptValidHeader:
         )
 
     @pytest.mark.parametrize(
-        "header_value, offers, expected_returned",
+        ("header_value", "offers", "expected_returned"),
         [
             # RFC 7231, section 5.3.2
             (
@@ -1166,7 +1165,7 @@ class TestAcceptValidHeader:
         ],
     )
     def test_acceptable_offers__valid_offers(
-        self, header_value, offers, expected_returned
+        self, header_value, offers, expected_returned,
     ):
         instance = AcceptValidHeader(header_value=header_value)
         returned = instance.acceptable_offers(offers=offers)
@@ -1210,7 +1209,7 @@ class TestAcceptValidHeader:
     @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match_mixedcase(self):
         accept = AcceptValidHeader(
-            "image/jpg; q=0.2, Image/pNg; Q=0.4, image/*; q=0.05"
+            "image/jpg; q=0.2, Image/pNg; Q=0.4, image/*; q=0.05",
         )
         assert accept.best_match(["Image/JpG"]) == "Image/JpG"
         assert accept.best_match(["image/Tiff"]) == "image/Tiff"
@@ -1245,7 +1244,7 @@ class TestAcceptNoHeader:
             value=(
                 ",\t , a/b;q=1;e1;e2=v2 \t,\t\t c/d, e/f;p1=v1;q=0;e1, "
                 + "g/h;p1=v1\t ;\t\tp2=v2;q=0.5 \t,"
-            )
+            ),
         )
         list_of_returned = list(returned)
         assert list_of_returned == [
@@ -1318,7 +1317,7 @@ class TestAcceptNoHeader:
         assert result.header_value == ""
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             # str
             (
@@ -1507,7 +1506,7 @@ class TestAcceptNoHeader:
         assert result.header_value == ""
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             # str
             (
@@ -1613,7 +1612,7 @@ class TestAcceptNoHeader:
         assert instance.accepts_html is True
 
     @pytest.mark.parametrize(
-        "offers, expected_returned",
+        ("offers", "expected_returned"),
         [
             (["text/html;p=1;q=0.5"], []),
             (["text/html;q=0.5"], []),
@@ -1663,7 +1662,7 @@ class TestAcceptInvalidHeader:
             value=(
                 ",\t , a/b;q=1;e1;e2=v2 \t,\t\t c/d, e/f;p1=v1;q=0;e1, "
                 + "g/h;p1=v1\t ;\t\tp2=v2;q=0.5 \t,"
-            )
+            ),
         )
         list_of_returned = list(returned)
         assert list_of_returned == [
@@ -1737,7 +1736,7 @@ class TestAcceptInvalidHeader:
         assert result.header_value == ""
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             # str
             (
@@ -1851,7 +1850,7 @@ class TestAcceptInvalidHeader:
     @pytest.mark.parametrize("header_value", [", ", 'a/b;p1=1;p2=2;q=0.8;e1;e2="'])
     def test___add___AcceptInvalidHeader(self, header_value):
         result = AcceptInvalidHeader(header_value=", ") + AcceptInvalidHeader(
-            header_value=header_value
+            header_value=header_value,
         )
         assert isinstance(result, AcceptNoHeader)
 
@@ -1927,7 +1926,7 @@ class TestAcceptInvalidHeader:
         assert result.header_value == ""
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             # str
             (
@@ -2033,7 +2032,7 @@ class TestAcceptInvalidHeader:
         assert instance.accepts_html is True
 
     @pytest.mark.parametrize(
-        "offers, expected_returned",
+        ("offers", "expected_returned"),
         [
             (["text/html;p=1;q=0.5"], []),
             (["text/html;q=0.5"], []),
@@ -2153,7 +2152,7 @@ class TestAcceptProperty:
         assert request.environ["HTTP_ACCEPT"] == header_value
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             ("", ""),
             ([], ""),
@@ -2238,7 +2237,7 @@ class TestAcceptProperty:
         assert request.environ["HTTP_ACCEPT"] == value_as_header
 
     @pytest.mark.parametrize(
-        "header_value", ["", "a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1"]
+        "header_value", ["", "a/b;q=0.5, c/d;p1=1;q=0, e/f, g/h;p1=1;q=1;e1=1"],
     )
     def test_fset_other_type_with___str__(self, header_value):
         request = Request.blank("/", environ={"HTTP_ACCEPT": "text/html"})
@@ -2318,7 +2317,7 @@ class TestAcceptCharset:
             AcceptCharset.parse(value=value)
 
     @pytest.mark.parametrize(
-        "value, expected_list",
+        ("value", "expected_list"),
         [
             ("*", [("*", 1.0)]),
             ("!#$%&'*+-.^_`|~;q=0.5", [("!#$%&'*+-.^_`|~", 0.5)]),
@@ -2352,7 +2351,7 @@ class TestAcceptCharset:
 class TestAcceptCharsetValidHeader:
     def test_parse__inherited(self):
         returned = AcceptCharsetValidHeader.parse(
-            value=",iso-8859-5 ; q=0.333 , ,utf-8,unicode-1-1 ;q=0.90,"
+            value=",iso-8859-5 ; q=0.333 , ,utf-8,unicode-1-1 ;q=0.90,",
         )
         list_of_returned = list(returned)
         assert list_of_returned == [
@@ -2416,7 +2415,7 @@ class TestAcceptCharsetValidHeader:
         assert result is not left_operand
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             (
                 "UTF-7;q=0.5, unicode-1-1;q=0, UTF-8",
@@ -2453,13 +2452,13 @@ class TestAcceptCharsetValidHeader:
         result = left_operand + right_operand
         assert isinstance(result, AcceptCharsetValidHeader)
         assert result.header_value == left_operand.header_value + ", " + str(
-            right_operand
+            right_operand,
         )
 
     def test___add___AcceptCharsetValidHeader(self):
         left_operand = AcceptCharsetValidHeader(header_value=",\t ,iso-8859-5;q=0.333,")
         right_operand = AcceptCharsetValidHeader(
-            header_value=", ,utf-7;q=0, \tutf-8;q=1,"
+            header_value=", ,utf-7;q=0, \tutf-8;q=1,",
         )
         result = left_operand + right_operand
         assert isinstance(result, AcceptCharsetValidHeader)
@@ -2470,7 +2469,7 @@ class TestAcceptCharsetValidHeader:
 
     def test___add___AcceptCharsetNoHeader(self):
         valid_header_instance = AcceptCharsetValidHeader(
-            header_value=", ,utf-7;q=0, \tutf-8;q=1,"
+            header_value=", ,utf-7;q=0, \tutf-8;q=1,",
         )
         result = valid_header_instance + AcceptCharsetNoHeader()
         assert isinstance(result, AcceptCharsetValidHeader)
@@ -2481,7 +2480,7 @@ class TestAcceptCharsetValidHeader:
     def test___add___AcceptCharsetInvalidHeader(self, header_value):
         valid_header_instance = AcceptCharsetValidHeader(header_value="header")
         result = valid_header_instance + AcceptCharsetInvalidHeader(
-            header_value=header_value
+            header_value=header_value,
         )
         assert isinstance(result, AcceptCharsetValidHeader)
         assert result.header_value == valid_header_instance.header_value
@@ -2510,7 +2509,7 @@ class TestAcceptCharsetValidHeader:
     @pytest.mark.filterwarnings(IGNORE_ITER)
     def test___iter__(self):
         instance = AcceptCharsetValidHeader(
-            header_value="utf-8; q=0.5, utf-7; q=0, iso-8859-5; q=0.8, unicode-1-1"
+            header_value="utf-8; q=0.5, utf-7; q=0, iso-8859-5; q=0.8, unicode-1-1",
         )
         assert list(instance) == ["unicode-1-1", "iso-8859-5", "utf-8"]
 
@@ -2522,7 +2521,7 @@ class TestAcceptCharsetValidHeader:
         assert result is not right_operand
 
     @pytest.mark.parametrize(
-        "left_operand", ["", [], (), {}, "UTF/8", ["UTF/8"], ("UTF/8",), {"UTF/8": 1.0}]
+        "left_operand", ["", [], (), {}, "UTF/8", ["UTF/8"], ("UTF/8",), {"UTF/8": 1.0}],
     )
     def test___radd___invalid_value(self, left_operand):
         right_operand = AcceptCharsetValidHeader(header_value="iso-8859-5")
@@ -2545,7 +2544,7 @@ class TestAcceptCharsetValidHeader:
         assert result is not right_operand
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             (
                 "UTF-7;q=0.5, unicode-1-1;q=0, UTF-8",
@@ -2567,7 +2566,7 @@ class TestAcceptCharsetValidHeader:
     )
     def test___radd___valid_value(self, value, value_as_header):
         right_operand = AcceptCharsetValidHeader(
-            header_value=",\t ,iso-8859-5;q=0.333,"
+            header_value=",\t ,iso-8859-5;q=0.333,",
         )
         result = value + right_operand
         assert isinstance(result, AcceptCharsetValidHeader)
@@ -2577,7 +2576,7 @@ class TestAcceptCharsetValidHeader:
 
     def test___radd___other_type_with_valid___str__(self):
         right_operand = AcceptCharsetValidHeader(
-            header_value=",\t ,iso-8859-5;q=0.333,"
+            header_value=",\t ,iso-8859-5;q=0.333,",
         )
 
         class Other:
@@ -2606,7 +2605,7 @@ class TestAcceptCharsetValidHeader:
         assert str(instance) == "iso-8859-5;q=0, utf-8, UTF-7, unicode-1-1;q=0.21"
 
     @pytest.mark.parametrize(
-        "header_value, offers, returned",
+        ("header_value", "offers", "returned"),
         [
             ("UTF-7, unicode-1-1", ["UTF-8", "iso-8859-5"], []),
             (
@@ -2675,7 +2674,7 @@ class TestAcceptCharsetValidHeader:
         accept = AcceptCharsetValidHeader("utf-8, iso-8859-5;q=0.55, utf-7;q=0.59")
         assert accept.best_match(["utf-8", "iso-8859-5"]) == "utf-8"
         accept = AcceptCharsetValidHeader(
-            "utf-8;q=0.5, iso-8859-5;q=0.586, utf-7;q=0.596"
+            "utf-8;q=0.5, iso-8859-5;q=0.586, utf-7;q=0.596",
         )
         assert accept.best_match(["utf-8", "utf-7"]) == "utf-7"
 
@@ -2708,7 +2707,7 @@ class TestAcceptCharsetValidHeader:
 class TestAcceptCharsetNoHeader:
     def test_parse__inherited(self):
         returned = AcceptCharsetNoHeader.parse(
-            value=",iso-8859-5 ; q=0.333 , ,utf-8,unicode-1-1 ;q=0.90,"
+            value=",iso-8859-5 ; q=0.333 , ,utf-8,unicode-1-1 ;q=0.90,",
         )
         list_of_returned = list(returned)
         assert list_of_returned == [
@@ -2753,7 +2752,7 @@ class TestAcceptCharsetNoHeader:
         assert result is not left_operand
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             (
                 "UTF-7;q=0.5, unicode-1-1;q=0, UTF-8",
@@ -2790,7 +2789,7 @@ class TestAcceptCharsetNoHeader:
 
     def test___add___AcceptCharsetValidHeader(self):
         right_operand = AcceptCharsetValidHeader(
-            header_value=", ,utf-7;q=0, \tutf-8;q=1,"
+            header_value=", ,utf-7;q=0, \tutf-8;q=1,",
         )
         result = AcceptCharsetNoHeader() + right_operand
         assert isinstance(result, AcceptCharsetValidHeader)
@@ -2836,7 +2835,7 @@ class TestAcceptCharsetNoHeader:
         assert result is not right_operand
 
     @pytest.mark.parametrize(
-        "left_operand", ["", [], (), {}, "UTF/8", ["UTF/8"], ("UTF/8",), {"UTF/8": 1.0}]
+        "left_operand", ["", [], (), {}, "UTF/8", ["UTF/8"], ("UTF/8",), {"UTF/8": 1.0}],
     )
     def test___radd___invalid_value(self, left_operand):
         right_operand = AcceptCharsetNoHeader()
@@ -2857,7 +2856,7 @@ class TestAcceptCharsetNoHeader:
         assert result is not right_operand
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             (
                 "UTF-7;q=0.5, unicode-1-1;q=0, UTF-8",
@@ -2932,7 +2931,7 @@ class TestAcceptCharsetNoHeader:
 class TestAcceptCharsetInvalidHeader:
     def test_parse__inherited(self):
         returned = AcceptCharsetInvalidHeader.parse(
-            value=",iso-8859-5 ; q=0.333 , ,utf-8,unicode-1-1 ;q=0.90,"
+            value=",iso-8859-5 ; q=0.333 , ,utf-8,unicode-1-1 ;q=0.90,",
         )
         list_of_returned = list(returned)
         assert list_of_returned == [
@@ -2972,7 +2971,7 @@ class TestAcceptCharsetInvalidHeader:
         assert isinstance(result, AcceptCharsetNoHeader)
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             (
                 "UTF-7;q=0.5, unicode-1-1;q=0, UTF-8",
@@ -3009,7 +3008,7 @@ class TestAcceptCharsetInvalidHeader:
 
     def test___add___AcceptCharsetValidHeader(self):
         right_operand = AcceptCharsetValidHeader(
-            header_value=", ,utf-7;q=0, \tutf-8;q=1,"
+            header_value=", ,utf-7;q=0, \tutf-8;q=1,",
         )
         result = AcceptCharsetInvalidHeader(header_value="") + right_operand
         assert isinstance(result, AcceptCharsetValidHeader)
@@ -3024,7 +3023,7 @@ class TestAcceptCharsetInvalidHeader:
 
     def test___add___AcceptCharsetInvalidHeader(self):
         result = AcceptCharsetInvalidHeader(
-            header_value=""
+            header_value="",
         ) + AcceptCharsetInvalidHeader(header_value="utf/8")
         assert isinstance(result, AcceptCharsetNoHeader)
 
@@ -3050,7 +3049,7 @@ class TestAcceptCharsetInvalidHeader:
         assert isinstance(result, AcceptCharsetNoHeader)
 
     @pytest.mark.parametrize(
-        "left_operand", ["", [], (), {}, "UTF/8", ["UTF/8"], ("UTF/8",), {"UTF/8": 1.0}]
+        "left_operand", ["", [], (), {}, "UTF/8", ["UTF/8"], ("UTF/8",), {"UTF/8": 1.0}],
     )
     def test___radd___invalid_value(self, left_operand):
         result = left_operand + AcceptCharsetInvalidHeader(header_value="")
@@ -3066,7 +3065,7 @@ class TestAcceptCharsetInvalidHeader:
         assert isinstance(result, AcceptCharsetNoHeader)
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             (
                 "UTF-7;q=0.5, unicode-1-1;q=0, UTF-8",
@@ -3208,7 +3207,7 @@ class TestAcceptCharsetProperty:
         assert request.environ["HTTP_ACCEPT_CHARSET"] == "UTF-7"
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             (
                 "utf-8;q=0.5, iso-8859-5;q=0, utf-7",
@@ -3317,7 +3316,7 @@ class TestAcceptEncoding:
             AcceptEncoding.parse(value=value)
 
     @pytest.mark.parametrize(
-        "value, expected_list",
+        ("value", "expected_list"),
         [
             (",", []),
             (", ,", []),
@@ -3348,13 +3347,13 @@ class TestAcceptEncoding:
 class TestAcceptEncodingValidHeader:
     def test_parse__inherited(self):
         returned = AcceptEncodingValidHeader.parse(
-            value=",,\t gzip;q=1.0, identity; q=0.5, *;q=0 \t ,"
+            value=",,\t gzip;q=1.0, identity; q=0.5, *;q=0 \t ,",
         )
         list_of_returned = list(returned)
         assert list_of_returned == [("gzip", 1.0), ("identity", 0.5), ("*", 0.0)]
 
     @pytest.mark.parametrize(
-        "header_value", [", ", "gzip;q=1.0, identity; q =0.5, *;q=0"]
+        "header_value", [", ", "gzip;q=1.0, identity; q =0.5, *;q=0"],
     )
     def test___init___invalid_header(self, header_value):
         with pytest.raises(ValueError):
@@ -3417,7 +3416,7 @@ class TestAcceptEncodingValidHeader:
         assert result is not left_operand
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             ("compress;q=0.5, deflate;q=0, *", "compress;q=0.5, deflate;q=0, *"),
             (["compress;q=0.5", "deflate;q=0", "*"], "compress;q=0.5, deflate;q=0, *"),
@@ -3456,7 +3455,7 @@ class TestAcceptEncodingValidHeader:
 
     def test___add___AcceptEncodingValidHeader_header_value_empty(self):
         left_operand = AcceptEncodingValidHeader(
-            header_value=",\t ,gzip, identity;q=0.333,"
+            header_value=",\t ,gzip, identity;q=0.333,",
         )
         right_operand = AcceptEncodingValidHeader(header_value="")
         result = left_operand + right_operand
@@ -3466,10 +3465,10 @@ class TestAcceptEncodingValidHeader:
 
     def test___add___AcceptEncodingValidHeader_header_value_not_empty(self):
         left_operand = AcceptEncodingValidHeader(
-            header_value=",\t ,gzip, identity;q=0.333,"
+            header_value=",\t ,gzip, identity;q=0.333,",
         )
         right_operand = AcceptEncodingValidHeader(
-            header_value="compress;q=0.5, deflate;q=0, *"
+            header_value="compress;q=0.5, deflate;q=0, *",
         )
         result = left_operand + right_operand
         assert isinstance(result, AcceptEncodingValidHeader)
@@ -3489,7 +3488,7 @@ class TestAcceptEncodingValidHeader:
     def test___add___AcceptEncodingInvalidHeader(self, header_value):
         valid_header_instance = AcceptEncodingValidHeader(header_value="gzip")
         result = valid_header_instance + AcceptEncodingInvalidHeader(
-            header_value=header_value
+            header_value=header_value,
         )
         assert isinstance(result, AcceptEncodingValidHeader)
         assert result.header_value == valid_header_instance.header_value
@@ -3511,7 +3510,7 @@ class TestAcceptEncodingValidHeader:
     @pytest.mark.filterwarnings(IGNORE_ITER)
     def test___iter__(self):
         instance = AcceptEncodingValidHeader(
-            header_value="gzip; q=0.5, *; q=0, deflate; q=0.8, compress"
+            header_value="gzip; q=0.5, *; q=0, deflate; q=0.8, compress",
         )
         assert list(instance) == ["compress", "deflate", "gzip"]
 
@@ -3563,7 +3562,7 @@ class TestAcceptEncodingValidHeader:
         assert result is not right_operand
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             ("compress;q=0.5, deflate;q=0, *", "compress;q=0.5, deflate;q=0, *"),
             (["compress;q=0.5", "deflate;q=0", "*"], "compress;q=0.5, deflate;q=0, *"),
@@ -3601,7 +3600,7 @@ class TestAcceptEncodingValidHeader:
         assert result.header_value == str(left_operand) + ", " + header
 
     @pytest.mark.parametrize(
-        "header_value, expected_returned",
+        ("header_value", "expected_returned"),
         [
             ("", "<AcceptEncodingValidHeader ('')>"),
             (
@@ -3616,7 +3615,7 @@ class TestAcceptEncodingValidHeader:
         assert repr(instance) == expected_returned
 
     @pytest.mark.parametrize(
-        "header_value, expected_returned",
+        ("header_value", "expected_returned"),
         [("", ""), (",\t, a ;\t q=0.20 , b ,',", "a;q=0.2, b, '")],
     )
     def test___str__(self, header_value, expected_returned):
@@ -3624,7 +3623,7 @@ class TestAcceptEncodingValidHeader:
         assert str(instance) == expected_returned
 
     @pytest.mark.parametrize(
-        "header_value, offers, expected_returned",
+        ("header_value", "offers", "expected_returned"),
         [
             ("", [], []),
             ("gzip, compress", [], []),
@@ -3685,7 +3684,7 @@ class TestAcceptEncodingValidHeader:
         accept = AcceptEncodingValidHeader("gzip, compress;q=0.55, deflate;q=0.59")
         assert accept.best_match(["gzip", "compress"]) == "gzip"
         accept = AcceptEncodingValidHeader(
-            "gzip;q=0.5, compress;q=0.586, deflate;q=0.596"
+            "gzip;q=0.5, compress;q=0.586, deflate;q=0.596",
         )
         assert accept.best_match(["gzip", "deflate"]) == "deflate"
 
@@ -3718,7 +3717,7 @@ class TestAcceptEncodingValidHeader:
 class TestAcceptEncodingNoHeader:
     def test_parse__inherited(self):
         returned = AcceptEncodingNoHeader.parse(
-            value=",,\t gzip;q=1.0, identity; q=0.5, *;q=0 \t ,"
+            value=",,\t gzip;q=1.0, identity; q=0.5, *;q=0 \t ,",
         )
         list_of_returned = list(returned)
         assert list_of_returned == [("gzip", 1.0), ("identity", 0.5), ("*", 0.0)]
@@ -3771,7 +3770,7 @@ class TestAcceptEncodingNoHeader:
         assert result.header_value == ""
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             ("compress;q=0.5, deflate;q=0, *", "compress;q=0.5, deflate;q=0, *"),
             (["compress;q=0.5", "deflate;q=0", "*"], "compress;q=0.5, deflate;q=0, *"),
@@ -3814,7 +3813,7 @@ class TestAcceptEncodingNoHeader:
 
     def test___add___AcceptEncodingValidHeader_header_value_not_empty(self):
         right_operand = AcceptEncodingValidHeader(
-            header_value="compress;q=0.5, deflate;q=0, *"
+            header_value="compress;q=0.5, deflate;q=0, *",
         )
         result = AcceptEncodingNoHeader() + right_operand
         assert isinstance(result, AcceptEncodingValidHeader)
@@ -3892,7 +3891,7 @@ class TestAcceptEncodingNoHeader:
         assert result.header_value == ""
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             ("compress;q=0.5, deflate;q=0, *", "compress;q=0.5, deflate;q=0, *"),
             (["compress;q=0.5", "deflate;q=0", "*"], "compress;q=0.5, deflate;q=0, *"),
@@ -3966,7 +3965,7 @@ class TestAcceptEncodingNoHeader:
 class TestAcceptEncodingInvalidHeader:
     def test_parse__inherited(self):
         returned = AcceptEncodingInvalidHeader.parse(
-            value=",,\t gzip;q=1.0, identity; q=0.5, *;q=0 \t ,"
+            value=",,\t gzip;q=1.0, identity; q=0.5, *;q=0 \t ,",
         )
         list_of_returned = list(returned)
         assert list_of_returned == [("gzip", 1.0), ("identity", 0.5), ("*", 0.0)]
@@ -4020,7 +4019,7 @@ class TestAcceptEncodingInvalidHeader:
         assert result.header_value == ""
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             ("compress;q=0.5, deflate;q=0, *", "compress;q=0.5, deflate;q=0, *"),
             (["compress;q=0.5", "deflate;q=0", "*"], "compress;q=0.5, deflate;q=0, *"),
@@ -4065,7 +4064,7 @@ class TestAcceptEncodingInvalidHeader:
     def test___add___AcceptEncodingValidHeader_header_value_not_empty(self):
         left_operand = AcceptEncodingInvalidHeader(header_value=", ")
         right_operand = AcceptEncodingValidHeader(
-            header_value="compress;q=0.5, deflate;q=0, *"
+            header_value="compress;q=0.5, deflate;q=0, *",
         )
         result = left_operand + right_operand
         assert isinstance(result, AcceptEncodingValidHeader)
@@ -4081,7 +4080,7 @@ class TestAcceptEncodingInvalidHeader:
     @pytest.mark.parametrize("header_value", [", ", "compress;q=1.001"])
     def test___add___AcceptEncodingInvalidHeader(self, header_value):
         result = AcceptEncodingInvalidHeader(
-            header_value="gzip;;q=1"
+            header_value="gzip;;q=1",
         ) + AcceptEncodingInvalidHeader(header_value=header_value)
         assert isinstance(result, AcceptEncodingNoHeader)
 
@@ -4142,7 +4141,7 @@ class TestAcceptEncodingInvalidHeader:
         assert result.header_value == ""
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             ("compress;q=0.5, deflate;q=0, *", "compress;q=0.5, deflate;q=0, *"),
             (["compress;q=0.5", "deflate;q=0", "*"], "compress;q=0.5, deflate;q=0, *"),
@@ -4283,7 +4282,7 @@ class TestAcceptEncodingProperty:
         assert request.environ["HTTP_ACCEPT_ENCODING"] == "compress"
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             ("gzip;q=0.5, compress;q=0, deflate", "gzip;q=0.5, compress;q=0, deflate"),
             (
@@ -4388,7 +4387,7 @@ class TestAcceptLanguage:
             AcceptLanguage.parse(value=value)
 
     @pytest.mark.parametrize(
-        "value, expected_list",
+        ("value", "expected_list"),
         [
             ("*", [("*", 1.0)]),
             ("fR;q=0.5", [("fR", 0.5)]),
@@ -4497,7 +4496,7 @@ class TestAcceptLanguageValidHeader:
         assert result is not left_operand
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             ("en-gb;q=0.5, fr;q=0, es", "en-gb;q=0.5, fr;q=0, es"),
             ([("en-gb", 0.5), ("fr", 0.0), "es"], "en-gb;q=0.5, fr;q=0, es"),
@@ -4527,7 +4526,7 @@ class TestAcceptLanguageValidHeader:
         header1 = ",\t ,de, zh-Hans;q=0.333,"
         header2 = ", ,fr;q=0, \tes;q=1,"
         result = AcceptLanguageValidHeader(
-            header_value=header1
+            header_value=header1,
         ) + AcceptLanguageValidHeader(header_value=header2)
         assert isinstance(result, AcceptLanguageValidHeader)
         assert result.header_value == header1 + ", " + header2
@@ -4543,7 +4542,7 @@ class TestAcceptLanguageValidHeader:
     def test___add___AcceptLanguageInvalidHeader(self, header_value):
         valid_header_instance = AcceptLanguageValidHeader(header_value="header")
         result = valid_header_instance + AcceptLanguageInvalidHeader(
-            header_value=header_value
+            header_value=header_value,
         )
         assert isinstance(result, AcceptLanguageValidHeader)
         assert result.header_value == valid_header_instance.header_value
@@ -4555,7 +4554,7 @@ class TestAcceptLanguageValidHeader:
         assert returned is True
 
     @pytest.mark.parametrize(
-        "header_value, offer",
+        ("header_value", "offer"),
         [
             ("*", "da"),
             ("da", "DA"),
@@ -4571,7 +4570,7 @@ class TestAcceptLanguageValidHeader:
         assert offer in instance
 
     @pytest.mark.parametrize(
-        "header_value, offer",
+        ("header_value", "offer"),
         [("en-gb", "en-us"), ("en-gb", "fr-fr"), ("en-gb", "fr"), ("en", "fr-fr")],
     )
     @pytest.mark.filterwarnings(IGNORE_CONTAINS)
@@ -4580,7 +4579,7 @@ class TestAcceptLanguageValidHeader:
         assert offer not in instance
 
     @pytest.mark.parametrize(
-        "header_value, expected_list",
+        ("header_value", "expected_list"),
         [
             ("fr;q=0, jp;q=0", []),
             ("en-gb, da", ["en-gb", "da"]),
@@ -4646,7 +4645,7 @@ class TestAcceptLanguageValidHeader:
         assert result is not right_operand
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             ("en-gb;q=0.5, fr;q=0, es", "en-gb;q=0.5, fr;q=0, es"),
             ([("en-gb", 0.5), ("fr", 0.0), "es"], "en-gb;q=0.5, fr;q=0, es"),
@@ -4656,7 +4655,7 @@ class TestAcceptLanguageValidHeader:
     )
     def test___radd___valid_value(self, value, value_as_header):
         right_operand = AcceptLanguageValidHeader(
-            header_value=",\t ,de, zh-Hans;q=0.333,"
+            header_value=",\t ,de, zh-Hans;q=0.333,",
         )
         result = value + right_operand
         assert isinstance(result, AcceptLanguageValidHeader)
@@ -4666,7 +4665,7 @@ class TestAcceptLanguageValidHeader:
 
     def test___radd___other_type_with_valid___str__(self):
         right_operand = AcceptLanguageValidHeader(
-            header_value=",\t ,de, zh-Hans;q=0.333,"
+            header_value=",\t ,de, zh-Hans;q=0.333,",
         )
 
         class Other:
@@ -4690,7 +4689,7 @@ class TestAcceptLanguageValidHeader:
         assert str(instance) == "de;q=0, es, zh, jp;q=0.21"
 
     @pytest.mark.parametrize(
-        "header_value, language_tags, expected_returned",
+        ("header_value", "language_tags", "expected_returned"),
         [
             # Example from RFC 4647, Section 3.4
             (
@@ -4811,7 +4810,7 @@ class TestAcceptLanguageValidHeader:
         assert returned == expected_returned
 
     @pytest.mark.parametrize(
-        "header_value, offers, default_match, expected_returned",
+        ("header_value", "offers", "default_match", "expected_returned"),
         [
             ("bar, *;q=0", ["foo"], None, None),
             ("en-gb, sr-Cyrl", ["sr-Cyrl", "en-gb"], None, "sr-Cyrl"),
@@ -4856,10 +4855,7 @@ class TestAcceptLanguageValidHeader:
             )
 
     @pytest.mark.parametrize(
-        (
-            "header_value, language_tags, default_range, default_tag, default"
-            ", expected"
-        ),
+        ("header_value", "language_tags", "default_range", "default_tag", "default", "expected"),
         [
             # Each language range in the header is considered in turn, in
             # descending order of qvalue
@@ -5220,7 +5216,7 @@ class TestAcceptLanguageValidHeader:
         ],
     )
     def test_lookup(
-        self, header_value, language_tags, default_range, default_tag, default, expected
+        self, header_value, language_tags, default_range, default_tag, default, expected,
     ):
         instance = AcceptLanguageValidHeader(header_value=header_value)
         returned = instance.lookup(
@@ -5232,7 +5228,7 @@ class TestAcceptLanguageValidHeader:
         assert returned == expected
 
     @pytest.mark.parametrize(
-        "header_value, offer, expected_returned",
+        ("header_value", "offer", "expected_returned"),
         [
             ("en-gb", "en-gb", 1),
             ("en-gb;q=0.5", "en-gb", 0.5),
@@ -5283,7 +5279,7 @@ class TestAcceptLanguageNoHeader:
         assert result is not left_operand
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             ("en-gb;q=0.5, fr;q=0, es", "en-gb;q=0.5, fr;q=0, es"),
             ([("en-gb", 0.5), ("fr", 0.0), "es"], "en-gb;q=0.5, fr;q=0, es"),
@@ -5324,7 +5320,7 @@ class TestAcceptLanguageNoHeader:
     def test___add___AcceptLanguageInvalidHeader(self, invalid_header_value):
         left_operand = AcceptLanguageNoHeader()
         result = left_operand + AcceptLanguageInvalidHeader(
-            header_value=invalid_header_value
+            header_value=invalid_header_value,
         )
         assert isinstance(result, AcceptLanguageNoHeader)
         assert result is not left_operand
@@ -5353,7 +5349,7 @@ class TestAcceptLanguageNoHeader:
         assert result is not right_operand
 
     @pytest.mark.parametrize(
-        "left_operand", ["", [], (), {}, "en_gb", ["en_gb"], ("en_gb",), {"en_gb": 1.0}]
+        "left_operand", ["", [], (), {}, "en_gb", ["en_gb"], ("en_gb",), {"en_gb": 1.0}],
     )
     def test___radd___invalid_value(self, left_operand):
         right_operand = AcceptLanguageNoHeader()
@@ -5374,7 +5370,7 @@ class TestAcceptLanguageNoHeader:
         assert result is not right_operand
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             ("en-gb;q=0.5, fr;q=0, es", "en-gb;q=0.5, fr;q=0, es"),
             ([("en-gb", 0.5), ("fr", 0.0), "es"], "en-gb;q=0.5, fr;q=0, es"),
@@ -5411,7 +5407,7 @@ class TestAcceptLanguageNoHeader:
         assert returned == []
 
     @pytest.mark.parametrize(
-        "offers, default_match, expected_returned",
+        ("offers", "default_match", "expected_returned"),
         [
             (["foo", "bar"], None, "foo"),
             ([("foo", 1), ("bar", 0.5)], None, "foo"),
@@ -5433,7 +5429,7 @@ class TestAcceptLanguageNoHeader:
             instance.lookup(default_tag=None, default=None)
 
     @pytest.mark.parametrize(
-        "default_tag, default, expected",
+        ("default_tag", "default", "expected"),
         [
             # If `default_tag` is not None, it is returned.
             ("default-tag", "default", "default-tag"),
@@ -5518,7 +5514,7 @@ class TestAcceptLanguageInvalidHeader:
 
     def test___add___AcceptLanguageInvalidHeader(self):
         result = AcceptLanguageInvalidHeader(
-            header_value=""
+            header_value="",
         ) + AcceptLanguageInvalidHeader(header_value="")
         assert isinstance(result, AcceptLanguageNoHeader)
 
@@ -5545,7 +5541,7 @@ class TestAcceptLanguageInvalidHeader:
         assert isinstance(result, AcceptLanguageNoHeader)
 
     @pytest.mark.parametrize(
-        "left_operand", ["", [], (), {}, "en_gb", ["en_gb"], ("en_gb",), {"en_gb": 1.0}]
+        "left_operand", ["", [], (), {}, "en_gb", ["en_gb"], ("en_gb",), {"en_gb": 1.0}],
     )
     def test___radd___invalid_value(self, left_operand):
         result = left_operand + AcceptLanguageInvalidHeader(header_value="")
@@ -5589,7 +5585,7 @@ class TestAcceptLanguageInvalidHeader:
         assert returned == []
 
     @pytest.mark.parametrize(
-        "offers, default_match, expected_returned",
+        ("offers", "default_match", "expected_returned"),
         [
             (["foo", "bar"], None, "foo"),
             ([("foo", 1), ("bar", 0.5)], None, "foo"),
@@ -5611,7 +5607,7 @@ class TestAcceptLanguageInvalidHeader:
             instance.lookup(default_tag=None, default=None)
 
     @pytest.mark.parametrize(
-        "default_tag, default, expected",
+        ("default_tag", "default", "expected"),
         [
             # If `default_tag` is not None, it is returned.
             ("default-tag", "default", "default-tag"),
@@ -5705,7 +5701,7 @@ class TestAcceptLanguageProperty:
         assert request.environ["HTTP_ACCEPT_LANGUAGE"] == "en-GB"
 
     @pytest.mark.parametrize(
-        "value, value_as_header",
+        ("value", "value_as_header"),
         [
             ("en-gb;q=0.5, fr;q=0, es", "en-gb;q=0.5, fr;q=0, es"),
             ([("en-gb", 0.5), ("fr", 0.0), "es"], "en-gb;q=0.5, fr;q=0, es"),

@@ -8,7 +8,7 @@ try:
         README = f.read()
     with open(os.path.join(here, "CHANGES.txt")) as f:
         CHANGES = f.read()
-except IOError:
+except OSError:
     README = CHANGES = ""
 
 testing_extras = [

@@ -24,10 +24,7 @@ if __name__ == "__main__":
     import signal
     import sys
 
-    if sys.argv[1:]:
-        arg = sys.argv[1]
-    else:
-        arg = None
+    arg = sys.argv[1] if sys.argv[1:] else None
     if arg in ["open", "run"]:
         import subprocess
         import time

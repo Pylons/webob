@@ -1,13 +1,13 @@
 import os
-import urllib
-import time
 import re
-from cPickle import load, dump
-from webob import Request, Response, html_escape
-from webob import exc
+import time
+import urllib
+
+from cPickle import dump, load
+from webob import Request, exc, html_escape
 
 
-class Commenter(object):
+class Commenter:
     def __init__(self, app, storage_dir):
         self.app = app
         self.storage_dir = storage_dir
@@ -72,16 +72,15 @@ class Commenter(object):
         text = []
         text.append("<hr>")
         text.append(
-            '<h2><a name="comment-area"></a>Comments (%s):</h2>' % len(comments)
+            '<h2><a name="comment-area"></a>Comments (%s):</h2>' % len(comments),
         )
         for comment in comments:
             text.append(
-                '<h3><a href="%s">%s</a> at %s:</h3>'
-                % (
+                '<h3><a href="{}">{}</a> at {}:</h3>'.format(
                     html_escape(comment["homepage"]),
                     html_escape(comment["name"]),
                     time.strftime("%c", comment["time"]),
-                )
+                ),
             )
             # Susceptible to XSS attacks!:
             text.append(comment["comments"])
@@ -89,19 +88,19 @@ class Commenter(object):
 
     def submit_form(self, base_path, req):
         return """<h2>Leave a comment:</h2>
-        <form action="%s/.comments" method="POST">
-         <input type="hidden" name="url" value="%s">
-         <table width="100%%">
+        <form action="{}/.comments" method="POST">
+         <input type="hidden" name="url" value="{}">
+         <table width="100%">
           <tr><td>Name:</td>
-              <td><input type="text" name="name" style="width: 100%%"></td></tr>
+              <td><input type="text" name="name" style="width: 100%"></td></tr>
           <tr><td>URL:</td>
-              <td><input type="text" name="homepage" style="width: 100%%"></td></tr>
+              <td><input type="text" name="homepage" style="width: 100%"></td></tr>
          </table>
          Comments:<br>
-         <textarea name="comments" rows=10 style="width: 100%%"></textarea><br>
+         <textarea name="comments" rows=10 style="width: 100%"></textarea><br>
          <input type="submit" value="Submit comment">
         </form>
-        """ % (
+        """.format(
             base_path,
             html_escape(req.url),
         )
@@ -112,12 +111,12 @@ class Commenter(object):
             name = req.params["name"]
             homepage = req.params["homepage"]
             comments = req.params["comments"]
-        except KeyError, e:
+        except KeyError as e:
             resp = exc.HTTPBadRequest("Missing parameter: %s" % e)
             return resp
         data = self.get_data(url)
         data.append(
-            dict(name=name, homepage=homepage, comments=comments, time=time.gmtime())
+            {"name": name, "homepage": homepage, "comments": comments, "time": time.gmtime()},
         )
         self.save_data(url, data)
         resp = exc.HTTPSeeOther(location=url + "#comment-area")

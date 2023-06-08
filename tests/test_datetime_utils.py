@@ -3,7 +3,6 @@ import datetime
 from email.utils import formatdate
 
 import pytest
-
 from webob import datetime_utils
 
 
@@ -34,7 +33,7 @@ def test_parse_date_invalid(invalid_date):
 
 
 @pytest.mark.parametrize(
-    "valid_date, parsed_datetime",
+    ("valid_date", "parsed_datetime"),
     [
         (
             "Mon, 20 Nov 1995 19:12:08 -0500",

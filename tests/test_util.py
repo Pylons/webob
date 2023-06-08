@@ -7,18 +7,15 @@ from webob.util import warn_deprecation
 
 class Test_warn_deprecation(unittest.TestCase):
     def setUp(self):
-
         self.oldwarn = warnings.warn
         warnings.warn = self._warn
         self.warnings = []
 
     def tearDown(self):
-
         warnings.warn = self.oldwarn
         del self.warnings
 
     def _callFUT(self, text, version, stacklevel):
-
         return warn_deprecation(text, version, stacklevel)
 
     def _warn(self, text, type, stacklevel=1):
@@ -28,16 +25,16 @@ class Test_warn_deprecation(unittest.TestCase):
         # test warning when duplicate keys are passed
         r = Response()
         r.headers.update([("Set-Cookie", "a=b"), ("Set-Cookie", "x=y")])
-        self.assertEqual(len(self.warnings), 1)
+        assert len(self.warnings) == 1
         deprecation_warning = self.warnings[0]
-        self.assertEqual(deprecation_warning["type"], UserWarning)
+        assert deprecation_warning["type"] == UserWarning
         assert "Consider using .extend()" in deprecation_warning["text"]
 
     def test_multidict_update_warning_unnecessary(self):
         # no warning on normal operation
         r = Response()
         r.headers.update([("Set-Cookie", "a=b")])
-        self.assertEqual(len(self.warnings), 0)
+        assert len(self.warnings) == 0
 
     def test_warn_deprecation(self):
         v = "1.3.0"
@@ -48,4 +45,4 @@ class Test_warn_deprecation(unittest.TestCase):
         v = "9.9.9"
 
         warn_deprecation("foo", v[:3], 1)
-        self.assertEqual(len(self.warnings), 1)
+        assert len(self.warnings) == 1

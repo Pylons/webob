@@ -85,7 +85,7 @@ class TestExistProp:
         from webob.cachecontrol import exists_property
 
         class Dummy:
-            properties = dict(prop=1)
+            properties = {"prop": 1}
             type = "dummy"
             prop = exists_property("prop", "dummy")
             badprop = exists_property("badprop", "big_dummy")
@@ -131,7 +131,7 @@ class TestValueProp:
         from webob.cachecontrol import value_property
 
         class Dummy:
-            properties = dict(prop=1)
+            properties = {"prop": 1}
             type = "dummy"
             prop = value_property("prop", "dummy")
             badprop = value_property("badprop", "big_dummy")
@@ -164,7 +164,7 @@ class TestValueProp:
         from webob.cachecontrol import value_property
 
         class Dummy:
-            properties = dict(prop=1, type="fail")
+            properties = {"prop": 1, "type": "fail"}
             type = "dummy"
             prop = value_property("prop", "dummy", type="failingtype")
 
@@ -206,7 +206,7 @@ def test_copy_cc():
 def test_serialize_cache_control_emptydict():
     from webob.cachecontrol import serialize_cache_control
 
-    result = serialize_cache_control(dict())
+    result = serialize_cache_control({})
     assert result == ""
 
 

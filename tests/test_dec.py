@@ -22,13 +22,13 @@ class DecoratorTests(unittest.TestCase):
             return bytes_(resp_str % req.url)
 
         resp = self._testit(test_app, "/a url")
-        self.assertEqual(resp.body, bytes_(resp_str % "http://localhost/a%20url"))
-        self.assertEqual(resp.content_length, 45)
-        self.assertEqual(resp.content_type, "text/html")
-        self.assertEqual(resp.charset, "UTF-8")
+        assert resp.body == bytes_(resp_str % "http://localhost/a%20url")
+        assert resp.content_length == 45
+        assert resp.content_type == "text/html"
+        assert resp.charset == "UTF-8"
 
     def test_wsgify_empty_repr(self):
-        self.assertTrue("wsgify at" in repr(wsgify()))
+        assert "wsgify at" in repr(wsgify())
 
     def test_wsgify_args(self):
         resp_str = b"hey hey my my"
@@ -38,23 +38,23 @@ class DecoratorTests(unittest.TestCase):
             return strarg
 
         resp = self._testit(test_app, "/a url")
-        self.assertEqual(resp.body, resp_str)
-        self.assertEqual(resp.content_length, 13)
-        self.assertEqual(resp.content_type, "text/html")
-        self.assertEqual(resp.charset, "UTF-8")
+        assert resp.body == resp_str
+        assert resp.content_length == 13
+        assert resp.content_type == "text/html"
+        assert resp.charset == "UTF-8"
 
     def test_wsgify_kwargs(self):
         resp_str = b"hey hey my my"
 
-        @wsgify(kwargs=dict(strarg=resp_str))
+        @wsgify(kwargs={"strarg": resp_str})
         def test_app(req, strarg=""):
             return strarg
 
         resp = self._testit(test_app, "/a url")
-        self.assertEqual(resp.body, resp_str)
-        self.assertEqual(resp.content_length, 13)
-        self.assertEqual(resp.content_type, "text/html")
-        self.assertEqual(resp.charset, "UTF-8")
+        assert resp.body == resp_str
+        assert resp.content_length == 13
+        assert resp.content_type == "text/html"
+        assert resp.charset == "UTF-8"
 
     def test_wsgify_raise_httpexception(self):
         from webob.exc import HTTPBadRequest
@@ -64,9 +64,9 @@ class DecoratorTests(unittest.TestCase):
             raise HTTPBadRequest
 
         resp = self._testit(test_app, "/a url")
-        self.assertTrue(resp.body.startswith(b"400 Bad Request"))
-        self.assertEqual(resp.content_type, "text/plain")
-        self.assertEqual(resp.charset, "UTF-8")
+        assert resp.body.startswith(b"400 Bad Request")
+        assert resp.content_type == "text/plain"
+        assert resp.charset == "UTF-8"
 
     def test_wsgify_no___get__(self):
         # use a class instance instead of a fn so we wrap something w/
@@ -77,8 +77,8 @@ class DecoratorTests(unittest.TestCase):
 
         test_app = wsgify(TestApp())
         resp = self._testit(test_app, "/a url")
-        self.assertEqual(resp.body, b"nothing to see here")
-        self.assertTrue(test_app.__get__(test_app) is test_app)
+        assert resp.body == b"nothing to see here"
+        assert test_app.__get__(test_app) is test_app
 
     def test_wsgify_app_returns_unicode(self):
         def test_app(req):
@@ -86,7 +86,7 @@ class DecoratorTests(unittest.TestCase):
 
         test_app = wsgify(test_app)
         resp = self._testit(test_app, "/a url")
-        self.assertEqual(resp.body, b"some text")
+        assert resp.body == b"some text"
 
     def test_wsgify_args_no_func(self):
         test_app = wsgify(None, args=(1,))
@@ -101,9 +101,7 @@ class DecoratorTests(unittest.TestCase):
         app = wsgify(show_vars, args=("foo", "bar"), kwargs={"a": 1, "b": 2})
         resp = app(Request.blank("/"))
 
-        self.assertEqual(
-            resp, bytes_(resp_str % ("['bar', 'foo']", "[('a', 1), ('b', 2)]"))
-        )
+        assert resp == bytes_(resp_str % ("['bar', 'foo']", "[('a', 1), ('b', 2)]"))
 
     def test_wsgify_call_args_override(self):
         resp_str = "args: %s, kwargs: %s"
@@ -114,14 +112,14 @@ class DecoratorTests(unittest.TestCase):
         app = wsgify(show_vars, args=("foo", "bar"), kwargs={"a": 1, "b": 2})
         resp = app(Request.blank("/"), "qux", c=3)
 
-        self.assertEqual(resp, bytes_(resp_str % ("['qux']", "[('c', 3)]")))
+        assert resp == bytes_(resp_str % ("['qux']", "[('c', 3)]"))
 
     def test_wsgify_wrong_sig(self):
         @wsgify
         def test_app(req):
             return "What have you done for me lately?"
 
-        req = dict()
+        req = {}
         self.assertRaises(TypeError, test_app, req, 1, 2)
         self.assertRaises(TypeError, test_app, req, 1, key="word")
 
@@ -131,9 +129,9 @@ class DecoratorTests(unittest.TestCase):
             return
 
         resp = self._testit(test_app, "/a url")
-        self.assertEqual(resp.body, b"")
-        self.assertEqual(resp.content_type, "text/html")
-        self.assertEqual(resp.content_length, 0)
+        assert resp.body == b""
+        assert resp.content_type == "text/html"
+        assert resp.content_length == 0
 
     def test_wsgify_get(self):
         resp_str = b"What'choo talkin' about, Willis?"
@@ -143,40 +141,38 @@ class DecoratorTests(unittest.TestCase):
             return Response(resp_str)
 
         resp = test_app.get("/url/path")
-        self.assertEqual(resp.body, resp_str)
+        assert resp.body == resp_str
 
     def test_wsgify_post(self):
-        post_dict = dict(speaker="Robin", words="Holy test coverage, Batman!")
+        post_dict = {"speaker": "Robin", "words": "Holy test coverage, Batman!"}
 
         @wsgify
         def test_app(req):
             return Response("{}: {}".format(req.POST["speaker"], req.POST["words"]))
 
         resp = test_app.post("/url/path", post_dict)
-        self.assertEqual(
-            resp.body, bytes_("{}: {}".format(post_dict["speaker"], post_dict["words"]))
-        )
+        assert resp.body == bytes_("{}: {}".format(post_dict["speaker"], post_dict["words"]))
 
     def test_wsgify_request_method(self):
         resp_str = b"Nice body!"
 
         @wsgify
         def test_app(req):
-            self.assertEqual(req.method, "PUT")
+            assert req.method == "PUT"
 
             return Response(req.body)
 
         resp = test_app.request("/url/path", method="PUT", body=resp_str)
-        self.assertEqual(resp.body, resp_str)
-        self.assertEqual(resp.content_length, 10)
-        self.assertEqual(resp.content_type, "text/html")
+        assert resp.body == resp_str
+        assert resp.content_length == 10
+        assert resp.content_type == "text/html"
 
     def test_wsgify_undecorated(self):
         def test_app(req):
             return Response("whoa")
 
         wrapped_test_app = wsgify(test_app)
-        self.assertTrue(wrapped_test_app.undecorated is test_app)
+        assert wrapped_test_app.undecorated is test_app
 
     def test_wsgify_custom_request(self):
         resp_str = "hey, this is a test: %s"
@@ -189,10 +185,10 @@ class DecoratorTests(unittest.TestCase):
             return bytes_(resp_str % req.url)
 
         resp = self._testit(test_app, "/a url")
-        self.assertEqual(resp.body, bytes_(resp_str % "http://localhost/a%20url"))
-        self.assertEqual(resp.content_length, 45)
-        self.assertEqual(resp.content_type, "text/html")
-        self.assertEqual(resp.charset, "UTF-8")
+        assert resp.body == bytes_(resp_str % "http://localhost/a%20url")
+        assert resp.content_length == 45
+        assert resp.content_type == "text/html"
+        assert resp.charset == "UTF-8"
 
     def test_middleware(self):
         resp_str = "These are the vars: %s"
@@ -205,9 +201,9 @@ class DecoratorTests(unittest.TestCase):
 
         from webob.dec import _MiddlewareFactory
 
-        self.assertTrue(set_urlvar.__class__ is _MiddlewareFactory)
+        assert set_urlvar.__class__ is _MiddlewareFactory
         r = repr(set_urlvar)
-        self.assertTrue("set_urlvar" in r)
+        assert "set_urlvar" in r
 
         @wsgify
         def show_vars(req):
@@ -215,10 +211,10 @@ class DecoratorTests(unittest.TestCase):
 
         show_vars2 = set_urlvar(show_vars, a=1, b=2)
         resp = self._testit(show_vars2, "/path")
-        self.assertEqual(resp.body, bytes_(resp_str % "[('a', 1), ('b', 2)]"))
-        self.assertEqual(resp.content_type, "text/html")
-        self.assertEqual(resp.charset, "UTF-8")
-        self.assertEqual(resp.content_length, 40)
+        assert resp.body == bytes_(resp_str % "[('a', 1), ('b', 2)]")
+        assert resp.content_type == "text/html"
+        assert resp.charset == "UTF-8"
+        assert resp.content_length == 40
 
     def test_middleware_call_kwargs(self):
         resp_str = "kwargs: %s"
@@ -236,7 +232,7 @@ class DecoratorTests(unittest.TestCase):
         app = set_args(show_vars, a=1, b=2)
         resp = app(Request.blank("/"))
 
-        self.assertEqual(resp.body, bytes_(resp_str % "[('a', 1), ('b', 2)]"))
+        assert resp.body == bytes_(resp_str % "[('a', 1), ('b', 2)]")
 
     def test_middleware_call_kwargs_override(self):
         resp_str = "kwargs: %s"
@@ -254,7 +250,7 @@ class DecoratorTests(unittest.TestCase):
         app = set_args(show_vars, a=1, b=2)
         resp = app(Request.blank("/"), c=3)
 
-        self.assertEqual(resp.body, bytes_(resp_str % "[('c', 3)]"))
+        assert resp.body == bytes_(resp_str % "[('c', 3)]")
 
     def test_middleware_as_decorator(self):
         resp_str = "These are the vars: %s"
@@ -271,10 +267,10 @@ class DecoratorTests(unittest.TestCase):
             return resp_str % (sorted(req.urlvars.items()))
 
         resp = self._testit(show_vars, "/path")
-        self.assertEqual(resp.body, bytes_(resp_str % "[('a', 1), ('b', 2)]"))
-        self.assertEqual(resp.content_type, "text/html")
-        self.assertEqual(resp.charset, "UTF-8")
-        self.assertEqual(resp.content_length, 40)
+        assert resp.body == bytes_(resp_str % "[('a', 1), ('b', 2)]")
+        assert resp.content_type == "text/html"
+        assert resp.charset == "UTF-8"
+        assert resp.content_length == 40
 
     def test_unbound_middleware(self):
         @wsgify
@@ -284,22 +280,22 @@ class DecoratorTests(unittest.TestCase):
         unbound = wsgify.middleware(None, test_app, some="thing")
         from webob.dec import _UnboundMiddleware
 
-        self.assertTrue(unbound.__class__ is _UnboundMiddleware)
-        self.assertEqual(unbound.kw, dict(some="thing"))
+        assert unbound.__class__ is _UnboundMiddleware
+        assert unbound.kw == {"some": "thing"}
 
         @unbound
         def middle(req, app, **kw):
             return app(req)
 
-        self.assertTrue(middle.__class__ is wsgify)
-        self.assertTrue("test_app" in repr(unbound))
+        assert middle.__class__ is wsgify
+        assert "test_app" in repr(unbound)
 
     def test_unbound_middleware_no_app(self):
         unbound = wsgify.middleware(None, None)
         from webob.dec import _UnboundMiddleware
 
-        self.assertTrue(unbound.__class__ is _UnboundMiddleware)
-        self.assertEqual(unbound.kw, dict())
+        assert unbound.__class__ is _UnboundMiddleware
+        assert unbound.kw == {}
 
     def test_classapp(self):
         class HostMap(dict):
@@ -311,10 +307,10 @@ class DecoratorTests(unittest.TestCase):
         app["example.com"] = Response("1")
         app["other.com"] = Response("2")
         resp = Request.blank("http://example.com/").get_response(wsgify(app))
-        self.assertEqual(resp.content_type, "text/html")
-        self.assertEqual(resp.charset, "UTF-8")
-        self.assertEqual(resp.content_length, 1)
-        self.assertEqual(resp.body, b"1")
+        assert resp.content_type == "text/html"
+        assert resp.charset == "UTF-8"
+        assert resp.content_length == 1
+        assert resp.body == b"1"
 
     def test_middleware_direct_call(self):
         @wsgify.middleware
@@ -322,4 +318,4 @@ class DecoratorTests(unittest.TestCase):
             return "foo"
 
         app = mw(Response())
-        self.assertEqual(app(Request.blank("/")), "foo")
+        assert app(Request.blank("/")) == "foo"

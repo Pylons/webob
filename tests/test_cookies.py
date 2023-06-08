@@ -1,7 +1,6 @@
 from datetime import timedelta
 
 import pytest
-
 from webob import cookies
 from webob.util import text_
 
@@ -43,7 +42,7 @@ def test_cookie_escaped_unquoted():
 def test_cookie_complex():
     c = cookies.Cookie(
         "dismiss-top=6; CP=null*, "
-        'PHPSESSID=0a539d42abc001cdc762809248d4beed, a="42,"'
+        'PHPSESSID=0a539d42abc001cdc762809248d4beed, a="42,"',
     )
 
     def d(v):
@@ -60,7 +59,7 @@ def test_cookie_complex():
 
 def test_cookie_complex_serialize():
     c = cookies.Cookie(
-        "dismiss-top=6; CP=null*, " 'PHPSESSID=0a539d42abc001cdc762809248d4beed, a="42"'
+        "dismiss-top=6; CP=null*, " 'PHPSESSID=0a539d42abc001cdc762809248d4beed, a="42"',
     )
     assert (
         c.serialize() == "CP=null*; PHPSESSID=0a539d42abc001cdc762809248d4beed;"
@@ -389,36 +388,36 @@ class TestRequestCookies:
     def test_keys(self):
         environ = {"HTTP_COOKIE": 'a=1; b="La Pe\\303\\261a"; c=3'}
         inst = self._makeOne(environ)
-        assert sorted(list(inst.keys())) == ["a", "b", "c"]
+        assert sorted(inst.keys()) == ["a", "b", "c"]
 
     def test_values(self):
         val = text_(b"La Pe\xc3\xb1a", "utf-8")
         environ = {"HTTP_COOKIE": 'a=1; b="La Pe\\303\\261a"; c=3'}
         inst = self._makeOne(environ)
-        assert sorted(list(inst.values())) == ["1", "3", val]
+        assert sorted(inst.values()) == ["1", "3", val]
 
     def test_items(self):
         val = text_(b"La Pe\xc3\xb1a", "utf-8")
         environ = {"HTTP_COOKIE": 'a=1; b="La Pe\\303\\261a"; c=3'}
         inst = self._makeOne(environ)
-        assert sorted(list(inst.items())) == [("a", "1"), ("b", val), ("c", "3")]
+        assert sorted(inst.items()) == [("a", "1"), ("b", val), ("c", "3")]
 
     def test_iterkeys_py3(self):
         environ = {"HTTP_COOKIE": b'a=1; b="La Pe\\303\\261a"; c=3'.decode("utf-8")}
         inst = self._makeOne(environ)
-        assert sorted(list(inst.keys())) == ["a", "b", "c"]
+        assert sorted(inst.keys()) == ["a", "b", "c"]
 
     def test_itervalues_py3(self):
         val = text_(b"La Pe\xc3\xb1a", "utf-8")
         environ = {"HTTP_COOKIE": b'a=1; b="La Pe\\303\\261a"; c=3'.decode("utf-8")}
         inst = self._makeOne(environ)
-        sorted(list(inst.values())) == ["1", "3", val]
+        sorted(inst.values()) == ["1", "3", val]
 
     def test_iteritems_py3(self):
         val = text_(b"La Pe\xc3\xb1a", "utf-8")
         environ = {"HTTP_COOKIE": b'a=1; b="La Pe\\303\\261a"; c=3'.decode("utf-8")}
         inst = self._makeOne(environ)
-        assert sorted(list(inst.items())) == [("a", "1"), ("b", val), ("c", "3")]
+        assert sorted(inst.items()) == [("a", "1"), ("b", val), ("c", "3")]
 
     def test___contains__(self):
         environ = {"HTTP_COOKIE": "a=1"}
@@ -429,7 +428,7 @@ class TestRequestCookies:
     def test___iter__(self):
         environ = {"HTTP_COOKIE": "a=1; b=2; c=3"}
         inst = self._makeOne(environ)
-        assert sorted(list(iter(inst))) == ["a", "b", "c"]
+        assert sorted(iter(inst)) == ["a", "b", "c"]
 
     def test___len__(self):
         environ = {"HTTP_COOKIE": "a=1; b=2; c=3"}
@@ -516,13 +515,13 @@ class CommonCookieProfile:
 
         d = Dummy(**kw)
         d.response = Dummy()
-        d.response.headerlist = list()
+        d.response.headerlist = []
         return d
 
     def makeOneRequest(self):
-        request = self.makeDummyRequest(environ=dict())
+        request = self.makeDummyRequest(environ={})
         request.environ["HTTP_HOST"] = "www.example.net"
-        request.cookies = dict()
+        request.cookies = {}
 
         return request
 
@@ -566,7 +565,8 @@ class TestCookieProfile(CommonCookieProfile):
     def test_get_value_serializer_raises_value_error(self):
         class RaisingSerializer:
             def loads(self, val):
-                raise ValueError("foo")
+                msg = "foo"
+                raise ValueError(msg)
 
         cookie = self.makeOne(serializer=RaisingSerializer())
         assert cookie.get_value() is None
@@ -757,9 +757,9 @@ class TestSignedCookieProfile(CommonCookieProfile):
 
 def serialize(secret, salt, data):
     import base64
-    from hashlib import sha1
     import hmac
     import json
+    from hashlib import sha1
 
     from webob.util import bytes_
 

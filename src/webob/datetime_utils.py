@@ -1,7 +1,7 @@
 import calendar
+import time
 from datetime import date, datetime, timedelta, tzinfo
 from email.utils import formatdate, mktime_tz, parsedate_tz
-import time
 
 from webob.util import text_
 
@@ -92,10 +92,10 @@ def serialize_date(dt):
     if isinstance(dt, (tuple, time.struct_time)):
         dt = calendar.timegm(dt)
 
-    if not (isinstance(dt, float) or isinstance(dt, int)):
+    if not (isinstance(dt, (float, int))):
         raise ValueError(
             "You must pass in a datetime, date, time tuple, or integer object, "
-            "not %r" % dt
+            "not %r" % dt,
         )
 
     return formatdate(dt, usegmt=True)

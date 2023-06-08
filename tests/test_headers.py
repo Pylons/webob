@@ -1,5 +1,4 @@
 import pytest
-
 from webob import headers
 
 

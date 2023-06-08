@@ -80,7 +80,7 @@ class wsgify:
     RequestClass = Request
 
     def __init__(
-        self, func=None, RequestClass=None, args=(), kwargs=None, middleware_wraps=None
+        self, func=None, RequestClass=None, args=(), kwargs=None, middleware_wraps=None,
     ):
         self.func = func
 
@@ -112,7 +112,7 @@ class wsgify:
             if args or kw:
                 raise TypeError(
                     "Unbound %s can only be called with the function it "
-                    "will wrap" % self.__class__.__name__
+                    "will wrap" % self.__class__.__name__,
                 )
             func = req
 
@@ -121,7 +121,7 @@ class wsgify:
         if isinstance(req, dict):
             if len(args) != 1 or kw:
                 raise TypeError(
-                    "Calling %r as a WSGI app with the wrong signature" % self.func
+                    "Calling %r as a WSGI app with the wrong signature" % self.func,
                 )
             environ = req
             start_response = args[0]
@@ -290,7 +290,7 @@ class wsgify:
         kwargs = kwargs or self.kwargs
 
         if self.middleware_wraps:
-            args = (self.middleware_wraps,) + args
+            args = (self.middleware_wraps, *args)
 
         return args, kwargs
 

@@ -167,8 +167,8 @@ References:
 
 import json
 import re
-from string import Template
 import sys
+from string import Template
 from urllib import parse as urlparse
 
 from webob.acceptparse import create_accept_header
@@ -202,10 +202,7 @@ def no_escape(value):
         return ""
 
     if not isinstance(value, str):
-        if isinstance(value, bytes):
-            value = text_(value, "utf-8")
-        else:
-            value = str(value)
+        value = text_(value, "utf-8") if isinstance(value, bytes) else str(value)
 
     return value
 
@@ -230,7 +227,6 @@ class HTTPException(Exception):
 
 
 class WSGIHTTPException(Response, HTTPException):
-
     # You should set in subclasses:
     # code = 200
     # title = 'OK'
@@ -244,14 +240,14 @@ class WSGIHTTPException(Response, HTTPException):
 ${explanation}<br /><br />
 ${detail}
 ${html_comment}
-"""
+""",
     )
 
     plain_template_obj = Template(
         """\
 ${status}
 
-${body}"""
+${body}""",
     )
 
     html_template_obj = Template(
@@ -264,7 +260,7 @@ ${body}"""
   <h1>${status}</h1>
   ${body}
  </body>
-</html>"""
+</html>""",
     )
 
     # Set this to True for responses that should have no request body
@@ -331,7 +327,7 @@ ${body}"""
         body = strip_tags(body)
 
         return self.plain_template_obj.substitute(
-            status=self.status, title=self.title, body=body
+            status=self.status, title=self.title, body=body,
         )
 
     def html_body(self, environ):
@@ -345,7 +341,7 @@ ${body}"""
     def json_body(self, environ):
         body = self._make_body(environ, no_escape)
         jsonbody = self.json_formatter(
-            body=body, status=self.status, title=self.title, environ=environ
+            body=body, status=self.status, title=self.title, environ=environ,
         )
 
         return json.dumps(jsonbody)
@@ -357,7 +353,7 @@ ${body}"""
         accept_value = environ.get("HTTP_ACCEPT", "")
         accept_header = create_accept_header(header_value=accept_value)
         acceptable_offers = accept_header.acceptable_offers(
-            offers=["text/html", "application/json"]
+            offers=["text/html", "application/json"],
         )
         match = acceptable_offers[0][0] if acceptable_offers else None
 
@@ -371,7 +367,7 @@ ${body}"""
             content_type = "text/plain"
             body = self.plain_body(environ)
         resp = Response(
-            body, status=self.status, headerlist=headerlist, content_type=content_type
+            body, status=self.status, headerlist=headerlist, content_type=content_type,
         )
         resp.content_type = content_type
 
@@ -549,7 +545,7 @@ class _HTTPMove(HTTPRedirection):
 ${explanation} <a href="${location}">${location}</a>;
 you should be redirected automatically.
 ${detail}
-${html_comment}"""
+${html_comment}""",
     )
 
     def __init__(
@@ -562,19 +558,20 @@ ${html_comment}"""
         add_slash=False,
     ):
         super().__init__(
-            detail=detail, headers=headers, comment=comment, body_template=body_template
+            detail=detail, headers=headers, comment=comment, body_template=body_template,
         )
 
         if location is not None:
             if "\n" in location or "\r" in location:
-                raise ValueError("Control characters are not allowed in location")
+                msg = "Control characters are not allowed in location"
+                raise ValueError(msg)
 
             self.location = location
 
             if add_slash:
+                msg = "You can only provide one of the arguments location and add_slash"
                 raise TypeError(
-                    "You can only provide one of the arguments location "
-                    "and add_slash"
+                    msg,
                 )
         self.add_slash = add_slash
 
@@ -824,7 +821,7 @@ class HTTPMethodNotAllowed(HTTPClientError):
     body_template_obj = Template(
         """\
 The method ${REQUEST_METHOD} is not allowed for this resource. <br /><br />
-${detail}"""
+${detail}""",
     )
 
 
@@ -847,7 +844,7 @@ class HTTPNotAcceptable(HTTPClientError):
         """\
 The resource could not be generated that was acceptable to your browser
 (content of type ${HTTP_ACCEPT}. <br /><br />
-${detail}"""
+${detail}""",
     )
 
 
@@ -996,7 +993,7 @@ class HTTPUnsupportedMediaType(HTTPClientError):
         """\
 The request media type ${CONTENT_TYPE} is not supported by this server.
 <br /><br />
-${detail}"""
+${detail}""",
     )
 
 
@@ -1203,7 +1200,7 @@ class HTTPNotImplemented(HTTPServerError):
     body_template_obj = Template(
         """
 The request method ${REQUEST_METHOD} is not implemented for this server. <br /><br />
-${detail}"""
+${detail}""",
     )
 
 
@@ -1348,9 +1345,9 @@ for name, value in list(globals().items()):
                 getattr(value, "code", None),
                 value not in (HTTPRedirection, HTTPClientError, HTTPServerError),
                 issubclass(
-                    value, (HTTPOk, HTTPRedirection, HTTPClientError, HTTPServerError)
+                    value, (HTTPOk, HTTPRedirection, HTTPClientError, HTTPServerError),
                 ),
-            )
+            ),
         ):
             status_map[value.code] = value
 

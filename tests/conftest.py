@@ -1,7 +1,7 @@
-from contextlib import contextmanager
 import logging
 import random
 import threading
+from contextlib import contextmanager
 from wsgiref.simple_server import (
     ServerHandler,
     WSGIRequestHandler,
@@ -45,9 +45,10 @@ def _make_test_server(app):
         except BaseException:
             if i == 1:
                 raise
+    return None
 
 
-@pytest.fixture
+@pytest.fixture()
 def serve():
     @contextmanager
     def _serve(app):

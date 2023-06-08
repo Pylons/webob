@@ -62,11 +62,7 @@ class ResponseHeaders(MultiDict):
     def __contains__(self, key):
         key = key.lower()
 
-        for k, _ in self._items:
-            if k.lower() == key:
-                return True
-
-        return False
+        return any(k.lower() == key for k, _ in self._items)
 
     has_key = __contains__
 
@@ -83,7 +79,7 @@ class ResponseHeaders(MultiDict):
     def pop(self, key, *args):
         if len(args) > 1:
             raise TypeError(
-                "pop expected at most 2 arguments, got %s" % repr(1 + len(args))
+                "pop expected at most 2 arguments, got %s" % repr(1 + len(args)),
             )
         key = key.lower()
 

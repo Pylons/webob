@@ -1,12 +1,12 @@
 # A reaction to: http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/552751
-from webob import Request, Response
-from webob import exc
-from simplejson import loads, dumps
-import traceback
 import sys
+import traceback
+
+from simplejson import dumps, loads
+from webob import Request, Response, exc
 
 
-class JsonRpcApp(object):
+class JsonRpcApp:
     """
     Serve the given object via json-rpc (http://json-rpc.org/)
     """
@@ -18,28 +18,29 @@ class JsonRpcApp(object):
         req = Request(environ)
         try:
             resp = self.process(req)
-        except ValueError, e:
+        except ValueError as e:
             resp = exc.HTTPBadRequest(str(e))
-        except exc.HTTPException, e:
+        except exc.HTTPException as e:
             resp = e
         return resp(environ, start_response)
 
     def process(self, req):
-        if not req.method == "POST":
-            raise exc.HTTPMethodNotAllowed("Only POST allowed", allowed="POST")
+        if req.method != "POST":
+            msg = "Only POST allowed"
+            raise exc.HTTPMethodNotAllowed(msg, allowed="POST")
         try:
             json = loads(req.body)
-        except ValueError, e:
+        except ValueError as e:
             raise ValueError("Bad JSON: %s" % e)
         try:
             method = json["method"]
             params = json["params"]
             id = json["id"]
-        except KeyError, e:
+        except KeyError as e:
             raise ValueError("JSON body missing parameter: %s" % e)
         if method.startswith("_"):
             raise exc.HTTPForbidden(
-                "Bad method name %s: must not start with _" % method
+                "Bad method name %s: must not start with _" % method,
             )
         if not isinstance(params, list):
             raise ValueError("Bad params %r: must be a list" % params)
@@ -52,21 +53,21 @@ class JsonRpcApp(object):
         except:
             text = traceback.format_exc()
             exc_value = sys.exc_info()[1]
-            error_value = dict(
-                name="JSONRPCError", code=100, message=str(exc_value), error=text
-            )
+            error_value = {
+                "name": "JSONRPCError", "code": 100, "message": str(exc_value), "error": text,
+            }
             return Response(
                 status=500,
                 content_type="application/json",
-                body=dumps(dict(result=None, error=error_value, id=id)),
+                body=dumps({"result": None, "error": error_value, "id": id}),
             )
         return Response(
             content_type="application/json",
-            body=dumps(dict(result=result, error=None, id=id)),
+            body=dumps({"result": result, "error": None, "id": id}),
         )
 
 
-class ServerProxy(object):
+class ServerProxy:
     """
     JSON proxy to a remote service.
     """
@@ -85,16 +86,16 @@ class ServerProxy(object):
         return _Method(self, name)
 
     def __repr__(self):
-        return "<%s for %s>" % (self.__class__.__name__, self._url)
+        return f"<{self.__class__.__name__} for {self._url}>"
 
 
-class _Method(object):
+class _Method:
     def __init__(self, parent, name):
         self.parent = parent
         self.name = name
 
     def __call__(self, *args):
-        json = dict(method=self.name, id=None, params=list(args))
+        json = {"method": self.name, "id": None, "params": list(args)}
         req = Request.blank(self.parent._url)
         req.method = "POST"
         req.content_type = "application/json"
@@ -103,8 +104,9 @@ class _Method(object):
         if resp.status_code != 200 and not (
             resp.status_code == 500 and resp.content_type == "application/json"
         ):
+            msg = f"Error from JSON-RPC client {self.parent._url}: {resp.status}"
             raise ProxyError(
-                "Error from JSON-RPC client %s: %s" % (self.parent._url, resp.status),
+                msg,
                 resp,
             )
         json = loads(resp.body)
@@ -141,14 +143,14 @@ class Fault(Exception):
         self.response = response
 
     def __str__(self):
-        return "Method error calling %s: %s\n%s" % (
+        return "Method error calling {}: {}\n{}".format(
             self.response.request.url,
             self.args[0],
             self.error,
         )
 
 
-class DemoObject(object):
+class DemoObject:
     """
     Something interesting to attach to
     """
@@ -177,7 +179,7 @@ def main(args=None):
 
     parser = optparse.OptionParser(usage="%prog [OPTIONS] MODULE:EXPRESSION")
     parser.add_option(
-        "-p", "--port", default="8080", help="Port to serve on (default 8080)"
+        "-p", "--port", default="8080", help="Port to serve on (default 8080)",
     )
     parser.add_option(
         "-H",
@@ -192,7 +194,7 @@ def main(args=None):
         sys.exit(2)
     app = make_app(args[0])
     server = simple_server.make_server(options.host, int(options.port), app)
-    print("Serving on http://%s:%s" % (options.host, options.port))
+    print(f"Serving on http://{options.host}:{options.port}")
     server.serve_forever()
     # Try python jsonrpc.py 'jsonrpc:DemoObject()'
 
