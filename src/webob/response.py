@@ -39,7 +39,6 @@ from webob.util import (
     status_generic_reasons,
     status_reasons,
     text_,
-    warn_deprecation,
 )
 
 try:

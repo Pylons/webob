@@ -1,7 +1,6 @@
 from collections.abc import MutableMapping
 from io import BytesIO, StringIO
 import sys
-import warnings
 
 import pytest
 

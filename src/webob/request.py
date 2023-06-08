@@ -6,8 +6,7 @@ import re
 import sys
 import tempfile
 from urllib import parse as urlparse
-from urllib.parse import quote as url_quote, quote_plus, urlencode as url_encode
-import warnings
+from urllib.parse import quote as url_quote, urlencode as url_encode
 
 from webob.acceptparse import (
     accept_charset_property,
@@ -33,7 +32,6 @@ from webob.descriptors import (
     serialize_if_range,
     serialize_int,
     serialize_range,
-    upath_property,
 )
 from webob.etag import AnyETag, IfRange, NoETag, etag_property
 from webob.headers import EnvironHeaders
