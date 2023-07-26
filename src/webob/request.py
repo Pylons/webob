@@ -41,7 +41,7 @@ from webob.multidict import GetDict, MultiDict, NestedMultiDict, NoVars
 from webob.util import bytes_, parse_qsl_text, text_, url_unquote
 
 try:
-    import simplejson as json
+    import ujson as json
 except ImportError:
     import json
 
