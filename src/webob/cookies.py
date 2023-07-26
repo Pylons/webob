@@ -4,7 +4,10 @@ from collections.abc import MutableMapping
 from datetime import date, datetime, timedelta
 import hashlib
 import hmac
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 import re
 import string
 import time
