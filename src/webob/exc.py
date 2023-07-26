@@ -165,7 +165,10 @@ References:
 
 """
 
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 import re
 from string import Template
 import sys
