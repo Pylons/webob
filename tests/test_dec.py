@@ -1,8 +1,9 @@
+import pytest
+
 from webob.dec import wsgify
 from webob.request import Request
 from webob.response import Response
 from webob.util import bytes_, text_
-import pytest
 
 
 class TestDecorator:
