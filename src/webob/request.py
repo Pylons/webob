@@ -83,7 +83,6 @@ class BaseRequest:
     _charset = None
 
     def __init__(self, environ, **kw):
-
         if type(environ) is not dict:
             raise TypeError(f"WSGI environ must be a dict; you passed {environ!r}")
 

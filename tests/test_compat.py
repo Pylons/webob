@@ -1,11 +1,10 @@
 from io import BytesIO
 import sys
-import unittest
 
 import pytest
 
 
-class text_Tests(unittest.TestCase):
+class TestText:
     def _callFUT(self, *arg, **kw):
         from webob.util import text_
 
@@ -13,24 +12,24 @@ class text_Tests(unittest.TestCase):
 
     def test_binary(self):
         result = self._callFUT(b"123")
-        self.assertTrue(isinstance(result, str))
-        self.assertEqual(result, str(b"123", "ascii"))
+        assert isinstance(result, str)
+        assert result == str(b"123", "ascii")
 
     def test_binary_alternate_decoding(self):
         result = self._callFUT(b"La Pe\xc3\xb1a", "utf-8")
-        self.assertTrue(isinstance(result, str))
-        self.assertEqual(result, str(b"La Pe\xc3\xb1a", "utf-8"))
+        assert isinstance(result, str)
+        assert result == str(b"La Pe\xc3\xb1a", "utf-8")
 
     def test_binary_decoding_error(self):
-        self.assertRaises(UnicodeDecodeError, self._callFUT, b"\xff", "utf-8")
+        pytest.raises(UnicodeDecodeError, self._callFUT, b"\xff", "utf-8")
 
     def test_text(self):
         result = self._callFUT(str(b"123", "ascii"))
-        self.assertTrue(isinstance(result, str))
-        self.assertEqual(result, str(b"123", "ascii"))
+        assert isinstance(result, str)
+        assert result == str(b"123", "ascii")
 
 
-class bytes_Tests(unittest.TestCase):
+class TestBytes:
     def _callFUT(self, *arg, **kw):
         from webob.util import bytes_
 
@@ -38,20 +37,20 @@ class bytes_Tests(unittest.TestCase):
 
     def test_binary(self):
         result = self._callFUT(b"123")
-        self.assertTrue(isinstance(result, bytes))
-        self.assertEqual(result, b"123")
+        assert isinstance(result, bytes)
+        assert result == b"123"
 
     def test_text(self):
         val = str(b"123", "ascii")
         result = self._callFUT(val)
-        self.assertTrue(isinstance(result, bytes))
-        self.assertEqual(result, b"123")
+        assert isinstance(result, bytes)
+        assert result == b"123"
 
     def test_text_alternate_encoding(self):
         val = str(b"La Pe\xc3\xb1a", "utf-8")
         result = self._callFUT(val, "utf-8")
-        self.assertTrue(isinstance(result, bytes))
-        self.assertEqual(result, b"La Pe\xc3\xb1a")
+        assert isinstance(result, bytes)
+        assert result == b"La Pe\xc3\xb1a"
 
 
 class Test_cgi_FieldStorage_Py3_tests:
