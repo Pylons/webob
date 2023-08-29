@@ -1103,7 +1103,7 @@ def test_location_unicode():
     res.location = "/test.html"
 
     def start_response(status, headerlist):
-        for (header, val) in headerlist:
+        for header, val in headerlist:
             if header.lower() == "location":
                 assert val == "http://test.com/test.html"
                 assert isinstance(val, str)

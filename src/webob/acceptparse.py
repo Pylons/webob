@@ -1221,7 +1221,7 @@ class MIMEAccept(Accept):
         try:
             parsed_accepted = Accept.parse(value)
 
-            for (media, q, _, _) in parsed_accepted:
+            for media, q, _, _ in parsed_accepted:
                 yield (media, q)
         except ValueError:
             pass

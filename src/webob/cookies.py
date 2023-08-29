@@ -30,7 +30,6 @@ SAMESITE_VALIDATION = True
 
 
 class RequestCookies(MutableMapping):
-
     _cache_key = "webob._parsed_cookies"
 
     def __init__(self, environ):
