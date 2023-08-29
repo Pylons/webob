@@ -1,4 +1,3 @@
-
 from webob.dec import wsgify
 from webob.request import Request
 from webob.response import Response
@@ -151,7 +150,9 @@ class TestDecorator:
             return Response("{}: {}".format(req.POST["speaker"], req.POST["words"]))
 
         resp = test_app.post("/url/path", post_dict)
-        assert resp.body == bytes_("{}: {}".format(post_dict["speaker"], post_dict["words"]))
+        assert resp.body == bytes_(
+            "{}: {}".format(post_dict["speaker"], post_dict["words"])
+        )
 
     def test_wsgify_request_method(self):
         resp_str = b"Nice body!"

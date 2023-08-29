@@ -8,18 +8,15 @@ from webob.util import warn_deprecation
 
 class Test_warn_deprecation:
     def setup_method(self, method):
-
         self.oldwarn = warnings.warn
         warnings.warn = self._warn
         self.warnings = []
 
     def tearDown(self):
-
         warnings.warn = self.oldwarn
         del self.warnings
 
     def _callFUT(self, text, version, stacklevel):
-
         return warn_deprecation(text, version, stacklevel)
 
     def _warn(self, text, type, stacklevel=1):
