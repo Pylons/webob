@@ -165,7 +165,7 @@ References:
 
 """
 
-import json
+import orjson
 import re
 from string import Template
 import sys
@@ -348,7 +348,7 @@ ${body}"""
             body=body, status=self.status, title=self.title, environ=environ
         )
 
-        return json.dumps(jsonbody)
+        return orjson.dumps(jsonbody).decode("UTF-8")
 
     def generate_response(self, environ, start_response):
         if self.content_length is not None:

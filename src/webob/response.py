@@ -42,10 +42,7 @@ from webob.util import (
     warn_deprecation,
 )
 
-try:
-    import simplejson as json
-except ImportError:
-    import json
+import orjson
 
 
 __all__ = ["Response"]
@@ -183,7 +180,7 @@ class Response:
                 json_body = kw.pop("json_body")
             else:
                 json_body = kw.pop("json")
-            body = json.dumps(json_body, separators=(",", ":")).encode("UTF-8")
+            body = orjson.dumps(json_body)
 
             if content_type is None:
                 content_type = "application/json"
@@ -598,10 +595,10 @@ class Response:
         """
         # Note: UTF-8 is a content-type specific default for JSON
 
-        return json.loads(self.body.decode("UTF-8"))
+        return orjson.loads(self.body.decode("UTF-8"))
 
     def _json_body__set(self, value):
-        self.body = json.dumps(value, separators=(",", ":")).encode("UTF-8")
+        self.body = orjson.dumps(value)
 
     def _json_body__del(self):
         del self.body

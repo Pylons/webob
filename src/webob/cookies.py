@@ -4,7 +4,7 @@ from collections.abc import MutableMapping
 from datetime import date, datetime, timedelta
 import hashlib
 import hmac
-import json
+import orjson
 import re
 import string
 import time
@@ -617,13 +617,13 @@ class JSONSerializer:
     """A serializer which uses `json.dumps`` and ``json.loads``"""
 
     def dumps(self, appstruct):
-        return bytes_(json.dumps(appstruct), encoding="utf-8")
+        return orjson.dumps(appstruct)
 
     def loads(self, bstruct):
         # NB: json.loads raises ValueError if no json object can be decoded
         # so we don't have to do it explicitly here.
 
-        return json.loads(text_(bstruct, encoding="utf-8"))
+        return orjson.loads(text_(bstruct, encoding="utf-8"))
 
 
 class Base64Serializer:

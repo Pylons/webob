@@ -40,10 +40,7 @@ from webob.headers import EnvironHeaders
 from webob.multidict import GetDict, MultiDict, NestedMultiDict, NoVars
 from webob.util import bytes_, parse_qsl_text, text_, url_unquote
 
-try:
-    import simplejson as json
-except ImportError:
-    import json
+import orjson
 
 
 __all__ = ["BaseRequest", "Request"]
@@ -730,10 +727,10 @@ class BaseRequest:
     def _json_body__get(self):
         """Access the body of the request as JSON"""
 
-        return json.loads(self.body.decode(self.charset))
+        return orjson.loads(self.body.decode(self.charset))
 
     def _json_body__set(self, value):
-        self.body = json.dumps(value, separators=(",", ":")).encode(self.charset)
+        self.body = orjson.dumps(value)
 
     def _json_body__del(self):
         del self.body
