@@ -45,7 +45,7 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - name: Setup python
-              uses: actions/setup-python@v4
+              uses: actions/setup-python@v5
               with:
                   python-version: ${{ matrix.py }}
                   architecture: ${{ matrix.architecture }}
@@ -58,7 +58,7 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - name: Setup python 3.8
-              uses: actions/setup-python@v4
+              uses: actions/setup-python@v5
               with:
                   python-version: 3.8
                   architecture: x64
@@ -71,7 +71,7 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - name: Setup python
-              uses: actions/setup-python@v4
+              uses: actions/setup-python@v5
               with:
                   python-version: 3.8
                   architecture: x64
@@ -83,7 +83,7 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - name: Setup python
-              uses: actions/setup-python@v4
+              uses: actions/setup-python@v5
               with:
                   python-version: 3.8
                   architecture: x64
