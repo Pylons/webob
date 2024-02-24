@@ -16,12 +16,14 @@ jobs:
         strategy:
             matrix:
                 py:
-                    - "3.7"
                     - "3.8"
                     - "3.9"
                     - "3.10"
                     - "3.11"
+                    - "3.12"
                     - "pypy-3.8"
+                    - "pypy-3.9"
+                    - "pypy-3.10"
                 os:
                     - "ubuntu-latest"
                     - "windows-latest"
@@ -29,23 +31,36 @@ jobs:
                 architecture:
                     - x64
                     - x86
-
+                include:
+                  - py: "pypy-3.8"
+                    toxenv: "pypy38"
+                  - py: "pypy-3.9"
+                    toxenv: "pypy39"
+                  - py: "pypy-3.10"
+                    toxenv: "pypy310"
                 exclude:
                     # Linux and macOS don't have x86 python
                     - os: "ubuntu-latest"
                       architecture: x86
                     - os: "macos-latest"
                       architecture: x86
-                    # PyPy on Windows is a no go
+                    # Don't run all PyPy versions except latest on
+                    # Windows/macOS. They are expensive to run.
                     - os: "windows-latest"
                       py: "pypy-3.8"
+                    - os: "macos-latest"
+                      py: "pypy-3.8"
+                    - os: "windows-latest"
+                      py: "pypy-3.9"
+                    - os: "macos-latest"
+                      py: "pypy-3.9"
 
         name: "Python: ${{ matrix.py }}-${{ matrix.architecture }} on ${{ matrix.os }}"
         runs-on: ${{ matrix.os }}
         steps:
             - uses: actions/checkout@v4
             - name: Setup python
-              uses: actions/setup-python@v4
+              uses: actions/setup-python@v5
               with:
                   python-version: ${{ matrix.py }}
                   architecture: ${{ matrix.architecture }}
@@ -58,7 +73,7 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - name: Setup python 3.8
-              uses: actions/setup-python@v4
+              uses: actions/setup-python@v5
               with:
                   python-version: 3.8
                   architecture: x64
@@ -71,7 +86,7 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - name: Setup python
-              uses: actions/setup-python@v4
+              uses: actions/setup-python@v5
               with:
                   python-version: 3.8
                   architecture: x64
@@ -83,7 +98,7 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - name: Setup python
-              uses: actions/setup-python@v4
+              uses: actions/setup-python@v5
               with:
                   python-version: 3.8
                   architecture: x64

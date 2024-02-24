@@ -1336,7 +1336,7 @@ status_map = {}
 
 for name, value in list(globals().items()):
     if (
-        isinstance(value, (type, type))
+        isinstance(value, type)
         and issubclass(value, HTTPException)
         and not name.startswith("_")
     ):

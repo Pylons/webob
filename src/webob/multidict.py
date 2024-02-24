@@ -418,7 +418,7 @@ class NestedMultiDict(MultiDict):
 
         return v
 
-    def __nonzero__(self):
+    def __bool__(self):
         for d in self.dicts:
             if d:
                 return True

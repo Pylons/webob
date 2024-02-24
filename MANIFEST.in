@@ -6,8 +6,9 @@ graft tests
 include README.rst
 include CHANGES.txt HISTORY.txt
 include contributing.md RELEASING.rst
-include .coveragerc .flake8 pyproject.toml
-include tox.ini appveyor.yml .travis.yml rtd.txt
+include pyproject.toml
+include .coveragerc .flake8 tox.ini
+include .readthedocs.yaml
 
 global-exclude __pycache__ *.py[cod]
 global-exclude .DS_Store

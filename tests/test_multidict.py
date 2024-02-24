@@ -101,7 +101,7 @@ class BaseDictTests:
         d.clear()
         assert len(d) == 0
 
-    def test_nonzero(self):
+    def test_bool(self):
         d = self._get_instance()
         assert d
         d.clear()
@@ -178,7 +178,9 @@ class BaseDictTests:
         environ.update(CONTENT_LENGTH=len(body))
         fs = FieldStorage(multipart_body, environ=environ)
         vars = MultiDict.from_fieldstorage(fs)
-        assert vars["title"].encode("utf8") == text_("こんにちは", "utf8").encode("utf8")
+        assert vars["title"].encode("utf8") == text_("こんにちは", "utf8").encode(
+            "utf8"
+        )
 
     def test_from_fieldstorage_with_base64_encoding(self):
         from cgi import FieldStorage
@@ -206,7 +208,9 @@ class BaseDictTests:
         environ.update(CONTENT_LENGTH=len(body))
         fs = FieldStorage(multipart_body, environ=environ)
         vars = MultiDict.from_fieldstorage(fs)
-        assert vars["title"].encode("utf8") == text_("こんにちは", "utf8").encode("utf8")
+        assert vars["title"].encode("utf8") == text_("こんにちは", "utf8").encode(
+            "utf8"
+        )
 
     def test_from_fieldstorage_with_quoted_printable_encoding(self):
         from cgi import FieldStorage
@@ -234,7 +238,9 @@ class BaseDictTests:
         environ.update(CONTENT_LENGTH=len(body))
         fs = FieldStorage(multipart_body, environ=environ)
         vars = MultiDict.from_fieldstorage(fs)
-        assert vars["title"].encode("utf8") == text_("こんにちは", "utf8").encode("utf8")
+        assert vars["title"].encode("utf8") == text_("こんにちは", "utf8").encode(
+            "utf8"
+        )
 
 
 class TestMultiDict(BaseDictTests):
@@ -311,11 +317,11 @@ class TestNestedMultiDict(BaseDictTests):
         d = self._get_instance()
         pytest.raises(KeyError, d.clear)
 
-    def test_nonzero(self):
+    def test_bool(self):
         d = self._get_instance()
-        assert d.__nonzero__() == True
+        assert d.__bool__() == True
         d.dicts = [{}]
-        assert d.__nonzero__() == False
+        assert d.__bool__() == False
         assert not d
 
 
