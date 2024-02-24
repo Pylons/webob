@@ -34,9 +34,9 @@ def test_transcode():
 
     def test(post):
         req = Request.blank("/?a", POST=post)
-        req.environ[
-            "CONTENT_TYPE"
-        ] = "multipart/form-data; charset=windows-1251; boundary=BOUNDARY"
+        req.environ["CONTENT_TYPE"] = (
+            "multipart/form-data; charset=windows-1251; boundary=BOUNDARY"
+        )
 
         return req.get_response(tapp)
 

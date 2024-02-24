@@ -1367,9 +1367,11 @@ class Response:
         # Build the headerlist, if we have a Location header, make it absolute
 
         return [
-            (k, v)
-            if k.lower() != "location"
-            else (k, self._make_location_absolute(environ, v))
+            (
+                (k, v)
+                if k.lower() != "location"
+                else (k, self._make_location_absolute(environ, v))
+            )
             for (k, v) in self._headerlist
         ]
 

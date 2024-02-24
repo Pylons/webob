@@ -178,7 +178,9 @@ class BaseDictTests:
         environ.update(CONTENT_LENGTH=len(body))
         fs = FieldStorage(multipart_body, environ=environ)
         vars = MultiDict.from_fieldstorage(fs)
-        assert vars["title"].encode("utf8") == text_("こんにちは", "utf8").encode("utf8")
+        assert vars["title"].encode("utf8") == text_("こんにちは", "utf8").encode(
+            "utf8"
+        )
 
     def test_from_fieldstorage_with_base64_encoding(self):
         from cgi import FieldStorage
@@ -206,7 +208,9 @@ class BaseDictTests:
         environ.update(CONTENT_LENGTH=len(body))
         fs = FieldStorage(multipart_body, environ=environ)
         vars = MultiDict.from_fieldstorage(fs)
-        assert vars["title"].encode("utf8") == text_("こんにちは", "utf8").encode("utf8")
+        assert vars["title"].encode("utf8") == text_("こんにちは", "utf8").encode(
+            "utf8"
+        )
 
     def test_from_fieldstorage_with_quoted_printable_encoding(self):
         from cgi import FieldStorage
@@ -234,7 +238,9 @@ class BaseDictTests:
         environ.update(CONTENT_LENGTH=len(body))
         fs = FieldStorage(multipart_body, environ=environ)
         vars = MultiDict.from_fieldstorage(fs)
-        assert vars["title"].encode("utf8") == text_("こんにちは", "utf8").encode("utf8")
+        assert vars["title"].encode("utf8") == text_("こんにちは", "utf8").encode(
+            "utf8"
+        )
 
 
 class TestMultiDict(BaseDictTests):

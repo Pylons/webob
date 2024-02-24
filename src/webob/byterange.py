@@ -86,7 +86,6 @@ class Range:
 
 
 class ContentRange:
-
     """
     Represents the Content-Range header
 

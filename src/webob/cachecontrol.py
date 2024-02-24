@@ -1,6 +1,7 @@
 """
 Represents the Cache-Control header
 """
+
 import re
 
 
@@ -140,7 +141,6 @@ class value_property:
 
 
 class CacheControl:
-
     """
     Represents the Cache-Control header.
 
