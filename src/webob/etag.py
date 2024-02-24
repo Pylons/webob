@@ -42,10 +42,8 @@ class _AnyETag:
     def __repr__(self):
         return "<ETag *>"
 
-    def __nonzero__(self):
+    def __bool__(self):
         return False
-
-    __bool__ = __nonzero__  # python 3
 
     def __contains__(self, other):
         return True
@@ -65,10 +63,8 @@ class _NoETag:
     def __repr__(self):
         return "<No ETag>"
 
-    def __nonzero__(self):
+    def __bool__(self):
         return False
-
-    __bool__ = __nonzero__  # python 3
 
     def __contains__(self, other):
         return False
@@ -137,7 +133,7 @@ class IfRange:
         """
         return resp.etag_strong in self.etag
 
-    def __nonzero__(self):
+    def __bool__(self):
         return bool(self.etag)
 
     def __repr__(self):
@@ -145,8 +141,6 @@ class IfRange:
 
     def __str__(self):
         return str(self.etag) if self.etag else ""
-
-    __bool__ = __nonzero__  # python 3
 
 
 class IfRangeDate:

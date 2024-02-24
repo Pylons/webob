@@ -31,17 +31,17 @@ methods:
 
 .. autoclass:: AcceptValidHeader
    :members: parse, header_value, parsed, __init__, __add__, __bool__,
-	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+	     __contains__, __iter__, __radd__, __repr__, __str__,
 	     accept_html, accepts_html, acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptNoHeader
    :members: parse, header_value, parsed, __init__, __add__, __bool__,
-	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+	     __contains__, __iter__, __radd__, __repr__, __str__,
              accept_html, accepts_html, acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptInvalidHeader
    :members: parse, header_value, parsed, __init__, __add__, __bool__,
-	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+	     __contains__, __iter__, __radd__, __repr__, __str__,
 	     accept_html, accepts_html, acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptCharset
@@ -49,17 +49,17 @@ methods:
 
 .. autoclass:: AcceptCharsetValidHeader
    :members: parse, header_value, parsed, __init__, __add__, __bool__,
-	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+	     __contains__, __iter__, __radd__, __repr__, __str__,
              acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptCharsetNoHeader
    :members: parse, header_value, parsed, __init__, __add__, __bool__,
-	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+	     __contains__, __iter__, __radd__, __repr__, __str__,
              acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptCharsetInvalidHeader
    :members: parse, header_value, parsed, __init__, __add__, __bool__,
-	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+	     __contains__, __iter__, __radd__, __repr__, __str__,
              acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptEncoding
@@ -67,17 +67,17 @@ methods:
 
 .. autoclass:: AcceptEncodingValidHeader
    :members: parse, header_value, parsed, __init__, __add__, __bool__,
-	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+	     __contains__, __iter__, __radd__, __repr__, __str__,
              acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptEncodingNoHeader
    :members: parse, header_value, parsed, __init__, __add__, __bool__,
-	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+	     __contains__, __iter__, __radd__, __repr__, __str__,
              acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptEncodingInvalidHeader
    :members: parse, header_value, parsed, __init__, __add__, __bool__,
-	     __contains__, __iter__, __nonzero__, __radd__, __repr__, __str__,
+	     __contains__, __iter__, __radd__, __repr__, __str__,
              acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptLanguage

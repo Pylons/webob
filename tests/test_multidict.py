@@ -101,7 +101,7 @@ class BaseDictTests:
         d.clear()
         assert len(d) == 0
 
-    def test_nonzero(self):
+    def test_bool(self):
         d = self._get_instance()
         assert d
         d.clear()
@@ -317,11 +317,11 @@ class TestNestedMultiDict(BaseDictTests):
         d = self._get_instance()
         pytest.raises(KeyError, d.clear)
 
-    def test_nonzero(self):
+    def test_bool(self):
         d = self._get_instance()
-        assert d.__nonzero__() == True
+        assert d.__bool__() == True
         d.dicts = [{}]
-        assert d.__nonzero__() == False
+        assert d.__bool__() == False
         assert not d
 
 

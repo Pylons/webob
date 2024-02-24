@@ -72,9 +72,9 @@ class Test_AnyETag:
         etag = self._makeOne()
         assert etag.__repr__() == "<ETag *>"
 
-    def test___nonzero__(self):
+    def test___bool__(self):
         etag = self._makeOne()
-        assert etag.__nonzero__() is False
+        assert etag.__bool__() is False
 
     def test___contains__something(self):
         etag = self._makeOne()
@@ -98,9 +98,9 @@ class Test_NoETag:
         etag = self._makeOne()
         assert etag.__repr__() == "<No ETag>"
 
-    def test___nonzero__(self):
+    def test___bool__(self):
         etag = self._makeOne()
-        assert etag.__nonzero__() is False
+        assert etag.__bool__() is False
 
     def test___contains__something(self):
         etag = self._makeOne()
