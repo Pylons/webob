@@ -117,7 +117,7 @@ def parse_date_delta(value):
 
 
 def serialize_date_delta(value):
-    if isinstance(value, (float, int, int)):
+    if isinstance(value, (float, int)):
         return str(int(value))
     else:
         return serialize_date(value)

@@ -54,7 +54,7 @@ EDIT_TEMPLATE = HTMLTemplate(
 )
 
 
-class WikiApp(object):
+class WikiApp:
     view_template = VIEW_TEMPLATE
     edit_template = EDIT_TEMPLATE
 
@@ -67,7 +67,7 @@ class WikiApp(object):
         page = self.get_page(req.path_info)
         try:
             try:
-                meth = getattr(self, "action_%s_%s" % (action, req.method))
+                meth = getattr(self, "action_{}_{}".format(action, req.method))
             except AttributeError:
                 raise exc.HTTPBadRequest("No such action %r" % action)
             resp = meth(req, page)
@@ -120,7 +120,7 @@ class WikiApp(object):
         return Response(text)
 
 
-class Page(object):
+class Page:
     def __init__(self, filename):
         self.filename = filename
 

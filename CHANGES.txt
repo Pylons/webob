@@ -1,10 +1,12 @@
 Unreleased
 ----------
 
-- Rename "master" git branch to "main"
-
 Feature
 ~~~~~~~
+
+- Rename "master" git branch to "main"
+
+- Add support for Python 3.12.
 
 - Add Request.remote_host, exposing REMOTE_HOST environment variable.
 
@@ -23,6 +25,7 @@ Compatibility
 Backwards Incompatibilities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+- Drop support for Python 2.7, 3.4, 3.5, 3.6, and 3.7.
 
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~

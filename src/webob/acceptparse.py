@@ -662,8 +662,6 @@ class AcceptValidHeader(Accept):
 
         return True
 
-    __nonzero__ = __bool__  # Python 2
-
     def __contains__(self, offer):
         """
         Return ``bool`` indicating whether `offer` is acceptable.
@@ -1281,8 +1279,6 @@ class _AcceptInvalidOrNoHeader(Accept):
         For this class, it always returns ``False``.
         """
         return False
-
-    __nonzero__ = __bool__  # Python 2
 
     def __contains__(self, offer):
         """
@@ -1959,8 +1955,6 @@ class AcceptCharsetValidHeader(AcceptCharset):
 
         return True
 
-    __nonzero__ = __bool__  # Python 2
-
     def __contains__(self, offer):
         """
         Return ``bool`` indicating whether `offer` is acceptable.
@@ -2308,8 +2302,6 @@ class _AcceptCharsetInvalidOrNoHeader(AcceptCharset):
         For this class, it always returns ``False``.
         """
         return False
-
-    __nonzero__ = __bool__  # Python 2
 
     def __contains__(self, offer):
         """
@@ -2969,8 +2961,6 @@ class AcceptEncodingValidHeader(AcceptEncoding):
 
         return True
 
-    __nonzero__ = __bool__  # Python 2
-
     def __contains__(self, offer):
         """
         Return ``bool`` indicating whether `offer` is acceptable.
@@ -3351,8 +3341,6 @@ class _AcceptEncodingInvalidOrNoHeader(AcceptEncoding):
         For this class, it always returns ``False``.
         """
         return False
-
-    __nonzero__ = __bool__  # Python 2
 
     def __contains__(self, offer):
         """
@@ -3991,7 +3979,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
             instance=self, other=other
         )
 
-    def __nonzero__(self):
+    def __bool__(self):
         """
         Return whether ``self`` represents a valid ``Accept-Language`` header.
 
@@ -4003,8 +3991,6 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         """
 
         return True
-
-    __bool__ = __nonzero__  # Python 3
 
     def __contains__(self, offer):
         """
@@ -4838,7 +4824,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
     have much behaviour in common.
     """
 
-    def __nonzero__(self):
+    def __bool__(self):
         """
         Return whether ``self`` represents a valid ``Accept-Language`` header.
 
@@ -4849,8 +4835,6 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         For this class, it always returns ``False``.
         """
         return False
-
-    __bool__ = __nonzero__  # Python 3
 
     def __contains__(self, offer):
         """
