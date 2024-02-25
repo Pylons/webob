@@ -6,6 +6,7 @@ The four headers are ``Accept``, ``Accept-Charset``, ``Accept-Encoding`` and
 """
 
 from collections import namedtuple
+import enum
 import re
 import textwrap
 import warnings
@@ -89,6 +90,17 @@ def _list_1_or_more__compiled_re(element_re):
     )
 
 
+class HeaderState(enum.Enum):
+    """
+    The state of an accept-style header to assist in identifying scenarios
+    an application may want to know about during accept-negotation.
+    """
+
+    Valid = "Valid"
+    Invalid = "Invalid"
+    Missing = "Missing"
+
+
 class AcceptOffer(namedtuple("AcceptOffer", ["type", "subtype", "params"])):
     """
     A pre-parsed offer tuple represeting a value in the format
@@ -116,8 +128,19 @@ class Accept:
     """
     Represent an ``Accept`` header.
 
-    Base class for :class:`AcceptValidHeader`, :class:`AcceptNoHeader`, and
-    :class:`AcceptInvalidHeader`.
+    A valid header is one that conforms to :rfc:`RFC 7231, section 5.3.2
+    <7231#section-5.3.2>`.
+
+    This object should not be modified. To add to the header, we can use the
+    addition operators (``+`` and ``+=``), which return a new object (see the
+    docstring for :meth:`.__add__`).
+
+    .. versionchanged:: 2.0
+
+        - Added the :attr:`.header_state` attribute.
+
+        - Removed ``__iter__`` and changed the behavior of :meth:`.best_match`,
+          :meth:`.quality`, and :meth:`.__contains__`.
     """
 
     # RFC 6838 describes syntax rules for media types that are different to
@@ -339,7 +362,7 @@ class Accept:
                 value = cls._process_quoted_string_token(token=value)
                 media_type_params[index] = (name, value)
 
-        return media_type_params
+        return tuple(media_type_params)
 
     @classmethod
     def _process_quoted_string_token(cls, token):
@@ -357,6 +380,9 @@ class Accept:
         """
         Convert Python value to header string for __add__/__radd__.
         """
+
+        if value is None:
+            return value
 
         if isinstance(value, str):
             return value
@@ -399,9 +425,9 @@ class Accept:
         Parse an ``Accept`` header.
 
         :param value: (``str``) header value
-        :return: If `value` is a valid ``Accept`` header, returns an iterator
-                 of (*media_range*, *qvalue*, *media_type_params*,
-                 *extension_params*) tuples, as parsed from the header from
+        :return: If ``value`` is a valid ``Accept`` header, returns an iterator
+                 of ``(*media_range*, *qvalue*, *media_type_params*,
+                 *extension_params*)`` tuples, as parsed from the header from
                  left to right.
 
                  | *media_range* is the media range, including any media type
@@ -421,7 +447,7 @@ class Accept:
                  | *extension_params* is the extension parameters, as a list
                    where each item is either a parameter string or a (parameter
                    name, value) tuple.
-        :raises ValueError: if `value` is an invalid header
+        :raises ValueError: if ``value`` is an invalid header
         """
         # Check if header is valid
         # Using Python stdlib's `re` module, there is currently no way to check
@@ -472,6 +498,7 @@ class Accept:
                             extension_params[index] = token_key
                 else:
                     extension_params = []
+                extension_params = tuple(extension_params)
 
                 yield (media_range, qvalue, media_type_params, extension_params)
 
@@ -533,18 +560,28 @@ class Accept:
 
         return parsed_offers
 
+    def __init__(self, header_value):
+        """
+        Create an :class:`.Accept` instance.
 
-class AcceptValidHeader(Accept):
-    """
-    Represent a valid ``Accept`` header.
+        :param header_value: (``str`` or ``None``) header value.
+        """
+        header_value = self._python_value_to_header_str(header_value)
+        self._header_value = header_value
+        self._parsed = None
+        if header_value is not None:
+            try:
+                self._parsed = tuple(self.parse(header_value))
+            except ValueError:
+                pass
 
-    A valid header is one that conforms to :rfc:`RFC 7231, section 5.3.2
-    <7231#section-5.3.2>`.
-
-    This object should not be modified. To add to the header, we can use the
-    addition operators (``+`` and ``+=``), which return a new object (see the
-    docstring for :meth:`AcceptValidHeader.__add__`).
-    """
+        #: Instance of :enum:`.HeaderState` representing the state of
+        #: the ``Accept`` header.
+        self.header_state = (
+            HeaderState.Missing
+            if header_value is None
+            else (HeaderState.Invalid if self._parsed is None else HeaderState.Valid)
+        )
 
     @property
     def header_value(self):
@@ -555,10 +592,10 @@ class AcceptValidHeader(Accept):
     @property
     def parsed(self):
         """
-        (``list`` or ``None``) Parsed form of the header.
+        (``tuple`` or ``None``) Parsed form of the header.
 
-        A list of (*media_range*, *qvalue*, *media_type_params*,
-        *extension_params*) tuples, where
+        A tuple of ``(*media_range*, *qvalue*, *media_type_params*,
+        *extension_params*)`` tuples, where
 
         *media_range* is the media range, including any media type parameters.
         The media range is returned in a canonicalised form (except the case of
@@ -571,26 +608,13 @@ class AcceptValidHeader(Accept):
         *qvalue* is the quality value of the media range.
 
         *media_type_params* is the media type parameters, as a list of
-        (parameter name, value) tuples.
+        ``(parameter name, value)`` tuples.
 
         *extension_params* is the extension parameters, as a list where each
-        item is either a parameter string or a (parameter name, value) tuple.
+        item is either a parameter string or a ``(parameter name, value)`` tuple.
         """
 
         return self._parsed
-
-    def __init__(self, header_value):
-        """
-        Create an :class:`AcceptValidHeader` instance.
-
-        :param header_value: (``str``) header value.
-        :raises ValueError: if `header_value` is an invalid value for an
-                            ``Accept`` header.
-        """
-        self._header_value = header_value
-        self._parsed = list(self.parse(header_value))
-        self._parsed_nonzero = [item for item in self.parsed if item[1]]
-        # item[1] is the qvalue
 
     def copy(self):
         """
@@ -599,56 +623,6 @@ class AcceptValidHeader(Accept):
         """
         return self.__class__(self._header_value)
 
-    def __add__(self, other):
-        """
-        Add to header, creating a new header object.
-
-        `other` can be:
-
-        * ``None``
-        * a ``str`` header value
-        * a ``dict``, with media ranges ``str``'s (including any media type
-          parameters) as keys, and either qvalues ``float``'s or (*qvalues*,
-          *extension_params*) tuples as values, where *extension_params* is a
-          ``str`` of the extension parameters segment of the header element,
-          starting with the first '``;``'
-        * a ``tuple`` or ``list``, where each item is either a header element
-          ``str``, or a (*media_range*, *qvalue*, *extension_params*) ``tuple``
-          or ``list`` where *media_range* is a ``str`` of the media range
-          including any media type parameters, and *extension_params* is a
-          ``str`` of the extension parameters segment of the header element,
-          starting with the first '``;``'
-        * an :class:`AcceptValidHeader`, :class:`AcceptNoHeader`, or
-          :class:`AcceptInvalidHeader` instance
-        * object of any other type that returns a value for ``__str__``
-
-        If `other` is a valid header value or another
-        :class:`AcceptValidHeader` instance, and the header value it represents
-        is not `''`, then the two header values are joined with ``', '``, and a
-        new :class:`AcceptValidHeader` instance with the new header value is
-        returned.
-
-        If `other` is a valid header value or another
-        :class:`AcceptValidHeader` instance representing a header value of
-        `''`; or if it is ``None`` or an :class:`AcceptNoHeader` instance; or
-        if it is an invalid header value, or an :class:`AcceptInvalidHeader`
-        instance, then a new :class:`AcceptValidHeader` instance with the same
-        header value as ``self`` is returned.
-        """
-
-        if isinstance(other, AcceptValidHeader):
-            if other.header_value == "":
-                return self.__class__(header_value=self.header_value)
-            else:
-                return create_accept_header(
-                    header_value=self.header_value + ", " + other.header_value
-                )
-
-        if isinstance(other, (AcceptNoHeader, AcceptInvalidHeader)):
-            return self.__class__(header_value=self.header_value)
-
-        return self._add_instance_and_non_accept_type(instance=self, other=other)
-
     def __bool__(self):
         """
         Return whether ``self`` represents a valid ``Accept`` header.
@@ -656,106 +630,17 @@ class AcceptValidHeader(Accept):
         Return ``True`` if ``self`` represents a valid header, and ``False`` if
         it represents an invalid header, or the header not being in the
         request.
-
-        For this class, it always returns ``True``.
         """
 
-        return True
-
-    def __contains__(self, offer):
-        """
-        Return ``bool`` indicating whether `offer` is acceptable.
-
-        .. warning::
-
-           The behavior of :meth:`AcceptValidHeader.__contains__` is currently
-           being maintained for backward compatibility, but it will change in
-           the future to better conform to the RFC.
-
-        :param offer: (``str``) media type offer
-        :return: (``bool``) Whether ``offer`` is acceptable according to the
-                 header.
-
-        This uses the old criterion of a match in
-        :meth:`AcceptValidHeader._old_match`, which is not as specified in
-        :rfc:`RFC 7231, section 5.3.2 <7231#section-5.3.2>`. It does not
-        correctly take into account media type parameters:
-
-            >>> 'text/html;p=1' in AcceptValidHeader('text/html')
-            False
-
-        or media ranges with ``q=0`` in the header::
-
-            >>> 'text/html' in AcceptValidHeader('text/*, text/html;q=0')
-            True
-            >>> 'text/html' in AcceptValidHeader('text/html;q=0, */*')
-            True
-
-        (See the docstring for :meth:`AcceptValidHeader._old_match` for other
-        problems with the old criterion for matching.)
-        """
-        warnings.warn(
-            "The behavior of AcceptValidHeader.__contains__ is "
-            "currently being maintained for backward compatibility, but it "
-            "will change in the future to better conform to the RFC.",
-            DeprecationWarning,
-        )
-
-        for (
-            media_range,
-            _quality,
-            _media_type_params,
-            _extension_params,
-        ) in self._parsed_nonzero:
-            if self._old_match(media_range, offer):
-                return True
-
-        return False
-
-    def __iter__(self):
-        """
-        Return all the ranges with non-0 qvalues, in order of preference.
-
-        .. warning::
-
-           The behavior of this method is currently maintained for backward
-           compatibility, but will change in the future.
-
-        :return: iterator of all the media ranges in the header with non-0
-                 qvalues, in descending order of qvalue. If two ranges have the
-                 same qvalue, they are returned in the order of their positions
-                 in the header, from left to right.
-
-        Please note that this is a simple filter for the ranges in the header
-        with non-0 qvalues, and is not necessarily the same as what the client
-        prefers, e.g. ``'audio/basic;q=0, */*'`` means 'everything but
-        audio/basic', but ``list(instance)`` would return only ``['*/*']``.
-        """
-        warnings.warn(
-            "The behavior of AcceptLanguageValidHeader.__iter__ is currently "
-            "maintained for backward compatibility, but will change in the "
-            "future.",
-            DeprecationWarning,
-        )
-
-        for media_range, _qvalue, _media_type_params, _extension_params in sorted(
-            self._parsed_nonzero, key=lambda i: i[1], reverse=True
-        ):
-            yield media_range
-
-    def __radd__(self, other):
-        """
-        Add to header, creating a new header object.
-
-        See the docstring for :meth:`AcceptValidHeader.__add__`.
-        """
-
-        return self._add_instance_and_non_accept_type(
-            instance=self, other=other, instance_on_the_right=True
-        )
+        return self.header_state is HeaderState.Valid
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} ({str(self)!r})>"
+        filler = (
+            f"({str(self)!r})"
+            if self.header_state is HeaderState.Valid
+            else f": {self.header_state.value}"
+        )
+        return f"<{self.__class__.__name__}{filler}>"
 
     def __str__(self):
         r"""
@@ -765,6 +650,13 @@ class AcceptValidHeader(Accept):
         q=0.50; e1=1 ;e2  ,  text/plain ,'``, ``str(instance)`` returns
         ``r'text/html;p1="\"1\"";q=0.5;e1=1;e2, text/plain'``.
         """
+
+        if self.header_state is HeaderState.Missing:
+            return "<no header in request>"
+
+        elif self.header_state is HeaderState.Invalid:
+            return "<invalid header value>"
+
         # self.parsed tuples are in the form: (media_range, qvalue,
         # media_type_params, extension_params)
         # self._iterable_to_header_element() requires iterable to be in the
@@ -781,100 +673,6 @@ class AcceptValidHeader(Accept):
             )
             for tuple_ in self.parsed
         )
-
-    def _add_instance_and_non_accept_type(
-        self, instance, other, instance_on_the_right=False
-    ):
-        if not other:
-            return self.__class__(header_value=instance.header_value)
-
-        other_header_value = self._python_value_to_header_str(value=other)
-
-        if other_header_value == "":
-            # if ``other`` is an object whose type we don't recognise, and
-            # str(other) returns ''
-            return self.__class__(header_value=instance.header_value)
-
-        try:
-            self.parse(value=other_header_value)
-        except ValueError:  # invalid header value
-            return self.__class__(header_value=instance.header_value)
-
-        new_header_value = (
-            (other_header_value + ", " + instance.header_value)
-            if instance_on_the_right
-            else (instance.header_value + ", " + other_header_value)
-        )
-        return self.__class__(header_value=new_header_value)
-
-    def _old_match(self, mask, offer):
-        """
-        Check if the offer is covered by the mask
-
-        ``offer`` may contain wildcards to facilitate checking if a ``mask``
-        would match a 'permissive' offer.
-
-        Wildcard matching forces the match to take place against the type or
-        subtype of the mask and offer (depending on where the wildcard matches)
-
-        .. warning::
-
-           This is maintained for backward compatibility, and will be
-           deprecated in the future.
-
-        This method was WebOb's old criterion for deciding whether a media type
-        matches a media range, used in
-
-        - :meth:`AcceptValidHeader.__contains__`
-        - :meth:`AcceptValidHeader.best_match`
-        - :meth:`AcceptValidHeader.quality`
-
-        It allows offers of *, */*, type/*, */subtype and types with no
-        subtypes, which are not media types as specified in :rfc:`RFC 7231,
-        section 5.3.2 <7231#section-5.3.2>`. This is also undocumented in any
-        of the public APIs that uses this method.
-        """
-        # Match if comparisons are the same or either is a complete wildcard
-        if mask.lower() == offer.lower() or "*/*" in (mask, offer) or "*" == offer:
-            return True
-
-        # Set mask type with wildcard subtype for malformed masks
-        try:
-            mask_type, mask_subtype = (x.lower() for x in mask.split("/"))
-        except ValueError:
-            mask_type = mask
-            mask_subtype = "*"
-
-        # Set offer type with wildcard subtype for malformed offers
-        try:
-            offer_type, offer_subtype = (x.lower() for x in offer.split("/"))
-        except ValueError:
-            offer_type = offer
-            offer_subtype = "*"
-
-        if mask_subtype == "*":
-            # match on type only
-            if offer_type == "*":
-                return True
-            else:
-                return mask_type.lower() == offer_type.lower()
-
-        if mask_type == "*":
-            # match on subtype only
-            if offer_subtype == "*":
-                return True
-            else:
-                return mask_subtype.lower() == offer_subtype.lower()
-
-        if offer_subtype == "*":
-            # match on type only
-            return mask_type.lower() == offer_type.lower()
-
-        if offer_type == "*":
-            # match on subtype only
-            return mask_subtype.lower() == offer_subtype.lower()
-
-        return offer.lower() == mask.lower()
 
     def accept_html(self):
         """
@@ -901,25 +699,35 @@ class AcceptValidHeader(Accept):
         """
         Return the offers that are acceptable according to the header.
 
-        The offers are returned in descending order of preference, where
-        preference is indicated by the qvalue of the media range in the header
-        that best matches the offer.
+        The matched offers are returned in descending order of preference,
+        where preference is indicated by the qvalue of the media range in the
+        header that best matches the offer.
 
         This uses the matching rules described in :rfc:`RFC 7231, section 5.3.2
         <7231#section-5.3.2>`.
 
-        Any offers that cannot be parsed via
-        :meth:`.Accept.parse_offer` will be ignored.
+        Any offers that cannot be parsed via :meth:`.parse_offer`
+        will be ignored.
 
-        :param offers: ``iterable`` of ``str`` media types (media types can
-                       include media type parameters) or pre-parsed instances
-                       of :class:`.AcceptOffer`.
-        :return: A list of tuples of the form (media type, qvalue), in
-                 descending order of qvalue. Where two offers have the same
-                 qvalue, they are returned in the same order as their order in
-                 `offers`.
+        :param offers:
+            ``iterable`` of ``str`` media types (media types can
+            include media type parameters) or pre-parsed instances
+            of :class:`.AcceptOffer`.
+        :return:
+            A list of tuples of the form (media type, qvalue), in
+            descending order of qvalue. Where two offers match the same
+            qvalue, they are returned in the same order as their order in
+            ``offers``.
         """
-        parsed = self.parsed
+
+        if self.header_state is not HeaderState.Valid:
+            # avoid returning any offers that don't match the grammar so
+            # that the return values here are consistent with what would be
+            # returned in a valid header
+            return [
+                (offers[offer_index], 1.0)
+                for offer_index, _ in self._parse_and_normalize_offers(offers)
+            ]
 
         # RFC 7231, section 3.1.1.1 "Media Type":
         # "The type, subtype, and parameter name tokens are case-insensitive.
@@ -931,7 +739,7 @@ class AcceptValidHeader(Accept):
                 qvalue,
                 tuple((name.lower(), value) for name, value in media_type_params),
             )
-            for media_range, qvalue, media_type_params, __ in parsed
+            for media_range, qvalue, media_type_params, __ in self.parsed
         ]
         lowercased_offers_parsed = self._parse_and_normalize_offers(offers)
 
@@ -1014,116 +822,49 @@ class AcceptValidHeader(Accept):
 
     def best_match(self, offers, default_match=None):
         """
-        Return the best match from the sequence of media type `offers`.
+        Return the best match from the sequence of media type ``offers``.
 
-        .. warning::
+        This is a thin wrapper around :meth:`.acceptable_offers` that makes
+        usage more convenient for typical use-cases where you just want
+        to know the client's most preferred match.
 
-           This is currently maintained for backward compatibility, and will be
-           deprecated in the future.
+        :param offers:
+            (iterable)
 
-           :meth:`AcceptValidHeader.best_match` uses its own algorithm (one not
-           specified in :rfc:`RFC 7231 <7231>`) to determine what is a best
-           match. The algorithm has many issues, and does not conform to
-           :rfc:`RFC 7231 <7231>`.
+            | Each item in the iterable must be a ``str`` media type and
+              may contain params/extensions.
 
-        Each media type in `offers` is checked against each non-``q=0`` range
-        in the header. If the two are a match according to WebOb's old
-        criterion for a match, the quality value of the match is the qvalue of
-        the media range from the header multiplied by the server quality value
-        of the offer (if the server quality value is not supplied, it is 1).
+        :param default_match:
+            (optional, any type) the value to be returned if there is no match
 
-        The offer in the match with the highest quality value is the best
-        match. If there is more than one match with the highest qvalue, the
-        match where the media range has a lower number of '*'s is the best
-        match. If the two have the same number of '*'s, the one that shows up
-        first in `offers` is the best match.
+        :return:
+            (``str``, or the type of ``default_match``)
 
-        :param offers: (iterable)
+            | The offer that is the best match based on q-value. If there is no
+              match, the value of ``default_match`` is returned. Where two
+              offers match the same qvalue, they are returned in the same order
+              as their order in ``offers``.
 
-                       | Each item in the iterable may be a ``str`` media type,
-                         or a (media type, server quality value) ``tuple`` or
-                         ``list``. (The two may be mixed in the iterable.)
+        .. versionchanged:: 2.0
 
-        :param default_match: (optional, any type) the value to be returned if
-                              there is no match
-
-        :return: (``str``, or the type of `default_match`)
-
-                 | The offer that is the best match. If there is no match, the
-                   value of `default_match` is returned.
-
-        This uses the old criterion of a match in
-        :meth:`AcceptValidHeader._old_match`, which is not as specified in
-        :rfc:`RFC 7231, section 5.3.2 <7231#section-5.3.2>`. It does not
-        correctly take into account media type parameters:
-
-            >>> instance = AcceptValidHeader('text/html')
-            >>> instance.best_match(offers=['text/html;p=1']) is None
-            True
-
-        or media ranges with ``q=0`` in the header::
-
-            >>> instance = AcceptValidHeader('text/*, text/html;q=0')
-            >>> instance.best_match(offers=['text/html'])
-            'text/html'
-
-            >>> instance = AcceptValidHeader('text/html;q=0, */*')
-            >>> instance.best_match(offers=['text/html'])
-            'text/html'
-
-        (See the docstring for :meth:`AcceptValidHeader._old_match` for other
-        problems with the old criterion for matching.)
-
-        Another issue is that this method considers the best matching range for
-        an offer to be the matching range with the highest quality value,
-        (where quality values are tied, the most specific media range is
-        chosen); whereas :rfc:`RFC 7231, section 5.3.2 <7231#section-5.3.2>`
-        specifies that we should consider the best matching range for a media
-        type offer to be the most specific matching range.::
-
-            >>> instance = AcceptValidHeader('text/html;q=0.5, text/*')
-            >>> instance.best_match(offers=['text/html', 'text/plain'])
-            'text/html'
+            - Offers containing wildcards are no longer allowed.
+            - A tuple can no longer be an offer containing server-side quality
+              values.
+            - An offer will only match a wildcard clause in the header, such
+              as ``*/*`` or ``text/*`` if it does not match something more
+              specific.
         """
-        warnings.warn(
-            "The behavior of AcceptValidHeader.best_match is currently being "
-            "maintained for backward compatibility, but it will be deprecated"
-            " in the future, as it does not conform to the RFC.",
-            DeprecationWarning,
-        )
-        best_quality = -1
-        best_offer = default_match
-        matched_by = "*/*"
-        for offer in offers:
-            if isinstance(offer, (tuple, list)):
-                offer, server_quality = offer
-            else:
-                server_quality = 1
-            for item in self._parsed_nonzero:
-                mask = item[0]
-                quality = item[1]
-                possible_quality = server_quality * quality
-                if possible_quality < best_quality:
-                    continue
-                elif possible_quality == best_quality:
-                    # 'text/plain' overrides 'message/*' overrides '*/*'
-                    # (if all match w/ the same q=)
-                    if matched_by.count("*") <= mask.count("*"):
-                        continue
-                if self._old_match(mask, offer):
-                    best_quality = possible_quality
-                    best_offer = offer
-                    matched_by = mask
-        return best_offer
+        matches = self.acceptable_offers(offers)
+        if matches:
+            return matches[0][0]
+        return default_match
 
     def quality(self, offer):
         """
-        Return quality value of given offer, or ``None`` if there is no match.
+        Return quality value of given ``offer``, or ``None`` if there is no match.
 
-        .. warning::
-
-           This is currently maintained for backward compatibility, and will be
-           deprecated in the future.
+        This is a thin wrapper around :meth:`.acceptable_offers` that matches
+        a specific ``offer``.
 
         :param offer: (``str``) media type offer
         :return: (``float`` or ``None``)
@@ -1131,388 +872,47 @@ class AcceptValidHeader(Accept):
                  | The highest quality value from the media range(s) that match
                    the `offer`, or ``None`` if there is no match.
 
-        This uses the old criterion of a match in
-        :meth:`AcceptValidHeader._old_match`, which is not as specified in
-        :rfc:`RFC 7231, section 5.3.2 <7231#section-5.3.2>`. It does not
-        correctly take into account media type parameters:
+        .. versionchanged:: 2.0
 
-            >>> instance = AcceptValidHeader('text/html')
-            >>> instance.quality('text/html;p=1') is None
-            True
-
-        or media ranges with ``q=0`` in the header::
-
-            >>> instance = AcceptValidHeader('text/*, text/html;q=0')
-            >>> instance.quality('text/html')
-            1.0
-            >>> AcceptValidHeader('text/html;q=0, */*').quality('text/html')
-            1.0
-
-        (See the docstring for :meth:`AcceptValidHeader._old_match` for other
-        problems with the old criterion for matching.)
-
-        Another issue is that this method considers the best matching range for
-        an offer to be the matching range with the highest quality value,
-        whereas :rfc:`RFC 7231, section 5.3.2 <7231#section-5.3.2>` specifies
-        that we should consider the best matching range for a media type offer
-        to be the most specific matching range.::
-
-            >>> instance = AcceptValidHeader('text/html;q=0.5, text/*')
-            >>> instance.quality('text/html')
-            1.0
+            - Offers containing wildcards are no longer allowed.
+            - A tuple can no longer be an offer containing server-side quality
+              values.
+            - An offer will only match a wildcard clause in the header, such
+              as ``*/*`` or ``text/*`` if it does not match something more
+              specific.
         """
-        warnings.warn(
-            "The behavior of AcceptValidHeader.quality is currently being "
-            "maintained for backward compatibility, but it will be deprecated "
-            "in the future, as it does not conform to the RFC.",
-            DeprecationWarning,
-        )
-        bestq = 0
-        for item in self.parsed:
-            media_range = item[0]
-            qvalue = item[1]
-            if self._old_match(media_range, offer):
-                bestq = max(bestq, qvalue)
-        return bestq or None
-
-
-class MIMEAccept(Accept):
-    """
-    Backwards compatibility shim for the new functionality provided by
-    AcceptValidHeader, AcceptInvalidHeader, or AcceptNoHeader, that acts like
-    the old MIMEAccept from WebOb version 1.7 or lower.
-
-    This shim does use the newer Accept header parsing, which will mean your
-    application may be less liberal in what Accept headers are correctly
-    parsed. It is recommended that user agents be updated to send appropriate
-    Accept headers that are valid according to :rfc:`7231#section-5.3.2`.
-
-    .. deprecated:: 1.8
-
-       Instead of directly creating the Accept object, please see:
-       :func:`create_accept_header(header_value)
-       <webob.acceptparse.create_accept_header>`, which will create the
-       appropriate object.
-
-       This shim has an extended deprecation period to allow for application
-       developers to switch to the new API.
-
-    """
-
-    def __init__(self, header_value):
-        warnings.warn(
-            "The MIMEAccept class has been replaced by "
-            "webob.acceptparse.create_accept_header. This compatibility shim "
-            "will be deprecated in a future version of WebOb.",
-            DeprecationWarning,
-        )
-        self._accept = create_accept_header(header_value)
-        if self._accept.parsed:
-            self._parsed = [(media, q) for (media, q, _, _) in self._accept.parsed]
-            self._parsed_nonzero = [(m, q) for (m, q) in self._parsed if q]
-        else:
-            self._parsed = []
-            self._parsed_nonzero = []
-
-    @staticmethod
-    def parse(value):
-        try:
-            parsed_accepted = Accept.parse(value)
-
-            for media, q, _, _ in parsed_accepted:
-                yield (media, q)
-        except ValueError:
-            pass
-
-    def __repr__(self):
-        return self._accept.__repr__()
-
-    def __iter__(self):
-        return self._accept.__iter__()
-
-    def __str__(self):
-        return self._accept.__str__()
-
-    def __add__(self, other):
-        if isinstance(other, self.__class__):
-            return self.__class__(str(self._accept.__add__(other._accept)))
-        else:
-            return self.__class__(str(self._accept.__add__(other)))
-
-    def __radd__(self, other):
-        return self.__class__(str(self._accept.__radd__(other)))
-
-    def __contains__(self, offer):
-        return offer in self._accept
-
-    def quality(self, offer):
-        return self._accept.quality(offer)
-
-    def best_match(self, offers, default_match=None):
-        return self._accept.best_match(offers, default_match=default_match)
-
-    def accept_html(self):
-        return self._accept.accept_html()
-
-
-class _AcceptInvalidOrNoHeader(Accept):
-    """
-    Represent when an ``Accept`` header is invalid or not in request.
-
-    This is the base class for the behaviour that :class:`.AcceptInvalidHeader`
-    and :class:`.AcceptNoHeader` have in common.
-
-    :rfc:`7231` does not provide any guidance on what should happen if the
-    ``Accept`` header has an invalid value. This implementation disregards the
-    header when the header is invalid, so :class:`.AcceptInvalidHeader` and
-    :class:`.AcceptNoHeader` have much behaviour in common.
-    """
-
-    def __bool__(self):
-        """
-        Return whether ``self`` represents a valid ``Accept`` header.
-
-        Return ``True`` if ``self`` represents a valid header, and ``False`` if
-        it represents an invalid header, or the header not being in the
-        request.
-
-        For this class, it always returns ``False``.
-        """
-        return False
+        matches = self.acceptable_offers([offer])
+        if matches:
+            return matches[0][1]
 
     def __contains__(self, offer):
         """
         Return ``bool`` indicating whether `offer` is acceptable.
 
-        .. warning::
-
-           The behavior of ``.__contains__`` for the ``Accept`` classes is
-           currently being maintained for backward compatibility, but it will
-           change in the future to better conform to the RFC.
+        This is a thin wrapper around :meth:`.acceptable_offers` that matches
+        a specific ``offer``.
 
         :param offer: (``str``) media type offer
         :return: (``bool``) Whether ``offer`` is acceptable according to the
                  header.
 
-        For this class, either there is no ``Accept`` header in the request, or
-        the header is invalid, so any media type is acceptable, and this always
-        returns ``True``.
+        .. versionchanged:: 2.0
+
+            - Offers containing wildcards are no longer allowed.
+            - A tuple can no longer be an offer containing server-side quality
+              values.
+            - An offer will only match a wildcard clause in the header, such
+              as ``*/*`` or ``text/*`` if it does not match something more
+              specific.
         """
-        warnings.warn(
-            "The behavior of .__contains__ for the Accept classes is "
-            "currently being maintained for backward compatibility, but it "
-            "will change in the future to better conform to the RFC.",
-            DeprecationWarning,
-        )
-        return True
 
-    def __iter__(self):
-        """
-        Return all the ranges with non-0 qvalues, in order of preference.
-
-        .. warning::
-
-           The behavior of this method is currently maintained for backward
-           compatibility, but will change in the future.
-
-        :return: iterator of all the media ranges in the header with non-0
-                 qvalues, in descending order of qvalue. If two ranges have the
-                 same qvalue, they are returned in the order of their positions
-                 in the header, from left to right.
-
-        When there is no ``Accept`` header in the request or the header is
-        invalid, there are no media ranges, so this always returns an empty
-        iterator.
-        """
-        warnings.warn(
-            "The behavior of AcceptValidHeader.__iter__ is currently "
-            "maintained for backward compatibility, but will change in the "
-            "future.",
-            DeprecationWarning,
-        )
-        return iter(())
-
-    def accept_html(self):
-        """
-        Return ``True`` if any HTML-like type is accepted.
-
-        The HTML-like types are 'text/html', 'application/xhtml+xml',
-        'application/xml' and 'text/xml'.
-
-        When the header is invalid, or there is no `Accept` header in the
-        request, all `offers` are considered acceptable, so this always returns
-        ``True``.
-        """
-        return bool(
-            self.acceptable_offers(
-                offers=[
-                    "text/html",
-                    "application/xhtml+xml",
-                    "application/xml",
-                    "text/xml",
-                ]
-            )
-        )
-
-    accepts_html = property(fget=accept_html, doc=accept_html.__doc__)
-    # note the plural
-
-    def acceptable_offers(self, offers):
-        """
-        Return the offers that are acceptable according to the header.
-
-        Any offers that cannot be parsed via
-        :meth:`.Accept.parse_offer` will be ignored.
-
-        :param offers: ``iterable`` of ``str`` media types (media types can
-                       include media type parameters)
-        :return: When the header is invalid, or there is no ``Accept`` header
-                 in the request, all `offers` are considered acceptable, so
-                 this method returns a list of (media type, qvalue) tuples
-                 where each offer in `offers` is paired with the qvalue of 1.0,
-                 in the same order as in `offers`.
-        """
-        # avoid returning any offers that don't match the grammar so
-        # that the return values here are consistent with what would be
-        # returned in AcceptValidHeader
-        return [
-            (offers[offer_index], 1.0)
-            for offer_index, _ in self._parse_and_normalize_offers(offers)
-        ]
-
-    def best_match(self, offers, default_match=None):
-        """
-        Return the best match from the sequence of language tag `offers`.
-
-        This is the ``.best_match()`` method for when the header is invalid or
-        not found in the request, corresponding to
-        :meth:`AcceptValidHeader.best_match`.
-
-        .. warning::
-
-           This is currently maintained for backward compatibility, and will be
-           deprecated in the future (see the documentation for
-           :meth:`AcceptValidHeader.best_match`).
-
-        When the header is invalid, or there is no `Accept` header in the
-        request, all `offers` are considered acceptable, so the best match is
-        the media type in `offers` with the highest server quality value (if
-        the server quality value is not supplied for a media type, it is 1).
-
-        If more than one media type in `offers` have the same highest server
-        quality value, then the one that shows up first in `offers` is the best
-        match.
-
-        :param offers: (iterable)
-
-                       | Each item in the iterable may be a ``str`` media type,
-                         or a (media type, server quality value) ``tuple`` or
-                         ``list``. (The two may be mixed in the iterable.)
-
-        :param default_match: (optional, any type) the value to be returned if
-                              `offers` is empty.
-
-        :return: (``str``, or the type of `default_match`)
-
-                 | The offer that has the highest server quality value.  If
-                   `offers` is empty, the value of `default_match` is returned.
-        """
-        warnings.warn(
-            "The behavior of .best_match for the Accept classes is currently "
-            "being maintained for backward compatibility, but the method will"
-            " be deprecated in the future, as its behavior is not specified "
-            "in (and currently does not conform to) RFC 7231.",
-            DeprecationWarning,
-        )
-        best_quality = -1
-        best_offer = default_match
-        for offer in offers:
-            if isinstance(offer, (list, tuple)):
-                offer, quality = offer
-            else:
-                quality = 1
-            if quality > best_quality:
-                best_offer = offer
-                best_quality = quality
-        return best_offer
-
-    def quality(self, offer):
-        """
-        Return quality value of given offer, or ``None`` if there is no match.
-
-        This is the ``.quality()`` method for when the header is invalid or not
-        found in the request, corresponding to
-        :meth:`AcceptValidHeader.quality`.
-
-        .. warning::
-
-           This is currently maintained for backward compatibility, and will be
-           deprecated in the future (see the documentation for
-           :meth:`AcceptValidHeader.quality`).
-
-        :param offer: (``str``) media type offer
-        :return: (``float``) ``1.0``.
-
-        When the ``Accept`` header is invalid or not in the request, all offers
-        are equally acceptable, so 1.0 is always returned.
-        """
-        warnings.warn(
-            "The behavior of .quality for the Accept classes is currently "
-            "being maintained for backward compatibility, but the method will"
-            " be deprecated in the future, as its behavior does not conform to"
-            "RFC 7231.",
-            DeprecationWarning,
-        )
-        return 1.0
-
-
-class AcceptNoHeader(_AcceptInvalidOrNoHeader):
-    """
-    Represent when there is no ``Accept`` header in the request.
-
-    This object should not be modified. To add to the header, we can use the
-    addition operators (``+`` and ``+=``), which return a new object (see the
-    docstring for :meth:`AcceptNoHeader.__add__`).
-    """
-
-    @property
-    def header_value(self):
-        """
-        (``str`` or ``None``) The header value.
-
-        As there is no header in the request, this is ``None``.
-        """
-        return self._header_value
-
-    @property
-    def parsed(self):
-        """
-        (``list`` or ``None``) Parsed form of the header.
-
-        As there is no header in the request, this is ``None``.
-        """
-        return self._parsed
-
-    def __init__(self):
-        """
-        Create an :class:`AcceptNoHeader` instance.
-        """
-        self._header_value = None
-        self._parsed = None
-        self._parsed_nonzero = None
-
-    def copy(self):
-        """
-        Create a copy of the header object.
-
-        """
-        return self.__class__()
+        return self.quality(offer) is not None
 
     def __add__(self, other):
         """
         Add to header, creating a new header object.
 
-        `other` can be:
+        ``other`` can be:
 
         * ``None``
         * a ``str`` header value
@@ -1527,200 +927,54 @@ class AcceptNoHeader(_AcceptInvalidOrNoHeader):
           including any media type parameters, and *extension_params* is a
           ``str`` of the extension parameters segment of the header element,
           starting with the first '``;``'
-        * an :class:`AcceptValidHeader`, :class:`AcceptNoHeader`, or
-          :class:`AcceptInvalidHeader` instance
+        * an :class:`Accept` instance
         * object of any other type that returns a value for ``__str__``
 
-        If `other` is a valid header value or an :class:`AcceptValidHeader`
-        instance, a new :class:`AcceptValidHeader` instance with the valid
-        header value is returned.
-
-        If `other` is ``None``, an :class:`AcceptNoHeader` instance, an invalid
-        header value, or an :class:`AcceptInvalidHeader` instance, a new
-        :class:`AcceptNoHeader` instance is returned.
+        The rules for adding values to a header are that the values are
+        appended if valid, or discarded. If everything is discarded then an
+        instance representing a missing header is returned.
         """
-        if isinstance(other, AcceptValidHeader):
-            return AcceptValidHeader(header_value=other.header_value)
 
-        if isinstance(other, (AcceptNoHeader, AcceptInvalidHeader)):
-            return self.__class__()
+        other = create_accept_header(other)
+        is_self_valid = self.header_state is HeaderState.Valid
+        is_other_valid = other.header_state is HeaderState.Valid
 
-        return self._add_instance_and_non_accept_type(instance=self, other=other)
+        if is_self_valid:
+            if is_other_valid:
+                if self.header_value == "":
+                    return other
+                if other.header_value == "":
+                    return self
+                return create_accept_header(
+                    self.header_value + ", " + other.header_value
+                )
+            return self
+        elif is_other_valid:
+            return other
+        return create_accept_header(None)
 
     def __radd__(self, other):
         """
         Add to header, creating a new header object.
 
-        See the docstring for :meth:`AcceptNoHeader.__add__`.
-        """
-        return self.__add__(other=other)
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}>"
-
-    def __str__(self):
-        """Return the ``str`` ``'<no header in request>'``."""
-
-        return "<no header in request>"
-
-    def _add_instance_and_non_accept_type(self, instance, other):
-        if other is None:
-            return self.__class__()
-
-        other_header_value = self._python_value_to_header_str(value=other)
-
-        try:
-            return AcceptValidHeader(header_value=other_header_value)
-        except ValueError:  # invalid header value
-            return self.__class__()
-
-
-class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
-    """
-    Represent an invalid ``Accept`` header.
-
-    An invalid header is one that does not conform to
-    :rfc:`7231#section-5.3.2`.
-
-    :rfc:`7231` does not provide any guidance on what should happen if the
-    ``Accept`` header has an invalid value. This implementation disregards the
-    header, and treats it as if there is no ``Accept`` header in the request.
-
-    This object should not be modified. To add to the header, we can use the
-    addition operators (``+`` and ``+=``), which return a new object (see the
-    docstring for :meth:`AcceptInvalidHeader.__add__`).
-    """
-
-    @property
-    def header_value(self):
-        """(``str`` or ``None``) The header value."""
-
-        return self._header_value
-
-    @property
-    def parsed(self):
-        """
-        (``list`` or ``None``) Parsed form of the header.
-
-        As the header is invalid and cannot be parsed, this is ``None``.
+        See the docstring for :meth:`.__add__`.
         """
 
-        return self._parsed
-
-    def __init__(self, header_value):
-        """
-        Create an :class:`AcceptInvalidHeader` instance.
-        """
-        self._header_value = header_value
-        self._parsed = None
-        self._parsed_nonzero = None
-
-    def copy(self):
-        """
-        Create a copy of the header object.
-
-        """
-        return self.__class__(self._header_value)
-
-    def __add__(self, other):
-        """
-        Add to header, creating a new header object.
-
-        `other` can be:
-
-        * ``None``
-        * a ``str`` header value
-        * a ``dict``, with media ranges ``str``'s (including any media type
-          parameters) as keys, and either qvalues ``float``'s or (*qvalues*,
-          *extension_params*) tuples as values, where *extension_params* is a
-          ``str`` of the extension parameters segment of the header element,
-          starting with the first '``;``'
-        * a ``tuple`` or ``list``, where each item is either a header element
-          ``str``, or a (*media_range*, *qvalue*, *extension_params*) ``tuple``
-          or ``list`` where *media_range* is a ``str`` of the media range
-          including any media type parameters, and *extension_params* is a
-          ``str`` of the extension parameters segment of the header element,
-          starting with the first '``;``'
-        * an :class:`AcceptValidHeader`, :class:`AcceptNoHeader`, or
-          :class:`AcceptInvalidHeader` instance
-        * object of any other type that returns a value for ``__str__``
-
-        If `other` is a valid header value or an :class:`AcceptValidHeader`
-        instance, then a new :class:`AcceptValidHeader` instance with the valid
-        header value is returned.
-
-        If `other` is ``None``, an :class:`AcceptNoHeader` instance, an invalid
-        header value, or an :class:`AcceptInvalidHeader` instance, a new
-        :class:`AcceptNoHeader` instance is returned.
-        """
-
-        if isinstance(other, AcceptValidHeader):
-            return AcceptValidHeader(header_value=other.header_value)
-
-        if isinstance(other, (AcceptNoHeader, AcceptInvalidHeader)):
-            return AcceptNoHeader()
-
-        return self._add_instance_and_non_accept_type(instance=self, other=other)
-
-    def __radd__(self, other):
-        """
-        Add to header, creating a new header object.
-
-        See the docstring for :meth:`AcceptValidHeader.__add__`.
-        """
-
-        return self._add_instance_and_non_accept_type(
-            instance=self, other=other, instance_on_the_right=True
-        )
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}>"
-        # We do not display the header_value, as it is untrusted input. The
-        # header_value could always be easily obtained from the .header_value
-        # property.
-
-    def __str__(self):
-        """Return the ``str`` ``'<invalid header value>'``."""
-
-        return "<invalid header value>"
-
-    def _add_instance_and_non_accept_type(
-        self, instance, other, instance_on_the_right=False
-    ):
-        if other is None:
-            return AcceptNoHeader()
-
-        other_header_value = self._python_value_to_header_str(value=other)
-
-        try:
-            return AcceptValidHeader(header_value=other_header_value)
-        except ValueError:  # invalid header value
-            return AcceptNoHeader()
+        other = create_accept_header(other)
+        return other + self
 
 
 def create_accept_header(header_value):
     """
     Create an object representing the ``Accept`` header in a request.
 
-    :param header_value: (``str``) header value
-    :return: If `header_value` is ``None``, an :class:`AcceptNoHeader`
-             instance.
-
-             | If `header_value` is a valid ``Accept`` header, an
-               :class:`AcceptValidHeader` instance.
-
-             | If `header_value` is an invalid ``Accept`` header, an
-               :class:`AcceptInvalidHeader` instance.
+    :param header_value: (``str`` or ``None``) header value
+    :return: An :class:`.Accept` instance.
     """
-
-    if header_value is None:
-        return AcceptNoHeader()
     if isinstance(header_value, Accept):
-        return header_value.copy()
-    try:
-        return AcceptValidHeader(header_value=header_value)
-    except ValueError:
-        return AcceptInvalidHeader(header_value=header_value)
+        # no need to copy, accept class is immutable
+        return header_value
+    return Accept(header_value)
 
 
 def accept_property():
@@ -1740,13 +994,13 @@ def accept_property():
     def fget(request):
         """Get an object representing the header in the request."""
 
-        return create_accept_header(header_value=request.environ.get(ENVIRON_KEY))
+        return create_accept_header(request.environ.get(ENVIRON_KEY))
 
     def fset(request, value):
         """
         Set the corresponding key in the request environ.
 
-        `value` can be:
+        ``value`` can be:
 
         * ``None``
         * a ``str`` header value
@@ -1761,19 +1015,17 @@ def accept_property():
           including any media type parameters, and *extension_params* is a
           ``str`` of the extension parameters segment of the header element,
           starting with the first '``;``'
-        * an :class:`AcceptValidHeader`, :class:`AcceptNoHeader`, or
-          :class:`AcceptInvalidHeader` instance
+        * an :class:`.Accept` instance
         * object of any other type that returns a value for ``__str__``
         """
 
-        if value is None or isinstance(value, AcceptNoHeader):
-            fdel(request=request)
+        if isinstance(value, Accept):
+            value = value.header_value
         else:
-            if isinstance(value, (AcceptValidHeader, AcceptInvalidHeader)):
-                header_value = value.header_value
-            else:
-                header_value = Accept._python_value_to_header_str(value=value)
-            request.environ[ENVIRON_KEY] = header_value
+            value = Accept._python_value_to_header_str(value)
+        if value is None:
+            return fdel(request)
+        request.environ[ENVIRON_KEY] = value
 
     def fdel(request):
         """Delete the corresponding key from the request environ."""

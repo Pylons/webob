@@ -6,18 +6,17 @@ import warnings
 import pytest
 
 from webob.acceptparse import (
+    Accept,
     AcceptCharsetInvalidHeader,
     AcceptCharsetNoHeader,
     AcceptCharsetValidHeader,
     AcceptEncodingInvalidHeader,
     AcceptEncodingNoHeader,
     AcceptEncodingValidHeader,
-    AcceptInvalidHeader,
     AcceptLanguageInvalidHeader,
     AcceptLanguageNoHeader,
     AcceptLanguageValidHeader,
-    AcceptNoHeader,
-    AcceptValidHeader,
+    HeaderState as AcceptHeaderState,
 )
 from webob.multidict import NoVars
 from webob.util import bytes_, text_
@@ -741,21 +740,24 @@ class TestRequestCommon:
     def test_accept_no_header(self):
         req = self._makeOne(environ={})
         header = req.accept
-        assert isinstance(header, AcceptNoHeader)
+        assert isinstance(header, Accept)
+        assert header.header_state is AcceptHeaderState.Missing
         assert header.header_value is None
 
     def test_accept_invalid_header(self):
         header_value = "text/html;param=val;q=1;extparam=\x19"
         req = self._makeOne(environ={"HTTP_ACCEPT": header_value})
         header = req.accept
-        assert isinstance(header, AcceptInvalidHeader)
+        assert isinstance(header, Accept)
+        assert header.header_state is AcceptHeaderState.Invalid
         assert header.header_value == header_value
 
     def test_accept_valid_header(self):
         header_value = ',,text/html;p1="v1";p2=v2;q=0.9;e1="v1";e2;e3=v3,'
         req = self._makeOne(environ={"HTTP_ACCEPT": header_value})
         header = req.accept
-        assert isinstance(header, AcceptValidHeader)
+        assert isinstance(header, Accept)
+        assert header.header_state is AcceptHeaderState.Valid
         assert header.header_value == header_value
 
     # accept_charset
@@ -1990,7 +1992,8 @@ class TestRequest_functional:
         tests = [
             ("image/png", "image/png"),
             ("image/*", "image/png"),
-            ("image/*, application/xml", "application/xml"),
+            ("image/*, application/xml", "image/png"),
+            ("image/jpeg, application/xml", "application/xml"),
         ]
 
         for accept, get in tests:
@@ -2703,7 +2706,6 @@ class TestRequest_functional:
         from datetime import datetime
 
         from webob import UTC, Response
-        from webob.acceptparse import Accept
         from webob.byterange import Range
         from webob.etag import ETagMatcher
         from webob.multidict import GetDict, MultiDict
