@@ -65,7 +65,13 @@ jobs:
                   python-version: ${{ matrix.py }}
                   architecture: ${{ matrix.architecture }}
             - run: pip install tox
-            - name: Running tox
+            - name: Running tox with specific toxenv
+              if: ${{ matrix.toxenv != '' }}
+              env:
+                TOXENV: ${{ matrix.toxenv }}
+              run: tox
+            - name: Running tox for current python version
+              if: ${{ matrix.toxenv == '' }}
               run: tox -e py
     coverage:
         runs-on: ubuntu-latest
