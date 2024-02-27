@@ -1041,8 +1041,19 @@ class AcceptCharset:
     """
     Represent an ``Accept-Charset`` header.
 
-    Base class for :class:`AcceptCharsetValidHeader`,
-    :class:`AcceptCharsetNoHeader`, and :class:`AcceptCharsetInvalidHeader`.
+    A valid header is one that conforms to :rfc:`RFC 7231, section 5.3.3
+    <7231#section-5.3.3>`.
+
+    This object should not be modified. To add to the header, we can use the
+    addition operators (``+`` and ``+=``), which return a new object (see the
+    docstring for :meth:`.__add__`).
+
+    .. versionchanged:: 2.0
+
+        - Added the :attr:`.header_state` attribute.
+
+        - Removed ``__iter__`` and changed the behavior of :meth:`.best_match`,
+          :meth:`.quality`, and :meth:`.__contains__`.
     """
 
     # RFC 7231 Section 3.1.1.2 "Charset":
@@ -1058,22 +1069,25 @@ class AcceptCharset:
 
     @classmethod
     def _python_value_to_header_str(cls, value):
+        if value is None:
+            return None
+
         if isinstance(value, str):
-            header_str = value
+            return value
+
+        if hasattr(value, "items"):
+            value = sorted(value.items(), key=lambda item: item[1], reverse=True)
+
+        if isinstance(value, (tuple, list)):
+            result = []
+
+            for item in value:
+                if isinstance(item, (tuple, list)):
+                    item = _item_qvalue_pair_to_header_element(pair=item)
+                result.append(item)
+            header_str = ", ".join(result)
         else:
-            if hasattr(value, "items"):
-                value = sorted(value.items(), key=lambda item: item[1], reverse=True)
-
-            if isinstance(value, (tuple, list)):
-                result = []
-
-                for item in value:
-                    if isinstance(item, (tuple, list)):
-                        item = _item_qvalue_pair_to_header_element(pair=item)
-                    result.append(item)
-                header_str = ", ".join(result)
-            else:
-                header_str = str(value)
+            header_str = str(value)
 
         return header_str
 
@@ -1086,7 +1100,7 @@ class AcceptCharset:
         :return: If `value` is a valid ``Accept-Charset`` header, returns an
                  iterator of (charset, quality value) tuples, as parsed from
                  the header from left to right.
-        :raises ValueError: if `value` is an invalid header
+        :raises ValueError: if ``value`` is an invalid header
         """
         # Check if header is valid
         # Using Python stdlib's `re` module, there is currently no way to check
@@ -1105,48 +1119,44 @@ class AcceptCharset:
 
         return generator(value=value)
 
+    def __init__(self, header_value):
+        """
+        Create an :class:`AcceptCharset` instance.
 
-class AcceptCharsetValidHeader(AcceptCharset):
-    """
-    Represent a valid ``Accept-Charset`` header.
+        :param header_value: (``str`` or ``None``) header value.
+        """
+        header_value = self._python_value_to_header_str(header_value)
+        self._header_value = header_value
+        self._parsed = None
+        if header_value is not None:
+            try:
+                self._parsed = tuple(self.parse(header_value))
+            except ValueError:
+                pass
 
-    A valid header is one that conforms to :rfc:`RFC 7231, section 5.3.3
-    <7231#section-5.3.3>`.
-
-    This object should not be modified. To add to the header, we can use the
-    addition operators (``+`` and ``+=``), which return a new object (see the
-    docstring for :meth:`AcceptCharsetValidHeader.__add__`).
-    """
+        #: Instance of :enum:`.HeaderState` representing the state of
+        #: the ``Accept-Charset`` header.
+        self.header_state = (
+            HeaderState.Missing
+            if header_value is None
+            else (HeaderState.Invalid if self._parsed is None else HeaderState.Valid)
+        )
 
     @property
     def header_value(self):
-        """(``str``) The header value."""
+        """(``str`` or ``None``) The header value."""
 
         return self._header_value
 
     @property
     def parsed(self):
         """
-        (``list``) Parsed form of the header.
+        (``tuple``) Parsed form of the header.
 
         A list of (charset, quality value) tuples.
         """
 
         return self._parsed
-
-    def __init__(self, header_value):
-        """
-        Create an :class:`AcceptCharsetValidHeader` instance.
-
-        :param header_value: (``str``) header value.
-        :raises ValueError: if `header_value` is an invalid value for an
-                            ``Accept-Charset`` header.
-        """
-        self._header_value = header_value
-        self._parsed = list(self.parse(header_value))
-        self._parsed_nonzero = [
-            item for item in self.parsed if item[1]  # item[1] is the qvalue
-        ]
 
     def copy(self):
         """
@@ -1155,45 +1165,6 @@ class AcceptCharsetValidHeader(AcceptCharset):
         """
         return self.__class__(self._header_value)
 
-    def __add__(self, other):
-        """
-        Add to header, creating a new header object.
-
-        `other` can be:
-
-        * ``None``
-        * a ``str`` header value
-        * a ``dict``, where keys are charsets and values are qvalues
-        * a ``tuple`` or ``list``, where each item is a charset ``str`` or a
-          ``tuple`` or ``list`` (charset, qvalue) pair (``str``'s and pairs
-          can be mixed within the ``tuple`` or ``list``)
-        * an :class:`AcceptCharsetValidHeader`, :class:`AcceptCharsetNoHeader`,
-          or :class:`AcceptCharsetInvalidHeader` instance
-        * object of any other type that returns a value for ``__str__``
-
-        If `other` is a valid header value or another
-        :class:`AcceptCharsetValidHeader` instance, the two header values are
-        joined with ``', '``, and a new :class:`AcceptCharsetValidHeader`
-        instance with the new header value is returned.
-
-        If `other` is ``None``, an :class:`AcceptCharsetNoHeader` instance, an
-        invalid header value, or an :class:`AcceptCharsetInvalidHeader`
-        instance, a new :class:`AcceptCharsetValidHeader` instance with the
-        same header value as ``self`` is returned.
-        """
-
-        if isinstance(other, AcceptCharsetValidHeader):
-            return create_accept_charset_header(
-                header_value=self.header_value + ", " + other.header_value
-            )
-
-        if isinstance(other, (AcceptCharsetNoHeader, AcceptCharsetInvalidHeader)):
-            return self.__class__(header_value=self.header_value)
-
-        return self._add_instance_and_non_accept_charset_type(
-            instance=self, other=other
-        )
-
     def __bool__(self):
         """
         Return whether ``self`` represents a valid ``Accept-Charset`` header.
@@ -1201,91 +1172,17 @@ class AcceptCharsetValidHeader(AcceptCharset):
         Return ``True`` if ``self`` represents a valid header, and ``False`` if
         it represents an invalid header, or the header not being in the
         request.
-
-        For this class, it always returns ``True``.
         """
 
-        return True
-
-    def __contains__(self, offer):
-        """
-        Return ``bool`` indicating whether `offer` is acceptable.
-
-        .. warning::
-
-           The behavior of :meth:`AcceptCharsetValidHeader.__contains__` is
-           currently being maintained for backward compatibility, but it will
-           change in the future to better conform to the RFC.
-
-        :param offer: (``str``) charset offer
-        :return: (``bool``) Whether ``offer`` is acceptable according to the
-                 header.
-
-        This does not fully conform to :rfc:`RFC 7231, section 5.3.3
-        <7231#section-5.3.3>`: it incorrect interprets ``*`` to mean 'match any
-        charset in the header', rather than 'match any charset that is not
-        mentioned elsewhere in the header'::
-
-            >>> 'UTF-8' in AcceptCharsetValidHeader('UTF-8;q=0, *')
-            True
-        """
-        warnings.warn(
-            "The behavior of AcceptCharsetValidHeader.__contains__ is "
-            "currently being maintained for backward compatibility, but it "
-            "will change in the future to better conform to the RFC.",
-            DeprecationWarning,
-        )
-
-        for mask, _quality in self._parsed_nonzero:
-            if self._old_match(mask, offer):
-                return True
-
-        return False
-
-    def __iter__(self):
-        """
-        Return all the items with non-0 qvalues, in order of preference.
-
-        .. warning::
-
-           The behavior of this method is currently maintained for backward
-           compatibility, but will change in the future.
-
-        :return: iterator of all the items (charset or ``*``) in the header
-                 with non-0 qvalues, in descending order of qvalue. If two
-                 items have the same qvalue, they are returned in the order of
-                 their positions in the header, from left to right.
-
-        Please note that this is a simple filter for the items in the header
-        with non-0 qvalues, and is not necessarily the same as what the client
-        prefers, e.g. ``'utf-7;q=0, *'`` means 'everything but utf-7', but
-        ``list(instance)`` would return only ``['*']``.
-        """
-        warnings.warn(
-            "The behavior of AcceptCharsetValidHeader.__iter__ is currently "
-            "maintained for backward compatibility, but will change in the "
-            "future.",
-            DeprecationWarning,
-        )
-
-        for mask, _quality in sorted(
-            self._parsed_nonzero, key=lambda i: i[1], reverse=True
-        ):
-            yield mask
-
-    def __radd__(self, other):
-        """
-        Add to header, creating a new header object.
-
-        See the docstring for :meth:`AcceptCharsetValidHeader.__add__`.
-        """
-
-        return self._add_instance_and_non_accept_charset_type(
-            instance=self, other=other, instance_on_the_right=True
-        )
+        return self.header_state is HeaderState.Valid
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} ({str(self)!r})>"
+        filler = (
+            f"({str(self)!r})"
+            if self.header_state is HeaderState.Valid
+            else f": {self.header_state.value}"
+        )
+        return f"<{self.__class__.__name__}{filler}>"
 
     def __str__(self):
         r"""
@@ -1295,52 +1192,16 @@ class AcceptCharsetValidHeader(AcceptCharset):
         utf-8;q=1.000, UTF-7, unicode-1-1;q=0.210  ,'``, ``str(instance)``
         returns ``'iso-8859-5;q=0, utf-8, UTF-7, unicode-1-1;q=0.21'``.
         """
+
+        if self.header_state is HeaderState.Missing:
+            return "<no header in request>"
+
+        elif self.header_state is HeaderState.Invalid:
+            return "<invalid header value>"
+
         return ", ".join(
             _item_qvalue_pair_to_header_element(pair=tuple_) for tuple_ in self.parsed
         )
-
-    def _add_instance_and_non_accept_charset_type(
-        self, instance, other, instance_on_the_right=False
-    ):
-        if not other:
-            return self.__class__(header_value=instance.header_value)
-
-        other_header_value = self._python_value_to_header_str(value=other)
-
-        try:
-            self.parse(value=other_header_value)
-        except ValueError:  # invalid header value
-            return self.__class__(header_value=instance.header_value)
-
-        new_header_value = (
-            (other_header_value + ", " + instance.header_value)
-            if instance_on_the_right
-            else (instance.header_value + ", " + other_header_value)
-        )
-        return self.__class__(header_value=new_header_value)
-
-    def _old_match(self, mask, offer):
-        """
-        Return whether charset offer matches header item (charset or ``*``).
-
-        .. warning::
-
-           This is maintained for backward compatibility, and will be
-           deprecated in the future.
-
-        This method was WebOb's old criterion for deciding whether a charset
-        matches a header item (charset or ``*``), used in
-
-        - :meth:`AcceptCharsetValidHeader.__contains__`
-        - :meth:`AcceptCharsetValidHeader.best_match`
-        - :meth:`AcceptCharsetValidHeader.quality`
-
-        It does not conform to :rfc:`RFC 7231, section 5.3.3
-        <7231#section-5.3.3>` in that it does not interpret ``*`` values in the
-        header correctly: ``*`` should only match charsets not mentioned
-        elsewhere in the header.
-        """
-        return mask == "*" or offer.lower() == mask.lower()
 
     def acceptable_offers(self, offers):
         """
@@ -1356,8 +1217,12 @@ class AcceptCharsetValidHeader(AcceptCharset):
         :param offers: ``iterable`` of ``str`` charsets
         :return: A list of tuples of the form (charset, qvalue), in descending
                  order of qvalue. Where two offers have the same qvalue, they
-                 are returned in the same order as their order in `offers`.
+                 are returned in the same order as their order in ``offers``.
         """
+
+        if self.header_state is not HeaderState.Valid:
+            return [(offer, 1.0) for offer in offers]
+
         lowercased_parsed = [
             (charset.lower(), qvalue) for (charset, qvalue) in self.parsed
         ]
@@ -1413,469 +1278,90 @@ class AcceptCharsetValidHeader(AcceptCharset):
 
     def best_match(self, offers, default_match=None):
         """
-        Return the best match from the sequence of charset `offers`.
+        Return the best match from the sequence of charset ``offers``.
 
-        .. warning::
+        This is a thin wrapper around :meth:`.acceptable_offers` that makes
+        usage more convenient for typical use-cases where you just want
+        to know the client's most preferred match.
 
-           This is currently maintained for backward compatibility, and will be
-           deprecated in the future.
+        :param offers:
+            (iterable)
 
-           :meth:`AcceptCharsetValidHeader.best_match`  has many issues, and
-           does not conform to :rfc:`RFC 7231 <7231>`.
+            | Each item in the iterable must be a ``str`` charset
 
-        Each charset in `offers` is checked against each non-``q=0`` item
-        (charset or ``*``) in the header. If the two are a match according to
-        WebOb's old criterion for a match, the quality value of the match is
-        the qvalue of the item from the header multiplied by the server quality
-        value of the offer (if the server quality value is not supplied, it is
-        1).
+        :param default_match:
+            (optional, any type) the value to be returned if there is no match
 
-        The offer in the match with the highest quality value is the best
-        match. If there is more than one match with the highest qvalue, the one
-        that shows up first in `offers` is the best match.
+        :return:
+            (``str``, or the type of ``default_match``)
 
-        :param offers: (iterable)
+            | The offer that is the best match based on q-value. If there is no
+              match, the value of ``default_match`` is returned. Where two
+              offers match the same qvalue, they are returned in the same order
+              as their order in ``offers``.
 
-                       | Each item in the iterable may be a ``str`` charset, or
-                         a (charset, server quality value) ``tuple`` or
-                         ``list``.  (The two may be mixed in the iterable.)
+        .. versionchanged:: 2.0
 
-        :param default_match: (optional, any type) the value to be returned if
-                              there is no match
-
-        :return: (``str``, or the type of `default_match`)
-
-                 | The offer that is the best match. If there is no match, the
-                   value of `default_match` is returned.
-
-        The algorithm behind this method was written for the ``Accept`` header
-        rather than the ``Accept-Charset`` header. It uses the old criterion of
-        a match in :meth:`AcceptCharsetValidHeader._old_match`, which does not
-        conform to :rfc:`RFC 7231, section 5.3.3 <7231#section-5.3.3>`, in that
-        it does not interpret ``*`` values in the header correctly: ``*``
-        should only match charsets not mentioned elsewhere in the header::
-
-            >>> AcceptCharsetValidHeader('utf-8;q=0, *').best_match(['utf-8'])
-            'utf-8'
+            - A tuple can no longer be an offer containing server-side quality
+              values.
+            - An offer will only match a ``*`` clause in a header if it does
+              not match any other clauses.
         """
-        warnings.warn(
-            "The behavior of AcceptCharsetValidHeader.best_match is currently"
-            " being maintained for backward compatibility, but it will be "
-            "deprecated in the future, as it does not conform to the RFC.",
-            DeprecationWarning,
-        )
-        best_quality = -1
-        best_offer = default_match
-        matched_by = "*/*"
-        for offer in offers:
-            if isinstance(offer, (tuple, list)):
-                offer, server_quality = offer
-            else:
-                server_quality = 1
-            for mask, quality in self._parsed_nonzero:
-                possible_quality = server_quality * quality
-                if possible_quality < best_quality:
-                    continue
-                elif possible_quality == best_quality:
-                    # 'text/plain' overrides 'message/*' overrides '*/*'
-                    # (if all match w/ the same q=)
-                    # [We can see that this was written for the Accept header,
-                    # not the Accept-Charset header.]
-                    if matched_by.count("*") <= mask.count("*"):
-                        continue
-                if self._old_match(mask, offer):
-                    best_quality = possible_quality
-                    best_offer = offer
-                    matched_by = mask
-        return best_offer
+        matches = self.acceptable_offers(offers)
+        if matches:
+            return matches[0][0]
+        return default_match
 
     def quality(self, offer):
         """
-        Return quality value of given offer, or ``None`` if there is no match.
+        Return quality value of given ``offer``, or ``None`` if there is no match.
 
-        .. warning::
-
-           This is currently maintained for backward compatibility, and will be
-           deprecated in the future.
+        This is a thin wrapper around :meth:`.acceptable_offers` that matches
+        a specific ``offer``.
 
         :param offer: (``str``) charset offer
         :return: (``float`` or ``None``)
 
-                 | The quality value from the charset that matches the `offer`,
-                   or ``None`` if there is no match.
+                 | The highest quality value from the charsets that match
+                   the `offer`, or ``None`` if there is no match.
 
-        This uses the old criterion of a match in
-        :meth:`AcceptCharsetValidHeader._old_match`, which does not conform to
-        :rfc:`RFC 7231, section 5.3.3 <7231#section-5.3.3>`, in that it does
-        not interpret ``*`` values in the header correctly: ``*`` should only
-        match charsets not mentioned elsewhere in the header::
+        .. versionchanged:: 2.0
 
-            >>> AcceptCharsetValidHeader('utf-8;q=0, *').quality('utf-8')
-            1.0
-            >>> AcceptCharsetValidHeader('utf-8;q=0.9, *').quality('utf-8')
-            1.0
+            - A tuple can no longer be an offer containing server-side quality
+              values.
+            - An offer will only match a ``*`` clause in a header if it does
+              not match any other clauses.
         """
-        warnings.warn(
-            "The behavior of AcceptCharsetValidHeader.quality is currently "
-            "being maintained for backward compatibility, but it will be "
-            "deprecated in the future, as it does not conform to the RFC.",
-            DeprecationWarning,
-        )
-        bestq = 0
-        for mask, quality in self.parsed:
-            if self._old_match(mask, offer):
-                bestq = max(bestq, quality)
-        return bestq or None
-
-
-class _AcceptCharsetInvalidOrNoHeader(AcceptCharset):
-    """
-    Represent when an ``Accept-Charset`` header is invalid or not in request.
-
-    This is the base class for the behaviour that
-    :class:`.AcceptCharsetInvalidHeader` and :class:`.AcceptCharsetNoHeader`
-    have in common.
-
-    :rfc:`7231` does not provide any guidance on what should happen if the
-    ``Accept-Charset`` header has an invalid value. This implementation
-    disregards the header when the header is invalid, so
-    :class:`.AcceptCharsetInvalidHeader` and :class:`.AcceptCharsetNoHeader`
-    have much behaviour in common.
-    """
-
-    def __bool__(self):
-        """
-        Return whether ``self`` represents a valid ``Accept-Charset`` header.
-
-        Return ``True`` if ``self`` represents a valid header, and ``False`` if
-        it represents an invalid header, or the header not being in the
-        request.
-
-        For this class, it always returns ``False``.
-        """
-        return False
+        matches = self.acceptable_offers([offer])
+        if matches:
+            return matches[0][1]
 
     def __contains__(self, offer):
         """
         Return ``bool`` indicating whether `offer` is acceptable.
 
-        .. warning::
-
-           The behavior of ``.__contains__`` for the ``AcceptCharset`` classes
-           is currently being maintained for backward compatibility, but it
-           will change in the future to better conform to the RFC.
+        This is a thin wrapper around :meth:`.acceptable_offers` that matches
+        a specific ``offer``.
 
         :param offer: (``str``) charset offer
         :return: (``bool``) Whether ``offer`` is acceptable according to the
                  header.
 
-        For this class, either there is no ``Accept-Charset`` header in the
-        request, or the header is invalid, so any charset is acceptable, and
-        this always returns ``True``.
+        .. versionchanged:: 2.0
+
+            - A tuple can no longer be an offer containing server-side quality
+              values.
+            - An offer will only match a ``*`` clause in a header if it does
+              not match any other clauses.
         """
-        warnings.warn(
-            "The behavior of .__contains__ for the AcceptCharset classes is "
-            "currently being maintained for backward compatibility, but it "
-            "will change in the future to better conform to the RFC.",
-            DeprecationWarning,
-        )
-        return True
 
-    def __iter__(self):
-        """
-        Return all the items with non-0 qvalues, in order of preference.
-
-        .. warning::
-
-           The behavior of this method is currently maintained for backward
-           compatibility, but will change in the future.
-
-        :return: iterator of all the items (charset or ``*``) in the header
-                 with non-0 qvalues, in descending order of qvalue. If two
-                 items have the same qvalue, they are returned in the order of
-                 their positions in the header, from left to right.
-
-        When there is no ``Accept-Charset`` header in the request or the header
-        is invalid, there are no items, and this always returns an empty
-        iterator.
-        """
-        warnings.warn(
-            "The behavior of AcceptCharsetValidHeader.__iter__ is currently "
-            "maintained for backward compatibility, but will change in the "
-            "future.",
-            DeprecationWarning,
-        )
-        return iter(())
-
-    def acceptable_offers(self, offers):
-        """
-        Return the offers that are acceptable according to the header.
-
-        The offers are returned in descending order of preference, where
-        preference is indicated by the qvalue of the charset or ``*`` in the
-        header matching the offer.
-
-        This uses the matching rules described in :rfc:`RFC 7231, section 5.3.3
-        <7231#section-5.3.3>`.
-
-        :param offers: ``iterable`` of ``str`` charsets
-        :return: A list of tuples of the form (charset, qvalue), in descending
-                 order of qvalue. Where two offers have the same qvalue, they
-                 are returned in the same order as their order in `offers`.
-
-                 | When the header is invalid or there is no ``Accept-Charset``
-                   header in the request, all `offers` are considered
-                   acceptable, so this method returns a list of (charset,
-                   qvalue) tuples where each offer in `offers` is paired with
-                   the qvalue of 1.0, in the same order as `offers`.
-        """
-        return [(offer, 1.0) for offer in offers]
-
-    def best_match(self, offers, default_match=None):
-        """
-        Return the best match from the sequence of charset `offers`.
-
-        This is the ``.best_match()`` method for when the header is invalid or
-        not found in the request, corresponding to
-        :meth:`AcceptCharsetValidHeader.best_match`.
-
-        .. warning::
-
-           This is currently maintained for backward compatibility, and will be
-           deprecated in the future (see the documentation for
-           :meth:`AcceptCharsetValidHeader.best_match`).
-
-        When the header is invalid, or there is no `Accept-Charset` header in
-        the request, all the charsets in `offers` are considered acceptable, so
-        the best match is the charset in `offers` with the highest server
-        quality value (if the server quality value is not supplied, it is 1).
-
-        If more than one charsets in `offers` have the same highest server
-        quality value, then the one that shows up first in `offers` is the best
-        match.
-
-        :param offers: (iterable)
-
-                       | Each item in the iterable may be a ``str`` charset, or
-                         a (charset, server quality value) ``tuple`` or
-                         ``list``.  (The two may be mixed in the iterable.)
-
-        :param default_match: (optional, any type) the value to be returned if
-                              `offers` is empty.
-
-        :return: (``str``, or the type of `default_match`)
-
-                 | The charset that has the highest server quality value.  If
-                   `offers` is empty, the value of `default_match` is returned.
-        """
-        warnings.warn(
-            "The behavior of .best_match for the AcceptCharset classes is "
-            "currently being maintained for backward compatibility, but the "
-            "method will be deprecated in the future, as its behavior is not "
-            "specified in (and currently does not conform to) RFC 7231.",
-            DeprecationWarning,
-        )
-        best_quality = -1
-        best_offer = default_match
-        for offer in offers:
-            if isinstance(offer, (list, tuple)):
-                offer, quality = offer
-            else:
-                quality = 1
-            if quality > best_quality:
-                best_offer = offer
-                best_quality = quality
-        return best_offer
-
-    def quality(self, offer):
-        """
-        Return quality value of given offer, or ``None`` if there is no match.
-
-        This is the ``.quality()`` method for when the header is invalid or not
-        found in the request, corresponding to
-        :meth:`AcceptCharsetValidHeader.quality`.
-
-        .. warning::
-
-           This is currently maintained for backward compatibility, and will be
-           deprecated in the future (see the documentation for
-           :meth:`AcceptCharsetValidHeader.quality`).
-
-        :param offer: (``str``) charset offer
-        :return: (``float``) ``1.0``.
-
-        When the ``Accept-Charset`` header is invalid or not in the request,
-        all offers are equally acceptable, so 1.0 is always returned.
-        """
-        warnings.warn(
-            "The behavior of .quality for the Accept-Charset classes is "
-            "currently being maintained for backward compatibility, but the "
-            "method will be deprecated in the future, as its behavior does not"
-            " conform to RFC 7231.",
-            DeprecationWarning,
-        )
-        return 1.0
-
-
-class AcceptCharsetNoHeader(_AcceptCharsetInvalidOrNoHeader):
-    """
-    Represent when there is no ``Accept-Charset`` header in the request.
-
-    This object should not be modified. To add to the header, we can use the
-    addition operators (``+`` and ``+=``), which return a new object (see the
-    docstring for :meth:`AcceptCharsetNoHeader.__add__`).
-    """
-
-    @property
-    def header_value(self):
-        """
-        (``str`` or ``None``) The header value.
-
-        As there is no header in the request, this is ``None``.
-        """
-        return self._header_value
-
-    @property
-    def parsed(self):
-        """
-        (``list`` or ``None``) Parsed form of the header.
-
-        As there is no header in the request, this is ``None``.
-        """
-        return self._parsed
-
-    def __init__(self):
-        """
-        Create an :class:`AcceptCharsetNoHeader` instance.
-        """
-        self._header_value = None
-        self._parsed = None
-        self._parsed_nonzero = None
-
-    def copy(self):
-        """
-        Create a copy of the header object.
-
-        """
-        return self.__class__()
+        return self.quality(offer) is not None
 
     def __add__(self, other):
         """
         Add to header, creating a new header object.
 
-        `other` can be:
-
-        * ``None``
-        * a ``str`` header value
-        * a ``dict``, where keys are charsets and values are qvalues
-        * a ``tuple`` or ``list``, where each item is a charset ``str`` or a
-          ``tuple`` or ``list`` (charset, qvalue) pair (``str`` and pairs
-          can be mixed within the ``tuple`` or ``list``)
-        * an :class:`AcceptCharsetValidHeader`, :class:`AcceptCharsetNoHeader`,
-          or :class:`AcceptCharsetInvalidHeader` instance
-        * object of any other type that returns a value for ``__str__``
-
-        If `other` is a valid header value or an
-        :class:`AcceptCharsetValidHeader` instance, a new
-        :class:`AcceptCharsetValidHeader` instance with the valid header value
-        is returned.
-
-        If `other` is ``None``, an :class:`AcceptCharsetNoHeader` instance, an
-        invalid header value, or an :class:`AcceptCharsetInvalidHeader`
-        instance, a new :class:`AcceptCharsetNoHeader` instance is returned.
-        """
-        if isinstance(other, AcceptCharsetValidHeader):
-            return AcceptCharsetValidHeader(header_value=other.header_value)
-
-        if isinstance(other, (AcceptCharsetNoHeader, AcceptCharsetInvalidHeader)):
-            return self.__class__()
-
-        return self._add_instance_and_non_accept_charset_type(
-            instance=self, other=other
-        )
-
-    def __radd__(self, other):
-        """
-        Add to header, creating a new header object.
-
-        See the docstring for :meth:`AcceptCharsetNoHeader.__add__`.
-        """
-        return self.__add__(other=other)
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}>"
-
-    def __str__(self):
-        """Return the ``str`` ``'<no header in request>'``."""
-
-        return "<no header in request>"
-
-    def _add_instance_and_non_accept_charset_type(self, instance, other):
-        if not other:
-            return self.__class__()
-
-        other_header_value = self._python_value_to_header_str(value=other)
-
-        try:
-            return AcceptCharsetValidHeader(header_value=other_header_value)
-        except ValueError:  # invalid header value
-            return self.__class__()
-
-
-class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
-    """
-    Represent an invalid ``Accept-Charset`` header.
-
-    An invalid header is one that does not conform to
-    :rfc:`7231#section-5.3.3`. As specified in the RFC, an empty header is an
-    invalid ``Accept-Charset`` header.
-
-    :rfc:`7231` does not provide any guidance on what should happen if the
-    ``Accept-Charset`` header has an invalid value. This implementation
-    disregards the header, and treats it as if there is no ``Accept-Charset``
-    header in the request.
-
-    This object should not be modified. To add to the header, we can use the
-    addition operators (``+`` and ``+=``), which return a new object (see the
-    docstring for :meth:`AcceptCharsetInvalidHeader.__add__`).
-    """
-
-    @property
-    def header_value(self):
-        """(``str`` or ``None``) The header value."""
-
-        return self._header_value
-
-    @property
-    def parsed(self):
-        """
-        (``list`` or ``None``) Parsed form of the header.
-
-        As the header is invalid and cannot be parsed, this is ``None``.
-        """
-
-        return self._parsed
-
-    def __init__(self, header_value):
-        """
-        Create an :class:`AcceptCharsetInvalidHeader` instance.
-        """
-        self._header_value = header_value
-        self._parsed = None
-        self._parsed_nonzero = None
-
-    def copy(self):
-        """
-        Create a copy of the header object.
-
-        """
-        return self.__class__(self._header_value)
-
-    def __add__(self, other):
-        """
-        Add to header, creating a new header object.
-
-        `other` can be:
+        ``other`` can be:
 
         * ``None``
         * a ``str`` header value
@@ -1883,89 +1369,50 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
         * a ``tuple`` or ``list``, where each item is a charset ``str`` or a
           ``tuple`` or ``list`` (charset, qvalue) pair (``str``'s and pairs
           can be mixed within the ``tuple`` or ``list``)
-        * an :class:`AcceptCharsetValidHeader`, :class:`AcceptCharsetNoHeader`,
-          or :class:`AcceptCharsetInvalidHeader` instance
+        * an :class:`AcceptCharset` instance
         * object of any other type that returns a value for ``__str__``
 
-        If `other` is a valid header value or an
-        :class:`AcceptCharsetValidHeader` instance, a new
-        :class:`AcceptCharsetValidHeader` instance with the valid header value
-        is returned.
-
-        If `other` is ``None``, an :class:`AcceptCharsetNoHeader` instance, an
-        invalid header value, or an :class:`AcceptCharsetInvalidHeader`
-        instance, a new :class:`AcceptCharsetNoHeader` instance is returned.
+        The rules for adding values to a header are that the values are
+        appended if valid, or discarded. If everything is discarded then an
+        instance representing a missing header is returned.
         """
 
-        if isinstance(other, AcceptCharsetValidHeader):
-            return AcceptCharsetValidHeader(header_value=other.header_value)
+        other = create_accept_charset_header(other)
+        is_self_valid = self.header_state is HeaderState.Valid
+        is_other_valid = other.header_state is HeaderState.Valid
 
-        if isinstance(other, (AcceptCharsetNoHeader, AcceptCharsetInvalidHeader)):
-            return AcceptCharsetNoHeader()
-
-        return self._add_instance_and_non_accept_charset_type(
-            instance=self, other=other
-        )
+        if is_self_valid:
+            if is_other_valid:
+                return create_accept_charset_header(
+                    self.header_value + ", " + other.header_value
+                )
+            return self
+        elif is_other_valid:
+            return other
+        return create_accept_charset_header(None)
 
     def __radd__(self, other):
         """
         Add to header, creating a new header object.
 
-        See the docstring for :meth:`AcceptCharsetValidHeader.__add__`.
+        See the docstring for :meth:`.__add__`.
         """
 
-        return self._add_instance_and_non_accept_charset_type(
-            instance=self, other=other, instance_on_the_right=True
-        )
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}>"
-        # We do not display the header_value, as it is untrusted input. The
-        # header_value could always be easily obtained from the .header_value
-        # property.
-
-    def __str__(self):
-        """Return the ``str`` ``'<invalid header value>'``."""
-
-        return "<invalid header value>"
-
-    def _add_instance_and_non_accept_charset_type(
-        self, instance, other, instance_on_the_right=False
-    ):
-        if not other:
-            return AcceptCharsetNoHeader()
-
-        other_header_value = self._python_value_to_header_str(value=other)
-
-        try:
-            return AcceptCharsetValidHeader(header_value=other_header_value)
-        except ValueError:  # invalid header value
-            return AcceptCharsetNoHeader()
+        other = create_accept_charset_header(other)
+        return other + self
 
 
 def create_accept_charset_header(header_value):
     """
     Create an object representing the ``Accept-Charset`` header in a request.
 
-    :param header_value: (``str``) header value
-    :return: If `header_value` is ``None``, an :class:`AcceptCharsetNoHeader`
-             instance.
-
-             | If `header_value` is a valid ``Accept-Charset`` header, an
-               :class:`AcceptCharsetValidHeader` instance.
-
-             | If `header_value` is an invalid ``Accept-Charset`` header, an
-               :class:`AcceptCharsetInvalidHeader` instance.
+    :param header_value: (``str`` or ``None``) header value
+    :return: an :class:`AcceptCharset` instance.
     """
 
-    if header_value is None:
-        return AcceptCharsetNoHeader()
     if isinstance(header_value, AcceptCharset):
-        return header_value.copy()
-    try:
-        return AcceptCharsetValidHeader(header_value=header_value)
-    except ValueError:
-        return AcceptCharsetInvalidHeader(header_value=header_value)
+        return header_value
+    return AcceptCharset(header_value)
 
 
 def accept_charset_property():
@@ -1985,15 +1432,13 @@ def accept_charset_property():
     def fget(request):
         """Get an object representing the header in the request."""
 
-        return create_accept_charset_header(
-            header_value=request.environ.get(ENVIRON_KEY)
-        )
+        return create_accept_charset_header(request.environ.get(ENVIRON_KEY))
 
     def fset(request, value):
         """
         Set the corresponding key in the request environ.
 
-        `value` can be:
+        ``value`` can be:
 
         * ``None``
         * a ``str`` header value
@@ -2001,21 +1446,17 @@ def accept_charset_property():
         * a ``tuple`` or ``list``, where each item is a charset ``str`` or a
           ``tuple`` or ``list`` (charset, qvalue) pair (``str``'s and pairs
           can be mixed within the ``tuple`` or ``list``)
-        * an :class:`AcceptCharsetValidHeader`, :class:`AcceptCharsetNoHeader`,
-          or :class:`AcceptCharsetInvalidHeader` instance
+        * an :class:`AcceptCharset` instance
         * object of any other type that returns a value for ``__str__``
         """
 
-        if value is None or isinstance(value, AcceptCharsetNoHeader):
-            fdel(request=request)
+        if isinstance(value, AcceptCharset):
+            value = value.header_value
         else:
-            if isinstance(
-                value, (AcceptCharsetValidHeader, AcceptCharsetInvalidHeader)
-            ):
-                header_value = value.header_value
-            else:
-                header_value = AcceptCharset._python_value_to_header_str(value=value)
-            request.environ[ENVIRON_KEY] = header_value
+            value = AcceptCharset._python_value_to_header_str(value)
+        if value is None:
+            return fdel(request)
+        request.environ[ENVIRON_KEY] = value
 
     def fdel(request):
         """Delete the corresponding key from the request environ."""
@@ -2344,9 +1785,9 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         content-coding offer matches a header item (content-coding,
         ``identity`` or ``*``), used in
 
-        - :meth:`AcceptCharsetValidHeader.__contains__`
-        - :meth:`AcceptCharsetValidHeader.best_match`
-        - :meth:`AcceptCharsetValidHeader.quality`
+        - :meth:`AcceptEncodingValidHeader.__contains__`
+        - :meth:`AcceptEncodingValidHeader.best_match`
+        - :meth:`AcceptEncodingValidHeader.quality`
 
         It does not conform to :rfc:`RFC 7231, section 5.3.4
         <7231#section-5.3.4>` in that it does not interpret ``*`` values in the
