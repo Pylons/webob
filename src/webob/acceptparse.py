@@ -1872,7 +1872,7 @@ def create_accept_encoding_header(header_value):
     """
     Create an object representing the ``Accept-Encoding`` header in a request.
 
-    :param header_value: (``str``) header value
+    :param header_value: (``str`` or ``None``) header value
     :return: an :class:`AcceptEncoding` instance.
     """
 
@@ -1939,8 +1939,26 @@ class AcceptLanguage:
     """
     Represent an ``Accept-Language`` header.
 
-    Base class for :class:`AcceptLanguageValidHeader`,
-    :class:`AcceptLanguageNoHeader`, and :class:`AcceptLanguageInvalidHeader`.
+    A valid header is one that conforms to :rfc:`RFC 7231, section 5.3.5
+    <7231#section-5.3.5>`.
+
+    We take the reference from the ``language-range`` syntax rule in :rfc:`RFC
+    7231, section 5.3.5 <7231#section-5.3.5>` to :rfc:`RFC 4647, section 2.1
+    <4647#section-2.1>` to mean that only basic language ranges (and not
+    extended language ranges) are expected in the ``Accept-Language`` header.
+
+    This object should not be modified. To add to the header, we can use the
+    addition operators (``+`` and ``+=``), which return a new object (see the
+    docstring for :meth:`.__add__`).
+
+    .. versionchanged:: 2.0
+
+        - Added the :attr:`.header_state` attribute.
+
+        - Removed previously-deprecated ``__contains__``, ``__iter__``,
+          ``best_match``, and ``quality`` methods. Look at using the
+          standards-compliant language-negotiation algorithms provided by
+          :meth:`.lookup` and :meth:`.basic_filtering` instead.
     """
 
     # RFC 7231 Section 5.3.5 "Accept-Language":
@@ -1959,22 +1977,25 @@ class AcceptLanguage:
 
     @classmethod
     def _python_value_to_header_str(cls, value):
+        if value is None:
+            return value
+
         if isinstance(value, str):
-            header_str = value
+            return value
+
+        if hasattr(value, "items"):
+            value = sorted(value.items(), key=lambda item: item[1], reverse=True)
+
+        if isinstance(value, (tuple, list)):
+            result = []
+
+            for element in value:
+                if isinstance(element, (tuple, list)):
+                    element = _item_qvalue_pair_to_header_element(pair=element)
+                result.append(element)
+            header_str = ", ".join(result)
         else:
-            if hasattr(value, "items"):
-                value = sorted(value.items(), key=lambda item: item[1], reverse=True)
-
-            if isinstance(value, (tuple, list)):
-                result = []
-
-                for element in value:
-                    if isinstance(element, (tuple, list)):
-                        element = _item_qvalue_pair_to_header_element(pair=element)
-                    result.append(element)
-                header_str = ", ".join(result)
-            else:
-                header_str = str(value)
+            header_str = str(value)
 
         return header_str
 
@@ -2006,36 +2027,28 @@ class AcceptLanguage:
 
         return generator(value=value)
 
-
-class AcceptLanguageValidHeader(AcceptLanguage):
-    """
-    Represent a valid ``Accept-Language`` header.
-
-    A valid header is one that conforms to :rfc:`RFC 7231, section 5.3.5
-    <7231#section-5.3.5>`.
-
-    We take the reference from the ``language-range`` syntax rule in :rfc:`RFC
-    7231, section 5.3.5 <7231#section-5.3.5>` to :rfc:`RFC 4647, section 2.1
-    <4647#section-2.1>` to mean that only basic language ranges (and not
-    extended language ranges) are expected in the ``Accept-Language`` header.
-
-    This object should not be modified. To add to the header, we can use the
-    addition operators (``+`` and ``+=``), which return a new object (see the
-    docstring for :meth:`AcceptLanguageValidHeader.__add__`).
-    """
-
     def __init__(self, header_value):
         """
-        Create an :class:`AcceptLanguageValidHeader` instance.
+        Create an :class:`AcceptLanguage` instance.
 
-        :param header_value: (``str``) header value.
-        :raises ValueError: if `header_value` is an invalid value for an
-                            ``Accept-Language`` header.
+        :param header_value: (``str`` or ``None``) header value.
         """
+        header_value = self._python_value_to_header_str(header_value)
         self._header_value = header_value
-        self._parsed = list(self.parse(header_value))
-        self._parsed_nonzero = [item for item in self.parsed if item[1]]
-        # item[1] is the qvalue
+        self._parsed = None
+        if header_value is not None:
+            try:
+                self._parsed = tuple(self.parse(header_value))
+            except ValueError:
+                pass
+
+        #: Instance of :enum:`.HeaderState` representing the state of
+        #: the ``Accept-Language`` header.
+        self.header_state = (
+            HeaderState.Missing
+            if header_value is None
+            else (HeaderState.Invalid if self._parsed is None else HeaderState.Valid)
+        )
 
     def copy(self):
         """
@@ -2053,52 +2066,12 @@ class AcceptLanguageValidHeader(AcceptLanguage):
     @property
     def parsed(self):
         """
-        (``list`` or ``None``) Parsed form of the header.
+        (``tuple`` or ``None``) Parsed form of the header.
 
-        A list of (language range, quality value) tuples.
+        A ``tuple`` of (*language range*, *quality value*) tuples.
         """
 
         return self._parsed
-
-    def __add__(self, other):
-        """
-        Add to header, creating a new header object.
-
-        `other` can be:
-
-        * ``None``
-        * a ``str``
-        * a ``dict``, with language ranges as keys and qvalues as values
-        * a ``tuple`` or ``list``, of language range ``str``'s or of ``tuple``
-          or ``list`` (language range, qvalue) pairs (``str``'s and pairs can
-          be mixed within the ``tuple`` or ``list``)
-        * an :class:`AcceptLanguageValidHeader`,
-          :class:`AcceptLanguageNoHeader`, or
-          :class:`AcceptLanguageInvalidHeader` instance
-        * object of any other type that returns a value for ``__str__``
-
-        If `other` is a valid header value or another
-        :class:`AcceptLanguageValidHeader` instance, the two header values are
-        joined with ``', '``, and a new :class:`AcceptLanguageValidHeader`
-        instance with the new header value is returned.
-
-        If `other` is ``None``, an :class:`AcceptLanguageNoHeader` instance, an
-        invalid header value, or an :class:`AcceptLanguageInvalidHeader`
-        instance, a new :class:`AcceptLanguageValidHeader` instance with the
-        same header value as ``self`` is returned.
-        """
-
-        if isinstance(other, AcceptLanguageValidHeader):
-            return create_accept_language_header(
-                header_value=self.header_value + ", " + other.header_value
-            )
-
-        if isinstance(other, (AcceptLanguageNoHeader, AcceptLanguageInvalidHeader)):
-            return self.__class__(header_value=self.header_value)
-
-        return self._add_instance_and_non_accept_language_type(
-            instance=self, other=other
-        )
 
     def __bool__(self):
         """
@@ -2107,108 +2080,17 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         Return ``True`` if ``self`` represents a valid header, and ``False`` if
         it represents an invalid header, or the header not being in the
         request.
-
-        For this class, it always returns ``True``.
         """
 
-        return True
-
-    def __contains__(self, offer):
-        """
-        Return ``bool`` indicating whether `offer` is acceptable.
-
-        .. warning::
-
-           The behavior of :meth:`AcceptLanguageValidHeader.__contains__` is
-           currently being maintained for backward compatibility, but it will
-           change in the future to better conform to the RFC.
-
-           What is 'acceptable' depends on the needs of your application.
-           :rfc:`RFC 7231, section 5.3.5 <7231#section-5.3.5>` suggests three
-           matching schemes from :rfc:`RFC 4647 <4647>`, two of which WebOb
-           supports with :meth:`AcceptLanguageValidHeader.basic_filtering` and
-           :meth:`AcceptLanguageValidHeader.lookup` (we interpret the RFC to
-           mean that Extended Filtering cannot apply for the
-           ``Accept-Language`` header, as the header only accepts basic
-           language ranges.) If these are not suitable for the needs of your
-           application, you may need to write your own matching using
-           :attr:`AcceptLanguageValidHeader.parsed`.
-
-        :param offer: (``str``) language tag offer
-        :return: (``bool``) Whether ``offer`` is acceptable according to the
-                 header.
-
-        This uses the old criterion of a match in
-        :meth:`AcceptLanguageValidHeader._old_match`, which does not conform to
-        :rfc:`RFC 7231, section 5.3.5 <7231#section-5.3.5>` or any of the
-        matching schemes suggested there. It also does not properly take into
-        account ranges with ``q=0`` in the header::
-
-            >>> 'en-gb' in AcceptLanguageValidHeader('en, en-gb;q=0')
-            True
-            >>> 'en' in AcceptLanguageValidHeader('en;q=0, *')
-            True
-
-        (See the docstring for :meth:`AcceptLanguageValidHeader._old_match` for
-        other problems with the old criterion for a match.)
-        """
-        warnings.warn(
-            "The behavior of AcceptLanguageValidHeader.__contains__ is "
-            "currently being maintained for backward compatibility, but it "
-            "will change in the future to better conform to the RFC.",
-            DeprecationWarning,
-        )
-
-        for mask, _quality in self._parsed_nonzero:
-            if self._old_match(mask, offer):
-                return True
-
-        return False
-
-    def __iter__(self):
-        """
-        Return all the ranges with non-0 qvalues, in order of preference.
-
-        .. warning::
-
-           The behavior of this method is currently maintained for backward
-           compatibility, but will change in the future.
-
-        :return: iterator of all the language ranges in the header with non-0
-                 qvalues, in descending order of qvalue. If two ranges have the
-                 same qvalue, they are returned in the order of their positions
-                 in the header, from left to right.
-
-        Please note that this is a simple filter for the ranges in the header
-        with non-0 qvalues, and is not necessarily the same as what the client
-        prefers, e.g. ``'en-gb;q=0, *'`` means 'everything but British
-        English', but ``list(instance)`` would return only ``['*']``.
-        """
-        warnings.warn(
-            "The behavior of AcceptLanguageValidHeader.__iter__ is currently "
-            "maintained for backward compatibility, but will change in the "
-            "future.",
-            DeprecationWarning,
-        )
-
-        for mask, _quality in sorted(
-            self._parsed_nonzero, key=lambda i: i[1], reverse=True
-        ):
-            yield mask
-
-    def __radd__(self, other):
-        """
-        Add to header, creating a new header object.
-
-        See the docstring for :meth:`AcceptLanguageValidHeader.__add__`.
-        """
-
-        return self._add_instance_and_non_accept_language_type(
-            instance=self, other=other, instance_on_the_right=True
-        )
+        return self.header_state is HeaderState.Valid
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} ({str(self)!r})>"
+        filler = (
+            f"({str(self)!r})"
+            if self.header_state is HeaderState.Valid
+            else f": {self.header_state.value}"
+        )
+        return f"<{self.__class__.__name__}{filler}>"
 
     def __str__(self):
         r"""
@@ -2218,100 +2100,15 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         jp;q=0.210  ,'``, ``str(instance)`` returns ``'de;q=0, es, zh,
         jp;q=0.21'``.
         """
+
+        if self.header_state is HeaderState.Missing:
+            return "<no header in request>"
+
+        elif self.header_state is HeaderState.Invalid:
+            return "<invalid header value>"
+
         return ", ".join(
             _item_qvalue_pair_to_header_element(pair=tuple_) for tuple_ in self.parsed
-        )
-
-    def _add_instance_and_non_accept_language_type(
-        self, instance, other, instance_on_the_right=False
-    ):
-        if not other:
-            return self.__class__(header_value=instance.header_value)
-
-        other_header_value = self._python_value_to_header_str(value=other)
-
-        try:
-            self.parse(value=other_header_value)
-        except ValueError:  # invalid header value
-            return self.__class__(header_value=instance.header_value)
-
-        new_header_value = (
-            (other_header_value + ", " + instance.header_value)
-            if instance_on_the_right
-            else (instance.header_value + ", " + other_header_value)
-        )
-        return self.__class__(header_value=new_header_value)
-
-    def _old_match(self, mask, item):
-        """
-        Return whether a language tag matches a language range.
-
-        .. warning::
-
-           This is maintained for backward compatibility, and will be
-           deprecated in the future.
-
-        This method was WebOb's old criterion for deciding whether a language
-        tag matches a language range, used in
-
-        - :meth:`AcceptLanguageValidHeader.__contains__`
-        - :meth:`AcceptLanguageValidHeader.best_match`
-        - :meth:`AcceptLanguageValidHeader.quality`
-
-        It does not conform to :rfc:`RFC 7231, section 5.3.5
-        <7231#section-5.3.5>`, or any of the matching schemes suggested there.
-
-        :param mask: (``str``)
-
-                     | language range
-
-        :param item: (``str``)
-
-                     | language tag. Subtags in language tags are separated by
-                       ``-`` (hyphen). If there are underscores (``_``) in this
-                       argument, they will be converted to hyphens before
-                       checking the match.
-
-        :return: (``bool``) whether the tag in `item` matches the range in
-                 `mask`.
-
-        `mask` and `item` are a match if:
-
-        - ``mask == *``.
-        - ``mask == item``.
-        - If the first subtag of `item` equals `mask`, or if the first subtag
-          of `mask` equals `item`.
-          This means that::
-
-              >>> instance._old_match(mask='en-gb', item='en')
-              True
-              >>> instance._old_match(mask='en', item='en-gb')
-              True
-
-          Which is different from any of the matching schemes suggested in
-          :rfc:`RFC 7231, section 5.3.5 <7231#section-5.3.5>`, in that none of
-          those schemes match both more *and* less specific tags.
-
-          However, this method appears to be only designed for language tags
-          and ranges with at most two subtags. So with an `item`/language tag
-          with more than two subtags like ``zh-Hans-CN``::
-
-              >>> instance._old_match(mask='zh', item='zh-Hans-CN')
-              True
-              >>> instance._old_match(mask='zh-Hans', item='zh-Hans-CN')
-              False
-
-          From commit history, this does not appear to have been from a
-          decision to match only the first subtag, but rather because only
-          language ranges and tags with at most two subtags were expected.
-        """
-        item = item.replace("_", "-").lower()
-        mask = mask.lower()
-        return (
-            mask == "*"
-            or item == mask
-            or item.split("-")[0] == mask
-            or item == mask.split("-")[0]
         )
 
     def basic_filtering(self, language_tags):
@@ -2359,6 +2156,12 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         -- this would not make sense, but is nonetheless a valid header
         according to the RFC -- the first in the header is used for matching,
         and the others are ignored.)
+
+        .. versionchanged:: 2.0
+
+            If the header is invalid or missing then it is treated similarly
+            to ``Accept-Language: *`` and all supplied language tags are
+            returned as matching with a quality of 1.0.
         """
         # The Basic Filtering matching scheme as applied to the Accept-Language
         # header is very under-specified by RFCs 7231 and 4647. This
@@ -2366,6 +2169,9 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         # 4647 and the rules of the Accept-Language header in RFC 7231 to
         # arrive at an algorithm for Basic Filtering as applied to the
         # Accept-Language header.
+
+        if self.header_state is not HeaderState.Valid:
+            return [(tag, 1.0) for tag in language_tags]
 
         lowercased_parsed = [
             (range_.lower(), qvalue) for (range_, qvalue) in self.parsed
@@ -2469,151 +2275,6 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         # for example, would be to indicate that two tags are equally preferred
         # (same qvalue), which we would not be able to do easily with a set or
         # a list without e.g. making a member of the set or list a sequence.
-
-    def best_match(self, offers, default_match=None):
-        """
-        Return the best match from the sequence of language tag `offers`.
-
-        .. warning::
-
-           This is currently maintained for backward compatibility, and will be
-           deprecated in the future.
-
-           :meth:`AcceptLanguageValidHeader.best_match` uses its own algorithm
-           (one not specified in :rfc:`RFC 7231 <7231>`) to determine what is a
-           best match. The algorithm has many issues, and does not conform to
-           :rfc:`RFC 7231 <7231>`.
-
-           :meth:`AcceptLanguageValidHeader.lookup` is a possible alternative
-
-           for finding a best match -- it conforms to, and is suggested as a
-           matching scheme for the ``Accept-Language`` header in, :rfc:`RFC
-           7231, section 5.3.5 <7231#section-5.3.5>` -- but please be aware
-           that there are differences in how it determines what is a best
-           match. If that is not suitable for the needs of your application,
-           you may need to write your own matching using
-           :attr:`AcceptLanguageValidHeader.parsed`.
-
-        Each language tag in `offers` is checked against each non-0 range in
-        the header. If the two are a match according to WebOb's old criterion
-
-        for a match, the quality value of the match is the qvalue of the
-        language range from the header multiplied by the server quality value
-        of the offer (if the server quality value is not supplied, it is 1).
-
-        The offer in the match with the highest quality value is the best
-        match. If there is more than one match with the highest qvalue, the
-        match where the language range has a lower number of '*'s is the best
-        match. If the two have the same number of '*'s, the one that shows up
-        first in `offers` is the best match.
-
-        :param offers: (iterable)
-
-                       | Each item in the iterable may be a ``str`` language
-                         tag, or a (language tag, server quality value)
-                         ``tuple`` or ``list``. (The two may be mixed in the
-                         iterable.)
-
-        :param default_match: (optional, any type) the value to be returned if
-                              there is no match
-
-        :return: (``str``, or the type of `default_match`)
-
-                 | The language tag that is the best match. If there is no
-                   match, the value of `default_match` is returned.
-
-
-        **Issues**:
-
-        - Incorrect tiebreaking when quality values of two matches are the same
-          (https://github.com/Pylons/webob/issues/256)::
-
-              >>> header = AcceptLanguageValidHeader(
-              ...     header_value='en-gb;q=1, en;q=0.8'
-              ... )
-              >>> header.best_match(offers=['en', 'en-GB'])
-              'en'
-              >>> header.best_match(offers=['en-GB', 'en'])
-              'en-GB'
-
-              >>> header = AcceptLanguageValidHeader(header_value='en-gb, en')
-              >>> header.best_match(offers=['en', 'en-gb'])
-              'en'
-              >>> header.best_match(offers=['en-gb', 'en'])
-              'en-gb'
-
-        - Incorrect handling of ``q=0``::
-
-              >>> header = AcceptLanguageValidHeader(header_value='en;q=0, *')
-              >>> header.best_match(offers=['en'])
-              'en'
-
-              >>> header = AcceptLanguageValidHeader(header_value='fr, en;q=0')
-              >>> header.best_match(offers=['en-gb'], default_match='en')
-              'en'
-
-        - Matching only takes into account the first subtag when matching a
-          range with more specific or less specific tags::
-
-              >>> header = AcceptLanguageValidHeader(header_value='zh')
-              >>> header.best_match(offers=['zh-Hans-CN'])
-              'zh-Hans-CN'
-              >>> header = AcceptLanguageValidHeader(header_value='zh-Hans')
-              >>> header.best_match(offers=['zh-Hans-CN'])
-              >>> header.best_match(offers=['zh-Hans-CN']) is None
-              True
-
-              >>> header = AcceptLanguageValidHeader(header_value='zh-Hans-CN')
-              >>> header.best_match(offers=['zh'])
-              'zh'
-              >>> header.best_match(offers=['zh-Hans'])
-              >>> header.best_match(offers=['zh-Hans']) is None
-              True
-
-        """
-        warnings.warn(
-            "The behavior of AcceptLanguageValidHeader.best_match is "
-            "currently being maintained for backward compatibility, but it "
-            "will be deprecated in the future as it does not conform to the "
-            "RFC.",
-            DeprecationWarning,
-        )
-        best_quality = -1
-        best_offer = default_match
-        matched_by = "*/*"
-        # [We can see that this was written for the ``Accept`` header and not
-        # the ``Accept-Language`` header, as there are no '/'s in a valid
-        # ``Accept-Language`` header.]
-        for offer in offers:
-            if isinstance(offer, (tuple, list)):
-                offer, server_quality = offer
-            else:
-                server_quality = 1
-            for mask, quality in self._parsed_nonzero:
-                possible_quality = server_quality * quality
-                if possible_quality < best_quality:
-                    continue
-                elif possible_quality == best_quality:
-                    # 'text/plain' overrides 'message/*' overrides '*/*'
-                    # (if all match w/ the same q=)
-                    if matched_by.count("*") <= mask.count("*"):
-                        continue
-                    # [This tiebreaking was written for the `Accept` header. A
-                    # basic language range in a valid ``Accept-Language``
-                    # header can only be either '*' or a range with no '*' in
-                    # it. This happens to work here, but is not sufficient as a
-                    # tiebreaker.
-                    #
-                    # A best match here, given this algorithm uses
-                    # self._old_match() which matches both more *and* less
-                    # specific tags, should be the match where the absolute
-                    # value of the difference between the subtag counts of
-                    # `mask` and `offer` is the lowest.]
-                if self._old_match(mask, offer):
-                    best_quality = possible_quality
-                    best_offer = offer
-                    matched_by = mask
-        return best_offer
 
     def lookup(self, language_tags, default_range=None, default_tag=None, default=None):
         """
@@ -2755,6 +2416,15 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                 "`default_tag` and `default` arguments cannot both be None."
             )
 
+        if self.header_state is not HeaderState.Valid:
+            if default_tag is not None:
+                return default_tag
+
+            try:
+                return default()
+            except TypeError:  # default is not a callable
+                return default
+
         # We need separate `default_tag` and `default` arguments because if we
         # only had the `default` argument, there would be no way to tell
         # whether a str is a language tag (in which case we have to check
@@ -2848,502 +2518,33 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         except TypeError:  # default is not a callable
             return default
 
-    def quality(self, offer):
-        """
-        Return quality value of given offer, or ``None`` if there is no match.
-
-        .. warning::
-
-           This is currently maintained for backward compatibility, and will be
-           deprecated in the future.
-
-           :meth:`AcceptLanguageValidHeader.quality` uses its own algorithm
-           (one not specified in :rfc:`RFC 7231 <7231>`) to determine what is a
-           best match. The algorithm has many issues, and does not conform to
-           :rfc:`RFC 7231 <7231>`.
-
-           What should be considered a match depends on the needs of your
-           application (for example, should a language range in the header
-           match a more specific language tag offer, or a less specific tag
-           offer?) :rfc:`RFC 7231, section 5.3.5 <7231#section-5.3.5>` suggests
-           three matching schemes from :rfc:`RFC 4647 <4647>`, two of which
-           WebOb supports with
-           :meth:`AcceptLanguageValidHeader.basic_filtering` and
-           :meth:`AcceptLanguageValidHeader.lookup` (we interpret the RFC to
-           mean that Extended Filtering cannot apply for the
-           ``Accept-Language`` header, as the header only accepts basic
-           language ranges.) :meth:`AcceptLanguageValidHeader.basic_filtering`
-           returns quality values with the matched language tags.
-           :meth:`AcceptLanguageValidHeader.lookup` returns a language tag
-           without the quality value, but the quality value is less likely to
-           be useful when we are looking for a best match.
-
-           If these are not suitable or sufficient for the needs of your
-           application, you may need to write your own matching using
-           :attr:`AcceptLanguageValidHeader.parsed`.
-
-        :param offer: (``str``) language tag offer
-        :return: (``float`` or ``None``)
-
-                 | The highest quality value from the language range(s) that
-                   match the `offer`, or ``None`` if there is no match.
-
-
-        **Issues**:
-
-        - Incorrect handling of ``q=0`` and ``*``::
-
-              >>> header = AcceptLanguageValidHeader(header_value='en;q=0, *')
-              >>> header.quality(offer='en')
-              1.0
-
-        - Matching only takes into account the first subtag when matching a
-          range with more specific or less specific tags::
-
-              >>> header = AcceptLanguageValidHeader(header_value='zh')
-              >>> header.quality(offer='zh-Hans-CN')
-              1.0
-              >>> header = AcceptLanguageValidHeader(header_value='zh-Hans')
-              >>> header.quality(offer='zh-Hans-CN')
-              >>> header.quality(offer='zh-Hans-CN') is None
-              True
-
-              >>> header = AcceptLanguageValidHeader(header_value='zh-Hans-CN')
-              >>> header.quality(offer='zh')
-              1.0
-              >>> header.quality(offer='zh-Hans')
-              >>> header.quality(offer='zh-Hans') is None
-              True
-
-        """
-        warnings.warn(
-            "The behavior of AcceptLanguageValidHeader.quality is"
-            "currently being maintained for backward compatibility, but it "
-            "will be deprecated in the future as it does not conform to the "
-            "RFC.",
-            DeprecationWarning,
-        )
-        bestq = 0
-        for mask, q in self.parsed:
-            if self._old_match(mask, offer):
-                bestq = max(bestq, q)
-        return bestq or None
-
-
-class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
-    """
-    Represent when an ``Accept-Language`` header is invalid or not in request.
-
-    This is the base class for the behaviour that
-    :class:`.AcceptLanguageInvalidHeader` and :class:`.AcceptLanguageNoHeader`
-    have in common.
-
-    :rfc:`7231` does not provide any guidance on what should happen if the
-    ``Accept-Language`` header has an invalid value. This implementation
-    disregards the header when the header is invalid, so
-    :class:`.AcceptLanguageInvalidHeader` and :class:`.AcceptLanguageNoHeader`
-    have much behaviour in common.
-    """
-
-    def __bool__(self):
-        """
-        Return whether ``self`` represents a valid ``Accept-Language`` header.
-
-        Return ``True`` if ``self`` represents a valid header, and ``False`` if
-        it represents an invalid header, or the header not being in the
-        request.
-
-        For this class, it always returns ``False``.
-        """
-        return False
-
     def __contains__(self, offer):
         """
         Return ``bool`` indicating whether `offer` is acceptable.
 
-        .. warning::
-
-           The behavior of ``.__contains__`` for the ``AcceptLanguage`` classes
-           is currently being maintained for backward compatibility, but it
-           will change in the future to better conform to the RFC.
+        This method determines "acceptable" offers using
+        :meth:`.basic_filtering`. It is up to the application to decide if this
+        is what they are expecting. We've implemented it this way because it
+        seems like the best way to answer "is this offer acceptable by the
+        header" which is the purpose of ``__contains__``.
 
         :param offer: (``str``) language tag offer
         :return: (``bool``) Whether ``offer`` is acceptable according to the
                  header.
 
-        For this class, either there is no ``Accept-Language`` header in the
-        request, or the header is invalid, so any language tag is acceptable,
-        and this always returns ``True``.
-        """
-        warnings.warn(
-            "The behavior of .__contains__ for the AcceptLanguage classes is "
-            "currently being maintained for backward compatibility, but it "
-            "will change in the future to better conform to the RFC.",
-            DeprecationWarning,
-        )
-        return True
-
-    def __iter__(self):
-        """
-        Return all the ranges with non-0 qvalues, in order of preference.
-
-        .. warning::
-
-           The behavior of this method is currently maintained for backward
-           compatibility, but will change in the future.
-
-        :return: iterator of all the language ranges in the header with non-0
-                 qvalues, in descending order of qvalue. If two ranges have the
-                 same qvalue, they are returned in the order of their positions
-                 in the header, from left to right.
-
-        For this class, either there is no ``Accept-Language`` header in the
-        request, or the header is invalid, so there are no language ranges, and
-        this always returns an empty iterator.
-        """
-        warnings.warn(
-            "The behavior of AcceptLanguageValidHeader.__iter__ is currently "
-            "maintained for backward compatibility, but will change in the "
-            "future.",
-            DeprecationWarning,
-        )
-        return iter(())
-
-    def basic_filtering(self, language_tags):
-        """
-        Return the tags that match the header, using Basic Filtering.
-
-        :param language_tags: (``iterable``) language tags
-        :return: A list of tuples of the form (language tag, qvalue), in
-                 descending order of preference.
-
-        When the header is invalid and when the header is not in the request,
-        there are no matches, so this method always returns an empty list.
-        """
-        return []
-
-    def best_match(self, offers, default_match=None):
-        """
-        Return the best match from the sequence of language tag `offers`.
-
-        This is the ``.best_match()`` method for when the header is invalid or
-        not found in the request, corresponding to
-        :meth:`AcceptLanguageValidHeader.best_match`.
-
-        .. warning::
-
-           This is currently maintained for backward compatibility, and will be
-           deprecated in the future (see the documentation for
-           :meth:`AcceptLanguageValidHeader.best_match`).
-
-        When the header is invalid, or there is no `Accept-Language` header in
-        the request, any of the language tags in `offers` are considered
-        acceptable, so the best match is the tag in `offers` with the highest
-        server quality value (if the server quality value is not supplied, it
-        is 1).
-
-        If more than one language tags in `offers` have the same highest server
-        quality value, then the one that shows up first in `offers` is the best
-        match.
-
-        :param offers: (iterable)
-
-                       | Each item in the iterable may be a ``str`` language
-                         tag, or a (language tag, server quality value)
-                         ``tuple`` or ``list``. (The two may be mixed in the
-                         iterable.)
-
-        :param default_match: (optional, any type) the value to be returned if
-                              `offers` is empty.
-
-        :return: (``str``, or the type of `default_match`)
-
-                 | The language tag that has the highest server quality value.
-                   If `offers` is empty, the value of `default_match` is
-                   returned.
-        """
-        warnings.warn(
-            "The behavior of .best_match for the AcceptLanguage classes is "
-            "currently being maintained for backward compatibility, but the "
-            "method will be deprecated in the future, as its behavior is not "
-            "specified in (and currently does not conform to) RFC 7231.",
-            DeprecationWarning,
-        )
-        best_quality = -1
-        best_offer = default_match
-        for offer in offers:
-            if isinstance(offer, (list, tuple)):
-                offer, quality = offer
-            else:
-                quality = 1
-            if quality > best_quality:
-                best_offer = offer
-                best_quality = quality
-        return best_offer
-
-    def lookup(
-        self, language_tags=None, default_range=None, default_tag=None, default=None
-    ):
-        """
-        Return the language tag that best matches the header, using Lookup.
-
-        When the header is invalid, or there is no ``Accept-Language`` header
-        in the request, all language tags are considered acceptable, so it is
-        as if the header is '*'. As specified for the Lookup matching scheme in
-        :rfc:`RFC 4647, section 3.4 <4647#section-3.4>`, when the header is
-        '*', the default value is to be computed and returned. So this method
-        will ignore the `language_tags` and `default_range` arguments, and
-        proceed to `default_tag`, then `default`.
-
-        :param language_tags: (optional, any type)
-
-                              | This argument is ignored, and is only used as a
-                                placeholder so that the method signature
-                                corresponds to that of
-                                :meth:`AcceptLanguageValidHeader.lookup`.
-
-        :param default_range: (optional, any type)
-
-                              | This argument is ignored, and is only used as a
-                                placeholder so that the method signature
-                                corresponds to that of
-                                :meth:`AcceptLanguageValidHeader.lookup`.
-
-        :param default_tag: (optional, ``None`` or ``str``)
-
-                            | At least one of `default_tag` or `default` must
-                              be supplied as an argument to the method, to
-                              define the defaulting behaviour.
-
-                            | If this argument is not ``None``, then it is
-                              returned.
-
-                            | This parameter corresponds to "return a
-                              particular language tag designated for the
-                              operation", one of the examples of "defaulting
-                              behavior" described in :rfc:`RFC 4647, section
-                              3.4.1 <4647#section-3.4.1>`.
-
-        :param default: (optional, ``None`` or any type, including a callable)
-
-                        | At least one of `default_tag` or `default` must be
-                          supplied as an argument to the method, to define the
-                          defaulting behaviour.
-
-                        | If `default_tag` is ``None``, then Lookup will next
-                          examine the `default` argument.
-
-                        | If `default` is a callable, it will be called, and
-                          the callable's return value will be returned.
-
-                        | If `default` is not a callable, the value itself will
-                          be returned.
-
-                        | This parameter corresponds to the "defaulting
-                          behavior" described in :rfc:`RFC 4647, section 3.4.1
-                          <4647#section-3.4.1>`
-
-        :return: (``str``, or any type)
-
-                 | the return value from `default_tag` or `default`.
-        """
-        if default_tag is None and default is None:
-            raise TypeError(
-                "`default_tag` and `default` arguments cannot both be None."
-            )
-
-        if default_tag is not None:
-            return default_tag
-
-        try:
-            return default()
-        except TypeError:  # default is not a callable
-            return default
-
-    def quality(self, offer):
-        """
-        Return quality value of given offer, or ``None`` if there is no match.
-
-        This is the ``.quality()`` method for when the header is invalid or not
-        found in the request, corresponding to
-        :meth:`AcceptLanguageValidHeader.quality`.
-
-        .. warning::
-
-           This is currently maintained for backward compatibility, and will be
-           deprecated in the future (see the documentation for
-           :meth:`AcceptLanguageValidHeader.quality`).
-
-        :param offer: (``str``) language tag offer
-        :return: (``float``) ``1.0``.
-
-        When the ``Accept-Language`` header is invalid or not in the request,
-        all offers are equally acceptable, so 1.0 is always returned.
-        """
-        warnings.warn(
-            "The behavior of .quality for the AcceptLanguage classes is "
-            "currently being maintained for backward compatibility, but the "
-            "method will be deprecated in the future, as its behavior is not "
-            "specified in (and currently does not conform to) RFC 7231.",
-            DeprecationWarning,
-        )
-        return 1.0
-
-
-class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
-    """
-    Represent when there is no ``Accept-Language`` header in the request.
-
-    This object should not be modified. To add to the header, we can use the
-    addition operators (``+`` and ``+=``), which return a new object (see the
-    docstring for :meth:`AcceptLanguageNoHeader.__add__`).
-    """
-
-    def __init__(self):
-        """
-        Create an :class:`AcceptLanguageNoHeader` instance.
-        """
-        self._header_value = None
-        self._parsed = None
-        self._parsed_nonzero = None
-
-    def copy(self):
-        """
-        Create a copy of the header object.
-
-        """
-        return self.__class__()
-
-    @property
-    def header_value(self):
-        """
-        (``str`` or ``None``) The header value.
-
-        As there is no header in the request, this is ``None``.
-        """
-        return self._header_value
-
-    @property
-    def parsed(self):
-        """
-        (``list`` or ``None``) Parsed form of the header.
-
-        As there is no header in the request, this is ``None``.
-        """
-        return self._parsed
-
-    def __add__(self, other):
-        """
-        Add to header, creating a new header object.
-
-        `other` can be:
-
-        * ``None``
-        * a ``str``
-        * a ``dict``, with language ranges as keys and qvalues as values
-        * a ``tuple`` or ``list``, of language range ``str``'s or of ``tuple``
-          or ``list`` (language range, qvalue) pairs (``str``'s and pairs can be
-          mixed within the ``tuple`` or ``list``)
-        * an :class:`AcceptLanguageValidHeader`,
-          :class:`AcceptLanguageNoHeader`, or
-          :class:`AcceptLanguageInvalidHeader` instance
-        * object of any other type that returns a value for ``__str__``
-
-        If `other` is a valid header value or an
-        :class:`AcceptLanguageValidHeader` instance, a new
-        :class:`AcceptLanguageValidHeader` instance with the valid header value
-        is returned.
-
-        If `other` is ``None``, an :class:`AcceptLanguageNoHeader` instance, an
-        invalid header value, or an :class:`AcceptLanguageInvalidHeader`
-        instance, a new :class:`AcceptLanguageNoHeader` instance is returned.
-        """
-        if isinstance(other, AcceptLanguageValidHeader):
-            return AcceptLanguageValidHeader(header_value=other.header_value)
-
-        if isinstance(other, (AcceptLanguageNoHeader, AcceptLanguageInvalidHeader)):
-            return self.__class__()
-
-        return self._add_instance_and_non_accept_language_type(
-            instance=self, other=other
-        )
-
-    def __radd__(self, other):
-        """
-        Add to header, creating a new header object.
-
-        See the docstring for :meth:`AcceptLanguageNoHeader.__add__`.
-        """
-        return self.__add__(other=other)
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}>"
-
-    def __str__(self):
-        """Return the ``str`` ``'<no header in request>'``."""
-
-        return "<no header in request>"
-
-    def _add_instance_and_non_accept_language_type(self, instance, other):
-        if not other:
-            return self.__class__()
-
-        other_header_value = self._python_value_to_header_str(value=other)
-
-        try:
-            return AcceptLanguageValidHeader(header_value=other_header_value)
-        except ValueError:  # invalid header value
-            return self.__class__()
-
-
-class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
-    """
-    Represent an invalid ``Accept-Language`` header.
-
-    An invalid header is one that does not conform to
-    :rfc:`7231#section-5.3.5`. As specified in the RFC, an empty header is an
-    invalid ``Accept-Language`` header.
-
-    :rfc:`7231` does not provide any guidance on what should happen if the
-    ``Accept-Language`` header has an invalid value. This implementation
-    disregards the header, and treats it as if there is no ``Accept-Language``
-    header in the request.
-
-    This object should not be modified. To add to the header, we can use the
-    addition operators (``+`` and ``+=``), which return a new object (see the
-    docstring for :meth:`AcceptLanguageInvalidHeader.__add__`).
-    """
-
-    def __init__(self, header_value):
-        """
-        Create an :class:`AcceptLanguageInvalidHeader` instance.
-        """
-        self._header_value = header_value
-        self._parsed = None
-        self._parsed_nonzero = None
-
-    def copy(self):
-        """
-        Create a copy of the header object.
-
-        """
-        return self.__class__(self._header_value)
-
-    @property
-    def header_value(self):
-        """(``str`` or ``None``) The header value."""
-
-        return self._header_value
-
-    @property
-    def parsed(self):
-        """
-        (``list`` or ``None``) Parsed form of the header.
-
-        As the header is invalid and cannot be parsed, this is ``None``.
+        If the header is invalid or missing then it is treated similarly
+        to ``Accept-Language: *`` and all supplied language tags are returned
+        as matching with a quality of 1.0.
+
+        .. versionchanged:: 2.0
+
+            This method now uses :meth:`.basic_filtering` as its matching
+            algorithm. Previous versions used a custom algorithm and did not
+            probably handle ``*;q=0``.
         """
 
-        return self._parsed
+        matches = self.basic_filtering([offer])
+        return len(matches) > 0
 
     def __add__(self, other):
         """
@@ -3357,90 +2558,50 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         * a ``tuple`` or ``list``, of language range ``str``'s or of ``tuple``
           or ``list`` (language range, qvalue) pairs (``str``'s and pairs can
           be mixed within the ``tuple`` or ``list``)
-        * an :class:`AcceptLanguageValidHeader`,
-          :class:`AcceptLanguageNoHeader`, or
-          :class:`AcceptLanguageInvalidHeader` instance
+        * an :class:`AcceptLanguage` instance
         * object of any other type that returns a value for ``__str__``
 
-        If `other` is a valid header value or an
-        :class:`AcceptLanguageValidHeader` instance, a new
-        :class:`AcceptLanguageValidHeader` instance with the valid header value
-        is returned.
-
-        If `other` is ``None``, an :class:`AcceptLanguageNoHeader` instance, an
-        invalid header value, or an :class:`AcceptLanguageInvalidHeader`
-        instance, a new :class:`AcceptLanguageNoHeader` instance is returned.
+        The rules for adding values to a header are that the values are
+        appended if valid, or discarded. If everything is discarded then an
+        instance representing a missing header is returned.
         """
 
-        if isinstance(other, AcceptLanguageValidHeader):
-            return AcceptLanguageValidHeader(header_value=other.header_value)
+        other = create_accept_language_header(other)
+        is_self_valid = self.header_state is HeaderState.Valid
+        is_other_valid = other.header_state is HeaderState.Valid
 
-        if isinstance(other, (AcceptLanguageNoHeader, AcceptLanguageInvalidHeader)):
-            return AcceptLanguageNoHeader()
-
-        return self._add_instance_and_non_accept_language_type(
-            instance=self, other=other
-        )
+        if is_self_valid:
+            if is_other_valid:
+                return create_accept_language_header(
+                    self.header_value + ", " + other.header_value
+                )
+            return self
+        elif is_other_valid:
+            return other
+        return create_accept_language_header(None)
 
     def __radd__(self, other):
         """
         Add to header, creating a new header object.
 
-        See the docstring for :meth:`AcceptLanguageValidHeader.__add__`.
+        See the docstring for :meth:`.__add__`.
         """
 
-        return self._add_instance_and_non_accept_language_type(
-            instance=self, other=other, instance_on_the_right=True
-        )
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}>"
-        # We do not display the header_value, as it is untrusted input. The
-        # header_value could always be easily obtained from the .header_value
-        # property.
-
-    def __str__(self):
-        """Return the ``str`` ``'<invalid header value>'``."""
-
-        return "<invalid header value>"
-
-    def _add_instance_and_non_accept_language_type(
-        self, instance, other, instance_on_the_right=False
-    ):
-        if not other:
-            return AcceptLanguageNoHeader()
-
-        other_header_value = self._python_value_to_header_str(value=other)
-
-        try:
-            return AcceptLanguageValidHeader(header_value=other_header_value)
-        except ValueError:  # invalid header value
-            return AcceptLanguageNoHeader()
+        other = create_accept_language_header(other)
+        return other + self
 
 
 def create_accept_language_header(header_value):
     """
     Create an object representing the ``Accept-Language`` header in a request.
 
-    :param header_value: (``str``) header value
-    :return: If `header_value` is ``None``, an :class:`AcceptLanguageNoHeader`
-             instance.
-
-             | If `header_value` is a valid ``Accept-Language`` header, an
-               :class:`AcceptLanguageValidHeader` instance.
-
-             | If `header_value` is an invalid ``Accept-Language`` header, an
-               :class:`AcceptLanguageInvalidHeader` instance.
+    :param header_value: (``str`` or ``None``) header value
+    :return: an :class:`AcceptLanguage` instance.
     """
 
-    if header_value is None:
-        return AcceptLanguageNoHeader()
     if isinstance(header_value, AcceptLanguage):
-        return header_value.copy()
-    try:
-        return AcceptLanguageValidHeader(header_value=header_value)
-    except ValueError:
-        return AcceptLanguageInvalidHeader(header_value=header_value)
+        return header_value
+    return AcceptLanguage(header_value)
 
 
 def accept_language_property():
@@ -3460,9 +2621,7 @@ def accept_language_property():
     def fget(request):
         """Get an object representing the header in the request."""
 
-        return create_accept_language_header(
-            header_value=request.environ.get(ENVIRON_KEY)
-        )
+        return create_accept_language_header(request.environ.get(ENVIRON_KEY))
 
     def fset(request, value):
         """
@@ -3476,22 +2635,17 @@ def accept_language_property():
         * a ``tuple`` or ``list``, of language range ``str``'s or of ``tuple``
           or ``list`` (language range, qvalue) pairs (``str``'s and pairs can
           be mixed within the ``tuple`` or ``list``)
-        * an :class:`AcceptLanguageValidHeader`,
-          :class:`AcceptLanguageNoHeader`, or
-          :class:`AcceptLanguageInvalidHeader` instance
+        * an :class:`AcceptLanguage` instance
         * object of any other type that returns a value for ``__str__``
         """
 
-        if value is None or isinstance(value, AcceptLanguageNoHeader):
-            fdel(request=request)
+        if isinstance(value, AcceptLanguage):
+            value = value.header_value
         else:
-            if isinstance(
-                value, (AcceptLanguageValidHeader, AcceptLanguageInvalidHeader)
-            ):
-                header_value = value.header_value
-            else:
-                header_value = AcceptLanguage._python_value_to_header_str(value=value)
-            request.environ[ENVIRON_KEY] = header_value
+            value = AcceptLanguage._python_value_to_header_str(value)
+        if value is None:
+            return fdel(request)
+        request.environ[ENVIRON_KEY] = value
 
     def fdel(request):
         """Delete the corresponding key from the request environ."""

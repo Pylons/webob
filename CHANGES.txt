@@ -43,6 +43,15 @@ Feature
   ``acceptable_offers``. See backward incompatibilities below.
   See https://github.com/Pylons/webob/pull/462
 
+- Consolidation of ``AcceptLanguage`` header handling into a single class.
+  See backward incompatibilities below for more information.
+  See https://github.com/Pylons/webob/pull/463
+
+- ``webob.acceptparse.AcceptLanguage.__contains__`` is undeprecated and its
+  logic is made consistent with the ``basic_filtering`` algorithm.
+  See backward incompatibilities below.
+  See https://github.com/Pylons/webob/pull/463
+
 Compatibility
 ~~~~~~~~~~~~~
 
@@ -113,6 +122,34 @@ Backwards Incompatibilities
     header explicitly it excluded via ``*;q=0`` or ``identity;q=0``.
 
   See https://github.com/Pylons/webob/pull/462
+
+- Remove ``AcceptLanguageValidHeader``, ``AcceptLanguageNoHeader`` and
+  ``AcceptLanguageInvalidHeader``. These classes are consolidated into
+  ``AcceptLanguage`` with a ``header_state`` attribute for users that need
+  to know the state of the header.
+  See https://github.com/Pylons/webob/pull/463
+
+- Remove previously-deprecated ``webob.acceptparse.AcceptLanguage`` methods
+  ``__iter__``, ``best_match`` and ``quality``. Look at using
+  ``basic_filtering`` and ``lookup`` methods instead that implement
+  RFC-compliant algorithms for language negotiation.
+  See https://github.com/Pylons/webob/pull/463
+
+- ``webob.acceptparse.AcceptLanguage.basic_filtering`` now considers supplied
+  language tags to all match with quality 1.0 if the header itself is missing
+  or invalid.
+  See https://github.com/Pylons/webob/pull/463
+
+- ``webob.acceptparse.AcceptEncoding.__contains__`` method is now a thin
+  wrapper around ``basic_filtering`` which modifies their behavior slightly:
+
+  - A tuple can no longer be an offer containing server-side quality values.
+  - An offer will only match a ``*`` clause in a header if it does not match
+    any other clauses.
+  - The ``identity`` offer was not properly considered a match unless the
+    header explicitly it excluded via ``*;q=0`` or ``identity;q=0``.
+
+  See https://github.com/Pylons/webob/pull/463
 
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~

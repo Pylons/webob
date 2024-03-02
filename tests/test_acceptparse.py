@@ -9,9 +9,6 @@ from webob.acceptparse import (
     AcceptCharset,
     AcceptEncoding,
     AcceptLanguage,
-    AcceptLanguageInvalidHeader,
-    AcceptLanguageNoHeader,
-    AcceptLanguageValidHeader,
     AcceptOffer,
     HeaderState,
     _item_n_weight_re,
@@ -26,11 +23,6 @@ from webob.acceptparse import (
     create_accept_language_header,
 )
 from webob.request import Request
-
-IGNORE_BEST_MATCH = "ignore:.*best_match.*"
-IGNORE_QUALITY = "ignore:.*quality.*"
-IGNORE_CONTAINS = "ignore:.*__contains__.*"
-IGNORE_ITER = "ignore:.*__iter__.*"
 
 
 class StringMe:
@@ -2726,266 +2718,40 @@ class TestAcceptLanguage:
         assert list_of_returned == expected_list
 
 
-class TestAcceptLanguageValidHeader:
-    @pytest.mark.parametrize("header_value", ["", ", da;q=0.2, en-gb;q=0.3 "])
-    def test___init___invalid_header(self, header_value):
-        with pytest.raises(ValueError):
-            AcceptLanguageValidHeader(header_value=header_value)
-
-    def test___init___valid_header(self):
+class TestAcceptLanguage__valid:
+    def test___init__(self):
         header_value = "zh-Hant;q=0.372,zh-CN-a-myExt-x-private;q=0.977,de,*;q=0.000"
-        instance = AcceptLanguageValidHeader(header_value=header_value)
+        instance = AcceptLanguage(header_value)
+        assert instance.header_state is HeaderState.Valid
         assert instance.header_value == header_value
-        assert instance.parsed == [
+        assert instance.parsed == (
             ("zh-Hant", 0.372),
             ("zh-CN-a-myExt-x-private", 0.977),
             ("de", 1.0),
             ("*", 0.0),
-        ]
-        assert instance._parsed_nonzero == [
-            ("zh-Hant", 0.372),
-            ("zh-CN-a-myExt-x-private", 0.977),
-            ("de", 1.0),
-        ]
-        assert isinstance(instance, AcceptLanguage)
-
-    def test___add___None(self):
-        left_operand = AcceptLanguageValidHeader(header_value="en")
-        result = left_operand + None
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == left_operand.header_value
-        assert result is not left_operand
-
-    @pytest.mark.parametrize(
-        "right_operand",
-        [
-            "",
-            [],
-            (),
-            {},
-            "en_gb",
-            ["en_gb"],
-            ("en_gb",),
-            {"en_gb": 1.0},
-            ",",
-            [","],
-            (",",),
-            {",": 1.0},
-        ],
-    )
-    def test___add___invalid_value(self, right_operand):
-        left_operand = AcceptLanguageValidHeader(header_value="en")
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == left_operand.header_value
-        assert result is not left_operand
-
-    @pytest.mark.parametrize("str_", ["", "en_gb", ","])
-    def test___add___other_type_with_invalid___str__(self, str_):
-        left_operand = AcceptLanguageValidHeader(header_value="en")
-
-        class Other:
-            def __str__(self):
-                return str_
-
-        right_operand = Other()
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == left_operand.header_value
-        assert result is not left_operand
-
-    @pytest.mark.parametrize(
-        "value, value_as_header",
-        [
-            ("en-gb;q=0.5, fr;q=0, es", "en-gb;q=0.5, fr;q=0, es"),
-            ([("en-gb", 0.5), ("fr", 0.0), "es"], "en-gb;q=0.5, fr;q=0, es"),
-            ((("en-gb", 0.5), ("fr", 0.0), "es"), "en-gb;q=0.5, fr;q=0, es"),
-            ({"en-gb": 0.5, "fr": 0.0, "es": 1.0}, "es, en-gb;q=0.5, fr;q=0"),
-        ],
-    )
-    def test___add___valid_value(self, value, value_as_header):
-        header = ",\t ,de, zh-Hans;q=0.333,"
-        result = AcceptLanguageValidHeader(header_value=header) + value
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == header + ", " + value_as_header
-
-    def test___add___other_type_with_valid___str__(self):
-        header = ",\t ,de, zh-Hans;q=0.333,"
-
-        class Other:
-            def __str__(self):
-                return "en-gb;q=0.5, fr;q=0, es"
-
-        right_operand = Other()
-        result = AcceptLanguageValidHeader(header_value=header) + right_operand
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == header + ", " + str(right_operand)
-
-    def test___add___AcceptLanguageValidHeader(self):
-        header1 = ",\t ,de, zh-Hans;q=0.333,"
-        header2 = ", ,fr;q=0, \tes;q=1,"
-        result = AcceptLanguageValidHeader(
-            header_value=header1
-        ) + AcceptLanguageValidHeader(header_value=header2)
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == header1 + ", " + header2
-
-    def test___add___AcceptLanguageNoHeader(self):
-        valid_header_instance = AcceptLanguageValidHeader(header_value="es")
-        result = valid_header_instance + AcceptLanguageNoHeader()
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == valid_header_instance.header_value
-        assert result is not valid_header_instance
-
-    @pytest.mark.parametrize("header_value", ["", "en_gb", ","])
-    def test___add___AcceptLanguageInvalidHeader(self, header_value):
-        valid_header_instance = AcceptLanguageValidHeader(header_value="header")
-        result = valid_header_instance + AcceptLanguageInvalidHeader(
-            header_value=header_value
         )
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == valid_header_instance.header_value
-        assert result is not valid_header_instance
 
     def test___bool__(self):
-        instance = AcceptLanguageValidHeader(header_value="valid-header")
+        instance = AcceptLanguage("valid-header")
         returned = bool(instance)
         assert returned is True
 
-    @pytest.mark.parametrize(
-        "header_value, offer",
-        [
-            ("*", "da"),
-            ("da", "DA"),
-            ("en", "en-gb"),
-            ("en-gb", "en-gb"),
-            ("en-gb", "en"),
-            ("en-gb", "en_GB"),
-        ],
-    )
-    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
-    def test___contains___in(self, header_value, offer):
-        instance = AcceptLanguageValidHeader(header_value=header_value)
-        assert offer in instance
-
-    @pytest.mark.parametrize(
-        "header_value, offer",
-        [("en-gb", "en-us"), ("en-gb", "fr-fr"), ("en-gb", "fr"), ("en", "fr-fr")],
-    )
-    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
-    def test___contains___not_in(self, header_value, offer):
-        instance = AcceptLanguageValidHeader(header_value=header_value)
-        assert offer not in instance
-
-    @pytest.mark.parametrize(
-        "header_value, expected_list",
-        [
-            ("fr;q=0, jp;q=0", []),
-            ("en-gb, da", ["en-gb", "da"]),
-            ("en-gb;q=0.5, da;q=0.5", ["en-gb", "da"]),
-            (
-                "de;q=0.8, de-DE-1996;q=0.5, de-Deva;q=0, de-Latn-DE",
-                ["de-Latn-DE", "de", "de-DE-1996"],
-            ),
-            # __iter__ is currently a simple filter for the ranges in the header
-            # with non-0 qvalues, and does not attempt to account for the special
-            # meanings of q=0 and *:
-            ("en-gb;q=0, *", ["*"]),
-            ("de, de;q=0", ["de"]),
-        ],
-    )
-    @pytest.mark.filterwarnings(IGNORE_ITER)
-    def test___iter__(self, header_value, expected_list):
-        instance = AcceptLanguageValidHeader(header_value=header_value)
-        assert list(instance) == expected_list
-
-    def test___radd___None(self):
-        right_operand = AcceptLanguageValidHeader(header_value="en")
-        result = None + right_operand
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == right_operand.header_value
-        assert result is not right_operand
-
-    @pytest.mark.parametrize(
-        "left_operand",
-        [
-            "",
-            [],
-            (),
-            {},
-            "en_gb",
-            ["en_gb"],
-            ("en_gb",),
-            {"en_gb": 1.0},
-            ",",
-            [","],
-            (",",),
-            {",": 1.0},
-        ],
-    )
-    def test___radd___invalid_value(self, left_operand):
-        right_operand = AcceptLanguageValidHeader(header_value="en")
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == right_operand.header_value
-        assert result is not right_operand
-
-    @pytest.mark.parametrize("str_", ["", "en_gb", ","])
-    def test___radd___other_type_with_invalid___str__(self, str_):
-        right_operand = AcceptLanguageValidHeader(header_value="en")
-
-        class Other:
-            def __str__(self):
-                return str_
-
-        result = Other() + right_operand
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == right_operand.header_value
-        assert result is not right_operand
-
-    @pytest.mark.parametrize(
-        "value, value_as_header",
-        [
-            ("en-gb;q=0.5, fr;q=0, es", "en-gb;q=0.5, fr;q=0, es"),
-            ([("en-gb", 0.5), ("fr", 0.0), "es"], "en-gb;q=0.5, fr;q=0, es"),
-            ((("en-gb", 0.5), ("fr", 0.0), "es"), "en-gb;q=0.5, fr;q=0, es"),
-            ({"en-gb": 0.5, "fr": 0.0, "es": 1.0}, "es, en-gb;q=0.5, fr;q=0"),
-        ],
-    )
-    def test___radd___valid_value(self, value, value_as_header):
-        right_operand = AcceptLanguageValidHeader(
-            header_value=",\t ,de, zh-Hans;q=0.333,"
-        )
-        result = value + right_operand
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert (
-            result.header_value == value_as_header + ", " + right_operand.header_value
-        )
-
-    def test___radd___other_type_with_valid___str__(self):
-        right_operand = AcceptLanguageValidHeader(
-            header_value=",\t ,de, zh-Hans;q=0.333,"
-        )
-
-        class Other:
-            def __str__(self):
-                return "en-gb;q=0.5, fr;q=0, es"
-
-        left_operand = Other()
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert (
-            result.header_value == str(left_operand) + ", " + right_operand.header_value
-        )
-
     def test___repr__(self):
-        instance = AcceptLanguageValidHeader(header_value=",da;q=0.200,en-gb;q=0.300")
-        assert repr(instance) == "<AcceptLanguageValidHeader ('da;q=0.2, en-gb;q=0.3')>"
+        instance = AcceptLanguage(",da;q=0.200,en-gb;q=0.300")
+        assert repr(instance) == "<AcceptLanguage('da;q=0.2, en-gb;q=0.3')>"
 
     def test___str__(self):
         header_value = ", \t,de;q=0.000 \t, es;q=1.000, zh, jp;q=0.210  ,"
-        instance = AcceptLanguageValidHeader(header_value=header_value)
+        instance = AcceptLanguage(header_value)
         assert str(instance) == "de;q=0, es, zh, jp;q=0.21"
+
+    def test_copy(self):
+        instance = AcceptLanguage("valid-header")
+        result = instance.copy()
+        assert instance is not result
+        assert instance.header_value == result.header_value
+        assert instance.header_state == result.header_state
+        assert instance.parsed == result.parsed
 
     @pytest.mark.parametrize(
         "header_value, language_tags, expected_returned",
@@ -3104,37 +2870,12 @@ class TestAcceptLanguageValidHeader:
         ],
     )
     def test_basic_filtering(self, header_value, language_tags, expected_returned):
-        instance = AcceptLanguageValidHeader(header_value=header_value)
-        returned = instance.basic_filtering(language_tags=language_tags)
-        assert returned == expected_returned
-
-    @pytest.mark.parametrize(
-        "header_value, offers, default_match, expected_returned",
-        [
-            ("bar, *;q=0", ["foo"], None, None),
-            ("en-gb, sr-Cyrl", ["sr-Cyrl", "en-gb"], None, "sr-Cyrl"),
-            ("en-gb, sr-Cyrl", ["en-gb", "sr-Cyrl"], None, "en-gb"),
-            ("en-gb, sr-Cyrl", [("sr-Cyrl", 0.5), "en-gb"], None, "en-gb"),
-            ("en-gb, sr-Cyrl", [("sr-Cyrl", 0.5), ("en-gb", 0.4)], None, "sr-Cyrl"),
-            ("en-gb, sr-Cyrl;q=0.5", ["en-gb", "sr-Cyrl"], None, "en-gb"),
-            ("en-gb;q=0.5, sr-Cyrl", ["en-gb", "sr-Cyrl"], None, "sr-Cyrl"),
-            ("en-gb, sr-Cyrl;q=0.55, es;q=0.59", ["en-gb", "sr-Cyrl"], None, "en-gb"),
-            (
-                "en-gb;q=0.5, sr-Cyrl;q=0.586, es-419;q=0.597",
-                ["en-gb", "es-419"],
-                None,
-                "es-419",
-            ),
-        ],
-    )
-    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
-    def test_best_match(self, header_value, offers, default_match, expected_returned):
-        instance = AcceptLanguageValidHeader(header_value=header_value)
-        returned = instance.best_match(offers=offers, default_match=default_match)
+        instance = AcceptLanguage(header_value)
+        returned = instance.basic_filtering(language_tags)
         assert returned == expected_returned
 
     def test_lookup_default_tag_and_default_cannot_both_be_None(self):
-        instance = AcceptLanguageValidHeader(header_value="valid-header")
+        instance = AcceptLanguage("valid-header")
         with pytest.raises(TypeError):
             instance.lookup(
                 language_tags=["tag"],
@@ -3144,7 +2885,7 @@ class TestAcceptLanguageValidHeader:
             )
 
     def test_lookup_default_range_cannot_be_asterisk(self):
-        instance = AcceptLanguageValidHeader(header_value="valid-header")
+        instance = AcceptLanguage("valid-header")
         with pytest.raises(ValueError):
             instance.lookup(
                 language_tags=["tag"],
@@ -3520,7 +3261,7 @@ class TestAcceptLanguageValidHeader:
     def test_lookup(
         self, header_value, language_tags, default_range, default_tag, default, expected
     ):
-        instance = AcceptLanguageValidHeader(header_value=header_value)
+        instance = AcceptLanguage(header_value)
         returned = instance.lookup(
             language_tags=language_tags,
             default_range=default_range,
@@ -3530,205 +3271,71 @@ class TestAcceptLanguageValidHeader:
         assert returned == expected
 
     @pytest.mark.parametrize(
-        "header_value, offer, expected_returned",
+        "header_value, offer",
         [
-            ("en-gb", "en-gb", 1),
-            ("en-gb;q=0.5", "en-gb", 0.5),
-            ("en-gb", "sr-Cyrl", None),
+            ("*", "da"),
+            ("da", "DA"),
+            ("en", "en-gb"),
+            ("en-gb", "en-gb"),
         ],
     )
-    @pytest.mark.filterwarnings(IGNORE_QUALITY)
-    def test_quality(self, header_value, offer, expected_returned):
-        instance = AcceptLanguageValidHeader(header_value=header_value)
-        returned = instance.quality(offer=offer)
-        assert returned == expected_returned
+    def test___contains___in(self, header_value, offer):
+        instance = AcceptLanguage(header_value)
+        assert offer in instance
+
+    @pytest.mark.parametrize(
+        "header_value, offer",
+        [
+            ("en-gb", "en-us"),
+            ("en-gb", "fr-fr"),
+            ("en-gb", "fr"),
+            ("en", "fr-fr"),
+            ("en-gb", "en"),
+            ("en-gb", "en_GB"),
+        ],
+    )
+    def test___contains___not_in(self, header_value, offer):
+        instance = AcceptLanguage(header_value)
+        assert offer not in instance
 
 
-class TestAcceptLanguageNoHeader:
+class TestAcceptLanguage__missing:
     def test___init__(self):
-        instance = AcceptLanguageNoHeader()
+        instance = AcceptLanguage(None)
+        assert instance.header_state is HeaderState.Missing
         assert instance.header_value is None
         assert instance.parsed is None
-        assert instance._parsed_nonzero is None
-        assert isinstance(instance, AcceptLanguage)
-
-    def test___add___None(self):
-        instance = AcceptLanguageNoHeader()
-        result = instance + None
-        assert isinstance(result, AcceptLanguageNoHeader)
-        assert result is not instance
-
-    @pytest.mark.parametrize(
-        "right_operand",
-        ["", [], (), {}, "en_gb", ["en_gb"], ("en_gb",), {"en_gb": 1.0}],
-    )
-    def test___add___invalid_value(self, right_operand):
-        left_operand = AcceptLanguageNoHeader()
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptLanguageNoHeader)
-        assert result is not left_operand
-
-    @pytest.mark.parametrize("str_", ["", "en_gb"])
-    def test___add___other_type_with_invalid___str__(self, str_):
-        left_operand = AcceptLanguageNoHeader()
-
-        class Other:
-            def __str__(self):
-                return str_
-
-        result = left_operand + Other()
-        assert isinstance(result, AcceptLanguageNoHeader)
-        assert result is not left_operand
-
-    @pytest.mark.parametrize(
-        "value, value_as_header",
-        [
-            ("en-gb;q=0.5, fr;q=0, es", "en-gb;q=0.5, fr;q=0, es"),
-            ([("en-gb", 0.5), ("fr", 0.0), "es"], "en-gb;q=0.5, fr;q=0, es"),
-            ((("en-gb", 0.5), ("fr", 0.0), "es"), "en-gb;q=0.5, fr;q=0, es"),
-            ({"en-gb": 0.5, "fr": 0.0, "es": 1.0}, "es, en-gb;q=0.5, fr;q=0"),
-        ],
-    )
-    def test___add___valid_value(self, value, value_as_header):
-        result = AcceptLanguageNoHeader() + value
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == value_as_header
-
-    def test___add___other_type_with_valid___str__(self):
-        class Other:
-            def __str__(self):
-                return "en-gb;q=0.5, fr;q=0, es"
-
-        right_operand = Other()
-        result = AcceptLanguageNoHeader() + right_operand
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == str(right_operand)
-
-    def test___add___AcceptLanguageValidHeader(self):
-        right_operand = AcceptLanguageValidHeader(header_value=", ,fr;q=0, \tes;q=1,")
-        result = AcceptLanguageNoHeader() + right_operand
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == right_operand.header_value
-
-    def test___add___AcceptLanguageNoHeader(self):
-        left_operand = AcceptLanguageNoHeader()
-        right_operand = AcceptLanguageNoHeader()
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptLanguageNoHeader)
-        assert result is not left_operand
-        assert result is not right_operand
-
-    @pytest.mark.parametrize("invalid_header_value", ["", "en_gb"])
-    def test___add___AcceptLanguageInvalidHeader(self, invalid_header_value):
-        left_operand = AcceptLanguageNoHeader()
-        result = left_operand + AcceptLanguageInvalidHeader(
-            header_value=invalid_header_value
-        )
-        assert isinstance(result, AcceptLanguageNoHeader)
-        assert result is not left_operand
 
     def test___bool__(self):
-        instance = AcceptLanguageNoHeader()
+        instance = AcceptLanguage(None)
         returned = bool(instance)
         assert returned is False
 
-    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
-    def test___contains__(self):
-        instance = AcceptLanguageNoHeader()
-        returned = "any-tag" in instance
-        assert returned is True
-
-    @pytest.mark.filterwarnings(IGNORE_ITER)
-    def test___iter__(self):
-        instance = AcceptLanguageNoHeader()
-        returned = list(instance)
-        assert returned == []
-
-    def test___radd___None(self):
-        right_operand = AcceptLanguageNoHeader()
-        result = None + right_operand
-        assert isinstance(result, AcceptLanguageNoHeader)
-        assert result is not right_operand
-
-    @pytest.mark.parametrize(
-        "left_operand", ["", [], (), {}, "en_gb", ["en_gb"], ("en_gb",), {"en_gb": 1.0}]
-    )
-    def test___radd___invalid_value(self, left_operand):
-        right_operand = AcceptLanguageNoHeader()
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptLanguageNoHeader)
-        assert result is not right_operand
-
-    @pytest.mark.parametrize("str_", ["", "en_gb", ","])
-    def test___radd___other_type_with_invalid___str__(self, str_):
-        right_operand = AcceptLanguageNoHeader()
-
-        class Other:
-            def __str__(self):
-                return str_
-
-        result = Other() + right_operand
-        assert isinstance(result, AcceptLanguageNoHeader)
-        assert result is not right_operand
-
-    @pytest.mark.parametrize(
-        "value, value_as_header",
-        [
-            ("en-gb;q=0.5, fr;q=0, es", "en-gb;q=0.5, fr;q=0, es"),
-            ([("en-gb", 0.5), ("fr", 0.0), "es"], "en-gb;q=0.5, fr;q=0, es"),
-            ((("en-gb", 0.5), ("fr", 0.0), "es"), "en-gb;q=0.5, fr;q=0, es"),
-            ({"en-gb": 0.5, "fr": 0.0, "es": 1.0}, "es, en-gb;q=0.5, fr;q=0"),
-        ],
-    )
-    def test___radd___valid_value(self, value, value_as_header):
-        result = value + AcceptLanguageNoHeader()
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == value_as_header
-
-    def test___radd___other_type_with_valid___str__(self):
-        class Other:
-            def __str__(self):
-                return "en-gb;q=0.5, fr;q=0, es"
-
-        left_operand = Other()
-        result = left_operand + AcceptLanguageNoHeader()
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == str(left_operand)
-
     def test___repr__(self):
-        instance = AcceptLanguageNoHeader()
-        assert repr(instance) == "<AcceptLanguageNoHeader>"
+        instance = AcceptLanguage(None)
+        assert repr(instance) == "<AcceptLanguage: Missing>"
 
     def test___str__(self):
-        instance = AcceptLanguageNoHeader()
+        instance = AcceptLanguage(None)
         assert str(instance) == "<no header in request>"
 
-    def test_basic_filtering(self):
-        instance = AcceptLanguageNoHeader()
-        returned = instance.basic_filtering(language_tags=["tag1", "tag2"])
-        assert returned == []
+    def test_copy(self):
+        instance = AcceptLanguage(None)
+        result = instance.copy()
+        assert instance is not result
+        assert instance.header_value == result.header_value
+        assert instance.header_state == result.header_state
+        assert instance.parsed == result.parsed
 
-    @pytest.mark.parametrize(
-        "offers, default_match, expected_returned",
-        [
-            (["foo", "bar"], None, "foo"),
-            ([("foo", 1), ("bar", 0.5)], None, "foo"),
-            ([("foo", 0.5), ("bar", 1)], None, "bar"),
-            ([("foo", 0.5), "bar"], None, "bar"),
-            ([("foo", 0.5), "bar"], object(), "bar"),
-            ([], "fallback", "fallback"),
-        ],
-    )
-    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
-    def test_best_match(self, offers, default_match, expected_returned):
-        instance = AcceptLanguageNoHeader()
-        returned = instance.best_match(offers=offers, default_match=default_match)
-        assert returned == expected_returned
+    def test_basic_filtering(self):
+        instance = AcceptLanguage(None)
+        returned = instance.basic_filtering(["tag1", "tag2"])
+        assert returned == [("tag1", 1.0), ("tag2", 1.0)]
 
     def test_lookup_default_tag_and_default_cannot_both_be_None(self):
-        instance = AcceptLanguageNoHeader()
+        instance = AcceptLanguage(None)
         with pytest.raises(TypeError):
-            instance.lookup(default_tag=None, default=None)
+            instance.lookup([], default_tag=None, default=None)
 
     @pytest.mark.parametrize(
         "default_tag, default, expected",
@@ -3744,169 +3351,54 @@ class TestAcceptLanguageNoHeader:
         ],
     )
     def test_lookup(self, default_tag, default, expected):
-        instance = AcceptLanguageNoHeader()
-        returned = instance.lookup(default_tag=default_tag, default=default)
+        instance = AcceptLanguage(None)
+        returned = instance.lookup([], default_tag=default_tag, default=default)
         assert returned == expected
 
-    @pytest.mark.filterwarnings(IGNORE_QUALITY)
-    def test_quality(self):
-        instance = AcceptLanguageNoHeader()
-        returned = instance.quality(offer="any-tag")
-        assert returned == 1.0
-
-
-class TestAcceptLanguageInvalidHeader:
-    def test___init__(self):
-        header_value = "invalid header"
-        instance = AcceptLanguageInvalidHeader(header_value=header_value)
-        assert instance.header_value == header_value
-        assert instance.parsed is None
-        assert instance._parsed_nonzero is None
-        assert isinstance(instance, AcceptLanguage)
-
-    def test___add___None(self):
-        instance = AcceptLanguageInvalidHeader(header_value="")
-        result = instance + None
-        assert isinstance(result, AcceptLanguageNoHeader)
-
-    @pytest.mark.parametrize(
-        "right_operand",
-        ["", [], (), {}, "en_gb", ["en_gb"], ("en_gb",), {"en_gb": 1.0}],
-    )
-    def test___add___invalid_value(self, right_operand):
-        result = AcceptLanguageInvalidHeader(header_value="") + right_operand
-        assert isinstance(result, AcceptLanguageNoHeader)
-
-    @pytest.mark.parametrize("str_", ["", "en_gb"])
-    def test___add___other_type_with_invalid___str__(self, str_):
-        class Other:
-            def __str__(self):
-                return str_
-
-        result = AcceptLanguageInvalidHeader(header_value="") + Other()
-        assert isinstance(result, AcceptLanguageNoHeader)
-
-    @pytest.mark.parametrize("value", ["en", ["en"], ("en",), {"en": 1.0}])
-    def test___add___valid_header_value(self, value):
-        result = AcceptLanguageInvalidHeader(header_value="") + value
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == "en"
-
-    def test___add___other_type_valid_header_value(self):
-        class Other:
-            def __str__(self):
-                return "en"
-
-        result = AcceptLanguageInvalidHeader(header_value="") + Other()
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == "en"
-
-    def test___add___AcceptLanguageValidHeader(self):
-        right_operand = AcceptLanguageValidHeader(header_value="en")
-        result = AcceptLanguageInvalidHeader(header_value="") + right_operand
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == right_operand.header_value
-        assert result is not right_operand
-
-    def test___add___AcceptLanguageNoHeader(self):
-        right_operand = AcceptLanguageNoHeader()
-        result = AcceptLanguageInvalidHeader(header_value="") + right_operand
-        assert isinstance(result, AcceptLanguageNoHeader)
-        assert result is not right_operand
-
-    def test___add___AcceptLanguageInvalidHeader(self):
-        result = AcceptLanguageInvalidHeader(
-            header_value=""
-        ) + AcceptLanguageInvalidHeader(header_value="")
-        assert isinstance(result, AcceptLanguageNoHeader)
-
-    def test___bool__(self):
-        instance = AcceptLanguageInvalidHeader(header_value="")
-        returned = bool(instance)
-        assert returned is False
-
-    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test___contains__(self):
-        instance = AcceptLanguageInvalidHeader(header_value="")
+        instance = AcceptLanguage(None)
         returned = "any-tag" in instance
         assert returned is True
 
-    @pytest.mark.filterwarnings(IGNORE_ITER)
-    def test___iter__(self):
-        instance = AcceptLanguageInvalidHeader(header_value="")
-        returned = list(instance)
-        assert returned == []
 
-    def test___radd___None(self):
-        instance = AcceptLanguageInvalidHeader(header_value="")
-        result = None + instance
-        assert isinstance(result, AcceptLanguageNoHeader)
+class TestAcceptLanguage__invalid:
+    def test___init__(self):
+        header_value = "invalid header"
+        instance = AcceptLanguage(header_value)
+        assert instance.header_state is HeaderState.Invalid
+        assert instance.header_value == header_value
+        assert instance.parsed is None
 
-    @pytest.mark.parametrize(
-        "left_operand", ["", [], (), {}, "en_gb", ["en_gb"], ("en_gb",), {"en_gb": 1.0}]
-    )
-    def test___radd___invalid_value(self, left_operand):
-        result = left_operand + AcceptLanguageInvalidHeader(header_value="")
-        assert isinstance(result, AcceptLanguageNoHeader)
-
-    @pytest.mark.parametrize("str_", ["", "en_gb"])
-    def test___radd___other_type_with_invalid___str__(self, str_):
-        class Other:
-            def __str__(self):
-                return str_
-
-        result = Other() + AcceptLanguageInvalidHeader(header_value="")
-        assert isinstance(result, AcceptLanguageNoHeader)
-
-    @pytest.mark.parametrize("value", ["en", ["en"], ("en",), {"en": 1.0}])
-    def test___radd___valid_header_value(self, value):
-        result = value + AcceptLanguageInvalidHeader(header_value="")
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == "en"
-
-    def test___radd___other_type_valid_header_value(self):
-        class Other:
-            def __str__(self):
-                return "en"
-
-        result = Other() + AcceptLanguageInvalidHeader(header_value="")
-        assert isinstance(result, AcceptLanguageValidHeader)
-        assert result.header_value == "en"
+    def test___bool__(self):
+        instance = AcceptLanguage("")
+        returned = bool(instance)
+        assert returned is False
 
     def test___repr__(self):
-        instance = AcceptLanguageInvalidHeader(header_value="\x00")
-        assert repr(instance) == "<AcceptLanguageInvalidHeader>"
+        instance = AcceptLanguage("\x00")
+        assert repr(instance) == "<AcceptLanguage: Invalid>"
 
     def test___str__(self):
-        instance = AcceptLanguageInvalidHeader(header_value="invalid header")
+        instance = AcceptLanguage("invalid header")
         assert str(instance) == "<invalid header value>"
 
-    def test_basic_filtering(self):
-        instance = AcceptLanguageInvalidHeader(header_value="")
-        returned = instance.basic_filtering(language_tags=["tag1", "tag2"])
-        assert returned == []
+    def test_copy(self):
+        instance = AcceptLanguage("invalid header")
+        result = instance.copy()
+        assert instance is not result
+        assert instance.header_value == result.header_value
+        assert instance.header_state == result.header_state
+        assert instance.parsed == result.parsed
 
-    @pytest.mark.parametrize(
-        "offers, default_match, expected_returned",
-        [
-            (["foo", "bar"], None, "foo"),
-            ([("foo", 1), ("bar", 0.5)], None, "foo"),
-            ([("foo", 0.5), ("bar", 1)], None, "bar"),
-            ([("foo", 0.5), "bar"], None, "bar"),
-            ([("foo", 0.5), "bar"], object(), "bar"),
-            ([], "fallback", "fallback"),
-        ],
-    )
-    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
-    def test_best_match(self, offers, default_match, expected_returned):
-        instance = AcceptLanguageInvalidHeader(header_value="")
-        returned = instance.best_match(offers=offers, default_match=default_match)
-        assert returned == expected_returned
+    def test_basic_filtering(self):
+        instance = AcceptLanguage("")
+        returned = instance.basic_filtering(["tag1", "tag2"])
+        assert returned == [("tag1", 1.0), ("tag2", 1.0)]
 
     def test_lookup_default_tag_and_default_cannot_both_be_None(self):
-        instance = AcceptLanguageInvalidHeader(header_value="")
+        instance = AcceptLanguage("")
         with pytest.raises(TypeError):
-            instance.lookup(default_tag=None, default=None)
+            instance.lookup([], default_tag=None, default=None)
 
     @pytest.mark.parametrize(
         "default_tag, default, expected",
@@ -3922,44 +3414,214 @@ class TestAcceptLanguageInvalidHeader:
         ],
     )
     def test_lookup(self, default_tag, default, expected):
-        instance = AcceptLanguageInvalidHeader(header_value="")
-        returned = instance.lookup(default_tag=default_tag, default=default)
+        instance = AcceptLanguage("")
+        returned = instance.lookup([], default_tag=default_tag, default=default)
         assert returned == expected
 
-    @pytest.mark.filterwarnings(IGNORE_QUALITY)
-    def test_quality(self):
-        instance = AcceptLanguageInvalidHeader(header_value="")
-        returned = instance.quality(offer="any-tag")
-        assert returned == 1.0
+    def test___contains__(self):
+        instance = AcceptLanguage(None)
+        returned = "any-tag" in instance
+        assert returned is True
+
+
+class TestAcceptLanguage__add:
+    invalid_values = [
+        "",
+        [],
+        (),
+        {},
+        "en_gb",
+        ["en_gb"],
+        ("en_gb",),
+        {"en_gb": 1.0},
+        ",",
+        [","],
+        (",",),
+        {",": 1.0},
+        StringMe(""),
+        StringMe("en_gb"),
+    ]
+
+    valid_values_with_headers = [
+        (
+            "en-gb;q=0.5, fr;q=0, es",
+            "en-gb;q=0.5, fr;q=0, es",
+        ),
+        (
+            [("en-gb", 0.5), ("fr", 0.0), "es"],
+            "en-gb;q=0.5, fr;q=0, es",
+        ),
+        (
+            (("en-gb", 0.5), ("fr", 0.0), "es"),
+            "en-gb;q=0.5, fr;q=0, es",
+        ),
+        (
+            {"en-gb": 0.5, "fr": 0.0, "es": 1.0},
+            "es, en-gb;q=0.5, fr;q=0",
+        ),
+        (
+            StringMe("en-gb;q=0.5, fr;q=0, es"),
+            "en-gb;q=0.5, fr;q=0, es",
+        ),
+    ]
+
+    # snapshots help confirm the instance is immutable
+    def snapshot_instance(self, inst):
+        return deepcopy(
+            {
+                "header_value": inst.header_value,
+                "parsed": inst.parsed,
+                "header_state": inst.header_state,
+            }
+        )
+
+    # we want to test math with primitive python values and Accept instances
+    @pytest.fixture(params=["primitive", "instance"])
+    def maker(self, request):
+        if request.param == "primitive":
+            return lambda x: x
+        return AcceptLanguage
+
+    # almost always add and radd are symmetrical so we can test both and
+    # expect the same result
+    @pytest.fixture(params=["add", "radd"])
+    def fn(self, request):
+        if request.param == "add":
+            return lambda x, y: x + y
+        return lambda x, y: y + x
+
+    @pytest.mark.parametrize(
+        "input_value, input_header",
+        valid_values_with_headers,
+    )
+    def test_valid_add_missing(self, input_value, input_header, maker, fn):
+        inst = AcceptLanguage(input_value)
+        snap = self.snapshot_instance(inst)
+        assert inst.header_state == HeaderState.Valid
+        assert inst.header_value == input_header
+
+        result = fn(inst, maker(None))
+        assert snap == self.snapshot_instance(inst)
+        assert result.header_state == HeaderState.Valid
+        assert result.header_value == input_header
+
+    def test_invalid_add_missing(self, maker, fn):
+        invalid_value = "en_gb"
+        inst = AcceptLanguage(invalid_value)
+        snap = self.snapshot_instance(inst)
+        assert inst.header_state == HeaderState.Invalid
+        assert inst.header_value == invalid_value
+
+        result = fn(inst, maker(None))
+        assert snap == self.snapshot_instance(inst)
+        assert result.header_state == HeaderState.Missing
+        assert result.header_value is None
+
+    def test_missing_add_missing(self, maker, fn):
+        inst = AcceptLanguage(None)
+        snap = self.snapshot_instance(inst)
+        assert inst.header_state == HeaderState.Missing
+        assert inst.header_value is None
+
+        result = fn(inst, maker(None))
+        assert snap == self.snapshot_instance(inst)
+        assert result.header_state == HeaderState.Missing
+        assert result.header_value is None
+
+    @pytest.mark.parametrize("valid_value, valid_header", valid_values_with_headers)
+    @pytest.mark.parametrize("invalid_value", invalid_values)
+    def test_valid_add_invalid(
+        self, valid_value, valid_header, invalid_value, maker, fn
+    ):
+        inst = AcceptLanguage(valid_value)
+        snap = self.snapshot_instance(inst)
+        assert inst.header_state == HeaderState.Valid
+        assert inst.header_value == valid_header
+
+        result = fn(inst, maker(invalid_value))
+        assert snap == self.snapshot_instance(inst)
+        assert result.header_state == HeaderState.Valid
+        assert result.header_value == valid_header
+
+    @pytest.mark.parametrize("invalid_value", invalid_values)
+    def test_invalid_add_invalid(self, invalid_value, maker, fn):
+        inst = AcceptLanguage("")
+        snap = self.snapshot_instance(inst)
+        assert inst.header_state == HeaderState.Invalid
+        assert inst.header_value == ""
+
+        result = fn(inst, maker(invalid_value))
+        assert snap == self.snapshot_instance(inst)
+        assert result.header_state == HeaderState.Missing
+        assert result.header_value is None
+
+    @pytest.mark.parametrize("invalid_value", invalid_values)
+    def test_missing_add_invalid(self, invalid_value, maker, fn):
+        inst = AcceptLanguage(None)
+        snap = self.snapshot_instance(inst)
+        assert inst.header_state == HeaderState.Missing
+        assert inst.header_value is None
+
+        result = fn(inst, maker(invalid_value))
+        assert snap == self.snapshot_instance(inst)
+        assert result.header_state == HeaderState.Missing
+        assert result.header_value is None
+
+    @pytest.mark.parametrize(
+        "input_value, input_header",
+        valid_values_with_headers,
+    )
+    def test_valid_add_valid(self, input_value, input_header, maker):
+        seed_value = "en"
+        inst = AcceptLanguage(seed_value)
+        snap = self.snapshot_instance(inst)
+        assert inst.header_state == HeaderState.Valid
+        assert inst.header_value == seed_value
+
+        result = inst + maker(input_value)
+        assert snap == self.snapshot_instance(inst)
+        assert result.header_state == HeaderState.Valid
+        assert result.header_value == seed_value + ", " + input_header
+
+        result = maker(input_value) + inst
+        assert snap == self.snapshot_instance(inst)
+        assert result.header_state == HeaderState.Valid
+        assert result.header_value == input_header + ", " + seed_value
 
 
 class TestCreateAcceptLanguageHeader:
     def test_header_value_is_None(self):
         header_value = None
-        returned = create_accept_language_header(header_value=header_value)
-        assert isinstance(returned, AcceptLanguageNoHeader)
+        returned = create_accept_language_header(header_value)
+        assert isinstance(returned, AcceptLanguage)
+        assert returned.header_state is HeaderState.Missing
         assert returned.header_value == header_value
         returned2 = create_accept_language_header(returned)
-        assert returned2 is not returned
-        assert returned2._header_value == returned._header_value
+        assert returned2 is returned
+        assert returned2.header_state is HeaderState.Missing
+        assert returned2.header_value == header_value
 
     def test_header_value_is_valid(self):
         header_value = "es, ja"
-        returned = create_accept_language_header(header_value=header_value)
-        assert isinstance(returned, AcceptLanguageValidHeader)
+        returned = create_accept_language_header(header_value)
+        assert isinstance(returned, AcceptLanguage)
+        assert returned.header_state is HeaderState.Valid
         assert returned.header_value == header_value
         returned2 = create_accept_language_header(returned)
-        assert returned2 is not returned
-        assert returned2._header_value == returned._header_value
+        assert returned2 is returned
+        assert returned2.header_state is HeaderState.Valid
+        assert returned2.header_value == header_value
 
     @pytest.mark.parametrize("header_value", ["", "en_gb"])
     def test_header_value_is_invalid(self, header_value):
-        returned = create_accept_language_header(header_value=header_value)
-        assert isinstance(returned, AcceptLanguageInvalidHeader)
+        returned = create_accept_language_header(header_value)
+        assert isinstance(returned, AcceptLanguage)
+        assert returned.header_state is HeaderState.Invalid
         assert returned.header_value == header_value
         returned2 = create_accept_language_header(returned)
-        assert returned2 is not returned
-        assert returned2._header_value == returned._header_value
+        assert returned2 is returned
+        assert returned2.header_state is HeaderState.Invalid
+        assert returned2.header_value == header_value
 
 
 class TestAcceptLanguageProperty:
@@ -3967,39 +3629,45 @@ class TestAcceptLanguageProperty:
         request = Request.blank("/", environ={"HTTP_ACCEPT_LANGUAGE": None})
         property_ = accept_language_property()
         returned = property_.fget(request=request)
-        assert isinstance(returned, AcceptLanguageNoHeader)
+        assert isinstance(returned, AcceptLanguage)
+        assert returned.header_state is HeaderState.Missing
 
     def test_fget_header_is_valid(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_LANGUAGE": "es"})
         property_ = accept_language_property()
         returned = property_.fget(request=request)
-        assert isinstance(returned, AcceptLanguageValidHeader)
+        assert isinstance(returned, AcceptLanguage)
+        assert returned.header_state is HeaderState.Valid
 
     def test_fget_header_is_invalid(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_LANGUAGE": "en_gb"})
         property_ = accept_language_property()
         returned = property_.fget(request=request)
-        assert isinstance(returned, AcceptLanguageInvalidHeader)
+        assert isinstance(returned, AcceptLanguage)
+        assert returned.header_state is HeaderState.Invalid
 
     def test_fset_value_is_None(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_LANGUAGE": "es"})
         property_ = accept_language_property()
         property_.fset(request=request, value=None)
-        assert isinstance(request.accept_language, AcceptLanguageNoHeader)
+        assert isinstance(request.accept_language, AcceptLanguage)
+        assert request.accept_language.header_state is HeaderState.Missing
         assert "HTTP_ACCEPT_LANGUAGE" not in request.environ
 
     def test_fset_value_is_invalid(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_LANGUAGE": "es"})
         property_ = accept_language_property()
         property_.fset(request=request, value="en_GB")
-        assert isinstance(request.accept_language, AcceptLanguageInvalidHeader)
+        assert isinstance(request.accept_language, AcceptLanguage)
+        assert request.accept_language.header_state is HeaderState.Invalid
         assert request.environ["HTTP_ACCEPT_LANGUAGE"] == "en_GB"
 
     def test_fset_value_is_valid(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_LANGUAGE": "es"})
         property_ = accept_language_property()
         property_.fset(request=request, value="en-GB")
-        assert isinstance(request.accept_language, AcceptLanguageValidHeader)
+        assert isinstance(request.accept_language, AcceptLanguage)
+        assert request.accept_language.header_state is HeaderState.Valid
         assert request.environ["HTTP_ACCEPT_LANGUAGE"] == "en-GB"
 
     @pytest.mark.parametrize(
@@ -4015,56 +3683,58 @@ class TestAcceptLanguageProperty:
         request = Request.blank("/", environ={"HTTP_ACCEPT_LANGUAGE": ""})
         property_ = accept_language_property()
         property_.fset(request=request, value=value)
-        assert isinstance(request.accept_language, AcceptLanguageValidHeader)
+        assert isinstance(request.accept_language, AcceptLanguage)
+        assert request.accept_language.header_state is HeaderState.Valid
         assert request.environ["HTTP_ACCEPT_LANGUAGE"] == value_as_header
 
     def test_fset_other_type_with_valid___str__(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_LANGUAGE": ""})
         property_ = accept_language_property()
-
-        class Other:
-            def __str__(self):
-                return "en-gb;q=0.5, fr;q=0, es"
-
-        value = Other()
+        value = StringMe("en-gb;q=0.5, fr;q=0, es")
         property_.fset(request=request, value=value)
-        assert isinstance(request.accept_language, AcceptLanguageValidHeader)
+        assert isinstance(request.accept_language, AcceptLanguage)
+        assert request.accept_language.header_state is HeaderState.Valid
         assert request.environ["HTTP_ACCEPT_LANGUAGE"] == str(value)
 
-    def test_fset_AcceptLanguageNoHeader(self):
+    def test_fset_missing_AcceptLanguage(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_LANGUAGE": "en"})
         property_ = accept_language_property()
-        header = AcceptLanguageNoHeader()
+        header = AcceptLanguage(None)
         property_.fset(request=request, value=header)
-        assert isinstance(request.accept_language, AcceptLanguageNoHeader)
+        assert isinstance(request.accept_language, AcceptLanguage)
+        assert request.accept_language.header_state is HeaderState.Missing
         assert "HTTP_ACCEPT_LANGUAGE" not in request.environ
 
-    def test_fset_AcceptLanguageValidHeader(self):
+    def test_fset_valid_AcceptLanguage(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_LANGUAGE": ""})
         property_ = accept_language_property()
-        header = AcceptLanguageValidHeader("es")
+        header = AcceptLanguage("es")
         property_.fset(request=request, value=header)
-        assert isinstance(request.accept_language, AcceptLanguageValidHeader)
+        assert isinstance(request.accept_language, AcceptLanguage)
+        assert request.accept_language.header_state is HeaderState.Valid
         assert request.environ["HTTP_ACCEPT_LANGUAGE"] == header.header_value
 
-    def test_fset_AcceptLanguageInvalidHeader(self):
+    def test_fset_invalid_AcceptLanguage(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_LANGUAGE": ""})
         property_ = accept_language_property()
-        header = AcceptLanguageInvalidHeader("en_gb")
+        header = AcceptLanguage("en_gb")
         property_.fset(request=request, value=header)
-        assert isinstance(request.accept_language, AcceptLanguageInvalidHeader)
+        assert isinstance(request.accept_language, AcceptLanguage)
+        assert request.accept_language.header_state is HeaderState.Invalid
         assert request.environ["HTTP_ACCEPT_LANGUAGE"] == header.header_value
 
     def test_fdel_header_key_in_environ(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_LANGUAGE": "es"})
         property_ = accept_language_property()
         property_.fdel(request=request)
-        assert isinstance(request.accept_language, AcceptLanguageNoHeader)
+        assert isinstance(request.accept_language, AcceptLanguage)
+        assert request.accept_language.header_state is HeaderState.Missing
         assert "HTTP_ACCEPT_LANGUAGE" not in request.environ
 
     def test_fdel_header_key_not_in_environ(self):
         request = Request.blank("/")
         property_ = accept_language_property()
         property_.fdel(request=request)
-        assert isinstance(request.accept_language, AcceptLanguageNoHeader)
+        assert isinstance(request.accept_language, AcceptLanguage)
+        assert request.accept_language.header_state is HeaderState.Missing
         assert "HTTP_ACCEPT_LANGUAGE" not in request.environ

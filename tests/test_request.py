@@ -9,9 +9,7 @@ from webob.acceptparse import (
     Accept,
     AcceptCharset,
     AcceptEncoding,
-    AcceptLanguageInvalidHeader,
-    AcceptLanguageNoHeader,
-    AcceptLanguageValidHeader,
+    AcceptLanguage,
     HeaderState as AcceptHeaderState,
 )
 from webob.multidict import NoVars
@@ -808,21 +806,24 @@ class TestRequestCommon:
     def test_accept_language_no_header(self):
         req = self._makeOne(environ={})
         header = req.accept_language
-        assert isinstance(header, AcceptLanguageNoHeader)
+        assert isinstance(header, AcceptLanguage)
+        assert header.header_state is AcceptHeaderState.Missing
         assert header.header_value is None
 
     @pytest.mark.parametrize("header_value", ["", ", da;q=0.2, en-gb;q =0.3"])
     def test_accept_language_invalid_header(self, header_value):
         req = self._makeOne(environ={"HTTP_ACCEPT_LANGUAGE": header_value})
         header = req.accept_language
-        assert isinstance(header, AcceptLanguageInvalidHeader)
+        assert isinstance(header, AcceptLanguage)
+        assert header.header_state is AcceptHeaderState.Invalid
         assert header.header_value == header_value
 
     def test_accept_language_valid_header(self):
         header_value = "zh-Hant;q=0.372,zh-CN-a-myExt-x-private;q=0.977,de,*;q=0.000"
         req = self._makeOne(environ={"HTTP_ACCEPT_LANGUAGE": header_value})
         header = req.accept_language
-        assert isinstance(header, AcceptLanguageValidHeader)
+        assert isinstance(header, AcceptLanguage)
+        assert header.header_state is AcceptHeaderState.Valid
         assert header.header_value == header_value
 
     # authorization
@@ -1954,7 +1955,6 @@ class TestRequest_functional:
             ("message/x-foo", 1.0),
         ]
 
-    @pytest.mark.filterwarnings("ignore:.*best_match.*")
     def test_from_mimeparse(self):
         # http://mimeparse.googlecode.com/svn/trunk/mimeparse.py
         supported = ["application/xbel+xml", "application/xml"]
@@ -2703,7 +2703,6 @@ class TestRequest_functional:
         assert req.params["name"] == "Bob"
         assert req.params.getall("name"), ["Bob" == "Joe"]
 
-    @pytest.mark.filterwarnings("ignore:.*best_match.*")
     def test_request_put(self):
         from datetime import datetime
 
@@ -2755,7 +2754,7 @@ class TestRequest_functional:
         )
 
         req.accept_language = "es, pt-BR"
-        assert req.accept_language.best_match(["es"]) == "es"
+        assert req.accept_language.lookup(["es"], default=lambda: None) == "es"
 
         # Conditional Requests
         server_token = "opaque-token"
