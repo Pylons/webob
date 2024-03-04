@@ -47,23 +47,9 @@ methods:
        acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptLanguage
-   :members: parse
-
-.. autoclass:: AcceptLanguageValidHeader
-   :members: header_value, parsed, __init__, __add__, __contains__, __iter__,
-             __radd__, __str__, parse, basic_filtering, best_match, lookup,
-             quality
-
-.. autoclass:: AcceptLanguageNoHeader
-   :members: header_value, parsed, __init__, __add__, __contains__, __iter__,
-             __radd__, __str__, parse, basic_filtering, best_match, lookup,
-             quality
-
-.. autoclass:: AcceptLanguageInvalidHeader
-   :members: header_value, parsed, __init__, __add__, __contains__, __iter__,
-             __radd__, __str__, parse, basic_filtering, best_match, lookup,
-             quality
-
+   :members:
+       parse, header_value, parsed, header_state, __init__, __add__,
+       __bool__, __radd__, __repr__, __str__, copy, basic_filtering, lookup
 
 Cache-Control
 ~~~~~~~~~~~~~
