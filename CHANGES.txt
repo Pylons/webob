@@ -10,13 +10,20 @@ Feature
 
 - Add Request.remote_host, exposing REMOTE_HOST environment variable.
 
-- Added ``acceptparse.Accept.parse_offer`` to codify what types of offers
-  are compatible with ``acceptparse.AcceptValidHeader.acceptable_offers``,
-  ``acceptparse.AcceptMissingHeader.acceptable_offers``, and
-  ``acceptparse.AcceptInvalidHeader.acceptable_offers``. This API also
-  normalizes the offer with lowercased type/subtype and parameter names.
+- Added ``webob.acceptparse.Accept.parse_offer`` to codify what types of offers
+  are compatible with ``webob.acceptparse.Accept.acceptable_offers``. This API
+  also normalizes the offer with lowercased type/subtype and parameter names.
   See https://github.com/Pylons/webob/pull/376 and
   https://github.com/Pylons/webob/pull/379
+
+- Consolidation of ``Accept`` header handling into a single class.
+  See backward incompatibilities below for more information.
+  See https://github.com/Pylons/webob/pull/460
+
+- ``webob.acceptparse.Accept``, methods ``best_match``, ``quality``, and
+  ``__contains__`` are undeprecated and their logic is made consistent with
+  ``acceptable_offers``. See backward incompatibilities below.
+  See https://github.com/Pylons/webob/pull/460
 
 Compatibility
 ~~~~~~~~~~~~~
@@ -26,6 +33,28 @@ Backwards Incompatibilities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Drop support for Python 2.7, 3.4, 3.5, 3.6, and 3.7.
+
+- Remove ``AcceptValidHeader``, ``AcceptNoHeader`` and ``AcceptInvalidHeader``.
+  These classes are consolidated into ``Accept`` with a ``header_state``
+  attribute for users that need to know the exact state of the header.
+  See https://github.com/Pylons/webob/pull/460
+
+- Remove previously-deprecated ``webob.acceptparse.MIMEAccept``.
+  See https://github.com/Pylons/webob/pull/460
+
+- Remove previously-deprecated ``webob.acceptparse.Accept.__iter__``.
+  See https://github.com/Pylons/webob/pull/460
+
+- ``webob.acceptparse.Accept`` methods, ``best_match``, ``quality``, and
+  ``__contains__`` are now thin wrappers around ``acceptable_offers`` which
+  modifies their behavior slightly:
+
+  - Offers containing wildcards are no longer allowed.
+  - A tuple can no longer be an offer containing server-side quality values.
+  - An offer will only match a wildcard clause in the header, such as ``*/*``
+    or ``text/*`` if it does not match something more specific.
+
+  See https://github.com/Pylons/webob/pull/460
 
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~

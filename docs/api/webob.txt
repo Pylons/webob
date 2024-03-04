@@ -23,43 +23,33 @@ a certain type:
 The classes that may be returned by one of the functions above, and their
 methods:
 
-.. autoclass:: Accept
-   :members: parse
-
 .. autoclass:: AcceptOffer
    :members: __str__
 
-.. autoclass:: AcceptValidHeader
-   :members: parse, header_value, parsed, __init__, __add__, __bool__,
-	     __contains__, __iter__, __radd__, __repr__, __str__,
-	     accept_html, accepts_html, acceptable_offers, best_match, quality
+.. autoenum:: HeaderState
 
-.. autoclass:: AcceptNoHeader
-   :members: parse, header_value, parsed, __init__, __add__, __bool__,
-	     __contains__, __iter__, __radd__, __repr__, __str__,
-             accept_html, accepts_html, acceptable_offers, best_match, quality
-
-.. autoclass:: AcceptInvalidHeader
-   :members: parse, header_value, parsed, __init__, __add__, __bool__,
-	     __contains__, __iter__, __radd__, __repr__, __str__,
-	     accept_html, accepts_html, acceptable_offers, best_match, quality
+.. autoclass:: Accept
+   :members:
+       parse, header_value, parsed, header_state, __init__, __add__,
+       __bool__, __radd__, __repr__, __str__, __contains__,
+       accept_html, accepts_html, acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptCharset
    :members: parse
 
 .. autoclass:: AcceptCharsetValidHeader
    :members: parse, header_value, parsed, __init__, __add__, __bool__,
-	     __contains__, __iter__, __radd__, __repr__, __str__,
+             __contains__, __iter__, __radd__, __repr__, __str__,
              acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptCharsetNoHeader
    :members: parse, header_value, parsed, __init__, __add__, __bool__,
-	     __contains__, __iter__, __radd__, __repr__, __str__,
+             __contains__, __iter__, __radd__, __repr__, __str__,
              acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptCharsetInvalidHeader
    :members: parse, header_value, parsed, __init__, __add__, __bool__,
-	     __contains__, __iter__, __radd__, __repr__, __str__,
+             __contains__, __iter__, __radd__, __repr__, __str__,
              acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptEncoding
@@ -67,17 +57,17 @@ methods:
 
 .. autoclass:: AcceptEncodingValidHeader
    :members: parse, header_value, parsed, __init__, __add__, __bool__,
-	     __contains__, __iter__, __radd__, __repr__, __str__,
+             __contains__, __iter__, __radd__, __repr__, __str__,
              acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptEncodingNoHeader
    :members: parse, header_value, parsed, __init__, __add__, __bool__,
-	     __contains__, __iter__, __radd__, __repr__, __str__,
+             __contains__, __iter__, __radd__, __repr__, __str__,
              acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptEncodingInvalidHeader
    :members: parse, header_value, parsed, __init__, __add__, __bool__,
-	     __contains__, __iter__, __radd__, __repr__, __str__,
+             __contains__, __iter__, __radd__, __repr__, __str__,
              acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptLanguage
@@ -85,22 +75,18 @@ methods:
 
 .. autoclass:: AcceptLanguageValidHeader
    :members: header_value, parsed, __init__, __add__, __contains__, __iter__,
-	     __radd__, __str__, parse, basic_filtering, best_match, lookup,
+             __radd__, __str__, parse, basic_filtering, best_match, lookup,
              quality
 
 .. autoclass:: AcceptLanguageNoHeader
    :members: header_value, parsed, __init__, __add__, __contains__, __iter__,
-	     __radd__, __str__, parse, basic_filtering, best_match, lookup,
+             __radd__, __str__, parse, basic_filtering, best_match, lookup,
              quality
 
 .. autoclass:: AcceptLanguageInvalidHeader
    :members: header_value, parsed, __init__, __add__, __contains__, __iter__,
-	     __radd__, __str__, parse, basic_filtering, best_match, lookup,
+             __radd__, __str__, parse, basic_filtering, best_match, lookup,
              quality
-
-Deprecated:
-
-.. autoclass:: MIMEAccept
 
 
 Cache-Control
