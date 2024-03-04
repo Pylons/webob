@@ -31,26 +31,14 @@ methods:
 .. autoclass:: Accept
    :members:
        parse, header_value, parsed, header_state, __init__, __add__,
-       __bool__, __radd__, __repr__, __str__, __contains__,
+       __bool__, __radd__, __repr__, __str__, __contains__, copy,
        accept_html, accepts_html, acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptCharset
-   :members: parse
-
-.. autoclass:: AcceptCharsetValidHeader
-   :members: parse, header_value, parsed, __init__, __add__, __bool__,
-             __contains__, __iter__, __radd__, __repr__, __str__,
-             acceptable_offers, best_match, quality
-
-.. autoclass:: AcceptCharsetNoHeader
-   :members: parse, header_value, parsed, __init__, __add__, __bool__,
-             __contains__, __iter__, __radd__, __repr__, __str__,
-             acceptable_offers, best_match, quality
-
-.. autoclass:: AcceptCharsetInvalidHeader
-   :members: parse, header_value, parsed, __init__, __add__, __bool__,
-             __contains__, __iter__, __radd__, __repr__, __str__,
-             acceptable_offers, best_match, quality
+   :members:
+       parse, header_value, parsed, header_state, __init__, __add__,
+       __bool__, __radd__, __repr__, __str__, __contains__, copy,
+       acceptable_offers, best_match, quality
 
 .. autoclass:: AcceptEncoding
    :members: parse

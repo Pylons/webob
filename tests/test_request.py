@@ -7,9 +7,7 @@ import pytest
 
 from webob.acceptparse import (
     Accept,
-    AcceptCharsetInvalidHeader,
-    AcceptCharsetNoHeader,
-    AcceptCharsetValidHeader,
+    AcceptCharset,
     AcceptEncodingInvalidHeader,
     AcceptEncodingNoHeader,
     AcceptEncodingValidHeader,
@@ -764,21 +762,24 @@ class TestRequestCommon:
     def test_accept_charset_no_header(self):
         req = self._makeOne(environ={})
         header = req.accept_charset
-        assert isinstance(header, AcceptCharsetNoHeader)
+        assert isinstance(header, AcceptCharset)
+        assert header.header_state is AcceptHeaderState.Missing
         assert header.header_value is None
 
     @pytest.mark.parametrize("header_value", ["", ", utf-7;q=0.2, utf-8;q =0.3"])
     def test_accept_charset_invalid_header(self, header_value):
         req = self._makeOne(environ={"HTTP_ACCEPT_CHARSET": header_value})
         header = req.accept_charset
-        assert isinstance(header, AcceptCharsetInvalidHeader)
+        assert isinstance(header, AcceptCharset)
+        assert header.header_state is AcceptHeaderState.Invalid
         assert header.header_value == header_value
 
     def test_accept_charset_valid_header(self):
         header_value = "iso-8859-5;q=0.372,unicode-1-1;q=0.977,UTF-8, *;q=0.000"
         req = self._makeOne(environ={"HTTP_ACCEPT_CHARSET": header_value})
         header = req.accept_charset
-        assert isinstance(header, AcceptCharsetValidHeader)
+        assert isinstance(header, AcceptCharset)
+        assert header.header_state is AcceptHeaderState.Valid
         assert header.header_value == header_value
 
     # accept_encoding
