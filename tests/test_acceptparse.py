@@ -8,9 +8,6 @@ from webob.acceptparse import (
     Accept,
     AcceptCharset,
     AcceptEncoding,
-    AcceptEncodingInvalidHeader,
-    AcceptEncodingNoHeader,
-    AcceptEncodingValidHeader,
     AcceptLanguage,
     AcceptLanguageInvalidHeader,
     AcceptLanguageNoHeader,
@@ -2001,7 +1998,7 @@ class TestAcceptCharsetProperty:
         assert "HTTP_ACCEPT_CHARSET" not in request.environ
 
 
-class TestAcceptEncoding:
+class TestAcceptEncoding__parsing:
     @pytest.mark.parametrize(
         "value",
         [
@@ -2059,274 +2056,32 @@ class TestAcceptEncoding:
         assert list_of_returned == expected_list
 
 
-class TestAcceptEncodingValidHeader:
-    def test_parse__inherited(self):
-        returned = AcceptEncodingValidHeader.parse(
-            value=",,\t gzip;q=1.0, identity; q=0.5, *;q=0 \t ,"
-        )
-        list_of_returned = list(returned)
-        assert list_of_returned == [("gzip", 1.0), ("identity", 0.5), ("*", 0.0)]
-
-    @pytest.mark.parametrize(
-        "header_value", [", ", "gzip;q=1.0, identity; q =0.5, *;q=0"]
-    )
-    def test___init___invalid_header(self, header_value):
-        with pytest.raises(ValueError):
-            AcceptEncodingValidHeader(header_value=header_value)
-
-    def test___init___valid_header(self):
+class TestAcceptEncoding__valid:
+    def test___init___(self):
         header_value = ",,\t gzip;q=1.0, identity; q=0, *;q=0.5 \t ,"
-        instance = AcceptEncodingValidHeader(header_value=header_value)
+        instance = AcceptEncoding(header_value)
+        assert instance.header_state is HeaderState.Valid
         assert instance.header_value == header_value
-        assert instance.parsed == [("gzip", 1.0), ("identity", 0.0), ("*", 0.5)]
-        assert instance._parsed_nonzero == [("gzip", 1.0), ("*", 0.5)]
-        assert isinstance(instance, AcceptEncoding)
-
-    def test___add___None(self):
-        left_operand = AcceptEncodingValidHeader(header_value="gzip")
-        result = left_operand + None
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == left_operand.header_value
-        assert result is not left_operand
-
-    @pytest.mark.parametrize("right_operand", [", ", [", "], (", ",), {", ": 1.0}])
-    def test___add___invalid_value(self, right_operand):
-        left_operand = AcceptEncodingValidHeader(header_value="gzip")
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == left_operand.header_value
-        assert result is not left_operand
-
-    def test___add___other_type_with_invalid___str__(self):
-        left_operand = AcceptEncodingValidHeader(header_value="gzip")
-
-        class Other:
-            def __str__(self):
-                return ", "
-
-        right_operand = Other()
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == left_operand.header_value
-        assert result is not left_operand
-
-    @pytest.mark.parametrize("value", ["", [], (), {}])
-    def test___add___valid_empty_value(self, value):
-        left_operand = AcceptEncodingValidHeader(header_value="gzip")
-        result = left_operand + value
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == left_operand.header_value
-        assert result is not left_operand
-
-    def test___add___other_type_with_valid___str___empty(self):
-        left_operand = AcceptEncodingValidHeader(header_value="gzip")
-
-        class Other:
-            def __str__(self):
-                return ""
-
-        result = left_operand + Other()
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == left_operand.header_value
-        assert result is not left_operand
-
-    @pytest.mark.parametrize(
-        "value, value_as_header",
-        [
-            ("compress;q=0.5, deflate;q=0, *", "compress;q=0.5, deflate;q=0, *"),
-            (["compress;q=0.5", "deflate;q=0", "*"], "compress;q=0.5, deflate;q=0, *"),
-            (
-                [("compress", 0.5), ("deflate", 0.0), ("*", 1.0)],
-                "compress;q=0.5, deflate;q=0, *",
-            ),
-            (("compress;q=0.5", "deflate;q=0", "*"), "compress;q=0.5, deflate;q=0, *"),
-            (
-                (("compress", 0.5), ("deflate", 0.0), ("*", 1.0)),
-                "compress;q=0.5, deflate;q=0, *",
-            ),
-            (
-                {"compress": 0.5, "deflate": 0.0, "*": 1.0},
-                "*, compress;q=0.5, deflate;q=0",
-            ),
-        ],
-    )
-    def test___add___valid_value(self, value, value_as_header):
-        header = ",\t ,gzip, identity;q=0.333,"
-        result = AcceptEncodingValidHeader(header_value=header) + value
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == header + ", " + value_as_header
-
-    def test___add___other_type_with_valid___str___not_empty(self):
-        header = ",\t ,gzip, identity;q=0.333,"
-
-        class Other:
-            def __str__(self):
-                return "compress;q=0.5, deflate;q=0, *"
-
-        right_operand = Other()
-        result = AcceptEncodingValidHeader(header_value=header) + right_operand
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == header + ", " + str(right_operand)
-
-    def test___add___AcceptEncodingValidHeader_header_value_empty(self):
-        left_operand = AcceptEncodingValidHeader(
-            header_value=",\t ,gzip, identity;q=0.333,"
-        )
-        right_operand = AcceptEncodingValidHeader(header_value="")
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == left_operand.header_value
-        assert result is not left_operand
-
-    def test___add___AcceptEncodingValidHeader_header_value_not_empty(self):
-        left_operand = AcceptEncodingValidHeader(
-            header_value=",\t ,gzip, identity;q=0.333,"
-        )
-        right_operand = AcceptEncodingValidHeader(
-            header_value="compress;q=0.5, deflate;q=0, *"
-        )
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert (
-            result.header_value
-            == left_operand.header_value + ", " + right_operand.header_value
-        )
-
-    def test___add___AcceptEncodingNoHeader(self):
-        valid_header_instance = AcceptEncodingValidHeader(header_value="gzip")
-        result = valid_header_instance + AcceptEncodingNoHeader()
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == valid_header_instance.header_value
-        assert result is not valid_header_instance
-
-    @pytest.mark.parametrize("header_value", [", ", "compress;q=1.001"])
-    def test___add___AcceptEncodingInvalidHeader(self, header_value):
-        valid_header_instance = AcceptEncodingValidHeader(header_value="gzip")
-        result = valid_header_instance + AcceptEncodingInvalidHeader(
-            header_value=header_value
-        )
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == valid_header_instance.header_value
-        assert result is not valid_header_instance
+        assert instance.parsed == (("gzip", 1.0), ("identity", 0.0), ("*", 0.5))
 
     def test___bool__(self):
-        instance = AcceptEncodingValidHeader(header_value="gzip")
+        instance = AcceptEncoding("gzip")
         returned = bool(instance)
         assert returned is True
-
-    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
-    def test___contains__(self):
-        accept = AcceptEncodingValidHeader("gzip, compress")
-        assert "gzip" in accept
-        assert "deflate" not in accept
-        for mask in ["*", "gzip", "gZIP"]:
-            assert "gzip" in AcceptEncodingValidHeader(mask)
-
-    @pytest.mark.filterwarnings(IGNORE_ITER)
-    def test___iter__(self):
-        instance = AcceptEncodingValidHeader(
-            header_value="gzip; q=0.5, *; q=0, deflate; q=0.8, compress"
-        )
-        assert list(instance) == ["compress", "deflate", "gzip"]
-
-    def test___radd___None(self):
-        right_operand = AcceptEncodingValidHeader(header_value="gzip")
-        result = None + right_operand
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == right_operand.header_value
-        assert result is not right_operand
-
-    @pytest.mark.parametrize("left_operand", [", ", [", "], (", ",), {", ": 1.0}])
-    def test___radd___invalid_value(self, left_operand):
-        right_operand = AcceptEncodingValidHeader(header_value="gzip")
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == right_operand.header_value
-        assert result is not right_operand
-
-    def test___radd___other_type_with_invalid___str__(self):
-        right_operand = AcceptEncodingValidHeader(header_value="gzip")
-
-        class Other:
-            def __str__(self):
-                return ", "
-
-        result = Other() + right_operand
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == right_operand.header_value
-        assert result is not right_operand
-
-    @pytest.mark.parametrize("value", ["", [], (), {}])
-    def test___radd___valid_empty_value(self, value):
-        right_operand = AcceptEncodingValidHeader(header_value="gzip")
-        result = value + right_operand
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == right_operand.header_value
-        assert result is not right_operand
-
-    def test___radd___other_type_with_valid___str___empty(self):
-        right_operand = AcceptEncodingValidHeader(header_value="gzip")
-
-        class Other:
-            def __str__(self):
-                return ""
-
-        result = Other() + right_operand
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == right_operand.header_value
-        assert result is not right_operand
-
-    @pytest.mark.parametrize(
-        "value, value_as_header",
-        [
-            ("compress;q=0.5, deflate;q=0, *", "compress;q=0.5, deflate;q=0, *"),
-            (["compress;q=0.5", "deflate;q=0", "*"], "compress;q=0.5, deflate;q=0, *"),
-            (
-                [("compress", 0.5), ("deflate", 0.0), ("*", 1.0)],
-                "compress;q=0.5, deflate;q=0, *",
-            ),
-            (("compress;q=0.5", "deflate;q=0", "*"), "compress;q=0.5, deflate;q=0, *"),
-            (
-                (("compress", 0.5), ("deflate", 0.0), ("*", 1.0)),
-                "compress;q=0.5, deflate;q=0, *",
-            ),
-            (
-                {"compress": 0.5, "deflate": 0.0, "*": 1.0},
-                "*, compress;q=0.5, deflate;q=0",
-            ),
-        ],
-    )
-    def test___radd___valid_non_empty_value(self, value, value_as_header):
-        header = ",\t ,gzip, identity;q=0.333,"
-        result = value + AcceptEncodingValidHeader(header_value=header)
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == value_as_header + ", " + header
-
-    def test___radd___other_type_with_valid___str___not_empty(self):
-        header = ",\t ,gzip, identity;q=0.333,"
-
-        class Other:
-            def __str__(self):
-                return "compress;q=0.5, deflate;q=0, *"
-
-        left_operand = Other()
-        result = left_operand + AcceptEncodingValidHeader(header_value=header)
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == str(left_operand) + ", " + header
 
     @pytest.mark.parametrize(
         "header_value, expected_returned",
         [
-            ("", "<AcceptEncodingValidHeader ('')>"),
+            ("", "<AcceptEncoding('')>"),
             (
                 ",\t, a ;\t q=0.20 , b ,',",
                 # single quote is valid character in token
-                """<AcceptEncodingValidHeader ("a;q=0.2, b, \'")>""",
+                """<AcceptEncoding("a;q=0.2, b, \'")>""",
             ),
         ],
     )
     def test___repr__(self, header_value, expected_returned):
-        instance = AcceptEncodingValidHeader(header_value=header_value)
+        instance = AcceptEncoding(header_value)
         assert repr(instance) == expected_returned
 
     @pytest.mark.parametrize(
@@ -2334,8 +2089,16 @@ class TestAcceptEncodingValidHeader:
         [("", ""), (",\t, a ;\t q=0.20 , b ,',", "a;q=0.2, b, '")],
     )
     def test___str__(self, header_value, expected_returned):
-        instance = AcceptEncodingValidHeader(header_value=header_value)
+        instance = AcceptEncoding(header_value)
         assert str(instance) == expected_returned
+
+    def test_copy(self):
+        instance = AcceptEncoding("gzip")
+        result = instance.copy()
+        assert instance is not result
+        assert instance.header_value == result.header_value
+        assert instance.header_state == result.header_state
+        assert instance.parsed == result.parsed
 
     @pytest.mark.parametrize(
         "header_value, offers, expected_returned",
@@ -2375,584 +2138,397 @@ class TestAcceptEncodingValidHeader:
         ],
     )
     def test_acceptable_offers(self, header_value, offers, expected_returned):
-        instance = AcceptEncodingValidHeader(header_value=header_value)
+        instance = AcceptEncoding(header_value)
         returned = instance.acceptable_offers(offers=offers)
         assert returned == expected_returned
 
-    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match(self):
-        accept = AcceptEncodingValidHeader("gzip, iso-8859-5")
+        accept = AcceptEncoding("gzip, iso-8859-5")
         assert accept.best_match(["gzip", "iso-8859-5"]) == "gzip"
         assert accept.best_match(["iso-8859-5", "gzip"]) == "iso-8859-5"
-        assert accept.best_match([("iso-8859-5", 0.5), "gzip"]) == "gzip"
-        assert accept.best_match([("iso-8859-5", 0.5), ("gzip", 0.4)]) == "iso-8859-5"
 
-    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match_with_one_lower_q(self):
-        accept = AcceptEncodingValidHeader("gzip, compress;q=0.5")
+        accept = AcceptEncoding("gzip, compress;q=0.5")
         assert accept.best_match(["gzip", "compress"]) == "gzip"
-        accept = AcceptEncodingValidHeader("gzip;q=0.5, compress")
+        accept = AcceptEncoding("gzip;q=0.5, compress")
         assert accept.best_match(["gzip", "compress"]) == "compress"
 
-    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match_with_complex_q(self):
-        accept = AcceptEncodingValidHeader("gzip, compress;q=0.55, deflate;q=0.59")
+        accept = AcceptEncoding("gzip, compress;q=0.55, deflate;q=0.59")
         assert accept.best_match(["gzip", "compress"]) == "gzip"
-        accept = AcceptEncodingValidHeader(
-            "gzip;q=0.5, compress;q=0.586, deflate;q=0.596"
-        )
+        accept = AcceptEncoding("gzip;q=0.5, compress;q=0.586, deflate;q=0.596")
         assert accept.best_match(["gzip", "deflate"]) == "deflate"
 
-    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match_mixedcase(self):
-        accept = AcceptEncodingValidHeader("gZiP; q=0.2, COMPress; Q=0.4, *; q=0.05")
+        accept = AcceptEncoding("gZiP; q=0.2, COMPress; Q=0.4, *; q=0.05")
         assert accept.best_match(["gzIP"]) == "gzIP"
         assert accept.best_match(["DeFlAte"]) == "DeFlAte"
         assert accept.best_match(["deflaTe", "compRess", "UtF-8"]) == "compRess"
 
-    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
-    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test_best_match_zero_quality(self):
-        assert AcceptEncodingValidHeader("deflate, *;q=0").best_match(["gzip"]) is None
-        assert "content-coding" not in AcceptEncodingValidHeader("*;q=0")
+        assert AcceptEncoding("deflate, *;q=0").best_match(["gzip"]) is None
+        assert "content-coding" not in AcceptEncoding("*;q=0")
 
-    @pytest.mark.filterwarnings(IGNORE_QUALITY)
     def test_quality(self):
-        accept = AcceptEncodingValidHeader("gzip")
+        accept = AcceptEncoding("gzip")
         assert accept.quality("gzip") == 1
-        accept = AcceptEncodingValidHeader("gzip;q=0.5")
+        accept = AcceptEncoding("gzip;q=0.5")
         assert accept.quality("gzip") == 0.5
 
-    @pytest.mark.filterwarnings(IGNORE_QUALITY)
+    def test_quality_with_identity(self):
+        accept = AcceptEncoding("gzip;q=0.5")
+        assert accept.quality("identity") == 1.0
+        accept = AcceptEncoding("gzip;q=0.5, identity;q=0")
+        assert accept.quality("identity") is None
+        accept = AcceptEncoding("gzip;q=0.5, identity;q=0.2, *;q=0")
+        assert accept.quality("identity") == 0.2
+        assert accept.quality("foo") is None
+
     def test_quality_not_found(self):
-        accept = AcceptEncodingValidHeader("gzip")
+        accept = AcceptEncoding("gzip")
         assert accept.quality("compress") is None
 
+    def test___contains__(self):
+        accept = AcceptEncoding("gzip, compress")
+        assert "gzip" in accept
+        assert "deflate" not in accept
+        for mask in ["*", "gzip", "gZIP"]:
+            accept = AcceptEncoding(mask)
+            assert "gzip" in accept
+            assert "identity" in accept
 
-class TestAcceptEncodingNoHeader:
-    def test_parse__inherited(self):
-        returned = AcceptEncodingNoHeader.parse(
-            value=",,\t gzip;q=1.0, identity; q=0.5, *;q=0 \t ,"
-        )
-        list_of_returned = list(returned)
-        assert list_of_returned == [("gzip", 1.0), ("identity", 0.5), ("*", 0.0)]
 
+class TestAcceptEncoding__missing:
     def test___init__(self):
-        instance = AcceptEncodingNoHeader()
+        instance = AcceptEncoding(None)
+        assert instance.header_state is HeaderState.Missing
         assert instance.header_value is None
         assert instance.parsed is None
-        assert instance._parsed_nonzero is None
-        assert isinstance(instance, AcceptEncoding)
-
-    def test___add___None(self):
-        left_operand = AcceptEncodingNoHeader()
-        result = left_operand + None
-        assert isinstance(result, AcceptEncodingNoHeader)
-
-    @pytest.mark.parametrize("right_operand", [", ", [", "], (", ",), {", ": 1.0}])
-    def test___add___invalid_value(self, right_operand):
-        left_operand = AcceptEncodingNoHeader()
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptEncodingNoHeader)
-
-    def test___add___other_type_with_invalid___str__(self):
-        left_operand = AcceptEncodingNoHeader()
-
-        class Other:
-            def __str__(self):
-                return ", "
-
-        right_operand = Other()
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptEncodingNoHeader)
-
-    @pytest.mark.parametrize("value", ["", [], (), {}])
-    def test___add___valid_empty_value(self, value):
-        left_operand = AcceptEncodingNoHeader()
-        result = left_operand + value
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == ""
-
-    def test___add___other_type_with_valid___str___empty(self):
-        left_operand = AcceptEncodingNoHeader()
-
-        class Other:
-            def __str__(self):
-                return ""
-
-        result = left_operand + Other()
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == ""
-
-    @pytest.mark.parametrize(
-        "value, value_as_header",
-        [
-            ("compress;q=0.5, deflate;q=0, *", "compress;q=0.5, deflate;q=0, *"),
-            (["compress;q=0.5", "deflate;q=0", "*"], "compress;q=0.5, deflate;q=0, *"),
-            (
-                [("compress", 0.5), ("deflate", 0.0), ("*", 1.0)],
-                "compress;q=0.5, deflate;q=0, *",
-            ),
-            (("compress;q=0.5", "deflate;q=0", "*"), "compress;q=0.5, deflate;q=0, *"),
-            (
-                (("compress", 0.5), ("deflate", 0.0), ("*", 1.0)),
-                "compress;q=0.5, deflate;q=0, *",
-            ),
-            (
-                {"compress": 0.5, "deflate": 0.0, "*": 1.0},
-                "*, compress;q=0.5, deflate;q=0",
-            ),
-        ],
-    )
-    def test___add___valid_value(self, value, value_as_header):
-        result = AcceptEncodingNoHeader() + value
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == value_as_header
-
-    def test___add___other_type_with_valid___str___not_empty(self):
-        class Other:
-            def __str__(self):
-                return "compress;q=0.5, deflate;q=0, *"
-
-        right_operand = Other()
-        result = AcceptEncodingNoHeader() + right_operand
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == str(right_operand)
-
-    def test___add___AcceptEncodingValidHeader_header_value_empty(self):
-        right_operand = AcceptEncodingValidHeader(header_value="")
-        result = AcceptEncodingNoHeader() + right_operand
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == right_operand.header_value
-        assert result is not right_operand
-
-    def test___add___AcceptEncodingValidHeader_header_value_not_empty(self):
-        right_operand = AcceptEncodingValidHeader(
-            header_value="compress;q=0.5, deflate;q=0, *"
-        )
-        result = AcceptEncodingNoHeader() + right_operand
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == right_operand.header_value
-
-    def test___add___AcceptEncodingNoHeader(self):
-        left_operand = AcceptEncodingNoHeader()
-        right_operand = AcceptEncodingNoHeader()
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptEncodingNoHeader)
-        assert result is not left_operand
-        assert result is not right_operand
-
-    @pytest.mark.parametrize("header_value", [", ", "compress;q=1.001"])
-    def test___add___AcceptEncodingInvalidHeader(self, header_value):
-        left_operand = AcceptEncodingNoHeader()
-        result = left_operand + AcceptEncodingInvalidHeader(header_value=header_value)
-        assert isinstance(result, AcceptEncodingNoHeader)
-        assert result is not left_operand
 
     def test___bool__(self):
-        instance = AcceptEncodingNoHeader()
+        instance = AcceptEncoding(None)
         returned = bool(instance)
         assert returned is False
 
-    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
-    def test___contains__(self):
-        instance = AcceptEncodingNoHeader()
-        returned = "content-coding" in instance
-        assert returned is True
-
-    @pytest.mark.filterwarnings(IGNORE_ITER)
-    def test___iter__(self):
-        instance = AcceptEncodingNoHeader()
-        returned = list(instance)
-        assert returned == []
-
-    def test___radd___None(self):
-        right_operand = AcceptEncodingNoHeader()
-        result = None + right_operand
-        assert isinstance(result, AcceptEncodingNoHeader)
-        assert result is not right_operand
-
-    @pytest.mark.parametrize("left_operand", [", ", [", "], (", ",), {", ": 1.0}])
-    def test___radd___invalid_value(self, left_operand):
-        right_operand = AcceptEncodingNoHeader()
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptEncodingNoHeader)
-        assert result is not right_operand
-
-    def test___radd___other_type_with_invalid___str__(self):
-        right_operand = AcceptEncodingNoHeader()
-
-        class Other:
-            def __str__(self):
-                return ", "
-
-        result = Other() + right_operand
-        assert isinstance(result, AcceptEncodingNoHeader)
-        assert result is not right_operand
-
-    @pytest.mark.parametrize("value", ["", [], (), {}])
-    def test___radd___valid_empty_value(self, value):
-        result = value + AcceptEncodingNoHeader()
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == ""
-
-    def test___radd___other_type_with_valid___str___empty(self):
-        class Other:
-            def __str__(self):
-                return ""
-
-        result = Other() + AcceptEncodingNoHeader()
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == ""
-
-    @pytest.mark.parametrize(
-        "value, value_as_header",
-        [
-            ("compress;q=0.5, deflate;q=0, *", "compress;q=0.5, deflate;q=0, *"),
-            (["compress;q=0.5", "deflate;q=0", "*"], "compress;q=0.5, deflate;q=0, *"),
-            (
-                [("compress", 0.5), ("deflate", 0.0), ("*", 1.0)],
-                "compress;q=0.5, deflate;q=0, *",
-            ),
-            (("compress;q=0.5", "deflate;q=0", "*"), "compress;q=0.5, deflate;q=0, *"),
-            (
-                (("compress", 0.5), ("deflate", 0.0), ("*", 1.0)),
-                "compress;q=0.5, deflate;q=0, *",
-            ),
-            (
-                {"compress": 0.5, "deflate": 0.0, "*": 1.0},
-                "*, compress;q=0.5, deflate;q=0",
-            ),
-        ],
-    )
-    def test___radd___valid_non_empty_value(self, value, value_as_header):
-        result = value + AcceptEncodingNoHeader()
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == value_as_header
-
-    def test___radd___other_type_with_valid___str___not_empty(self):
-        class Other:
-            def __str__(self):
-                return "compress;q=0.5, deflate;q=0, *"
-
-        left_operand = Other()
-        result = left_operand + AcceptEncodingNoHeader()
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == str(left_operand)
-
     def test___repr__(self):
-        instance = AcceptEncodingNoHeader()
-        assert repr(instance) == "<AcceptEncodingNoHeader>"
+        instance = AcceptEncoding(None)
+        assert repr(instance) == "<AcceptEncoding: Missing>"
 
     def test___str__(self):
-        instance = AcceptEncodingNoHeader()
+        instance = AcceptEncoding(None)
         assert str(instance) == "<no header in request>"
 
+    def test_copy(self):
+        instance = AcceptEncoding(None)
+        result = instance.copy()
+        assert instance is not result
+        assert instance.header_value == result.header_value
+        assert instance.header_state == result.header_state
+        assert instance.parsed == result.parsed
+
     def test_acceptable_offers(self):
-        instance = AcceptEncodingNoHeader()
+        instance = AcceptEncoding(None)
         returned = instance.acceptable_offers(offers=["a", "b", "c"])
         assert returned == [("a", 1.0), ("b", 1.0), ("c", 1.0)]
 
-    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match(self):
-        accept = AcceptEncodingNoHeader()
+        accept = AcceptEncoding(None)
         assert accept.best_match(["gzip", "compress"]) == "gzip"
-        assert accept.best_match([("gzip", 1), ("compress", 0.5)]) == "gzip"
-        assert accept.best_match([("gzip", 0.5), ("compress", 1)]) == "compress"
-        assert accept.best_match([("gzip", 0.5), "compress"]) == "compress"
-        assert (
-            accept.best_match([("gzip", 0.5), "compress"], default_match=True)
-            == "compress"
-        )
-        assert (
-            accept.best_match([("gzip", 0.5), "compress"], default_match=False)
-            == "compress"
-        )
+        assert accept.best_match(["compress", "gzip"]) == "compress"
+        assert accept.best_match(["compress", "gzip", "identity"]) == "compress"
         assert accept.best_match([], default_match="fallback") == "fallback"
 
-    @pytest.mark.filterwarnings(IGNORE_QUALITY)
     def test_quality(self):
-        instance = AcceptEncodingNoHeader()
-        returned = instance.quality(offer="content-coding")
-        assert returned == 1.0
+        instance = AcceptEncoding(None)
+        assert instance.quality("content-coding") == 1.0
+        assert instance.quality("identity") == 1.0
 
-
-class TestAcceptEncodingInvalidHeader:
-    def test_parse__inherited(self):
-        returned = AcceptEncodingInvalidHeader.parse(
-            value=",,\t gzip;q=1.0, identity; q=0.5, *;q=0 \t ,"
-        )
-        list_of_returned = list(returned)
-        assert list_of_returned == [("gzip", 1.0), ("identity", 0.5), ("*", 0.0)]
-
-    def test___init__(self):
-        header_value = "invalid header"
-        instance = AcceptEncodingInvalidHeader(header_value=header_value)
-        assert instance.header_value == header_value
-        assert instance.parsed is None
-        assert instance._parsed_nonzero is None
-        assert isinstance(instance, AcceptEncoding)
-
-    def test___add___None(self):
-        left_operand = AcceptEncodingInvalidHeader(header_value=", ")
-        result = left_operand + None
-        assert isinstance(result, AcceptEncodingNoHeader)
-
-    @pytest.mark.parametrize("right_operand", [", ", [", "], (", ",), {", ": 1.0}])
-    def test___add___invalid_value(self, right_operand):
-        left_operand = AcceptEncodingInvalidHeader(header_value="invalid header")
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptEncodingNoHeader)
-
-    def test___add___other_type_with_invalid___str__(self):
-        left_operand = AcceptEncodingInvalidHeader(header_value="invalid header")
-
-        class Other:
-            def __str__(self):
-                return ", "
-
-        right_operand = Other()
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptEncodingNoHeader)
-
-    @pytest.mark.parametrize("value", ["", [], (), {}])
-    def test___add___valid_empty_value(self, value):
-        left_operand = AcceptEncodingInvalidHeader(header_value=", ")
-        result = left_operand + value
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == ""
-
-    def test___add___other_type_with_valid___str___empty(self):
-        left_operand = AcceptEncodingInvalidHeader(header_value=", ")
-
-        class Other:
-            def __str__(self):
-                return ""
-
-        result = left_operand + Other()
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == ""
-
-    @pytest.mark.parametrize(
-        "value, value_as_header",
-        [
-            ("compress;q=0.5, deflate;q=0, *", "compress;q=0.5, deflate;q=0, *"),
-            (["compress;q=0.5", "deflate;q=0", "*"], "compress;q=0.5, deflate;q=0, *"),
-            (
-                [("compress", 0.5), ("deflate", 0.0), ("*", 1.0)],
-                "compress;q=0.5, deflate;q=0, *",
-            ),
-            (("compress;q=0.5", "deflate;q=0", "*"), "compress;q=0.5, deflate;q=0, *"),
-            (
-                (("compress", 0.5), ("deflate", 0.0), ("*", 1.0)),
-                "compress;q=0.5, deflate;q=0, *",
-            ),
-            (
-                {"compress": 0.5, "deflate": 0.0, "*": 1.0},
-                "*, compress;q=0.5, deflate;q=0",
-            ),
-        ],
-    )
-    def test___add___valid_value(self, value, value_as_header):
-        result = AcceptEncodingInvalidHeader(header_value=", ") + value
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == value_as_header
-
-    def test___add___other_type_with_valid___str___not_empty(self):
-        class Other:
-            def __str__(self):
-                return "*, compress;q=0.5, deflate;q=0"
-
-        right_operand = Other()
-        result = AcceptEncodingInvalidHeader(header_value=", ") + right_operand
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == str(right_operand)
-
-    def test___add___AcceptEncodingValidHeader_header_value_empty(self):
-        left_operand = AcceptEncodingInvalidHeader(header_value=", ")
-        right_operand = AcceptEncodingValidHeader(header_value="")
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == right_operand.header_value
-        assert result is not right_operand
-
-    def test___add___AcceptEncodingValidHeader_header_value_not_empty(self):
-        left_operand = AcceptEncodingInvalidHeader(header_value=", ")
-        right_operand = AcceptEncodingValidHeader(
-            header_value="compress;q=0.5, deflate;q=0, *"
-        )
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == right_operand.header_value
-
-    def test___add___AcceptEncodingNoHeader(self):
-        left_operand = AcceptEncodingInvalidHeader(header_value=", ")
-        right_operand = AcceptEncodingNoHeader()
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptEncodingNoHeader)
-        assert result is not right_operand
-
-    @pytest.mark.parametrize("header_value", [", ", "compress;q=1.001"])
-    def test___add___AcceptEncodingInvalidHeader(self, header_value):
-        result = AcceptEncodingInvalidHeader(
-            header_value="gzip;;q=1"
-        ) + AcceptEncodingInvalidHeader(header_value=header_value)
-        assert isinstance(result, AcceptEncodingNoHeader)
-
-    def test___bool__(self):
-        instance = AcceptEncodingInvalidHeader(header_value=", ")
-        returned = bool(instance)
-        assert returned is False
-
-    @pytest.mark.filterwarnings(IGNORE_CONTAINS)
     def test___contains__(self):
-        instance = AcceptEncodingInvalidHeader(header_value=", ")
+        instance = AcceptEncoding(None)
         returned = "content-coding" in instance
         assert returned is True
 
-    @pytest.mark.filterwarnings(IGNORE_ITER)
-    def test___iter__(self):
-        instance = AcceptEncodingInvalidHeader(header_value=", ")
-        returned = list(instance)
-        assert returned == []
 
-    def test___radd___None(self):
-        right_operand = AcceptEncodingInvalidHeader(header_value=", ")
-        result = None + right_operand
-        assert isinstance(result, AcceptEncodingNoHeader)
+class TestAcceptEncoding__invalid:
+    def test___init__(self):
+        header_value = "invalid header"
+        instance = AcceptEncoding(header_value)
+        assert instance.header_state is HeaderState.Invalid
+        assert instance.header_value == header_value
+        assert instance.parsed is None
 
-    @pytest.mark.parametrize("left_operand", [", ", [", "], (", ",), {", ": 1.0}])
-    def test___radd___invalid_value(self, left_operand):
-        right_operand = AcceptEncodingInvalidHeader(header_value="gzip;q= 1")
-        result = left_operand + right_operand
-        assert isinstance(result, AcceptEncodingNoHeader)
-
-    def test___radd___other_type_with_invalid___str__(self):
-        right_operand = AcceptEncodingInvalidHeader(header_value="gzip;q= 1")
-
-        class Other:
-            def __str__(self):
-                return ", "
-
-        result = Other() + right_operand
-        assert isinstance(result, AcceptEncodingNoHeader)
-
-    @pytest.mark.parametrize("value", ["", [], (), {}])
-    def test___radd___valid_empty_value(self, value):
-        right_operand = AcceptEncodingInvalidHeader(header_value=", ")
-        result = value + right_operand
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == ""
-
-    def test___radd___other_type_with_valid___str___empty(self):
-        right_operand = AcceptEncodingInvalidHeader(header_value=", ")
-
-        class Other:
-            def __str__(self):
-                return ""
-
-        result = Other() + right_operand
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == ""
-
-    @pytest.mark.parametrize(
-        "value, value_as_header",
-        [
-            ("compress;q=0.5, deflate;q=0, *", "compress;q=0.5, deflate;q=0, *"),
-            (["compress;q=0.5", "deflate;q=0", "*"], "compress;q=0.5, deflate;q=0, *"),
-            (
-                [("compress", 0.5), ("deflate", 0.0), ("*", 1.0)],
-                "compress;q=0.5, deflate;q=0, *",
-            ),
-            (("compress;q=0.5", "deflate;q=0", "*"), "compress;q=0.5, deflate;q=0, *"),
-            (
-                (("compress", 0.5), ("deflate", 0.0), ("*", 1.0)),
-                "compress;q=0.5, deflate;q=0, *",
-            ),
-            (
-                {"compress": 0.5, "deflate": 0.0, "*": 1.0},
-                "*, compress;q=0.5, deflate;q=0",
-            ),
-        ],
-    )
-    def test___radd___valid_non_empty_value(self, value, value_as_header):
-        result = value + AcceptEncodingInvalidHeader(header_value=", ")
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == value_as_header
-
-    def test___radd___other_type_with_valid___str___not_empty(self):
-        class Other:
-            def __str__(self):
-                return "compress;q=0.5, deflate;q=0, *"
-
-        left_operand = Other()
-        result = left_operand + AcceptEncodingInvalidHeader(header_value=", ")
-        assert isinstance(result, AcceptEncodingValidHeader)
-        assert result.header_value == str(left_operand)
+    def test___bool__(self):
+        instance = AcceptEncoding(", ")
+        returned = bool(instance)
+        assert returned is False
 
     def test___repr__(self):
-        instance = AcceptEncodingInvalidHeader(header_value="\x00")
-        assert repr(instance) == "<AcceptEncodingInvalidHeader>"
+        instance = AcceptEncoding("\x00")
+        assert repr(instance) == "<AcceptEncoding: Invalid>"
 
     def test___str__(self):
-        instance = AcceptEncodingInvalidHeader(header_value=", ")
+        instance = AcceptEncoding(", ")
         assert str(instance) == "<invalid header value>"
 
+    def test_copy(self):
+        instance = AcceptEncoding(", ")
+        result = instance.copy()
+        assert instance is not result
+        assert instance.header_value == result.header_value
+        assert instance.header_state == result.header_state
+        assert instance.parsed == result.parsed
+
     def test_acceptable_offers(self):
-        instance = AcceptEncodingInvalidHeader(header_value=", ")
+        instance = AcceptEncoding(", ")
         returned = instance.acceptable_offers(offers=["a", "b", "c"])
         assert returned == [("a", 1.0), ("b", 1.0), ("c", 1.0)]
 
-    @pytest.mark.filterwarnings(IGNORE_BEST_MATCH)
     def test_best_match(self):
-        accept = AcceptEncodingInvalidHeader(header_value=", ")
+        accept = AcceptEncoding(", ")
         assert accept.best_match(["gzip", "compress"]) == "gzip"
-        assert accept.best_match([("gzip", 1), ("compress", 0.5)]) == "gzip"
-        assert accept.best_match([("gzip", 0.5), ("compress", 1)]) == "compress"
-        assert accept.best_match([("gzip", 0.5), "compress"]) == "compress"
-        assert (
-            accept.best_match([("gzip", 0.5), "compress"], default_match=True)
-            == "compress"
-        )
-        assert (
-            accept.best_match([("gzip", 0.5), "compress"], default_match=False)
-            == "compress"
-        )
+        assert accept.best_match(["compress", "gzip"]) == "compress"
+        assert accept.best_match(["compress", "gzip", "identity"]) == "compress"
         assert accept.best_match([], default_match="fallback") == "fallback"
 
-    @pytest.mark.filterwarnings(IGNORE_QUALITY)
     def test_quality(self):
-        instance = AcceptEncodingInvalidHeader(header_value=", ")
-        returned = instance.quality(offer="content-coding")
-        assert returned == 1.0
+        instance = AcceptEncoding(", ")
+        assert instance.quality("content-coding") == 1.0
+        assert instance.quality("identity") == 1.0
+
+    def test___contains__(self):
+        instance = AcceptEncoding(", ")
+        returned = "content-coding" in instance
+        assert returned is True
+
+
+class TestAcceptEncoding__add:
+    invalid_values = [
+        ", ",
+        [", "],
+        (", ",),
+        {", ": 1.0},
+        StringMe(", "),
+    ]
+
+    valid_nonempty_values_with_headers = [
+        (
+            "compress;q=0.5, deflate;q=0, *",
+            "compress;q=0.5, deflate;q=0, *",
+        ),
+        (
+            ["compress;q=0.5", "deflate;q=0", "*"],
+            "compress;q=0.5, deflate;q=0, *",
+        ),
+        (
+            [("compress", 0.5), ("deflate", 0.0), ("*", 1.0)],
+            "compress;q=0.5, deflate;q=0, *",
+        ),
+        (
+            ("compress;q=0.5", "deflate;q=0", "*"),
+            "compress;q=0.5, deflate;q=0, *",
+        ),
+        (
+            (("compress", 0.5), ("deflate", 0.0), ("*", 1.0)),
+            "compress;q=0.5, deflate;q=0, *",
+        ),
+        (
+            {"compress": 0.5, "deflate": 0.0, "*": 1.0},
+            "*, compress;q=0.5, deflate;q=0",
+        ),
+    ]
+
+    valid_empty_values = ["", [], (), {}, StringMe("")]
+
+    valid_values_with_headers = valid_nonempty_values_with_headers + [
+        [x, ""] for x in valid_empty_values
+    ]
+
+    # snapshots help confirm the instance is immutable
+    def snapshot_instance(self, inst):
+        return deepcopy(
+            {
+                "header_value": inst.header_value,
+                "parsed": inst.parsed,
+                "header_state": inst.header_state,
+            }
+        )
+
+    # we want to test math with primitive python values and Accept instances
+    @pytest.fixture(params=["primitive", "instance"])
+    def maker(self, request):
+        if request.param == "primitive":
+            return lambda x: x
+        return AcceptEncoding
+
+    # almost always add and radd are symmetrical so we can test both and
+    # expect the same result
+    @pytest.fixture(params=["add", "radd"])
+    def fn(self, request):
+        if request.param == "add":
+            return lambda x, y: x + y
+        return lambda x, y: y + x
+
+    @pytest.mark.parametrize(
+        "input_value, input_header",
+        valid_values_with_headers,
+    )
+    def test_valid_add_missing(self, input_value, input_header, maker, fn):
+        inst = AcceptEncoding(input_value)
+        snap = self.snapshot_instance(inst)
+        assert inst.header_state == HeaderState.Valid
+        assert inst.header_value == input_header
+
+        result = fn(inst, maker(None))
+        assert snap == self.snapshot_instance(inst)
+        assert result.header_state == HeaderState.Valid
+        assert result.header_value == input_header
+
+    def test_invalid_add_missing(self, maker, fn):
+        inst = AcceptEncoding(", ")
+        snap = self.snapshot_instance(inst)
+        assert inst.header_state == HeaderState.Invalid
+        assert inst.header_value == ", "
+
+        result = fn(inst, maker(None))
+        assert snap == self.snapshot_instance(inst)
+        assert result.header_state == HeaderState.Missing
+        assert result.header_value is None
+
+    def test_missing_add_missing(self, maker, fn):
+        inst = AcceptEncoding(None)
+        snap = self.snapshot_instance(inst)
+        assert inst.header_state == HeaderState.Missing
+        assert inst.header_value is None
+
+        result = fn(inst, maker(None))
+        assert snap == self.snapshot_instance(inst)
+        assert result.header_state == HeaderState.Missing
+        assert result.header_value is None
+
+    @pytest.mark.parametrize("valid_value, valid_header", valid_values_with_headers)
+    @pytest.mark.parametrize("invalid_value", invalid_values)
+    def test_valid_add_invalid(
+        self, valid_value, valid_header, invalid_value, maker, fn
+    ):
+        inst = AcceptEncoding(valid_value)
+        snap = self.snapshot_instance(inst)
+        assert inst.header_state == HeaderState.Valid
+        assert inst.header_value == valid_header
+
+        result = fn(inst, maker(invalid_value))
+        assert snap == self.snapshot_instance(inst)
+        assert result.header_state == HeaderState.Valid
+        assert result.header_value == valid_header
+
+    @pytest.mark.parametrize("invalid_value", invalid_values)
+    def test_invalid_add_invalid(self, invalid_value, maker, fn):
+        inst = AcceptEncoding(", ")
+        snap = self.snapshot_instance(inst)
+        assert inst.header_state == HeaderState.Invalid
+        assert inst.header_value == ", "
+
+        result = fn(inst, maker(invalid_value))
+        assert snap == self.snapshot_instance(inst)
+        assert result.header_state == HeaderState.Missing
+        assert result.header_value is None
+
+    @pytest.mark.parametrize("invalid_value", invalid_values)
+    def test_missing_add_invalid(self, invalid_value, maker, fn):
+        inst = AcceptEncoding(None)
+        snap = self.snapshot_instance(inst)
+        assert inst.header_state == HeaderState.Missing
+        assert inst.header_value is None
+
+        result = fn(inst, maker(invalid_value))
+        assert snap == self.snapshot_instance(inst)
+        assert result.header_state == HeaderState.Missing
+        assert result.header_value is None
+
+    @pytest.mark.parametrize(
+        "input_value, input_header",
+        valid_nonempty_values_with_headers,
+    )
+    def test_nonempty_valid_add_valid(self, input_value, input_header, maker):
+        seed_value = ",\t ,gzip, identity;q=0.333,"
+        inst = AcceptEncoding(seed_value)
+        snap = self.snapshot_instance(inst)
+        assert inst.header_state == HeaderState.Valid
+        assert inst.header_value == seed_value
+
+        result = inst + maker(input_value)
+        assert snap == self.snapshot_instance(inst)
+        assert result.header_state == HeaderState.Valid
+        assert result.header_value == seed_value + ", " + input_header
+
+        result = maker(input_value) + inst
+        assert snap == self.snapshot_instance(inst)
+        assert result.header_state == HeaderState.Valid
+        assert result.header_value == input_header + ", " + seed_value
+
+    @pytest.mark.parametrize(
+        "input_value, input_header",
+        valid_nonempty_values_with_headers,
+    )
+    @pytest.mark.parametrize("empty_value", valid_empty_values)
+    def test_nonempty_valid_add_empty(
+        self, input_value, input_header, empty_value, maker, fn
+    ):
+        inst = AcceptEncoding(input_value)
+        snap = self.snapshot_instance(inst)
+        assert inst.header_state == HeaderState.Valid
+        assert inst.header_value == input_header
+
+        result = fn(inst, maker(empty_value))
+        assert snap == self.snapshot_instance(inst)
+        assert result.header_state == HeaderState.Valid
+        assert result.header_value == input_header
+
+    @pytest.mark.parametrize("empty_value", valid_empty_values)
+    def test_empty_valid_add_empty(self, empty_value, maker, fn):
+        expected_value = ""
+        inst = AcceptEncoding(empty_value)
+        snap = self.snapshot_instance(inst)
+        assert inst.header_state == HeaderState.Valid
+        assert inst.header_value == expected_value
+
+        result = fn(inst, maker(empty_value))
+        assert snap == self.snapshot_instance(inst)
+        assert result.header_state == HeaderState.Valid
+        assert result.header_value == expected_value
 
 
 class TestCreateAcceptEncodingHeader:
     def test_header_value_is_None(self):
         header_value = None
-        returned = create_accept_encoding_header(header_value=header_value)
-        assert isinstance(returned, AcceptEncodingNoHeader)
+        returned = create_accept_encoding_header(header_value)
+        assert isinstance(returned, AcceptEncoding)
+        assert returned.header_state is HeaderState.Missing
         assert returned.header_value == header_value
         returned2 = create_accept_encoding_header(returned)
-        assert returned2 is not returned
+        assert isinstance(returned2, AcceptEncoding)
+        assert returned2.header_state is HeaderState.Missing
         assert returned2._header_value == returned._header_value
 
     def test_header_value_is_valid(self):
         header_value = "gzip, identity;q=0.9"
-        returned = create_accept_encoding_header(header_value=header_value)
-        assert isinstance(returned, AcceptEncodingValidHeader)
+        returned = create_accept_encoding_header(header_value)
+        assert isinstance(returned, AcceptEncoding)
+        assert returned.header_state is HeaderState.Valid
         assert returned.header_value == header_value
         returned2 = create_accept_encoding_header(returned)
-        assert returned2 is not returned
+        assert isinstance(returned2, AcceptEncoding)
+        assert returned2.header_state is HeaderState.Valid
         assert returned2._header_value == returned._header_value
 
     @pytest.mark.parametrize("header_value", [", ", "gzip;q= 1"])
     def test_header_value_is_invalid(self, header_value):
-        returned = create_accept_encoding_header(header_value=header_value)
-        assert isinstance(returned, AcceptEncodingInvalidHeader)
+        returned = create_accept_encoding_header(header_value)
+        assert isinstance(returned, AcceptEncoding)
+        assert returned.header_state is HeaderState.Invalid
         assert returned.header_value == header_value
         returned2 = create_accept_encoding_header(returned)
-        assert returned2 is not returned
+        assert isinstance(returned2, AcceptEncoding)
+        assert returned2.header_state is HeaderState.Invalid
         assert returned2._header_value == returned._header_value
 
 
@@ -2961,39 +2537,45 @@ class TestAcceptEncodingProperty:
         request = Request.blank("/", environ={"HTTP_ACCEPT_ENCODING": None})
         property_ = accept_encoding_property()
         returned = property_.fget(request=request)
-        assert isinstance(returned, AcceptEncodingNoHeader)
+        assert isinstance(returned, AcceptEncoding)
+        assert returned.header_state is HeaderState.Missing
 
     def test_fget_header_is_valid(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_ENCODING": "gzip"})
         property_ = accept_encoding_property()
         returned = property_.fget(request=request)
-        assert isinstance(returned, AcceptEncodingValidHeader)
+        assert isinstance(returned, AcceptEncoding)
+        assert returned.header_state is HeaderState.Valid
 
     def test_fget_header_is_invalid(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_ENCODING": ", "})
         property_ = accept_encoding_property()
         returned = property_.fget(request=request)
-        assert isinstance(returned, AcceptEncodingInvalidHeader)
+        assert isinstance(returned, AcceptEncoding)
+        assert returned.header_state is HeaderState.Invalid
 
     def test_fset_value_is_None(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_ENCODING": "gzip"})
         property_ = accept_encoding_property()
         property_.fset(request=request, value=None)
-        assert isinstance(request.accept_encoding, AcceptEncodingNoHeader)
+        assert isinstance(request.accept_encoding, AcceptEncoding)
+        assert request.accept_encoding.header_state is HeaderState.Missing
         assert "HTTP_ACCEPT_ENCODING" not in request.environ
 
     def test_fset_value_is_invalid(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_ENCODING": "gzip"})
         property_ = accept_encoding_property()
         property_.fset(request=request, value=", ")
-        assert isinstance(request.accept_encoding, AcceptEncodingInvalidHeader)
+        assert isinstance(request.accept_encoding, AcceptEncoding)
+        assert request.accept_encoding.header_state is HeaderState.Invalid
         assert request.environ["HTTP_ACCEPT_ENCODING"] == ", "
 
     def test_fset_value_is_valid(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_ENCODING": "gzip"})
         property_ = accept_encoding_property()
         property_.fset(request=request, value="compress")
-        assert isinstance(request.accept_encoding, AcceptEncodingValidHeader)
+        assert isinstance(request.accept_encoding, AcceptEncoding)
+        assert request.accept_encoding.header_state is HeaderState.Valid
         assert request.environ["HTTP_ACCEPT_ENCODING"] == "compress"
 
     @pytest.mark.parametrize(
@@ -3018,58 +2600,60 @@ class TestAcceptEncodingProperty:
         request = Request.blank("/", environ={"HTTP_ACCEPT_ENCODING": ""})
         property_ = accept_encoding_property()
         property_.fset(request=request, value=value)
-        assert isinstance(request.accept_encoding, AcceptEncodingValidHeader)
+        assert isinstance(request.accept_encoding, AcceptEncoding)
+        assert request.accept_encoding.header_state is HeaderState.Valid
         assert request.environ["HTTP_ACCEPT_ENCODING"] == value_as_header
 
     def test_fset_other_type_with_valid___str__(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_ENCODING": ""})
         property_ = accept_encoding_property()
-
-        class Other:
-            def __str__(self):
-                return "gzip;q=0.5, compress;q=0, deflate"
-
-        value = Other()
+        value = StringMe("gzip;q=0.5, compress;q=0, deflate")
         property_.fset(request=request, value=value)
-        assert isinstance(request.accept_encoding, AcceptEncodingValidHeader)
+        assert isinstance(request.accept_encoding, AcceptEncoding)
+        assert request.accept_encoding.header_state is HeaderState.Valid
         assert request.environ["HTTP_ACCEPT_ENCODING"] == str(value)
 
-    def test_fset_AcceptEncodingNoHeader(self):
+    def test_fset_missing_AcceptEncoding(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_ENCODING": ""})
         property_ = accept_encoding_property()
-        header = AcceptEncodingNoHeader()
+        header = AcceptEncoding(None)
         property_.fset(request=request, value=header)
-        assert isinstance(request.accept_encoding, AcceptEncodingNoHeader)
+        assert isinstance(request.accept_encoding, AcceptEncoding)
+        assert request.accept_encoding.header_state is HeaderState.Missing
         assert "HTTP_ACCEPT_ENCODING" not in request.environ
 
-    def test_fset_AcceptEncodingValidHeader(self):
+    def test_fset_valid_AcceptEncoding(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_ENCODING": ""})
         property_ = accept_encoding_property()
-        header = AcceptEncodingValidHeader("gzip")
+        header = AcceptEncoding("gzip")
         property_.fset(request=request, value=header)
-        assert isinstance(request.accept_encoding, AcceptEncodingValidHeader)
+        assert isinstance(request.accept_encoding, AcceptEncoding)
+        assert request.accept_encoding.header_state is HeaderState.Valid
         assert request.environ["HTTP_ACCEPT_ENCODING"] == header.header_value
 
-    def test_fset_AcceptEncodingInvalidHeader(self):
+    def test_fset_invalid_AcceptEncoding(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_ENCODING": "gzip"})
         property_ = accept_encoding_property()
-        header = AcceptEncodingInvalidHeader(", ")
+        header = AcceptEncoding(", ")
         property_.fset(request=request, value=header)
-        assert isinstance(request.accept_encoding, AcceptEncodingInvalidHeader)
+        assert isinstance(request.accept_encoding, AcceptEncoding)
+        assert request.accept_encoding.header_state is HeaderState.Invalid
         assert request.environ["HTTP_ACCEPT_ENCODING"] == header.header_value
 
     def test_fdel_header_key_in_environ(self):
         request = Request.blank("/", environ={"HTTP_ACCEPT_ENCODING": "gzip"})
         property_ = accept_encoding_property()
         property_.fdel(request=request)
-        assert isinstance(request.accept_encoding, AcceptEncodingNoHeader)
+        assert isinstance(request.accept_encoding, AcceptEncoding)
+        assert request.accept_encoding.header_state is HeaderState.Missing
         assert "HTTP_ACCEPT_ENCODING" not in request.environ
 
     def test_fdel_header_key_not_in_environ(self):
         request = Request.blank("/")
         property_ = accept_encoding_property()
         property_.fdel(request=request)
-        assert isinstance(request.accept_encoding, AcceptEncodingNoHeader)
+        assert isinstance(request.accept_encoding, AcceptEncoding)
+        assert request.accept_encoding.header_state is HeaderState.Missing
         assert "HTTP_ACCEPT_ENCODING" not in request.environ
 
 

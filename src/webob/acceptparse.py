@@ -1472,8 +1472,19 @@ class AcceptEncoding:
     """
     Represent an ``Accept-Encoding`` header.
 
-    Base class for :class:`AcceptEncodingValidHeader`,
-    :class:`AcceptEncodingNoHeader`, and :class:`AcceptEncodingInvalidHeader`.
+    A valid header is one that conforms to :rfc:`RFC 7231, section 5.3.4
+    <7231#section-5.3.4>`.
+
+    This object should not be modified. To add to the header, we can use the
+    addition operators (``+`` and ``+=``), which return a new object (see the
+    docstring for :meth:`.__add__`).
+
+    .. versionchanged:: 2.0
+
+        - Added the :attr:`.header_state` attribute.
+
+        - Removed ``__iter__`` and changed the behavior of :meth:`.best_match`,
+          :meth:`.quality`, and :meth:`.__contains__`.
     """
 
     # RFC 7231 Section 3.1.2.1 "Content Codings":
@@ -1492,22 +1503,25 @@ class AcceptEncoding:
 
     @classmethod
     def _python_value_to_header_str(cls, value):
+        if value is None:
+            return value
+
         if isinstance(value, str):
-            header_str = value
+            return value
+
+        if hasattr(value, "items"):
+            value = sorted(value.items(), key=lambda item: item[1], reverse=True)
+
+        if isinstance(value, (tuple, list)):
+            result = []
+
+            for item in value:
+                if isinstance(item, (tuple, list)):
+                    item = _item_qvalue_pair_to_header_element(pair=item)
+                result.append(item)
+            header_str = ", ".join(result)
         else:
-            if hasattr(value, "items"):
-                value = sorted(value.items(), key=lambda item: item[1], reverse=True)
-
-            if isinstance(value, (tuple, list)):
-                result = []
-
-                for item in value:
-                    if isinstance(item, (tuple, list)):
-                        item = _item_qvalue_pair_to_header_element(pair=item)
-                    result.append(item)
-                header_str = ", ".join(result)
-            else:
-                header_str = str(value)
+            header_str = str(value)
 
         return header_str
 
@@ -1539,18 +1553,28 @@ class AcceptEncoding:
 
         return generator(value=value)
 
+    def __init__(self, header_value):
+        """
+        Create an :class:`AcceptEncoding` instance.
 
-class AcceptEncodingValidHeader(AcceptEncoding):
-    """
-    Represent a valid ``Accept-Encoding`` header.
+        :param header_value: (``str``) header value.
+        """
+        header_value = self._python_value_to_header_str(header_value)
+        self._header_value = header_value
+        self._parsed = None
+        if header_value is not None:
+            try:
+                self._parsed = tuple(self.parse(header_value))
+            except ValueError:
+                pass
 
-    A valid header is one that conforms to :rfc:`RFC 7231, section 5.3.4
-    <7231#section-5.3.4>`.
-
-    This object should not be modified. To add to the header, we can use the
-    addition operators (``+`` and ``+=``), which return a new object (see the
-    docstring for :meth:`AcceptEncodingValidHeader.__add__`).
-    """
+        #: Instance of :enum:`.HeaderState` representing the state of
+        #: the ``Accept-Encoding`` header.
+        self.header_state = (
+            HeaderState.Missing
+            if header_value is None
+            else (HeaderState.Invalid if self._parsed is None else HeaderState.Valid)
+        )
 
     @property
     def header_value(self):
@@ -1561,30 +1585,17 @@ class AcceptEncodingValidHeader(AcceptEncoding):
     @property
     def parsed(self):
         """
-        (``list`` or ``None``) Parsed form of the header.
+        (``tuple`` or ``None``) Parsed form of the header.
 
-        A list of (*codings*, *qvalue*) tuples, where
+        A ``tuple`` of (*codings*, *qvalue*) tuples, where
 
-        *codings* (``str``) is a content-coding, the string "``identity``", or
-        "``*``"; and
+        *codings* (``str``) is a content-coding, the string ``identity``, or
+        ``*``; and
 
         *qvalue* (``float``) is the quality value of the codings.
         """
 
         return self._parsed
-
-    def __init__(self, header_value):
-        """
-        Create an :class:`AcceptEncodingValidHeader` instance.
-
-        :param header_value: (``str``) header value.
-        :raises ValueError: if `header_value` is an invalid value for an
-                            ``Accept-Encoding`` header.
-        """
-        self._header_value = header_value
-        self._parsed = list(self.parse(header_value))
-        self._parsed_nonzero = [item for item in self.parsed if item[1]]
-        # item[1] is the qvalue
 
     def copy(self):
         """
@@ -1593,54 +1604,6 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         """
         return self.__class__(self._header_value)
 
-    def __add__(self, other):
-        """
-        Add to header, creating a new header object.
-
-        `other` can be:
-
-        * ``None``
-        * a ``str`` header value
-        * a ``dict``, with content-coding, ``identity`` or ``*`` ``str``'s as
-          keys, and qvalue ``float``'s as values
-        * a ``tuple`` or ``list``, where each item is either a header element
-          ``str``, or a (content-coding/``identity``/``*``, qvalue) ``tuple``
-          or ``list``
-        * an :class:`AcceptEncodingValidHeader`,
-          :class:`AcceptEncodingNoHeader`, or
-          :class:`AcceptEncodingInvalidHeader` instance
-        * object of any other type that returns a value for ``__str__``
-
-        If `other` is a valid header value or another
-        :class:`AcceptEncodingValidHeader` instance, and the header value it
-        represents is not ``''``, then the two header values are joined with
-        ``', '``, and a new :class:`AcceptEncodingValidHeader` instance with
-        the new header value is returned.
-
-        If `other` is a valid header value or another
-        :class:`AcceptEncodingValidHeader` instance representing a header value
-        of ``''``; or if it is ``None`` or an :class:`AcceptEncodingNoHeader`
-        instance; or if it is an invalid header value, or an
-        :class:`AcceptEncodingInvalidHeader` instance, then a new
-        :class:`AcceptEncodingValidHeader` instance with the same header value
-        as ``self`` is returned.
-        """
-
-        if isinstance(other, AcceptEncodingValidHeader):
-            if other.header_value == "":
-                return self.__class__(header_value=self.header_value)
-            else:
-                return create_accept_encoding_header(
-                    header_value=self.header_value + ", " + other.header_value
-                )
-
-        if isinstance(other, (AcceptEncodingNoHeader, AcceptEncodingInvalidHeader)):
-            return self.__class__(header_value=self.header_value)
-
-        return self._add_instance_and_non_accept_encoding_type(
-            instance=self, other=other
-        )
-
     def __bool__(self):
         """
         Return whether ``self`` represents a valid ``Accept-Encoding`` header.
@@ -1648,93 +1611,17 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         Return ``True`` if ``self`` represents a valid header, and ``False`` if
         it represents an invalid header, or the header not being in the
         request.
-
-        For this class, it always returns ``True``.
         """
 
-        return True
-
-    def __contains__(self, offer):
-        """
-        Return ``bool`` indicating whether `offer` is acceptable.
-
-        .. warning::
-
-           The behavior of :meth:`AcceptEncodingValidHeader.__contains__` is
-           currently being maintained for backward compatibility, but it will
-           change in the future to better conform to the RFC.
-
-        :param offer: (``str``) a content-coding or ``identity`` offer
-        :return: (``bool``) Whether ``offer`` is acceptable according to the
-                 header.
-
-        The behavior of this method does not fully conform to :rfc:`7231`.
-        It does not correctly interpret ``*``::
-
-            >>> 'gzip' in AcceptEncodingValidHeader('gzip;q=0, *')
-            True
-
-        and does not handle the ``identity`` token correctly::
-
-            >>> 'identity' in AcceptEncodingValidHeader('gzip')
-            False
-        """
-        warnings.warn(
-            "The behavior of AcceptEncodingValidHeader.__contains__ is "
-            "currently being maintained for backward compatibility, but it "
-            "will change in the future to better conform to the RFC.",
-            DeprecationWarning,
-        )
-
-        for mask, _quality in self._parsed_nonzero:
-            if self._old_match(mask, offer):
-                return True
-
-    def __iter__(self):
-        """
-        Return all the ranges with non-0 qvalues, in order of preference.
-
-        .. warning::
-
-           The behavior of this method is currently maintained for backward
-           compatibility, but will change in the future.
-
-        :return: iterator of all the (content-coding/``identity``/``*``) items
-                 in the header with non-0 qvalues, in descending order of
-                 qvalue. If two items have the same qvalue, they are returned
-                 in the order of their positions in the header, from left to
-                 right.
-
-        Please note that this is a simple filter for the items in the header
-        with non-0 qvalues, and is not necessarily the same as what the client
-        prefers, e.g. ``'gzip;q=0, *'`` means 'everything but gzip', but
-        ``list(instance)`` would return only ``['*']``.
-        """
-        warnings.warn(
-            "The behavior of AcceptEncodingLanguageValidHeader.__iter__ is "
-            "currently maintained for backward compatibility, but will change"
-            " in the future.",
-            DeprecationWarning,
-        )
-
-        for mask, _quality in sorted(
-            self._parsed_nonzero, key=lambda i: i[1], reverse=True
-        ):
-            yield mask
-
-    def __radd__(self, other):
-        """
-        Add to header, creating a new header object.
-
-        See the docstring for :meth:`AcceptEncodingValidHeader.__add__`.
-        """
-
-        return self._add_instance_and_non_accept_encoding_type(
-            instance=self, other=other, instance_on_the_right=True
-        )
+        return self.header_state is HeaderState.Valid
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} ({str(self)!r})>"
+        filler = (
+            f"({str(self)!r})"
+            if self.header_state is HeaderState.Valid
+            else f": {self.header_state.value}"
+        )
+        return f"<{self.__class__.__name__}{filler}>"
 
     def __str__(self):
         r"""
@@ -1743,58 +1630,16 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         e.g. If the ``header_value`` is ``",\t, a ;\t q=0.20 , b ,',"``,
         ``str(instance)`` returns ``"a;q=0.2, b, '"``.
         """
+
+        if self.header_state is HeaderState.Missing:
+            return "<no header in request>"
+
+        elif self.header_state is HeaderState.Invalid:
+            return "<invalid header value>"
+
         return ", ".join(
             _item_qvalue_pair_to_header_element(pair=tuple_) for tuple_ in self.parsed
         )
-
-    def _add_instance_and_non_accept_encoding_type(
-        self, instance, other, instance_on_the_right=False
-    ):
-        if not other:
-            return self.__class__(header_value=instance.header_value)
-
-        other_header_value = self._python_value_to_header_str(value=other)
-
-        if other_header_value == "":
-            # if ``other`` is an object whose type we don't recognise, and
-            # str(other) returns ''
-            return self.__class__(header_value=instance.header_value)
-
-        try:
-            self.parse(value=other_header_value)
-        except ValueError:  # invalid header value
-            return self.__class__(header_value=instance.header_value)
-
-        new_header_value = (
-            (other_header_value + ", " + instance.header_value)
-            if instance_on_the_right
-            else (instance.header_value + ", " + other_header_value)
-        )
-        return self.__class__(header_value=new_header_value)
-
-    def _old_match(self, mask, offer):
-        """
-        Return whether content-coding offer matches codings header item.
-
-        .. warning::
-
-           This is maintained for backward compatibility, and will be
-           deprecated in the future.
-
-        This method was WebOb's old criterion for deciding whether a
-        content-coding offer matches a header item (content-coding,
-        ``identity`` or ``*``), used in
-
-        - :meth:`AcceptEncodingValidHeader.__contains__`
-        - :meth:`AcceptEncodingValidHeader.best_match`
-        - :meth:`AcceptEncodingValidHeader.quality`
-
-        It does not conform to :rfc:`RFC 7231, section 5.3.4
-        <7231#section-5.3.4>` in that it does not interpret ``*`` values in the
-        header correctly: ``*`` should only match content-codings not mentioned
-        elsewhere in the header.
-        """
-        return mask == "*" or offer.lower() == mask.lower()
 
     def acceptable_offers(self, offers):
         """
@@ -1802,28 +1647,32 @@ class AcceptEncodingValidHeader(AcceptEncoding):
 
         The offers are returned in descending order of preference, where
         preference is indicated by the qvalue of the item (content-coding,
-        "identity" or "*") in the header that matches the offer.
+        ``identity`` or ``*``) in the header that matches the offer.
 
         This uses the matching rules described in :rfc:`RFC 7231, section 5.3.4
         <7231#section-5.3.4>`.
 
-        :param offers: ``iterable`` of ``str``s, where each ``str`` is a
+        :param offers: ``iterable`` of ``str``'s, where each ``str`` is a
                        content-coding or the string ``identity`` (the token
                        used to represent "no encoding")
-        :return: A list of tuples of the form (content-coding or "identity",
-                 qvalue), in descending order of qvalue. Where two offers have
+        :return: A list of tuples of the form (content-coding or ``identity``,
+                 qvalue), in descending order of qvalue. Where two offers match
                  the same qvalue, they are returned in the same order as their
                  order in `offers`.
 
-        Use the string ``'identity'`` (without the quotes) in `offers` to
-        indicate an offer with no content-coding. From the RFC: 'If the
-        representation has no content-coding, then it is acceptable by default
-        unless specifically excluded by the Accept-Encoding field stating
-        either "identity;q=0" or "\\*;q=0" without a more specific entry for
-        "identity".' The RFC does not specify the qvalue that should be
-        assigned to the representation/offer with no content-coding; this
-        implementation assigns it a qvalue of 1.0.
+        Use the string ``identity`` in `offers` to indicate an offer with no
+        content-coding. From the RFC: 'If the representation has no
+        content-coding, then it is acceptable by default unless specifically
+        excluded by the Accept-Encoding field stating either ``identity;q=0``
+        or ``*;q=0`` without a more specific entry for ``identity``.'
+        The RFC does not specify the qvalue that should be assigned to the
+        representation/offer with no content-coding; this implementation
+        assigns it a qvalue of 1.0.
         """
+
+        if self.header_state is not HeaderState.Valid:
+            return [(offer, 1.0) for offer in offers]
+
         lowercased_parsed = [
             (codings.lower(), qvalue) for (codings, qvalue) in self.parsed
         ]
@@ -1881,358 +1730,93 @@ class AcceptEncodingValidHeader(AcceptEncoding):
 
     def best_match(self, offers, default_match=None):
         """
-        Return the best match from the sequence of `offers`.
+        Return the best match from the sequence of ``offers``.
 
-        .. warning::
+        This is a thin wrapper around :meth:`.acceptable_offers` that makes
+        usage more convenient for typical use-cases where you just want
+        to know the client's most preferred match.
 
-           This is currently maintained for backward compatibility, and will be
-           deprecated in the future.
+        :param offers: ``iterable`` of ``str``s, where each ``str`` is a
+                       content-coding or the string ``identity`` (the token
+                       used to represent "no encoding")
 
-           :meth:`AcceptEncodingValidHeader.best_match` uses its own algorithm
-           (one not specified in :rfc:`RFC 7231 <7231>`) to determine what is a
-           best match. The algorithm has many issues, and does not conform to
-           the RFC.
+        :param default_match:
+            (optional, any type) the value to be returned if there is no match
 
-        Each offer in `offers` is checked against each non-``q=0`` item
-        (content-coding/``identity``/``*``) in the header. If the two are a
-        match according to WebOb's old criterion for a match, the quality value
-        of the match is the qvalue of the item from the header multiplied by
-        the server quality value of the offer (if the server quality value is
-        not supplied, it is 1).
+        :return:
+            (``str``, or the type of ``default_match``)
 
-        The offer in the match with the highest quality value is the best
-        match. If there is more than one match with the highest qvalue, the one
-        that shows up first in `offers` is the best match.
+            | The offer that is the best match based on q-value. If there is no
+              match, the value of ``default_match`` is returned. Where two
+              offers match the same qvalue, they are returned in the same order
+              as their order in ``offers``.
 
-        :param offers: (iterable)
+        .. versionchanged:: 2.0
 
-                       | Each item in the iterable may be a ``str`` *codings*,
-                         or a (*codings*, server quality value) ``tuple`` or
-                         ``list``, where *codings* is either a content-coding,
-                         or the string ``identity`` (which represents *no
-                         encoding*). ``str`` and ``tuple``/``list`` elements
-                         may be mixed within the iterable.
-
-        :param default_match: (optional, any type) the value to be returned if
-                              there is no match
-
-        :return: (``str``, or the type of `default_match`)
-
-                 | The offer that is the best match. If there is no match, the
-                   value of `default_match` is returned.
-
-        This method does not conform to :rfc:`RFC 7231, section 5.3.4
-        <7231#section-5.3.4>`, in that it does not correctly interpret ``*``::
-
-            >>> AcceptEncodingValidHeader('gzip;q=0, *').best_match(['gzip'])
-            'gzip'
-
-        and does not handle the ``identity`` token correctly::
-
-            >>> instance = AcceptEncodingValidHeader('gzip')
-            >>> instance.best_match(['identity']) is None
-            True
+            - A tuple can no longer be an offer containing server-side quality
+              values.
+            - An offer will only match a ``*`` clause in a header if it does
+              not match any other clauses.
+            - The ``identity`` offer was not properly considered a match unless
+              the header explicitly it excluded via ``*;q=0`` or
+              ``identity;q=0``.
         """
-        warnings.warn(
-            "The behavior of AcceptEncodingValidHeader.best_match is "
-            "currently being maintained for backward compatibility, but it "
-            "will be deprecated in the future, as it does not conform to the"
-            " RFC.",
-            DeprecationWarning,
-        )
-        best_quality = -1
-        best_offer = default_match
-        matched_by = "*/*"
-        for offer in offers:
-            if isinstance(offer, (tuple, list)):
-                offer, server_quality = offer
-            else:
-                server_quality = 1
-            for item in self._parsed_nonzero:
-                mask = item[0]
-                quality = item[1]
-                possible_quality = server_quality * quality
-                if possible_quality < best_quality:
-                    continue
-                elif possible_quality == best_quality:
-                    # 'text/plain' overrides 'message/*' overrides '*/*'
-                    # (if all match w/ the same q=)
-                    # [We can see that this was written for the Accept header,
-                    # not the Accept-Encoding header.]
-                    if matched_by.count("*") <= mask.count("*"):
-                        continue
-                if self._old_match(mask, offer):
-                    best_quality = possible_quality
-                    best_offer = offer
-                    matched_by = mask
-        return best_offer
+        matches = self.acceptable_offers(offers)
+        if matches:
+            return matches[0][0]
+        return default_match
 
     def quality(self, offer):
         """
-        Return quality value of given offer, or ``None`` if there is no match.
+        Return quality value of given ``offer``, or ``None`` if there is no match.
 
-        .. warning::
+        This is a thin wrapper around :meth:`.acceptable_offers` that matches
+        a specific ``offer``.
 
-           This is currently maintained for backward compatibility, and will be
-           deprecated in the future.
-
-        :param offer: (``str``) A content-coding, or ``identity``.
+        :param offer: (``str``) a content-coding, or ``identity`` offer
         :return: (``float`` or ``None``)
 
                  | The quality value from the header item
                    (content-coding/``identity``/``*``) that matches the
                    `offer`, or ``None`` if there is no match.
 
-        The behavior of this method does not conform to :rfc:`RFC 7231, section
-        5.3.4<7231#section-5.3.4>`, in that it does not correctly interpret
-        ``*``::
+        .. versionchanged:: 2.0
 
-            >>> AcceptEncodingValidHeader('gzip;q=0, *').quality('gzip')
-            1.0
-
-        and does not handle the ``identity`` token correctly::
-
-            >>> AcceptEncodingValidHeader('gzip').quality('identity') is None
-            True
+            - A tuple can no longer be an offer containing server-side quality
+              values.
+            - An offer will only match a ``*`` clause in a header if it does
+              not match any other clauses.
+            - The ``identity`` offer was not properly considered a match unless
+              the header explicitly it excluded via ``*;q=0`` or
+              ``identity;q=0``.
         """
-        warnings.warn(
-            "The behavior of AcceptEncodingValidHeader.quality is currently "
-            "being maintained for backward compatibility, but it will be "
-            "deprecated in the future, as it does not conform to the RFC.",
-            DeprecationWarning,
-        )
-        bestq = 0
-        for mask, q in self.parsed:
-            if self._old_match(mask, offer):
-                bestq = max(bestq, q)
-        return bestq or None
-
-
-class _AcceptEncodingInvalidOrNoHeader(AcceptEncoding):
-    """
-    Represent when an ``Accept-Encoding`` header is invalid or not in request.
-
-    This is the base class for the behaviour that
-    :class:`.AcceptEncodingInvalidHeader` and :class:`.AcceptEncodingNoHeader`
-    have in common.
-
-    :rfc:`7231` does not provide any guidance on what should happen if the
-    ``AcceptEncoding`` header has an invalid value. This implementation
-    disregards the header when the header is invalid, so
-    :class:`.AcceptEncodingInvalidHeader` and :class:`.AcceptEncodingNoHeader`
-    have much behaviour in common.
-    """
-
-    def __bool__(self):
-        """
-        Return whether ``self`` represents a valid ``Accept-Encoding`` header.
-
-        Return ``True`` if ``self`` represents a valid header, and ``False`` if
-        it represents an invalid header, or the header not being in the
-        request.
-
-        For this class, it always returns ``False``.
-        """
-        return False
+        matches = self.acceptable_offers([offer])
+        if matches:
+            return matches[0][1]
 
     def __contains__(self, offer):
         """
         Return ``bool`` indicating whether `offer` is acceptable.
 
-        .. warning::
-
-           The behavior of ``.__contains__`` for the ``Accept-Encoding``
-           classes is currently being maintained for backward compatibility,
-           but it will change in the future to better conform to the RFC.
+        This is a thin wrapper around :meth:`.acceptable_offers` that matches
+        a specific ``offer``.
 
         :param offer: (``str``) a content-coding or ``identity`` offer
         :return: (``bool``) Whether ``offer`` is acceptable according to the
                  header.
 
-        For this class, either there is no ``Accept-Encoding`` header in the
-        request, or the header is invalid, so any content-coding is acceptable,
-        and this always returns ``True``.
+        .. versionchanged:: 2.0
+
+            - A tuple can no longer be an offer containing server-side quality
+              values.
+            - An offer will only match a ``*`` clause in a header if it does
+              not match any other clauses.
+            - The ``identity`` offer was not properly considered a match unless
+              the header explicitly it excluded via ``*;q=0`` or
+              ``identity;q=0``.
         """
-        warnings.warn(
-            "The behavior of .__contains__ for the Accept-Encoding classes is "
-            "currently being maintained for backward compatibility, but it "
-            "will change in the future to better conform to the RFC.",
-            DeprecationWarning,
-        )
-        return True
 
-    def __iter__(self):
-        """
-        Return all the header items with non-0 qvalues, in order of preference.
-
-        .. warning::
-
-           The behavior of this method is currently maintained for backward
-           compatibility, but will change in the future.
-
-        :return: iterator of all the (content-coding/``identity``/``*``) items
-                 in the header with non-0 qvalues, in descending order of
-                 qvalue. If two items have the same qvalue, they are returned
-                 in the order of their positions in the header, from left to
-                 right.
-
-        When there is no ``Accept-Encoding`` header in the request or the
-        header is invalid, there are no items in the header, so this always
-        returns an empty iterator.
-        """
-        warnings.warn(
-            "The behavior of AcceptEncodingValidHeader.__iter__ is currently "
-            "maintained for backward compatibility, but will change in the "
-            "future.",
-            DeprecationWarning,
-        )
-        return iter(())
-
-    def acceptable_offers(self, offers):
-        """
-        Return the offers that are acceptable according to the header.
-
-        :param offers: ``iterable`` of ``str``s, where each ``str`` is a
-                       content-coding or the string ``identity`` (the token
-                       used to represent "no encoding")
-        :return: When the header is invalid, or there is no ``Accept-Encoding``
-                 header in the request, all `offers` are considered acceptable,
-                 so this method returns a list of (content-coding or
-                 "identity", qvalue) tuples where each offer in `offers` is
-                 paired with the qvalue of 1.0, in the same order as in
-                 `offers`.
-        """
-        return [(offer, 1.0) for offer in offers]
-
-    def best_match(self, offers, default_match=None):
-        """
-        Return the best match from the sequence of `offers`.
-
-        This is the ``.best_match()`` method for when the header is invalid or
-        not found in the request, corresponding to
-        :meth:`AcceptEncodingValidHeader.best_match`.
-
-        .. warning::
-
-           This is currently maintained for backward compatibility, and will be
-           deprecated in the future (see the documentation for
-           :meth:`AcceptEncodingValidHeader.best_match`).
-
-        When the header is invalid, or there is no `Accept-Encoding` header in
-        the request, all `offers` are considered acceptable, so the best match
-        is the offer in `offers` with the highest server quality value (if the
-        server quality value is not supplied for a media type, it is 1).
-
-        If more than one offer in `offers` have the same highest server quality
-        value, then the one that shows up first in `offers` is the best match.
-
-        :param offers: (iterable)
-
-                       | Each item in the iterable may be a ``str`` *codings*,
-                         or a (*codings*, server quality value) ``tuple`` or
-                         ``list``, where *codings* is either a content-coding,
-                         or the string ``identity`` (which represents *no
-                         encoding*). ``str`` and ``tuple``/``list`` elements
-                         may be mixed within the iterable.
-
-        :param default_match: (optional, any type) the value to be returned if
-                              `offers` is empty.
-
-        :return: (``str``, or the type of `default_match`)
-
-                 | The offer that has the highest server quality value. If
-                   `offers` is empty, the value of `default_match` is returned.
-        """
-        warnings.warn(
-            "The behavior of .best_match for the Accept-Encoding classes is "
-            "currently being maintained for backward compatibility, but the "
-            "method will be deprecated in the future, as its behavior is not "
-            "specified in (and currently does not conform to) RFC 7231.",
-            DeprecationWarning,
-        )
-        best_quality = -1
-        best_offer = default_match
-        for offer in offers:
-            if isinstance(offer, (list, tuple)):
-                offer, quality = offer
-            else:
-                quality = 1
-            if quality > best_quality:
-                best_offer = offer
-                best_quality = quality
-        return best_offer
-
-    def quality(self, offer):
-        """
-        Return quality value of given offer, or ``None`` if there is no match.
-
-        This is the ``.quality()`` method for when the header is invalid or not
-        found in the request, corresponding to
-        :meth:`AcceptEncodingValidHeader.quality`.
-
-        .. warning::
-
-           This is currently maintained for backward compatibility, and will be
-           deprecated in the future (see the documentation for
-           :meth:`AcceptEncodingValidHeader.quality`).
-
-        :param offer: (``str``) A content-coding, or ``identity``.
-        :return: (``float``) ``1.0``.
-
-        When the ``Accept-Encoding`` header is invalid or not in the request,
-        all offers are equally acceptable, so 1.0 is always returned.
-        """
-        warnings.warn(
-            "The behavior of .quality for the Accept-Encoding classes is "
-            "currently being maintained for backward compatibility, but the "
-            "method will be deprecated in the future, as its behavior does "
-            "not conform to RFC 7231.",
-            DeprecationWarning,
-        )
-        return 1.0
-
-
-class AcceptEncodingNoHeader(_AcceptEncodingInvalidOrNoHeader):
-    """
-    Represent when there is no ``Accept-Encoding`` header in the request.
-
-    This object should not be modified. To add to the header, we can use the
-    addition operators (``+`` and ``+=``), which return a new object (see the
-    docstring for :meth:`AcceptEncodingNoHeader.__add__`).
-    """
-
-    @property
-    def header_value(self):
-        """
-        (``str`` or ``None``) The header value.
-
-        As there is no header in the request, this is ``None``.
-        """
-        return self._header_value
-
-    @property
-    def parsed(self):
-        """
-        (``list`` or ``None``) Parsed form of the header.
-
-        As there is no header in the request, this is ``None``.
-        """
-        return self._parsed
-
-    def __init__(self):
-        """
-        Create an :class:`AcceptEncodingNoHeader` instance.
-        """
-        self._header_value = None
-        self._parsed = None
-        self._parsed_nonzero = None
-
-    def copy(self):
-        """
-        Create a copy of the header object.
-
-        """
-        return self.__class__()
+        return self.quality(offer) is not None
 
     def __add__(self, other):
         """
@@ -2247,178 +1831,41 @@ class AcceptEncodingNoHeader(_AcceptEncodingInvalidOrNoHeader):
         * a ``tuple`` or ``list``, where each item is either a header element
           ``str``, or a (content-coding/``identity``/``*``, qvalue) ``tuple``
           or ``list``
-        * an :class:`AcceptEncodingValidHeader`,
-          :class:`AcceptEncodingNoHeader`, or
-          :class:`AcceptEncodingInvalidHeader` instance
+        * an :class:`AcceptEncoding` instance
         * object of any other type that returns a value for ``__str__``
 
-        If `other` is a valid header value or an
-        :class:`AcceptEncodingValidHeader` instance, a new
-        :class:`AcceptEncodingValidHeader` instance with the valid header value
-        is returned.
-
-        If `other` is ``None``, an :class:`AcceptEncodingNoHeader` instance, an
-        invalid header value, or an :class:`AcceptEncodingInvalidHeader`
-        instance, a new :class:`AcceptEncodingNoHeader` instance is returned.
+        The rules for adding values to a header are that the values are
+        appended if valid, or discarded. If everything is discarded then an
+        instance representing a missing header is returned.
         """
-        if isinstance(other, AcceptEncodingValidHeader):
-            return AcceptEncodingValidHeader(header_value=other.header_value)
 
-        if isinstance(other, (AcceptEncodingNoHeader, AcceptEncodingInvalidHeader)):
-            return self.__class__()
+        other = create_accept_encoding_header(other)
+        is_self_valid = self.header_state is HeaderState.Valid
+        is_other_valid = other.header_state is HeaderState.Valid
 
-        return self._add_instance_and_non_accept_encoding_type(
-            instance=self, other=other
-        )
+        if is_self_valid:
+            if is_other_valid:
+                if self.header_value == "":
+                    return other
+                if other.header_value == "":
+                    return self
+                return create_accept_encoding_header(
+                    self.header_value + ", " + other.header_value
+                )
+            return self
+        elif is_other_valid:
+            return other
+        return create_accept_encoding_header(None)
 
     def __radd__(self, other):
         """
         Add to header, creating a new header object.
 
-        See the docstring for :meth:`AcceptEncodingNoHeader.__add__`.
-        """
-        return self.__add__(other=other)
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}>"
-
-    def __str__(self):
-        """Return the ``str`` ``'<no header in request>'``."""
-
-        return "<no header in request>"
-
-    def _add_instance_and_non_accept_encoding_type(self, instance, other):
-        if other is None:
-            return self.__class__()
-
-        other_header_value = self._python_value_to_header_str(value=other)
-
-        try:
-            return AcceptEncodingValidHeader(header_value=other_header_value)
-        except ValueError:  # invalid header value
-            return self.__class__()
-
-
-class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
-    """
-    Represent an invalid ``Accept-Encoding`` header.
-
-    An invalid header is one that does not conform to
-    :rfc:`7231#section-5.3.4`.
-
-    :rfc:`7231` does not provide any guidance on what should happen if the
-    ``Accept-Encoding`` header has an invalid value. This implementation
-    disregards the header, and treats it as if there is no ``Accept-Encoding``
-    header in the request.
-
-    This object should not be modified. To add to the header, we can use the
-    addition operators (``+`` and ``+=``), which return a new object (see the
-    docstring for :meth:`AcceptEncodingInvalidHeader.__add__`).
-    """
-
-    @property
-    def header_value(self):
-        """(``str`` or ``None``) The header value."""
-
-        return self._header_value
-
-    @property
-    def parsed(self):
-        """
-        (``list`` or ``None``) Parsed form of the header.
-
-        As the header is invalid and cannot be parsed, this is ``None``.
+        See the docstring for :meth:`.__add__`.
         """
 
-        return self._parsed
-
-    def __init__(self, header_value):
-        """
-        Create an :class:`AcceptEncodingInvalidHeader` instance.
-        """
-        self._header_value = header_value
-        self._parsed = None
-        self._parsed_nonzero = None
-
-    def copy(self):
-        """
-        Create a copy of the header object.
-
-        """
-        return self.__class__(self._header_value)
-
-    def __add__(self, other):
-        """
-        Add to header, creating a new header object.
-
-        `other` can be:
-
-        * ``None``
-        * a ``str`` header value
-        * a ``dict``, with content-coding, ``identity`` or ``*`` ``str``'s as
-          keys, and qvalue ``float``'s as values
-        * a ``tuple`` or ``list``, where each item is either a header element
-          ``str``, or a (content-coding/``identity``/``*``, qvalue) ``tuple``
-          or ``list``
-        * an :class:`AcceptEncodingValidHeader`,
-          :class:`AcceptEncodingNoHeader`, or
-          :class:`AcceptEncodingInvalidHeader` instance
-        * object of any other type that returns a value for ``__str__``
-
-        If `other` is a valid header value or an
-        :class:`AcceptEncodingValidHeader` instance, then a new
-        :class:`AcceptEncodingValidHeader` instance with the valid header value
-        is returned.
-
-        If `other` is ``None``, an :class:`AcceptEncodingNoHeader` instance, an
-        invalid header value, or an :class:`AcceptEncodingInvalidHeader`
-        instance, a new :class:`AcceptEncodingNoHeader` instance is returned.
-        """
-
-        if isinstance(other, AcceptEncodingValidHeader):
-            return AcceptEncodingValidHeader(header_value=other.header_value)
-
-        if isinstance(other, (AcceptEncodingNoHeader, AcceptEncodingInvalidHeader)):
-            return AcceptEncodingNoHeader()
-
-        return self._add_instance_and_non_accept_encoding_type(
-            instance=self, other=other
-        )
-
-    def __radd__(self, other):
-        """
-        Add to header, creating a new header object.
-
-        See the docstring for :meth:`AcceptEncodingValidHeader.__add__`.
-        """
-
-        return self._add_instance_and_non_accept_encoding_type(
-            instance=self, other=other, instance_on_the_right=True
-        )
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}>"
-        # We do not display the header_value, as it is untrusted input. The
-        # header_value could always be easily obtained from the .header_value
-        # property.
-
-    def __str__(self):
-        """Return the ``str`` ``'<invalid header value>'``."""
-
-        return "<invalid header value>"
-
-    def _add_instance_and_non_accept_encoding_type(
-        self, instance, other, instance_on_the_right=False
-    ):
-        if other is None:
-            return AcceptEncodingNoHeader()
-
-        other_header_value = self._python_value_to_header_str(value=other)
-
-        try:
-            return AcceptEncodingValidHeader(header_value=other_header_value)
-        except ValueError:  # invalid header value
-            return AcceptEncodingNoHeader()
+        other = create_accept_encoding_header(other)
+        return other + self
 
 
 def create_accept_encoding_header(header_value):
@@ -2426,24 +1873,12 @@ def create_accept_encoding_header(header_value):
     Create an object representing the ``Accept-Encoding`` header in a request.
 
     :param header_value: (``str``) header value
-    :return: If `header_value` is ``None``, an :class:`AcceptEncodingNoHeader`
-             instance.
-
-             | If `header_value` is a valid ``Accept-Encoding`` header, an
-               :class:`AcceptEncodingValidHeader` instance.
-
-             | If `header_value` is an invalid ``Accept-Encoding`` header, an
-               :class:`AcceptEncodingInvalidHeader` instance.
+    :return: an :class:`AcceptEncoding` instance.
     """
 
-    if header_value is None:
-        return AcceptEncodingNoHeader()
     if isinstance(header_value, AcceptEncoding):
-        return header_value.copy()
-    try:
-        return AcceptEncodingValidHeader(header_value=header_value)
-    except ValueError:
-        return AcceptEncodingInvalidHeader(header_value=header_value)
+        return header_value
+    return AcceptEncoding(header_value)
 
 
 def accept_encoding_property():
@@ -2463,9 +1898,7 @@ def accept_encoding_property():
     def fget(request):
         """Get an object representing the header in the request."""
 
-        return create_accept_encoding_header(
-            header_value=request.environ.get(ENVIRON_KEY)
-        )
+        return create_accept_encoding_header(request.environ.get(ENVIRON_KEY))
 
     def fset(request, value):
         """
@@ -2480,22 +1913,17 @@ def accept_encoding_property():
         * a ``tuple`` or ``list``, where each item is either a header element
           ``str``, or a (content-coding/``identity``/``*``, qvalue) ``tuple``
           or ``list``
-        * an :class:`AcceptEncodingValidHeader`,
-          :class:`AcceptEncodingNoHeader`, or
-          :class:`AcceptEncodingInvalidHeader` instance
+        * an :class:`AcceptEncoding` instance
         * object of any other type that returns a value for ``__str__``
         """
 
-        if value is None or isinstance(value, AcceptEncodingNoHeader):
-            fdel(request=request)
+        if isinstance(value, AcceptEncoding):
+            value = value.header_value
         else:
-            if isinstance(
-                value, (AcceptEncodingValidHeader, AcceptEncodingInvalidHeader)
-            ):
-                header_value = value.header_value
-            else:
-                header_value = AcceptEncoding._python_value_to_header_str(value=value)
-            request.environ[ENVIRON_KEY] = header_value
+            value = AcceptEncoding._python_value_to_header_str(value)
+        if value is None:
+            return fdel(request)
+        request.environ[ENVIRON_KEY] = value
 
     def fdel(request):
         """Delete the corresponding key from the request environ."""
