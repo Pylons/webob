@@ -1748,7 +1748,7 @@ class Transcoder:
 
             return q_orig
 
-        q = list(parse_qsl_text(q, self.charset))
+        q = list(parse_qsl_text(q, self.charset, self.errors))
 
         return url_encode(q)
 
