@@ -1031,6 +1031,17 @@ def test_location():
     assert req.get_response(res).location == 'http://localhost/test2.html'
 
 
+def test_location_no_open_redirect():
+    # This is a test for a fix for CVE-2024-42353 and
+    # https://github.com/Pylons/webob/security/advisories/GHSA-mg3v-6m49-jhp3
+    res = Response()
+    res.status = "301"
+    res.location = "//www.example.com/test"
+    assert res.location == "//www.example.com/test"
+    req = Request.blank("/")
+    assert req.get_response(res).location == "http://localhost/%2fwww.example.com/test"
+
+
 @pytest.mark.xfail(sys.version_info < (3,0),
                    reason="Python 2.x unicode != str, WSGI requires str. Test "
                    "added due to https://github.com/Pylons/webob/issues/247. "
