@@ -1359,6 +1359,11 @@ class Response:
         if SCHEME_RE.search(value):
             return value
 
+        # This is to fix an open redirect issue due to the way that
+        # urlparse.urljoin works. See CVE-2024-42353 and
+        # https://github.com/Pylons/webob/security/advisories/GHSA-mg3v-6m49-jhp3
+        if value.startswith("//"):
+            value = f"/%2f{value[2:]}"
         new_location = urlparse.urljoin(_request_uri(environ), value)
 
         return new_location
