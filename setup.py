@@ -18,7 +18,11 @@ testing_extras = [
     "pytest-xdist",
 ]
 
-docs_extras = ["Sphinx >= 1.7.5", "pylons-sphinx-themes"]
+docs_extras = [
+    "Sphinx >= 1.7.5",
+    "pylons-sphinx-themes",
+    "setuptools",
+]
 
 setup(
     name="WebOb",
