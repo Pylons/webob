@@ -1,6 +1,19 @@
 Unreleased
 ----------
 
+Security Fix
+~~~~~~~~~~~~
+
+- The use of WebOb's Response object to redirect a request to a new location
+  can lead to an open redirect if the Location header is not a full URI.
+
+  See https://github.com/Pylons/webob/security/advisories/GHSA-mg3v-6m49-jhp3
+  and CVE-2024-42353
+
+  Thanks to Sara Gao for the report
+
+  (This fix was released in WebOb 1.8.8)
+
 Feature
 ~~~~~~~
 
