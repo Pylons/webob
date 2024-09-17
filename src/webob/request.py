@@ -18,7 +18,6 @@ from webob.acceptparse import (
     accept_property,
 )
 from webob.cachecontrol import CacheControl, serialize_cache_control
-from webob.compat import cgi_FieldStorage
 from webob.cookies import RequestCookies
 from webob.descriptors import (
     CHARSET_RE,
@@ -170,18 +169,7 @@ class BaseRequest:
         elif content_type != "multipart/form-data":
             return r
 
-        fs_environ = self.environ.copy()
-        fs_environ.setdefault("CONTENT_LENGTH", "0")
-        fs_environ["QUERY_STRING"] = ""
-        fs = cgi_FieldStorage(
-            fp=self.body_file,
-            environ=fs_environ,
-            keep_blank_values=True,
-            encoding=charset,
-            errors=errors,
-        )
-
-        fout = t.transcode_fs(fs, r._content_type_raw)
+        fout = t.transcode_multipart(self.body_file, r._content_type_raw)
 
         # this order is important, because setting body_file
         # resets content_length
@@ -1749,23 +1737,14 @@ class Transcoder:
 
         return url_encode(q)
 
-    def transcode_fs(self, fs, content_type):
-        # transcode FieldStorage
-        def decode(b):
-            return b
-
-        data = []
-
-        for field in fs.list or ():
-            field.name = decode(field.name)
-
-            if field.filename:
-                field.filename = decode(field.filename)
-                data.append((field.name, field))
-            else:
-                data.append((field.name, decode(field.value)))
-
-        # TODO: transcode big requests to temp file
-        content_type, fout = _encode_multipart(data, content_type, fout=io.BytesIO())
-
+    def transcode_multipart(self, body, content_type):
+        # Transcode multipart
+        boundary = _get_multipart_boundary(content_type)
+        parser = MultipartParser(body, boundary, charset=self.charset)
+        data = MultiDict.from_multipart(parser)
+        content_type, fout = _encode_multipart(
+            data.items(),
+            content_type,
+            fout=io.BytesIO(),
+        )
         return fout
