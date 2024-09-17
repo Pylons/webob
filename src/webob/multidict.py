@@ -6,8 +6,10 @@ Gives a multi-value dictionary object (MultiDict) plus several wrappers
 """
 import binascii
 from collections.abc import MutableMapping
-from urllib.parse import urlencode as url_encode
+from urllib.parse import parse_qsl, urlencode as url_encode
 import warnings
+
+from multipart import parse_options_header
 
 __all__ = ["MultiDict", "NestedMultiDict", "NoVars", "GetDict"]
 
@@ -57,6 +59,9 @@ class MultiDict(MutableMapping):
     def from_fieldstorage(cls, fs):
         """
         Create a multidict from a cgi.FieldStorage instance
+
+        Legacy.
+
         """
         obj = cls()
         # fs.list can be None when there's nothing to parse
@@ -95,6 +100,25 @@ class MultiDict(MutableMapping):
                 obj.add(field.name, decode(value))
 
         return obj
+
+    @classmethod
+    def from_multipart(cls, mp):
+        obj = cls()
+
+        for part in mp:
+            if part.filename or not part.is_buffered():
+                container = MultiDictFile.from_multipart_part(part)
+                obj.add(part.name, container)
+            else:
+                obj.add(part.name, part.value)
+        return obj
+
+    @classmethod
+    def from_qs(cls, data, charset="utf-8"):
+        data = parse_qsl(data, keep_blank_values=True)
+        return cls(
+            (key.decode(charset), value.decode(charset)) for (key, value) in data
+        )
 
     def __getitem__(self, key):
         for k, v in reversed(self._items):
@@ -284,6 +308,56 @@ class MultiDict(MutableMapping):
 
 
 _dummy = object()
+
+
+class MultiDictFile:
+    """
+    A container for a file from a ``multipart/form-data`` request.
+
+    """
+
+    def __init__(
+        self,
+        name,
+        filename,
+        file,
+        type,
+        type_options,
+        disposition,
+        disposition_options,
+        headers,
+    ):
+        self.name = name
+        self.filename = filename
+        self.file = file
+        self.type = type
+        self.type_options = type_options
+        self.disposition = disposition
+        self.disposition_options = disposition_options
+        self.headers = headers
+
+    @classmethod
+    def from_multipart_part(cls, part):
+        content_type = part.headers.get("Content-Type", "")
+        content_type, options = parse_options_header(content_type)
+        return cls(
+            name=part.name,
+            filename=part.filename,
+            file=part.file,
+            type=content_type,
+            type_options=options,
+            disposition=part.disposition,
+            disposition_options=part.options,
+            headers=part.headers,
+        )
+
+    @property
+    def value(self):
+        pos = self.file.tell()
+        self.file.seek(0)
+        val = self.file.read()
+        self.file.seek(pos)
+        return val
 
 
 class GetDict(MultiDict):

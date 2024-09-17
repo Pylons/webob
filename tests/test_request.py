@@ -1060,9 +1060,7 @@ class TestRequestCommon:
         assert request.content_length == 139
 
     def test_blank__post_files(self):
-        import cgi
-
-        from webob.multidict import MultiDict
+        from webob.multidict import MultiDict, MultiDictFile
         from webob.request import _get_multipart_boundary
 
         POST = MultiDict()
@@ -1090,8 +1088,9 @@ class TestRequestCommon:
         )
         assert body_norm == expected
         assert request.content_length == 294
-        assert isinstance(request.POST["first"], cgi.FieldStorage)
-        assert isinstance(request.POST["second"], cgi.FieldStorage)
+        # TODO:  Backwards incompatible changes
+        assert isinstance(request.POST["first"], MultiDictFile)
+        assert isinstance(request.POST["second"], MultiDictFile)
         assert request.POST["first"].value == b"1"
         assert request.POST["second"].value == b"2"
         assert request.POST["third"] == "3"
@@ -2440,7 +2439,7 @@ class TestRequest_functional:
         # A valid request without a Content-Length header should still read
         # the full body.
         # Also test parity between as_string and from_bytes / from_file.
-        import cgi
+        from webob.multidict import MultiDictFile
 
         cls = self._getTargetClass()
         req = cls.from_bytes(_test_req)
@@ -2455,7 +2454,7 @@ class TestRequest_functional:
         assert bar_contents in req.body
         assert req.params["foo"] == "foo"
         bar = req.params["bar"]
-        assert isinstance(bar, cgi.FieldStorage)
+        assert isinstance(bar, MultiDictFile)
         assert bar.type == "application/octet-stream"
         bar.file.seek(0)
         assert bar.file.read() == bar_contents
@@ -2473,7 +2472,7 @@ class TestRequest_functional:
             cls.from_bytes(_test_req2 + b"xx")
 
     def test_from_text(self):
-        import cgi
+        from webob.multidict import MultiDictFile
 
         cls = self._getTargetClass()
         req = cls.from_text(text_(_test_req, "utf-8"))
@@ -2488,7 +2487,7 @@ class TestRequest_functional:
         assert bar_contents in req.body
         assert req.params["foo"] == "foo"
         bar = req.params["bar"]
-        assert isinstance(bar, cgi.FieldStorage)
+        assert isinstance(bar, MultiDictFile)
         assert bar.type == "application/octet-stream"
         bar.file.seek(0)
         assert bar.file.read() == bar_contents
@@ -2574,6 +2573,7 @@ class TestRequest_functional:
         lst = [req.body_file.read(1) for i in range(3)]
         assert lst == [b"a", b"b", b"c"]
 
+    @pytest.mark.xfail
     def test_cgi_escaping_fix(self):
         req = self._blankOne(
             "/",

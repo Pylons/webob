@@ -9,6 +9,8 @@ from urllib import parse as urlparse
 from urllib.parse import quote as url_quote, quote_plus, urlencode as url_encode
 import warnings
 
+from multipart import MultipartParser
+
 from webob.acceptparse import (
     accept_charset_property,
     accept_encoding_property,
@@ -796,27 +798,22 @@ class BaseRequest:
             return NoVars(
                 "Not an HTML form submission (Content-Type: %s)" % content_type
             )
+
         self._check_charset()
-
-        self.make_body_seekable()
-        self.body_file_raw.seek(0)
-
-        fs_environ = env.copy()
-        # FieldStorage assumes a missing CONTENT_LENGTH, but a
-        # default of 0 is better:
-        fs_environ.setdefault("CONTENT_LENGTH", "0")
-        fs_environ["QUERY_STRING"] = ""
-        fs = cgi_FieldStorage(
-            fp=self.body_file,
-            environ=fs_environ,
-            keep_blank_values=True,
-            encoding="utf8",
-        )
-
-        self.body_file_raw.seek(0)
-        vars = MultiDict.from_fieldstorage(fs)
+        if content_type == "multipart/form-data":
+            self.make_body_seekable()
+            self.body_file_raw.seek(0)
+            boundary = _get_multipart_boundary(self._content_type_raw)
+            parser = MultipartParser(
+                self.body_file,
+                boundary,
+                charset="utf8",
+            )
+            vars = MultiDict.from_multipart(parser)
+            self.body_file_raw.seek(0)
+        else:
+            vars = MultiDict.from_qs(self.body)
         env["webob._parsed_post_vars"] = (vars, self.body_file_raw)
-
         return vars
 
     @property
