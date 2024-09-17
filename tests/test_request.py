@@ -2922,35 +2922,6 @@ class TestRequest_functional:
         assert req_body == req2_body
 
 
-class Test_cgi_FieldStorage__repr__patch:
-    def _callFUT(self, fake):
-        from webob.compat import cgi_FieldStorage
-
-        return cgi_FieldStorage.__repr__(fake)
-
-    def test_with_file(self):
-        class Fake:
-            name = "name"
-            file = "file"
-            filename = "filename"
-            value = "value"
-
-        fake = Fake()
-        result = self._callFUT(fake)
-        assert result, "FieldStorage('name' == 'filename')"
-
-    def test_without_file(self):
-        class Fake:
-            name = "name"
-            file = None
-            filename = "filename"
-            value = "value"
-
-        fake = Fake()
-        result = self._callFUT(fake)
-        assert result, "FieldStorage('name', 'filename' == 'value')"
-
-
 class TestLimitedLengthFile:
     def _makeOne(self, file, maxlen):
         from webob.request import LimitedLengthFile

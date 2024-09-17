@@ -6,7 +6,7 @@ from urllib.request import urlopen as url_open
 
 import pytest
 
-from webob.compat import Empty, Queue
+from queue import Empty, Queue
 from webob.request import Request
 from webob.response import Response
 from webob.util import bytes_

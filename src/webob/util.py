@@ -1,6 +1,6 @@
 import warnings
 
-from webob.compat import escape
+from html import escape
 from webob.headers import _trans_key
 
 
