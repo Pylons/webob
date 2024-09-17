@@ -312,7 +312,10 @@ _dummy = object()
 
 class MultiDictFile:
     """
-    A container for a file from a ``multipart/form-data`` request.
+    An object representing a file upload in a ``multipart/form-data`` request.
+
+    This object has the same shape as Python's deprecated ``cgi.FieldStorage``
+    object, which was previously used by webob to represent file uploads.
 
     """
 
