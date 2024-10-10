@@ -54,7 +54,7 @@ setup(
     package_dir={"": "src"},
     python_requires=">=3.8",
     install_requires=[
-        "legacy-cgi~=2.6; python_version >= '3.13'",
+        "legacy-cgi>=2.6; python_version>='3.13'",
     ],
     zip_safe=True,
     extras_require={"testing": testing_extras, "docs": docs_extras},
