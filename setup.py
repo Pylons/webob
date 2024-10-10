@@ -52,6 +52,9 @@ setup(
     packages=find_packages('src', exclude=['tests']),
     package_dir={'': 'src'},
     python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*',
+    install_requires=[
+        "legacy-cgi>=2.6; python_version>='3.13'",
+    ],
     zip_safe=True,
     extras_require={
         'testing': testing_extras,
