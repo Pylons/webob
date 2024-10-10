@@ -40,7 +40,7 @@ jobs:
                     - os: "macos-latest"
                       py: "pypy-3.9"
 
-        name: "Python: ${{ matrix.py }}-${{ matrix.architecture }} on ${{ matrix.os }}"
+        name: "Python: ${{ matrix.py }} on ${{ matrix.os }}"
         runs-on: ${{ matrix.os }}
         steps:
             - uses: actions/checkout@v4
