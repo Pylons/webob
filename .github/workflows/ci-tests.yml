@@ -21,7 +21,6 @@ jobs:
                     - "3.10"
                     - "3.11"
                     - "3.12"
-                    - "pypy-3.8"
                     - "pypy-3.9"
                     - "pypy-3.10"
                 os:
@@ -29,8 +28,6 @@ jobs:
                     - "windows-latest"
                     - "macos-latest"
                 include:
-                  - py: "pypy-3.8"
-                    toxenv: "pypy38"
                   - py: "pypy-3.9"
                     toxenv: "pypy39"
                   - py: "pypy-3.10"
@@ -38,10 +35,6 @@ jobs:
                 exclude:
                     # Don't run all PyPy versions except latest on
                     # Windows/macOS. They are expensive to run.
-                    - os: "windows-latest"
-                      py: "pypy-3.8"
-                    - os: "macos-latest"
-                      py: "pypy-3.8"
                     - os: "windows-latest"
                       py: "pypy-3.9"
                     - os: "macos-latest"
