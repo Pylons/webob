@@ -54,7 +54,7 @@ setup(
     package_dir={"": "src"},
     python_requires=">=3.8",
     install_requires=[
-        "multipart>=0.2,<0.3",
+        "multipart~=1.1",
     ],
     zip_safe=True,
     extras_require={"testing": testing_extras, "docs": docs_extras},

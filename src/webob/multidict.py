@@ -342,15 +342,16 @@ class MultiDictFile:
     @classmethod
     def from_multipart_part(cls, part):
         content_type = part.headers.get("Content-Type", "")
-        content_type, options = parse_options_header(content_type)
+        content_type, options = parse_options_header(part.content_type)
+        disposition, disp_options = parse_options_header(part.disposition)
         return cls(
             name=part.name,
             filename=part.filename,
             file=part.file,
             type=content_type,
             type_options=options,
-            disposition=part.disposition,
-            disposition_options=part.options,
+            disposition=disposition,
+            disposition_options=disp_options,
             headers=part.headers,
         )
 
