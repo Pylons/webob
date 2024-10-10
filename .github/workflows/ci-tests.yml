@@ -21,41 +21,26 @@ jobs:
                     - "3.10"
                     - "3.11"
                     - "3.12"
-                    - "pypy-3.8"
                     - "pypy-3.9"
                     - "pypy-3.10"
                 os:
                     - "ubuntu-latest"
                     - "windows-latest"
                     - "macos-latest"
-                architecture:
-                    - x64
-                    - x86
                 include:
-                  - py: "pypy-3.8"
-                    toxenv: "pypy38"
                   - py: "pypy-3.9"
                     toxenv: "pypy39"
                   - py: "pypy-3.10"
                     toxenv: "pypy310"
                 exclude:
-                    # Linux and macOS don't have x86 python
-                    - os: "ubuntu-latest"
-                      architecture: x86
-                    - os: "macos-latest"
-                      architecture: x86
                     # Don't run all PyPy versions except latest on
                     # Windows/macOS. They are expensive to run.
-                    - os: "windows-latest"
-                      py: "pypy-3.8"
-                    - os: "macos-latest"
-                      py: "pypy-3.8"
                     - os: "windows-latest"
                       py: "pypy-3.9"
                     - os: "macos-latest"
                       py: "pypy-3.9"
 
-        name: "Python: ${{ matrix.py }}-${{ matrix.architecture }} on ${{ matrix.os }}"
+        name: "Python: ${{ matrix.py }} on ${{ matrix.os }}"
         runs-on: ${{ matrix.os }}
         steps:
             - uses: actions/checkout@v4
@@ -63,7 +48,6 @@ jobs:
               uses: actions/setup-python@v5
               with:
                   python-version: ${{ matrix.py }}
-                  architecture: ${{ matrix.architecture }}
             - run: pip install tox
             - name: Running tox with specific toxenv
               if: ${{ matrix.toxenv != '' }}
