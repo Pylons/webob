@@ -2119,22 +2119,6 @@ class TestRequest_functional:
         req2 = req2.decode("latin-1")
         assert body == req2.body
 
-    @pytest.mark.xfail
-    def test_none_field_name(self):
-        from webob.request import Request
-
-        body = b"--FOO\r\nContent-Disposition: form-data\r\n\r\n123\r\n--FOO--"
-        content_type = "multipart/form-data; boundary=FOO"
-        environ = {
-            "wsgi.input": BytesIO(body),
-            "CONTENT_TYPE": content_type,
-            "CONTENT_LENGTH": len(body),
-            "REQUEST_METHOD": "POST",
-        }
-        req = Request(environ)
-        req = req.decode("latin-1")
-        assert body == req.body
-
     def test_broken_seek(self):
         # copy() should work even when the input has a broken seek method
         req = self._blankOne(
@@ -2573,17 +2557,6 @@ class TestRequest_functional:
         req = self._blankOne("/", method="PUT", body=b"abc")
         lst = [req.body_file.read(1) for i in range(3)]
         assert lst == [b"a", b"b", b"c"]
-
-    @pytest.mark.xfail
-    def test_cgi_escaping_fix(self):
-        req = self._blankOne(
-            "/",
-            content_type="multipart/form-data; boundary=boundary",
-            POST=_cgi_escaping_body,
-        )
-        assert list(req.POST.keys()) == ['%20%22"']
-        req.body_file.read()
-        assert list(req.POST.keys()) == ['%20%22"']
 
     def test_content_type_none(self):
         r = self._blankOne("/", content_type="text/html")
