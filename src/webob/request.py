@@ -9,8 +9,6 @@ from urllib import parse as urlparse
 from urllib.parse import quote as url_quote, quote_plus, urlencode as url_encode
 import warnings
 
-from .multipart import MultipartParser
-
 from webob.acceptparse import (
     accept_charset_property,
     accept_encoding_property,
@@ -40,6 +38,8 @@ from webob.etag import AnyETag, IfRange, NoETag, etag_property
 from webob.headers import EnvironHeaders
 from webob.multidict import GetDict, MultiDict, NestedMultiDict, NoVars
 from webob.util import bytes_, parse_qsl_text, text_, url_unquote
+
+from .multipart import MultipartParser
 
 try:
     import simplejson as json
