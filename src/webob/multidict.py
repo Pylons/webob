@@ -9,7 +9,7 @@ from collections.abc import MutableMapping
 from urllib.parse import parse_qsl, urlencode as url_encode
 import warnings
 
-from multipart import parse_options_header
+from .multipart import parse_options_header
 
 __all__ = ["MultiDict", "NestedMultiDict", "NoVars", "GetDict"]
 

@@ -9,7 +9,7 @@ from urllib import parse as urlparse
 from urllib.parse import quote as url_quote, quote_plus, urlencode as url_encode
 import warnings
 
-from multipart import MultipartParser
+from .multipart import MultipartParser
 
 from webob.acceptparse import (
     accept_charset_property,

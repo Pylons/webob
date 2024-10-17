@@ -53,9 +53,6 @@ setup(
     packages=find_packages("src", exclude=["tests"]),
     package_dir={"": "src"},
     python_requires=">=3.8",
-    install_requires=[
-        "multipart~=1.1",
-    ],
     zip_safe=True,
     extras_require={"testing": testing_extras, "docs": docs_extras},
 )
