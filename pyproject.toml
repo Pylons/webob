@@ -9,6 +9,8 @@ exclude = '''
   \.git
   | .tox
 )/
+| src/webob/multipart.py
+| tests/test_multipart/
 '''
 
  # This next section only exists for people that have their editors
@@ -17,7 +19,7 @@ exclude = '''
 profile = "black"
 multi_line_output = 3
 src_paths = ["src", "tests"]
-skip_glob = ["docs/*"]
+skip_glob = ["docs/*", "tests/test_multipart/*", "src/webob/multipart.py"]
 include_trailing_comma = true
 force_grid_wrap = false
 combine_as_imports = true
