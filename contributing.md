@@ -41,17 +41,23 @@ supported systems and attempt to build the docs.
 
 For example, to run the test suite with your current Python runtime:
 
-    tox -e py
+```shell
+tox -e py
+```
 
 If you wish to run multiple targets, you can do so by separating them with a
 comma:
 
-    tox -e py312,coverage
+```shell
+tox -e py312,coverage
+```
 
 If you've already run the coverage target and want to see the results in HTML,
 you can override `tox.ini` settings with the `commands` option:
 
-    tox -e coverage -x testenv:coverage.commands="coverage html"
+```shell
+tox -e coverage -x testenv:coverage.commands="coverage html"
+```
 
 To build the docs:
 
