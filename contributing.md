@@ -55,11 +55,15 @@ you can override `tox.ini` settings with the `commands` option:
 
 To build the docs:
 
-    tox -e docs
+```shell
+tox -e docs
+```
 
 List all possible targets:
 
-    tox list # or `tox l`
+```shell
+tox list # or `tox l`
+```
 
 See `tox.ini` file for details, or <https://tox.wiki/> for general `tox` usage.
 
