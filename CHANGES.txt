@@ -1,3 +1,12 @@
+1.8.9 (2024-11-23)
+------------------
+
+Bugfix
+~~~~~~
+
+- Add `legacy-cgi` to required packages to be installed for Python 3.13
+  compatibility. See https://github.com/Pylons/webob/pull/469
+
 1.8.8 (2024-08-13)
 ------------------
 
