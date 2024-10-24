@@ -36,20 +36,42 @@ one or two development branches are actively maintained.
 Running Tests
 -------------
 
-*Note:* This section needs better instructions.
-
 Run `tox` from within your checkout. This will run the tests across all
 supported systems and attempt to build the docs.
 
-To run the tests for Python 2.x only:
+For example, to run the test suite with your current Python runtime:
 
-    $ tox py2-cover
+```shell
+tox -e py
+```
 
-To build the docs for Python 3.x only:
+If you wish to run multiple targets, you can do so by separating them with a
+comma:
 
-    $ tox py3-docs
+```shell
+tox -e py312,coverage
+```
 
-See the `tox.ini` file for details.
+If you've already run the coverage target and want to see the results in HTML,
+you can override `tox.ini` settings with the `commands` option:
+
+```shell
+tox -e coverage -x testenv:coverage.commands="coverage html"
+```
+
+To build the docs:
+
+```shell
+tox -e docs
+```
+
+List all possible targets:
+
+```shell
+tox list # or `tox l`
+```
+
+See `tox.ini` file for details, or <https://tox.wiki/> for general `tox` usage.
 
 
 Building documentation for a Pylons Project project
