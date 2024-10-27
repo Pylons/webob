@@ -21,6 +21,7 @@ testing_extras = [
 docs_extras = [
     'Sphinx >= 1.7.5',
     'pylons-sphinx-themes',
+    'setuptools'
     ]
 
 setup(
