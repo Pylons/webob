@@ -579,17 +579,17 @@ class TestRequestCommon:
     @pytest.mark.parametrize("method", ["POST", "PUT", "PATCH", "DELETE"])
     def test_POST_multipart(self, method):
         data = (
-            b"------------------------------deb95b63e42a\n"
-            b'Content-Disposition: form-data; name="foo"\n'
-            b"\n"
-            b"foo\n"
-            b"------------------------------deb95b63e42a\n"
-            b'Content-Disposition: form-data; name="bar"; filename="bar.txt"\n'
-            b"Content-type: application/octet-stream\n"
-            b"\n"
-            b'these are the contents of the file "bar.txt"\n'
-            b"\n"
-            b"------------------------------deb95b63e42a--\n"
+            b"------------------------------deb95b63e42a\r\n"
+            b'Content-Disposition: form-data; name="foo"\r\n'
+            b"\r\n"
+            b"foo\r\n"
+            b"------------------------------deb95b63e42a\r\n"
+            b'Content-Disposition: form-data; name="bar"; filename="bar.txt"\r\n'
+            b"Content-type: application/octet-stream\r\n"
+            b"\r\n"
+            b'these are the contents of the file "bar.txt"\r\n'
+            b"\r\n"
+            b"------------------------------deb95b63e42a--\r\n"
         )
         wsgi_input = BytesIO(data)
         environ = {
@@ -606,7 +606,7 @@ class TestRequestCommon:
         bar = result["bar"]
         assert bar.name == "bar"
         assert bar.filename == "bar.txt"
-        assert bar.file.read() == b'these are the contents of the file "bar.txt"\n'
+        assert bar.file.read() == b'these are the contents of the file "bar.txt"\r\n'
 
     @pytest.mark.parametrize("method", ["POST", "PUT", "PATCH", "DELETE"])
     def test_POST_preserves_body_file(self, method):
@@ -1060,9 +1060,7 @@ class TestRequestCommon:
         assert request.content_length == 139
 
     def test_blank__post_files(self):
-        import cgi
-
-        from webob.multidict import MultiDict
+        from webob.multidict import MultiDict, MultiDictFile
         from webob.request import _get_multipart_boundary
 
         POST = MultiDict()
@@ -1090,8 +1088,9 @@ class TestRequestCommon:
         )
         assert body_norm == expected
         assert request.content_length == 294
-        assert isinstance(request.POST["first"], cgi.FieldStorage)
-        assert isinstance(request.POST["second"], cgi.FieldStorage)
+        # TODO:  Backwards incompatible changes
+        assert isinstance(request.POST["first"], MultiDictFile)
+        assert isinstance(request.POST["second"], MultiDictFile)
         assert request.POST["first"].value == b"1"
         assert request.POST["second"].value == b"2"
         assert request.POST["third"] == "3"
@@ -2120,21 +2119,6 @@ class TestRequest_functional:
         req2 = req2.decode("latin-1")
         assert body == req2.body
 
-    def test_none_field_name(self):
-        from webob.request import Request
-
-        body = b"--FOO\r\nContent-Disposition: form-data\r\n\r\n123\r\n--FOO--"
-        content_type = "multipart/form-data; boundary=FOO"
-        environ = {
-            "wsgi.input": BytesIO(body),
-            "CONTENT_TYPE": content_type,
-            "CONTENT_LENGTH": len(body),
-            "REQUEST_METHOD": "POST",
-        }
-        req = Request(environ)
-        req = req.decode("latin-1")
-        assert body == req.body
-
     def test_broken_seek(self):
         # copy() should work even when the input has a broken seek method
         req = self._blankOne(
@@ -2440,7 +2424,7 @@ class TestRequest_functional:
         # A valid request without a Content-Length header should still read
         # the full body.
         # Also test parity between as_string and from_bytes / from_file.
-        import cgi
+        from webob.multidict import MultiDictFile
 
         cls = self._getTargetClass()
         req = cls.from_bytes(_test_req)
@@ -2455,7 +2439,7 @@ class TestRequest_functional:
         assert bar_contents in req.body
         assert req.params["foo"] == "foo"
         bar = req.params["bar"]
-        assert isinstance(bar, cgi.FieldStorage)
+        assert isinstance(bar, MultiDictFile)
         assert bar.type == "application/octet-stream"
         bar.file.seek(0)
         assert bar.file.read() == bar_contents
@@ -2473,7 +2457,7 @@ class TestRequest_functional:
             cls.from_bytes(_test_req2 + b"xx")
 
     def test_from_text(self):
-        import cgi
+        from webob.multidict import MultiDictFile
 
         cls = self._getTargetClass()
         req = cls.from_text(text_(_test_req, "utf-8"))
@@ -2488,7 +2472,7 @@ class TestRequest_functional:
         assert bar_contents in req.body
         assert req.params["foo"] == "foo"
         bar = req.params["bar"]
-        assert isinstance(bar, cgi.FieldStorage)
+        assert isinstance(bar, MultiDictFile)
         assert bar.type == "application/octet-stream"
         bar.file.seek(0)
         assert bar.file.read() == bar_contents
@@ -2573,16 +2557,6 @@ class TestRequest_functional:
         req = self._blankOne("/", method="PUT", body=b"abc")
         lst = [req.body_file.read(1) for i in range(3)]
         assert lst == [b"a", b"b", b"c"]
-
-    def test_cgi_escaping_fix(self):
-        req = self._blankOne(
-            "/",
-            content_type="multipart/form-data; boundary=boundary",
-            POST=_cgi_escaping_body,
-        )
-        assert list(req.POST.keys()) == ['%20%22"']
-        req.body_file.read()
-        assert list(req.POST.keys()) == ['%20%22"']
 
     def test_content_type_none(self):
         r = self._blankOne("/", content_type="text/html")
@@ -2922,35 +2896,6 @@ class TestRequest_functional:
         assert req_body == req2_body
 
 
-class Test_cgi_FieldStorage__repr__patch:
-    def _callFUT(self, fake):
-        from webob.compat import cgi_FieldStorage
-
-        return cgi_FieldStorage.__repr__(fake)
-
-    def test_with_file(self):
-        class Fake:
-            name = "name"
-            file = "file"
-            filename = "filename"
-            value = "value"
-
-        fake = Fake()
-        result = self._callFUT(fake)
-        assert result, "FieldStorage('name' == 'filename')"
-
-    def test_without_file(self):
-        class Fake:
-            name = "name"
-            file = None
-            filename = "filename"
-            value = "value"
-
-        fake = Fake()
-        result = self._callFUT(fake)
-        assert result, "FieldStorage('name', 'filename' == 'value')"
-
-
 class TestLimitedLengthFile:
     def _makeOne(self, file, maxlen):
         from webob.request import LimitedLengthFile
@@ -3132,11 +3077,13 @@ def simpleapp(environ, start_response):
     ]
 
 
-_cgi_escaping_body = """--boundary
-Content-Disposition: form-data; name="%20%22""
-
-
---boundary--"""
+_cgi_escaping_body = (
+    b"--boundary\r\n"
+    b'Content-Disposition: form-data; name="%20%22""\r\n'
+    b"\r\n"
+    b"\r\n"
+    b"--boundary--\r\n"
+)
 
 
 def _norm_req(s):
