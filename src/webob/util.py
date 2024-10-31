@@ -22,7 +22,7 @@ def url_unquote(s):
     return unquote(s.encode("ascii")).decode("latin-1")
 
 
-def parse_qsl_text(qs, encoding="utf-8"):
+def parse_qsl_text(qs, encoding="utf-8", errors="strict"):
     qs = qs.encode("latin-1")
     qs = qs.replace(b"+", b" ")
     pairs = [s2 for s1 in qs.split(b"&") for s2 in s1.split(b";") if s2]
@@ -34,7 +34,7 @@ def parse_qsl_text(qs, encoding="utf-8"):
             nv.append("")
         name = unquote(nv[0])
         value = unquote(nv[1])
-        yield (name.decode(encoding), value.decode(encoding))
+        yield (name.decode(encoding, errors), value.decode(encoding, errors))
 
 
 def text_(s, encoding="latin-1", errors="strict"):
