@@ -1,7 +1,7 @@
 import base64
 import binascii
 from collections.abc import MutableMapping
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 import hashlib
 import hmac
 import json
@@ -239,10 +239,13 @@ def serialize_cookie_date(v):
         v = timedelta(seconds=v)
 
     if isinstance(v, timedelta):
-        v = datetime.utcnow() + v
+        v = datetime.now(tz=timezone.utc) + v
 
-    if isinstance(v, (datetime, date)):
+    if isinstance(v, datetime):
+        v = v.astimezone(timezone.utc).timetuple()
+    elif isinstance(v, date):
         v = v.timetuple()
+
     r = time.strftime("%%s, %d-%%s-%Y %H:%M:%S GMT", v)
 
     return bytes_(r % (weekdays[v[6]], months[v[1]]), "ascii")
