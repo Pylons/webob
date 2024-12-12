@@ -6,6 +6,7 @@ import struct
 from urllib import parse as urlparse
 from urllib.parse import quote as url_quote
 import zlib
+import zoneinfo
 
 from webob.byterange import ContentRange
 from webob.cachecontrol import CacheControl, serialize_cache_control
@@ -1259,15 +1260,15 @@ class Response:
             cache_control.max_age = 0
             cache_control.post_check = 0
             cache_control.pre_check = 0
-            self.expires = datetime.utcnow()
+            self.expires = datetime.now(tz=zoneinfo.ZoneInfo("UTC")).replace(tzinfo=None)
 
             if "last-modified" not in self.headers:
-                self.last_modified = datetime.utcnow()
+                self.last_modified = datetime.now(tz=zoneinfo.ZoneInfo("UTC")).replace(tzinfo=None)
             self.pragma = "no-cache"
         else:
             cache_control.properties.clear()
             cache_control.max_age = seconds
-            self.expires = datetime.utcnow() + timedelta(seconds=seconds)
+            self.expires = datetime.now(tz=zoneinfo.ZoneInfo("UTC")).replace(tzinfo=None) + timedelta(seconds=seconds)
             self.pragma = None
 
         for name, value in kw.items():

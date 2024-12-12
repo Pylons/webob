@@ -9,6 +9,7 @@ import re
 import string
 import time
 import warnings
+import zoneinfo
 
 from webob.util import bytes_, text_
 
@@ -239,10 +240,13 @@ def serialize_cookie_date(v):
         v = timedelta(seconds=v)
 
     if isinstance(v, timedelta):
-        v = datetime.utcnow() + v
+        v = datetime.now(tz=zoneinfo.ZoneInfo("UTC")) + v
 
-    if isinstance(v, (datetime, date)):
+    if isinstance(v, datetime):
+        v = v.astimezone(zoneinfo.ZoneInfo("UTC")).timetuple()
+    elif isinstance(v, date):
         v = v.timetuple()
+
     r = time.strftime("%%s, %d-%%s-%Y %H:%M:%S GMT", v)
 
     return bytes_(r % (weekdays[v[6]], months[v[1]]), "ascii")
