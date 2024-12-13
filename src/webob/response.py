@@ -1,5 +1,5 @@
 from base64 import b64encode
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from hashlib import md5
 import re
 import struct
@@ -1246,6 +1246,8 @@ class Response:
             seconds = timedelta_to_seconds(seconds)
         cache_control = self.cache_control
 
+        utcnow = datetime.now(tz=timezone.utc).replace(tzinfo=None)
+
         if seconds is None:
             pass
         elif not seconds:
@@ -1259,15 +1261,15 @@ class Response:
             cache_control.max_age = 0
             cache_control.post_check = 0
             cache_control.pre_check = 0
-            self.expires = datetime.utcnow()
+            self.expires = utcnow
 
             if "last-modified" not in self.headers:
-                self.last_modified = datetime.utcnow()
+                self.last_modified = utcnow
             self.pragma = "no-cache"
         else:
             cache_control.properties.clear()
             cache_control.max_age = seconds
-            self.expires = datetime.utcnow() + timedelta(seconds=seconds)
+            self.expires = utcnow + timedelta(seconds=seconds)
             self.pragma = None
 
         for name, value in kw.items():
