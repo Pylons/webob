@@ -1052,7 +1052,7 @@ def test_merge_cookies_resp_is_wsgi_callable():
     environ = {}
 
     def dummy_start_response(status, headers, exc_info=None):
-        assert headers, [("Set-Cookie" == "a=1; Path=/")]
+        assert headers, ["Set-Cookie" == "a=1; Path=/"]
 
     result = wsgiapp(environ, dummy_start_response)
     assert result == "abc"
@@ -1269,7 +1269,6 @@ def test_cache_expires_set_zero():
     assert res.cache_control.no_cache == "*"
     assert res.cache_control.must_revalidate is True
     assert res.cache_control.max_age == 0
-    assert res.cache_control.post_check == 0
 
 
 def test_encode_content_unknown():

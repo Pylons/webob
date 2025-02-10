@@ -1,17 +1,25 @@
-from collections.abc import MutableMapping
+from __future__ import annotations
+
+from collections.abc import Iterator, MutableMapping
+from typing import TYPE_CHECKING, TypeVar, overload
 
 from webob.multidict import MultiDict
+
+if TYPE_CHECKING:
+    from _typeshed.wsgi import WSGIEnvironment
+
+    _T = TypeVar("_T")
 
 __all__ = ["ResponseHeaders", "EnvironHeaders"]
 
 
-class ResponseHeaders(MultiDict):
+class ResponseHeaders(MultiDict[str, str]):
     """
     Dictionary view on the response headerlist.
     Keys are normalized for case and whitespace.
     """
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> str:
         key = key.lower()
 
         for k, v in reversed(self._items):
@@ -19,13 +27,13 @@ class ResponseHeaders(MultiDict):
                 return v
         raise KeyError(key)
 
-    def getall(self, key):
+    def getall(self, key: str) -> list[str]:
         key = key.lower()
 
         return [v for (k, v) in self._items if k.lower() == key]
 
-    def mixed(self):
-        r = self.dict_of_lists()
+    def mixed(self) -> dict[str, str | list[str]]:
+        r: dict[str, str | list[str]] = self.dict_of_lists()  # type: ignore[assignment]
 
         for key, val in r.items():
             if len(val) == 1:
@@ -33,20 +41,20 @@ class ResponseHeaders(MultiDict):
 
         return r
 
-    def dict_of_lists(self):
-        r = {}
+    def dict_of_lists(self) -> dict[str, list[str]]:
+        r: dict[str, list[str]] = {}
 
         for key, val in self.items():
             r.setdefault(key.lower(), []).append(val)
 
         return r
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: str) -> None:
         norm_key = key.lower()
         self._items[:] = [(k, v) for (k, v) in self._items if k.lower() != norm_key]
         self._items.append((key, value))
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str) -> None:
         key = key.lower()
         items = self._items
         found = False
@@ -59,7 +67,10 @@ class ResponseHeaders(MultiDict):
         if not found:
             raise KeyError(key)
 
-    def __contains__(self, key):
+    def __contains__(self, key: object) -> bool:
+        if not isinstance(key, str):
+            return False
+
         key = key.lower()
 
         for k, _ in self._items:
@@ -70,7 +81,7 @@ class ResponseHeaders(MultiDict):
 
     has_key = __contains__
 
-    def setdefault(self, key, default=None):
+    def setdefault(self, key: str, default: str) -> str:
         c_key = key.lower()
 
         for k, v in self._items:
@@ -80,7 +91,13 @@ class ResponseHeaders(MultiDict):
 
         return default
 
-    def pop(self, key, *args):
+    @overload
+    def pop(self, key: str) -> str: ...
+
+    @overload
+    def pop(self, key: str, default: _T, /) -> str | _T: ...
+
+    def pop(self, key: str, *args: _T) -> str | _T:
         if len(args) > 1:
             raise TypeError(
                 "pop expected at most 2 arguments, got %s" % repr(1 + len(args))
@@ -110,7 +127,7 @@ key2header = {
 header2key = {v.upper(): k for (k, v) in key2header.items()}
 
 
-def _trans_key(key):
+def _trans_key(key: object) -> str | None:
     if not isinstance(key, str):
         return None
     elif key in key2header:
@@ -121,7 +138,7 @@ def _trans_key(key):
         return None
 
 
-def _trans_name(name):
+def _trans_name(name: str) -> str:
     name = name.upper()
 
     if name in header2key:
@@ -130,7 +147,7 @@ def _trans_name(name):
     return "HTTP_" + name.replace("-", "_")
 
 
-class EnvironHeaders(MutableMapping):
+class EnvironHeaders(MutableMapping[str, str]):
     """An object that represents the headers as present in a
     WSGI environment.
 
@@ -141,26 +158,28 @@ class EnvironHeaders(MutableMapping):
     headers).
     """
 
-    def __init__(self, environ):
+    def __init__(self, environ: WSGIEnvironment) -> None:
         self.environ = environ
 
-    def __getitem__(self, hname):
-        return self.environ[_trans_name(hname)]
+    def __getitem__(self, hname: str) -> str:
+        return self.environ[_trans_name(hname)]  # type: ignore[no-any-return]
 
-    def __setitem__(self, hname, value):
+    def __setitem__(self, hname: str, value: str) -> None:
         self.environ[_trans_name(hname)] = value
 
-    def __delitem__(self, hname):
+    def __delitem__(self, hname: str) -> None:
         del self.environ[_trans_name(hname)]
 
-    def keys(self):
+    def keys(self) -> Iterator[str]:  # type: ignore[override]
         return filter(None, map(_trans_key, self.environ))
 
-    def __contains__(self, hname):
+    def __contains__(self, hname: object) -> bool:
+        if not isinstance(hname, str):
+            return False
         return _trans_name(hname) in self.environ
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(list(self.keys()))
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         yield from self.keys()

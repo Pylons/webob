@@ -120,7 +120,7 @@ jobs:
             - run: tox -e docs
     lint:
         runs-on: ubuntu-22.04
-        name: Lint the package
+        name: Lint and type check the package
         steps:
             - uses: actions/checkout@v4
             - name: Setup python
@@ -129,4 +129,4 @@ jobs:
                   python-version: "3.13"
                   architecture: x64
             - run: pip install tox
-            - run: tox -e lint
+            - run: tox -e lint,mypy

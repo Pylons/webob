@@ -165,10 +165,13 @@ References:
 
 """
 
+from __future__ import annotations
+
 import json
 import re
 from string import Template
 import sys
+from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar
 from urllib import parse as urlparse
 
 from webob.acceptparse import create_accept_header
@@ -176,28 +179,49 @@ from webob.request import Request
 from webob.response import Response
 from webob.util import html_escape, text_
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
+
+    from _typeshed import OptExcInfo, SupportsItems, SupportsKeysAndGetItem
+    from _typeshed.wsgi import StartResponse, WSGIApplication, WSGIEnvironment
+    from typing_extensions import Self, TypeAlias
+
+    _Headers: TypeAlias = """(
+        SupportsItems[str, str]
+        | SupportsKeysAndGetItem[str, str]
+        | Iterable[tuple[str, str]]
+    )"""
+
+    class _JSONFormatter(Protocol):
+        def __call__(
+            self, *, body: str, status: str, title: str, environ: WSGIEnvironment
+        ) -> Any: ...
+
+
+_T = TypeVar("_T")
+
 tag_re = re.compile(r"<.*?>", re.S)
 br_re = re.compile(r"<br.*?>", re.I | re.S)
 comment_re = re.compile(r"<!--|-->")
 
 
-class _lazified:
-    def __init__(self, func, value):
+class _lazified(Generic[_T]):
+    def __init__(self, func: Callable[[_T], str], value: _T) -> None:
         self.func = func
         self.value = value
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.func(self.value)
 
 
-def lazify(func):
-    def wrapper(value):
+def lazify(func: Callable[[_T], str]) -> Callable[[_T], _lazified[_T]]:
+    def wrapper(value: _T) -> _lazified[_T]:
         return _lazified(func, value)
 
     return wrapper
 
 
-def no_escape(value):
+def no_escape(value: object) -> str:
     if value is None:
         return ""
 
@@ -210,7 +234,7 @@ def no_escape(value):
     return value
 
 
-def strip_tags(value):
+def strip_tags(value: str) -> str:
     value = value.replace("\n", " ")
     value = value.replace("\r", "")
     value = br_re.sub("\n", value)
@@ -221,11 +245,13 @@ def strip_tags(value):
 
 
 class HTTPException(Exception):
-    def __init__(self, message, wsgi_response):
+    def __init__(self, message: str, wsgi_response: Response) -> None:
         Exception.__init__(self, message)
         self.wsgi_response = wsgi_response
 
-    def __call__(self, environ, start_response):
+    def __call__(
+        self, environ: WSGIEnvironment, start_response: StartResponse
+    ) -> Iterable[bytes]:
         return self.wsgi_response(environ, start_response)
 
 
@@ -238,7 +264,7 @@ class WSGIHTTPException(Response, HTTPException):
     code = 500
     title = "Internal Server Error"
     explanation = ""
-    body_template_obj = Template(
+    body_template_obj: Template = Template(
         """\
 ${explanation}<br /><br />
 ${detail}
@@ -246,14 +272,14 @@ ${html_comment}
 """
     )
 
-    plain_template_obj = Template(
+    plain_template_obj: Template = Template(
         """\
 ${status}
 
 ${body}"""
     )
 
-    html_template_obj = Template(
+    html_template_obj: Template = Template(
         """\
 <html>
  <head>
@@ -271,13 +297,13 @@ ${body}"""
 
     def __init__(
         self,
-        detail=None,
-        headers=None,
-        comment=None,
-        body_template=None,
-        json_formatter=None,
-        **kw,
-    ):
+        detail: str | None = None,
+        headers: _Headers | None = None,
+        comment: str | None = None,
+        body_template: str | None = None,
+        json_formatter: _JSONFormatter | None = None,
+        **kw: Any,
+    ) -> None:
         Response.__init__(self, status=f"{self.code} {self.title}", **kw)
         Exception.__init__(self, detail)
 
@@ -295,21 +321,24 @@ ${body}"""
             del self.content_length
 
         if json_formatter is not None:
-            self.json_formatter = json_formatter
+            self.json_formatter = json_formatter  # type: ignore[method-assign]
 
-    def __str__(self):
+    def __str__(self) -> str:  # type: ignore[override]
         return self.detail or self.explanation
 
-    def _make_body(self, environ, escape):
-        escape = lazify(escape)
-        args = {
-            "explanation": escape(self.explanation),
-            "detail": escape(self.detail or ""),
-            "comment": escape(self.comment or ""),
+    def _make_body(
+        self, environ: WSGIEnvironment, escape: Callable[[object], str]
+    ) -> str:
+
+        lazy_escape = lazify(escape)
+        args: dict[str, object] = {
+            "explanation": lazy_escape(self.explanation),
+            "detail": lazy_escape(self.detail or ""),
+            "comment": lazy_escape(self.comment or ""),
         }
 
         if self.comment:
-            args["html_comment"] = "<!-- %s -->" % escape(self.comment)
+            args["html_comment"] = "<!-- %s -->" % lazy_escape(self.comment)
         else:
             args["html_comment"] = ""
 
@@ -317,15 +346,15 @@ ${body}"""
             # Custom template; add headers to args
 
             for k, v in environ.items():
-                args[k] = escape(v)
+                args[k] = lazy_escape(v)
 
             for k, v in self.headers.items():
-                args[k.lower()] = escape(v)
+                args[k.lower()] = lazy_escape(v)
         t_obj = self.body_template_obj
 
         return t_obj.safe_substitute(args)
 
-    def plain_body(self, environ):
+    def plain_body(self, environ: WSGIEnvironment) -> str:
         body = self._make_body(environ, no_escape)
         body = strip_tags(body)
 
@@ -333,15 +362,18 @@ ${body}"""
             status=self.status, title=self.title, body=body
         )
 
-    def html_body(self, environ):
+    def html_body(self, environ: WSGIEnvironment) -> str:
         body = self._make_body(environ, html_escape)
 
         return self.html_template_obj.substitute(status=self.status, body=body)
 
-    def json_formatter(self, body, status, title, environ):
+    def json_formatter(
+        self, *, body: str, status: str, title: str, environ: WSGIEnvironment
+    ) -> Any:
+
         return {"message": body, "code": status, "title": title}
 
-    def json_body(self, environ):
+    def json_body(self, environ: WSGIEnvironment) -> str:  # type: ignore[override]
         body = self._make_body(environ, no_escape)
         jsonbody = self.json_formatter(
             body=body, status=self.status, title=self.title, environ=environ
@@ -349,7 +381,9 @@ ${body}"""
 
         return json.dumps(jsonbody)
 
-    def generate_response(self, environ, start_response):
+    def generate_response(
+        self, environ: WSGIEnvironment, start_response: StartResponse
+    ) -> Iterable[bytes]:
         if self.content_length is not None:
             del self.content_length
         headerlist = list(self.headerlist)
@@ -376,7 +410,10 @@ ${body}"""
 
         return resp(environ, start_response)
 
-    def __call__(self, environ, start_response):
+    def __call__(
+        self, environ: WSGIEnvironment, start_response: StartResponse
+    ) -> Iterable[bytes]:
+
         is_head = environ["REQUEST_METHOD"] == "HEAD"
 
         if self.has_body or self.empty_body or is_head:
@@ -390,7 +427,7 @@ ${body}"""
         return app_iter
 
     @property
-    def wsgi_response(self):
+    def wsgi_response(self) -> Self:  # type: ignore[override]
         return self
 
 
@@ -553,13 +590,13 @@ ${html_comment}"""
 
     def __init__(
         self,
-        detail=None,
-        headers=None,
-        comment=None,
-        body_template=None,
-        location=None,
-        add_slash=False,
-    ):
+        detail: str | None = None,
+        headers: _Headers | None = None,
+        comment: str | None = None,
+        body_template: str | None = None,
+        location: str | None = None,
+        add_slash: bool = False,
+    ) -> None:
         super().__init__(
             detail=detail, headers=headers, comment=comment, body_template=body_template
         )
@@ -577,7 +614,10 @@ ${html_comment}"""
                 )
         self.add_slash = add_slash
 
-    def __call__(self, environ, start_response):
+    def __call__(
+        self, environ: WSGIEnvironment, start_response: StartResponse
+    ) -> Iterable[bytes]:
+
         req = Request(environ)
 
         if self.add_slash:
@@ -1313,26 +1353,36 @@ class HTTPExceptionMiddleware:
     *expected* exceptions raise through the WSGI stack is dangerous.
     """
 
-    def __init__(self, application):
+    def __init__(self, application: WSGIApplication) -> None:
         self.application = application
 
-    def __call__(self, environ, start_response):
+    def __call__(
+        self, environ: WSGIEnvironment, start_response: StartResponse
+    ) -> Iterable[bytes]:
+
         try:
             return self.application(environ, start_response)
-        except HTTPException:
+        except HTTPException as exc:
             parent_exc_info = sys.exc_info()
 
-            def repl_start_response(status, headers, exc_info=None):
+            def repl_start_response(
+                status: str,
+                headers: list[tuple[str, str]],
+                exc_info: OptExcInfo | None = None,
+            ) -> Callable[[bytes], object]:
+
                 if exc_info is None:
                     exc_info = parent_exc_info
 
                 return start_response(status, headers, exc_info)
 
-            return parent_exc_info[1](environ, repl_start_response)
+            return exc(environ, repl_start_response)
 
 
 __all__ = ["HTTPExceptionMiddleware", "status_map"]
-status_map = {}
+status_map: dict[
+    int, type[HTTPOk | HTTPRedirection | HTTPClientError | HTTPServerError]
+] = {}
 
 for name, value in list(globals().items()):
     if (
@@ -1342,13 +1392,11 @@ for name, value in list(globals().items()):
     ):
         __all__.append(name)
 
-        if all(
-            (
-                getattr(value, "code", None),
-                value not in (HTTPRedirection, HTTPClientError, HTTPServerError),
-                issubclass(
-                    value, (HTTPOk, HTTPRedirection, HTTPClientError, HTTPServerError)
-                ),
+        if (
+            getattr(value, "code", None)
+            and value not in (HTTPRedirection, HTTPClientError, HTTPServerError)
+            and issubclass(
+                value, (HTTPOk, HTTPRedirection, HTTPClientError, HTTPServerError)
             )
         ):
             status_map[value.code] = value

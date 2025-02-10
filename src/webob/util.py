@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+from html import escape
+from typing import TYPE_CHECKING, overload
 import warnings
 
-from webob.compat import escape
 from webob.headers import _trans_key
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
-def unquote(string):
+
+def unquote(string: bytes) -> bytes:
     if not string:
         return b""
     res = string.split(b"%")
@@ -18,40 +24,62 @@ def unquote(string):
     return string
 
 
-def url_unquote(s):
+def url_unquote(s: str) -> str:
     return unquote(s.encode("ascii")).decode("latin-1")
 
 
-def parse_qsl_text(qs, encoding="utf-8"):
-    qs = qs.encode("latin-1")
-    qs = qs.replace(b"+", b" ")
-    pairs = [s2 for s1 in qs.split(b"&") for s2 in s1.split(b";") if s2]
+def parse_qsl_text(qs: str, encoding: str = "utf-8") -> Iterator[tuple[str, str]]:
+    qsb = qs.encode("latin-1")
+    qsb = qsb.replace(b"+", b" ")
+    pairs = [s2 for s1 in qsb.split(b"&") for s2 in s1.split(b";") if s2]
 
     for name_value in pairs:
         nv = name_value.split(b"=", 1)
 
         if len(nv) != 2:
-            nv.append("")
+            nv.append(b"")
         name = unquote(nv[0])
         value = unquote(nv[1])
         yield (name.decode(encoding), value.decode(encoding))
 
 
-def text_(s, encoding="latin-1", errors="strict"):
+@overload
+def text_(s: str | bytes, encoding: str = "latin-1", errors: str = "strict") -> str: ...
+
+
+@overload
+def text_(s: None, encoding: str = "latin-1", errors: str = "strict") -> None: ...
+
+
+def text_(
+    s: str | bytes | None, encoding: str = "latin-1", errors: str = "strict"
+) -> str | None:
     if isinstance(s, bytes):
         return str(s, encoding, errors)
 
     return s
 
 
-def bytes_(s, encoding="latin-1", errors="strict"):
+@overload
+def bytes_(
+    s: str | bytes, encoding: str = "latin-1", errors: str = "strict"
+) -> bytes: ...
+
+
+@overload
+def bytes_(s: None, encoding: str = "latin-1", errors: str = "strict") -> None: ...
+
+
+def bytes_(
+    s: str | bytes | None, encoding: str = "latin-1", errors: str = "strict"
+) -> bytes | None:
     if isinstance(s, str):
         return s.encode(encoding, errors)
 
     return s
 
 
-def html_escape(s):
+def html_escape(s: object) -> str:
     """HTML-escape a string or object
 
     This converts any non-string objects passed into it to strings
@@ -67,7 +95,7 @@ def html_escape(s):
     __html__ = getattr(s, "__html__", None)
 
     if __html__ is not None and callable(__html__):
-        return s.__html__()
+        return __html__()  # type: ignore[no-any-return]
 
     if not isinstance(s, str):
         s = str(s)
@@ -79,9 +107,10 @@ def html_escape(s):
     return text_(s)
 
 
-def header_docstring(header, rfc_section):
+def header_docstring(header: str, rfc_section: str) -> str:
     if header.isupper():
-        header = _trans_key(header)
+        # FIXME: What should we do when this returns `None`?
+        header = _trans_key(header)  # type: ignore[assignment]
     major_section = rfc_section.split(".")[0]
     link = "http://www.w3.org/Protocols/rfc2616/rfc2616-sec{}.html#sec{}".format(
         major_section,
@@ -95,7 +124,7 @@ def header_docstring(header, rfc_section):
     )
 
 
-def warn_deprecation(text, version, stacklevel):
+def warn_deprecation(text: str, version: str, stacklevel: int) -> None:
     # version specifies when to start raising exceptions instead of warnings
 
     if version in ("1.2", "1.3", "1.4", "1.5", "1.6", "1.7"):
@@ -105,7 +134,7 @@ def warn_deprecation(text, version, stacklevel):
     warnings.warn(text, cls, stacklevel=stacklevel + 1)
 
 
-status_reasons = {
+status_reasons: dict[int, str] = {
     # Status Codes
     # Informational
     100: "Continue",
@@ -171,7 +200,7 @@ status_reasons = {
 }
 
 # generic class responses as per RFC2616
-status_generic_reasons = {
+status_generic_reasons: dict[int, str] = {
     1: "Continue",
     2: "Success",
     3: "Multiple Choices",

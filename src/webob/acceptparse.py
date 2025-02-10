@@ -5,10 +5,82 @@ The four headers are ``Accept``, ``Accept-Charset``, ``Accept-Encoding`` and
 ``Accept-Language``.
 """
 
-from collections import namedtuple
+from __future__ import annotations
+
 import re
 import textwrap
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Protocol, overload
 import warnings
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Iterator, Sequence
+    from typing import TypeVar
+
+    from _typeshed import SupportsItems
+    from typing_extensions import Self, TypeAlias
+
+    from webob.request import BaseRequest
+    from webob.types import AsymmetricPropertyWithDelete, ListOrTuple
+
+    _T = TypeVar("_T")
+    _ParsedAccept: TypeAlias = tuple[
+        str, float, list[tuple[str, str]], list["str | tuple[str, str]"]
+    ]
+
+    class _SupportsStr(Protocol):
+        def __str__(self) -> str:
+            pass
+
+    _AnyAcceptHeader: TypeAlias = (
+        "AcceptValidHeader | AcceptInvalidHeader | AcceptNoHeader"
+    )
+    _AnyAcceptCharsetHeader: TypeAlias = (
+        "AcceptCharsetValidHeader | AcceptCharsetInvalidHeader | AcceptCharsetNoHeader"
+    )
+    _AnyAcceptEncodingHeader: TypeAlias = (
+        "AcceptEncodingValidHeader | AcceptEncodingInvalidHeader | AcceptEncodingNoHeader"
+    )
+    _AnyAcceptLanguageHeader: TypeAlias = (
+        "AcceptLanguageValidHeader | AcceptLanguageInvalidHeader | AcceptLanguageNoHeader"
+    )
+
+    _AcceptProperty: TypeAlias = AsymmetricPropertyWithDelete[
+        _AnyAcceptHeader,
+        """(
+        _AnyAcceptHeader
+        | SupportsItems[str, float | tuple[float, str]]
+        | ListOrTuple[str | tuple[str, float, str] | list[Any]]
+        | _SupportsStr | str | None
+        )""",
+    ]
+    _AcceptCharsetProperty: TypeAlias = AsymmetricPropertyWithDelete[
+        _AnyAcceptCharsetHeader,
+        """(
+        _AnyAcceptCharsetHeader
+        | SupportsItems[str, float]
+        | ListOrTuple[str | tuple[str, float] | list[Any]]
+        | _SupportsStr | str | None
+        )""",
+    ]
+    _AcceptEncodingProperty: TypeAlias = AsymmetricPropertyWithDelete[
+        _AnyAcceptEncodingHeader,
+        """(
+        _AnyAcceptEncodingHeader
+        | SupportsItems[str, float]
+        | ListOrTuple[str | tuple[str, float] | list[Any]]
+        | _SupportsStr | str | None
+        )""",
+    ]
+    _AcceptLanguageProperty: TypeAlias = AsymmetricPropertyWithDelete[
+        _AnyAcceptLanguageHeader,
+        """(
+        _AnyAcceptLanguageHeader
+        | SupportsItems[str, float]
+        | ListOrTuple[str | tuple[str, float] | list[Any]]
+        | _SupportsStr | str | None
+        )""",
+    ]
+
 
 # RFC 7230 Section 3.2.3 "Whitespace"
 # OWS            = *( SP / HTAB )
@@ -33,11 +105,11 @@ qvalue_re = r"(?:0(?:\.[0-9]{0,3})?)" "|" r"(?:1(?:\.0{0,3})?)"
 weight_re = OWS_re + ";" + OWS_re + "[qQ]=(" + qvalue_re + ")"
 
 
-def _item_n_weight_re(item_re):
+def _item_n_weight_re(item_re: str) -> str:
     return "(" + item_re + ")(?:" + weight_re + ")?"
 
 
-def _item_qvalue_pair_to_header_element(pair):
+def _item_qvalue_pair_to_header_element(pair: tuple[str, float] | list[Any]) -> str:
     item, qvalue = pair
 
     if qvalue == 1.0:
@@ -50,7 +122,7 @@ def _item_qvalue_pair_to_header_element(pair):
     return element
 
 
-def _list_0_or_more__compiled_re(element_re):
+def _list_0_or_more__compiled_re(element_re: str) -> re.Pattern[str]:
     # RFC 7230 Section 7 "ABNF List Extension: #rule":
     # #element => [ ( "," / element ) *( OWS "," [ OWS element ] ) ]
 
@@ -70,7 +142,7 @@ def _list_0_or_more__compiled_re(element_re):
     )
 
 
-def _list_1_or_more__compiled_re(element_re):
+def _list_1_or_more__compiled_re(element_re: str) -> re.Pattern[str]:
     # RFC 7230 Section 7 "ABNF List Extension: #rule":
     # 1#element => *( "," OWS ) element *( OWS "," [ OWS element ] )
     # and RFC 7230 Errata ID: 4169
@@ -89,7 +161,7 @@ def _list_1_or_more__compiled_re(element_re):
     )
 
 
-class AcceptOffer(namedtuple("AcceptOffer", ["type", "subtype", "params"])):
+class AcceptOffer(NamedTuple):
     """
     A pre-parsed offer tuple represeting a value in the format
     ``type/subtype;param0=value0;param1=value1``.
@@ -100,9 +172,11 @@ class AcceptOffer(namedtuple("AcceptOffer", ["type", "subtype", "params"])):
 
     """
 
-    __slots__ = ()
+    type: str
+    subtype: str
+    params: tuple[tuple[str, str], ...]
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Return the properly quoted media type string.
 
@@ -163,10 +237,9 @@ class Accept:
         + "/"
         + subtype_re
         + ")"
-        +
         # '*' is included through type_re and subtype_re, so this covers */*
         # and type/*
-        ")"
+        + ")"
         + "("
         + "(?:"
         + OWS_re
@@ -244,7 +317,7 @@ class Accept:
     media_type_compiled_re = re.compile("^" + media_type_re + "$")
 
     @classmethod
-    def _escape_and_quote_parameter_value(cls, param_value):
+    def _escape_and_quote_parameter_value(cls, param_value: str) -> str:
         """
         Escape and quote parameter value where necessary.
 
@@ -262,7 +335,9 @@ class Accept:
         return param_value
 
     @classmethod
-    def _form_extension_params_segment(cls, extension_params):
+    def _form_extension_params_segment(
+        cls, extension_params: Iterable[str | tuple[str, str]]
+    ) -> str:
         """
         Convert iterable of extension parameters to str segment for header.
 
@@ -272,9 +347,9 @@ class Accept:
         extension_params_segment = ""
 
         for item in extension_params:
-            try:
+            if isinstance(item, str):
                 extension_params_segment += ";" + item
-            except TypeError:
+            else:
                 param_name, param_value = item
                 param_value = cls._escape_and_quote_parameter_value(
                     param_value=param_value
@@ -284,7 +359,9 @@ class Accept:
         return extension_params_segment
 
     @classmethod
-    def _form_media_range(cls, type_subtype, media_type_params):
+    def _form_media_range(
+        cls, type_subtype: str, media_type_params: Iterable[tuple[str, str]]
+    ) -> str:
         """
         Combine `type_subtype` and `media_type_params` to form a media range.
 
@@ -300,7 +377,7 @@ class Accept:
         return type_subtype + media_type_params_segment
 
     @classmethod
-    def _iterable_to_header_element(cls, iterable):
+    def _iterable_to_header_element(cls, iterable: Iterable[Any]) -> str:
         """
         Convert iterable of tuples into header element ``str``.
 
@@ -326,7 +403,9 @@ class Accept:
         return element
 
     @classmethod
-    def _parse_media_type_params(cls, media_type_params_segment):
+    def _parse_media_type_params(
+        cls, media_type_params_segment: str
+    ) -> list[tuple[str, str]]:
         """
         Parse media type parameters segment into list of (name, value) tuples.
         """
@@ -342,7 +421,7 @@ class Accept:
         return media_type_params
 
     @classmethod
-    def _process_quoted_string_token(cls, token):
+    def _process_quoted_string_token(cls, token: str) -> str:
         """
         Return unescaped and unquoted value from quoted token.
         """
@@ -353,7 +432,7 @@ class Accept:
         return re.sub(r"\\(?![\\])", "", token[1:-1]).replace("\\\\", "\\")
 
     @classmethod
-    def _python_value_to_header_str(cls, value):
+    def _python_value_to_header_str(cls, value: object) -> str:
         """
         Convert Python value to header string for __add__/__radd__.
         """
@@ -394,7 +473,7 @@ class Accept:
         return header_str
 
     @classmethod
-    def parse(cls, value):
+    def parse(cls, value: str) -> Iterator[_ParsedAccept]:
         """
         Parse an ``Accept`` header.
 
@@ -431,7 +510,7 @@ class Accept:
         if cls.accept_compiled_re.match(value) is None:
             raise ValueError("Invalid value for an Accept header.")
 
-        def generator(value):
+        def generator(value: str) -> Iterator[_ParsedAccept]:
             for match in cls.media_range_n_accept_params_compiled_re.finditer(value):
                 groups = match.groups()
 
@@ -478,7 +557,7 @@ class Accept:
         return generator(value=value)
 
     @classmethod
-    def parse_offer(cls, offer):
+    def parse_offer(cls, offer: str | AcceptOffer) -> AcceptOffer:
         """
         Parse an offer into its component parts.
 
@@ -514,12 +593,14 @@ class Accept:
         )
 
     @classmethod
-    def _parse_and_normalize_offers(cls, offers):
+    def _parse_and_normalize_offers(
+        cls, offers: Iterable[str | AcceptOffer]
+    ) -> list[tuple[int, AcceptOffer]]:
         """
         Throw out any offers that do not match the media range ABNF.
 
-        :return: A list of offers split into the format ``[offer_index,
-                 parsed_offer]``.
+        :return: A list of offers split into the format ``(offer_index,
+                 parsed_offer)``.
 
         """
         parsed_offers = []
@@ -529,7 +610,7 @@ class Accept:
                 parsed_offer = cls.parse_offer(offer)
             except ValueError:
                 continue
-            parsed_offers.append([index, parsed_offer])
+            parsed_offers.append((index, parsed_offer))
 
         return parsed_offers
 
@@ -547,13 +628,13 @@ class AcceptValidHeader(Accept):
     """
 
     @property
-    def header_value(self):
+    def header_value(self) -> str:
         """(``str`` or ``None``) The header value."""
 
         return self._header_value
 
     @property
-    def parsed(self):
+    def parsed(self) -> list[_ParsedAccept]:
         """
         (``list`` or ``None``) Parsed form of the header.
 
@@ -579,7 +660,7 @@ class AcceptValidHeader(Accept):
 
         return self._parsed
 
-    def __init__(self, header_value):
+    def __init__(self, header_value: str) -> None:
         """
         Create an :class:`AcceptValidHeader` instance.
 
@@ -589,17 +670,27 @@ class AcceptValidHeader(Accept):
         """
         self._header_value = header_value
         self._parsed = list(self.parse(header_value))
-        self._parsed_nonzero = [item for item in self.parsed if item[1]]
+        self._parsed_nonzero = [item for item in self._parsed if item[1]]
         # item[1] is the qvalue
 
-    def copy(self):
+    def copy(self) -> Self:
         """
         Create a copy of the header object.
 
         """
         return self.__class__(self._header_value)
 
-    def __add__(self, other):
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptHeader
+            | SupportsItems[str, float | tuple[float, str]]
+            | ListOrTuple[str | tuple[str, float, str] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self:
         """
         Add to header, creating a new header object.
 
@@ -640,7 +731,7 @@ class AcceptValidHeader(Accept):
             if other.header_value == "":
                 return self.__class__(header_value=self.header_value)
             else:
-                return create_accept_header(
+                return create_accept_header(  # type: ignore[return-value]
                     header_value=self.header_value + ", " + other.header_value
                 )
 
@@ -649,7 +740,7 @@ class AcceptValidHeader(Accept):
 
         return self._add_instance_and_non_accept_type(instance=self, other=other)
 
-    def __bool__(self):
+    def __bool__(self) -> Literal[True]:
         """
         Return whether ``self`` represents a valid ``Accept`` header.
 
@@ -662,7 +753,7 @@ class AcceptValidHeader(Accept):
 
         return True
 
-    def __contains__(self, offer):
+    def __contains__(self, offer: str) -> bool:
         """
         Return ``bool`` indicating whether `offer` is acceptable.
 
@@ -712,7 +803,7 @@ class AcceptValidHeader(Accept):
 
         return False
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """
         Return all the ranges with non-0 qvalues, in order of preference.
 
@@ -743,7 +834,17 @@ class AcceptValidHeader(Accept):
         ):
             yield media_range
 
-    def __radd__(self, other):
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptHeader
+            | SupportsItems[str, float | tuple[float, str]]
+            | ListOrTuple[str | tuple[str, float, str] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self:
         """
         Add to header, creating a new header object.
 
@@ -754,10 +855,10 @@ class AcceptValidHeader(Accept):
             instance=self, other=other, instance_on_the_right=True
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__} ({str(self)!r})>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         r"""
         Return a tidied up version of the header value.
 
@@ -783,8 +884,8 @@ class AcceptValidHeader(Accept):
         )
 
     def _add_instance_and_non_accept_type(
-        self, instance, other, instance_on_the_right=False
-    ):
+        self, instance: Self, other: object, instance_on_the_right: bool = False
+    ) -> Self:
         if not other:
             return self.__class__(header_value=instance.header_value)
 
@@ -807,7 +908,7 @@ class AcceptValidHeader(Accept):
         )
         return self.__class__(header_value=new_header_value)
 
-    def _old_match(self, mask, offer):
+    def _old_match(self, mask: str, offer: str) -> bool:
         """
         Check if the offer is covered by the mask
 
@@ -876,7 +977,7 @@ class AcceptValidHeader(Accept):
 
         return offer.lower() == mask.lower()
 
-    def accept_html(self):
+    def accept_html(self) -> bool:
         """
         Return ``True`` if any HTML-like type is accepted.
 
@@ -894,10 +995,17 @@ class AcceptValidHeader(Accept):
             )
         )
 
-    accepts_html = property(fget=accept_html, doc=accept_html.__doc__)
-    # note the plural
+    if TYPE_CHECKING:
 
-    def acceptable_offers(self, offers):
+        @property
+        def accepts_html(self) -> bool:
+            pass
+
+    else:
+        accepts_html = property(fget=accept_html, doc=accept_html.__doc__)
+
+    # note the plural
+    def acceptable_offers(self, offers: Sequence[str]) -> list[tuple[str, float]]:
         """
         Return the offers that are acceptable according to the header.
 
@@ -911,7 +1019,7 @@ class AcceptValidHeader(Accept):
         Any offers that cannot be parsed via
         :meth:`.Accept.parse_offer` will be ignored.
 
-        :param offers: ``iterable`` of ``str`` media types (media types can
+        :param offers: ``sequence`` of ``str`` media types (media types can
                        include media type parameters) or pre-parsed instances
                        of :class:`.AcceptOffer`.
         :return: A list of tuples of the form (media type, qvalue), in
@@ -920,6 +1028,7 @@ class AcceptValidHeader(Accept):
                  `offers`.
         """
         parsed = self.parsed
+        assert parsed is not None
 
         # RFC 7231, section 3.1.1.1 "Media Type":
         # "The type, subtype, and parameter name tokens are case-insensitive.
@@ -935,7 +1044,7 @@ class AcceptValidHeader(Accept):
         ]
         lowercased_offers_parsed = self._parse_and_normalize_offers(offers)
 
-        acceptable_offers_n_quality_factors = {}
+        acceptable_offers_n_quality_factors: dict[str, tuple[float, int, int]] = {}
         for offer_index, parsed_offer in lowercased_offers_parsed:
             offer = offers[offer_index]
             offer_type, offer_subtype, offer_media_type_params = parsed_offer
@@ -989,7 +1098,7 @@ class AcceptValidHeader(Accept):
                     specificity,  # specifity of matched range
                 )
 
-        acceptable_offers_n_quality_factors = [
+        filtered_acceptable_offers_n_quality_factors = [
             # key is offer, value[0] is qvalue, value[1] is offer_index
             (key, value[0], value[1])
             for key, value in acceptable_offers_n_quality_factors.items()
@@ -1000,19 +1109,38 @@ class AcceptValidHeader(Accept):
             # text/html' (which does not make sense, but is nonetheless valid),
             # and offers is ['text/html']
         ]
-        acceptable_offers_n_quality_factors.sort(
+        filtered_acceptable_offers_n_quality_factors.sort(
             key=lambda tuple_: (tuple_[1], -tuple_[2]),
             reverse=True,
             # descending sort by (qvalue, -offer_index)
         )
         # return list of (offer, qvalue) tuples, dropping offer_index
-        return [(item[0], item[1]) for item in acceptable_offers_n_quality_factors]
+        return [
+            (offer, qvalue)
+            for offer, qvalue, _ in filtered_acceptable_offers_n_quality_factors
+        ]
         # If a media range is repeated in the header (which would not make
         # sense, but would be valid according to the rules in the RFC), an
         # offer for which the media range is the most specific match would take
         # its qvalue from the first appearance of the range in the header.
 
-    def best_match(self, offers, default_match=None):
+    @overload
+    def best_match(
+        self,
+        offers: Iterable[str | tuple[str, float] | list[Any]],
+        default_match: None = None,
+    ) -> str | None: ...
+
+    @overload
+    def best_match(
+        self, offers: Iterable[str | tuple[str, float] | list[Any]], default_match: str
+    ) -> str: ...
+
+    def best_match(
+        self,
+        offers: Iterable[str | tuple[str, float] | list[Any]],
+        default_match: str | None = None,
+    ) -> str | None:
         """
         Return the best match from the sequence of media type `offers`.
 
@@ -1091,7 +1219,7 @@ class AcceptValidHeader(Accept):
             " in the future, as it does not conform to the RFC.",
             DeprecationWarning,
         )
-        best_quality = -1
+        best_quality: float = -1
         best_offer = default_match
         matched_by = "*/*"
         for offer in offers:
@@ -1116,7 +1244,7 @@ class AcceptValidHeader(Accept):
                     matched_by = mask
         return best_offer
 
-    def quality(self, offer):
+    def quality(self, offer: str) -> float | None:
         """
         Return quality value of given offer, or ``None`` if there is no match.
 
@@ -1167,7 +1295,7 @@ class AcceptValidHeader(Accept):
             "in the future, as it does not conform to the RFC.",
             DeprecationWarning,
         )
-        bestq = 0
+        bestq: float = 0
         for item in self.parsed:
             media_range = item[0]
             qvalue = item[1]
@@ -1199,7 +1327,7 @@ class MIMEAccept(Accept):
 
     """
 
-    def __init__(self, header_value):
+    def __init__(self, header_value: str) -> None:
         warnings.warn(
             "The MIMEAccept class has been replaced by "
             "webob.acceptparse.create_accept_header. This compatibility shim "
@@ -1215,7 +1343,7 @@ class MIMEAccept(Accept):
             self._parsed_nonzero = []
 
     @staticmethod
-    def parse(value):
+    def parse(value: str) -> Iterator[tuple[str, float]]:  # type: ignore[override]
         try:
             parsed_accepted = Accept.parse(value)
 
@@ -1224,35 +1352,39 @@ class MIMEAccept(Accept):
         except ValueError:
             pass
 
-    def __repr__(self):
-        return self._accept.__repr__()
+    # NOTE: These all should have the same signatures as in Accept
+    #       so no point in type checking these for this compatibility shim
+    if not TYPE_CHECKING:
 
-    def __iter__(self):
-        return self._accept.__iter__()
+        def __repr__(self):
+            return self._accept.__repr__()
 
-    def __str__(self):
-        return self._accept.__str__()
+        def __iter__(self):
+            return self._accept.__iter__()
 
-    def __add__(self, other):
-        if isinstance(other, self.__class__):
-            return self.__class__(str(self._accept.__add__(other._accept)))
-        else:
-            return self.__class__(str(self._accept.__add__(other)))
+        def __str__(self):
+            return self._accept.__str__()
 
-    def __radd__(self, other):
-        return self.__class__(str(self._accept.__radd__(other)))
+        def __add__(self, other):
+            if isinstance(other, self.__class__):
+                return self.__class__(str(self._accept.__add__(other._accept)))
+            else:
+                return self.__class__(str(self._accept.__add__(other)))
 
-    def __contains__(self, offer):
-        return offer in self._accept
+        def __radd__(self, other):
+            return self.__class__(str(self._accept.__radd__(other)))
 
-    def quality(self, offer):
-        return self._accept.quality(offer)
+        def __contains__(self, offer):
+            return offer in self._accept
 
-    def best_match(self, offers, default_match=None):
-        return self._accept.best_match(offers, default_match=default_match)
+        def quality(self, offer):
+            return self._accept.quality(offer)
 
-    def accept_html(self):
-        return self._accept.accept_html()
+        def best_match(self, offers, default_match=None):
+            return self._accept.best_match(offers, default_match=default_match)
+
+        def accept_html(self):
+            return self._accept.accept_html()
 
 
 class _AcceptInvalidOrNoHeader(Accept):
@@ -1268,7 +1400,7 @@ class _AcceptInvalidOrNoHeader(Accept):
     :class:`.AcceptNoHeader` have much behaviour in common.
     """
 
-    def __bool__(self):
+    def __bool__(self) -> Literal[False]:
         """
         Return whether ``self`` represents a valid ``Accept`` header.
 
@@ -1280,7 +1412,7 @@ class _AcceptInvalidOrNoHeader(Accept):
         """
         return False
 
-    def __contains__(self, offer):
+    def __contains__(self, offer: str) -> Literal[True]:
         """
         Return ``bool`` indicating whether `offer` is acceptable.
 
@@ -1306,7 +1438,7 @@ class _AcceptInvalidOrNoHeader(Accept):
         )
         return True
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """
         Return all the ranges with non-0 qvalues, in order of preference.
 
@@ -1332,7 +1464,7 @@ class _AcceptInvalidOrNoHeader(Accept):
         )
         return iter(())
 
-    def accept_html(self):
+    def accept_html(self) -> bool:
         """
         Return ``True`` if any HTML-like type is accepted.
 
@@ -1357,14 +1489,14 @@ class _AcceptInvalidOrNoHeader(Accept):
     accepts_html = property(fget=accept_html, doc=accept_html.__doc__)
     # note the plural
 
-    def acceptable_offers(self, offers):
+    def acceptable_offers(self, offers: Sequence[str]) -> list[tuple[str, float]]:
         """
         Return the offers that are acceptable according to the header.
 
         Any offers that cannot be parsed via
         :meth:`.Accept.parse_offer` will be ignored.
 
-        :param offers: ``iterable`` of ``str`` media types (media types can
+        :param offers: ``sequence`` of ``str`` media types (media types can
                        include media type parameters)
         :return: When the header is invalid, or there is no ``Accept`` header
                  in the request, all `offers` are considered acceptable, so
@@ -1380,7 +1512,23 @@ class _AcceptInvalidOrNoHeader(Accept):
             for offer_index, _ in self._parse_and_normalize_offers(offers)
         ]
 
-    def best_match(self, offers, default_match=None):
+    @overload
+    def best_match(
+        self,
+        offers: Iterable[str | tuple[str, float] | list[Any]],
+        default_match: None = None,
+    ) -> str | None: ...
+
+    @overload
+    def best_match(
+        self, offers: Iterable[str | tuple[str, float] | list[Any]], default_match: str
+    ) -> str: ...
+
+    def best_match(
+        self,
+        offers: Iterable[str | tuple[str, float] | list[Any]],
+        default_match: str | None = None,
+    ) -> str | None:
         """
         Return the best match from the sequence of language tag `offers`.
 
@@ -1424,7 +1572,7 @@ class _AcceptInvalidOrNoHeader(Accept):
             "in (and currently does not conform to) RFC 7231.",
             DeprecationWarning,
         )
-        best_quality = -1
+        best_quality: float = -1
         best_offer = default_match
         for offer in offers:
             if isinstance(offer, (list, tuple)):
@@ -1436,7 +1584,7 @@ class _AcceptInvalidOrNoHeader(Accept):
                 best_quality = quality
         return best_offer
 
-    def quality(self, offer):
+    def quality(self, offer: str) -> float:
         """
         Return quality value of given offer, or ``None`` if there is no match.
 
@@ -1476,7 +1624,7 @@ class AcceptNoHeader(_AcceptInvalidOrNoHeader):
     """
 
     @property
-    def header_value(self):
+    def header_value(self) -> None:
         """
         (``str`` or ``None``) The header value.
 
@@ -1485,7 +1633,7 @@ class AcceptNoHeader(_AcceptInvalidOrNoHeader):
         return self._header_value
 
     @property
-    def parsed(self):
+    def parsed(self) -> None:
         """
         (``list`` or ``None``) Parsed form of the header.
 
@@ -1493,7 +1641,7 @@ class AcceptNoHeader(_AcceptInvalidOrNoHeader):
         """
         return self._parsed
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Create an :class:`AcceptNoHeader` instance.
         """
@@ -1501,14 +1649,43 @@ class AcceptNoHeader(_AcceptInvalidOrNoHeader):
         self._parsed = None
         self._parsed_nonzero = None
 
-    def copy(self):
+    def copy(self) -> Self:
         """
         Create a copy of the header object.
 
         """
         return self.__class__()
 
-    def __add__(self, other):
+    @overload
+    def __add__(self, other: AcceptValidHeader | Literal[""]) -> AcceptValidHeader: ...
+
+    @overload
+    def __add__(self, other: AcceptNoHeader | AcceptInvalidHeader | None) -> Self: ...
+
+    @overload
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptHeader
+            | SupportsItems[str, float | tuple[float, str]]
+            | ListOrTuple[str | tuple[str, float, str] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self | AcceptValidHeader: ...
+
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptHeader
+            | SupportsItems[str, float | tuple[float, str]]
+            | ListOrTuple[str | tuple[str, float, str] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self | AcceptValidHeader:
         """
         Add to header, creating a new header object.
 
@@ -1547,23 +1724,55 @@ class AcceptNoHeader(_AcceptInvalidOrNoHeader):
 
         return self._add_instance_and_non_accept_type(instance=self, other=other)
 
-    def __radd__(self, other):
+    @overload
+    def __radd__(self, other: AcceptValidHeader | Literal[""]) -> AcceptValidHeader: ...
+
+    @overload
+    def __radd__(self, other: AcceptNoHeader | AcceptInvalidHeader | None) -> Self: ...
+
+    @overload
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptHeader
+            | SupportsItems[str, float | tuple[float, str]]
+            | ListOrTuple[str | tuple[str, float, str] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self | AcceptValidHeader: ...
+
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptHeader
+            | SupportsItems[str, float | tuple[float, str]]
+            | ListOrTuple[str | tuple[str, float, str] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self | AcceptValidHeader:
         """
         Add to header, creating a new header object.
 
         See the docstring for :meth:`AcceptNoHeader.__add__`.
         """
-        return self.__add__(other=other)
+        return self.__add__(other)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__}>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the ``str`` ``'<no header in request>'``."""
 
         return "<no header in request>"
 
-    def _add_instance_and_non_accept_type(self, instance, other):
+    def _add_instance_and_non_accept_type(
+        self, instance: Self, other: object
+    ) -> Self | AcceptValidHeader:
+
         if other is None:
             return self.__class__()
 
@@ -1592,13 +1801,13 @@ class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
     """
 
     @property
-    def header_value(self):
+    def header_value(self) -> str:
         """(``str`` or ``None``) The header value."""
 
         return self._header_value
 
     @property
-    def parsed(self):
+    def parsed(self) -> None:
         """
         (``list`` or ``None``) Parsed form of the header.
 
@@ -1607,7 +1816,7 @@ class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
 
         return self._parsed
 
-    def __init__(self, header_value):
+    def __init__(self, header_value: str) -> None:
         """
         Create an :class:`AcceptInvalidHeader` instance.
         """
@@ -1615,14 +1824,45 @@ class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
         self._parsed = None
         self._parsed_nonzero = None
 
-    def copy(self):
+    def copy(self) -> Self:
         """
         Create a copy of the header object.
 
         """
         return self.__class__(self._header_value)
 
-    def __add__(self, other):
+    @overload
+    def __add__(self, other: AcceptValidHeader | Literal[""]) -> AcceptValidHeader: ...
+
+    @overload
+    def __add__(
+        self, other: AcceptInvalidHeader | AcceptNoHeader | None
+    ) -> AcceptNoHeader: ...
+
+    @overload
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptHeader
+            | SupportsItems[str, float | tuple[float, str]]
+            | ListOrTuple[str | tuple[str, float, str] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> AcceptValidHeader | AcceptNoHeader: ...
+
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptHeader
+            | SupportsItems[str, float | tuple[float, str]]
+            | ListOrTuple[str | tuple[str, float, str] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> AcceptValidHeader | AcceptNoHeader:
         """
         Add to header, creating a new header object.
 
@@ -1662,7 +1902,38 @@ class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
 
         return self._add_instance_and_non_accept_type(instance=self, other=other)
 
-    def __radd__(self, other):
+    @overload
+    def __radd__(self, other: AcceptValidHeader | Literal[""]) -> AcceptValidHeader: ...
+
+    @overload
+    def __radd__(
+        self, other: AcceptInvalidHeader | AcceptNoHeader | None
+    ) -> AcceptNoHeader: ...
+
+    @overload
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptHeader
+            | SupportsItems[str, float | tuple[float, str]]
+            | ListOrTuple[str | tuple[str, float, str] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> AcceptValidHeader | AcceptNoHeader: ...
+
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptHeader
+            | SupportsItems[str, float | tuple[float, str]]
+            | ListOrTuple[str | tuple[str, float, str] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self | AcceptValidHeader | AcceptNoHeader:
         """
         Add to header, creating a new header object.
 
@@ -1673,20 +1944,21 @@ class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
             instance=self, other=other, instance_on_the_right=True
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__}>"
         # We do not display the header_value, as it is untrusted input. The
         # header_value could always be easily obtained from the .header_value
         # property.
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the ``str`` ``'<invalid header value>'``."""
 
         return "<invalid header value>"
 
     def _add_instance_and_non_accept_type(
-        self, instance, other, instance_on_the_right=False
-    ):
+        self, instance: Self, other: object, instance_on_the_right: bool = False
+    ) -> AcceptValidHeader | AcceptNoHeader:
+
         if other is None:
             return AcceptNoHeader()
 
@@ -1698,7 +1970,35 @@ class AcceptInvalidHeader(_AcceptInvalidOrNoHeader):
             return AcceptNoHeader()
 
 
-def create_accept_header(header_value):
+@overload
+def create_accept_header(
+    header_value: AcceptValidHeader | Literal[""],
+) -> AcceptValidHeader: ...
+
+
+@overload
+def create_accept_header(header_value: AcceptInvalidHeader) -> AcceptInvalidHeader: ...
+
+
+@overload
+def create_accept_header(header_value: None | AcceptNoHeader) -> AcceptNoHeader: ...
+
+
+@overload
+def create_accept_header(
+    header_value: str,
+) -> AcceptValidHeader | AcceptInvalidHeader: ...
+
+
+@overload
+def create_accept_header(
+    header_value: _AnyAcceptHeader | str | None,
+) -> _AnyAcceptHeader: ...
+
+
+def create_accept_header(
+    header_value: _AnyAcceptHeader | str | None,
+) -> _AnyAcceptHeader:
     """
     Create an object representing the ``Accept`` header in a request.
 
@@ -1723,7 +2023,7 @@ def create_accept_header(header_value):
         return AcceptInvalidHeader(header_value=header_value)
 
 
-def accept_property():
+def accept_property() -> _AcceptProperty:
     doc = """
         Property representing the ``Accept`` header.
 
@@ -1737,12 +2037,22 @@ def accept_property():
 
     ENVIRON_KEY = "HTTP_ACCEPT"
 
-    def fget(request):
+    def fget(request: BaseRequest) -> _AnyAcceptHeader:
         """Get an object representing the header in the request."""
 
         return create_accept_header(header_value=request.environ.get(ENVIRON_KEY))
 
-    def fset(request, value):
+    def fset(
+        request: BaseRequest,
+        value: (
+            _AnyAcceptHeader
+            | SupportsItems[str, float | tuple[float, str]]
+            | ListOrTuple[str | tuple[str, float, str] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> None:
         """
         Set the corresponding key in the request environ.
 
@@ -1775,7 +2085,7 @@ def accept_property():
                 header_value = Accept._python_value_to_header_str(value=value)
             request.environ[ENVIRON_KEY] = header_value
 
-    def fdel(request):
+    def fdel(request: BaseRequest) -> None:
         """Delete the corresponding key from the request environ."""
         try:
             del request.environ[ENVIRON_KEY]
@@ -1805,7 +2115,7 @@ class AcceptCharset:
     )
 
     @classmethod
-    def _python_value_to_header_str(cls, value):
+    def _python_value_to_header_str(cls, value: object) -> str:
         if isinstance(value, str):
             header_str = value
         else:
@@ -1826,7 +2136,7 @@ class AcceptCharset:
         return header_str
 
     @classmethod
-    def parse(cls, value):
+    def parse(cls, value: str) -> Iterator[tuple[str, float]]:
         """
         Parse an ``Accept-Charset`` header.
 
@@ -1844,7 +2154,7 @@ class AcceptCharset:
         if cls.accept_charset_compiled_re.match(value) is None:
             raise ValueError("Invalid value for an Accept-Charset header.")
 
-        def generator(value):
+        def generator(value: str) -> Iterator[tuple[str, float]]:
             for match in cls.charset_n_weight_compiled_re.finditer(value):
                 charset = match.group(1)
                 qvalue = match.group(2)
@@ -1867,13 +2177,13 @@ class AcceptCharsetValidHeader(AcceptCharset):
     """
 
     @property
-    def header_value(self):
+    def header_value(self) -> str:
         """(``str``) The header value."""
 
         return self._header_value
 
     @property
-    def parsed(self):
+    def parsed(self) -> list[tuple[str, float]]:
         """
         (``list``) Parsed form of the header.
 
@@ -1882,7 +2192,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
 
         return self._parsed
 
-    def __init__(self, header_value):
+    def __init__(self, header_value: str) -> None:
         """
         Create an :class:`AcceptCharsetValidHeader` instance.
 
@@ -1896,14 +2206,24 @@ class AcceptCharsetValidHeader(AcceptCharset):
             item for item in self.parsed if item[1]  # item[1] is the qvalue
         ]
 
-    def copy(self):
+    def copy(self) -> Self:
         """
         Create a copy of the header object.
 
         """
         return self.__class__(self._header_value)
 
-    def __add__(self, other):
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptCharsetHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self:
         """
         Add to header, creating a new header object.
 
@@ -1931,7 +2251,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
         """
 
         if isinstance(other, AcceptCharsetValidHeader):
-            return create_accept_charset_header(
+            return create_accept_charset_header(  # type: ignore[return-value]
                 header_value=self.header_value + ", " + other.header_value
             )
 
@@ -1942,7 +2262,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
             instance=self, other=other
         )
 
-    def __bool__(self):
+    def __bool__(self) -> Literal[True]:
         """
         Return whether ``self`` represents a valid ``Accept-Charset`` header.
 
@@ -1955,7 +2275,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
 
         return True
 
-    def __contains__(self, offer):
+    def __contains__(self, offer: str) -> bool:
         """
         Return ``bool`` indicating whether `offer` is acceptable.
 
@@ -1990,7 +2310,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
 
         return False
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """
         Return all the items with non-0 qvalues, in order of preference.
 
@@ -2021,7 +2341,17 @@ class AcceptCharsetValidHeader(AcceptCharset):
         ):
             yield mask
 
-    def __radd__(self, other):
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptCharsetHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self:
         """
         Add to header, creating a new header object.
 
@@ -2032,10 +2362,10 @@ class AcceptCharsetValidHeader(AcceptCharset):
             instance=self, other=other, instance_on_the_right=True
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__} ({str(self)!r})>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         r"""
         Return a tidied up version of the header value.
 
@@ -2048,8 +2378,9 @@ class AcceptCharsetValidHeader(AcceptCharset):
         )
 
     def _add_instance_and_non_accept_charset_type(
-        self, instance, other, instance_on_the_right=False
-    ):
+        self, instance: Self, other: object, instance_on_the_right: bool = False
+    ) -> Self:
+
         if not other:
             return self.__class__(header_value=instance.header_value)
 
@@ -2067,7 +2398,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
         )
         return self.__class__(header_value=new_header_value)
 
-    def _old_match(self, mask, offer):
+    def _old_match(self, mask: str, offer: str) -> bool:
         """
         Return whether charset offer matches header item (charset or ``*``).
 
@@ -2090,7 +2421,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
         """
         return mask == "*" or offer.lower() == mask.lower()
 
-    def acceptable_offers(self, offers):
+    def acceptable_offers(self, offers: Sequence[str]) -> list[tuple[str, float]]:
         """
         Return the offers that are acceptable according to the header.
 
@@ -2101,7 +2432,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
         This uses the matching rules described in :rfc:`RFC 7231, section 5.3.3
         <7231#section-5.3.3>`.
 
-        :param offers: ``iterable`` of ``str`` charsets
+        :param offers: ``sequence`` of ``str`` charsets
         :return: A list of tuples of the form (charset, qvalue), in descending
                  order of qvalue. Where two offers have the same qvalue, they
                  are returned in the same order as their order in `offers`.
@@ -2128,9 +2459,9 @@ class AcceptCharsetValidHeader(AcceptCharset):
                     not_acceptable_charsets.add(charset)
                 else:
                     acceptable_charsets[charset] = qvalue
-        acceptable_charsets = list(acceptable_charsets.items())
+        acceptable_charsets_list = list(acceptable_charsets.items())
         # Sort acceptable_charsets by qvalue, descending order
-        acceptable_charsets.sort(key=lambda tuple_: tuple_[1], reverse=True)
+        acceptable_charsets_list.sort(key=lambda tuple_: tuple_[1], reverse=True)
 
         filtered_offers = []
         for index, offer in enumerate(lowercased_offers):
@@ -2139,7 +2470,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
                 continue
 
             matched_charset_qvalue = None
-            for charset, qvalue in acceptable_charsets:
+            for charset, qvalue in acceptable_charsets_list:
                 if offer == charset:
                     matched_charset_qvalue = qvalue
                     break
@@ -2159,7 +2490,23 @@ class AcceptCharsetValidHeader(AcceptCharset):
         return [(item[0], item[1]) for item in filtered_offers]
         # (offer, qvalue), dropping the position
 
-    def best_match(self, offers, default_match=None):
+    @overload
+    def best_match(
+        self,
+        offers: Iterable[str | tuple[str, float] | list[Any]],
+        default_match: None = None,
+    ) -> str | None: ...
+
+    @overload
+    def best_match(
+        self, offers: Iterable[str | tuple[str, float] | list[Any]], default_match: str
+    ) -> str: ...
+
+    def best_match(
+        self,
+        offers: Iterable[str | tuple[str, float] | list[Any]],
+        default_match: str | None = None,
+    ) -> str | None:
         """
         Return the best match from the sequence of charset `offers`.
 
@@ -2212,7 +2559,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
             "deprecated in the future, as it does not conform to the RFC.",
             DeprecationWarning,
         )
-        best_quality = -1
+        best_quality: float = -1
         best_offer = default_match
         matched_by = "*/*"
         for offer in offers:
@@ -2237,7 +2584,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
                     matched_by = mask
         return best_offer
 
-    def quality(self, offer):
+    def quality(self, offer: str) -> float | None:
         """
         Return quality value of given offer, or ``None`` if there is no match.
 
@@ -2269,7 +2616,7 @@ class AcceptCharsetValidHeader(AcceptCharset):
             "deprecated in the future, as it does not conform to the RFC.",
             DeprecationWarning,
         )
-        bestq = 0
+        bestq: float = 0
         for mask, quality in self.parsed:
             if self._old_match(mask, offer):
                 bestq = max(bestq, quality)
@@ -2291,7 +2638,7 @@ class _AcceptCharsetInvalidOrNoHeader(AcceptCharset):
     have much behaviour in common.
     """
 
-    def __bool__(self):
+    def __bool__(self) -> Literal[False]:
         """
         Return whether ``self`` represents a valid ``Accept-Charset`` header.
 
@@ -2303,7 +2650,7 @@ class _AcceptCharsetInvalidOrNoHeader(AcceptCharset):
         """
         return False
 
-    def __contains__(self, offer):
+    def __contains__(self, offer: str) -> Literal[True]:
         """
         Return ``bool`` indicating whether `offer` is acceptable.
 
@@ -2329,7 +2676,7 @@ class _AcceptCharsetInvalidOrNoHeader(AcceptCharset):
         )
         return True
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """
         Return all the items with non-0 qvalues, in order of preference.
 
@@ -2355,7 +2702,7 @@ class _AcceptCharsetInvalidOrNoHeader(AcceptCharset):
         )
         return iter(())
 
-    def acceptable_offers(self, offers):
+    def acceptable_offers(self, offers: Iterable[str]) -> list[tuple[str, float]]:
         """
         Return the offers that are acceptable according to the header.
 
@@ -2379,7 +2726,23 @@ class _AcceptCharsetInvalidOrNoHeader(AcceptCharset):
         """
         return [(offer, 1.0) for offer in offers]
 
-    def best_match(self, offers, default_match=None):
+    @overload
+    def best_match(
+        self,
+        offers: Iterable[str | tuple[str, float] | list[Any]],
+        default_match: None = None,
+    ) -> str | None: ...
+
+    @overload
+    def best_match(
+        self, offers: Iterable[str | tuple[str, float] | list[Any]], default_match: str
+    ) -> str: ...
+
+    def best_match(
+        self,
+        offers: Iterable[str | tuple[str, float] | list[Any]],
+        default_match: str | None = None,
+    ) -> str | None:
         """
         Return the best match from the sequence of charset `offers`.
 
@@ -2423,7 +2786,7 @@ class _AcceptCharsetInvalidOrNoHeader(AcceptCharset):
             "specified in (and currently does not conform to) RFC 7231.",
             DeprecationWarning,
         )
-        best_quality = -1
+        best_quality: float = -1
         best_offer = default_match
         for offer in offers:
             if isinstance(offer, (list, tuple)):
@@ -2435,7 +2798,7 @@ class _AcceptCharsetInvalidOrNoHeader(AcceptCharset):
                 best_quality = quality
         return best_offer
 
-    def quality(self, offer):
+    def quality(self, offer: str) -> float | None:
         """
         Return quality value of given offer, or ``None`` if there is no match.
 
@@ -2475,7 +2838,7 @@ class AcceptCharsetNoHeader(_AcceptCharsetInvalidOrNoHeader):
     """
 
     @property
-    def header_value(self):
+    def header_value(self) -> None:
         """
         (``str`` or ``None``) The header value.
 
@@ -2484,7 +2847,7 @@ class AcceptCharsetNoHeader(_AcceptCharsetInvalidOrNoHeader):
         return self._header_value
 
     @property
-    def parsed(self):
+    def parsed(self) -> None:
         """
         (``list`` or ``None``) Parsed form of the header.
 
@@ -2492,7 +2855,7 @@ class AcceptCharsetNoHeader(_AcceptCharsetInvalidOrNoHeader):
         """
         return self._parsed
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Create an :class:`AcceptCharsetNoHeader` instance.
         """
@@ -2500,14 +2863,46 @@ class AcceptCharsetNoHeader(_AcceptCharsetInvalidOrNoHeader):
         self._parsed = None
         self._parsed_nonzero = None
 
-    def copy(self):
+    def copy(self) -> Self:
         """
         Create a copy of the header object.
 
         """
         return self.__class__()
 
-    def __add__(self, other):
+    @overload
+    def __add__(self, other: AcceptCharsetValidHeader) -> AcceptCharsetValidHeader: ...
+
+    @overload
+    def __add__(
+        self,
+        other: AcceptCharsetInvalidHeader | AcceptCharsetNoHeader | Literal[""] | None,
+    ) -> Self: ...
+
+    @overload
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptCharsetHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self | AcceptCharsetValidHeader: ...
+
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptCharsetHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self | AcceptCharsetValidHeader:
         """
         Add to header, creating a new header object.
 
@@ -2542,23 +2937,58 @@ class AcceptCharsetNoHeader(_AcceptCharsetInvalidOrNoHeader):
             instance=self, other=other
         )
 
-    def __radd__(self, other):
+    @overload
+    def __radd__(self, other: AcceptCharsetValidHeader) -> AcceptCharsetValidHeader: ...
+
+    @overload
+    def __radd__(
+        self,
+        other: AcceptCharsetInvalidHeader | AcceptCharsetNoHeader | Literal[""] | None,
+    ) -> Self: ...
+
+    @overload
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptCharsetHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self | AcceptCharsetValidHeader: ...
+
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptCharsetHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self | AcceptCharsetValidHeader:
         """
         Add to header, creating a new header object.
 
         See the docstring for :meth:`AcceptCharsetNoHeader.__add__`.
         """
-        return self.__add__(other=other)
+        return self.__add__(other)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__}>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the ``str`` ``'<no header in request>'``."""
 
         return "<no header in request>"
 
-    def _add_instance_and_non_accept_charset_type(self, instance, other):
+    def _add_instance_and_non_accept_charset_type(
+        self, instance: Self, other: object
+    ) -> Self | AcceptCharsetValidHeader:
+
         if not other:
             return self.__class__()
 
@@ -2589,13 +3019,13 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
     """
 
     @property
-    def header_value(self):
+    def header_value(self) -> str:
         """(``str`` or ``None``) The header value."""
 
         return self._header_value
 
     @property
-    def parsed(self):
+    def parsed(self) -> None:
         """
         (``list`` or ``None``) Parsed form of the header.
 
@@ -2604,7 +3034,7 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
 
         return self._parsed
 
-    def __init__(self, header_value):
+    def __init__(self, header_value: str) -> None:
         """
         Create an :class:`AcceptCharsetInvalidHeader` instance.
         """
@@ -2612,14 +3042,46 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
         self._parsed = None
         self._parsed_nonzero = None
 
-    def copy(self):
+    def copy(self) -> Self:
         """
         Create a copy of the header object.
 
         """
         return self.__class__(self._header_value)
 
-    def __add__(self, other):
+    @overload
+    def __add__(self, other: AcceptCharsetValidHeader) -> AcceptCharsetValidHeader: ...
+
+    @overload
+    def __add__(
+        self,
+        other: AcceptCharsetInvalidHeader | AcceptCharsetNoHeader | Literal[""] | None,
+    ) -> AcceptCharsetNoHeader: ...
+
+    @overload
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptCharsetHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> AcceptCharsetValidHeader | AcceptCharsetNoHeader: ...
+
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptCharsetHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> AcceptCharsetValidHeader | AcceptCharsetNoHeader:
         """
         Add to header, creating a new header object.
 
@@ -2655,7 +3117,39 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
             instance=self, other=other
         )
 
-    def __radd__(self, other):
+    @overload
+    def __radd__(self, other: AcceptCharsetValidHeader) -> AcceptCharsetValidHeader: ...
+
+    @overload
+    def __radd__(
+        self,
+        other: AcceptCharsetInvalidHeader | AcceptCharsetNoHeader | Literal[""] | None,
+    ) -> AcceptCharsetNoHeader: ...
+
+    @overload
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptCharsetHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> AcceptCharsetValidHeader | AcceptCharsetNoHeader: ...
+
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptCharsetHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> AcceptCharsetValidHeader | AcceptCharsetNoHeader:
         """
         Add to header, creating a new header object.
 
@@ -2666,20 +3160,21 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
             instance=self, other=other, instance_on_the_right=True
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__}>"
         # We do not display the header_value, as it is untrusted input. The
         # header_value could always be easily obtained from the .header_value
         # property.
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the ``str`` ``'<invalid header value>'``."""
 
         return "<invalid header value>"
 
     def _add_instance_and_non_accept_charset_type(
-        self, instance, other, instance_on_the_right=False
-    ):
+        self, instance: Self, other: object, instance_on_the_right: bool = False
+    ) -> AcceptCharsetValidHeader | AcceptCharsetNoHeader:
+
         if not other:
             return AcceptCharsetNoHeader()
 
@@ -2691,7 +3186,39 @@ class AcceptCharsetInvalidHeader(_AcceptCharsetInvalidOrNoHeader):
             return AcceptCharsetNoHeader()
 
 
-def create_accept_charset_header(header_value):
+@overload
+def create_accept_charset_header(
+    header_value: AcceptCharsetValidHeader | Literal[""],
+) -> AcceptCharsetValidHeader: ...
+
+
+@overload
+def create_accept_charset_header(
+    header_value: AcceptCharsetInvalidHeader,
+) -> AcceptCharsetInvalidHeader: ...
+
+
+@overload
+def create_accept_charset_header(
+    header_value: AcceptCharsetNoHeader | None,
+) -> AcceptCharsetNoHeader: ...
+
+
+@overload
+def create_accept_charset_header(
+    header_value: str,
+) -> AcceptCharsetValidHeader | AcceptCharsetInvalidHeader: ...
+
+
+@overload
+def create_accept_charset_header(
+    header_value: _AnyAcceptCharsetHeader | str | None,
+) -> _AnyAcceptCharsetHeader: ...
+
+
+def create_accept_charset_header(
+    header_value: _AnyAcceptCharsetHeader | str | None,
+) -> _AnyAcceptCharsetHeader:
     """
     Create an object representing the ``Accept-Charset`` header in a request.
 
@@ -2716,7 +3243,7 @@ def create_accept_charset_header(header_value):
         return AcceptCharsetInvalidHeader(header_value=header_value)
 
 
-def accept_charset_property():
+def accept_charset_property() -> _AcceptCharsetProperty:
     doc = """
         Property representing the ``Accept-Charset`` header.
 
@@ -2730,14 +3257,24 @@ def accept_charset_property():
 
     ENVIRON_KEY = "HTTP_ACCEPT_CHARSET"
 
-    def fget(request):
+    def fget(request: BaseRequest) -> _AnyAcceptCharsetHeader:
         """Get an object representing the header in the request."""
 
         return create_accept_charset_header(
             header_value=request.environ.get(ENVIRON_KEY)
         )
 
-    def fset(request, value):
+    def fset(
+        request: BaseRequest,
+        value: (
+            _AnyAcceptCharsetHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> None:
         """
         Set the corresponding key in the request environ.
 
@@ -2765,7 +3302,7 @@ def accept_charset_property():
                 header_value = AcceptCharset._python_value_to_header_str(value=value)
             request.environ[ENVIRON_KEY] = header_value
 
-    def fdel(request):
+    def fdel(request: BaseRequest) -> None:
         """Delete the corresponding key from the request environ."""
         try:
             del request.environ[ENVIRON_KEY]
@@ -2798,7 +3335,7 @@ class AcceptEncoding:
     )
 
     @classmethod
-    def _python_value_to_header_str(cls, value):
+    def _python_value_to_header_str(cls, value: object) -> str:
         if isinstance(value, str):
             header_str = value
         else:
@@ -2819,7 +3356,7 @@ class AcceptEncoding:
         return header_str
 
     @classmethod
-    def parse(cls, value):
+    def parse(cls, value: str) -> Iterator[tuple[str, float]]:
         """
         Parse an ``Accept-Encoding`` header.
 
@@ -2837,7 +3374,7 @@ class AcceptEncoding:
         if cls.accept_encoding_compiled_re.match(value) is None:
             raise ValueError("Invalid value for an Accept-Encoding header.")
 
-        def generator(value):
+        def generator(value: str) -> Iterator[tuple[str, float]]:
             for match in cls.codings_n_weight_compiled_re.finditer(value):
                 codings = match.group(1)
                 qvalue = match.group(2)
@@ -2860,13 +3397,13 @@ class AcceptEncodingValidHeader(AcceptEncoding):
     """
 
     @property
-    def header_value(self):
+    def header_value(self) -> str:
         """(``str`` or ``None``) The header value."""
 
         return self._header_value
 
     @property
-    def parsed(self):
+    def parsed(self) -> list[tuple[str, float]]:
         """
         (``list`` or ``None``) Parsed form of the header.
 
@@ -2880,7 +3417,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
 
         return self._parsed
 
-    def __init__(self, header_value):
+    def __init__(self, header_value: str) -> None:
         """
         Create an :class:`AcceptEncodingValidHeader` instance.
 
@@ -2893,14 +3430,24 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         self._parsed_nonzero = [item for item in self.parsed if item[1]]
         # item[1] is the qvalue
 
-    def copy(self):
+    def copy(self) -> Self:
         """
         Create a copy of the header object.
 
         """
         return self.__class__(self._header_value)
 
-    def __add__(self, other):
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptEncodingHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self:
         """
         Add to header, creating a new header object.
 
@@ -2937,7 +3484,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
             if other.header_value == "":
                 return self.__class__(header_value=self.header_value)
             else:
-                return create_accept_encoding_header(
+                return create_accept_encoding_header(  # type: ignore[return-value]
                     header_value=self.header_value + ", " + other.header_value
                 )
 
@@ -2948,7 +3495,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
             instance=self, other=other
         )
 
-    def __bool__(self):
+    def __bool__(self) -> Literal[True]:
         """
         Return whether ``self`` represents a valid ``Accept-Encoding`` header.
 
@@ -2961,7 +3508,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
 
         return True
 
-    def __contains__(self, offer):
+    def __contains__(self, offer: str) -> bool:
         """
         Return ``bool`` indicating whether `offer` is acceptable.
 
@@ -2996,8 +3543,9 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         for mask, _quality in self._parsed_nonzero:
             if self._old_match(mask, offer):
                 return True
+        return False
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """
         Return all the ranges with non-0 qvalues, in order of preference.
 
@@ -3029,7 +3577,17 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         ):
             yield mask
 
-    def __radd__(self, other):
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptEncodingHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self:
         """
         Add to header, creating a new header object.
 
@@ -3040,10 +3598,10 @@ class AcceptEncodingValidHeader(AcceptEncoding):
             instance=self, other=other, instance_on_the_right=True
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__} ({str(self)!r})>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         r"""
         Return a tidied up version of the header value.
 
@@ -3055,8 +3613,9 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         )
 
     def _add_instance_and_non_accept_encoding_type(
-        self, instance, other, instance_on_the_right=False
-    ):
+        self, instance: Self, other: object, instance_on_the_right: bool = False
+    ) -> Self:
+
         if not other:
             return self.__class__(header_value=instance.header_value)
 
@@ -3079,7 +3638,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         )
         return self.__class__(header_value=new_header_value)
 
-    def _old_match(self, mask, offer):
+    def _old_match(self, mask: str, offer: str) -> bool:
         """
         Return whether content-coding offer matches codings header item.
 
@@ -3103,7 +3662,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         """
         return mask == "*" or offer.lower() == mask.lower()
 
-    def acceptable_offers(self, offers):
+    def acceptable_offers(self, offers: Sequence[str]) -> list[tuple[str, float]]:
         """
         Return the offers that are acceptable according to the header.
 
@@ -3114,7 +3673,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         This uses the matching rules described in :rfc:`RFC 7231, section 5.3.4
         <7231#section-5.3.4>`.
 
-        :param offers: ``iterable`` of ``str``s, where each ``str`` is a
+        :param offers: ``sequence`` of ``str``s, where each ``str`` is a
                        content-coding or the string ``identity`` (the token
                        used to represent "no encoding")
         :return: A list of tuples of the form (content-coding or "identity",
@@ -3153,9 +3712,9 @@ class AcceptEncodingValidHeader(AcceptEncoding):
                     not_acceptable_codingss.add(codings)
                 else:
                     acceptable_codingss[codings] = qvalue
-        acceptable_codingss = list(acceptable_codingss.items())
+        acceptable_codingsl = list(acceptable_codingss.items())
         # Sort acceptable_codingss by qvalue, descending order
-        acceptable_codingss.sort(key=lambda tuple_: tuple_[1], reverse=True)
+        acceptable_codingsl.sort(key=lambda tuple_: tuple_[1], reverse=True)
 
         filtered_offers = []
         for index, offer in enumerate(lowercased_offers):
@@ -3164,7 +3723,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
                 continue
 
             matched_codings_qvalue = None
-            for codings, qvalue in acceptable_codingss:
+            for codings, qvalue in acceptable_codingsl:
                 if offer == codings:
                     matched_codings_qvalue = qvalue
                     break
@@ -3186,7 +3745,23 @@ class AcceptEncodingValidHeader(AcceptEncoding):
         return [(item[0], item[1]) for item in filtered_offers]
         # (offer, qvalue), dropping the position
 
-    def best_match(self, offers, default_match=None):
+    @overload
+    def best_match(
+        self,
+        offers: Iterable[str | tuple[str, float] | list[Any]],
+        default_match: None = None,
+    ) -> str | None: ...
+
+    @overload
+    def best_match(
+        self, offers: Iterable[str | tuple[str, float] | list[Any]], default_match: str
+    ) -> str: ...
+
+    def best_match(
+        self,
+        offers: Iterable[str | tuple[str, float] | list[Any]],
+        default_match: str | None = None,
+    ) -> str | None:
         """
         Return the best match from the sequence of `offers`.
 
@@ -3247,7 +3822,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
             " RFC.",
             DeprecationWarning,
         )
-        best_quality = -1
+        best_quality: float = -1
         best_offer = default_match
         matched_by = "*/*"
         for offer in offers:
@@ -3274,7 +3849,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
                     matched_by = mask
         return best_offer
 
-    def quality(self, offer):
+    def quality(self, offer: str) -> float | None:
         """
         Return quality value of given offer, or ``None`` if there is no match.
 
@@ -3308,7 +3883,7 @@ class AcceptEncodingValidHeader(AcceptEncoding):
             "deprecated in the future, as it does not conform to the RFC.",
             DeprecationWarning,
         )
-        bestq = 0
+        bestq: float = 0
         for mask, q in self.parsed:
             if self._old_match(mask, offer):
                 bestq = max(bestq, q)
@@ -3330,7 +3905,7 @@ class _AcceptEncodingInvalidOrNoHeader(AcceptEncoding):
     have much behaviour in common.
     """
 
-    def __bool__(self):
+    def __bool__(self) -> Literal[False]:
         """
         Return whether ``self`` represents a valid ``Accept-Encoding`` header.
 
@@ -3342,7 +3917,7 @@ class _AcceptEncodingInvalidOrNoHeader(AcceptEncoding):
         """
         return False
 
-    def __contains__(self, offer):
+    def __contains__(self, offer: str) -> Literal[True]:
         """
         Return ``bool`` indicating whether `offer` is acceptable.
 
@@ -3368,7 +3943,7 @@ class _AcceptEncodingInvalidOrNoHeader(AcceptEncoding):
         )
         return True
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """
         Return all the header items with non-0 qvalues, in order of preference.
 
@@ -3395,7 +3970,7 @@ class _AcceptEncodingInvalidOrNoHeader(AcceptEncoding):
         )
         return iter(())
 
-    def acceptable_offers(self, offers):
+    def acceptable_offers(self, offers: Iterable[str]) -> list[tuple[str, float]]:
         """
         Return the offers that are acceptable according to the header.
 
@@ -3411,7 +3986,23 @@ class _AcceptEncodingInvalidOrNoHeader(AcceptEncoding):
         """
         return [(offer, 1.0) for offer in offers]
 
-    def best_match(self, offers, default_match=None):
+    @overload
+    def best_match(
+        self,
+        offers: Iterable[str | tuple[str, float] | list[Any]],
+        default_match: None = None,
+    ) -> str | None: ...
+
+    @overload
+    def best_match(
+        self, offers: Iterable[str | tuple[str, float] | list[Any]], default_match: str
+    ) -> str: ...
+
+    def best_match(
+        self,
+        offers: Iterable[str | tuple[str, float] | list[Any]],
+        default_match: str | None = None,
+    ) -> str | None:
         """
         Return the best match from the sequence of `offers`.
 
@@ -3457,7 +4048,7 @@ class _AcceptEncodingInvalidOrNoHeader(AcceptEncoding):
             "specified in (and currently does not conform to) RFC 7231.",
             DeprecationWarning,
         )
-        best_quality = -1
+        best_quality: float = -1
         best_offer = default_match
         for offer in offers:
             if isinstance(offer, (list, tuple)):
@@ -3469,7 +4060,7 @@ class _AcceptEncodingInvalidOrNoHeader(AcceptEncoding):
                 best_quality = quality
         return best_offer
 
-    def quality(self, offer):
+    def quality(self, offer: str) -> float | None:
         """
         Return quality value of given offer, or ``None`` if there is no match.
 
@@ -3509,7 +4100,7 @@ class AcceptEncodingNoHeader(_AcceptEncodingInvalidOrNoHeader):
     """
 
     @property
-    def header_value(self):
+    def header_value(self) -> None:
         """
         (``str`` or ``None``) The header value.
 
@@ -3518,7 +4109,7 @@ class AcceptEncodingNoHeader(_AcceptEncodingInvalidOrNoHeader):
         return self._header_value
 
     @property
-    def parsed(self):
+    def parsed(self) -> None:
         """
         (``list`` or ``None``) Parsed form of the header.
 
@@ -3526,7 +4117,7 @@ class AcceptEncodingNoHeader(_AcceptEncodingInvalidOrNoHeader):
         """
         return self._parsed
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Create an :class:`AcceptEncodingNoHeader` instance.
         """
@@ -3534,14 +4125,47 @@ class AcceptEncodingNoHeader(_AcceptEncodingInvalidOrNoHeader):
         self._parsed = None
         self._parsed_nonzero = None
 
-    def copy(self):
+    def copy(self) -> Self:
         """
         Create a copy of the header object.
 
         """
         return self.__class__()
 
-    def __add__(self, other):
+    @overload
+    def __add__(
+        self, other: AcceptEncodingValidHeader | Literal[""]
+    ) -> AcceptEncodingValidHeader: ...
+
+    @overload
+    def __add__(
+        self, other: AcceptEncodingInvalidHeader | AcceptEncodingNoHeader | None
+    ) -> Self: ...
+
+    @overload
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptEncodingHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self | AcceptEncodingValidHeader: ...
+
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptEncodingHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self | AcceptEncodingValidHeader:
         """
         Add to header, creating a new header object.
 
@@ -3578,23 +4202,59 @@ class AcceptEncodingNoHeader(_AcceptEncodingInvalidOrNoHeader):
             instance=self, other=other
         )
 
-    def __radd__(self, other):
+    @overload
+    def __radd__(
+        self, other: AcceptEncodingValidHeader | Literal[""]
+    ) -> AcceptEncodingValidHeader: ...
+
+    @overload
+    def __radd__(
+        self, other: AcceptEncodingInvalidHeader | AcceptEncodingNoHeader | None
+    ) -> Self: ...
+
+    @overload
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptEncodingHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self | AcceptEncodingValidHeader: ...
+
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptEncodingHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self | AcceptEncodingValidHeader:
         """
         Add to header, creating a new header object.
 
         See the docstring for :meth:`AcceptEncodingNoHeader.__add__`.
         """
-        return self.__add__(other=other)
+        return self.__add__(other)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__}>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the ``str`` ``'<no header in request>'``."""
 
         return "<no header in request>"
 
-    def _add_instance_and_non_accept_encoding_type(self, instance, other):
+    def _add_instance_and_non_accept_encoding_type(
+        self, instance: Self, other: object
+    ) -> Self | AcceptEncodingValidHeader:
+
         if other is None:
             return self.__class__()
 
@@ -3624,13 +4284,13 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
     """
 
     @property
-    def header_value(self):
+    def header_value(self) -> str:
         """(``str`` or ``None``) The header value."""
 
         return self._header_value
 
     @property
-    def parsed(self):
+    def parsed(self) -> None:
         """
         (``list`` or ``None``) Parsed form of the header.
 
@@ -3639,7 +4299,7 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
 
         return self._parsed
 
-    def __init__(self, header_value):
+    def __init__(self, header_value: str) -> None:
         """
         Create an :class:`AcceptEncodingInvalidHeader` instance.
         """
@@ -3647,14 +4307,47 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
         self._parsed = None
         self._parsed_nonzero = None
 
-    def copy(self):
+    def copy(self) -> Self:
         """
         Create a copy of the header object.
 
         """
         return self.__class__(self._header_value)
 
-    def __add__(self, other):
+    @overload
+    def __add__(
+        self, other: AcceptEncodingValidHeader | Literal[""]
+    ) -> AcceptEncodingValidHeader: ...
+
+    @overload
+    def __add__(
+        self, other: AcceptEncodingInvalidHeader | AcceptEncodingNoHeader | None
+    ) -> AcceptEncodingNoHeader: ...
+
+    @overload
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptEncodingHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> AcceptEncodingValidHeader | AcceptEncodingNoHeader: ...
+
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptEncodingHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> AcceptEncodingValidHeader | AcceptEncodingNoHeader:
         """
         Add to header, creating a new header object.
 
@@ -3692,7 +4385,40 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
             instance=self, other=other
         )
 
-    def __radd__(self, other):
+    @overload
+    def __radd__(
+        self, other: AcceptEncodingValidHeader | Literal[""]
+    ) -> AcceptEncodingValidHeader: ...
+
+    @overload
+    def __radd__(
+        self, other: AcceptEncodingInvalidHeader | AcceptEncodingNoHeader | None
+    ) -> AcceptEncodingNoHeader: ...
+
+    @overload
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptEncodingHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> AcceptEncodingValidHeader | AcceptEncodingNoHeader: ...
+
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptEncodingHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> AcceptEncodingValidHeader | AcceptEncodingNoHeader:
         """
         Add to header, creating a new header object.
 
@@ -3703,20 +4429,21 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
             instance=self, other=other, instance_on_the_right=True
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__}>"
         # We do not display the header_value, as it is untrusted input. The
         # header_value could always be easily obtained from the .header_value
         # property.
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the ``str`` ``'<invalid header value>'``."""
 
         return "<invalid header value>"
 
     def _add_instance_and_non_accept_encoding_type(
-        self, instance, other, instance_on_the_right=False
-    ):
+        self, instance: Self, other: object, instance_on_the_right: bool = False
+    ) -> AcceptEncodingValidHeader | AcceptEncodingNoHeader:
+
         if other is None:
             return AcceptEncodingNoHeader()
 
@@ -3728,7 +4455,39 @@ class AcceptEncodingInvalidHeader(_AcceptEncodingInvalidOrNoHeader):
             return AcceptEncodingNoHeader()
 
 
-def create_accept_encoding_header(header_value):
+@overload
+def create_accept_encoding_header(
+    header_value: AcceptEncodingValidHeader | Literal[""],
+) -> AcceptEncodingValidHeader: ...
+
+
+@overload
+def create_accept_encoding_header(
+    header_value: AcceptEncodingInvalidHeader,
+) -> AcceptEncodingInvalidHeader: ...
+
+
+@overload
+def create_accept_encoding_header(
+    header_value: AcceptEncodingNoHeader | None,
+) -> AcceptEncodingNoHeader: ...
+
+
+@overload
+def create_accept_encoding_header(
+    header_value: str,
+) -> AcceptEncodingValidHeader | AcceptEncodingInvalidHeader: ...
+
+
+@overload
+def create_accept_encoding_header(
+    header_value: _AnyAcceptEncodingHeader | str | None,
+) -> _AnyAcceptEncodingHeader: ...
+
+
+def create_accept_encoding_header(
+    header_value: _AnyAcceptEncodingHeader | str | None,
+) -> _AnyAcceptEncodingHeader:
     """
     Create an object representing the ``Accept-Encoding`` header in a request.
 
@@ -3753,7 +4512,7 @@ def create_accept_encoding_header(header_value):
         return AcceptEncodingInvalidHeader(header_value=header_value)
 
 
-def accept_encoding_property():
+def accept_encoding_property() -> _AcceptEncodingProperty:
     doc = """
         Property representing the ``Accept-Encoding`` header.
 
@@ -3767,14 +4526,24 @@ def accept_encoding_property():
 
     ENVIRON_KEY = "HTTP_ACCEPT_ENCODING"
 
-    def fget(request):
+    def fget(request: BaseRequest) -> _AnyAcceptEncodingHeader:
         """Get an object representing the header in the request."""
 
         return create_accept_encoding_header(
             header_value=request.environ.get(ENVIRON_KEY)
         )
 
-    def fset(request, value):
+    def fset(
+        request: BaseRequest,
+        value: (
+            _AnyAcceptEncodingHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> None:
         """
         Set the corresponding key in the request environ.
 
@@ -3804,7 +4573,7 @@ def accept_encoding_property():
                 header_value = AcceptEncoding._python_value_to_header_str(value=value)
             request.environ[ENVIRON_KEY] = header_value
 
-    def fdel(request):
+    def fdel(request: BaseRequest) -> None:
         """Delete the corresponding key from the request environ."""
         try:
             del request.environ[ENVIRON_KEY]
@@ -3837,7 +4606,7 @@ class AcceptLanguage:
     )
 
     @classmethod
-    def _python_value_to_header_str(cls, value):
+    def _python_value_to_header_str(cls, value: object) -> str:
         if isinstance(value, str):
             header_str = value
         else:
@@ -3858,7 +4627,7 @@ class AcceptLanguage:
         return header_str
 
     @classmethod
-    def parse(cls, value):
+    def parse(cls, value: str) -> Iterator[tuple[str, float]]:
         """
         Parse an ``Accept-Language`` header.
 
@@ -3876,7 +4645,7 @@ class AcceptLanguage:
         if cls.accept_language_compiled_re.match(value) is None:
             raise ValueError("Invalid value for an Accept-Language header.")
 
-        def generator(value):
+        def generator(value: str) -> Iterator[tuple[str, float]]:
             for match in cls.lang_range_n_weight_compiled_re.finditer(value):
                 lang_range = match.group(1)
                 qvalue = match.group(2)
@@ -3903,7 +4672,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
     docstring for :meth:`AcceptLanguageValidHeader.__add__`).
     """
 
-    def __init__(self, header_value):
+    def __init__(self, header_value: str) -> None:
         """
         Create an :class:`AcceptLanguageValidHeader` instance.
 
@@ -3916,7 +4685,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         self._parsed_nonzero = [item for item in self.parsed if item[1]]
         # item[1] is the qvalue
 
-    def copy(self):
+    def copy(self) -> Self:
         """
         Create a copy of the header object.
 
@@ -3924,13 +4693,13 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         return self.__class__(self._header_value)
 
     @property
-    def header_value(self):
+    def header_value(self) -> str:
         """(``str`` or ``None``) The header value."""
 
         return self._header_value
 
     @property
-    def parsed(self):
+    def parsed(self) -> list[tuple[str, float]]:
         """
         (``list`` or ``None``) Parsed form of the header.
 
@@ -3939,7 +4708,17 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
         return self._parsed
 
-    def __add__(self, other):
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptLanguageHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self:
         """
         Add to header, creating a new header object.
 
@@ -3968,7 +4747,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         """
 
         if isinstance(other, AcceptLanguageValidHeader):
-            return create_accept_language_header(
+            return create_accept_language_header(  # type: ignore[return-value]
                 header_value=self.header_value + ", " + other.header_value
             )
 
@@ -3979,7 +4758,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
             instance=self, other=other
         )
 
-    def __bool__(self):
+    def __bool__(self) -> Literal[True]:
         """
         Return whether ``self`` represents a valid ``Accept-Language`` header.
 
@@ -3992,7 +4771,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
         return True
 
-    def __contains__(self, offer):
+    def __contains__(self, offer: str) -> bool:
         """
         Return ``bool`` indicating whether `offer` is acceptable.
 
@@ -4044,7 +4823,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
         return False
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """
         Return all the ranges with non-0 qvalues, in order of preference.
 
@@ -4075,7 +4854,17 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         ):
             yield mask
 
-    def __radd__(self, other):
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptLanguageHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self:
         """
         Add to header, creating a new header object.
 
@@ -4086,10 +4875,10 @@ class AcceptLanguageValidHeader(AcceptLanguage):
             instance=self, other=other, instance_on_the_right=True
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__} ({str(self)!r})>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         r"""
         Return a tidied up version of the header value.
 
@@ -4102,8 +4891,9 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         )
 
     def _add_instance_and_non_accept_language_type(
-        self, instance, other, instance_on_the_right=False
-    ):
+        self, instance: Self, other: object, instance_on_the_right: bool = False
+    ) -> Self:
+
         if not other:
             return self.__class__(header_value=instance.header_value)
 
@@ -4121,7 +4911,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         )
         return self.__class__(header_value=new_header_value)
 
-    def _old_match(self, mask, item):
+    def _old_match(self, mask: str, item: str) -> bool:
         """
         Return whether a language tag matches a language range.
 
@@ -4193,7 +4983,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
             or item == mask.split("-")[0]
         )
 
-    def basic_filtering(self, language_tags):
+    def basic_filtering(self, language_tags: Sequence[str]) -> list[tuple[str, float]]:
         """
         Return the tags that match the header, using Basic Filtering.
 
@@ -4204,7 +4994,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         tags in the `language_tags` argument and returns the ones that match
         the header according to the matching scheme.
 
-        :param language_tags: (``iterable``) language tags
+        :param language_tags: (``sequence``) language tags
         :return: A list of tuples of the form (language tag, qvalue), in
                  descending order of qvalue. If two or more tags have the same
                  qvalue, they are returned in the same order as that in the
@@ -4269,18 +5059,18 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                     not_acceptable_ranges.add(range_)
                 else:
                     acceptable_ranges[range_] = (qvalue, position_in_header)
-        acceptable_ranges = [
+        acceptable_ranges_list = [
             (range_, qvalue, position_in_header)
             for range_, (qvalue, position_in_header) in acceptable_ranges.items()
         ]
         # Sort acceptable_ranges by position_in_header, ascending order
-        acceptable_ranges.sort(key=lambda tuple_: tuple_[2])
+        acceptable_ranges_list.sort(key=lambda tuple_: tuple_[2])
         # Sort acceptable_ranges by qvalue, descending order
-        acceptable_ranges.sort(key=lambda tuple_: tuple_[1], reverse=True)
+        acceptable_ranges_list.sort(key=lambda tuple_: tuple_[1], reverse=True)
         # Sort guaranteed to be stable with Python >= 2.2, so position in
         # header is tiebreaker when two ranges have the same qvalue
 
-        def match(tag, range_):
+        def match(tag: str, range_: str) -> bool:
             # RFC 4647, section 2.1: 'A language range matches a particular
             # language tag if, in a case-insensitive comparison, it exactly
             # equals the tag, or if it exactly equals a prefix of the tag such
@@ -4297,7 +5087,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                 continue
 
             matched_range_qvalue = None
-            for range_, qvalue, position_in_header in acceptable_ranges:
+            for range_, qvalue, position_in_header in acceptable_ranges_list:
                 # acceptable_ranges is in descending order of qvalue, and tied
                 # ranges are in ascending order of position_in_header, so the
                 # first range_ that matches the tag is the best match
@@ -4349,7 +5139,23 @@ class AcceptLanguageValidHeader(AcceptLanguage):
         # (same qvalue), which we would not be able to do easily with a set or
         # a list without e.g. making a member of the set or list a sequence.
 
-    def best_match(self, offers, default_match=None):
+    @overload
+    def best_match(
+        self,
+        offers: Iterable[str | tuple[str, float] | list[Any]],
+        default_match: None = None,
+    ) -> str | None: ...
+
+    @overload
+    def best_match(
+        self, offers: Iterable[str | tuple[str, float] | list[Any]], default_match: str
+    ) -> str: ...
+
+    def best_match(
+        self,
+        offers: Iterable[str | tuple[str, float] | list[Any]],
+        default_match: str | None = None,
+    ) -> str | None:
         """
         Return the best match from the sequence of language tag `offers`.
 
@@ -4457,7 +5263,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
             "RFC.",
             DeprecationWarning,
         )
-        best_quality = -1
+        best_quality: float = -1
         best_offer = default_match
         matched_by = "*/*"
         # [We can see that this was written for the ``Accept`` header and not
@@ -4494,7 +5300,70 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                     matched_by = mask
         return best_offer
 
-    def lookup(self, language_tags, default_range=None, default_tag=None, default=None):
+    @overload
+    def lookup(
+        self,
+        language_tags: Sequence[str],
+        default_range: str | None,
+        default_tag: str,
+        default: None = None,
+    ) -> str | None: ...
+
+    @overload
+    def lookup(
+        self,
+        language_tags: Sequence[str],
+        *,
+        default_range: str | None = None,
+        default_tag: str,
+        default: None = None,
+    ) -> str | None: ...
+
+    @overload
+    def lookup(
+        self,
+        language_tags: Sequence[str],
+        default_range: str | None,
+        default_tag: None,
+        default: _T | Callable[[], _T],
+    ) -> _T | str | None: ...
+
+    @overload
+    def lookup(
+        self,
+        language_tags: Sequence[str],
+        default_range: str | None,
+        default_tag: str,
+        default: _T | Callable[[], _T],
+    ) -> _T | str: ...
+
+    @overload
+    def lookup(
+        self,
+        language_tags: Sequence[str],
+        *,
+        default_range: str | None = None,
+        default_tag: None = None,
+        default: _T | Callable[[], _T],
+    ) -> _T | str | None: ...
+
+    @overload
+    def lookup(
+        self,
+        language_tags: Sequence[str],
+        *,
+        default_range: str | None = None,
+        default_tag: str,
+        default: _T | Callable[[], _T],
+    ) -> _T | str: ...
+
+    def lookup(
+        self,
+        language_tags: Sequence[str],
+        default_range: str | None = None,
+        default_tag: str | None = None,
+        default: _T | Callable[[], _T] | None = None,
+    ) -> _T | str | None:
         """
         Return the language tag that best matches the header, using Lookup.
 
@@ -4523,7 +5392,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
             5. zh
             6. (default)
 
-        :param language_tags: (``iterable``) language tags
+        :param language_tags: (``sequence``) language tags
 
         :param default_range: (optional, ``None`` or ``str``)
 
@@ -4647,7 +5516,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
 
         tags = language_tags
         not_acceptable_ranges = []
-        acceptable_ranges = []
+        acceptable_range_pairs = []
 
         asterisk_q0_found = False
         # Whether there is a '*' range in the header with q=0
@@ -4664,17 +5533,17 @@ class AcceptLanguageValidHeader(AcceptLanguage):
             elif qvalue == 0.0:
                 not_acceptable_ranges.append(range_.lower())
             else:
-                acceptable_ranges.append((range_, qvalue))
+                acceptable_range_pairs.append((range_, qvalue))
                 # range_ is .lower()ed later
         # Sort acceptable_ranges by qvalue, descending order
-        acceptable_ranges.sort(key=lambda tuple_: tuple_[1], reverse=True)
+        acceptable_range_pairs.sort(key=lambda tuple_: tuple_[1], reverse=True)
         # Sort guaranteed to be stable with Python >= 2.2, so position in
         # header is tiebreaker when two ranges have the same qvalue
 
-        acceptable_ranges = [tuple_[0] for tuple_ in acceptable_ranges]
+        acceptable_ranges = [tuple_[0] for tuple_ in acceptable_range_pairs]
         lowered_tags = [tag.lower() for tag in tags]
 
-        def best_match(range_):
+        def best_match(range_: str) -> str | None:
             subtags = range_.split("-")
             while True:
                 for index, tag in enumerate(lowered_tags):
@@ -4696,7 +5565,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                 try:
                     subtag_before_this = subtags[-2]
                 except IndexError:  # len(subtags) == 1
-                    break
+                    return None
                 # len(subtags) >= 2
                 if len(subtag_before_this) == 1 and (
                     subtag_before_this.isdigit() or subtag_before_this.isalpha()
@@ -4722,12 +5591,12 @@ class AcceptLanguageValidHeader(AcceptLanguage):
                 if lowered_default_tag not in not_acceptable_ranges:
                     return default_tag
 
-        try:
+        if callable(default):
             return default()
-        except TypeError:  # default is not a callable
+        else:  # default is not a callable
             return default
 
-    def quality(self, offer):
+    def quality(self, offer: str) -> float | None:
         """
         Return quality value of given offer, or ``None`` if there is no match.
 
@@ -4802,7 +5671,7 @@ class AcceptLanguageValidHeader(AcceptLanguage):
             "RFC.",
             DeprecationWarning,
         )
-        bestq = 0
+        bestq: float = 0
         for mask, q in self.parsed:
             if self._old_match(mask, offer):
                 bestq = max(bestq, q)
@@ -4824,7 +5693,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
     have much behaviour in common.
     """
 
-    def __bool__(self):
+    def __bool__(self) -> Literal[False]:
         """
         Return whether ``self`` represents a valid ``Accept-Language`` header.
 
@@ -4836,7 +5705,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         """
         return False
 
-    def __contains__(self, offer):
+    def __contains__(self, offer: str) -> Literal[True]:
         """
         Return ``bool`` indicating whether `offer` is acceptable.
 
@@ -4862,7 +5731,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         )
         return True
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """
         Return all the ranges with non-0 qvalues, in order of preference.
 
@@ -4888,7 +5757,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         )
         return iter(())
 
-    def basic_filtering(self, language_tags):
+    def basic_filtering(self, language_tags: Iterable[str]) -> list[tuple[str, float]]:
         """
         Return the tags that match the header, using Basic Filtering.
 
@@ -4901,7 +5770,23 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         """
         return []
 
-    def best_match(self, offers, default_match=None):
+    @overload
+    def best_match(
+        self,
+        offers: Iterable[str | tuple[str, float] | list[Any]],
+        default_match: None = None,
+    ) -> str | None: ...
+
+    @overload
+    def best_match(
+        self, offers: Iterable[str | tuple[str, float] | list[Any]], default_match: str
+    ) -> str: ...
+
+    def best_match(
+        self,
+        offers: Iterable[str | tuple[str, float] | list[Any]],
+        default_match: str | None = None,
+    ) -> str | None:
         """
         Return the best match from the sequence of language tag `offers`.
 
@@ -4948,7 +5833,7 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
             "specified in (and currently does not conform to) RFC 7231.",
             DeprecationWarning,
         )
-        best_quality = -1
+        best_quality: float = -1
         best_offer = default_match
         for offer in offers:
             if isinstance(offer, (list, tuple)):
@@ -4960,9 +5845,51 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
                 best_quality = quality
         return best_offer
 
+    @overload
     def lookup(
-        self, language_tags=None, default_range=None, default_tag=None, default=None
-    ):
+        self,
+        language_tags: object,
+        default_range: object,
+        default_tag: str,
+        default: object = None,
+    ) -> str: ...
+
+    @overload
+    def lookup(
+        self,
+        language_tags: object = None,
+        *,
+        default_range: object = None,
+        default_tag: str,
+        default: object = None,
+    ) -> str: ...
+
+    @overload
+    def lookup(
+        self,
+        language_tags: object,
+        default_range: object,
+        default_tag: None,
+        default: _T | Callable[[], _T],
+    ) -> _T: ...
+
+    @overload
+    def lookup(
+        self,
+        language_tags: object = None,
+        *,
+        default_range: object = None,
+        default_tag: None = None,
+        default: _T | Callable[[], _T],
+    ) -> _T: ...
+
+    def lookup(
+        self,
+        language_tags: object = None,
+        default_range: object = None,
+        default_tag: str | None = None,
+        default: _T | Callable[[], _T] | None = None,
+    ) -> _T | str | None:
         """
         Return the language tag that best matches the header, using Lookup.
 
@@ -5034,12 +5961,12 @@ class _AcceptLanguageInvalidOrNoHeader(AcceptLanguage):
         if default_tag is not None:
             return default_tag
 
-        try:
+        if callable(default):
             return default()
-        except TypeError:  # default is not a callable
+        else:  # default is not a callable
             return default
 
-    def quality(self, offer):
+    def quality(self, offer: str) -> float | None:
         """
         Return quality value of given offer, or ``None`` if there is no match.
 
@@ -5078,7 +6005,7 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
     docstring for :meth:`AcceptLanguageNoHeader.__add__`).
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Create an :class:`AcceptLanguageNoHeader` instance.
         """
@@ -5086,7 +6013,7 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
         self._parsed = None
         self._parsed_nonzero = None
 
-    def copy(self):
+    def copy(self) -> Self:
         """
         Create a copy of the header object.
 
@@ -5094,7 +6021,7 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
         return self.__class__()
 
     @property
-    def header_value(self):
+    def header_value(self) -> None:
         """
         (``str`` or ``None``) The header value.
 
@@ -5103,7 +6030,7 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
         return self._header_value
 
     @property
-    def parsed(self):
+    def parsed(self) -> None:
         """
         (``list`` or ``None``) Parsed form of the header.
 
@@ -5111,7 +6038,43 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
         """
         return self._parsed
 
-    def __add__(self, other):
+    @overload
+    def __add__(
+        self, other: AcceptLanguageValidHeader
+    ) -> AcceptLanguageValidHeader: ...
+
+    @overload
+    def __add__(
+        self,
+        other: (
+            AcceptLanguageInvalidHeader | AcceptLanguageNoHeader | Literal[""] | None
+        ),
+    ) -> Self: ...
+
+    @overload
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptLanguageHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self | AcceptLanguageValidHeader: ...
+
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptLanguageHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self | AcceptLanguageValidHeader:
         """
         Add to header, creating a new header object.
 
@@ -5147,23 +6110,62 @@ class AcceptLanguageNoHeader(_AcceptLanguageInvalidOrNoHeader):
             instance=self, other=other
         )
 
-    def __radd__(self, other):
+    @overload
+    def __radd__(
+        self, other: AcceptLanguageValidHeader
+    ) -> AcceptLanguageValidHeader: ...
+
+    @overload
+    def __radd__(
+        self,
+        other: (
+            AcceptLanguageInvalidHeader | AcceptLanguageNoHeader | Literal[""] | None
+        ),
+    ) -> Self: ...
+
+    @overload
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptLanguageHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self | AcceptLanguageValidHeader: ...
+
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptLanguageHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> Self | AcceptLanguageValidHeader:
         """
         Add to header, creating a new header object.
 
         See the docstring for :meth:`AcceptLanguageNoHeader.__add__`.
         """
-        return self.__add__(other=other)
+        return self.__add__(other)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__}>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the ``str`` ``'<no header in request>'``."""
 
         return "<no header in request>"
 
-    def _add_instance_and_non_accept_language_type(self, instance, other):
+    def _add_instance_and_non_accept_language_type(
+        self, instance: Self, other: object
+    ) -> Self | AcceptLanguageValidHeader:
+
         if not other:
             return self.__class__()
 
@@ -5193,7 +6195,7 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
     docstring for :meth:`AcceptLanguageInvalidHeader.__add__`).
     """
 
-    def __init__(self, header_value):
+    def __init__(self, header_value: str) -> None:
         """
         Create an :class:`AcceptLanguageInvalidHeader` instance.
         """
@@ -5201,7 +6203,7 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         self._parsed = None
         self._parsed_nonzero = None
 
-    def copy(self):
+    def copy(self) -> Self:
         """
         Create a copy of the header object.
 
@@ -5209,13 +6211,13 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
         return self.__class__(self._header_value)
 
     @property
-    def header_value(self):
+    def header_value(self) -> str:
         """(``str`` or ``None``) The header value."""
 
         return self._header_value
 
     @property
-    def parsed(self):
+    def parsed(self) -> None:
         """
         (``list`` or ``None``) Parsed form of the header.
 
@@ -5224,7 +6226,43 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
 
         return self._parsed
 
-    def __add__(self, other):
+    @overload
+    def __add__(
+        self, other: AcceptLanguageValidHeader
+    ) -> AcceptLanguageValidHeader: ...
+
+    @overload
+    def __add__(
+        self,
+        other: (
+            AcceptLanguageInvalidHeader | AcceptLanguageNoHeader | Literal[""] | None
+        ),
+    ) -> AcceptLanguageNoHeader: ...
+
+    @overload
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptLanguageHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> AcceptLanguageValidHeader | AcceptLanguageNoHeader: ...
+
+    def __add__(
+        self,
+        other: (
+            _AnyAcceptLanguageHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> AcceptLanguageValidHeader | AcceptLanguageNoHeader:
         """
         Add to header, creating a new header object.
 
@@ -5261,7 +6299,43 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
             instance=self, other=other
         )
 
-    def __radd__(self, other):
+    @overload
+    def __radd__(
+        self, other: AcceptLanguageValidHeader
+    ) -> AcceptLanguageValidHeader: ...
+
+    @overload
+    def __radd__(
+        self,
+        other: (
+            AcceptLanguageInvalidHeader | AcceptLanguageNoHeader | Literal[""] | None
+        ),
+    ) -> AcceptLanguageNoHeader: ...
+
+    @overload
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptLanguageHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> AcceptLanguageValidHeader | AcceptLanguageNoHeader: ...
+
+    def __radd__(
+        self,
+        other: (
+            _AnyAcceptLanguageHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> AcceptLanguageValidHeader | AcceptLanguageNoHeader:
         """
         Add to header, creating a new header object.
 
@@ -5272,20 +6346,21 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
             instance=self, other=other, instance_on_the_right=True
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__}>"
         # We do not display the header_value, as it is untrusted input. The
         # header_value could always be easily obtained from the .header_value
         # property.
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the ``str`` ``'<invalid header value>'``."""
 
         return "<invalid header value>"
 
     def _add_instance_and_non_accept_language_type(
-        self, instance, other, instance_on_the_right=False
-    ):
+        self, instance: Self, other: object, instance_on_the_right: bool = False
+    ) -> AcceptLanguageValidHeader | AcceptLanguageNoHeader:
+
         if not other:
             return AcceptLanguageNoHeader()
 
@@ -5297,7 +6372,39 @@ class AcceptLanguageInvalidHeader(_AcceptLanguageInvalidOrNoHeader):
             return AcceptLanguageNoHeader()
 
 
-def create_accept_language_header(header_value):
+@overload
+def create_accept_language_header(
+    header_value: AcceptLanguageValidHeader | Literal[""],
+) -> AcceptLanguageValidHeader: ...
+
+
+@overload
+def create_accept_language_header(
+    header_value: AcceptLanguageNoHeader | None,
+) -> AcceptLanguageNoHeader: ...
+
+
+@overload
+def create_accept_language_header(
+    header_value: AcceptLanguageInvalidHeader,
+) -> AcceptLanguageInvalidHeader: ...
+
+
+@overload
+def create_accept_language_header(
+    header_value: str,
+) -> AcceptLanguageValidHeader | AcceptLanguageInvalidHeader: ...
+
+
+@overload
+def create_accept_language_header(
+    header_value: _AnyAcceptLanguageHeader | str | None,
+) -> _AnyAcceptLanguageHeader: ...
+
+
+def create_accept_language_header(
+    header_value: _AnyAcceptLanguageHeader | str | None,
+) -> _AnyAcceptLanguageHeader:
     """
     Create an object representing the ``Accept-Language`` header in a request.
 
@@ -5322,7 +6429,7 @@ def create_accept_language_header(header_value):
         return AcceptLanguageInvalidHeader(header_value=header_value)
 
 
-def accept_language_property():
+def accept_language_property() -> _AcceptLanguageProperty:
     doc = """
         Property representing the ``Accept-Language`` header.
 
@@ -5336,14 +6443,24 @@ def accept_language_property():
 
     ENVIRON_KEY = "HTTP_ACCEPT_LANGUAGE"
 
-    def fget(request):
+    def fget(request: BaseRequest) -> _AnyAcceptLanguageHeader:
         """Get an object representing the header in the request."""
 
         return create_accept_language_header(
             header_value=request.environ.get(ENVIRON_KEY)
         )
 
-    def fset(request, value):
+    def fset(
+        request: BaseRequest,
+        value: (
+            _AnyAcceptLanguageHeader
+            | SupportsItems[str, float]
+            | ListOrTuple[str | tuple[str, float] | list[Any]]
+            | _SupportsStr
+            | str
+            | None
+        ),
+    ) -> None:
         """
         Set the corresponding key in the request environ.
 
@@ -5372,7 +6489,7 @@ def accept_language_property():
                 header_value = AcceptLanguage._python_value_to_header_str(value=value)
             request.environ[ENVIRON_KEY] = header_value
 
-    def fdel(request):
+    def fdel(request: BaseRequest) -> None:
         """Delete the corresponding key from the request environ."""
         try:
             del request.environ[ENVIRON_KEY]
