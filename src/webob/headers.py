@@ -69,7 +69,7 @@ class ResponseHeaders(MultiDict[str, str]):
 
     def __contains__(self, key: object) -> bool:
         if not isinstance(key, str):
-            return False
+            return False  # pragma: no cover
 
         key = key.lower()
 
@@ -175,7 +175,7 @@ class EnvironHeaders(MutableMapping[str, str]):
 
     def __contains__(self, hname: object) -> bool:
         if not isinstance(hname, str):
-            return False
+            return False  # pragma: no cover
         return _trans_name(hname) in self.environ
 
     def __len__(self) -> int:

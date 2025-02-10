@@ -1633,7 +1633,7 @@ class ResponseBodyFile:
     @property
     def encoding(self) -> str | None:
         """The encoding of the file (inherited from response.charset)"""
-        return self.response.charset
+        return self.response.charset  # pragma: no cover
 
     def writelines(self, seq: Sequence[str | bytes]) -> None:
         """

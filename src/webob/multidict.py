@@ -653,7 +653,7 @@ class NoVars:
         return {}
 
     def dict_of_lists(self) -> dict[str, list[str]]:
-        return {}
+        return {}  # pragma: no cover
 
     def __contains__(self, key: object) -> Literal[False]:
         return False
