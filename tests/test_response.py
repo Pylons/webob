@@ -1052,7 +1052,7 @@ def test_merge_cookies_resp_is_wsgi_callable():
     environ = {}
 
     def dummy_start_response(status, headers, exc_info=None):
-        assert headers, [("Set-Cookie" == "a=1; Path=/")]
+        assert headers, ["Set-Cookie" == "a=1; Path=/"]
 
     result = wsgiapp(environ, dummy_start_response)
     assert result == "abc"

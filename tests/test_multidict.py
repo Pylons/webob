@@ -1,7 +1,13 @@
+import sys
+
 import pytest
 
 from webob import multidict
 from webob.util import text_
+
+requires_cgi = pytest.mark.skipif(
+    sys.version_info >= (3, 13), reason="requires `cgi` module"
+)
 
 
 class BaseDictTests:
@@ -139,6 +145,7 @@ class BaseDictTests:
         d = MultiDict()
         assert d.view_list([1, 2])._items == [1, 2]
 
+    @requires_cgi
     def test_from_fieldstorage_with_filename(self):
         from webob.multidict import MultiDict
 
@@ -146,6 +153,7 @@ class BaseDictTests:
         fs = DummyFieldStorage("a", "1", "file")
         assert d.from_fieldstorage(fs) == MultiDict({"a": fs.list[0]})
 
+    @requires_cgi
     def test_from_fieldstorage_without_filename(self):
         from webob.multidict import MultiDict
 
@@ -153,6 +161,7 @@ class BaseDictTests:
         fs = DummyFieldStorage("a", "1")
         assert d.from_fieldstorage(fs) == MultiDict({"a": "1"})
 
+    @requires_cgi
     def test_from_fieldstorage_with_charset(self):
         from cgi import FieldStorage
 
@@ -182,6 +191,7 @@ class BaseDictTests:
             "utf8"
         )
 
+    @requires_cgi
     def test_from_fieldstorage_with_base64_encoding(self):
         from cgi import FieldStorage
 
@@ -212,6 +222,7 @@ class BaseDictTests:
             "utf8"
         )
 
+    @requires_cgi
     def test_from_fieldstorage_with_quoted_printable_encoding(self):
         from cgi import FieldStorage
 
@@ -263,6 +274,34 @@ class TestMultiDict(BaseDictTests):
     def test_repr_with_password(self):
         d = self._get_instance(password="pwd")
         assert repr(d) == "MultiDict([('password', '******')])"
+
+    def test_from_multipart(self):
+        from io import BytesIO
+
+        from multipart import MultipartParser
+
+        data = (
+            b"--foobar\r\n"
+            b'Content-Disposition: form-data; name="foo"\r\n'
+            b"\r\n"
+            b"bar\r\n"
+            b"--foobar\r\n"
+            b'Content-Disposition: form-data; name="fizz"; filename="fizz.txt"\r\n'
+            b"Content-type: application/octet-stream\r\n"
+            b"\r\n"
+            b"buzz\r\n"
+            b"\r\n"
+            b"--foobar--\r\n"
+        )
+        body = BytesIO(data)
+        body.seek(0)
+        mp = MultipartParser(body, b"foobar")
+        inst = self.klass.from_multipart(mp)
+        assert inst["foo"] == "bar"
+        fizz = inst["fizz"]
+        assert isinstance(fizz, multidict.MultiDictFile)
+        assert fizz.filename == "fizz.txt"
+        assert fizz.value == b"buzz\r\n"
 
 
 class TestNestedMultiDict(BaseDictTests):

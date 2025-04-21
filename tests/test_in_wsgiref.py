@@ -1,12 +1,12 @@
-import cgi
 import logging
+from queue import Empty, Queue
 import socket
 import sys
 from urllib.request import urlopen as url_open
 
+import multipart
 import pytest
 
-from webob.compat import Empty, Queue
 from webob.request import Request
 from webob.response import Response
 from webob.util import bytes_
@@ -88,7 +88,7 @@ def _test_app_req_interrupt(env, sr):
 
 def _req_int_cgi(req):
     assert req.body_file.read(0) == b""
-    cgi.FieldStorage(fp=req.body_file, environ=req.environ)
+    multipart.MultipartParser(req.body_file, "foobar").parts()
 
 
 def _req_int_readline(req):
