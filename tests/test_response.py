@@ -1096,6 +1096,58 @@ def test_location_no_open_redirect():
     assert req.get_response(res).location == "http://localhost/%2fwww.example.com/test"
 
 
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "/\t/www.example.com/test",
+        "\t//www.example.com/test",
+        "//\twww.example.com/test",
+        "/\t\t/www.example.com/test",
+    ],
+)
+def test_location_no_open_redirect_tab_bypass(payload):
+    # Follow-up to CVE-2024-42353. urllib.parse.urlsplit() (used internally
+    # by urljoin) strips ASCII tab on Python 3.10+, which allowed a
+    # Location value to bypass the "//" check and be parsed as
+    # protocol-relative. See GHSA-fh3h-vg37-cc95. (CR and LF are already
+    # rejected by the location header setter, so only tab is reachable
+    # via the public API.)
+    res = Response()
+    res.status = "301"
+    res.location = payload
+    req = Request.blank("/")
+    assert req.get_response(res).location == (
+        "http://localhost/%2fwww.example.com/test"
+    )
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "/\t/www.example.com/test",
+        "/\n/www.example.com/test",
+        "/\r/www.example.com/test",
+        "\t//www.example.com/test",
+        "\n//www.example.com/test",
+        "\r//www.example.com/test",
+        "//\twww.example.com/test",
+        "//\nwww.example.com/test",
+        "//\rwww.example.com/test",
+        "//\tw\nww.example.com/test",
+    ],
+)
+def test__make_location_absolute_strips_url_whitespace(payload):
+    # Defense in depth for GHSA-fh3h-vg37-cc95: even when called with a
+    # Location value that bypasses the descriptor's CR/LF check (e.g. via
+    # direct manipulation of _headerlist), tab/CR/LF must not be usable to
+    # turn a relative path into a protocol-relative redirect.
+    result = Response._make_location_absolute(
+        {"wsgi.url_scheme": "http", "HTTP_HOST": "example.com:80"},
+        payload,
+    )
+    assert result == "http://example.com/%2fwww.example.com/test"
+
+
 @pytest.mark.xfail(
     sys.version_info < (3, 0),
     reason="Python 2.x unicode != str, WSGI requires str. Test "

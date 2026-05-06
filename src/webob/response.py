@@ -1356,12 +1356,17 @@ class Response:
 
     @staticmethod
     def _make_location_absolute(environ, value):
+        # urllib.parse.urlsplit() (called internally by urljoin) strips
+        # ASCII tab, CR, and LF from the URL on Python 3.10+. Strip them
+        # ourselves first so they cannot be used to bypass the SCHEME_RE
+        # or protocol-relative ("//") checks below. See CVE-2024-42353,
+        # https://github.com/Pylons/webob/security/advisories/GHSA-mg3v-6m49-jhp3,
+        # and the follow-up advisory GHSA-fh3h-vg37-cc95.
+        value = value.replace("\t", "").replace("\r", "").replace("\n", "")
+
         if SCHEME_RE.search(value):
             return value
 
-        # This is to fix an open redirect issue due to the way that
-        # urlparse.urljoin works. See CVE-2024-42353 and
-        # https://github.com/Pylons/webob/security/advisories/GHSA-mg3v-6m49-jhp3
         if value.startswith("//"):
             value = f"/%2f{value[2:]}"
         new_location = urlparse.urljoin(_request_uri(environ), value)
