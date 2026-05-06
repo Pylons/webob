@@ -1,3 +1,18 @@
+Unreleased
+----------
+
+Security Fix
+~~~~~~~~~~~~
+
+- The fix for CVE-2024-42353 was incomplete: a Location value containing
+  ASCII tab, carriage return, or line feed characters between consecutive
+  slashes could still be interpreted as a protocol-relative URL by
+  ``urllib.parse.urljoin`` on Python 3.10+, allowing an open redirect.
+
+  See https://github.com/Pylons/webob/security/advisories/GHSA-fh3h-vg37-cc95
+
+  Thanks to Caleb Brown of Google for the report.
+
 1.8.9 (2024-11-23)
 ------------------
 
