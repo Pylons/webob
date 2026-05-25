@@ -1628,11 +1628,13 @@ class LimitedLengthFile(io.RawIOBase):
         if not self.remaining:
             return 0
         sz0 = min(len(buff), self.remaining)
+        if not sz0:
+            return 0
         data = self.file.read(sz0)
         sz = len(data)
         self.remaining -= sz
 
-        if sz < sz0 and self.remaining:
+        if not data and self.remaining:
             raise DisconnectionError(
                 "The client disconnected while sending the body "
                 "(%d more bytes were expected)" % (self.remaining,)

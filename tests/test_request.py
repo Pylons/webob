@@ -1,5 +1,5 @@
 from collections.abc import MutableMapping
-from io import BytesIO, StringIO
+from io import BufferedReader, BytesIO, StringIO
 import sys
 import warnings
 
@@ -2965,6 +2965,30 @@ class TestLimitedLengthFile:
         dummyfile = DummyFile()
         inst = self._makeOne(dummyfile, 0)
         assert inst.fileno() == 1
+
+    def test_short_read_with_data_returns_before_disconnect(self):
+        inst = self._makeOne(BytesIO(b"abc"), 5)
+        buff = bytearray(4)
+
+        assert inst.readinto(buff) == 3
+        assert buff[:3] == b"abc"
+
+        with pytest.raises(OSError):
+            inst.readinto(buff)
+
+    def test_zero_length_readinto_buffer(self):
+        inst = self._makeOne(BytesIO(b"abc"), 5)
+
+        assert inst.readinto(bytearray()) == 0
+        assert inst.remaining == 5
+
+    def test_buffered_readline_returns_line_before_disconnect(self):
+        inst = BufferedReader(self._makeOne(BytesIO(b"a=b\nz="), 100))
+
+        assert inst.readline() == b"a=b\n"
+
+        with pytest.raises(OSError):
+            inst.readline()
 
 
 class Test_environ_from_url:
