@@ -1,0 +1,8 @@
+.. _changelog:
+
+WebOb Change History
+====================
+
+.. include:: ../CHANGES.txt
+
+.. include:: ../HISTORY.txt

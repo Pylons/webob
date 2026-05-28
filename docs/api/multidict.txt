@@ -1,0 +1,34 @@
+:mod:`webob.multidict` -- multi-value dictionary object
+=======================================================
+
+multidict
+---------
+
+Several parts of WebOb use a "multidict", which is a dictionary where a key can
+have multiple values. The quintessential example is a query string like
+``?pref=red&pref=blue``. The ``pref`` variable has two values, ``red`` and
+``blue``.
+
+In a multidict, when you do ``request.GET['pref']``, you'll get back only
+``'blue'`` (the last value of ``pref``).  Sometimes returning a string and
+other times returning a list is a cause of frequent exceptions.  If you want
+*all* the values back, use ``request.GET.getall('pref')``. If you want to be
+sure there is *one and only one* value, use ``request.GET.getone('pref')``,
+which will raise an exception if there is zero or more than one value for
+``pref``.
+
+When you use operations like ``request.GET.items()``, you'll get back something
+like ``[('pref', 'red'), ('pref', 'blue')]``. All the key/value pairs will
+show up.  Similarly ``request.GET.keys()`` returns ``['pref', 'pref']``.
+Multidict is a view on a list of tuples; all the keys are ordered, and all the
+values are ordered.
+
+.. automodule:: webob.multidict
+.. autoclass:: MultiDict
+   :members:
+   :inherited-members:
+.. autoclass:: NestedMultiDict
+   :members:
+.. autoclass:: NoVars
+   :members:
+

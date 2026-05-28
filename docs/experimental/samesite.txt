@@ -1,0 +1,23 @@
+.. _samesiteexp:
+
+Same-site Cookies
+=================
+
+The `Same-site cookie RFC
+<https://tools.ietf.org/html/draft-west-first-party-cookies-07>`_ updates
+`RFC6265 <https://tools.ietf.org/html/rfc6265>`_ to include a new cookie
+attribute named ``SameSite``.
+
+WebOb provides support for setting the ``SameSite`` attribute in its cookie
+APIs, using the ``samesite`` keyword argument.
+
+In `Incrementally Better Cookies
+<https://tools.ietf.org/html/draft-west-cookie-incrementalism-00>`_ the
+standard was altered to add an additional option for the ``SameSite``
+attribute. This new option has `known incompatible clients
+<https://www.chromium.org/updates/same-site/incompatible-clients>`_, please be
+aware that WebOb does not attempt to sniff the user agent to know if setting
+the ``SameSite`` attribute to ``None`` will cause compatibility issues.
+
+Please refer to the API documentation for :func:`webob.cookies.make_cookie`
+and :class:`webob.cookies.CookieProfile` for the keyword arguments.

@@ -1,0 +1,85 @@
+name: Build and test
+
+on:
+    # Only on pushes to main or one of the release branches we build on push
+    push:
+        branches:
+            - main
+            - "[0-9].[0-9]+-branch"
+        tags:
+            - "*"
+    # Build pull requests
+    pull_request:
+
+jobs:
+    test:
+        strategy:
+            # See https://github.com/actions/runner-images
+            matrix:
+                py:
+                    - "3.10"
+                    - "3.11"
+                    - "3.12"
+                    - "3.13"
+                    - "3.14"
+                    - "pypy-3.10"
+                os:
+                    - "ubuntu-24.04" # x64
+                    - "windows-2022" # x64
+                    - "macos-15" # arm64
+                    - "macos-15-intel" # x64
+                include:
+                    - os: "ubuntu-24.04"
+                      pytest-args: "--cov"
+                    - py: "pypy-3.10"
+                      toxenv: "pypy310"
+                      pytest-args: ""
+
+        name: "Python: ${{ matrix.py }} on ${{ matrix.os }}"
+        runs-on: ${{ matrix.os }}
+        steps:
+            - uses: actions/checkout@v6
+            - name: Setup uv
+              uses: astral-sh/setup-uv@v7
+              with:
+                  python-version: ${{ matrix.py }}
+            - name: Running tox with specific toxenv
+              if: ${{ matrix.toxenv != '' }}
+              env:
+                TOXENV: ${{ matrix.toxenv }}
+              run: uvx tox
+            - name: Running tox for current python version
+              if: ${{ matrix.toxenv == '' }}
+              run: uvx tox -e py -- ${{ matrix.pytest-args }}
+
+    coverage:
+        runs-on: ubuntu-24.04
+        name: Validate coverage
+        steps:
+            - uses: actions/checkout@v6
+            - name: Setup uv
+              uses: astral-sh/setup-uv@v7
+              with:
+                  python-version: "3.14"
+            - run: uvx tox -e py314,coverage
+    docs:
+        runs-on: ubuntu-24.04
+        name: Build the documentation
+        steps:
+            - uses: actions/checkout@v6
+            - name: Setup uv
+              uses: astral-sh/setup-uv@v7
+              with:
+                  python-version: "3.14"
+            - run: uvx tox -e docs
+    lint:
+        runs-on: ubuntu-24.04
+        name: Lint the package
+        steps:
+            - uses: actions/checkout@v6
+            - name: Setup uv
+              uses: astral-sh/setup-uv@v7
+              with:
+                  python-version: "3.14"
+            - run: uvx tox -e lint
+

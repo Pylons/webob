@@ -1,0 +1,156 @@
+:mod:`webob` -- Request/Response objects
+========================================
+
+Headers
+-------
+
+.. _acceptheader:
+
+Accept*
+~~~~~~~
+
+.. automodule:: webob.acceptparse
+
+
+Convenience functions to automatically create the appropriate header objects of
+a certain type:
+
+.. autofunction:: create_accept_header
+.. autofunction:: create_accept_charset_header
+.. autofunction:: create_accept_encoding_header
+.. autofunction:: create_accept_language_header
+
+The classes that may be returned by one of the functions above, and their
+methods:
+
+.. autoclass:: Accept
+   :members: parse
+
+.. autoclass:: AcceptOffer
+   :members: __str__
+
+.. autoclass:: AcceptValidHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __radd__, __repr__, __str__,
+	     accept_html, accepts_html, acceptable_offers, best_match, quality
+
+.. autoclass:: AcceptNoHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __radd__, __repr__, __str__,
+             accept_html, accepts_html, acceptable_offers, best_match, quality
+
+.. autoclass:: AcceptInvalidHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __radd__, __repr__, __str__,
+	     accept_html, accepts_html, acceptable_offers, best_match, quality
+
+.. autoclass:: AcceptCharset
+   :members: parse
+
+.. autoclass:: AcceptCharsetValidHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __radd__, __repr__, __str__,
+             acceptable_offers, best_match, quality
+
+.. autoclass:: AcceptCharsetNoHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __radd__, __repr__, __str__,
+             acceptable_offers, best_match, quality
+
+.. autoclass:: AcceptCharsetInvalidHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __radd__, __repr__, __str__,
+             acceptable_offers, best_match, quality
+
+.. autoclass:: AcceptEncoding
+   :members: parse
+
+.. autoclass:: AcceptEncodingValidHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __radd__, __repr__, __str__,
+             acceptable_offers, best_match, quality
+
+.. autoclass:: AcceptEncodingNoHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __radd__, __repr__, __str__,
+             acceptable_offers, best_match, quality
+
+.. autoclass:: AcceptEncodingInvalidHeader
+   :members: parse, header_value, parsed, __init__, __add__, __bool__,
+	     __contains__, __iter__, __radd__, __repr__, __str__,
+             acceptable_offers, best_match, quality
+
+.. autoclass:: AcceptLanguage
+   :members: parse
+
+.. autoclass:: AcceptLanguageValidHeader
+   :members: header_value, parsed, __init__, __add__, __contains__, __iter__,
+	     __radd__, __str__, parse, basic_filtering, best_match, lookup,
+             quality
+
+.. autoclass:: AcceptLanguageNoHeader
+   :members: header_value, parsed, __init__, __add__, __contains__, __iter__,
+	     __radd__, __str__, parse, basic_filtering, best_match, lookup,
+             quality
+
+.. autoclass:: AcceptLanguageInvalidHeader
+   :members: header_value, parsed, __init__, __add__, __contains__, __iter__,
+	     __radd__, __str__, parse, basic_filtering, best_match, lookup,
+             quality
+
+Deprecated:
+
+.. autoclass:: MIMEAccept
+
+
+Cache-Control
+~~~~~~~~~~~~~
+.. autoclass:: webob.cachecontrol.CacheControl
+   :members:
+
+Range and related headers
+~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autoclass:: webob.byterange.Range
+   :members:
+.. autoclass:: webob.byterange.ContentRange
+   :members:
+.. autoclass:: webob.etag.IfRange
+   :members:
+
+ETag
+~~~~
+.. autoclass:: webob.etag.ETagMatcher
+   :members:
+
+Misc Functions and Internals
+----------------------------
+
+.. autofunction:: webob.html_escape
+
+.. comment:
+   not sure what to do with these constants; not autoclass
+   .. autoclass:: webob.day
+   .. autoclass:: webob.week
+   .. autoclass:: webob.hour
+   .. autoclass:: webob.minute
+   .. autoclass:: webob.second
+   .. autoclass:: webob.month
+   .. autoclass:: webob.year
+
+.. autoclass:: webob.headers.ResponseHeaders
+   :members:
+.. autoclass:: webob.headers.EnvironHeaders
+   :members:
+
+.. autoclass:: webob.cachecontrol.UpdateDict
+   :members:
+
+
+.. comment:
+   Descriptors
+   -----------
+
+   .. autoclass:: webob.descriptors.environ_getter
+   .. autoclass:: webob.descriptors.header_getter
+   .. autoclass:: webob.descriptors.converter
+   .. autoclass:: webob.descriptors.deprecated_property

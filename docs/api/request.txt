@@ -1,0 +1,12 @@
+:mod:`webob.request` -- Request
+===============================
+
+Request
+-------
+
+.. automodule:: webob.request
+.. autoclass:: webob.request.Request
+.. autoclass:: webob.request.BaseRequest
+   :members:
+
+

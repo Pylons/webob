@@ -1,0 +1,120 @@
+Unreleased
+----------
+
+Security Fix
+~~~~~~~~~~~~
+
+- The use of WebOb's Response object to redirect a request to a new location
+  can lead to an open redirect if the Location header is not a full URI.
+
+  See https://github.com/Pylons/webob/security/advisories/GHSA-mg3v-6m49-jhp3
+  and CVE-2024-42353
+
+  Thanks to Sara Gao for the report
+
+  (This fix was released in WebOb 1.8.8)
+
+Feature
+~~~~~~~
+
+- Rename "master" git branch to "main"
+
+- Add support for Python 3.12.
+
+- Add support for Python 3.13.
+
+- Add support for Python 3.14.
+
+- Add Request.remote_host, exposing REMOTE_HOST environment variable.
+
+- Added ``acceptparse.Accept.parse_offer`` to codify what types of offers
+  are compatible with ``acceptparse.AcceptValidHeader.acceptable_offers``,
+  ``acceptparse.AcceptMissingHeader.acceptable_offers``, and
+  ``acceptparse.AcceptInvalidHeader.acceptable_offers``. This API also
+  normalizes the offer with lowercased type/subtype and parameter names.
+  See https://github.com/Pylons/webob/pull/376 and
+  https://github.com/Pylons/webob/pull/379
+
+Compatibility
+~~~~~~~~~~~~~
+
+
+Backwards Incompatibilities
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Drop support for Python 2.7, 3.4, 3.5, 3.6, 3.7, 3.8 and 3.9
+
+Experimental Features
+~~~~~~~~~~~~~~~~~~~~~
+
+- The SameSite value now includes a new option named "None", this is a new
+  change that was introduced in
+  https://tools.ietf.org/html/draft-west-cookie-incrementalism-00
+
+  Please be aware that older clients are incompatible with this change:
+  https://www.chromium.org/updates/same-site/incompatible-clients, WebOb does
+  not enable SameSite on cookies by default, so there is no backwards
+  incompatible change here.
+
+  See https://github.com/Pylons/webob/issues/406
+
+- Validation of SameSite values can be disabled by toggling a module flag. This
+  is in anticipation of future changes in evolving cookie standards.
+  The discussion in https://github.com/Pylons/webob/pull/407 (which initially
+  expanded the allowed options) notes the sudden change to browser cookie
+  implementation details may happen again.
+
+  In May 2019, Google announced a new model for privacy controls in their
+  browsers, which affected the list of valid options for the SameSite attribute
+  of cookies. In late 2019, the company began to roll out these changes to their
+  browsers to force developer adoption of the new specification.
+  See https://www.chromium.org/updates/same-site and
+  https://blog.chromium.org/2019/10/developers-get-ready-for-new.html for more
+  details on this change.
+
+  See https://github.com/Pylons/webob/pull/409
+
+
+Bugfix
+~~~~~~
+
+- Response.content_type now accepts unicode strings on Python 2 and encodes
+  them to latin-1. See https://github.com/Pylons/webob/pull/389 and
+  https://github.com/Pylons/webob/issues/388
+
+- Accept header classes now support a .copy() function that may be used to
+  create a copy. This allows ``create_accept_header`` and other like functions
+  to accept an pre-existing Accept header. See
+  https://github.com/Pylons/webob/pull/386 and
+  https://github.com/Pylons/webob/issues/385
+
+- SameSite may now be passed as str or bytes to `Response.set_cookie` and
+  `cookies.make_cookie`. This was an oversight as all other arguments would be
+  correctly coerced before being serialized. See
+  https://github.com/Pylons/webob/issues/361 and
+  https://github.com/Pylons/webob/pull/362
+
+- acceptparse.MIMEAccept which is deprecated in WebOb 1.8.0 made a backwards
+  incompatible change that led to it raising on an invalid Accept header. This
+  behaviour has now been reversed, as well as some other fixes to allow
+  MIMEAccept to behave more like the old version. See
+  https://github.com/Pylons/webob/pull/356
+
+- ``acceptparse.AcceptValidHeader``, ``acceptparse.AcceptInvalidHeader``, and
+  ``acceptparse.AcceptNoHeader`` will now always ignore offers that do not
+  match the required media type grammar when calling ``.acceptable_offers()``.
+  Previous versions raised a ``ValueError`` for invalid offers in
+  ``AcceptValidHeader`` and returned them as acceptable in the others.
+  See https://github.com/Pylons/webob/pull/372
+
+- ``Response.body_file.write`` and ``Response.write`` now returns the written
+  length. See https://github.com/Pylons/webob/pull/422
+
+Warnings
+~~~~~~~~
+
+- Some backslashes introduced with the new accept handling code were causing
+  DeprecationWarnings upon compiling the source to pyc files, all of the
+  backslashes have been reigned in as appropriate, and users should no longer
+  see DeprecationWarnings for invalid escape sequence. See
+  https://github.com/Pylons/webob/issues/384
