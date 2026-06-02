@@ -23,6 +23,8 @@ Security Fix
 
   Thanks to Caleb Brown of Google for the report.
 
+  (Thix fix was released in WebOb 1.8.10)
+
 Feature
 ~~~~~~~
 
