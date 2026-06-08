@@ -10,6 +10,7 @@ import string
 import time
 import warnings
 
+from webob.datetime_utils import utcnow
 from webob.util import bytes_, text_
 
 __all__ = [
@@ -239,7 +240,7 @@ def serialize_cookie_date(v):
         v = timedelta(seconds=v)
 
     if isinstance(v, timedelta):
-        v = datetime.utcnow() + v
+        v = utcnow() + v
 
     if isinstance(v, (datetime, date)):
         v = v.timetuple()

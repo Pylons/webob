@@ -1,5 +1,5 @@
 import calendar
-from datetime import date, datetime, timedelta, tzinfo
+from datetime import date, datetime, timedelta, timezone, tzinfo
 from email.utils import formatdate, mktime_tz, parsedate_tz
 import time
 
@@ -19,6 +19,7 @@ __all__ = [
     "serialize_date",
     "parse_date_delta",
     "serialize_date_delta",
+    "utcnow",
 ]
 
 _now = datetime.now  # hook point for unit tests
@@ -121,3 +122,10 @@ def serialize_date_delta(value):
         return str(int(value))
     else:
         return serialize_date(value)
+
+
+def utcnow():
+    """
+    replacement of deprecated datetime.datetime.utcnow
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None)
