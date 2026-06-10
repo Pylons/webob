@@ -74,12 +74,12 @@ jobs:
             - run: uvx tox -e docs
     lint:
         runs-on: ubuntu-24.04
-        name: Lint the package
+        name: Lint and type check the package
         steps:
             - uses: actions/checkout@v6
             - name: Setup uv
               uses: astral-sh/setup-uv@v7
               with:
                   python-version: "3.14"
-            - run: uvx tox -e lint
+            - run: uvx tox -e lint,mypy
 

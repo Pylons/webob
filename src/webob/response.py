@@ -1,14 +1,21 @@
+from __future__ import annotations
+
 from base64 import b64encode
 from datetime import datetime, timedelta
 from hashlib import md5
 import re
 import struct
+from typing import IO, TYPE_CHECKING, Any, Literal, TypeVar, overload
 from urllib import parse as urlparse
 from urllib.parse import quote as url_quote
 import zlib
 
 from webob.byterange import ContentRange
-from webob.cachecontrol import CacheControl, serialize_cache_control
+from webob.cachecontrol import (
+    CacheControl,
+    ResponseCacheControl,
+    serialize_cache_control,
+)
 from webob.cookies import Cookie, make_cookie
 from webob.datetime_utils import (
     parse_date_delta,
@@ -42,10 +49,36 @@ from webob.util import (
     warn_deprecation,
 )
 
-try:
-    import simplejson as json
-except ImportError:
+if TYPE_CHECKING:
+    from collections.abc import Callable, Collection, Iterable, Iterator, Sequence
     import json
+
+    from _typeshed import OptExcInfo, SupportsItems, SupportsRead
+    from _typeshed.wsgi import StartResponse, WSGIApplication, WSGIEnvironment
+    from typing_extensions import Self
+
+    from webob.cookies import _SameSitePolicy
+    from webob.descriptors import (
+        _authorization,
+        _ContentRangeParams,
+        _DateProperty,
+    )
+    from webob.request import Request
+    from webob.types import (
+        AsymmetricProperty,
+        AsymmetricPropertyWithDelete,
+        ResponseCacheControlDict,
+        ResponseCacheExpires,
+        SymmetricProperty,
+        SymmetricPropertyWithDelete,
+    )
+
+    _ResponseT = TypeVar("_ResponseT", bound="Response")
+else:
+    try:
+        import simplejson as json
+    except ImportError:
+        import json
 
 
 __all__ = ["Response"]
@@ -158,8 +191,8 @@ class Response:
     # constructor they correctly get saved and set, however they are not used
     # by any part of the Response. See commit
     # 627593bbcd4ab52adc7ee569001cdda91c670d5d for rationale.
-    request = None
-    environ = None
+    request: Request | None = None
+    environ: WSGIEnvironment | None = None
 
     #
     # __init__, from_file, copy
@@ -167,15 +200,15 @@ class Response:
 
     def __init__(
         self,
-        body=None,
-        status=None,
-        headerlist=None,
-        app_iter=None,
-        content_type=None,
-        conditional_response=None,
-        charset=_marker,
-        **kw,
-    ):
+        body: bytes | str | None = None,
+        status: int | str | bytes | None = None,
+        headerlist: list[tuple[str, str]] | None = None,
+        app_iter: Iterable[bytes] | None = None,
+        content_type: str | None = None,
+        conditional_response: bool | None = None,
+        charset: str = _marker,  # type: ignore[assignment]
+        **kw: Any,
+    ) -> None:
         # Do some sanity checking, and turn json_body into an actual body
 
         if app_iter is None and body is None and ("json_body" in kw or "json" in kw):
@@ -202,7 +235,7 @@ class Response:
             self.status = status
 
         # Initialize headers
-        self._headers = None
+        self._headers: ResponseHeaders | None = None
 
         if headerlist is None:
             self._headerlist = []
@@ -296,6 +329,7 @@ class Response:
         # Set up app_iter if the HTTP Status code has a body
 
         if app_iter is None and code_has_body:
+            assert body is not None
             if isinstance(body, str):
                 # Fall back to trying self.charset if encoding is not set. In
                 # most cases encoding will be set to the default value.
@@ -318,6 +352,7 @@ class Response:
         elif app_iter is None and not code_has_body:
             app_iter = [b""]
 
+        assert app_iter is not None
         self._app_iter = app_iter
 
         # Loop through all the remaining keyword arguments
@@ -329,7 +364,7 @@ class Response:
             setattr(self, name, value)
 
     @classmethod
-    def from_file(cls, fp):
+    def from_file(cls, fp: IO[str] | IO[bytes]) -> Response:
         """Reads a response from a file-like object (it must implement
         ``.read(size)`` and ``.readline()``).
 
@@ -343,6 +378,8 @@ class Response:
         status = fp.readline().strip()
         is_text = isinstance(status, str)
 
+        _colon: str | bytes
+        _http: str | bytes
         if is_text:
             _colon = ":"
             _http = "HTTP/"
@@ -350,7 +387,7 @@ class Response:
             _colon = b":"
             _http = b"HTTP/"
 
-        if status.startswith(_http):
+        if status.startswith(_http):  # type: ignore[arg-type]
             http_ver, status_num, status_text = status.split(None, 2)
             status = f"{text_(status_num)} {text_(status_text)}"
 
@@ -362,7 +399,7 @@ class Response:
 
                 break
             try:
-                header_name, value = line.split(_colon, 1)
+                header_name, value = line.split(_colon, 1)  # type: ignore[arg-type]
             except ValueError:
                 raise ValueError("Bad header line: %r" % line)
             value = value.strip()
@@ -371,13 +408,13 @@ class Response:
         body = fp.read(r.content_length or 0)
 
         if is_text:
-            r.text = body
+            r.text = body  # type: ignore[assignment]
         else:
-            r.body = body
+            r.body = body  # type: ignore[assignment]
 
         return r
 
-    def copy(self):
+    def copy(self) -> Response:
         """Makes a copy of the response."""
         # we need to do this for app_iter to be reusable
         app_iter = list(self._app_iter)
@@ -396,10 +433,10 @@ class Response:
     # __repr__, __str__
     #
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__} at 0x{abs(id(self)):x} {self.status}>"
 
-    def __str__(self, skip_body=False):
+    def __str__(self, skip_body: bool = False) -> str:
         parts = [self.status]
 
         if not skip_body:
@@ -416,14 +453,14 @@ class Response:
     # status, status_code/status_int
     #
 
-    def _status__get(self):
+    def _status__get(self) -> str:
         """
         The status string.
         """
 
         return self._status
 
-    def _status__set(self, value):
+    def _status__set(self, value: int | str | bytes) -> None:
         try:
             code = int(value)
         except (ValueError, TypeError):
@@ -451,21 +488,25 @@ class Response:
             raise ValueError("Invalid status code, integer required.")
         self._status = value
 
-    status = property(_status__get, _status__set, doc=_status__get.__doc__)
+    status: AsymmetricProperty[str, int | str | bytes] = property(
+        _status__get, _status__set, doc=_status__get.__doc__
+    )
 
-    def _status_code__get(self):
+    def _status_code__get(self) -> int:
         """
         The status as an integer.
         """
 
         return int(self._status.split()[0])
 
-    def _status_code__set(self, code):
+    def _status_code__set(self, code: int) -> None:
         try:
             self._status = "%d %s" % (code, status_reasons[code])
         except KeyError:
             self._status = "%d %s" % (code, status_generic_reasons[code // 100])
 
+    status_code: SymmetricProperty[int]
+    status_int: SymmetricProperty[int]
     status_code = status_int = property(
         _status_code__get, _status_code__set, doc=_status_code__get.__doc__
     )
@@ -474,14 +515,16 @@ class Response:
     # headerslist, headers
     #
 
-    def _headerlist__get(self):
+    def _headerlist__get(self) -> list[tuple[str, str]]:
         """
         The list of response headers.
         """
 
         return self._headerlist
 
-    def _headerlist__set(self, value):
+    def _headerlist__set(
+        self, value: Iterable[tuple[str, str]] | SupportsItems[str, str]
+    ) -> None:
         self._headers = None
 
         if not isinstance(value, list):
@@ -490,17 +533,19 @@ class Response:
             value = list(value)
         self._headerlist = value
 
-    def _headerlist__del(self):
+    def _headerlist__del(self) -> None:
         self.headerlist = []
 
-    headerlist = property(
+    headerlist: AsymmetricPropertyWithDelete[
+        list[tuple[str, str]], Iterable[tuple[str, str]] | SupportsItems[str, str]
+    ] = property(
         _headerlist__get,
         _headerlist__set,
         _headerlist__del,
         doc=_headerlist__get.__doc__,
     )
 
-    def _headers__get(self):
+    def _headers__get(self) -> ResponseHeaders:
         """
         The headers in a dictionary-like object.
         """
@@ -510,19 +555,23 @@ class Response:
 
         return self._headers
 
-    def _headers__set(self, value):
+    def _headers__set(
+        self, value: Iterable[tuple[str, str]] | SupportsItems[str, str]
+    ) -> None:
         if hasattr(value, "items"):
             value = value.items()
         self.headerlist = value
         self._headers = None
 
-    headers = property(_headers__get, _headers__set, doc=_headers__get.__doc__)
+    headers: AsymmetricProperty[
+        ResponseHeaders, SupportsItems[str, str] | Iterable[tuple[str, str]]
+    ] = property(_headers__get, _headers__set, doc=_headers__get.__doc__)
 
     #
     # body
     #
 
-    def _body__get(self):
+    def _body__get(self) -> bytes:
         """
         The body of the response, as a :class:`bytes`.  This will read in
         the entire app_iter if necessary.
@@ -535,7 +584,7 @@ class Response:
         #             pass
 
         if isinstance(app_iter, list) and len(app_iter) == 1:
-            return app_iter[0]
+            return app_iter[0]  # type: ignore[no-any-return]
 
         if app_iter is None:
             raise AttributeError("No body has been set")
@@ -560,9 +609,9 @@ class Response:
 
         return body
 
-    def _body__set(self, value=b""):
+    def _body__set(self, value: bytes = b"") -> None:
         if not isinstance(value, bytes):
-            if isinstance(value, str):
+            if isinstance(value, str):  # type: ignore[unreachable]
                 msg = (
                     "You cannot set Response.body to a text object "
                     "(use Response.text)"
@@ -582,9 +631,11 @@ class Response:
     #         self.body = ''
     #         #self.content_length = None
 
-    body = property(_body__get, _body__set, _body__set)
+    body: SymmetricPropertyWithDelete[bytes] = property(
+        _body__get, _body__set, _body__set
+    )
 
-    def _json_body__get(self):
+    def _json_body__get(self) -> Any:
         """
         Set/get the body of the response as JSON.
 
@@ -600,15 +651,18 @@ class Response:
 
         return json.loads(self.body.decode("UTF-8"))
 
-    def _json_body__set(self, value):
+    def _json_body__set(self, value: Any) -> None:
         self.body = json.dumps(value, separators=(",", ":")).encode("UTF-8")
 
-    def _json_body__del(self):
+    def _json_body__del(self) -> None:
         del self.body
 
+    json: SymmetricPropertyWithDelete[Any]
+    json_body: SymmetricPropertyWithDelete[Any]
     json = json_body = property(_json_body__get, _json_body__set, _json_body__del)
 
-    def _has_body__get(self):
+    @property
+    def has_body(self) -> bool:
         """
         Determine if the the response has a :attr:`~Response.body`. In
         contrast to simply accessing :attr:`~Response.body`, this method
@@ -624,17 +678,15 @@ class Response:
                 return False
 
         if app_iter is None:  # pragma: no cover
-            return False
+            return False  # type: ignore[unreachable]
 
         return True
-
-    has_body = property(_has_body__get)
 
     #
     # text, unicode_body, ubody
     #
 
-    def _text__get(self):
+    def _text__get(self) -> str:
         """
         Get/set the text value of the body using the ``charset`` of the
         ``Content-Type`` or the ``default_body_encoding``.
@@ -650,7 +702,7 @@ class Response:
 
         return body.decode(decoding, self.unicode_errors)
 
-    def _text__set(self, value):
+    def _text__set(self, value: str) -> None:
         if not self.charset and not self.default_body_encoding:
             raise AttributeError(
                 "You cannot access Response.text unless charset or "
@@ -665,11 +717,15 @@ class Response:
         encoding = self.charset or self.default_body_encoding
         self.body = value.encode(encoding)
 
-    def _text__del(self):
+    def _text__del(self) -> None:
         del self.body
 
-    text = property(_text__get, _text__set, _text__del, doc=_text__get.__doc__)
+    text: SymmetricPropertyWithDelete[str] = property(
+        _text__get, _text__set, _text__del, doc=_text__get.__doc__
+    )
 
+    unicode_body: SymmetricPropertyWithDelete[str]
+    ubody: SymmetricPropertyWithDelete[str]
     unicode_body = ubody = property(
         _text__get, _text__set, _text__del, "Deprecated alias for .text"
     )
@@ -678,7 +734,7 @@ class Response:
     # body_file, write(text)
     #
 
-    def _body_file__get(self):
+    def _body_file__get(self) -> ResponseBodyFile:
         """
         A file-like object that can be used to write to the
         body.  If you passed in a list ``app_iter``, that ``app_iter`` will be
@@ -687,20 +743,21 @@ class Response:
 
         return ResponseBodyFile(self)
 
-    def _body_file__set(self, file):
+    def _body_file__set(self, file: SupportsRead[bytes]) -> None:
         self.app_iter = iter_file(file)
 
-    def _body_file__del(self):
+    def _body_file__del(self) -> None:
         del self.body
 
+    body_file: AsymmetricPropertyWithDelete[ResponseBodyFile, SupportsRead[bytes]]
     body_file = property(
         _body_file__get, _body_file__set, _body_file__del, doc=_body_file__get.__doc__
     )
 
-    def write(self, text):
+    def write(self, text: str | bytes) -> int:
         if not isinstance(text, bytes):
             if not isinstance(text, str):
-                msg = "You can only write str to a Response.body_file, not %s"
+                msg = "You can only write str to a Response.body_file, not %s"  # type: ignore[unreachable]
                 raise TypeError(msg % type(text))
 
             if not self.charset:
@@ -728,7 +785,7 @@ class Response:
     # app_iter
     #
 
-    def _app_iter__get(self):
+    def _app_iter__get(self) -> Iterable[bytes]:
         """
         Returns the ``app_iter`` of the response.
 
@@ -738,17 +795,17 @@ class Response:
 
         return self._app_iter
 
-    def _app_iter__set(self, value):
+    def _app_iter__set(self, value: Iterable[bytes]) -> None:
         if self._app_iter is not None:
             # Undo the automatically-set content-length
             self.content_length = None
         self._app_iter = value
 
-    def _app_iter__del(self):
+    def _app_iter__del(self) -> None:
         self._app_iter = []
         self.content_length = None
 
-    app_iter = property(
+    app_iter: SymmetricPropertyWithDelete[Iterable[bytes]] = property(
         _app_iter__get, _app_iter__set, _app_iter__del, doc=_app_iter__get.__doc__
     )
 
@@ -772,10 +829,12 @@ class Response:
     content_disposition = header_getter("Content-Disposition", "19.5.1")
 
     accept_ranges = header_getter("Accept-Ranges", "14.5")
-    content_range = converter(
+    content_range: AsymmetricPropertyWithDelete[
+        ContentRange | None, _ContentRangeParams
+    ] = converter(
         header_getter("Content-Range", "14.16"),
         parse_content_range,
-        serialize_content_range,
+        serialize_content_range,  # type: ignore[arg-type]
         "ContentRange object",
     )
 
@@ -784,37 +843,40 @@ class Response:
     last_modified = date_header("Last-Modified", "14.29")
 
     _etag_raw = header_getter("ETag", "14.19")
-    etag = converter(
-        _etag_raw, parse_etag_response, serialize_etag_response, "Entity tag"
+    etag: AsymmetricPropertyWithDelete[
+        str | None, tuple[str, bool] | str | None
+    ] = converter(
+        _etag_raw, parse_etag_response, serialize_etag_response, "Entity tag"  # type: ignore[arg-type]
     )
 
     @property
-    def etag_strong(self):
+    def etag_strong(self) -> str | None:
         return parse_etag_response(self._etag_raw, strong=True)
 
     location = header_getter("Location", "14.30")
     pragma = header_getter("Pragma", "14.32")
     age = converter(header_getter("Age", "14.6"), parse_int_safe, serialize_int, "int")
-
-    retry_after = converter(
+    retry_after: _DateProperty = converter(
         header_getter("Retry-After", "14.37"),
         parse_date_delta,
-        serialize_date_delta,
+        serialize_date_delta,  # type: ignore[arg-type]
         "HTTP date or delta seconds",
     )
 
     server = header_getter("Server", "14.38")
 
     # TODO: the standard allows this to be a list of challenges
-    www_authenticate = converter(
-        header_getter("WWW-Authenticate", "14.47"), parse_auth, serialize_auth
+    www_authenticate: AsymmetricPropertyWithDelete[
+        _authorization | None, tuple[str, str | dict[str, str]] | list[Any] | str | None
+    ] = converter(
+        header_getter("WWW-Authenticate", "14.47"), parse_auth, serialize_auth  # type: ignore[arg-type]
     )
 
     #
     # charset
     #
 
-    def _charset__get(self):
+    def _charset__get(self) -> str | None:
         """
         Get/set the ``charset`` specified in ``Content-Type``.
 
@@ -832,7 +894,7 @@ class Response:
 
         return None
 
-    def _charset__set(self, charset):
+    def _charset__set(self, charset: str | None) -> None:
         if charset is None:
             self._charset__del()
 
@@ -850,7 +912,7 @@ class Response:
         header += "; charset=%s" % charset
         self.headers["Content-Type"] = header
 
-    def _charset__del(self):
+    def _charset__del(self) -> None:
         header = self.headers.pop("Content-Type", None)
 
         if header is None:
@@ -863,7 +925,7 @@ class Response:
             header = header[: match.start()] + header[match.end() :]
         self.headers["Content-Type"] = header
 
-    charset = property(
+    charset: SymmetricPropertyWithDelete[str | None] = property(
         _charset__get, _charset__set, _charset__del, doc=_charset__get.__doc__
     )
 
@@ -871,7 +933,7 @@ class Response:
     # content_type
     #
 
-    def _content_type__get(self):
+    def _content_type__get(self) -> str | None:
         """
         Get/set the ``Content-Type`` header. If no ``Content-Type`` header is
         set, this will return ``None``.
@@ -900,7 +962,7 @@ class Response:
 
         return header.split(";", 1)[0]
 
-    def _content_type__set(self, value):
+    def _content_type__set(self, value: str | None) -> None:
         if not value:
             self._content_type__del()
 
@@ -933,10 +995,10 @@ class Response:
 
             self.headers["Content-Type"] = content_type
 
-    def _content_type__del(self):
+    def _content_type__del(self) -> None:
         self.headers.pop("Content-Type", None)
 
-    content_type = property(
+    content_type: SymmetricPropertyWithDelete[str | None] = property(
         _content_type__get,
         _content_type__set,
         _content_type__del,
@@ -947,7 +1009,7 @@ class Response:
     # content_type_params
     #
 
-    def _content_type_params__get(self):
+    def _content_type_params__get(self) -> dict[str, str]:
         """
         A dictionary of all the parameters in the content type.
 
@@ -966,7 +1028,9 @@ class Response:
 
         return result
 
-    def _content_type_params__set(self, value_dict):
+    def _content_type_params__set(
+        self, value_dict: SupportsItems[str, str] | None
+    ) -> None:
         if not value_dict:
             self._content_type_params__del()
 
@@ -982,12 +1046,14 @@ class Response:
         ct += "".join(params)
         self.headers["Content-Type"] = ct
 
-    def _content_type_params__del(self):
+    def _content_type_params__del(self) -> None:
         self.headers["Content-Type"] = self.headers.get("Content-Type", "").split(
             ";", 1
         )[0]
 
-    content_type_params = property(
+    content_type_params: AsymmetricPropertyWithDelete[
+        dict[str, str], SupportsItems[str, str] | None
+    ] = property(
         _content_type_params__get,
         _content_type_params__set,
         _content_type_params__del,
@@ -1000,17 +1066,17 @@ class Response:
 
     def set_cookie(
         self,
-        name,
-        value="",
-        max_age=None,
-        path="/",
-        domain=None,
-        secure=False,
-        httponly=False,
-        comment=None,
-        overwrite=False,
-        samesite=None,
-    ):
+        name: str | bytes,
+        value: str | bytes | None = "",
+        max_age: int | timedelta | None = None,
+        path: str = "/",
+        domain: str | None = None,
+        secure: bool = False,
+        httponly: bool = False,
+        comment: str | None = None,
+        overwrite: bool = False,
+        samesite: _SameSitePolicy | None = None,
+    ) -> None:
         """
         Set (add) a cookie for the response.
 
@@ -1097,7 +1163,9 @@ class Response:
         )
         self.headerlist.append(("Set-Cookie", cookie))
 
-    def delete_cookie(self, name, path="/", domain=None):
+    def delete_cookie(
+        self, name: str | bytes, path: str = "/", domain: str | None = None
+    ) -> None:
         """
         Delete a cookie from the client.  Note that ``path`` and ``domain``
         must match how the cookie was originally set.
@@ -1107,7 +1175,7 @@ class Response:
         """
         self.set_cookie(name, None, path=path, domain=domain)
 
-    def unset_cookie(self, name, strict=True):
+    def unset_cookie(self, name: str | bytes, strict: bool = True) -> None:
         """
         Unset a cookie with the given name (remove it from the response).
         """
@@ -1132,7 +1200,15 @@ class Response:
         elif strict:
             raise KeyError("No cookie has been set with the name %r" % name)
 
-    def merge_cookies(self, resp):
+    @overload
+    def merge_cookies(self, resp: _ResponseT) -> _ResponseT: ...
+
+    @overload
+    def merge_cookies(self, resp: WSGIApplication) -> WSGIApplication: ...
+
+    def merge_cookies(
+        self, resp: Response | WSGIApplication
+    ) -> Response | WSGIApplication:
         """Merge the cookies that were set on this response with the
         given ``resp`` object (which can be any WSGI application).
 
@@ -1151,11 +1227,16 @@ class Response:
         else:
             c_headers = [h for h in self.headerlist if h[0].lower() == "set-cookie"]
 
-            def repl_app(environ, start_response):
-                def repl_start_response(status, headers, exc_info=None):
-                    return start_response(
-                        status, headers + c_headers, exc_info=exc_info
-                    )
+            def repl_app(
+                environ: WSGIEnvironment, start_response: StartResponse
+            ) -> Iterable[bytes]:
+
+                def repl_start_response(
+                    status: str,
+                    headers: list[tuple[str, str]],
+                    exc_info: OptExcInfo | None = None,
+                ) -> Callable[[bytes], object]:
+                    return start_response(status, headers + c_headers, exc_info)
 
                 return resp(environ, repl_start_response)
 
@@ -1165,9 +1246,9 @@ class Response:
     # cache_control
     #
 
-    _cache_control_obj = None
+    _cache_control_obj: ResponseCacheControl | None = None
 
-    def _cache_control__get(self):
+    def _cache_control__get(self) -> ResponseCacheControl:
         """
         Get/set/modify the Cache-Control header (`HTTP spec section 14.9
         <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9>`_).
@@ -1188,14 +1269,16 @@ class Response:
 
         return self._cache_control_obj
 
-    def _cache_control__set(self, value):
+    def _cache_control__set(
+        self, value: ResponseCacheControl | ResponseCacheControlDict | str | None
+    ) -> None:
         # This actually becomes a copy
 
         if not value:
             value = ""
 
         if isinstance(value, dict):
-            value = CacheControl(value, "response")
+            value = CacheControl(value, "response")  # type: ignore[arg-type]
 
         if isinstance(value, str):
             value = str(value)
@@ -1205,15 +1288,15 @@ class Response:
                 self.headers["Cache-Control"] = value
 
                 return
-            value = CacheControl.parse(value, "response")
+            value = CacheControl.parse(value, type="response")
         cache = self.cache_control
         cache.properties.clear()
         cache.properties.update(value.properties)
 
-    def _cache_control__del(self):
+    def _cache_control__del(self) -> None:
         self.cache_control = {}
 
-    def _update_cache_control(self, prop_dict):
+    def _update_cache_control(self, prop_dict: dict[str, Any]) -> None:
         value = serialize_cache_control(prop_dict)
 
         if not value:
@@ -1222,7 +1305,10 @@ class Response:
         else:
             self.headers["Cache-Control"] = value
 
-    cache_control = property(
+    cache_control: AsymmetricProperty[
+        ResponseCacheControl,
+        ResponseCacheControl | ResponseCacheControlDict | str | None,
+    ] = property(
         _cache_control__get,
         _cache_control__set,
         _cache_control__del,
@@ -1233,7 +1319,7 @@ class Response:
     # cache_expires
     #
 
-    def _cache_expires(self, seconds=0, **kw):
+    def _cache_expires(self, seconds: int | timedelta | None = 0, **kw: Any) -> None:
         """
         Set expiration on this request.  This sets the response to
         expire in the given seconds, and any other attributes are used
@@ -1257,8 +1343,6 @@ class Response:
             cache_control.no_cache = True
             cache_control.must_revalidate = True
             cache_control.max_age = 0
-            cache_control.post_check = 0
-            cache_control.pre_check = 0
             self.expires = datetime.utcnow()
 
             if "last-modified" not in self.headers:
@@ -1273,13 +1357,17 @@ class Response:
         for name, value in kw.items():
             setattr(cache_control, name, value)
 
-    cache_expires = property(lambda self: self._cache_expires, _cache_expires)
+    cache_expires: AsymmetricProperty[
+        ResponseCacheExpires, timedelta | int | bool | None
+    ] = property(lambda self: self._cache_expires, _cache_expires)
 
     #
     # encode_content, decode_content, md5_etag
     #
 
-    def encode_content(self, encoding="gzip", lazy=False):
+    def encode_content(
+        self, encoding: Literal["gzip", "identity"] = "gzip", lazy: bool = False
+    ) -> None:
         """
         Encode the content with the given encoding (only ``gzip`` and
         ``identity`` are supported).
@@ -1302,7 +1390,7 @@ class Response:
             self.content_length = sum(map(len, self._app_iter))
         self.content_encoding = "gzip"
 
-    def decode_content(self):
+    def decode_content(self) -> None:
         content_encoding = self.content_encoding or "identity"
 
         if content_encoding == "identity":
@@ -1333,7 +1421,9 @@ class Response:
                 self.body = zlib.decompress(self.body, -15)
             self.content_encoding = None
 
-    def md5_etag(self, body=None, set_content_md5=False):
+    def md5_etag(
+        self, body: bytes | None = None, set_content_md5: bool = False
+    ) -> None:
         """
         Generate an etag for the response object using an MD5 hash of
         the body (the ``body`` parameter, or ``self.body`` if not given).
@@ -1348,14 +1438,14 @@ class Response:
         md5_digest = md5(body).digest()
         md5_digest = b64encode(md5_digest)
         md5_digest = md5_digest.replace(b"\n", b"")
-        md5_digest = text_(md5_digest)
-        self.etag = md5_digest.strip("=")
+        md5_digest_str = text_(md5_digest)
+        self.etag = md5_digest_str.strip("=")
 
         if set_content_md5:
-            self.content_md5 = md5_digest
+            self.content_md5 = md5_digest_str
 
     @staticmethod
-    def _make_location_absolute(environ, value):
+    def _make_location_absolute(environ: WSGIEnvironment, value: str) -> str:
         # urllib.parse.urlsplit() (called internally by urljoin) strips
         # ASCII tab, CR, and LF from the URL on Python 3.10+. Strip them
         # ourselves first so they cannot be used to bypass the SCHEME_RE
@@ -1373,7 +1463,7 @@ class Response:
 
         return new_location
 
-    def _abs_headerlist(self, environ):
+    def _abs_headerlist(self, environ: WSGIEnvironment) -> list[tuple[str, str]]:
         # Build the headerlist, if we have a Location header, make it absolute
 
         return [
@@ -1389,7 +1479,9 @@ class Response:
     # __call__, conditional_response_app
     #
 
-    def __call__(self, environ, start_response):
+    def __call__(
+        self, environ: WSGIEnvironment, start_response: StartResponse
+    ) -> Iterable[bytes]:
         """
         WSGI application interface
         """
@@ -1410,7 +1502,9 @@ class Response:
 
     _safe_methods = ("GET", "HEAD")
 
-    def conditional_response_app(self, environ, start_response):
+    def conditional_response_app(
+        self, environ: WSGIEnvironment, start_response: StartResponse
+    ) -> Iterable[bytes]:
         """
         Like the normal ``__call__`` interface, but checks conditional headers:
 
@@ -1468,12 +1562,13 @@ class Response:
 
                 return [body]
             else:
+                assert content_range.start is not None
                 app_iter = self.app_iter_range(content_range.start, content_range.stop)
 
                 if app_iter is not None:
                     # the following should be guaranteed by
                     # Range.range_for_length(length)
-                    assert content_range.start is not None
+                    assert content_range.stop is not None
                     headerlist = [
                         (
                             "Content-Length",
@@ -1495,7 +1590,7 @@ class Response:
 
         return self._app_iter
 
-    def app_iter_range(self, start, stop):
+    def app_iter_range(self, start: int, stop: int | None) -> AppIterRange:
         """
         Return a new ``app_iter`` built from the response ``app_iter``, that
         serves up only the given ``start:stop`` range.
@@ -1503,16 +1598,21 @@ class Response:
         app_iter = self._app_iter
 
         if hasattr(app_iter, "app_iter_range"):
-            return app_iter.app_iter_range(start, stop)
+            return app_iter.app_iter_range(start, stop)  # type: ignore[no-any-return]
 
         return AppIterRange(app_iter, start, stop)
 
 
-def filter_headers(hlist, remove_headers=("content-length", "content-type")):
+def filter_headers(
+    hlist: Iterable[tuple[str, str]],
+    remove_headers: Collection[str] = ("content-length", "content-type"),
+) -> list[tuple[str, str]]:
     return [h for h in hlist if (h[0].lower() not in remove_headers)]
 
 
-def iter_file(file, block_size=1 << 18):  # 256Kb
+def iter_file(
+    file: SupportsRead[bytes], block_size: int = 1 << 18  # 256Kb
+) -> Iterator[bytes]:
     while True:
         data = file.read(block_size)
 
@@ -1522,25 +1622,25 @@ def iter_file(file, block_size=1 << 18):  # 256Kb
 
 
 class ResponseBodyFile:
-    mode = "wb"
-    closed = False
+    mode: Literal["wb"] = "wb"
+    closed: Literal[False] = False
 
-    def __init__(self, response):
+    def __init__(self, response: Response) -> None:
         """
         Represents a :class:`~Response` as a file like object.
         """
         self.response = response
         self.write = response.write
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<body_file for %r>" % self.response
 
-    encoding = property(
-        lambda self: self.response.charset,
-        doc="The encoding of the file (inherited from response.charset)",
-    )
+    @property
+    def encoding(self) -> str | None:
+        """The encoding of the file (inherited from response.charset)"""
+        return self.response.charset  # pragma: no cover
 
-    def writelines(self, seq):
+    def writelines(self, seq: Sequence[str | bytes]) -> None:
         """
         Write a sequence of lines to the response.
         """
@@ -1548,13 +1648,13 @@ class ResponseBodyFile:
         for item in seq:
             self.write(item)
 
-    def close(self):
+    def close(self) -> None:
         raise NotImplementedError("Response bodies cannot be closed")
 
-    def flush(self):
+    def flush(self) -> None:
         pass
 
-    def tell(self):
+    def tell(self) -> int:
         """
         Provide the current location where we are going to start writing.
         """
@@ -1570,7 +1670,7 @@ class AppIterRange:
     Wraps an ``app_iter``, returning just a range of bytes.
     """
 
-    def __init__(self, app_iter, start, stop):
+    def __init__(self, app_iter: Iterable[bytes], start: int, stop: int | None) -> None:
         assert start >= 0, "Bad start: %r" % start
         assert stop is None or (stop >= 0 and stop >= start), "Bad stop: %r" % stop
         self.app_iter = iter(app_iter)
@@ -1578,10 +1678,10 @@ class AppIterRange:
         self.start = start
         self.stop = stop
 
-    def __iter__(self):
+    def __iter__(self) -> Self:
         return self
 
-    def _skip_start(self):
+    def _skip_start(self) -> bytes:
         start, stop = self.start, self.stop
 
         for chunk in self.app_iter:
@@ -1602,7 +1702,7 @@ class AppIterRange:
         else:
             raise StopIteration()
 
-    def next(self):
+    def next(self) -> bytes:
         if self._pos < self.start:
             # need to skip some leading bytes
 
@@ -1622,7 +1722,7 @@ class AppIterRange:
 
     __next__ = next  # py3
 
-    def close(self):
+    def close(self) -> None:
         iter_close(self.app_iter)
 
 
@@ -1634,23 +1734,23 @@ class EmptyResponse:
     method to close an underlying ``app_iter`` it replaces.
     """
 
-    def __init__(self, app_iter=None):
+    def __init__(self, app_iter: Iterable[bytes] | None = None) -> None:
         if app_iter is not None and hasattr(app_iter, "close"):
             self.close = app_iter.close
 
-    def __iter__(self):
+    def __iter__(self) -> Self:
         return self
 
-    def __len__(self):
+    def __len__(self) -> Literal[0]:
         return 0
 
-    def next(self):
+    def next(self) -> bytes:
         raise StopIteration()
 
     __next__ = next  # py3
 
 
-def _is_xml(content_type):
+def _is_xml(content_type: str) -> bool:
     return (
         content_type.startswith("application/xml")
         or (content_type.startswith("application/") and content_type.endswith("+xml"))
@@ -1658,15 +1758,15 @@ def _is_xml(content_type):
     )
 
 
-def _content_type_has_charset(content_type):
+def _content_type_has_charset(content_type: str) -> bool:
     return content_type.startswith("text/") or _is_xml(content_type)
 
 
-def _request_uri(environ):
+def _request_uri(environ: WSGIEnvironment) -> str:
     """Like ``wsgiref.url.request_uri``, except eliminates ``:80`` ports.
 
     Returns the full request URI."""
-    url = environ["wsgi.url_scheme"] + "://"
+    url: str = environ["wsgi.url_scheme"] + "://"
 
     if environ.get("HTTP_HOST"):
         url += environ["HTTP_HOST"]
@@ -1692,12 +1792,12 @@ def _request_uri(environ):
     return url
 
 
-def iter_close(iter):
+def iter_close(iter: Iterable[bytes]) -> None:
     if hasattr(iter, "close"):
         iter.close()
 
 
-def gzip_app_iter(app_iter):
+def gzip_app_iter(app_iter: Iterable[bytes]) -> Iterator[bytes]:
     size = 0
     crc = zlib.crc32(b"") & 0xFFFFFFFF
     compress = zlib.compressobj(

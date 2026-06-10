@@ -11,6 +11,14 @@ source =
 [report]
 show_missing = true
 precision = 2
+omit =
+    src/webob/types.py
+exclude_lines =
+    pragma: no cover
+    @overload
+    if TYPE_CHECKING:
+    if __name__ == .__main__.
+    raise NotImplementedError
 
 [html]
 show_contexts = True

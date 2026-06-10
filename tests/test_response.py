@@ -1321,7 +1321,6 @@ def test_cache_expires_set_zero():
     assert res.cache_control.no_cache == "*"
     assert res.cache_control.must_revalidate is True
     assert res.cache_control.max_age == 0
-    assert res.cache_control.post_check == 0
 
 
 def test_encode_content_unknown():

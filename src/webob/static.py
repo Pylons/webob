@@ -1,13 +1,26 @@
+from __future__ import annotations
+
 import mimetypes
 import os
+from typing import IO, TYPE_CHECKING, Any
 
 from webob import exc
 from webob.dec import wsgify
 from webob.response import Response
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from _typeshed import StrPath
+    from _typeshed.wsgi import WSGIApplication
+
+    from webob.request import Request
+
+
 __all__ = ["FileApp", "DirectoryApp"]
 
-mimetypes._winreg = None  # do not load mimetypes from windows registry
+# do not load mimetypes from windows registry
+mimetypes._winreg = None  # type: ignore[attr-defined]
 mimetypes.add_type(
     "text/javascript", ".js"
 )  # stdlib default is application/x-javascript
@@ -22,7 +35,7 @@ class FileApp:
     Adds a mime type based on `mimetypes.guess_type()`.
     """
 
-    def __init__(self, filename, **kw):
+    def __init__(self, filename: StrPath, **kw: Any) -> None:
         self.filename = filename
         content_type, content_encoding = mimetypes.guess_type(filename)
         kw.setdefault("content_type", content_type)
@@ -33,7 +46,7 @@ class FileApp:
         self._open = open
 
     @wsgify
-    def __call__(self, req):
+    def __call__(self, req: Request) -> WSGIApplication:
         if req.method not in ("GET", "HEAD"):
             return exc.HTTPMethodNotAllowed("You cannot %s a file" % req.method)
         try:
@@ -63,10 +76,15 @@ class FileApp:
 
 
 class FileIter:
-    def __init__(self, file):
+    def __init__(self, file: IO[bytes]) -> None:
         self.file = file
 
-    def app_iter_range(self, seek=None, limit=None, block_size=None):
+    def app_iter_range(
+        self,
+        seek: int | None = None,
+        limit: int | None = None,
+        block_size: int | None = None,
+    ) -> Iterator[bytes]:
         """Iter over the content of the file.
 
         You can set the `seek` parameter to read the file starting from a
@@ -117,8 +135,12 @@ class DirectoryApp:
     """
 
     def __init__(
-        self, path, index_page="index.html", hide_index_with_redirect=False, **kw
-    ):
+        self,
+        path: StrPath,
+        index_page: str = "index.html",
+        hide_index_with_redirect: bool = False,
+        **kw: Any,
+    ) -> None:
         self.path = os.path.abspath(path)
         if not self.path.endswith(os.path.sep):
             self.path += os.path.sep
@@ -128,11 +150,11 @@ class DirectoryApp:
         self.hide_index_with_redirect = hide_index_with_redirect
         self.fileapp_kw = kw
 
-    def make_fileapp(self, path):
+    def make_fileapp(self, path: StrPath) -> FileApp:
         return FileApp(path, **self.fileapp_kw)
 
     @wsgify
-    def __call__(self, req):
+    def __call__(self, req: Request) -> Response | FileApp:
         path = os.path.abspath(os.path.join(self.path, req.path_info.lstrip("/")))
         if os.path.isdir(path) and self.index_page:
             return self.index(req, path)
@@ -153,7 +175,7 @@ class DirectoryApp:
         else:
             return self.make_fileapp(path)
 
-    def index(self, req, path):
+    def index(self, req: Request, path: StrPath) -> Response | FileApp:
         index_path = os.path.join(path, self.index_page)
         if not os.path.isfile(index_path):
             return exc.HTTPNotFound(comment=index_path)

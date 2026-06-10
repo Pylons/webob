@@ -1,6 +1,16 @@
+from __future__ import annotations
+
 import base64
 import binascii
-from collections.abc import MutableMapping
+from collections.abc import (
+    Callable,
+    Collection,
+    ItemsView,
+    Iterator,
+    KeysView,
+    MutableMapping,
+    ValuesView,
+)
 from datetime import date, datetime, timedelta
 import hashlib
 import hmac
@@ -8,9 +18,37 @@ import json
 import re
 import string
 import time
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeVar, overload
 import warnings
 
 from webob.util import bytes_, text_
+
+if TYPE_CHECKING:
+    from _hashlib import HASH
+    from _typeshed.wsgi import WSGIEnvironment
+    from typing_extensions import TypeAlias, TypedDict, TypeGuard
+
+    from webob.request import BaseRequest
+    from webob.response import Response
+    from webob.types import AsymmetricProperty, SymmetricProperty
+
+    _T = TypeVar("_T")
+    _MorselValueT = TypeVar("_MorselValueT", bytes, bool, "bytes | None", "bool | None")
+    # we accept both the official spelling and the one used in the WebOb docs
+    # the implementation compares after lower() so technically there are more
+    # valid spellings, but it seems more natural to support these two spellings
+    _SameSitePolicy: TypeAlias = Literal[
+        "Strict", "Lax", "None", "strict", "lax", "none"
+    ]
+
+    class _Serializer(Protocol):
+        def dumps(self, appstruct: Any, /) -> bytes: ...
+        def loads(self, bstruct: bytes, /) -> Any: ...
+
+    class _Renamer(TypedDict):
+        name: bytes
+        quoter: Callable[[bytes], bytes]
+
 
 __all__ = [
     "Cookie",
@@ -29,22 +67,23 @@ _marker = object()
 SAMESITE_VALIDATION = True
 
 
-class RequestCookies(MutableMapping):
+class RequestCookies(MutableMapping[str, str]):
     _cache_key = "webob._parsed_cookies"
 
-    def __init__(self, environ):
+    def __init__(self, environ: WSGIEnvironment) -> None:
         self._environ = environ
 
     @property
-    def _cache(self):
+    def _cache(self) -> dict[str, str]:
         env = self._environ
         header = env.get("HTTP_COOKIE", "")
+        cache: dict[str, str]
         cache, cache_header = env.get(self._cache_key, ({}, None))
 
         if cache_header == header:
             return cache
 
-        def d(b):
+        def d(b: bytes) -> str:
             return b.decode("utf8")
 
         cache = {d(k): d(v) for k, v in parse_cookie(header)}
@@ -52,7 +91,7 @@ class RequestCookies(MutableMapping):
 
         return cache
 
-    def _mutate_header(self, name, value):
+    def _mutate_header(self, name: str, value: str | None) -> bool:
         header = self._environ.get("HTTP_COOKIE")
         had_header = header is not None
         header = header or ""
@@ -95,7 +134,7 @@ class RequestCookies(MutableMapping):
 
         return found
 
-    def _valid_cookie_name(self, name):
+    def _valid_cookie_name(self, name: str) -> str:
         if not isinstance(name, str):
             raise TypeError(name, "cookie name must be a string")
 
@@ -109,7 +148,7 @@ class RequestCookies(MutableMapping):
 
         return name
 
-    def __setitem__(self, name, value):
+    def __setitem__(self, name: str, value: str) -> None:
         name = self._valid_cookie_name(name)
 
         if not isinstance(value, str):
@@ -117,51 +156,57 @@ class RequestCookies(MutableMapping):
 
         self._mutate_header(name, value)
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> str:
         return self._cache[name]
 
-    def get(self, name, default=None):
+    @overload
+    def get(self, name: str, default: None = None) -> str | None: ...
+
+    @overload
+    def get(self, name: str, default: _T) -> str | _T: ...
+
+    def get(self, name: str, default: Any = None) -> str | Any:
         return self._cache.get(name, default)
 
-    def __delitem__(self, name):
+    def __delitem__(self, name: str) -> None:
         name = self._valid_cookie_name(name)
         found = self._mutate_header(name, None)
 
         if not found:
             raise KeyError(name)
 
-    def keys(self):
+    def keys(self) -> KeysView[str]:
         return self._cache.keys()
 
-    def values(self):
+    def values(self) -> ValuesView[str]:
         return self._cache.values()
 
-    def items(self):
+    def items(self) -> ItemsView[str, str]:
         return self._cache.items()
 
-    def __contains__(self, name):
+    def __contains__(self, name: object) -> bool:
         return name in self._cache
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return self._cache.__iter__()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._cache)
 
-    def clear(self):
+    def clear(self) -> None:
         self._environ["HTTP_COOKIE"] = ""
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<RequestCookies (dict-like) with values {self._cache!r}>"
 
 
-class Cookie(dict):
-    def __init__(self, input=None):
+class Cookie(dict[bytes, "Morsel"]):
+    def __init__(self, input: str | None = None) -> None:
         if input:
             self.load(input)
 
-    def load(self, data):
-        morsel = {}
+    def load(self, data: str) -> None:
+        morsel: Morsel | dict[bytes, bytes] = {}
 
         for key, val in _parse_cookie(data):
             if key.lower() in _c_keys:
@@ -169,7 +214,7 @@ class Cookie(dict):
             else:
                 morsel = self.add(key, val)
 
-    def add(self, key, val):
+    def add(self, key: str | bytes, val: str | bytes) -> Morsel | dict[bytes, bytes]:
         if not isinstance(key, bytes):
             key = key.encode("ascii", "replace")
 
@@ -180,31 +225,31 @@ class Cookie(dict):
 
         return r
 
-    __setitem__ = add
+    __setitem__ = add  # type: ignore[assignment]
 
-    def serialize(self, full=True):
+    def serialize(self, full: bool = True) -> str:
         return "; ".join(m.serialize(full) for m in self.values())
 
-    def values(self):
+    def values(self) -> list[Morsel]:  # type: ignore[override]
         return [m for _, m in sorted(self.items())]
 
     __str__ = serialize
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<{}: [{}]>".format(
             self.__class__.__name__,
             ", ".join(map(repr, self.values())),
         )
 
 
-def _parse_cookie(data):
-    data = data.encode("latin-1")
+def _parse_cookie(data: str) -> Iterator[tuple[bytes, bytes]]:
+    data_bytes = data.encode("latin-1")
 
-    for key, val in _rx_cookie.findall(data):
+    for key, val in _rx_cookie.findall(data_bytes):
         yield key, _unquote(val)
 
 
-def parse_cookie(data):
+def parse_cookie(data: str) -> Iterator[tuple[bytes, bytes]]:
     """
     Parse cookies ignoring anything except names and values
     """
@@ -212,14 +257,26 @@ def parse_cookie(data):
     return ((k, v) for k, v in _parse_cookie(data) if _valid_cookie_name(k))
 
 
-def cookie_property(key, serialize=lambda v: v):
-    def fset(self, v):
+@overload
+def cookie_property(key: bytes) -> SymmetricProperty[bytes | None]: ...
+
+
+@overload
+def cookie_property(
+    key: bytes, serialize: Callable[[_T], _MorselValueT]
+) -> AsymmetricProperty[_MorselValueT, _T]: ...
+
+
+def cookie_property(
+    key: bytes, serialize: Callable[[Any], Any] = lambda v: v
+) -> AsymmetricProperty[Any, Any]:
+    def fset(self: Morsel, v: _T) -> None:
         self[key] = serialize(v)
 
     return property(lambda self: self[key], fset)
 
 
-def serialize_max_age(v):
+def serialize_max_age(v: timedelta | int | str | bytes | None) -> bytes | None:
     if isinstance(v, timedelta):
         v = str(v.seconds + v.days * 24 * 60 * 60)
     elif isinstance(v, int):
@@ -228,7 +285,20 @@ def serialize_max_age(v):
     return bytes_(v)
 
 
-def serialize_cookie_date(v):
+def serialize_cookie_date(
+    v: (
+        datetime
+        | date
+        | timedelta
+        | time._TimeTuple
+        | time.struct_time
+        | bytes
+        | str
+        | int
+        | None
+    ),
+) -> bytes | None:
+
     if v is None:
         return None
     elif isinstance(v, bytes):
@@ -248,7 +318,7 @@ def serialize_cookie_date(v):
     return bytes_(r % (weekdays[v[6]], months[v[1]]), "ascii")
 
 
-def serialize_samesite(v):
+def serialize_samesite(v: str | bytes) -> bytes:
     v = bytes_(v)
 
     if SAMESITE_VALIDATION:
@@ -258,10 +328,10 @@ def serialize_samesite(v):
     return v
 
 
-class Morsel(dict):
+class Morsel(dict[bytes, "bytes | bool | None"]):
     __slots__ = ("name", "value")
 
-    def __init__(self, name, value):
+    def __init__(self, name: str | bytes, value: str | bytes) -> None:
         self.name = bytes_(name, encoding="ascii")
         self.value = bytes_(value, encoding="ascii")
         assert _valid_cookie_name(self.name)
@@ -276,14 +346,14 @@ class Morsel(dict):
     secure = cookie_property(b"secure", bool)
     samesite = cookie_property(b"samesite", serialize_samesite)
 
-    def __setitem__(self, k, v):
+    def __setitem__(self, k: str | bytes, v: bytes | bool | None) -> None:
         k = bytes_(k.lower(), "ascii")
 
         if k in _c_keys:
             dict.__setitem__(self, k, v)
 
-    def serialize(self, full=True):
-        result = []
+    def serialize(self, full: bool = True) -> str:
+        result: list[bytes] = []
         add = result.append
         add(self.name + b"=" + _value_quote(self.value))
 
@@ -292,11 +362,12 @@ class Morsel(dict):
                 v = self[k]
 
                 if v:
+                    assert isinstance(v, bytes)
                     info = _c_renames[k]
                     name = info["name"]
                     quoter = info["quoter"]
                     add(name + b"=" + quoter(v))
-            expires = self[b"expires"]
+            expires = self.expires
 
             if expires:
                 add(b"expires=" + expires)
@@ -319,7 +390,7 @@ class Morsel(dict):
 
     __str__ = serialize
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<{}: {}={!r}>".format(
             self.__class__.__name__,
             text_(self.name),
@@ -346,7 +417,7 @@ _rx_cookie = re.compile(bytes_(_re_cookie_str, "ascii"))
 _rx_unquote = re.compile(bytes_(r"\\([0-3][0-7][0-7]|.)", "ascii"))
 
 
-def _bchr(i):
+def _bchr(i: int) -> bytes:
     return bytes([i])
 
 
@@ -357,7 +428,7 @@ _b_dollar_sign = ord("$")
 _b_quote_mark = ord('"')
 
 
-def _unquote(v):
+def _unquote(v: bytes) -> bytes:
     # assert isinstance(v, bytes)
 
     if v and v[0] == v[-1] == _b_quote_mark:
@@ -366,7 +437,7 @@ def _unquote(v):
     return _rx_unquote.sub(_ch_unquote, v)
 
 
-def _ch_unquote(m):
+def _ch_unquote(m: re.Match[bytes]) -> bytes:
     return _ch_unquote_map[m.group(1)]
 
 
@@ -403,10 +474,11 @@ _valid_token_bytes = bytes_(_valid_token_chars)
 # this is a map used to escape the values
 
 _escape_noop_chars = _allowed_cookie_chars + " "
-_escape_map = {chr(i): "\\%03o" % i for i in range(256)}
-_escape_map.update(zip(_escape_noop_chars, _escape_noop_chars))
+_escape_map_str = {chr(i): "\\%03o" % i for i in range(256)}
+_escape_map_str.update(zip(_escape_noop_chars, _escape_noop_chars))
 
-_escape_map = {ord(k): bytes_(v, "ascii") for k, v in _escape_map.items()}
+_escape_map = {ord(k): bytes_(v, "ascii") for k, v in _escape_map_str.items()}
+del _escape_map_str
 _escape_char = _escape_map.__getitem__
 
 weekdays = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
@@ -428,10 +500,15 @@ months = (
 
 
 # This is temporary, until we can remove this from _value_quote
-_should_raise = None
+_should_raise: bool | None = None
 
 
-def __warn_or_raise(text, warn_class, to_raise, raise_reason):
+def __warn_or_raise(
+    text: str,
+    warn_class: type[Warning],
+    to_raise: type[BaseException],
+    raise_reason: str,
+) -> None:
     if _should_raise:
         raise to_raise(raise_reason)
 
@@ -439,7 +516,7 @@ def __warn_or_raise(text, warn_class, to_raise, raise_reason):
         warnings.warn(text, warn_class, stacklevel=2)
 
 
-def _value_quote(v):
+def _value_quote(v: bytes) -> bytes:
     # This looks scary, but is simple. We remove all valid characters from the
     # string, if we end up with leftovers (string is longer than 0, we have
     # invalid characters in our value)
@@ -461,7 +538,7 @@ def _value_quote(v):
     return v
 
 
-def _valid_cookie_name(key):
+def _valid_cookie_name(key: object) -> TypeGuard[bytes]:
     return isinstance(key, bytes) and not (
         key.translate(None, _valid_token_bytes)
         # Not explicitly required by RFC6265, may consider removing later:
@@ -470,14 +547,14 @@ def _valid_cookie_name(key):
     )
 
 
-def _path_quote(v):
+def _path_quote(v: bytes) -> bytes:
     return b"".join(map(_escape_char, v))
 
 
 _domain_quote = _path_quote
 _max_age_quote = _path_quote
 
-_c_renames = {
+_c_renames: dict[bytes, _Renamer] = {
     b"path": {"name": b"Path", "quoter": _path_quote},
     b"comment": {"name": b"Comment", "quoter": _value_quote},
     b"domain": {"name": b"Domain", "quoter": _domain_quote},
@@ -489,16 +566,16 @@ _c_keys.update([b"expires", b"secure", b"httponly", b"samesite"])
 
 
 def make_cookie(
-    name,
-    value,
-    max_age=None,
-    path="/",
-    domain=None,
-    secure=False,
-    httponly=False,
-    comment=None,
-    samesite=None,
-):
+    name: str | bytes,
+    value: str | bytes | None,
+    max_age: int | timedelta | None = None,
+    path: str = "/",
+    domain: str | None = None,
+    secure: bool | None = False,
+    httponly: bool | None = False,
+    comment: str | None = None,
+    samesite: _SameSitePolicy | None = None,
+) -> str:
     """
     Generate a cookie value.
 
@@ -558,6 +635,7 @@ def make_cookie(
 
     # We are deleting the cookie, override max_age and expires
 
+    expires: int | str | None
     if value is None:
         value = b""
         # Note that the max-age value of zero is technically contraspec;
@@ -615,10 +693,10 @@ def make_cookie(
 class JSONSerializer:
     """A serializer which uses `json.dumps`` and ``json.loads``"""
 
-    def dumps(self, appstruct):
+    def dumps(self, appstruct: Any) -> bytes:
         return bytes_(json.dumps(appstruct), encoding="utf-8")
 
-    def loads(self, bstruct):
+    def loads(self, bstruct: bytes | str) -> Any:
         # NB: json.loads raises ValueError if no json object can be decoded
         # so we don't have to do it explicitly here.
 
@@ -628,13 +706,13 @@ class JSONSerializer:
 class Base64Serializer:
     """A serializer which uses base64 to encode/decode data"""
 
-    def __init__(self, serializer=None):
+    def __init__(self, serializer: _Serializer | None = None) -> None:
         if serializer is None:
             serializer = JSONSerializer()
 
         self.serializer = serializer
 
-    def dumps(self, appstruct):
+    def dumps(self, appstruct: Any) -> bytes:
         """
         Given an ``appstruct``, serialize and sign the data.
 
@@ -644,7 +722,7 @@ class Base64Serializer:
 
         return base64.urlsafe_b64encode(cstruct)
 
-    def loads(self, bstruct):
+    def loads(self, bstruct: bytes) -> Any:
         """
         Given a ``bstruct`` (a bytestring), verify the signature and then
         deserialize and return the deserialized value.
@@ -688,7 +766,13 @@ class SignedSerializer:
 
     """
 
-    def __init__(self, secret, salt, hashalg="sha512", serializer=None):
+    def __init__(
+        self,
+        secret: str | bytes,
+        salt: str | bytes,
+        hashalg: str = "sha512",
+        serializer: _Serializer | None = None,
+    ) -> None:
         self.salt = salt
         self.secret = secret
         self.hashalg = hashalg
@@ -699,7 +783,6 @@ class SignedSerializer:
         except UnicodeEncodeError:
             self.salted_secret = bytes_(salt or "", "utf-8") + bytes_(secret, "utf-8")
 
-        self.digestmod = lambda string=b"": hashlib.new(self.hashalg, string)
         self.digest_size = self.digestmod().digest_size
 
         if serializer is None:
@@ -707,7 +790,10 @@ class SignedSerializer:
 
         self.serializer = serializer
 
-    def dumps(self, appstruct):
+    def digestmod(self, string: bytes = b"") -> HASH:
+        return hashlib.new(self.hashalg, string)
+
+    def dumps(self, appstruct: Any) -> bytes:
         """
         Given an ``appstruct``, serialize and sign the data.
 
@@ -718,7 +804,7 @@ class SignedSerializer:
 
         return base64.urlsafe_b64encode(sig + cstruct).rstrip(b"=")
 
-    def loads(self, bstruct):
+    def loads(self, bstruct: bytes) -> Any:
         """
         Given a ``bstruct`` (a bytestring), verify the signature and then
         deserialize and return the deserialized value.
@@ -793,15 +879,15 @@ class CookieProfile:
 
     def __init__(
         self,
-        cookie_name,
-        secure=False,
-        max_age=None,
-        httponly=None,
-        samesite=None,
-        path="/",
-        domains=None,
-        serializer=None,
-    ):
+        cookie_name: str,
+        secure: bool = False,
+        max_age: int | timedelta | None = None,
+        httponly: bool | None = None,
+        samesite: _SameSitePolicy | None = None,
+        path: str = "/",
+        domains: Collection[str] | None = None,
+        serializer: _Serializer | None = None,
+    ) -> None:
         self.cookie_name = cookie_name
         self.secure = secure
         self.max_age = max_age
@@ -814,14 +900,14 @@ class CookieProfile:
             serializer = Base64Serializer()
 
         self.serializer = serializer
-        self.request = None
+        self.request: BaseRequest | None = None
 
-    def __call__(self, request):
+    def __call__(self, request: BaseRequest) -> CookieProfile:
         """Bind a request to a copy of this instance and return it"""
 
         return self.bind(request)
 
-    def bind(self, request):
+    def bind(self, request: BaseRequest) -> CookieProfile:
         """Bind a request to a copy of this instance and return it"""
 
         selfish = CookieProfile(
@@ -838,7 +924,7 @@ class CookieProfile:
 
         return selfish
 
-    def get_value(self):
+    def get_value(self) -> Any | None:
         """Looks for a cookie by name in the currently bound request, and
         returns its value.  If the cookie profile is not bound to a request,
         this method will raise a :exc:`ValueError`.
@@ -857,19 +943,20 @@ class CookieProfile:
             try:
                 return self.serializer.loads(bytes_(cookie))
             except ValueError:
-                return None
+                pass
+        return None
 
     def set_cookies(
         self,
-        response,
-        value,
-        domains=_default,
-        max_age=_default,
-        path=_default,
-        secure=_default,
-        httponly=_default,
-        samesite=_default,
-    ):
+        response: Response,
+        value: Any,
+        domains: Collection[str] = _default,  # type: ignore[assignment]
+        max_age: int | timedelta | None = _default,  # type: ignore[assignment]
+        path: str = _default,  # type: ignore[assignment]
+        secure: bool = _default,  # type: ignore[assignment]
+        httponly: bool = _default,  # type: ignore[assignment]
+        samesite: _SameSitePolicy | None = _default,  # type: ignore[assignment]
+    ) -> Response:
         """Set the cookies on a response."""
         cookies = self.get_headers(
             value,
@@ -886,14 +973,14 @@ class CookieProfile:
 
     def get_headers(
         self,
-        value,
-        domains=_default,
-        max_age=_default,
-        path=_default,
-        secure=_default,
-        httponly=_default,
-        samesite=_default,
-    ):
+        value: Any,
+        domains: Collection[str] = _default,  # type: ignore[assignment]
+        max_age: int | timedelta | None = _default,  # type: ignore[assignment]
+        path: str = _default,  # type: ignore[assignment]
+        secure: bool = _default,  # type: ignore[assignment]
+        httponly: bool = _default,  # type: ignore[assignment]
+        samesite: _SameSitePolicy | None = _default,  # type: ignore[assignment]
+    ) -> list[tuple[str, str]]:
         """Retrieve raw headers for setting cookies.
 
         Returns a list of headers that should be set for the cookies to
@@ -916,7 +1003,16 @@ class CookieProfile:
             samesite=samesite,
         )
 
-    def _get_cookies(self, value, domains, max_age, path, secure, httponly, samesite):
+    def _get_cookies(
+        self,
+        value: Any,
+        domains: Collection[str] | None,
+        max_age: int | timedelta | None,
+        path: str,
+        secure: bool,
+        httponly: bool | None,
+        samesite: _SameSitePolicy | None,
+    ) -> list[tuple[str, str]]:
         """Internal function
 
         This returns a list of cookies that are valid HTTP Headers.
@@ -1049,18 +1145,18 @@ class SignedCookieProfile(CookieProfile):
 
     def __init__(
         self,
-        secret,
-        salt,
-        cookie_name,
-        secure=False,
-        max_age=None,
-        httponly=False,
-        samesite=None,
-        path="/",
-        domains=None,
-        hashalg="sha512",
-        serializer=None,
-    ):
+        secret: str | bytes,
+        salt: str | bytes,
+        cookie_name: str,
+        secure: bool = False,
+        max_age: int | timedelta | None = None,
+        httponly: bool | None = False,
+        samesite: _SameSitePolicy | None = None,
+        path: str = "/",
+        domains: Collection[str] | None = None,
+        hashalg: str = "sha512",
+        serializer: _Serializer | None = None,
+    ) -> None:
         self.secret = secret
         self.salt = salt
         self.hashalg = hashalg
@@ -1081,7 +1177,7 @@ class SignedCookieProfile(CookieProfile):
             serializer=signed_serializer,
         )
 
-    def bind(self, request):
+    def bind(self, request: BaseRequest) -> SignedCookieProfile:
         """Bind a request to a copy of this instance and return it"""
 
         selfish = SignedCookieProfile(
@@ -1100,3 +1196,8 @@ class SignedCookieProfile(CookieProfile):
         selfish.request = request
 
         return selfish
+
+    if TYPE_CHECKING:
+        # NOTE: Since the return type of bind changed, __call__ changes as well
+        def __call__(self, request: BaseRequest) -> SignedCookieProfile:
+            pass
