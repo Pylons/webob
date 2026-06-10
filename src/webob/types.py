@@ -24,7 +24,7 @@ SetterValueType_contra = TypeVar("SetterValueType_contra", contravariant=True)
 
 class AsymmetricProperty(Protocol[GetterReturnType_co, SetterValueType_contra]):
     @overload
-    def __get__(self, obj: None, type: type[object] | None = ..., /) -> property: ...
+    def __get__(self, obj: None, type: type[object], /) -> property: ...
     @overload
     def __get__(
         self, obj: object, type: type[object] | None = ..., /

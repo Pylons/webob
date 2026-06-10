@@ -1,4 +1,5 @@
 import cgi
+from io import DEFAULT_BUFFER_SIZE
 import logging
 import socket
 import sys
@@ -12,6 +13,8 @@ from webob.response import Response
 from webob.util import bytes_
 
 log = logging.getLogger(__name__)
+
+TARGET_CL = DEFAULT_BUFFER_SIZE * 2
 
 
 @pytest.mark.usefixtures("serve")
@@ -64,7 +67,7 @@ _global_res = Queue()
 
 
 def _test_app_req_interrupt(env, sr):
-    target_cl = 100000
+    target_cl = TARGET_CL
     try:
         req = Request(env)
         cl = req.content_length
@@ -94,7 +97,7 @@ def _req_int_cgi(req):
 def _req_int_readline(req):
     try:
         assert req.body_file.readline() == b"a=b\n"
-    except OSError:
+    except OSError as exc:
         # too early to detect disconnect
         raise AssertionError("False disconnect alert")
     req.body_file.readline()
@@ -126,7 +129,7 @@ def _send_interrupted_req(server, path="/"):
 _interrupted_req = (
     "POST %s HTTP/1.0\r\n"
     "content-type: application/x-www-form-urlencoded\r\n"
-    "content-length: 100000\r\n"
+    f"content-length: {TARGET_CL}\r\n"
     "\r\n"
 )
-_interrupted_req += "a=b\nz=" + "x" * 10000
+_interrupted_req += "a=b\nz=" + "x" * DEFAULT_BUFFER_SIZE

@@ -283,7 +283,7 @@ def serialize_list(value: Iterable[str] | str) -> str:
 
 
 def converter_date(prop: _StringProperty) -> _DateProperty:
-    return converter(prop, parse_date, serialize_date, "HTTP date")  # type: ignore[arg-type]
+    return converter(prop, parse_date, serialize_date, "HTTP date")
 
 
 def date_header(header: str, rfc_section: str) -> _DateProperty:

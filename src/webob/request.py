@@ -499,7 +499,7 @@ class BaseRequest:
         """
         e = self.environ
         scheme: str = e["wsgi.url_scheme"]
-        url = scheme + "://"
+        url: str = scheme + "://"
         host = e.get("HTTP_HOST")
 
         if host is not None:
@@ -517,6 +517,8 @@ class BaseRequest:
         elif scheme == "http":
             if port == "80":
                 port = None
+
+        assert host is not None
         url += host
 
         if port:
@@ -1039,7 +1041,7 @@ class BaseRequest:
             # self.body_file with something that is readable and EOF's
             # correctly.
 
-            return self.environ.get(  # type: ignore[no-any-return]
+            return self.environ.get(  # type: ignore[return-value]
                 "wsgi.input_terminated",
                 # For backwards compatibility, we fall back to checking if
                 # webob.is_body_readable is set in the environ

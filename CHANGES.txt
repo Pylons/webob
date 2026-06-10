@@ -14,12 +14,27 @@ Security Fix
 
   (This fix was released in WebOb 1.8.8)
 
+- The fix for CVE-2024-42353 was incomplete: a Location value containing
+  ASCII tab, carriage return, or line feed characters between consecutive
+  slashes could still be interpreted as a protocol-relative URL by
+  ``urllib.parse.urljoin`` on Python 3.10+, allowing an open redirect.
+
+  See https://github.com/Pylons/webob/security/advisories/GHSA-fh3h-vg37-cc95
+
+  Thanks to Caleb Brown of Google for the report.
+
+  (Thix fix was released in WebOb 1.8.10)
+
 Feature
 ~~~~~~~
 
 - Rename "master" git branch to "main"
 
 - Add support for Python 3.12.
+
+- Add support for Python 3.13.
+
+- Add support for Python 3.14.
 
 - Add Request.remote_host, exposing REMOTE_HOST environment variable.
 
@@ -38,7 +53,7 @@ Compatibility
 Backwards Incompatibilities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- Drop support for Python 2.7, 3.4, 3.5, 3.6, and 3.7.
+- Drop support for Python 2.7, 3.4, 3.5, 3.6, 3.7, 3.8 and 3.9
 
 Experimental Features
 ~~~~~~~~~~~~~~~~~~~~~
