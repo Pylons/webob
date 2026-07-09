@@ -22,6 +22,7 @@ __all__ = [
 ]
 
 _now = datetime.now  # hook point for unit tests
+_utcnow = datetime.utcnow  # hook point for unit tests
 
 
 class _UTC(tzinfo):
@@ -84,7 +85,12 @@ def serialize_date(dt):
         return text_(dt)
 
     if isinstance(dt, timedelta):
-        dt = _now() + dt
+        # The result is later serialized as GMT (see ``usegmt=True`` below and
+        # ``calendar.timegm`` above), so the "now" the delta is added to must be
+        # UTC.  Using a naive local ``_now()`` here mislabels local time as GMT
+        # and produces a header value off by the local UTC offset (see #430).
+        # This mirrors ``Response._cache_expires``, which uses ``utcnow()``.
+        dt = _utcnow() + dt
 
     if isinstance(dt, (datetime, date)):
         dt = dt.timetuple()
