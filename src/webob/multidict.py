@@ -7,10 +7,13 @@ Gives a multi-value dictionary object (MultiDict) plus several wrappers
 
 import binascii
 from collections.abc import MutableMapping
-from urllib.parse import urlencode as url_encode
+from functools import cached_property
+from urllib.parse import parse_qsl, urlencode as url_encode
 import warnings
 
-__all__ = ["MultiDict", "NestedMultiDict", "NoVars", "GetDict"]
+import multipart
+
+__all__ = ["MultiDict", "MultiDictFile", "NestedMultiDict", "NoVars", "GetDict"]
 
 
 class MultiDict(MutableMapping):
@@ -22,9 +25,7 @@ class MultiDict(MutableMapping):
 
     def __init__(self, *args, **kw):
         if len(args) > 1:
-            raise TypeError(
-                "MultiDict can only be called with one positional " "argument"
-            )
+            raise TypeError("MultiDict can only be called with one positional argument")
 
         if args:
             if hasattr(args[0], "items"):
@@ -55,9 +56,18 @@ class MultiDict(MutableMapping):
         return obj
 
     @classmethod
-    def from_fieldstorage(cls, fs):
+    def from_fieldstorage(cls, fs):  # pragma: no cover
         """
         Create a multidict from a cgi.FieldStorage instance
+
+        .. deprecated:: 2.0
+
+            This method will not function in Python 3.13 or greater because the
+            `cgi` module has been removed.  Consider using the `multipart`_
+            library with :meth:`from_multipart` instead.
+
+        .. _multipart: https://pypi.org/project/multipart/
+
         """
         obj = cls()
         # fs.list can be None when there's nothing to parse
@@ -96,6 +106,30 @@ class MultiDict(MutableMapping):
                 obj.add(field.name, decode(value))
 
         return obj
+
+    @classmethod
+    def from_multipart(cls, mp):
+        """
+        Create a multidict from a `MultipartParser`_ object.
+
+        .. _MultipartParser: https://multipart.readthedocs.io/en/latest/api.html#multipart.MultipartParser
+
+        """
+        obj = cls()
+
+        for part in mp:
+            if part.filename or not part.is_buffered():
+                obj.add(part.name, MultiDictFile(part))
+            else:
+                obj.add(part.name, part.value)
+        return obj
+
+    @classmethod
+    def from_qs(cls, data, charset="utf-8"):
+        data = parse_qsl(data, keep_blank_values=True)
+        return cls(
+            (key.decode(charset), value.decode(charset)) for (key, value) in data
+        )
 
     def __getitem__(self, key):
         for k, v in reversed(self._items):
@@ -285,6 +319,48 @@ class MultiDict(MutableMapping):
 
 
 _dummy = object()
+
+
+class MultiDictFile:
+    """
+    This object represents file uploads in a ``multipart/form-data`` request.
+
+    This is a thin wrapper around :cls:`multipart.MultipartPart` to mimic the
+    shape of Python's deprecated ``cgi.FieldStorage`` object to maintain backwards
+    compatibility with previous versions of webob.
+    """
+
+    def __init__(self, part: multipart.MultipartPart):
+        self._part = part
+        self.name = part.name
+        self.filename = part.filename
+        self.file = part.file
+        self.type = part.content_type
+        # self.type_options is a property
+        self.disposition = part.disposition
+        # self.disposition_options is a property
+        self.headers = part.headers
+        self.close = part.close
+
+    @cached_property
+    def type_options(self):
+        raw_ctype = self.headers.get("Content-Type", "")
+        return multipart.parse_options_header(raw_ctype)[1]
+
+    @cached_property
+    def disposition_options(self):
+        return multipart.parse_options_header(
+            self.disposition, unquote=multipart.content_disposition_unquote
+        )[1]
+
+    @cached_property
+    def value(self):
+        assert self.file
+        pos = self.file.tell()
+        self.file.seek(0)
+        val = self.file.read()
+        self.file.seek(pos)
+        return val
 
 
 class GetDict(MultiDict):
