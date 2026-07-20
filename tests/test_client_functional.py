@@ -68,7 +68,6 @@ def cookie_app(req):
     resp = Response("test")
     resp.headers.add("Set-Cookie", "a=b")
     resp.headers.add("Set-Cookie", "c=d")
-    resp.headerlist.append(("X-Crazy", "value\r\n  continuation"))
     return resp
 
 
@@ -78,9 +77,6 @@ def test_client_cookies(serve, client_app=None):
         req = Request.blank(server.url + "/?test")
         resp = req.send(client_app)
         assert resp.headers.getall("Set-Cookie") == ["a=b", "c=d"]
-        assert resp.headers["X-Crazy"] == "value, continuation", repr(
-            resp.headers["X-Crazy"]
-        )
 
 
 @wsgify

@@ -1052,7 +1052,7 @@ def test_merge_cookies_resp_is_wsgi_callable():
     environ = {}
 
     def dummy_start_response(status, headers, exc_info=None):
-        assert headers, ["Set-Cookie" == "a=1; Path=/"]
+        assert headers == [("Set-Cookie", "a=1; Path=/")]
 
     result = wsgiapp(environ, dummy_start_response)
     assert result == "abc"
@@ -1094,6 +1094,58 @@ def test_location_no_open_redirect():
     assert res.location == "//www.example.com/test"
     req = Request.blank("/")
     assert req.get_response(res).location == "http://localhost/%2fwww.example.com/test"
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "/\t/www.example.com/test",
+        "\t//www.example.com/test",
+        "//\twww.example.com/test",
+        "/\t\t/www.example.com/test",
+    ],
+)
+def test_location_no_open_redirect_tab_bypass(payload):
+    # Follow-up to CVE-2024-42353. urllib.parse.urlsplit() (used internally
+    # by urljoin) strips ASCII tab on Python 3.10+, which allowed a
+    # Location value to bypass the "//" check and be parsed as
+    # protocol-relative. See GHSA-fh3h-vg37-cc95. (CR and LF are already
+    # rejected by the location header setter, so only tab is reachable
+    # via the public API.)
+    res = Response()
+    res.status = "301"
+    res.location = payload
+    req = Request.blank("/")
+    assert req.get_response(res).location == (
+        "http://localhost/%2fwww.example.com/test"
+    )
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "/\t/www.example.com/test",
+        "/\n/www.example.com/test",
+        "/\r/www.example.com/test",
+        "\t//www.example.com/test",
+        "\n//www.example.com/test",
+        "\r//www.example.com/test",
+        "//\twww.example.com/test",
+        "//\nwww.example.com/test",
+        "//\rwww.example.com/test",
+        "//\tw\nww.example.com/test",
+    ],
+)
+def test__make_location_absolute_strips_url_whitespace(payload):
+    # Defense in depth for GHSA-fh3h-vg37-cc95: even when called with a
+    # Location value that bypasses the descriptor's CR/LF check (e.g. via
+    # direct manipulation of _headerlist), tab/CR/LF must not be usable to
+    # turn a relative path into a protocol-relative redirect.
+    result = Response._make_location_absolute(
+        {"wsgi.url_scheme": "http", "HTTP_HOST": "example.com:80"},
+        payload,
+    )
+    assert result == "http://example.com/%2fwww.example.com/test"
 
 
 @pytest.mark.xfail(

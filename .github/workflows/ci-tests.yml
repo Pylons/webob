@@ -14,119 +14,72 @@ on:
 jobs:
     test:
         strategy:
+            # See https://github.com/actions/runner-images
             matrix:
                 py:
-                    - "3.9"
                     - "3.10"
                     - "3.11"
                     - "3.12"
                     - "3.13"
-                    - "pypy-3.9"
+                    - "3.14"
                     - "pypy-3.10"
-                    # Pre-release
                 os:
-                    - "ubuntu-22.04"
-                    - "windows-latest"
-                    - "macos-14" # arm64
-                    - "macos-13" # x64
-                architecture:
-                    - x64
-                    - x86
-                    - arm64
+                    - "ubuntu-24.04" # x64
+                    - "windows-2022" # x64
+                    - "macos-15" # arm64
+                    - "macos-15-intel" # x64
                 include:
-                    - py: "pypy-3.9"
-                      toxenv: "pypy39"
+                    - os: "ubuntu-24.04"
+                      pytest-args: "--cov"
                     - py: "pypy-3.10"
                       toxenv: "pypy310"
-                exclude:
-                    # Ubuntu does not have x86/arm64 Python
-                    - os: "ubuntu-22.04"
-                      architecture: x86
-                    - os: "ubuntu-22.04"
-                      architecture: arm64
-                    # MacOS we need to make sure to remove x86 on all
-                    # We need to run no arm64 on macos-13 (Intel), but some
-                    # Python versions: 3.9/3.10
-                    #
-                    # From 3.11 onward, there is support for running x64 and
-                    # arm64 on Apple Silicon based systems (macos-14)
-                    - os: "macos-13"
-                      architecture: x86
-                    - os: "macos-13"
-                      architecture: arm64
-                    - os: "macos-14"
-                      architecture: x86
-                    - os: "macos-14"
-                      architecture: x64
-                      py: "3.9"
-                    - os: "macos-14"
-                      architecture: x64
-                      py: "3.10"
-                    # Windows does not have arm64 releases
-                    - os: "windows-latest"
-                      architecture: arm64
-                    # Don't run all PyPy versions except latest on
-                    # Windows/macOS. They are expensive to run.
-                    - os: "windows-latest"
-                      py: "pypy-3.9"
-                    - os: "macos-13"
-                      py: "pypy-3.9"
-                    - os: "macos-14"
-                      py: "pypy-3.9"
+                      pytest-args: ""
 
-        name: "Python: ${{ matrix.py }}-${{ matrix.architecture }} on ${{ matrix.os }}"
+        name: "Python: ${{ matrix.py }} on ${{ matrix.os }}"
         runs-on: ${{ matrix.os }}
         steps:
-            - uses: actions/checkout@v4
-            - name: Setup python
-              uses: actions/setup-python@v5
+            - uses: actions/checkout@v6
+            - name: Setup uv
+              uses: astral-sh/setup-uv@v7
               with:
                   python-version: ${{ matrix.py }}
-                  architecture: ${{ matrix.architecture }}
-            - run: pip install tox
             - name: Running tox with specific toxenv
               if: ${{ matrix.toxenv != '' }}
               env:
                 TOXENV: ${{ matrix.toxenv }}
-              run: tox
+              run: uvx tox
             - name: Running tox for current python version
               if: ${{ matrix.toxenv == '' }}
-              run: tox -e py
+              run: uvx tox -e py -- ${{ matrix.pytest-args }}
 
     coverage:
-        runs-on: ubuntu-22.04
+        runs-on: ubuntu-24.04
         name: Validate coverage
         steps:
-            - uses: actions/checkout@v4
-            - name: Setup python
-              uses: actions/setup-python@v5
+            - uses: actions/checkout@v6
+            - name: Setup uv
+              uses: astral-sh/setup-uv@v7
               with:
-                  python-version: "3.13"
-                  architecture: x64
-
-            - run: pip install tox
-            - run: tox -e py313,coverage
+                  python-version: "3.14"
+            - run: uvx tox -e py314,coverage
     docs:
-        runs-on: ubuntu-22.04
+        runs-on: ubuntu-24.04
         name: Build the documentation
         steps:
-            - uses: actions/checkout@v4
-            - name: Setup python
-              uses: actions/setup-python@v5
+            - uses: actions/checkout@v6
+            - name: Setup uv
+              uses: astral-sh/setup-uv@v7
               with:
-                  python-version: "3.13"
-                  architecture: x64
-            - run: pip install tox
-            - run: tox -e docs
+                  python-version: "3.14"
+            - run: uvx tox -e docs
     lint:
-        runs-on: ubuntu-22.04
+        runs-on: ubuntu-24.04
         name: Lint the package
         steps:
-            - uses: actions/checkout@v4
-            - name: Setup python
-              uses: actions/setup-python@v5
+            - uses: actions/checkout@v6
+            - name: Setup uv
+              uses: astral-sh/setup-uv@v7
               with:
-                  python-version: "3.13"
-                  architecture: x64
-            - run: pip install tox
-            - run: tox -e lint
+                  python-version: "3.14"
+            - run: uvx tox -e lint
+

@@ -238,23 +238,18 @@ class WSGIHTTPException(Response, HTTPException):
     code = 500
     title = "Internal Server Error"
     explanation = ""
-    body_template_obj = Template(
-        """\
+    body_template_obj = Template("""\
 ${explanation}<br /><br />
 ${detail}
 ${html_comment}
-"""
-    )
+""")
 
-    plain_template_obj = Template(
-        """\
+    plain_template_obj = Template("""\
 ${status}
 
-${body}"""
-    )
+${body}""")
 
-    html_template_obj = Template(
-        """\
+    html_template_obj = Template("""\
 <html>
  <head>
   <title>${status}</title>
@@ -263,8 +258,7 @@ ${body}"""
   <h1>${status}</h1>
   ${body}
  </body>
-</html>"""
-    )
+</html>""")
 
     # Set this to True for responses that should have no request body
     empty_body = False
@@ -543,13 +537,11 @@ class _HTTPMove(HTTPRedirection):
     """
 
     explanation = "The resource has been moved to"
-    body_template_obj = Template(
-        """\
+    body_template_obj = Template("""\
 ${explanation} <a href="${location}">${location}</a>;
 you should be redirected automatically.
 ${detail}
-${html_comment}"""
-    )
+${html_comment}""")
 
     def __init__(
         self,
@@ -820,11 +812,9 @@ class HTTPMethodNotAllowed(HTTPClientError):
     code = 405
     title = "Method Not Allowed"
     # override template since we need an environment variable
-    body_template_obj = Template(
-        """\
+    body_template_obj = Template("""\
 The method ${REQUEST_METHOD} is not allowed for this resource. <br /><br />
-${detail}"""
-    )
+${detail}""")
 
 
 class HTTPNotAcceptable(HTTPClientError):
@@ -842,12 +832,10 @@ class HTTPNotAcceptable(HTTPClientError):
     code = 406
     title = "Not Acceptable"
     # override template since we need an environment variable
-    body_template_obj = Template(
-        """\
+    body_template_obj = Template("""\
 The resource could not be generated that was acceptable to your browser
 (content of type ${HTTP_ACCEPT}. <br /><br />
-${detail}"""
-    )
+${detail}""")
 
 
 class HTTPProxyAuthenticationRequired(HTTPClientError):
@@ -991,12 +979,10 @@ class HTTPUnsupportedMediaType(HTTPClientError):
     code = 415
     title = "Unsupported Media Type"
     # override template since we need an environment variable
-    body_template_obj = Template(
-        """\
+    body_template_obj = Template("""\
 The request media type ${CONTENT_TYPE} is not supported by this server.
 <br /><br />
-${detail}"""
-    )
+${detail}""")
 
 
 class HTTPRequestRangeNotSatisfiable(HTTPClientError):
@@ -1199,11 +1185,9 @@ class HTTPNotImplemented(HTTPServerError):
 
     code = 501
     title = "Not Implemented"
-    body_template_obj = Template(
-        """
+    body_template_obj = Template("""
 The request method ${REQUEST_METHOD} is not implemented for this server. <br /><br />
-${detail}"""
-    )
+${detail}""")
 
 
 class HTTPBadGateway(HTTPServerError):

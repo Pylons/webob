@@ -4,6 +4,7 @@
 """
 Gives a multi-value dictionary object (MultiDict) plus several wrappers
 """
+
 import binascii
 from collections.abc import MutableMapping
 from urllib.parse import parse_qsl, urlencode as url_encode
