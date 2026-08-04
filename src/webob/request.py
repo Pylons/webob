@@ -114,7 +114,7 @@ class BaseRequest:
             return val
         encoding = getattr(self, encattr)
 
-        if encoding in _LATIN_ENCODINGS:  # shortcut
+        if encoding in _LATIN_ENCODINGS or encoding == 'UTF-8':  # shortcut
             return val
 
         return bytes_(val, "latin-1").decode(encoding)
