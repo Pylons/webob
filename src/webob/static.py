@@ -9,7 +9,9 @@ __all__ = [
     'FileApp', 'DirectoryApp',
 ]
 
-mimetypes._winreg = None # do not load mimetypes from windows registry
+# do not load mimetypes from windows registry
+mimetypes._winreg = mimetypes._mimetypes_read_windows_registry = None
+
 mimetypes.add_type('text/javascript', '.js') # stdlib default is application/x-javascript
 mimetypes.add_type('image/x-icon', '.ico') # not among defaults
 
