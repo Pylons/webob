@@ -1,16 +1,26 @@
+from __future__ import annotations
+
 import errno
 import re
-import sys
 
 try:
-    import httplib
+    import httplib  # type: ignore
 except ImportError:
     import http.client as httplib
 
 import socket
+from typing import TYPE_CHECKING, ClassVar
 from urllib.parse import quote as url_quote
 
 from webob import exc
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from http.client import HTTPConnection, HTTPMessage, HTTPSConnection
+
+    from _typeshed.wsgi import StartResponse, WSGIEnvironment
+
+    from webob.response import Response
 
 __all__ = ["send_request_app", "SendRequest"]
 
@@ -36,13 +46,16 @@ class SendRequest:
 
     def __init__(
         self,
-        HTTPConnection=httplib.HTTPConnection,
-        HTTPSConnection=httplib.HTTPSConnection,
-    ):
+        HTTPConnection: type[HTTPConnection] = httplib.HTTPConnection,
+        HTTPSConnection: type[HTTPSConnection] = httplib.HTTPSConnection,
+    ) -> None:
         self.HTTPConnection = HTTPConnection
         self.HTTPSConnection = HTTPSConnection
 
-    def __call__(self, environ, start_response):
+    def __call__(
+        self, environ: WSGIEnvironment, start_response: StartResponse
+    ) -> Iterable[bytes]:
+
         scheme = environ["wsgi.url_scheme"]
 
         if scheme == "http":
@@ -69,7 +82,7 @@ class SendRequest:
             environ["SERVER_PORT"] = port
         kw = {}
 
-        if "webob.client.timeout" in environ and self._timeout_supported(ConnClass):
+        if "webob.client.timeout" in environ:
             kw["timeout"] = environ["webob.client.timeout"]
         conn = ConnClass("%(SERVER_NAME)s:%(SERVER_PORT)s" % environ, **kw)
         headers = {}
@@ -100,6 +113,7 @@ class SendRequest:
         if environ.get("CONTENT_TYPE"):
             headers["Content-Type"] = environ["CONTENT_TYPE"]
 
+        resp: Response
         if not path.startswith("/"):
             path = "/" + path
         try:
@@ -142,16 +156,16 @@ class SendRequest:
 
     # Remove these headers from response (specify lower case header
     # names):
-    filtered_headers = ("transfer-encoding",)
+    filtered_headers: ClassVar[tuple[str, ...]] = ("transfer-encoding",)
 
     MULTILINE_RE = re.compile(r"\r?\n\s*")
 
-    def parse_headers(self, message):
+    def parse_headers(self, message: HTTPMessage) -> list[tuple[str, str]]:
         """
         Turn a Message object into a list of WSGI-style headers.
         """
-        headers_out = []
-        headers = message._headers
+        headers_out: list[tuple[str, str]] = []
+        headers = message._headers  # type: ignore[attr-defined]
 
         for full_header in headers:
             if not full_header:  # pragma: no cover
@@ -191,19 +205,10 @@ class SendRequest:
 
         return headers_out
 
-    def _timeout_supported(self, ConnClass):
-        if sys.version_info < (2, 7) and ConnClass in (
-            httplib.HTTPConnection,
-            httplib.HTTPSConnection,
-        ):  # pragma: no cover
-            return False
 
-        return True
+send_request_app: SendRequest = SendRequest()
 
-
-send_request_app = SendRequest()
-
-_e_refused = (errno.ECONNREFUSED,)
+_e_refused: tuple[int, ...] = (errno.ECONNREFUSED,)
 
 if hasattr(errno, "ENODATA"):  # pragma: no cover
     _e_refused += (errno.ENODATA,)

@@ -52,8 +52,11 @@ setup(
     license="MIT",
     packages=find_packages("src", exclude=["tests"]),
     package_dir={"": "src"},
+    include_package_data=True,
+    package_data={"webob": ["py.typed"]},
     python_requires=">=3.9.0",
     install_requires=[
+        "typing-extensions>=4.12.0",
         "legacy-cgi>=2.6; python_version>='3.13'",
     ],
     zip_safe=True,
