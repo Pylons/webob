@@ -49,7 +49,7 @@ class JsonRpcApp(object):
             raise ValueError("No such method %s" % method)
         try:
             result = method(*params)
-        except:
+        except Exception:
             text = traceback.format_exc()
             exc_value = sys.exc_info()[1]
             error_value = dict(
