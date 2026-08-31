@@ -1782,6 +1782,12 @@ class TestBaseRequest:
         inst = self._makeOne({"a": val})
         assert inst.encget("a") == val
 
+    def test_encget_invalid_utf8_path_does_not_raise(self):
+        # %c0 in the URL lands in PATH_INFO as latin-1 0xC0, which is not utf-8.
+        val = str(b"\xc0", "latin-1")
+        inst = self._makeOne({"PATH_INFO": val})
+        assert inst.encget("PATH_INFO", encattr="url_encoding") == val
+
     def test_relative_url(self):
         inst = self._blankOne("/%C3%AB/c")
         result = inst.relative_url("a")
