@@ -117,7 +117,11 @@ class BaseRequest:
         if encoding in _LATIN_ENCODINGS:  # shortcut
             return val
 
-        return bytes_(val, "latin-1").decode(encoding)
+        try:
+            return bytes_(val, "latin-1").decode(encoding)
+        except UnicodeDecodeError:
+            # PATH_INFO is latin-1 per PEP 3333; a probe like %c0 is not utf-8.
+            return val
 
     def encset(self, key, val, encattr=None):
         if encattr:
