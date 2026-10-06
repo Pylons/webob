@@ -134,6 +134,12 @@ Experimental Features
 Bugfix
 ~~~~~~
 
+- ``Response.set_cookie(..., overwrite=True)`` keeps the valueless ``Secure``
+  and ``HttpOnly`` flags when it reloads existing ``Set-Cookie`` headers.
+  Previously those flags were dropped, so overwriting a cookie beside
+  ``SameSite=None`` raised ``ValueError`` and other cookies lost ``Secure``
+  or ``HttpOnly``. See https://github.com/Pylons/webob/issues/417
+
 - ``webob.cookies.serialize_cookie_date()`` now converts a timezone-aware
   ``datetime`` to UTC before serializing it, instead of writing its local
   wall-clock time out as GMT. Naive datetimes continue to be treated as UTC.
