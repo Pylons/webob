@@ -162,6 +162,23 @@ class Cookie(dict):
             self.load(input)
 
     def load(self, data):
+        # Secure and HttpOnly are serialized without "=value". The parser
+        # only matches key=value, so reloading a Set-Cookie header dropped
+        # those flags. Overwrite then raised ValueError for SameSite=None
+        # (which requires Secure) or silently removed the flags.
+        # https://github.com/Pylons/webob/issues/417
+        pieces = []
+
+        for piece in data.split(";"):
+            stripped = piece.strip()
+
+            if "=" not in stripped and stripped.lower() in ("secure", "httponly"):
+                lead = piece[: len(piece) - len(piece.lstrip())]
+                pieces.append(f"{lead}{stripped}=true")
+            else:
+                pieces.append(piece)
+
+        data = ";".join(pieces)
         morsel = {}
 
         for key, val in _parse_cookie(data):

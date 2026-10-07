@@ -919,6 +919,28 @@ def test_set_cookie_overwrite():
     assert res.headerlist[-1] == ("Set-Cookie", "a=2; Path=/")
 
 
+def test_set_cookie_overwrite_keeps_secure_and_httponly():
+    # Reloading Set-Cookie used to drop valueless Secure and HttpOnly flags.
+    # SameSite=None then raised ValueError, and other cookies lost the flags.
+    # https://github.com/Pylons/webob/issues/417
+    res = Response()
+    res.set_cookie("foo", "val", secure=True, httponly=True, samesite="none")
+    res.set_cookie("bar", "val", secure=True, httponly=True, samesite="lax")
+    res.set_cookie(
+        "bar",
+        "val1",
+        overwrite=True,
+        secure=True,
+        httponly=True,
+        samesite="lax",
+    )
+    set_cookies = [value for name, value in res.headerlist if name == "Set-Cookie"]
+    assert set_cookies == [
+        "foo=val; Path=/; secure; HttpOnly; SameSite=none",
+        "bar=val1; Path=/; secure; HttpOnly; SameSite=lax",
+    ]
+
+
 def test_set_cookie_value_is_None():
     res = Response()
     res.set_cookie("a", None)
