@@ -360,6 +360,17 @@ def test_conditional_response_range_not_satisfiable_response():
     assert resp.body == b"Requested range not satisfiable: bytes=100-200"
 
 
+def test_conditional_response_suffix_range_larger_than_body():
+    req = Request.blank("/", range="bytes=-100")
+    resp = req.get_response(Response(b"foo\n", conditional_response=True))
+    assert resp.status_code == 206
+    assert resp.content_range.start == 0
+    assert resp.content_range.stop == 4
+    assert resp.content_range.length == 4
+    assert resp.content_length == 4
+    assert resp.body == b"foo\n"
+
+
 def test_HEAD_conditional_response_range_not_satisfiable_response():
     req = Request.blank("/", method="HEAD", range="bytes=100-200")
     resp = Response(app_iter=["foo\n"], content_length=4, conditional_response=True)

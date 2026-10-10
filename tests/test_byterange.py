@@ -8,10 +8,15 @@ from webob.byterange import ContentRange, Range, _is_content_range_valid
 
 
 def test_not_satisfiable():
-    range = Range.parse("bytes=-100")
-    assert range.range_for_length(50) is None
     range = Range.parse("bytes=100-")
     assert range.range_for_length(50) is None
+
+
+@pytest.mark.parametrize("suffix", [50, 51, 100])
+def test_suffix_range_covering_entire_representation(suffix):
+    range = Range.parse(f"bytes=-{suffix}")
+    assert range.range_for_length(50) == (0, 50)
+    assert tuple(range.content_range(50)) == (0, 50, 50)
 
 
 def test_range_parse():

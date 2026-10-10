@@ -28,7 +28,7 @@ class Range:
         if end is None:
             end = length
             if start < 0:
-                start += length
+                start = max(0, start + length)
         if _is_content_range_valid(start, end, length):
             stop = min(end, length)
             return (start, stop)
