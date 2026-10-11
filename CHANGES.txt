@@ -134,6 +134,10 @@ Experimental Features
 Bugfix
 ~~~~~~
 
+- Suffix byte ranges larger than a non-empty selected representation now
+  return the entire representation, as required by RFC 9110 section 14.1.2,
+  instead of being treated as unsatisfiable and producing a 416 response.
+
 - ``webob.cookies.serialize_cookie_date()`` now converts a timezone-aware
   ``datetime`` to UTC before serializing it, instead of writing its local
   wall-clock time out as GMT. Naive datetimes continue to be treated as UTC.
