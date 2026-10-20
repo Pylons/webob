@@ -134,6 +134,11 @@ Experimental Features
 Bugfix
 ~~~~~~
 
+- ``Range.parse`` now returns ``None`` for a ``Range`` header with neither a
+  first nor a last byte position (``bytes=-``), instead of raising
+  ``ValueError``. Previously such a request header made ``req.range`` and
+  conditional range responses raise.
+
 - ``webob.cookies.serialize_cookie_date()`` now converts a timezone-aware
   ``datetime`` to UTC before serializing it, instead of writing its local
   wall-clock time out as GMT. Naive datetimes continue to be treated as UTC.
