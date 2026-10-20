@@ -75,6 +75,8 @@ class Range:
             return None
         start, end = m.groups()
         if not start:
+            if not end:
+                return None
             return cls(-int(end), None)
         start = int(start)
         if not end:

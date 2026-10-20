@@ -349,6 +349,14 @@ def test_conditional_response_if_modified_since_true():
     assert resp.status_code == 200
 
 
+def test_conditional_response_range_empty_bounds_ignored():
+    req = Request.blank("/", range="bytes=-")
+    resp = Response(app_iter=[b"x" * 10], conditional_response=True)
+    resp = req.get_response(resp)
+    assert resp.status_code == 200
+    assert resp.body == b"x" * 10
+
+
 def test_conditional_response_range_not_satisfiable_response():
     req = Request.blank("/", range="bytes=100-200")
     resp = Response(app_iter=["foo\n"], content_length=4, conditional_response=True)

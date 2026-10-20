@@ -22,6 +22,8 @@ def test_range_parse():
     assert Range.parse("bytes=10-5") is None
     assert Range.parse("bytes 5-10") is None
     assert Range.parse("words=10-5") is None
+    assert Range.parse("bytes=-") is None
+    assert Range.parse("bytes = - ") is None
 
 
 def test_range_content_range_length_none():
