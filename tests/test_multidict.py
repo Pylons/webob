@@ -77,9 +77,11 @@ class BaseDictTests:
 
     def test_setdefault(self):
         d = self._get_instance()
-        d.setdefault("a", "1")
+        original_values = d.getall("a")
+        assert d.setdefault("a", "1") == d["a"]
+        assert d.getall("a") == original_values
         assert d["a"] != "1"
-        d.setdefault("e", "1")
+        assert d.setdefault("e", "1") == "1"
         assert "e" in d
 
     def test_add(self):

@@ -203,7 +203,7 @@ class MultiDict(MutableMapping):
         return self.__class__(self)
 
     def setdefault(self, key, default=None):
-        for k, v in self._items:
+        for k, v in reversed(self._items):
             if key == k:
                 return v
         self._items.append((key, default))
