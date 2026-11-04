@@ -416,6 +416,48 @@ class TestRequestCookies:
         assert environ["HTTP_COOKIE"] == ""
         assert inst._cache == {}
 
+    def test_get_duplicate_cookie_names_first_value_wins(self):
+        environ = {"HTTP_COOKIE": "a=first; a=second; b=2"}
+        inst = self._makeOne(environ)
+        assert inst["a"] == "first"
+        assert inst.get("a") == "first"
+        assert dict(inst) == {"a": "first", "b": "2"}
+        assert len(inst) == 2
+
+    def test__setitem__duplicate_cookie_names_replaced(self):
+        environ = {"HTTP_COOKIE": "a=1; b=2; a=3"}
+        inst = self._makeOne(environ)
+        inst["a"] = "new"
+        assert environ["HTTP_COOKIE"] == "a=new; b=2"
+        assert inst["a"] == "new"
+
+    def test__delitem__duplicate_cookie_names_all_removed(self):
+        environ = {"HTTP_COOKIE": "a=1; b=2; a=3"}
+        inst = self._makeOne(environ)
+        del inst["a"]
+        assert environ["HTTP_COOKIE"] == "b=2"
+        assert inst.get("a") is None
+        assert "a" not in inst
+
+    def test__setitem__duplicate_cookie_names_none_survive_sanitize(self):
+        # Regression test for the scenario in issue #182: masking every
+        # cookie value must not leave a duplicate value behind.
+        environ = {"HTTP_COOKIE": "token=secret1; token=secret2; other=x"}
+        inst = self._makeOne(environ)
+        for key in list(inst):
+            inst[key] = "***"
+        assert environ["HTTP_COOKIE"] == "token=***; other=***"
+        assert "secret" not in environ["HTTP_COOKIE"]
+
+    def test__delitem__duplicate_cookie_names_only_occurrence_removed(self):
+        # Guard: deleting one name must not touch other cookies, even
+        # when the name appears at the end of the header.
+        environ = {"HTTP_COOKIE": "b=2; a=1; a=3"}
+        inst = self._makeOne(environ)
+        del inst["a"]
+        assert environ["HTTP_COOKIE"] == "b=2"
+        assert inst["b"] == "2"
+
     def test_keys(self):
         environ = {"HTTP_COOKIE": 'a=1; b="La Pe\\303\\261a"; c=3'}
         inst = self._makeOne(environ)

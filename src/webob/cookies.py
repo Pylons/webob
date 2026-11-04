@@ -48,7 +48,17 @@ class RequestCookies(MutableMapping):
         def d(b):
             return b.decode("utf8")
 
-        cache = {d(k): d(v) for k, v in parse_cookie(header)}
+        # A cookie name may appear multiple times in the header. Keep the
+        # first value: user agents order cookies so that the ones with the
+        # highest priority (longest matching path) come first.
+        cache = {}
+
+        for k, v in parse_cookie(header):
+            key = d(k)
+
+            if key not in cache:
+                cache[key] = d(v)
+
         env[self._cache_key] = (cache, header)
 
         return cache
@@ -66,28 +76,30 @@ class RequestCookies(MutableMapping):
         else:
             bytes_val = _value_quote(bytes_(value, "utf-8"))
             replacement = bytes_name + b"=" + bytes_val
-        matches = _rx_cookie.finditer(header)
+        # The header may contain the same cookie name multiple times. The
+        # new value replaces the first occurrence and any further
+        # occurrences are dropped (or all are removed when deleting), so
+        # that no stale value can survive a set/delete.
+        segments = []
         found = False
 
-        for match in matches:
+        for match in _rx_cookie.finditer(header):
             start, end = match.span()
             match_name = match.group(1)
 
             if match_name == bytes_name:
-                found = True
+                if not found:
+                    found = True
 
-                if replacement is None:  # remove value
-                    header = header[:start].rstrip(b" ;") + header[end:]
-                else:  # replace value
-                    header = header[:start] + replacement + header[end:]
+                    if replacement is not None:
+                        segments.append(replacement)
+            else:
+                segments.append(header[start:end])
 
-                break
-        else:
-            if replacement is not None:
-                if header:
-                    header += b"; " + replacement
-                else:
-                    header = replacement
+        if not found and replacement is not None:
+            segments.append(replacement)
+
+        header = b"; ".join(segments)
 
         if header:
             self._environ["HTTP_COOKIE"] = text_(header, "latin-1")
